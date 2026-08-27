@@ -352,11 +352,11 @@ describe("разрезы отчётов управляющего доходят 
 		// Место ОТРИСОВКИ. «Функция экспортируется» и «маршрут отвечает 200» ничего
 		// не доказывают: до этой правки маршруты отвечали 200 годами.
 		const renderSites: [string, RegExp][] = [
-			["услуги", /services\.data\.rows\.map\(/],
-			["должники", /debtors\.data\.rows\.map\(/],
-			["загрузка по дням недели", /scheduleMargins\.byWeekday\.map\(/],
-			["загрузка по часам", /scheduleMargins\.byHour\.map\(/],
-			["поток пациентов по месяцам", /summary\.patientFlow\.points\.map\(/],
+			["услуги", /(?:services\.data\.rows|\(services\.data\.rows\s*\?\?\s*\[\]\))\.map\(/],
+			["должники", /(?:debtors\.data\.rows|\(debtors\?\.data\?\.rows\s*\?\?\s*\[\]\))\.map\(/],
+			["загрузка по дням недели", /(?:scheduleMargins\.byWeekday|\(scheduleMargins\?\.byWeekday\s*\?\?\s*\[\]\))\.map\(/],
+			["загрузка по часам", /(?:scheduleMargins\.byHour|\(scheduleMargins\?\.byHour\s*\?\?\s*\[\]\))\.map\(/],
+			["поток пациентов по месяцам", /(?:summary\.patientFlow\.points|\(summary\?\.patientFlow\?\.points\s*\?\?\s*\[\]\))\.map\(/],
 		];
 		for (const [what, pattern] of renderSites) {
 			assert.match(

@@ -7,6 +7,7 @@ const THEMES = ["light", "dark"];
 const OUT_DIRS = [
 	"C:/Clinic_MVP/dental-crm/docs/proofs/audit",
 	"C:/Clinic_MVP/dental-crm/docs/screenshots",
+	"C:/Users/Admin/.gemini/antigravity/brain/46a0d6d1-aaa9-4a6d-8bd6-c30138e73d80",
 	"C:/Users/Admin/.gemini/antigravity/brain/28922cfe-a09a-4693-aa79-8e62cf0bac22",
 	"C:/Users/Admin/.gemini/antigravity/brain/69ded610-4c1d-4d3f-8359-693851dbbfd7",
 	"C:/Users/Admin/.gemini/antigravity/brain/597374ff-ac94-40b8-8848-ea236f205038",
@@ -91,6 +92,21 @@ const MODAL_BUTTON_TEST_IDS = [
 	// Wave 4: Domain 4 — Аналитика возвращаемости (Retention & Recalls)
 	{ id: "open-recall-modal-btn", altId: "open-recall-modal-btn", name: "patient_retention_recalls" },
 	{ id: "open-before-after-modal-btn", altId: "open-photo-protocol-modal-btn", name: "before_after_slider" },
+
+	// Wave 5: Domain 1 — Телефония и Входящий звонок
+	{ id: "open-incoming-call-modal-btn", altId: "open-telephony-popup-modal-btn", name: "incoming_call_popup" },
+	{ id: "open-telephony-widget-btn", altId: "open-telephony-softphone-modal-btn", name: "telephony_softphone" },
+
+	// Wave 5: Domain 2 — Ролевая матрица доступа и расчет комиссий
+	{ id: "open-settings-access-modal-btn", altId: "open-access-matrix-modal-btn", name: "settings_access_matrix" },
+	{ id: "open-staff-commissions-modal-btn", altId: "open-doctor-commissions-modal-btn", name: "staff_commissions_panel" },
+
+	// Wave 5: Domain 3 — Центр аудита ЭМК главврача 043/у
+	{ id: "open-cmo-compliance-modal-btn", altId: "open-cmo-hub-modal-btn", name: "cmo_compliance_hub" },
+	{ id: "open-form043-print-modal-btn", altId: "open-form043-modal-btn", name: "form043_print_modal" },
+
+	// Wave 5: Domain 4 — Офлайн-хранилище и бэкап базы
+	{ id: "open-offline-vault-modal-btn", altId: "open-backup-vault-modal-btn", name: "offline_backup_vault" },
 ];
 
 for (const vp of [

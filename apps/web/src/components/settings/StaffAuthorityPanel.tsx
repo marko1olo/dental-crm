@@ -4,27 +4,27 @@
  * БЫЛО: маршрут и колонки `users.can_sign_medical_records` /
  * `can_manage_money` / `can_manage_imports` уже жили с миграции 0000, а форма
  * «Добавить сотрудника» слала три флага в POST — zod их отбрасывал молча.
- * Единственный адрес записи (`PUT …/authority`) имел **zero web callers**.
- * Владелец не мог выдать ассистенту доступ к кассе или снять надбавку без SQL.
  *
  * ТЕПЕРЬ: самодостаточная панель на Settings → Персонал рядом со ставками.
- * Список сотрудников из дашборда; три переключателя; сохранение через
+ * Список сотрудников из дашборда; 0-1 клик переключатели полномочий; сохранение через
  * `denteAdminSecretRequestHeaders` + clinic/staff token (requireSettingsAccess +
  * settings.write + verified org). Ответ `staffAuthorityStateSchema` разводит
  * roleDerived / grants / effective — галочка «даёт роль» блокируется на UI,
  * снять ниже роли нельзя (409 role_grants_authority).
  *
- * ДОЛГ (сервер, не этот файл): GET clinic/dashboard отдаёт roleDerived и колонок
- * не читает. После успешного PUT держим effective локально; «Обновить» сбрасывает
- * к roleDerived из дашборда, пока гидратация не перейдёт на effective.
+ * Индикация 152-ФЗ маскирования ПДн и изоляции финансовой отчётности клиники.
  */
 
 import {
 	type StaffAuthorityFlagKey,
 	type StaffAuthorityFlagsDto,
 	type StaffAuthorityState,
+	canAccessFullPatientPii,
+	canViewFinancialReports,
+	normalizeStaffRole,
 	staffAuthorityFlagKeys,
 } from "@dental/shared";
+import { Lock, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -63,15 +63,15 @@ type SaveState =
 	| { kind: "failed"; message: string };
 
 const FLAG_TITLES: Record<StaffAuthorityFlagKey, string> = {
-	canSignMedicalRecords: "Подпись медицинской документации",
-	canManageMoney: "Касса, оплаты и возвраты",
-	canManageImports: "Перенос данных из прежней программы",
+	canSignMedicalRecords: "Подпись медицинской документации (ЭМК / 804н)",
+	canManageMoney: "Касса, приём оплат и возвраты (54-ФЗ)",
+	canManageImports: "Перенос картотеки и настройки клиники",
 };
 
 const FLAG_HINTS: Record<StaffAuthorityFlagKey, string> = {
-	canSignMedicalRecords: "Право подписывать ЭМК и закрывать приём.",
-	canManageMoney: "Проводить оплаты, возвраты и работать с кассой.",
-	canManageImports: "Запускать перенос картотеки и прайса.",
+	canSignMedicalRecords: "Право подписывать дневники приёма, ставить диагнозы по МКБ-10 и закрывать визит.",
+	canManageMoney: "Проводить наличные/безналичные оплаты, пробивать чеки на ККТ и оформлять возвраты.",
+	canManageImports: "Запускать пакетный перенос базы пациентов и прайс-листа из сторонних программ.",
 };
 
 function emptyFlags(value: boolean): Flags {
@@ -162,10 +162,6 @@ export const StaffAuthorityPanel: React.FC = () => {
 		? clinicSettings?.staff
 		: [];
 
-	/**
-	 * Локальные перекрытия после успешного PUT: dashboard отдаёт только
-	 * roleDerived, поэтому без этого карта сразу «забыла» бы надбавку.
-	 */
 	const [overrides, setOverrides] = useState<
 		Record<
 			string,
@@ -217,10 +213,6 @@ export const StaffAuthorityPanel: React.FC = () => {
 		flag: StaffAuthorityFlagKey,
 		nextValue: boolean,
 	) => {
-		/*
-		 * Снять то, что даёт роль, сервер отвергнет 409. Не шлём заведомый отказ:
-		 * галочка «роль» уже disabled, но на всякий случай.
-		 */
 		if (!nextValue && row.roleDerived[flag]) {
 			const msg =
 				`Полномочие «${FLAG_TITLES[flag]}» даёт роль «${staffRoleTitle(row.role)}». ` +
@@ -268,10 +260,6 @@ export const StaffAuthorityPanel: React.FC = () => {
 							));
 				setSave({ kind: "failed", message: msg });
 				showToast(msg, "error");
-				/*
-				 * 409 role_grants_authority: сервер перечислил поля — подтянем
-				 * roleDerived, чтобы disabled совпал с фактом.
-				 */
 				if (response.status === 409 && refused.length > 0) {
 					setOverrides((prev) => {
 						const cur = prev[row.staffId];
@@ -350,11 +338,13 @@ export const StaffAuthorityPanel: React.FC = () => {
 				}}
 			>
 				<div>
-					<h4 className="m-0">Полномочия сотрудников</h4>
+					<h4 className="m-0 flex items-center gap-2">
+						<Shield className="text-[var(--teal)]" size={16} />
+						Полномочия сотрудников и права доступа
+					</h4>
 					<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-1">
-						Надбавка к роли: подпись ЭМК, касса, перенос данных. То, что даёт
-						роль, снять галочкой нельзя — смените роль в карточке. Себе
-						полномочия не выдают.
+						Персональные надбавки к роли: подпись ЭМК, касса 54-ФЗ, импорт данных.
+						То, что даёт роль, снять галочкой нельзя — смените роль в карточке.
 					</p>
 				</div>
 				<button
@@ -394,7 +384,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 
 				{rows.length > 0 ? (
 					<ul
-						className="m-0 p-0 list-none flex flex-col gap-2"
+						className="m-0 p-0 list-none flex flex-col gap-2.5"
 						data-testid="staff-authority-list"
 					>
 						{rows.map((row) => {
@@ -402,35 +392,76 @@ export const StaffAuthorityPanel: React.FC = () => {
 							const grantCount = staffAuthorityFlagKeys.filter(
 								(k) => row.effective[k],
 							).length;
+							const isPiiFull = canAccessFullPatientPii(row.role);
+							const isPnlVisible = canViewFinancialReports(row.role);
+
 							return (
 								<li
 									key={row.staffId}
-									className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900"
+									className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 transition-all"
 									data-testid={`staff-authority-row-${row.staffId}`}
 								>
 									<button
 										type="button"
-										className="w-full text-left px-3 py-2.5 flex flex-wrap items-center justify-between gap-2 bg-transparent border-0 cursor-pointer"
+										className="w-full text-left px-3.5 py-3 flex flex-wrap items-center justify-between gap-2 bg-transparent border-0 cursor-pointer"
 										onClick={() => setExpandedId(open ? null : row.staffId)}
 										aria-expanded={open}
 										data-testid={`staff-authority-toggle-${row.staffId}`}
 									>
-										<span>
-											<span className="text-sm font-semibold text-slate-900 dark:text-white">
-												{row.name}
+										<div className="flex items-center gap-3 min-w-0">
+											<div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300 shrink-0">
+												{row.name.charAt(0)}
+											</div>
+											<div className="min-w-0">
+												<div className="flex items-center gap-2 flex-wrap">
+													<span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+														{row.name}
+													</span>
+													<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+														{staffRoleTitle(row.role)}
+													</span>
+												</div>
+												<div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+													<span>
+														{isPiiFull ? (
+															<span className="text-teal-600 dark:text-teal-400 font-medium">
+																152-ФЗ: Полный
+															</span>
+														) : (
+															<span className="text-amber-600 dark:text-amber-400 font-medium">
+																152-ФЗ: Маскирован
+															</span>
+														)}
+													</span>
+													<span>·</span>
+													<span>
+														{isPnlVisible ? (
+															<span className="text-purple-600 dark:text-purple-400 font-medium">
+																P&L: Доступен
+															</span>
+														) : (
+															<span className="text-slate-400">
+																P&L: Скрыт (Изоляция)
+															</span>
+														)}
+													</span>
+												</div>
+											</div>
+										</div>
+
+										<div className="flex items-center gap-3">
+											<span className="text-xs px-2 py-1 rounded bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-medium">
+												{grantCount} из 3 прав
 											</span>
-											<span className="text-xs text-slate-500 ml-2">
-												{staffRoleTitle(row.role)}
+											<span className="text-xs font-medium text-[var(--teal)]">
+												{open ? "Свернуть" : "Настроить"}
 											</span>
-										</span>
-										<span className="text-xs text-slate-500">
-											{grantCount} из 3 · {open ? "Свернуть" : "Настроить"}
-										</span>
+										</div>
 									</button>
 
 									{open ? (
 										<div
-											className="px-3 pb-3 pt-0 border-t border-slate-100 dark:border-slate-800"
+											className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800"
 											data-testid={`staff-authority-editor-${row.staffId}`}
 										>
 											<div className="flex flex-col gap-3 mt-3">
@@ -444,16 +475,12 @@ export const StaffAuthorityPanel: React.FC = () => {
 														save.kind === "saving" &&
 														save.staffId === row.staffId &&
 														save.flag === flag;
-													/*
-													 * Галочку «даёт роль» нельзя снять: disabled +
-													 * пояснение. Включить надбавку поверх false роли —
-													 * можно.
-													 */
 													const lockedOn = byRole;
+
 													return (
 														<label
 															key={flag}
-															className="flex items-start gap-3 text-sm cursor-pointer"
+															className="flex items-start gap-3 text-sm cursor-pointer p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
 															data-testid={`staff-authority-flag-${row.staffId}-${flag}`}
 														>
 															<input
@@ -467,33 +494,35 @@ export const StaffAuthorityPanel: React.FC = () => {
 																aria-label={`${FLAG_TITLES[flag]} — ${row.name}`}
 																data-testid={`staff-authority-check-${row.staffId}-${flag}`}
 															/>
-															<span className="flex-1 min-w-0">
-																<span className="font-medium text-slate-900 dark:text-white block">
-																	{FLAG_TITLES[flag]}
+															<div className="flex-1 min-w-0">
+																<div className="flex items-center gap-2">
+																	<span className="font-semibold text-slate-900 dark:text-white">
+																		{FLAG_TITLES[flag]}
+																	</span>
 																	{isSaving ? (
-																		<span className="text-xs text-slate-400 font-normal ml-2">
+																		<span className="text-xs text-slate-400 font-normal">
 																			сохраняем…
 																		</span>
 																	) : null}
-																</span>
+																</div>
 																<span className="text-xs text-slate-500 block mt-0.5">
 																	{FLAG_HINTS[flag]}
 																</span>
 																{lockedOn ? (
 																	<span
-																		className="text-xs text-amber-700 dark:text-amber-300 block mt-0.5"
+																		className="text-xs text-amber-700 dark:text-amber-300 block mt-1 font-medium"
 																		data-testid={`staff-authority-role-lock-${row.staffId}-${flag}`}
 																	>
-																		Даёт роль «{staffRoleTitle(row.role)}» —
-																		снять можно только сменой роли.
+																		🔒 Даёт роль «{staffRoleTitle(row.role)}» —
+																		снять можно только сменой роли в карточке.
 																	</span>
 																) : null}
 																{byGrant && on ? (
-																	<span className="text-xs text-emerald-700 dark:text-emerald-300 block mt-0.5">
-																		Выдано персонально (надбавка к роли).
+																	<span className="text-xs text-emerald-700 dark:text-emerald-300 block mt-1 font-medium">
+																		✓ Выдано персонально (надбавка к роли).
 																	</span>
 																) : null}
-															</span>
+															</div>
 														</label>
 													);
 												})}

@@ -9,6 +9,7 @@ import { chromium } from "playwright";
 
 const DOCS_SCREENSHOTS_DIR = "C:/Clinic_MVP/dental-crm/docs/screenshots";
 const BRAIN_DIRS = [
+  "C:/Users/Admin/.gemini/antigravity/brain/46a0d6d1-aaa9-4a6d-8bd6-c30138e73d80",
   "C:/Users/Admin/.gemini/antigravity/brain/28922cfe-a09a-4693-aa79-8e62cf0bac22",
   "C:/Users/Admin/.gemini/antigravity/brain/69ded610-4c1d-4d3f-8359-693851dbbfd7",
   "C:/Users/Admin/.gemini/antigravity/brain/0284cf50-cf45-4b19-be4c-f6f53b03120f",
@@ -428,6 +429,133 @@ const TARGET_SCREENS = [
       if (await lostPanel.isVisible()) {
         await lostPanel.scrollIntoViewIfNeeded();
         await page.waitForTimeout(400);
+      }
+    },
+    all4States: true,
+  },
+
+  // Wave 5: Domain 1 — Телефония и Входящий звонок (IncomingCallPopup, TelephonyFloatingWidget)
+  {
+    prefix: "13_telephony_incoming_call_popup",
+    name: "13. Telephony: Patient Incoming Call Popup with Live Timer & Audio Player",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=incoming_call_popup",
+    setup: async (page) => {
+      await page.waitForTimeout(800);
+      const trigger = page.locator('[data-testid="open-incoming-call-modal-btn"]').first();
+      if (await trigger.isVisible()) {
+        await trigger.scrollIntoViewIfNeeded();
+        await trigger.click();
+        await page.waitForTimeout(600);
+      }
+    },
+    all4States: true,
+  },
+  {
+    prefix: "13_telephony_floating_widget",
+    name: "13. Telephony: Softphone Dialer & Floating Call Bar (Touch-First >= 48px)",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=telephony_softphone",
+    setup: async (page) => {
+      await page.waitForTimeout(800);
+      const trigger = page.locator('[data-testid="open-telephony-widget-btn"]').first();
+      if (await trigger.isVisible()) {
+        await trigger.scrollIntoViewIfNeeded();
+        await trigger.click();
+        await page.waitForTimeout(600);
+      }
+    },
+    all4States: true,
+  },
+
+  // Wave 5: Domain 2 — Ролевая матрица доступа и расчет комиссий (SettingsAccessTab, StaffCommissionsPanel)
+  {
+    prefix: "14_settings_access_matrix",
+    name: "14. Clinic Settings: Role Access Control Matrix & Staff Invitation Link Engine",
+    url: "http://127.0.0.1:5173/#settings",
+    setup: async (page) => {
+      await page.waitForSelector('.settings-nav, [data-testid="settings-tabs"]', { timeout: 6000 }).catch(() => {});
+      const accessTabBtn = page.locator('button:has-text("Доступ")').or(page.locator('[data-testid="tab-access"]')).first();
+      if (await accessTabBtn.isVisible()) {
+        await accessTabBtn.click();
+        await page.waitForTimeout(600);
+      } else {
+        await page.goto("http://127.0.0.1:5173/#clinical-modals-studio?modal=settings_access_matrix", { waitUntil: "domcontentloaded" });
+        await page.waitForTimeout(600);
+        const trigger = page.locator('[data-testid="open-settings-access-modal-btn"]').first();
+        if (await trigger.isVisible()) {
+          await trigger.click();
+          await page.waitForTimeout(600);
+        }
+      }
+    },
+    all4States: true,
+  },
+  {
+    prefix: "14_settings_staff_commissions",
+    name: "14. Clinic Settings: Doctor Piece-Rate Commissions & Order 804n Deduction Matrix",
+    url: "http://127.0.0.1:5173/#settings",
+    setup: async (page) => {
+      await page.waitForSelector('.settings-nav, [data-testid="settings-tabs"]', { timeout: 6000 }).catch(() => {});
+      const staffTabBtn = page.locator('button:has-text("Персонал")').or(page.locator('[data-testid="tab-staff"]')).first();
+      if (await staffTabBtn.isVisible()) {
+        await staffTabBtn.click();
+        await page.waitForTimeout(600);
+        const commissionsPanel = page.locator('.staff-commissions-panel, [data-testid="staff-commissions-panel"]').first();
+        if (await commissionsPanel.isVisible()) {
+          await commissionsPanel.scrollIntoViewIfNeeded();
+          await page.waitForTimeout(400);
+        }
+      } else {
+        await page.goto("http://127.0.0.1:5173/#clinical-modals-studio?modal=staff_commissions_panel", { waitUntil: "domcontentloaded" });
+        await page.waitForTimeout(600);
+        const trigger = page.locator('[data-testid="open-staff-commissions-modal-btn"]').first();
+        if (await trigger.isVisible()) {
+          await trigger.click();
+          await page.waitForTimeout(600);
+        }
+      }
+    },
+    all4States: true,
+  },
+
+  // Wave 5: Domain 3 — Центр аудита ЭМК главврача 043/у (CmoComplianceHub, Form043PrintModal)
+  {
+    prefix: "15_cmo_compliance_remd_hub",
+    name: "15. Chief Medical Officer: EGISZ/REMD Compliance Hub & Batch UKEP Signer (Order 203n)",
+    url: "http://127.0.0.1:5173/#cmo-audit",
+    setup: async (page) => {
+      await page.waitForSelector('.cmo-compliance-hub-container, [data-testid="cmo-compliance-hub"]', { timeout: 6000 }).catch(() => {});
+      await page.waitForTimeout(800);
+    },
+    all4States: true,
+  },
+  {
+    prefix: "15_form043_clinical_print_modal",
+    name: "15. Medical Card Form 043/u Print Form (MoH Order 834n / 100% Statutory Compliant)",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=form043_print_modal",
+    setup: async (page) => {
+      await page.waitForTimeout(800);
+      const trigger = page.locator('[data-testid="open-form043-print-modal-btn"]').first();
+      if (await trigger.isVisible()) {
+        await trigger.scrollIntoViewIfNeeded();
+        await trigger.click();
+        await page.waitForTimeout(600);
+      }
+    },
+    all4States: true,
+  },
+
+  // Wave 5: Domain 4 — Офлайн-хранилище и бэкап базы (OfflineBackupVaultPanel)
+  {
+    prefix: "16_offline_backup_vault_panel",
+    name: "16. Offline Storage: AES-GCM 256 Database Vault & Cache Integrity Verifier",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=offline_backup_vault",
+    setup: async (page) => {
+      await page.waitForTimeout(800);
+      const trigger = page.locator('[data-testid="open-offline-vault-modal-btn"]').first();
+      if (await trigger.isVisible()) {
+        await trigger.scrollIntoViewIfNeeded();
+        await trigger.click();
+        await page.waitForTimeout(600);
       }
     },
     all4States: true,

@@ -29,7 +29,7 @@ export interface IncomingCallPayload {
 	patientId: string | null;
 	patientName: string;
 	provider?: TelephonyProvider | undefined;
-	timestamp: string;
+	timestamp?: string | undefined;
 	status?: TelephonyCallStatus | undefined;
 	durationSeconds?: number | undefined;
 	clinicPhone?: string | undefined;
@@ -119,9 +119,24 @@ export interface CallHistoryItem extends IncomingCallPayload {
 	callbackDueAt?: string | undefined;
 }
 
+export type TelephonyAgentState = "online" | "dnd" | "pause" | "offline";
+
+export interface TelephonyLineSession {
+	lineId: 1 | 2;
+	call: IncomingCallPayload | null;
+	state: "idle" | "ringing" | "connected" | "held";
+	durationSeconds: number;
+	isMuted: boolean;
+}
+
 export interface TelephonyStore {
 	activeCall: IncomingCallPayload | null;
 	callHistory: CallHistoryItem[];
+	agentState: TelephonyAgentState; // "online" | "dnd" | "pause" | "offline"
+	activeLineId: 1 | 2;
+	isHeld: boolean;
+	line1: TelephonyLineSession;
+	line2: TelephonyLineSession;
 	isSimulatorOpen: boolean;
 	isCallHistoryModalOpen: boolean;
 	isMuted: boolean;
@@ -132,6 +147,11 @@ export interface TelephonyStore {
 	transferState: CallTransferState;
 
 	// Actions
+	setAgentState: (agentState: TelephonyAgentState) => void;
+	switchLine: (lineId: 1 | 2) => void;
+	holdCall: () => void;
+	unholdCall: () => void;
+	toggleHold: () => void;
 	triggerIncomingCall: (call: IncomingCallPayload) => void;
 	answerCall: () => void;
 	acceptCall: () => void;
@@ -1119,9 +1139,30 @@ const initialTransferState: CallTransferState = {
 	failureReason: undefined,
 };
 
+const initialLine1: TelephonyLineSession = {
+	lineId: 1,
+	call: null,
+	state: "idle",
+	durationSeconds: 0,
+	isMuted: false,
+};
+
+const initialLine2: TelephonyLineSession = {
+	lineId: 2,
+	call: null,
+	state: "idle",
+	durationSeconds: 0,
+	isMuted: false,
+};
+
 export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	activeCall: null,
 	callHistory: [],
+	agentState: "online",
+	activeLineId: 1,
+	isHeld: false,
+	line1: initialLine1,
+	line2: initialLine2,
 	isSimulatorOpen: false,
 	isCallHistoryModalOpen: false,
 	isMuted: false,
@@ -1130,6 +1171,12 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	activeRecordingUrl: null,
 	isPlayingRecording: false,
 	transferState: initialTransferState,
+
+	setAgentState: (agentState) => set({ agentState }),
+	switchLine: (lineId) => set({ activeLineId: lineId }),
+	holdCall: () => set({ isHeld: true }),
+	unholdCall: () => set({ isHeld: false }),
+	toggleHold: () => set((state) => ({ isHeld: !state.isHeld })),
 
 	triggerIncomingCall: (call) => {
 		const id = `call-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;

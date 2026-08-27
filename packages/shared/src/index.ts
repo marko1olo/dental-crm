@@ -25,6 +25,8 @@ export * from "./schedule/index.js";
 export * from "./recalls/index.js";
 export * from "./tasks/index.js";
 export * from "./patients/index.js";
+export * from "./storage/index.js";
+export * from "./telephony/index.js";
 
 
 
@@ -13876,6 +13878,9 @@ export class DentalInteractionMatrixEngine {
 		};
 	}
 }
+
+export * from "./security/index.js";
+
 
 
 

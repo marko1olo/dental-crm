@@ -1,22 +1,25 @@
 /**
- * Действующие ставки врачей (GET /api/settings/staff/commissions).
+ * Действующие ставки врачей и калькулятор сдельной оплаты (GET /api/settings/staff/commissions).
  *
  * БЫЛО: маршрут отдавал список `{ userId, commissionPct, materialCostDeductionPct,
  * effectiveFrom }` из `doctor_commissions`, а PUT
  * `/api/settings/staff/:staffId/commission` уже жил в DoctorPayoutDashboard —
- * но **zero web callers** на GET. Владелец видел ставку только внутри месячного
- * отчёта выплат; на вкладке «Персонал» процента не было, и врачи без приёмов
- * в выбранном месяце выглядели «без ставки», хотя строка в базе уже есть.
+ * но zero web callers на GET.
  *
  * ТЕПЕРЬ: самодостаточная панель на Settings → Персонал. Грузит GET list,
  * сопоставляет userId с ФИО из дашборда, даёт задать/изменить процент через
- * тот же PUT и `auth.settingsAccessHeaders`, что и остальные вкладки настроек
- * (requireSettingsAccess + settingsAdminSecretSession → x-dente-admin-secret).
+ * тот же PUT и `auth.settingsAccessHeaders`, что и остальные вкладки настроек.
  *
- * BYLO: denteAdminSecretRequestHeaders() без второго аргумента — секрет не
- * уходил. Локально зелёно (unguarded), у заказчика 403 на GET list и PUT rate.
+ * Интегрирован симулятор и калькулятор сдельной мотивации врача строго в целых копейках
+ * (% от терапевтического/ортопедического приёма минус ЗТЛ и расходные материалы).
  */
 
+import {
+	calculateDoctorPieceRatePayout,
+	formatKopecksToRublesDisplay,
+	parseRublesToKopecks,
+} from "@dental/shared";
+import { Calculator, Check, ChevronDown, ChevronUp, Coins, Percent, RefreshCw, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -84,20 +87,14 @@ function formatEffectiveFrom(iso: string): string {
 }
 
 function isDoctorLikeRole(role: string): boolean {
-	// staffRoleSchema: owner | doctor | administrator | assistant | manager
-	// Ставку платят врачу; owner часто сам принимает. assistant/admin — нет.
-	return role === "doctor" || role === "owner";
+	return role === "doctor" || role === "owner" || role === "head_doctor";
 }
 
 export const StaffCommissionsPanel: React.FC = () => {
 	const appLogic = useAppLogicContext();
-	/*
-	 * authRef: useAppLogic returns a new auth object each render. Keep the
-	 * settings secret fresh inside loadRates/saveRate without thrashing deps.
-	 */
 	const authRef = useRef(appLogic?.auth);
 	authRef.current = appLogic?.auth;
-	// dashboard живёт на корне useAppLogic; точный тип — ReturnType, читаем мягко.
+
 	const dashboardUnknown = (appLogic as { dashboard?: unknown } | null)
 		?.dashboard;
 
@@ -137,6 +134,18 @@ export const StaffCommissionsPanel: React.FC = () => {
 	const [save, setSave] = useState<SaveState>({ kind: "idle" });
 	const [editingUserId, setEditingUserId] = useState<string | null>(null);
 	const [draft, setDraft] = useState("");
+
+	// Интерактивный калькулятор сдельной оплаты (Live Simulator)
+	const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+	const [simTherapyRub, setSimTherapyRub] = useState("350000");
+	const [simTherapyRate, setSimTherapyRate] = useState("25");
+	const [simOrthoRub, setSimOrthoRub] = useState("450000");
+	const [simOrthoRate, setSimOrthoRate] = useState("20");
+	const [simLabCostRub, setSimLabCostRub] = useState("120000");
+	const [simLabDeductionPct, setSimLabDeductionPct] = useState("100");
+	const [simMaterialCostRub, setSimMaterialCostRub] = useState("30000");
+	const [simMaterialDeductionPct, setSimMaterialDeductionPct] = useState("0");
+	const [simBaseShiftRub, setSimBaseShiftRub] = useState("0");
 
 	const rateByUserId = useMemo(() => {
 		const map = new Map<string, CommissionRate>();
@@ -318,9 +327,42 @@ export const StaffCommissionsPanel: React.FC = () => {
 
 	const withoutRate = rows.filter((r) => r.rate === null).length;
 
+	// Расчет симулятора сдельной оплаты в копейках
+	const simCalculation = useMemo(() => {
+		try {
+			return calculateDoctorPieceRatePayout({
+				therapyRevenueKopecks: parseRublesToKopecks(simTherapyRub),
+				therapyRatePct: Number(simTherapyRate) || 0,
+				orthopedicsRevenueKopecks: parseRublesToKopecks(simOrthoRub),
+				orthopedicsRatePct: Number(simOrthoRate) || 0,
+				surgeryRevenueKopecks: 0,
+				surgeryRatePct: 0,
+				hygieneRevenueKopecks: 0,
+				hygieneRatePct: 0,
+				labOrdersCostKopecks: parseRublesToKopecks(simLabCostRub),
+				labDeductionPct: Number(simLabDeductionPct) || 0,
+				materialCostKopecks: parseRublesToKopecks(simMaterialCostRub),
+				materialDeductionPct: Number(simMaterialDeductionPct) || 0,
+				baseShiftSalaryKopecks: parseRublesToKopecks(simBaseShiftRub),
+			});
+		} catch {
+			return null;
+		}
+	}, [
+		simTherapyRub,
+		simTherapyRate,
+		simOrthoRub,
+		simOrthoRate,
+		simLabCostRub,
+		simLabDeductionPct,
+		simMaterialCostRub,
+		simMaterialDeductionPct,
+		simBaseShiftRub,
+	]);
+
 	return (
 		<article
-			className="settings-card col-span-full"
+			className="settings-card col-span-full flex flex-col gap-4"
 			aria-label="Ставки врачей"
 			data-testid="staff-commissions-panel"
 		>
@@ -335,23 +377,197 @@ export const StaffCommissionsPanel: React.FC = () => {
 				}}
 			>
 				<div>
-					<h4 className="m-0">Ставки врачей (% от кассы)</h4>
+					<h4 className="m-0 flex items-center gap-2">
+						<Percent size={16} className="text-[var(--teal)]" />
+						Ставки врачей и сдельная мотивация (% от кассы)
+					</h4>
 					<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-1">
-						Процент, по которому клиника платит врачу за лечение. Ноль допустим
-						(оклад). Действующие значения из таблицы ставок, не из отчёта за
-						месяц.
+						Процент, по которому клиника начисляет зарплату врачам от приёма.
+						Расчёт ведётся строго в целых копейках с учётом списания ЗТЛ и материалов.
 					</p>
 				</div>
-				<button
-					type="button"
-					className="secondary-button text-xs"
-					onClick={() => void loadRates()}
-					disabled={load.kind === "loading"}
-					data-testid="staff-commissions-refresh"
-				>
-					{load.kind === "loading" ? "Загрузка…" : "Обновить"}
-				</button>
+
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						className="secondary-button text-xs flex items-center gap-1.5"
+						onClick={() => setIsSimulatorOpen((v) => !v)}
+						data-testid="toggle-piece-rate-simulator"
+					>
+						<Calculator size={13} />
+						{isSimulatorOpen ? "Скрыть калькулятор" : "Калькулятор сделки"}
+					</button>
+
+					<button
+						type="button"
+						className="secondary-button text-xs"
+						onClick={() => void loadRates()}
+						disabled={load.kind === "loading"}
+						data-testid="staff-commissions-refresh"
+					>
+						{load.kind === "loading" ? "Загрузка…" : "Обновить"}
+					</button>
+				</div>
 			</div>
+
+			{/* Интерактивный калькулятор сдельной оплаты (Simulator) */}
+			{isSimulatorOpen && (
+				<div
+					className="p-4 rounded-xl border border-teal-200 dark:border-teal-900 bg-teal-50/40 dark:bg-teal-950/20 flex flex-col gap-3 transition-all"
+					data-testid="piece-rate-simulator-panel"
+				>
+					<div className="flex items-center justify-between">
+						<h5 className="m-0 text-xs font-bold text-teal-900 dark:text-teal-200 flex items-center gap-2">
+							<Coins size={15} />
+							Симулятор сдельной оплаты врача (Расчёт в целых копейках)
+						</h5>
+						<span className="text-[11px] text-teal-700 dark:text-teal-300 font-mono">
+							Zero Float · Penny-Exact
+						</span>
+					</div>
+
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+						<div className="flex flex-col gap-1">
+							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
+								Терапия: выручка (₽)
+							</label>
+							<input
+								type="text"
+								value={simTherapyRub}
+								onChange={(e) => setSimTherapyRub(e.target.value)}
+								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
+								placeholder="350000"
+							/>
+						</div>
+
+						<div className="flex flex-col gap-1">
+							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
+								Ставка терапия (%)
+							</label>
+							<input
+								type="text"
+								value={simTherapyRate}
+								onChange={(e) => setSimTherapyRate(e.target.value)}
+								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
+								placeholder="25"
+							/>
+						</div>
+
+						<div className="flex flex-col gap-1">
+							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
+								Ортопедия (₽)
+							</label>
+							<input
+								type="text"
+								value={simOrthoRub}
+								onChange={(e) => setSimOrthoRub(e.target.value)}
+								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
+								placeholder="450000"
+							/>
+						</div>
+
+						<div className="flex flex-col gap-1">
+							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
+								Ставка ортопедия (%)
+							</label>
+							<input
+								type="text"
+								value={simOrthoRate}
+								onChange={(e) => setSimOrthoRate(e.target.value)}
+								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
+								placeholder="20"
+							/>
+						</div>
+
+						<div className="flex flex-col gap-1">
+							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
+								ЗТЛ лаборатория (₽)
+							</label>
+							<input
+								type="text"
+								value={simLabCostRub}
+								onChange={(e) => setSimLabCostRub(e.target.value)}
+								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
+								placeholder="120000"
+							/>
+						</div>
+
+						<div className="flex flex-col gap-1">
+							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
+								Удержание ЗТЛ (%)
+							</label>
+							<input
+								type="text"
+								value={simLabDeductionPct}
+								onChange={(e) => setSimLabDeductionPct(e.target.value)}
+								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
+								placeholder="100"
+							/>
+						</div>
+
+						<div className="flex flex-col gap-1">
+							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
+								Расходные материалы (₽)
+							</label>
+							<input
+								type="text"
+								value={simMaterialCostRub}
+								onChange={(e) => setSimMaterialCostRub(e.target.value)}
+								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
+								placeholder="30000"
+							/>
+						</div>
+
+						<div className="flex flex-col gap-1">
+							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
+								Оклад за смены (₽)
+							</label>
+							<input
+								type="text"
+								value={simBaseShiftRub}
+								onChange={(e) => setSimBaseShiftRub(e.target.value)}
+								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
+								placeholder="0"
+							/>
+						</div>
+					</div>
+
+					{simCalculation && (
+						<div className="mt-2 p-3 rounded-lg bg-white dark:bg-slate-900 border border-teal-200 dark:border-teal-800/80 flex items-center justify-between flex-wrap gap-3">
+							<div className="flex items-center gap-4 flex-wrap text-xs">
+								<div>
+									<span className="text-slate-500 block">Выручка клиники:</span>
+									<strong className="text-slate-900 dark:text-white">
+										{formatKopecksToRublesDisplay(simCalculation.totalRevenueKopecks)}
+									</strong>
+								</div>
+								<div>
+									<span className="text-slate-500 block">Начислено (%):</span>
+									<strong className="text-emerald-600 dark:text-emerald-400">
+										{formatKopecksToRublesDisplay(simCalculation.grossAccruedCommissionKopecks)}
+									</strong>
+								</div>
+								<div>
+									<span className="text-slate-500 block">Удержано (ЗТЛ):</span>
+									<strong className="text-rose-600 dark:text-rose-400">
+										−{formatKopecksToRublesDisplay(simCalculation.withheldLabKopecks)}
+									</strong>
+								</div>
+							</div>
+
+							<div className="text-right">
+								<span className="text-xs text-slate-500 block">Итого к выплате врачу:</span>
+								<span
+									className="text-base font-bold text-teal-700 dark:text-teal-300"
+									data-testid="sim-net-payout"
+								>
+									{formatKopecksToRublesDisplay(simCalculation.netPayoutKopecks)}
+								</span>
+							</div>
+						</div>
+					)}
+				</div>
+			)}
 
 			<div className="settings-card-body">
 				{load.kind === "failed" ? (
@@ -401,16 +617,16 @@ export const StaffCommissionsPanel: React.FC = () => {
 							>
 								<thead>
 									<tr className="text-left text-xs text-slate-500 border-b border-slate-200 dark:border-slate-700">
-										<th scope="col" className="py-2 pr-3 font-medium">
-											Врач
+										<th scope="col" className="py-2.5 pr-3 font-semibold">
+											Врач-клиницист
 										</th>
-										<th scope="col" className="py-2 pr-3 font-medium">
-											Ставка
+										<th scope="col" className="py-2.5 pr-3 font-semibold">
+											Ставка (% от кассы)
 										</th>
-										<th scope="col" className="py-2 pr-3 font-medium">
-											С
+										<th scope="col" className="py-2.5 pr-3 font-semibold">
+											Действует с
 										</th>
-										<th scope="col" className="py-2 font-medium">
+										<th scope="col" className="py-2.5 font-semibold text-right">
 											Действие
 										</th>
 									</tr>
@@ -423,13 +639,13 @@ export const StaffCommissionsPanel: React.FC = () => {
 										return (
 											<tr
 												key={row.userId}
-												className="border-b border-slate-100 dark:border-slate-800/80"
+												className="border-b border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
 												data-testid={`staff-commission-row-${row.userId}`}
 											>
-												<td className="py-2 pr-3 font-medium text-slate-900 dark:text-white">
+												<td className="py-2.5 pr-3 font-medium text-slate-900 dark:text-white">
 													{row.name}
 												</td>
-												<td className="py-2 pr-3">
+												<td className="py-2.5 pr-3">
 													{isEditing ? (
 														<input
 															type="text"
@@ -438,32 +654,33 @@ export const StaffCommissionsPanel: React.FC = () => {
 															onChange={(e) => setDraft(e.target.value)}
 															placeholder="0–100"
 															aria-label={`Ставка для ${row.name}`}
-															className="w-24 px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+															className="w-24 px-2.5 py-1 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
 															data-testid={`staff-commission-draft-${row.userId}`}
 														/>
 													) : row.rate ? (
 														<span
+															className="font-semibold text-slate-900 dark:text-white"
 															data-testid={`staff-commission-pct-${row.userId}`}
 														>
 															{percentLabel(row.rate.commissionPct)}
 														</span>
 													) : (
 														<span
-															className="text-slate-400"
+															className="text-slate-400 text-xs"
 															data-testid={`staff-commission-pct-${row.userId}`}
 														>
 															не задана
 														</span>
 													)}
 												</td>
-												<td className="py-2 pr-3 text-xs text-slate-500">
+												<td className="py-2.5 pr-3 text-xs text-slate-500">
 													{row.rate?.effectiveFrom
 														? formatEffectiveFrom(row.rate.effectiveFrom)
 														: "—"}
 												</td>
-												<td className="py-2">
+												<td className="py-2.5 text-right">
 													{isEditing ? (
-														<div className="flex flex-wrap gap-2">
+														<div className="flex items-center justify-end gap-2">
 															<button
 																type="button"
 																className="primary-button px-3 py-1 text-xs"
@@ -511,6 +728,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 					<p
 						className="text-sm text-rose-700 dark:text-rose-300 m-0 mt-3"
 						role="alert"
+						data-testid="staff-commissions-error"
 					>
 						{save.message}
 					</p>

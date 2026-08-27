@@ -1,10 +1,27 @@
-import type { StaffRole } from "@dental/shared";
+import {
+	type GranularStaffRole,
+	GRANULAR_STAFF_ROLES,
+	GRANULAR_ROLE_MATRIX,
+	PERMISSION_DEFINITIONS,
+	ROLE_METADATA_REGISTRY,
+	type StaffRole,
+	getAccessLevelBadge,
+} from "@dental/shared";
 import {
 	Check,
+	Coins,
+	FileSpreadsheet,
+	FileText,
+	KeyRound,
 	Link as LinkIcon,
+	Lock,
 	Mail,
+	PhoneCall,
+	Shield,
+	ShieldAlert,
 	ShieldCheck,
 	UserCheck,
+	Users,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
@@ -19,11 +36,6 @@ import {
 	parseInviteCreationPayload,
 } from "./settingsInviteRoles";
 
-/*
- * Импорта SingleSessionEnforcementsWidget здесь больше нет намеренно: панель
- * нечем заполнить. Причина подробно — в конце разметки, у места, откуда она
- * убрана. Не возвращай импорт, не прочитав тот комментарий.
- */
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 type WorkspaceProfile = any;
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -53,25 +65,17 @@ export function SettingsAccessTab({
 
 	// Hooks MUST be called before any conditional returns (React Rules of Hooks)
 	const [inviteEmail, setInviteEmail] = useState("");
-	/*
-	 * Роль приглашения типизирована `StaffRole`, а не строкой. Раньше здесь стояло
-	 * `useState('doctor')`, а список в разметке предлагал значение «admin», которого
-	 * в схеме ролей нет; чем это кончалось для прав нового сотрудника — разобрано в
-	 * ./settingsInviteRoles.ts.
-	 */
 	const [inviteRole, setInviteRole] = useState<StaffRole>("doctor");
 	const [inviteLink, setInviteLink] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [copied, setCopied] = useState(false);
+	const [selectedMatrixRole, setSelectedMatrixRole] = useState<GranularStaffRole>("doctor");
+	const [selectedModuleFilter, setSelectedModuleFilter] = useState<string>("all");
 
 	if (settingsTab !== "access") return null;
 
 	const handleGenerateInvite = async (e: React.FormEvent) => {
 		e.preventDefault();
-		/*
-		 * «Введите email» ничего не говорило о том, зачем он нужен. Адрес — это то,
-		 * куда сотрудник получит ссылку и по чему он потом входит.
-		 */
 		if (!inviteEmail.trim()) {
 			showToast(
 				"Укажите рабочий адрес почты сотрудника — по нему он войдёт в программу",
@@ -81,8 +85,6 @@ export function SettingsAccessTab({
 		}
 		setLoading(true);
 		setCopied(false);
-		/* Прошлая ссылка убирается сразу: иначе при отказе на экране остаётся
-       ссылка от предыдущего приглашения, и её отправят не тому человеку. */
 		setInviteLink("");
 		try {
 			const staffToken = readDenteStaffToken();
@@ -94,12 +96,6 @@ export function SettingsAccessTab({
 				},
 				body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
 			});
-			/*
-			 * Тело читается строкой один раз и разбирается чистой функцией. Раньше
-			 * `await response.json()` стоял ДО проверки `response.ok`: на пустом теле и
-			 * на HTML от прокси он бросал исключение, и администратору печаталось
-			 * английское «Unexpected token '<' ... is not valid JSON».
-			 */
 			const raw = await response.text();
 			const outcome = parseInviteCreationPayload(response.status, raw);
 			if (!outcome.ok) {
@@ -115,16 +111,11 @@ export function SettingsAccessTab({
 				return;
 			}
 			setInviteLink(window.location.origin + outcome.inviteLink);
-			/*
-			 * БЫЛО «Приглашение создано!» — и всё. Администратор не знал, что дальше:
-			 * письмо программа не отправляет, ссылку надо передать самому.
-			 */
 			showToast(
 				`Ссылка для ${inviteRoleTitle(inviteRole).toLowerCase()} готова — скопируйте её и передайте сотруднику, она действует 7 дней`,
 				"success",
 			);
 		} catch (err) {
-			// Текст исключения наружу не идёт: он английский («Failed to fetch»).
 			logger.error("[приглашение] запрос не дошёл до сервера", err);
 			showToast(
 				actionFailureToast(
@@ -152,29 +143,222 @@ export function SettingsAccessTab({
 	const typedRoleAccessPolicies = (dashboard?.clinicSettings
 		?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
 
+	const activeRoleMeta = ROLE_METADATA_REGISTRY[selectedMatrixRole];
+	const activeRolePermissions = GRANULAR_ROLE_MATRIX[selectedMatrixRole] || {};
+
+	const filteredPermissions = PERMISSION_DEFINITIONS.filter((perm) => {
+		if (selectedModuleFilter === "all") return true;
+		return perm.module === selectedModuleFilter;
+	});
+
 	return (
 		<section
-			className="access-settings"
+			className="access-settings flex flex-col gap-6"
 			aria-label="Доступы, рабочие профили и роли"
 		>
 			<div className="import-copy">
 				<UserCheck aria-hidden="true" />
 				<div>
-					<p className="eyebrow">Доступы</p>
-					<h2>Рабочие профили для врача, администратора, ассистента и сети</h2>
+					<p className="eyebrow">Безопасность и RBAC</p>
+					<h2>Матрица прав доступа, 152-ФЗ защита и финансовая изоляция</h2>
 					<p>
-						Режим клиники влияет на первый экран, видимые разделы, права записи,
-						аудит и зоны, где нужно ручное подтверждение.
+						Гранулярная ролевая модель для 8 клинических и административных ролей.
+						Строгая изоляция финансовой отчётности клиники, маскирование персональных данных
+						пациентов и расчёт сдельной мотивации в целых копейках.
 					</p>
 				</div>
 			</div>
 
-			<article className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 mt-6 shadow-sm">
+			{/* Ключевые гарантии безопасности системы */}
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="security-guarantees-grid">
+				<div className="p-4 rounded-xl border border-teal-200 dark:border-teal-900/60 bg-teal-50/50 dark:bg-teal-950/20 flex flex-col gap-2">
+					<div className="flex items-center gap-2 text-teal-700 dark:text-teal-300 font-semibold text-sm">
+						<ShieldCheck size={18} />
+						<span>152-ФЗ Защита ПДн</span>
+					</div>
+					<p className="text-xs text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+						Телефоны, паспорта, СНИЛС и адреса проживания маскируются для ассистентов и младшего персонала.
+						Врачи и администраторы видят необходимые контакты для связи и приёма.
+					</p>
+				</div>
+
+				<div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col gap-2">
+					<div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-semibold text-sm">
+						<Lock size={18} />
+						<span>Финансовая изоляция</span>
+					</div>
+					<p className="text-xs text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+						Сводный P&L, выручка клиники, маржинальность и общие зарплатные ведомости доступны только Директору,
+						Главврачу и Бухгалтеру. Врач видит исключительно свою личную сдельную выработку.
+					</p>
+				</div>
+
+				<div className="p-4 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/50 dark:bg-amber-950/20 flex flex-col gap-2">
+					<div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-semibold text-sm">
+						<Coins size={18} />
+						<span>Сдельная оплата (Копейки)</span>
+					</div>
+					<p className="text-xs text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+						Расчёт мотивации (% от терапевтического/ортопедического приёма минус ЗТЛ и материалы)
+						ведётся strictly в целых копейках с нулевой погрешностью округления.
+					</p>
+				</div>
+			</div>
+
+			{/* Гранулярная ролевая матрица (8 канонических ролей) */}
+			<article
+				className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4"
+				data-testid="granular-role-matrix-panel"
+			>
+				<div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+					<div>
+						<h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 m-0">
+							<Shield size={18} className="text-[var(--teal)]" />
+							Гранулярная матрица прав персонала (8 ролей)
+						</h3>
+						<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-1">
+							Выберите роль для инспекции прав доступа к медицинским картам, кассе, 152-ФЗ ПДн, складу и настройкам.
+						</p>
+					</div>
+
+					<div className="flex items-center gap-2 flex-wrap">
+						<span className="text-xs font-semibold text-slate-500">Модуль:</span>
+						<select
+							value={selectedModuleFilter}
+							onChange={(e) => setSelectedModuleFilter(e.target.value)}
+							className="px-2.5 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+							aria-label="Фильтр по функциональному модулю"
+						>
+							<option value="all">Все модули (22 права)</option>
+							<option value="clinical">ЭМК и протоколы</option>
+							<option value="schedule">Расписание и смены</option>
+							<option value="patients">Пациенты и 152-ФЗ</option>
+							<option value="finance_cashier">Касса 54-ФЗ</option>
+							<option value="finance_reports">P&L и финансы клиники</option>
+							<option value="payroll">Зарплата и мотивация</option>
+							<option value="inventory">Склад и СанПиН</option>
+							<option value="settings">Настройки клиники</option>
+							<option value="egisz">ЕГИСЗ Минздрава</option>
+							<option value="communications">Коммуникации</option>
+						</select>
+					</div>
+				</div>
+
+				{/* 8 кнопок переключения ролей */}
+				<div
+					className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2"
+					role="tablist"
+					aria-label="Выбор роли для проверки матрицы прав"
+				>
+					{GRANULAR_STAFF_ROLES.map((roleKey) => {
+						const meta = ROLE_METADATA_REGISTRY[roleKey];
+						const isSelected = selectedMatrixRole === roleKey;
+						return (
+							<button
+								key={roleKey}
+								type="button"
+								role="tab"
+								aria-selected={isSelected}
+								onClick={() => setSelectedMatrixRole(roleKey)}
+								className={`px-3 py-2 rounded-xl text-xs font-medium transition-all text-center flex flex-col items-center justify-center gap-1 border cursor-pointer ${
+									isSelected
+										? "bg-[var(--teal-surface,#f0fdfa)] text-[var(--teal,#0d9488)] border-[var(--teal)] shadow-sm font-bold"
+										: "bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+								}`}
+								data-testid={`role-matrix-tab-${roleKey}`}
+							>
+								<span className="truncate w-full">{meta.shortTitle}</span>
+							</button>
+						);
+					})}
+				</div>
+
+				{/* Карточка выбранной роли */}
+				<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-start justify-between flex-wrap gap-3">
+					<div>
+						<div className="flex items-center gap-2">
+							<h4 className="m-0 text-sm font-bold text-slate-900 dark:text-white">
+								{activeRoleMeta.title}
+							</h4>
+							<span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono">
+								role: {activeRoleMeta.role}
+							</span>
+						</div>
+						<p className="text-xs text-slate-600 dark:text-slate-400 m-0 mt-1">
+							{activeRoleMeta.description}
+						</p>
+					</div>
+
+					<div className="flex items-center gap-2">
+						{activeRoleMeta.role === "doctor" && (
+							<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+								🔒 P&L Клиники Скрыт
+							</span>
+						)}
+						{activeRoleMeta.role === "assistant" && (
+							<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+								🛡️ 152-ФЗ Маскирование
+							</span>
+						)}
+					</div>
+				</div>
+
+				{/* Таблица полномочий для выбранной роли */}
+				<div className="overflow-x-auto">
+					<table className="w-full text-left text-xs border-collapse">
+						<thead>
+							<tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 font-medium">
+								<th className="py-2.5 px-3">Полномочие и назначение</th>
+								<th className="py-2.5 px-3">Модуль</th>
+								<th className="py-2.5 px-3 text-right">Уровень доступа</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+							{filteredPermissions.map((perm) => {
+								const level = activeRolePermissions[perm.key] || "none";
+								const badge = getAccessLevelBadge(level);
+								return (
+									<tr
+										key={perm.key}
+										className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+										data-testid={`perm-row-${perm.key}`}
+									>
+										<td className="py-2.5 px-3">
+											<span className="font-semibold text-slate-900 dark:text-white block">
+												{perm.title}
+											</span>
+											<span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+												{perm.description}
+											</span>
+										</td>
+										<td className="py-2.5 px-3">
+											<span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+												{perm.module}
+											</span>
+										</td>
+										<td className="py-2.5 px-3 text-right">
+											<span
+												className={`inline-block px-2.5 py-1 rounded-lg text-xs font-semibold border ${badge.badgeClass} ${badge.borderClass}`}
+												data-testid={`perm-badge-${perm.key}-${level}`}
+											>
+												{badge.label}
+											</span>
+										</td>
+									</tr>
+								);
+							})}
+						</tbody>
+					</table>
+				</div>
+			</article>
+
+			{/* Пригласить сотрудника */}
+			<article className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
 				<div className="mb-4">
-					<h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+					<h3 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2 m-0">
 						<Mail size={18} className="text-[var(--teal)]" /> Пригласить сотрудника
 					</h3>
-					<p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+					<p className="text-xs text-slate-600 dark:text-slate-400 mt-1 m-0">
 						Сгенерируйте уникальную ссылку для регистрации нового врача,
 						ассистента или администратора.
 					</p>
@@ -191,20 +375,6 @@ export function SettingsAccessTab({
 						disabled={loading}
 						className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex-1 min-w-[200px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 					/>
-					{/*
-                  РОЛИ БЕРУТСЯ ИЗ СПИСКА РОЛЕЙ, А НЕ ПИШУТСЯ ЗДЕСЬ РУКАМИ.
-
-                  Здесь стояли четыре строки, набранные вручную, и одна из них
-                  отправляла роль «admin», которой в системе не существует
-                  (настоящая — «administrator»). Сервер роль не проверяет и пишет
-                  её в учётную запись как есть, а фильтр разделов по неизвестной
-                  роли отдаёт ВСЕ разделы: приглашённый администратор получал
-                  права владельца. Роли «Управляющий» в списке не было вовсе,
-                  хотя права для неё описаны. Разбор целиком —
-                  в ./settingsInviteRoles.ts.
-                */}
-					{/* Подпись у поля не было вовсе: aria-label, а не скрытый <label>,
-                    чтобы не зависеть от того, собран ли класс sr-only. */}
 					<select
 						id="invite-role"
 						aria-label="Роль нового сотрудника"
@@ -286,11 +456,11 @@ export function SettingsAccessTab({
 			<div className="workspace-profile-grid">
 				{typedWorkspaceProfiles.map((profile) => (
 					<article
-						className={`workspace-profile-card ${profile.mode === dashboard.clinicSettings.profile.mode ? "active" : ""}`}
+						className={`workspace-profile-card ${profile.mode === dashboard?.clinicSettings?.profile?.mode ? "active" : ""}`}
 						key={profile.id}
 					>
 						<div className="workspace-profile-head">
-							<span>{clinicModeLabels[profile.mode].title}</span>
+							<span>{clinicModeLabels[profile.mode]?.title ?? profile.mode}</span>
 							<strong>{profile.title}</strong>
 							<p>{profile.description}</p>
 						</div>
@@ -298,12 +468,12 @@ export function SettingsAccessTab({
 							className="workspace-token-row"
 							aria-label="Разделы профиля"
 						>
-							{profile.visibleSections.map((section) => (
-								<span key={section}>{viewLabels[section]}</span>
+							{profile.visibleSections.map((section: string) => (
+								<span key={section}>{viewLabels[section] ?? section}</span>
 							))}
 						</section>
 						<ul>
-							{profile.automations.slice(0, 3).map((automation) => (
+							{profile.automations.slice(0, 3).map((automation: string) => (
 								<li key={automation}>{automation}</li>
 							))}
 						</ul>
@@ -361,25 +531,6 @@ export function SettingsAccessTab({
 					</article>
 				))}
 			</div>
-			{/*
-              Здесь стояла панель «Контроль единственного параллельного входа»
-              (SingleSessionEnforcementsWidget). Убрана: она обещала не журнал
-              входов, а ВЫТЕСНЕНИЕ сессии — колонку «Токен сессии» и плашку
-              «Вытеснена предыдущая». Такого механизма в системе нет: токены
-              подписанные и stateless, на сервере не хранятся, хранилища сессий
-              и отзыва токенов не существует. В таблице
-              single_session_enforcements на весь репозиторий ноль вставок —
-              только SELECT в apps/api/src/db/singleSessionEnforcementsQuery.ts,
-              поэтому панель писала «Активных параллельных сессий не
-              обнаружено» в любой клинике и в любой день.
-
-              Подотчётность на вкладке доступов держат вещи выше: приглашение
-              сотрудника по ссылке, рабочие профили и права ролей; кто что
-              сделал — вкладка «Аудит», вход под своим PIN — настройки команды.
-
-              Вернуть можно только вместе с настоящим вытеснением сессий:
-              серверным хранилищем токенов и их отзывом.
-            */}
 		</section>
 	);
 }

@@ -99,6 +99,12 @@ export function TelephonyFloatingWidget({
 	const volumeLevel = useTelephonyStore((s) => s.volumeLevel);
 	const playbackSpeed = useTelephonyStore((s) => s.playbackSpeed);
 	const setPlaybackSpeed = useTelephonyStore((s) => s.setPlaybackSpeed);
+	const agentState = useTelephonyStore((s) => s.agentState);
+	const setAgentState = useTelephonyStore((s) => s.setAgentState);
+	const activeLineId = useTelephonyStore((s) => s.activeLineId);
+	const switchLine = useTelephonyStore((s) => s.switchLine);
+	const isHeld = useTelephonyStore((s) => s.isHeld);
+	const toggleHold = useTelephonyStore((s) => s.toggleHold);
 	const openSimulator = useTelephonyStore((s) => s.openSimulator);
 
 	const ctx = useAppLogicContext();
@@ -474,7 +480,7 @@ export function TelephonyFloatingWidget({
 					aria-label="Плавающий виджет софтфона телефонии"
 				>
 					{/* Header Topbar */}
-					<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line,#334155)] bg-[var(--paper-soft,rgba(30,41,59,0.6))]">
+					<div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--line,#334155)] bg-[var(--paper-soft,rgba(30,41,59,0.6))]">
 						<div className="flex items-center gap-2 min-w-0">
 							<div className="w-8 h-8 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] flex-shrink-0">
 								{activeCall ? <PhoneCall size={16} /> : <Headphones size={16} />}
@@ -486,7 +492,7 @@ export function TelephonyFloatingWidget({
 											? isCallAnswered
 												? "Разговор в процессе"
 												: "Входящий вызов"
-											: "SIP Софтфон клиники"}
+											: "SIP Софтфон"}
 									</h4>
 									{activeCall && (
 										<span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
@@ -494,11 +500,28 @@ export function TelephonyFloatingWidget({
 										</span>
 									)}
 								</div>
-								<p className="text-[10px] text-[var(--muted,#94a3b8)] truncate">
-									{activeCall
-										? activeCall.provider?.toUpperCase() || "IP-АТС"
-										: "Готов к приему звонков"}
-								</p>
+								<div className="flex items-center gap-1 text-[10px] text-[var(--muted,#94a3b8)]">
+									<span
+										className={`w-2 h-2 rounded-full ${
+											agentState === "online"
+												? "bg-emerald-400"
+												: agentState === "dnd"
+													? "bg-rose-400"
+													: agentState === "pause"
+														? "bg-amber-400"
+														: "bg-slate-400"
+										}`}
+									/>
+									<span>
+										{agentState === "online"
+											? "На линии (Онлайн)"
+											: agentState === "dnd"
+												? "Не беспокоить"
+												: agentState === "pause"
+													? "Перерыв"
+													: "Не в сети"}
+									</span>
+								</div>
 							</div>
 						</div>
 
@@ -539,6 +562,73 @@ export function TelephonyFloatingWidget({
 							>
 								<ChevronDown size={18} />
 							</button>
+						</div>
+					</div>
+
+					{/* Operator Readiness State & Multi-Line Switcher Bar */}
+					<div className="flex items-center justify-between px-3 py-1.5 bg-[var(--paper-soft,rgba(15,23,42,0.8))] border-b border-[var(--line,#334155)] gap-2 text-xs">
+						{/* Agent State Pills */}
+						<div className="flex items-center gap-1">
+							{(
+								[
+									{ id: "online", label: "Онлайн", color: "text-emerald-400 bg-emerald-950/60 border-emerald-800/60" },
+									{ id: "dnd", label: "Занят", color: "text-rose-400 bg-rose-950/60 border-rose-800/60" },
+									{ id: "pause", label: "Перерыв", color: "text-amber-400 bg-amber-950/60 border-amber-800/60" },
+								] as const
+							).map((st) => (
+								<button
+									key={st.id}
+									type="button"
+									onClick={() => setAgentState(st.id)}
+									className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${
+										agentState === st.id
+											? `${st.color} shadow-xs`
+											: "text-[var(--muted,#94a3b8)] border-transparent hover:text-[var(--ink,#f8fafc)]"
+									}`}
+								>
+									{st.label}
+								</button>
+							))}
+						</div>
+
+						{/* Line 1 & Line 2 Switcher Pills */}
+						<div className="flex items-center gap-1 bg-slate-900/90 rounded-lg p-0.5 border border-slate-800">
+							<button
+								type="button"
+								onClick={() => switchLine(1)}
+								className={`px-2 py-1 rounded text-[10px] font-mono font-bold transition-all ${
+									activeLineId === 1
+										? "bg-[var(--teal)] text-white shadow-xs"
+										: "text-slate-400 hover:text-slate-200"
+								}`}
+							>
+								Л1 {activeCall ? "●" : "○"}
+							</button>
+							<button
+								type="button"
+								onClick={() => switchLine(2)}
+								className={`px-2 py-1 rounded text-[10px] font-mono font-bold transition-all ${
+									activeLineId === 2
+										? "bg-[var(--teal)] text-white shadow-xs"
+										: "text-slate-400 hover:text-slate-200"
+								}`}
+							>
+								Л2 ○
+							</button>
+							{activeCall && (
+								<button
+									type="button"
+									onClick={toggleHold}
+									className={`px-1.5 py-1 rounded text-[10px] font-bold border transition-all ${
+										isHeld
+											? "bg-amber-500 text-slate-950 border-amber-400 shadow-xs"
+											: "text-amber-400 border-transparent hover:bg-amber-950/40"
+									}`}
+									title={isHeld ? "Снять с удержания" : "Поставить звонок на удержание (Hold)"}
+								>
+									{isHeld ? "На удержании" : "Hold"}
+								</button>
+							)}
 						</div>
 					</div>
 

@@ -43,6 +43,7 @@ import {
 	generateComplianceRegistryPrintText,
 } from "./cmoComplianceHubEngine";
 import { CmoEmrAuditModal } from "./CmoEmrAuditModal";
+import { EgiszCdaExportModal } from "../../documents/egisz/EgiszCdaExportModal";
 import {
 	type CryptoProCertificate,
 	checkCryptoProPlugin,
@@ -81,6 +82,8 @@ export function CmoComplianceHub({
 
 	// EMR Audit Modal for detailed review
 	const [auditingVisitId, setAuditingVisitId] = useState<string | null>(null);
+	// Single EGISZ CDA R2 XML Export & UKEP inspection
+	const [cdaExportVisit, setCdaExportVisit] = useState<ClinicVisitComplianceItem | null>(null);
 
 	// ── Detect CryptoPro Plugin & Load Certificates ──
 	const loadCertificates = useCallback(async () => {
@@ -834,19 +837,31 @@ export function CmoComplianceHub({
 											)}
 										</td>
 										<td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-											<button
-												type="button"
-												onClick={() => {
-													setAuditingVisitId(item.id);
-													onOpenAuditModal?.(item.id);
-												}}
-												className="cmo-hub-btn cmo-hub-btn--secondary"
-												style={{ minHeight: "36px", padding: "4px 10px", fontSize: "12px" }}
-												title="Открыть клиническую экспертизу качества карты (Приказ 203н)"
-											>
-												<Eye size={14} />
-												<span>Экспертиза</span>
-											</button>
+											<div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+												<button
+													type="button"
+													onClick={() => setCdaExportVisit(item)}
+													className="cmo-hub-btn cmo-hub-btn--secondary"
+													style={{ minHeight: "36px", padding: "4px 8px", fontSize: "12px" }}
+													title="Экспорт и валидация СЭМД CDA R2 XML для ЕГИСЗ (Приказ 911н)"
+												>
+													<FileText size={14} />
+													<span>СЭМД CDA</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														setAuditingVisitId(item.id);
+														onOpenAuditModal?.(item.id);
+													}}
+													className="cmo-hub-btn cmo-hub-btn--secondary"
+													style={{ minHeight: "36px", padding: "4px 10px", fontSize: "12px" }}
+													title="Открыть клиническую экспертизу качества карты (Приказ 203н)"
+												>
+													<Eye size={14} />
+													<span>Экспертиза</span>
+												</button>
+											</div>
 										</td>
 									</tr>
 								);
@@ -1023,6 +1038,32 @@ export function CmoComplianceHub({
 				<CmoEmrAuditModal
 					isOpen={Boolean(auditingVisitId)}
 					onClose={() => setAuditingVisitId(null)}
+				/>
+			)}
+
+			{/* ── Tier 3: EGISZ CDA R2 XML Export & UKEP Signature Modal ── */}
+			{cdaExportVisit && (
+				<EgiszCdaExportModal
+					isOpen={Boolean(cdaExportVisit)}
+					onClose={() => setCdaExportVisit(null)}
+					visitId={cdaExportVisit.visitId}
+					patientId={cdaExportVisit.patientId}
+					patient={{
+						patientId: cdaExportVisit.patientId,
+						name: (() => {
+							const parts = (cdaExportVisit.patientFullName || "").trim().split(/\s+/);
+							const last = parts[0] || "Пациент";
+							const first = parts[1] || "Пациент";
+							const mid = parts[2];
+							if (mid && mid.trim()) {
+								return { first, last, middle: mid.trim() };
+							}
+							return { first, last };
+						})(),
+						snils: cdaExportVisit.patientSnils || null,
+						birthDate: cdaExportVisit.patientBirthDate || null,
+					}}
+					initialFormType="043u"
 				/>
 			)}
 		</div>

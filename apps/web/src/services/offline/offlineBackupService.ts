@@ -13,13 +13,18 @@
 
 import {
 	DEFAULT_DENTE_BACKUP_PASSPHRASE,
+	type DatabaseSnapshot,
 	type DenteBackupHeader,
 	type DenteBackupItemsCount,
 	type DenteBackupPayload,
 	type DenteBackupValidationResult,
+	type DryRunRestoreResult,
+	createDatabaseSnapshot,
 	createEncryptedDenteBackup,
+	executeDryRunRestoreCheck,
 	restoreEncryptedDenteBackup,
 	validateDenteBackupContainer,
+	verifyDatabaseSnapshot,
 } from "@dental/shared";
 import { logger } from "../../utils/logger";
 import {
@@ -732,3 +737,133 @@ export function getAutoBackupScheduleStatus(): AutoBackupScheduleStatus {
 	autoBackupStatus.totalSnapshotsInVault = listLocalVaultSnapshots().length;
 	return { ...autoBackupStatus };
 }
+
+/**
+ * Создает структурированный снапшот локальной базы данных с подсчетом SHA-256 по каждой таблице и корневого хеша.
+ */
+export async function createLocalDatabaseSnapshot(options?: {
+	organizationId?: string | undefined;
+	clinicName?: string | undefined;
+	notes?: string | undefined;
+}): Promise<DatabaseSnapshot> {
+	const orgId = options?.organizationId;
+
+	// 1. Mutations
+	let mutations: OfflineMutation[] = [];
+	try {
+		mutations = await withIdbTransactionRetry(async (db) => {
+			return new Promise<OfflineMutation[]>((resolve, reject) => {
+				const tx = db.transaction(MUTATIONS_STORE_NAME, "readonly");
+				const store = tx.objectStore(MUTATIONS_STORE_NAME);
+				const req = store.getAll();
+				req.onsuccess = () => resolve((req.result as OfflineMutation[]) || []);
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch (err) {
+		logger.warn("[OfflineBackup] Could not read all mutations for snapshot", err);
+	}
+
+	// 2. Drafts
+	let drafts: OfflineDraft[] = [];
+	try {
+		drafts = await listOfflineDrafts({ organizationId: orgId });
+	} catch (err) {
+		logger.warn("[OfflineBackup] Could not list drafts for snapshot", err);
+	}
+
+	// 3. Clinical cache
+	let clinicalCache: any[] = [];
+	try {
+		clinicalCache = await listPatientClinicalCache(undefined, orgId);
+	} catch (err) {
+		logger.warn("[OfflineBackup] Could not list clinical cache for snapshot", err);
+	}
+
+	// 4. Schedules
+	let schedules: CachedActiveSchedule[] = [];
+	try {
+		schedules = await listCachedActiveSchedules(orgId);
+	} catch (err) {
+		logger.warn("[OfflineBackup] Could not list schedules for snapshot", err);
+	}
+
+	// 5. Patients
+	let patients: CachedPatientCard[] = [];
+	try {
+		patients = await listCachedPatientCards(orgId);
+	} catch (err) {
+		logger.warn("[OfflineBackup] Could not list patients for snapshot", err);
+	}
+
+	// 6. Odontograms
+	let odontograms: CachedOdontogram[] = [];
+	try {
+		odontograms = await withIdbTransactionRetry(async (db) => {
+			return new Promise<CachedOdontogram[]>((resolve) => {
+				if (!db.objectStoreNames.contains(ODONTOGRAM_CACHE_STORE_NAME)) {
+					return resolve([]);
+				}
+				const tx = db.transaction(ODONTOGRAM_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(ODONTOGRAM_CACHE_STORE_NAME);
+				const req = store.getAll();
+				req.onsuccess = () => resolve((req.result as CachedOdontogram[]) || []);
+				req.onerror = () => resolve([]);
+			});
+		});
+	} catch (err) {
+		logger.warn("[OfflineBackup] Could not list odontograms for snapshot", err);
+	}
+
+	// 7. Pricelists
+	let pricelists: CachedPriceList804n[] = [];
+	try {
+		const plist = await getCachedPriceList804n(orgId);
+		if (plist) pricelists.push(plist);
+	} catch (err) {
+		logger.warn("[OfflineBackup] Could not get pricelist for snapshot", err);
+	}
+
+	// 8. ICD-10
+	let icd10: CachedIcd10Dictionary[] = [];
+	try {
+		const icd = await getCachedIcd10Dictionary();
+		if (icd) icd10.push(icd);
+	} catch (err) {
+		logger.warn("[OfflineBackup] Could not get ICD-10 for snapshot", err);
+	}
+
+	return createDatabaseSnapshot({
+		organizationId: orgId,
+		clinicName: options?.clinicName || "DENTE Клиника",
+		driver: "indexeddb",
+		notes: options?.notes,
+		tables: {
+			mutations,
+			drafts,
+			clinicalCache,
+			schedules,
+			patients,
+			odontograms,
+			pricelists,
+			icd10,
+		},
+	});
+}
+
+/**
+ * Выполняет безопасный симуляционный Dry-run тест восстановления без записи в постоянное хранилище.
+ */
+export function runDryRunRestoreVerification(
+	rawBackupText: string,
+	options?: {
+		passphrase?: string | undefined;
+		targetOrganizationId?: string | undefined;
+	},
+): DryRunRestoreResult {
+	return executeDryRunRestoreCheck(rawBackupText, {
+		passphrase: options?.passphrase,
+		targetOrganizationId: options?.targetOrganizationId,
+	});
+}
+

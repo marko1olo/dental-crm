@@ -24,6 +24,8 @@ export * from "./schedule/index.js";
 export * from "./recalls/index.js";
 export * from "./tasks/index.js";
 export * from "./patients/index.js";
+export * from "./storage/index.js";
+export * from "./telephony/index.js";
 export declare function isHttpUrl(value: string): boolean;
 export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
@@ -462,21 +464,21 @@ export declare const integrationPresetSchema: z.ZodObject<{
     id: string;
     category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
     title: string;
+    riskLevel: "medium" | "low" | "high";
     vendor: string;
     supportedInputs: string[];
-    capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+    capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
     migrationNotes: string[];
-    riskLevel: "medium" | "low" | "high";
 }, {
     status: "usable_now" | "needs_mapping" | "planned_connector";
     id: string;
     category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
     title: string;
+    riskLevel: "medium" | "low" | "high";
     vendor: string;
     supportedInputs: string[];
-    capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+    capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
     migrationNotes: string[];
-    riskLevel: "medium" | "low" | "high";
 }>;
 export type IntegrationPreset = z.infer<typeof integrationPresetSchema>;
 export declare const speechProviderKindSchema: z.ZodEnum<["browser_speech", "groq_whisper", "openai_transcribe", "deepgram_streaming", "assemblyai_async", "cloudflare_whisper", "azure_speech", "google_speech", "huggingface_asr", "mobile_native_speech", "local_whisper", "vosk_local"]>;
@@ -2559,23 +2561,23 @@ export declare const staffWorkingDaySchema: z.ZodEffects<z.ZodObject<{
     start: z.ZodString;
     end: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    enabled: boolean;
     weekday: number;
+    enabled: boolean;
     start: string;
     end: string;
 }, {
-    enabled: boolean;
     weekday: number;
+    enabled: boolean;
     start: string;
     end: string;
 }>, {
-    enabled: boolean;
     weekday: number;
+    enabled: boolean;
     start: string;
     end: string;
 }, {
-    enabled: boolean;
     weekday: number;
+    enabled: boolean;
     start: string;
     end: string;
 }>;
@@ -2586,23 +2588,23 @@ export declare const staffWorkingHoursSchema: z.ZodArray<z.ZodEffects<z.ZodObjec
     start: z.ZodString;
     end: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    enabled: boolean;
     weekday: number;
+    enabled: boolean;
     start: string;
     end: string;
 }, {
-    enabled: boolean;
     weekday: number;
+    enabled: boolean;
     start: string;
     end: string;
 }>, {
-    enabled: boolean;
     weekday: number;
+    enabled: boolean;
     start: string;
     end: string;
 }, {
-    enabled: boolean;
     weekday: number;
+    enabled: boolean;
     start: string;
     end: string;
 }>, "many">;
@@ -2770,23 +2772,23 @@ export declare const staffMemberSchema: z.ZodObject<{
         start: z.ZodString;
         end: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, "many">>>;
@@ -2808,8 +2810,8 @@ export declare const staffMemberSchema: z.ZodObject<{
     canManageMoney: boolean;
     canManageImports: boolean;
     workingHours?: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[] | null | undefined;
@@ -2829,8 +2831,8 @@ export declare const staffMemberSchema: z.ZodObject<{
     canManageMoney: boolean;
     canManageImports: boolean;
     workingHours?: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[] | null | undefined;
@@ -2853,23 +2855,23 @@ export declare const chairSchema: z.ZodObject<{
         start: z.ZodString;
         end: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, "many">>>;
@@ -2885,8 +2887,8 @@ export declare const chairSchema: z.ZodObject<{
     hasMicroscope: boolean;
     hasSurgeryKit: boolean;
     workingHours?: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[] | null | undefined;
@@ -2902,8 +2904,8 @@ export declare const chairSchema: z.ZodObject<{
     hasMicroscope: boolean;
     hasSurgeryKit: boolean;
     workingHours?: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[] | null | undefined;
@@ -2933,8 +2935,8 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
     scope: "clinic" | "personal" | "branch" | "network";
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
     primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-    defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-    visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+    defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+    visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
     compactNavigation: boolean;
     requiredCapabilities: string[];
     automations: string[];
@@ -2946,8 +2948,8 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
     scope: "clinic" | "personal" | "branch" | "network";
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
     primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-    defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-    visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+    defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+    visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
     compactNavigation: boolean;
     requiredCapabilities: string[];
     automations: string[];
@@ -2968,20 +2970,20 @@ export declare const roleAccessPolicySchema: z.ZodObject<{
     title: string;
     role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     scope: "clinic" | "personal" | "branch" | "network";
-    defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-    canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-    canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-    restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+    defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+    canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+    canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+    restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
     requiresApprovalFor: string[];
     auditEvents: string[];
 }, {
     title: string;
     role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     scope: "clinic" | "personal" | "branch" | "network";
-    defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-    canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-    canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-    restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+    defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+    canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+    canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+    restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
     requiresApprovalFor: string[];
     auditEvents: string[];
 }>;
@@ -3147,23 +3149,23 @@ export declare const clinicSettingsSchema: z.ZodObject<{
             start: z.ZodString;
             end: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }, {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }>, {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }, {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }>, "many">>>;
@@ -3185,8 +3187,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         canManageMoney: boolean;
         canManageImports: boolean;
         workingHours?: {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }[] | null | undefined;
@@ -3206,8 +3208,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         canManageMoney: boolean;
         canManageImports: boolean;
         workingHours?: {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }[] | null | undefined;
@@ -3229,23 +3231,23 @@ export declare const clinicSettingsSchema: z.ZodObject<{
             start: z.ZodString;
             end: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }, {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }>, {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }, {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }>, "many">>>;
@@ -3261,8 +3263,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         hasMicroscope: boolean;
         hasSurgeryKit: boolean;
         workingHours?: {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }[] | null | undefined;
@@ -3278,8 +3280,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         hasMicroscope: boolean;
         hasSurgeryKit: boolean;
         workingHours?: {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }[] | null | undefined;
@@ -3299,21 +3301,21 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         id: string;
         category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         title: string;
+        riskLevel: "medium" | "low" | "high";
         vendor: string;
         supportedInputs: string[];
-        capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+        capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
         migrationNotes: string[];
-        riskLevel: "medium" | "low" | "high";
     }, {
         status: "usable_now" | "needs_mapping" | "planned_connector";
         id: string;
         category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         title: string;
+        riskLevel: "medium" | "low" | "high";
         vendor: string;
         supportedInputs: string[];
-        capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+        capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
         migrationNotes: string[];
-        riskLevel: "medium" | "low" | "high";
     }>, "many">;
     workspaceProfiles: z.ZodArray<z.ZodObject<{
         id: z.ZodString;
@@ -3335,8 +3337,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         scope: "clinic" | "personal" | "branch" | "network";
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-        defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-        visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+        defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+        visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         compactNavigation: boolean;
         requiredCapabilities: string[];
         automations: string[];
@@ -3348,8 +3350,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         scope: "clinic" | "personal" | "branch" | "network";
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-        defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-        visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+        defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+        visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         compactNavigation: boolean;
         requiredCapabilities: string[];
         automations: string[];
@@ -3369,20 +3371,20 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         title: string;
         role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         scope: "clinic" | "personal" | "branch" | "network";
-        defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-        canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-        canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-        restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+        defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+        canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+        canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+        restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         requiresApprovalFor: string[];
         auditEvents: string[];
     }, {
         title: string;
         role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         scope: "clinic" | "personal" | "branch" | "network";
-        defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-        canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-        canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-        restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+        defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+        canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+        canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+        restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         requiresApprovalFor: string[];
         auditEvents: string[];
     }>, "many">;
@@ -3446,8 +3448,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         canManageMoney: boolean;
         canManageImports: boolean;
         workingHours?: {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }[] | null | undefined;
@@ -3464,8 +3466,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         hasMicroscope: boolean;
         hasSurgeryKit: boolean;
         workingHours?: {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }[] | null | undefined;
@@ -3475,11 +3477,11 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         id: string;
         category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         title: string;
+        riskLevel: "medium" | "low" | "high";
         vendor: string;
         supportedInputs: string[];
-        capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+        capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
         migrationNotes: string[];
-        riskLevel: "medium" | "low" | "high";
     }[];
     workspaceProfiles: {
         id: string;
@@ -3488,8 +3490,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         scope: "clinic" | "personal" | "branch" | "network";
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-        defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-        visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+        defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+        visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         compactNavigation: boolean;
         requiredCapabilities: string[];
         automations: string[];
@@ -3499,10 +3501,10 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         title: string;
         role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         scope: "clinic" | "personal" | "branch" | "network";
-        defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-        canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-        canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-        restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+        defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+        canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+        canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+        restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         requiresApprovalFor: string[];
         auditEvents: string[];
     }[];
@@ -3566,8 +3568,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         canManageMoney: boolean;
         canManageImports: boolean;
         workingHours?: {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }[] | null | undefined;
@@ -3584,8 +3586,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         hasMicroscope: boolean;
         hasSurgeryKit: boolean;
         workingHours?: {
-            enabled: boolean;
             weekday: number;
+            enabled: boolean;
             start: string;
             end: string;
         }[] | null | undefined;
@@ -3595,11 +3597,11 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         id: string;
         category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         title: string;
+        riskLevel: "medium" | "low" | "high";
         vendor: string;
         supportedInputs: string[];
-        capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+        capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
         migrationNotes: string[];
-        riskLevel: "medium" | "low" | "high";
     }[];
     workspaceProfiles: {
         id: string;
@@ -3608,8 +3610,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         scope: "clinic" | "personal" | "branch" | "network";
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-        defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-        visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+        defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+        visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         compactNavigation: boolean;
         requiredCapabilities: string[];
         automations: string[];
@@ -3619,10 +3621,10 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         title: string;
         role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         scope: "clinic" | "personal" | "branch" | "network";
-        defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-        canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-        canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-        restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+        defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+        canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+        canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+        restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         requiresApprovalFor: string[];
         auditEvents: string[];
     }[];
@@ -3706,16 +3708,16 @@ export declare const scheduleWarningSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     id: string;
     title: string;
-    detail: string;
     severity: "info" | "warning" | "critical";
+    detail: string;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     relatedAppointmentId: string | null;
     actionLabel: string;
 }, {
     id: string;
     title: string;
-    detail: string;
     severity: "info" | "warning" | "critical";
+    detail: string;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     relatedAppointmentId: string | null;
     actionLabel: string;
@@ -3905,16 +3907,16 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         id: string;
         title: string;
-        detail: string;
         severity: "info" | "warning" | "critical";
+        detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         relatedAppointmentId: string | null;
         actionLabel: string;
     }, {
         id: string;
         title: string;
-        detail: string;
         severity: "info" | "warning" | "critical";
+        detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         relatedAppointmentId: string | null;
         actionLabel: string;
@@ -3976,8 +3978,8 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     scheduleWarnings: {
         id: string;
         title: string;
-        detail: string;
         severity: "info" | "warning" | "critical";
+        detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         relatedAppointmentId: string | null;
         actionLabel: string;
@@ -4039,8 +4041,8 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     scheduleWarnings: {
         id: string;
         title: string;
-        detail: string;
         severity: "info" | "warning" | "critical";
+        detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         relatedAppointmentId: string | null;
         actionLabel: string;
@@ -5330,8 +5332,8 @@ export declare const communicationTaskSchema: z.ZodObject<{
     priority: "normal" | "low" | "high" | "urgent";
     channel: "max" | "phone" | "email" | "whatsapp" | "sms" | "telegram" | "in_person" | "vk";
     assignedRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-    intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
     appointmentId: string | null;
+    intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
     dueAt: string;
     lastEventAt: string | null;
     workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -5349,8 +5351,8 @@ export declare const communicationTaskSchema: z.ZodObject<{
     priority: "normal" | "low" | "high" | "urgent";
     channel: "max" | "phone" | "email" | "whatsapp" | "sms" | "telegram" | "in_person" | "vk";
     assignedRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-    intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
     appointmentId: string | null;
+    intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
     dueAt: string;
     lastEventAt: string | null;
     workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -6381,8 +6383,8 @@ export declare const denteTelegramOutboxItemSchema: z.ZodObject<{
     title: string;
     warnings: string[];
     scheduledAt: string;
-    source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
     appointmentId: string | null;
+    source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
     taskId: string | null;
     subjectType: "patient" | "staff";
     subjectId: string;
@@ -6400,8 +6402,8 @@ export declare const denteTelegramOutboxItemSchema: z.ZodObject<{
     title: string;
     warnings: string[];
     scheduledAt: string;
-    source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
     appointmentId: string | null;
+    source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
     taskId: string | null;
     subjectType: "patient" | "staff";
     subjectId: string;
@@ -6453,8 +6455,8 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         scheduledAt: string;
-        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         appointmentId: string | null;
+        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         taskId: string | null;
         subjectType: "patient" | "staff";
         subjectId: string;
@@ -6472,8 +6474,8 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         scheduledAt: string;
-        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         appointmentId: string | null;
+        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         taskId: string | null;
         subjectType: "patient" | "staff";
         subjectId: string;
@@ -6494,8 +6496,8 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         scheduledAt: string;
-        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         appointmentId: string | null;
+        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         taskId: string | null;
         subjectType: "patient" | "staff";
         subjectId: string;
@@ -6528,8 +6530,8 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         scheduledAt: string;
-        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         appointmentId: string | null;
+        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         taskId: string | null;
         subjectType: "patient" | "staff";
         subjectId: string;
@@ -6597,8 +6599,8 @@ export declare const denteTelegramOutboxSendResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         scheduledAt: string;
-        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         appointmentId: string | null;
+        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         taskId: string | null;
         subjectType: "patient" | "staff";
         subjectId: string;
@@ -6616,8 +6618,8 @@ export declare const denteTelegramOutboxSendResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         scheduledAt: string;
-        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         appointmentId: string | null;
+        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         taskId: string | null;
         subjectType: "patient" | "staff";
         subjectId: string;
@@ -6650,8 +6652,8 @@ export declare const denteTelegramOutboxSendResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         scheduledAt: string;
-        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         appointmentId: string | null;
+        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         taskId: string | null;
         subjectType: "patient" | "staff";
         subjectId: string;
@@ -6679,8 +6681,8 @@ export declare const denteTelegramOutboxSendResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         scheduledAt: string;
-        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         appointmentId: string | null;
+        source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
         taskId: string | null;
         subjectType: "patient" | "staff";
         subjectId: string;
@@ -6738,8 +6740,8 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 scheduledAt: string;
-                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 appointmentId: string | null;
+                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 taskId: string | null;
                 subjectType: "patient" | "staff";
                 subjectId: string;
@@ -6757,8 +6759,8 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 scheduledAt: string;
-                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 appointmentId: string | null;
+                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 taskId: string | null;
                 subjectType: "patient" | "staff";
                 subjectId: string;
@@ -6791,8 +6793,8 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 scheduledAt: string;
-                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 appointmentId: string | null;
+                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 taskId: string | null;
                 subjectType: "patient" | "staff";
                 subjectId: string;
@@ -6820,8 +6822,8 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 scheduledAt: string;
-                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 appointmentId: string | null;
+                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 taskId: string | null;
                 subjectType: "patient" | "staff";
                 subjectId: string;
@@ -6862,8 +6864,8 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 scheduledAt: string;
-                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 appointmentId: string | null;
+                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 taskId: string | null;
                 subjectType: "patient" | "staff";
                 subjectId: string;
@@ -6898,8 +6900,8 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 scheduledAt: string;
-                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 appointmentId: string | null;
+                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 taskId: string | null;
                 subjectType: "patient" | "staff";
                 subjectId: string;
@@ -6936,8 +6938,8 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 scheduledAt: string;
-                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 appointmentId: string | null;
+                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 taskId: string | null;
                 subjectType: "patient" | "staff";
                 subjectId: string;
@@ -6984,8 +6986,8 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 scheduledAt: string;
-                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 appointmentId: string | null;
+                source: "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "tax_document_request" | "appointment_reminder" | "post_visit_checkup" | "review_request" | "communication_task" | "staff_digest";
                 taskId: string | null;
                 subjectType: "patient" | "staff";
                 subjectId: string;
@@ -7292,7 +7294,6 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
     organizationId: string;
     clinicId: string;
     warnings: string[];
-    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     settings: {
         organizationId: string;
         updatedAt: string;
@@ -7336,6 +7337,7 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
         allowVoiceIntake: boolean;
         staffEscalationChannel: string | null;
     };
+    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     botUsername: string | null;
     botConfigId: string;
     tokenConfigured: boolean;
@@ -7363,7 +7365,6 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
     organizationId: string;
     clinicId: string;
     warnings: string[];
-    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     settings: {
         organizationId: string;
         updatedAt: string;
@@ -7407,6 +7408,7 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
             filling_restoration?: number | undefined;
         } | undefined;
     };
+    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     botUsername: string | null;
     botConfigId: string;
     tokenConfigured: boolean;
@@ -7843,26 +7845,26 @@ export declare const patientInsightSchema: z.ZodObject<{
     lastActivityAt: z.ZodNullable<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     patientId: string;
+    clinicalFlags: string[];
     riskLevel: "low" | "high" | "watch";
-    openTasks: number;
     riskReasons: string[];
+    openTasks: number;
     nextBestAction: string;
     recallDueAt: string | null;
     balanceDueRub: number;
     missingDocumentKinds: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-    clinicalFlags: string[];
     adminFlags: string[];
     lastActivityAt: string | null;
 }, {
     patientId: string;
+    clinicalFlags: string[];
     riskLevel: "low" | "high" | "watch";
-    openTasks: number;
     riskReasons: string[];
+    openTasks: number;
     nextBestAction: string;
     recallDueAt: string | null;
     balanceDueRub: number;
     missingDocumentKinds: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-    clinicalFlags: string[];
     adminFlags: string[];
     lastActivityAt: string | null;
 }>;
@@ -7889,7 +7891,7 @@ export declare const recommendedActionSchema: z.ZodObject<{
     detail: string;
     source: string;
     actionLabel: string;
-    section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+    section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     metricLabel: string;
 }, {
     id: string;
@@ -7900,7 +7902,7 @@ export declare const recommendedActionSchema: z.ZodObject<{
     detail: string;
     source: string;
     actionLabel: string;
-    section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+    section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     metricLabel: string;
 }>;
 export type RecommendedAction = z.infer<typeof recommendedActionSchema>;
@@ -8011,9 +8013,9 @@ export declare const updateAppointmentSchema: z.ZodEffects<z.ZodObject<{
     chairId?: string | null | undefined;
     comment?: string | null | undefined;
     doctorUserId?: string | null | undefined;
-    assistantUserId?: string | null | undefined;
     startsAt?: string | undefined;
     endsAt?: string | undefined;
+    assistantUserId?: string | null | undefined;
 }, {
     status?: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show" | undefined;
     patientId?: string | null | undefined;
@@ -8021,9 +8023,9 @@ export declare const updateAppointmentSchema: z.ZodEffects<z.ZodObject<{
     chairId?: string | null | undefined;
     comment?: string | null | undefined;
     doctorUserId?: string | null | undefined;
-    assistantUserId?: string | null | undefined;
     startsAt?: string | undefined;
     endsAt?: string | undefined;
+    assistantUserId?: string | null | undefined;
 }>, {
     status?: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show" | undefined;
     patientId?: string | null | undefined;
@@ -8031,9 +8033,9 @@ export declare const updateAppointmentSchema: z.ZodEffects<z.ZodObject<{
     chairId?: string | null | undefined;
     comment?: string | null | undefined;
     doctorUserId?: string | null | undefined;
-    assistantUserId?: string | null | undefined;
     startsAt?: string | undefined;
     endsAt?: string | undefined;
+    assistantUserId?: string | null | undefined;
 }, {
     status?: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show" | undefined;
     patientId?: string | null | undefined;
@@ -8041,9 +8043,9 @@ export declare const updateAppointmentSchema: z.ZodEffects<z.ZodObject<{
     chairId?: string | null | undefined;
     comment?: string | null | undefined;
     doctorUserId?: string | null | undefined;
-    assistantUserId?: string | null | undefined;
     startsAt?: string | undefined;
     endsAt?: string | undefined;
+    assistantUserId?: string | null | undefined;
 }>;
 export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>;
 export declare const appointmentReadinessStateSchema: z.ZodEnum<["ready", "needs_attention", "blocked"]>;
@@ -8094,6 +8096,7 @@ export declare const appointmentReadinessSchema: z.ZodObject<{
     patientId: string | null;
     state: "ready" | "blocked" | "needs_attention";
     warnings: string[];
+    appointmentId: string;
     checks: {
         key: string;
         title: string;
@@ -8103,11 +8106,11 @@ export declare const appointmentReadinessSchema: z.ZodObject<{
     nextAction: string;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     blockers: string[];
-    appointmentId: string;
     score: number;
 }, {
     patientId: string | null;
     state: "ready" | "blocked" | "needs_attention";
+    appointmentId: string;
     checks: {
         key: string;
         title: string;
@@ -8117,7 +8120,6 @@ export declare const appointmentReadinessSchema: z.ZodObject<{
     nextAction: string;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     blockers: string[];
-    appointmentId: string;
     score: number;
     warnings?: string[] | undefined;
 }>;
@@ -8137,21 +8139,21 @@ export declare const scheduleSuggestionSchema: z.ZodObject<{
     reason: string;
     title: string;
     priority: "urgent" | "routine" | "important";
+    appointmentId: string | null;
     detail: string;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     actionLabel: string;
-    appointmentId: string | null;
-    section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+    section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
 }, {
     id: string;
     reason: string;
     title: string;
     priority: "urgent" | "routine" | "important";
+    appointmentId: string | null;
     detail: string;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     actionLabel: string;
-    appointmentId: string | null;
-    section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+    section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
 }>;
 export type ScheduleSuggestion = z.infer<typeof scheduleSuggestionSchema>;
 export declare const visitCloseChecklistItemSchema: z.ZodObject<{
@@ -8173,7 +8175,7 @@ export declare const visitCloseChecklistItemSchema: z.ZodObject<{
     blocking: boolean;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     actionLabel: string;
-    section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+    section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
 }, {
     id: string;
     visitId: string;
@@ -8183,7 +8185,7 @@ export declare const visitCloseChecklistItemSchema: z.ZodObject<{
     blocking: boolean;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     actionLabel: string;
-    section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+    section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
 }>;
 export type VisitCloseChecklistItem = z.infer<typeof visitCloseChecklistItemSchema>;
 export declare const visitCloseChecklistSchema: z.ZodObject<{
@@ -8211,7 +8213,7 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         blocking: boolean;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         actionLabel: string;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     }, {
         id: string;
         visitId: string;
@@ -8221,7 +8223,7 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         blocking: boolean;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         actionLabel: string;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     visitId: string;
@@ -8234,7 +8236,7 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         blocking: boolean;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         actionLabel: string;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     }[];
     nextAction: string;
     score: number;
@@ -8251,7 +8253,7 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         blocking: boolean;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         actionLabel: string;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     }[];
     nextAction: string;
     score: number;
@@ -10777,6 +10779,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     patientBirthDate?: string | null | undefined;
     patientPhone?: string | null | undefined;
     snils?: string | null | undefined;
+    omsPolicy?: string | null | undefined;
     identityDocument?: string | null | undefined;
     registrationAddress?: string | null | undefined;
     medicalOrganizationAddress?: string | null | undefined;
@@ -10787,7 +10790,6 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     identityDocumentNumber?: string | null | undefined;
     patientEmail?: string | null | undefined;
     stayAddress?: string | null | undefined;
-    omsPolicy?: string | null | undefined;
     omsIssuedAt?: string | null | undefined;
     insurerName?: string | null | undefined;
     socialSupportCode?: string | null | undefined;
@@ -10975,6 +10977,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     patientBirthDate?: string | null | undefined;
     patientPhone?: string | null | undefined;
     snils?: string | null | undefined;
+    omsPolicy?: string | null | undefined;
     identityDocument?: string | null | undefined;
     registrationAddress?: string | null | undefined;
     medicalOrganizationAddress?: string | null | undefined;
@@ -10985,7 +10988,6 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     identityDocumentNumber?: string | null | undefined;
     patientEmail?: string | null | undefined;
     stayAddress?: string | null | undefined;
-    omsPolicy?: string | null | undefined;
     omsIssuedAt?: string | null | undefined;
     insurerName?: string | null | undefined;
     socialSupportCode?: string | null | undefined;
@@ -13995,6 +13997,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         patientBirthDate?: string | null | undefined;
         patientPhone?: string | null | undefined;
         snils?: string | null | undefined;
+        omsPolicy?: string | null | undefined;
         identityDocument?: string | null | undefined;
         registrationAddress?: string | null | undefined;
         medicalOrganizationAddress?: string | null | undefined;
@@ -14005,7 +14008,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         identityDocumentNumber?: string | null | undefined;
         patientEmail?: string | null | undefined;
         stayAddress?: string | null | undefined;
-        omsPolicy?: string | null | undefined;
         omsIssuedAt?: string | null | undefined;
         insurerName?: string | null | undefined;
         socialSupportCode?: string | null | undefined;
@@ -14193,6 +14195,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         patientBirthDate?: string | null | undefined;
         patientPhone?: string | null | undefined;
         snils?: string | null | undefined;
+        omsPolicy?: string | null | undefined;
         identityDocument?: string | null | undefined;
         registrationAddress?: string | null | undefined;
         medicalOrganizationAddress?: string | null | undefined;
@@ -14203,7 +14206,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         identityDocumentNumber?: string | null | undefined;
         patientEmail?: string | null | undefined;
         stayAddress?: string | null | undefined;
-        omsPolicy?: string | null | undefined;
         omsIssuedAt?: string | null | undefined;
         insurerName?: string | null | undefined;
         socialSupportCode?: string | null | undefined;
@@ -17248,6 +17250,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         patientBirthDate?: string | null | undefined;
         patientPhone?: string | null | undefined;
         snils?: string | null | undefined;
+        omsPolicy?: string | null | undefined;
         identityDocument?: string | null | undefined;
         registrationAddress?: string | null | undefined;
         medicalOrganizationAddress?: string | null | undefined;
@@ -17258,7 +17261,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         identityDocumentNumber?: string | null | undefined;
         patientEmail?: string | null | undefined;
         stayAddress?: string | null | undefined;
-        omsPolicy?: string | null | undefined;
         omsIssuedAt?: string | null | undefined;
         insurerName?: string | null | undefined;
         socialSupportCode?: string | null | undefined;
@@ -18407,6 +18409,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         patientBirthDate?: string | null | undefined;
         patientPhone?: string | null | undefined;
         snils?: string | null | undefined;
+        omsPolicy?: string | null | undefined;
         identityDocument?: string | null | undefined;
         registrationAddress?: string | null | undefined;
         medicalOrganizationAddress?: string | null | undefined;
@@ -18417,7 +18420,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         identityDocumentNumber?: string | null | undefined;
         patientEmail?: string | null | undefined;
         stayAddress?: string | null | undefined;
-        omsPolicy?: string | null | undefined;
         omsIssuedAt?: string | null | undefined;
         insurerName?: string | null | undefined;
         socialSupportCode?: string | null | undefined;
@@ -22317,6 +22319,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -22327,7 +22330,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -22515,6 +22517,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -22525,7 +22528,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -25570,6 +25572,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -25580,7 +25583,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -26729,6 +26731,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -26739,7 +26742,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -28741,6 +28743,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -28751,7 +28754,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -30130,6 +30132,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -30140,7 +30143,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -33127,6 +33129,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -33137,7 +33140,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -33325,6 +33327,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -33335,7 +33338,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -36380,6 +36382,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -36390,7 +36393,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -37539,6 +37541,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -37549,7 +37552,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -39868,23 +39870,23 @@ export declare const dashboardSchema: z.ZodObject<{
                 start: z.ZodString;
                 end: z.ZodString;
             }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }, {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }>, {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }, {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }>, "many">>>;
@@ -39906,8 +39908,8 @@ export declare const dashboardSchema: z.ZodObject<{
             canManageMoney: boolean;
             canManageImports: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -39927,8 +39929,8 @@ export declare const dashboardSchema: z.ZodObject<{
             canManageMoney: boolean;
             canManageImports: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -39950,23 +39952,23 @@ export declare const dashboardSchema: z.ZodObject<{
                 start: z.ZodString;
                 end: z.ZodString;
             }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }, {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }>, {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }, {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }>, "many">>>;
@@ -39982,8 +39984,8 @@ export declare const dashboardSchema: z.ZodObject<{
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -39999,8 +40001,8 @@ export declare const dashboardSchema: z.ZodObject<{
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -40020,21 +40022,21 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
+            riskLevel: "medium" | "low" | "high";
             vendor: string;
             supportedInputs: string[];
-            capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+            capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
             migrationNotes: string[];
-            riskLevel: "medium" | "low" | "high";
         }, {
             status: "usable_now" | "needs_mapping" | "planned_connector";
             id: string;
             category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
+            riskLevel: "medium" | "low" | "high";
             vendor: string;
             supportedInputs: string[];
-            capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+            capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
             migrationNotes: string[];
-            riskLevel: "medium" | "low" | "high";
         }>, "many">;
         workspaceProfiles: z.ZodArray<z.ZodObject<{
             id: z.ZodString;
@@ -40056,8 +40058,8 @@ export declare const dashboardSchema: z.ZodObject<{
             scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             compactNavigation: boolean;
             requiredCapabilities: string[];
             automations: string[];
@@ -40069,8 +40071,8 @@ export declare const dashboardSchema: z.ZodObject<{
             scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             compactNavigation: boolean;
             requiredCapabilities: string[];
             automations: string[];
@@ -40090,20 +40092,20 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             scope: "clinic" | "personal" | "branch" | "network";
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             requiresApprovalFor: string[];
             auditEvents: string[];
         }, {
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             scope: "clinic" | "personal" | "branch" | "network";
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             requiresApprovalFor: string[];
             auditEvents: string[];
         }>, "many">;
@@ -40167,8 +40169,8 @@ export declare const dashboardSchema: z.ZodObject<{
             canManageMoney: boolean;
             canManageImports: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -40185,8 +40187,8 @@ export declare const dashboardSchema: z.ZodObject<{
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -40196,11 +40198,11 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
+            riskLevel: "medium" | "low" | "high";
             vendor: string;
             supportedInputs: string[];
-            capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+            capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
             migrationNotes: string[];
-            riskLevel: "medium" | "low" | "high";
         }[];
         workspaceProfiles: {
             id: string;
@@ -40209,8 +40211,8 @@ export declare const dashboardSchema: z.ZodObject<{
             scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             compactNavigation: boolean;
             requiredCapabilities: string[];
             automations: string[];
@@ -40220,10 +40222,10 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             scope: "clinic" | "personal" | "branch" | "network";
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             requiresApprovalFor: string[];
             auditEvents: string[];
         }[];
@@ -40287,8 +40289,8 @@ export declare const dashboardSchema: z.ZodObject<{
             canManageMoney: boolean;
             canManageImports: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -40305,8 +40307,8 @@ export declare const dashboardSchema: z.ZodObject<{
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -40316,11 +40318,11 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
+            riskLevel: "medium" | "low" | "high";
             vendor: string;
             supportedInputs: string[];
-            capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+            capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
             migrationNotes: string[];
-            riskLevel: "medium" | "low" | "high";
         }[];
         workspaceProfiles: {
             id: string;
@@ -40329,8 +40331,8 @@ export declare const dashboardSchema: z.ZodObject<{
             scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             compactNavigation: boolean;
             requiredCapabilities: string[];
             automations: string[];
@@ -40340,10 +40342,10 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             scope: "clinic" | "personal" | "branch" | "network";
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             requiresApprovalFor: string[];
             auditEvents: string[];
         }[];
@@ -40511,16 +40513,16 @@ export declare const dashboardSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             id: string;
             title: string;
-            detail: string;
             severity: "info" | "warning" | "critical";
+            detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
             actionLabel: string;
         }, {
             id: string;
             title: string;
-            detail: string;
             severity: "info" | "warning" | "critical";
+            detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
             actionLabel: string;
@@ -40582,8 +40584,8 @@ export declare const dashboardSchema: z.ZodObject<{
         scheduleWarnings: {
             id: string;
             title: string;
-            detail: string;
             severity: "info" | "warning" | "critical";
+            detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
             actionLabel: string;
@@ -40645,8 +40647,8 @@ export declare const dashboardSchema: z.ZodObject<{
         scheduleWarnings: {
             id: string;
             title: string;
-            detail: string;
             severity: "info" | "warning" | "critical";
+            detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
             actionLabel: string;
@@ -40845,26 +40847,26 @@ export declare const dashboardSchema: z.ZodObject<{
         lastActivityAt: z.ZodNullable<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         patientId: string;
+        clinicalFlags: string[];
         riskLevel: "low" | "high" | "watch";
-        openTasks: number;
         riskReasons: string[];
+        openTasks: number;
         nextBestAction: string;
         recallDueAt: string | null;
         balanceDueRub: number;
         missingDocumentKinds: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-        clinicalFlags: string[];
         adminFlags: string[];
         lastActivityAt: string | null;
     }, {
         patientId: string;
+        clinicalFlags: string[];
         riskLevel: "low" | "high" | "watch";
-        openTasks: number;
         riskReasons: string[];
+        openTasks: number;
         nextBestAction: string;
         recallDueAt: string | null;
         balanceDueRub: number;
         missingDocumentKinds: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-        clinicalFlags: string[];
         adminFlags: string[];
         lastActivityAt: string | null;
     }>, "many">;
@@ -40888,7 +40890,7 @@ export declare const dashboardSchema: z.ZodObject<{
         detail: string;
         source: string;
         actionLabel: string;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         metricLabel: string;
     }, {
         id: string;
@@ -40899,7 +40901,7 @@ export declare const dashboardSchema: z.ZodObject<{
         detail: string;
         source: string;
         actionLabel: string;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         metricLabel: string;
     }>, "many">;
     appointments: z.ZodArray<z.ZodObject<{
@@ -40968,6 +40970,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string | null;
         state: "ready" | "blocked" | "needs_attention";
         warnings: string[];
+        appointmentId: string;
         checks: {
             key: string;
             title: string;
@@ -40977,11 +40980,11 @@ export declare const dashboardSchema: z.ZodObject<{
         nextAction: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockers: string[];
-        appointmentId: string;
         score: number;
     }, {
         patientId: string | null;
         state: "ready" | "blocked" | "needs_attention";
+        appointmentId: string;
         checks: {
             key: string;
             title: string;
@@ -40991,7 +40994,6 @@ export declare const dashboardSchema: z.ZodObject<{
         nextAction: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockers: string[];
-        appointmentId: string;
         score: number;
         warnings?: string[] | undefined;
     }>, "many">;
@@ -41010,21 +41012,21 @@ export declare const dashboardSchema: z.ZodObject<{
         reason: string;
         title: string;
         priority: "urgent" | "routine" | "important";
+        appointmentId: string | null;
         detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         actionLabel: string;
-        appointmentId: string | null;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     }, {
         id: string;
         reason: string;
         title: string;
         priority: "urgent" | "routine" | "important";
+        appointmentId: string | null;
         detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         actionLabel: string;
-        appointmentId: string | null;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     }>, "many">;
     activeVisit: z.ZodNullable<z.ZodObject<{
         id: z.ZodString;
@@ -41097,7 +41099,7 @@ export declare const dashboardSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }, {
             id: string;
             visitId: string;
@@ -41107,7 +41109,7 @@ export declare const dashboardSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
         visitId: string;
@@ -41120,7 +41122,7 @@ export declare const dashboardSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }[];
         nextAction: string;
         score: number;
@@ -41137,7 +41139,7 @@ export declare const dashboardSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }[];
         nextAction: string;
         score: number;
@@ -43215,6 +43217,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 patientBirthDate?: string | null | undefined;
                 patientPhone?: string | null | undefined;
                 snils?: string | null | undefined;
+                omsPolicy?: string | null | undefined;
                 identityDocument?: string | null | undefined;
                 registrationAddress?: string | null | undefined;
                 medicalOrganizationAddress?: string | null | undefined;
@@ -43225,7 +43228,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 identityDocumentNumber?: string | null | undefined;
                 patientEmail?: string | null | undefined;
                 stayAddress?: string | null | undefined;
-                omsPolicy?: string | null | undefined;
                 omsIssuedAt?: string | null | undefined;
                 insurerName?: string | null | undefined;
                 socialSupportCode?: string | null | undefined;
@@ -43413,6 +43415,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 patientBirthDate?: string | null | undefined;
                 patientPhone?: string | null | undefined;
                 snils?: string | null | undefined;
+                omsPolicy?: string | null | undefined;
                 identityDocument?: string | null | undefined;
                 registrationAddress?: string | null | undefined;
                 medicalOrganizationAddress?: string | null | undefined;
@@ -43423,7 +43426,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 identityDocumentNumber?: string | null | undefined;
                 patientEmail?: string | null | undefined;
                 stayAddress?: string | null | undefined;
-                omsPolicy?: string | null | undefined;
                 omsIssuedAt?: string | null | undefined;
                 insurerName?: string | null | undefined;
                 socialSupportCode?: string | null | undefined;
@@ -46468,6 +46470,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 patientBirthDate?: string | null | undefined;
                 patientPhone?: string | null | undefined;
                 snils?: string | null | undefined;
+                omsPolicy?: string | null | undefined;
                 identityDocument?: string | null | undefined;
                 registrationAddress?: string | null | undefined;
                 medicalOrganizationAddress?: string | null | undefined;
@@ -46478,7 +46481,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 identityDocumentNumber?: string | null | undefined;
                 patientEmail?: string | null | undefined;
                 stayAddress?: string | null | undefined;
-                omsPolicy?: string | null | undefined;
                 omsIssuedAt?: string | null | undefined;
                 insurerName?: string | null | undefined;
                 socialSupportCode?: string | null | undefined;
@@ -47627,6 +47629,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 patientBirthDate?: string | null | undefined;
                 patientPhone?: string | null | undefined;
                 snils?: string | null | undefined;
+                omsPolicy?: string | null | undefined;
                 identityDocument?: string | null | undefined;
                 registrationAddress?: string | null | undefined;
                 medicalOrganizationAddress?: string | null | undefined;
@@ -47637,7 +47640,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 identityDocumentNumber?: string | null | undefined;
                 patientEmail?: string | null | undefined;
                 stayAddress?: string | null | undefined;
-                omsPolicy?: string | null | undefined;
                 omsIssuedAt?: string | null | undefined;
                 insurerName?: string | null | undefined;
                 socialSupportCode?: string | null | undefined;
@@ -49948,8 +49950,8 @@ export declare const dashboardSchema: z.ZodObject<{
         priority: "normal" | "low" | "high" | "urgent";
         channel: "max" | "phone" | "email" | "whatsapp" | "sms" | "telegram" | "in_person" | "vk";
         assignedRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-        intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
         appointmentId: string | null;
+        intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -49967,8 +49969,8 @@ export declare const dashboardSchema: z.ZodObject<{
         priority: "normal" | "low" | "high" | "urgent";
         channel: "max" | "phone" | "email" | "whatsapp" | "sms" | "telegram" | "in_person" | "vk";
         assignedRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-        intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
         appointmentId: string | null;
+        intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -50252,19 +50254,6 @@ export declare const dashboardSchema: z.ZodObject<{
         familyGroupId?: string | null | undefined;
         mergedIntoPatientId?: string | null | undefined;
     }[];
-    appointments: {
-        status: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show";
-        id: string;
-        patientId: string | null;
-        reason: string | null;
-        organizationId: string;
-        chairId: string | null;
-        comment: string | null;
-        doctorUserId: string | null;
-        startsAt: string;
-        endsAt: string;
-        assistantUserId?: string | null | undefined;
-    }[];
     payments: {
         status: "paid" | "planned" | "refunded" | "voided";
         id: string;
@@ -50299,6 +50288,19 @@ export declare const dashboardSchema: z.ZodObject<{
         payerBirthDate?: string | null | undefined;
         payerIdentityDocument?: string | null | undefined;
         payerRelationship?: string | null | undefined;
+    }[];
+    appointments: {
+        status: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show";
+        id: string;
+        patientId: string | null;
+        reason: string | null;
+        organizationId: string;
+        chairId: string | null;
+        comment: string | null;
+        doctorUserId: string | null;
+        startsAt: string;
+        endsAt: string;
+        assistantUserId?: string | null | undefined;
     }[];
     auditEvents: {
         id: string;
@@ -50369,8 +50371,8 @@ export declare const dashboardSchema: z.ZodObject<{
             canManageMoney: boolean;
             canManageImports: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -50387,8 +50389,8 @@ export declare const dashboardSchema: z.ZodObject<{
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -50398,11 +50400,11 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
+            riskLevel: "medium" | "low" | "high";
             vendor: string;
             supportedInputs: string[];
-            capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+            capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
             migrationNotes: string[];
-            riskLevel: "medium" | "low" | "high";
         }[];
         workspaceProfiles: {
             id: string;
@@ -50411,8 +50413,8 @@ export declare const dashboardSchema: z.ZodObject<{
             scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             compactNavigation: boolean;
             requiredCapabilities: string[];
             automations: string[];
@@ -50422,10 +50424,10 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             scope: "clinic" | "personal" | "branch" | "network";
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             requiresApprovalFor: string[];
             auditEvents: string[];
         }[];
@@ -50489,8 +50491,8 @@ export declare const dashboardSchema: z.ZodObject<{
         scheduleWarnings: {
             id: string;
             title: string;
-            detail: string;
             severity: "info" | "warning" | "critical";
+            detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
             actionLabel: string;
@@ -50498,14 +50500,14 @@ export declare const dashboardSchema: z.ZodObject<{
     };
     patientInsights: {
         patientId: string;
+        clinicalFlags: string[];
         riskLevel: "low" | "high" | "watch";
-        openTasks: number;
         riskReasons: string[];
+        openTasks: number;
         nextBestAction: string;
         recallDueAt: string | null;
         balanceDueRub: number;
         missingDocumentKinds: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-        clinicalFlags: string[];
         adminFlags: string[];
         lastActivityAt: string | null;
     }[];
@@ -50518,13 +50520,14 @@ export declare const dashboardSchema: z.ZodObject<{
         detail: string;
         source: string;
         actionLabel: string;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         metricLabel: string;
     }[];
     appointmentReadiness: {
         patientId: string | null;
         state: "ready" | "blocked" | "needs_attention";
         warnings: string[];
+        appointmentId: string;
         checks: {
             key: string;
             title: string;
@@ -50534,7 +50537,6 @@ export declare const dashboardSchema: z.ZodObject<{
         nextAction: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockers: string[];
-        appointmentId: string;
         score: number;
     }[];
     scheduleSuggestions: {
@@ -50542,11 +50544,11 @@ export declare const dashboardSchema: z.ZodObject<{
         reason: string;
         title: string;
         priority: "urgent" | "routine" | "important";
+        appointmentId: string | null;
         detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         actionLabel: string;
-        appointmentId: string | null;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     }[];
     activeVisit: {
         status: "draft" | "voided" | "signed";
@@ -50575,7 +50577,7 @@ export declare const dashboardSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }[];
         nextAction: string;
         score: number;
@@ -50749,8 +50751,8 @@ export declare const dashboardSchema: z.ZodObject<{
         priority: "normal" | "low" | "high" | "urgent";
         channel: "max" | "phone" | "email" | "whatsapp" | "sms" | "telegram" | "in_person" | "vk";
         assignedRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-        intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
         appointmentId: string | null;
+        intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -50922,19 +50924,6 @@ export declare const dashboardSchema: z.ZodObject<{
         familyGroupId?: string | null | undefined;
         mergedIntoPatientId?: string | null | undefined;
     }[];
-    appointments: {
-        status: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show";
-        id: string;
-        patientId: string | null;
-        reason: string | null;
-        organizationId: string;
-        chairId: string | null;
-        comment: string | null;
-        doctorUserId: string | null;
-        startsAt: string;
-        endsAt: string;
-        assistantUserId?: string | null | undefined;
-    }[];
     payments: {
         status: "paid" | "planned" | "refunded" | "voided";
         id: string;
@@ -50969,6 +50958,19 @@ export declare const dashboardSchema: z.ZodObject<{
         payerBirthDate?: string | null | undefined;
         payerIdentityDocument?: string | null | undefined;
         payerRelationship?: string | null | undefined;
+    }[];
+    appointments: {
+        status: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show";
+        id: string;
+        patientId: string | null;
+        reason: string | null;
+        organizationId: string;
+        chairId: string | null;
+        comment: string | null;
+        doctorUserId: string | null;
+        startsAt: string;
+        endsAt: string;
+        assistantUserId?: string | null | undefined;
     }[];
     auditEvents: {
         id: string;
@@ -51039,8 +51041,8 @@ export declare const dashboardSchema: z.ZodObject<{
             canManageMoney: boolean;
             canManageImports: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -51057,8 +51059,8 @@ export declare const dashboardSchema: z.ZodObject<{
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
             workingHours?: {
-                enabled: boolean;
                 weekday: number;
+                enabled: boolean;
                 start: string;
                 end: string;
             }[] | null | undefined;
@@ -51068,11 +51070,11 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
+            riskLevel: "medium" | "low" | "high";
             vendor: string;
             supportedInputs: string[];
-            capabilities: ("documents" | "services" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "tax_documents" | "audit")[];
+            capabilities: ("documents" | "services" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "tax_documents" | "audit")[];
             migrationNotes: string[];
-            riskLevel: "medium" | "low" | "high";
         }[];
         workspaceProfiles: {
             id: string;
@@ -51081,8 +51083,8 @@ export declare const dashboardSchema: z.ZodObject<{
             scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             compactNavigation: boolean;
             requiredCapabilities: string[];
             automations: string[];
@@ -51092,10 +51094,10 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             scope: "clinic" | "personal" | "branch" | "network";
-            defaultSection: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
-            canRead: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            canWrite: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
-            restricted: ("shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings")[];
+            defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
+            canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
+            restricted: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             requiresApprovalFor: string[];
             auditEvents: string[];
         }[];
@@ -51159,8 +51161,8 @@ export declare const dashboardSchema: z.ZodObject<{
         scheduleWarnings: {
             id: string;
             title: string;
-            detail: string;
             severity: "info" | "warning" | "critical";
+            detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
             actionLabel: string;
@@ -51168,14 +51170,14 @@ export declare const dashboardSchema: z.ZodObject<{
     };
     patientInsights: {
         patientId: string;
+        clinicalFlags: string[];
         riskLevel: "low" | "high" | "watch";
-        openTasks: number;
         riskReasons: string[];
+        openTasks: number;
         nextBestAction: string;
         recallDueAt: string | null;
         balanceDueRub: number;
         missingDocumentKinds: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-        clinicalFlags: string[];
         adminFlags: string[];
         lastActivityAt: string | null;
     }[];
@@ -51188,12 +51190,13 @@ export declare const dashboardSchema: z.ZodObject<{
         detail: string;
         source: string;
         actionLabel: string;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         metricLabel: string;
     }[];
     appointmentReadiness: {
         patientId: string | null;
         state: "ready" | "blocked" | "needs_attention";
+        appointmentId: string;
         checks: {
             key: string;
             title: string;
@@ -51203,7 +51206,6 @@ export declare const dashboardSchema: z.ZodObject<{
         nextAction: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockers: string[];
-        appointmentId: string;
         score: number;
         warnings?: string[] | undefined;
     }[];
@@ -51212,11 +51214,11 @@ export declare const dashboardSchema: z.ZodObject<{
         reason: string;
         title: string;
         priority: "urgent" | "routine" | "important";
+        appointmentId: string | null;
         detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         actionLabel: string;
-        appointmentId: string | null;
-        section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+        section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     }[];
     activeVisit: {
         status: "draft" | "voided" | "signed";
@@ -51245,7 +51247,7 @@ export declare const dashboardSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }[];
         nextAction: string;
         score: number;
@@ -51419,8 +51421,8 @@ export declare const dashboardSchema: z.ZodObject<{
         priority: "normal" | "low" | "high" | "urgent";
         channel: "max" | "phone" | "email" | "whatsapp" | "sms" | "telegram" | "in_person" | "vk";
         assignedRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-        intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
         appointmentId: string | null;
+        intent: "general" | "callback_requested" | "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "lead_capture" | "transactional_reply";
         dueAt: string;
         lastEventAt: string | null;
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
@@ -52579,23 +52581,23 @@ export declare const createStaffMemberSchema: z.ZodObject<{
         start: z.ZodString;
         end: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, "many">>>;
@@ -52606,8 +52608,8 @@ export declare const createStaffMemberSchema: z.ZodObject<{
     phone?: string | null | undefined;
     email?: string | null | undefined;
     workingHours?: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[] | null | undefined;
@@ -52616,13 +52618,13 @@ export declare const createStaffMemberSchema: z.ZodObject<{
     role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     phone?: string | null | undefined;
     email?: string | null | undefined;
+    specialties?: ("pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal")[] | undefined;
     workingHours?: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[] | null | undefined;
-    specialties?: ("pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal")[] | undefined;
 }>;
 export type CreateStaffMemberInput = z.infer<typeof createStaffMemberSchema>;
 export declare const updateStaffWorkingHoursSchema: z.ZodObject<{
@@ -52632,37 +52634,37 @@ export declare const updateStaffWorkingHoursSchema: z.ZodObject<{
         start: z.ZodString;
         end: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     workingHours: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[];
 }, {
     workingHours: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[];
@@ -52813,37 +52815,37 @@ export declare const updateChairWorkingHoursSchema: z.ZodObject<{
         start: z.ZodString;
         end: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     workingHours: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[];
 }, {
     workingHours: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[];
@@ -52863,23 +52865,23 @@ export declare const createChairSchema: z.ZodObject<{
         start: z.ZodString;
         end: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }, {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }>, "many">>>;
@@ -52890,8 +52892,8 @@ export declare const createChairSchema: z.ZodObject<{
     hasSurgeryKit: boolean;
     notes?: string | null | undefined;
     workingHours?: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[] | null | undefined;
@@ -52901,8 +52903,8 @@ export declare const createChairSchema: z.ZodObject<{
     name: string;
     notes?: string | null | undefined;
     workingHours?: {
-        enabled: boolean;
         weekday: number;
+        enabled: boolean;
         start: string;
         end: string;
     }[] | null | undefined;
@@ -54762,6 +54764,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -54772,7 +54775,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -54960,6 +54962,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -54970,7 +54973,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -58015,6 +58017,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -58025,7 +58028,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -59174,6 +59176,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -59184,7 +59187,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -60341,6 +60343,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -60351,7 +60354,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -61509,6 +61511,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -61519,7 +61522,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -62677,6 +62679,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -62687,7 +62690,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -63845,6 +63847,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
             medicalOrganizationAddress?: string | null | undefined;
@@ -63855,7 +63858,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             identityDocumentNumber?: string | null | undefined;
             patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
-            omsPolicy?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
             socialSupportCode?: string | null | undefined;
@@ -71939,7 +71941,7 @@ export declare const dicomRenderCacheTaskSchema: z.ZodObject<{
     label: string;
     estimatedMemoryMb: number;
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
     sliceStart: number | null;
     sliceEnd: number | null;
     budgetMs: number;
@@ -71952,7 +71954,7 @@ export declare const dicomRenderCacheTaskSchema: z.ZodObject<{
     label: string;
     estimatedMemoryMb: number;
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
     sliceStart: number | null;
     sliceEnd: number | null;
     budgetMs: number;
@@ -72020,7 +72022,7 @@ export declare const dicomProgressiveLoadStageSchema: z.ZodObject<{
     nextAction: string;
     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
     label: string;
-    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
     sliceStart: number | null;
     sliceEnd: number | null;
     budgetMs: number;
@@ -72039,7 +72041,7 @@ export declare const dicomProgressiveLoadStageSchema: z.ZodObject<{
     nextAction: string;
     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
     label: string;
-    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
     sliceStart: number | null;
     sliceEnd: number | null;
     budgetMs: number;
@@ -72707,7 +72709,7 @@ export declare const dicomRenderCachePlanResponseSchema: z.ZodObject<{
         nextAction: string;
         kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
         label: string;
-        target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+        target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
         sliceStart: number | null;
         sliceEnd: number | null;
         budgetMs: number;
@@ -72726,7 +72728,7 @@ export declare const dicomRenderCachePlanResponseSchema: z.ZodObject<{
         nextAction: string;
         kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
         label: string;
-        target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+        target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
         sliceStart: number | null;
         sliceEnd: number | null;
         budgetMs: number;
@@ -72760,7 +72762,7 @@ export declare const dicomRenderCachePlanResponseSchema: z.ZodObject<{
         label: string;
         estimatedMemoryMb: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-        target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+        target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
         sliceStart: number | null;
         sliceEnd: number | null;
         budgetMs: number;
@@ -72773,7 +72775,7 @@ export declare const dicomRenderCachePlanResponseSchema: z.ZodObject<{
         label: string;
         estimatedMemoryMb: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-        target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+        target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
         sliceStart: number | null;
         sliceEnd: number | null;
         budgetMs: number;
@@ -72824,7 +72826,7 @@ export declare const dicomRenderCachePlanResponseSchema: z.ZodObject<{
         nextAction: string;
         kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
         label: string;
-        target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+        target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
         sliceStart: number | null;
         sliceEnd: number | null;
         budgetMs: number;
@@ -72845,7 +72847,7 @@ export declare const dicomRenderCachePlanResponseSchema: z.ZodObject<{
         label: string;
         estimatedMemoryMb: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-        target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+        target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
         sliceStart: number | null;
         sliceEnd: number | null;
         budgetMs: number;
@@ -72894,7 +72896,7 @@ export declare const dicomRenderCachePlanResponseSchema: z.ZodObject<{
         nextAction: string;
         kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
         label: string;
-        target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+        target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
         sliceStart: number | null;
         sliceEnd: number | null;
         budgetMs: number;
@@ -72915,7 +72917,7 @@ export declare const dicomRenderCachePlanResponseSchema: z.ZodObject<{
         label: string;
         estimatedMemoryMb: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-        target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+        target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
         sliceStart: number | null;
         sliceEnd: number | null;
         budgetMs: number;
@@ -76155,7 +76157,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -76174,7 +76176,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -76208,7 +76210,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -76221,7 +76223,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -76272,7 +76274,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -76293,7 +76295,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -76342,7 +76344,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -76363,7 +76365,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -77828,7 +77830,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -77849,7 +77851,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -78190,7 +78192,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -78211,7 +78213,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -78771,7 +78773,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -78790,7 +78792,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -78824,7 +78826,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -78837,7 +78839,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -78888,7 +78890,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -78909,7 +78911,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -78958,7 +78960,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -78979,7 +78981,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -80444,7 +80446,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -80465,7 +80467,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -80806,7 +80808,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -80827,7 +80829,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -81189,7 +81191,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -81210,7 +81212,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -81567,7 +81569,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -81588,7 +81590,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -82138,7 +82140,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -82157,7 +82159,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -82191,7 +82193,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -82204,7 +82206,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -82255,7 +82257,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -82276,7 +82278,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -82325,7 +82327,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -82346,7 +82348,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -83811,7 +83813,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -83832,7 +83834,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -84173,7 +84175,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -84194,7 +84196,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -84539,7 +84541,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -84560,7 +84562,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -84905,7 +84907,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -84926,7 +84928,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -85488,7 +85490,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -85507,7 +85509,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -85541,7 +85543,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -85554,7 +85556,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -85605,7 +85607,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -85626,7 +85628,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -85675,7 +85677,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -85696,7 +85698,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -87161,7 +87163,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -87182,7 +87184,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -87523,7 +87525,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -87544,7 +87546,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -87906,7 +87908,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -87927,7 +87929,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -88284,7 +88286,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -88305,7 +88307,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -88666,7 +88668,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -88687,7 +88689,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89047,7 +89049,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89068,7 +89070,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89629,7 +89631,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89648,7 +89650,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89682,7 +89684,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89695,7 +89697,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89746,7 +89748,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89767,7 +89769,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89816,7 +89818,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -89837,7 +89839,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -91302,7 +91304,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -91323,7 +91325,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -91664,7 +91666,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -91685,7 +91687,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -92047,7 +92049,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -92068,7 +92070,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -92425,7 +92427,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -92446,7 +92448,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -92812,7 +92814,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -92833,7 +92835,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -93196,7 +93198,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     nextAction: string;
                     kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                     label: string;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -93217,7 +93219,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     label: string;
                     estimatedMemoryMb: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                    target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                    target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                     sliceStart: number | null;
                     sliceEnd: number | null;
                     budgetMs: number;
@@ -94286,7 +94288,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94305,7 +94307,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94339,7 +94341,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94352,7 +94354,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94403,7 +94405,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94424,7 +94426,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94473,7 +94475,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94494,7 +94496,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94649,7 +94651,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94670,7 +94672,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94822,7 +94824,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             nextAction: string;
             kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
             label: string;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -94843,7 +94845,7 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             label: string;
             estimatedMemoryMb: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-            target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+            target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
             sliceStart: number | null;
             sliceEnd: number | null;
             budgetMs: number;
@@ -95998,7 +96000,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96017,7 +96019,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96051,7 +96053,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96064,7 +96066,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96115,7 +96117,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96136,7 +96138,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96185,7 +96187,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96206,7 +96208,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96361,7 +96363,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96382,7 +96384,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96534,7 +96536,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96555,7 +96557,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96807,7 +96809,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -96828,7 +96830,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -97078,7 +97080,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 nextAction: string;
                 kind: "metadata_only" | "external_handoff" | "idle_refine" | "seed_slices" | "interleaved_decimation" | "active_window" | "adjacent_window";
                 label: string;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -97099,7 +97101,7 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 label: string;
                 estimatedMemoryMb: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
-                target: "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu" | "indexeddb";
+                target: "indexeddb" | "external_viewer" | "main_thread" | "web_worker" | "offscreen_canvas" | "gpu";
                 sliceStart: number | null;
                 sliceEnd: number | null;
                 budgetMs: number;
@@ -99117,7 +99119,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }, {
             id: string;
             visitId: string;
@@ -99127,7 +99129,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
         visitId: string;
@@ -99140,7 +99142,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }[];
         nextAction: string;
         score: number;
@@ -99157,7 +99159,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }[];
         nextAction: string;
         score: number;
@@ -99214,7 +99216,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }[];
         nextAction: string;
         score: number;
@@ -99257,7 +99259,7 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             blocking: boolean;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             actionLabel: string;
-            section: "shift" | "visit" | "documents" | "schedule" | "imaging" | "patients" | "finance" | "communications" | "settings";
+            section: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         }[];
         nextAction: string;
         score: number;
@@ -99802,7 +99804,7 @@ export declare const documentIngestionRequestSchema: z.ZodEffects<z.ZodObject<{
     target: z.ZodDefault<z.ZodEnum<["smart_import", "patients", "imaging", "pricelist", "plain_text"]>>;
 }, "strip", z.ZodTypeAny, {
     fileName: string;
-    target: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+    target: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     rawText?: string | undefined;
     mimeType?: string | null | undefined;
     fileBase64?: string | undefined;
@@ -99810,11 +99812,11 @@ export declare const documentIngestionRequestSchema: z.ZodEffects<z.ZodObject<{
     fileName: string;
     rawText?: string | undefined;
     mimeType?: string | null | undefined;
-    target?: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text" | undefined;
+    target?: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text" | undefined;
     fileBase64?: string | undefined;
 }>, {
     fileName: string;
-    target: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+    target: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     rawText?: string | undefined;
     mimeType?: string | null | undefined;
     fileBase64?: string | undefined;
@@ -99822,7 +99824,7 @@ export declare const documentIngestionRequestSchema: z.ZodEffects<z.ZodObject<{
     fileName: string;
     rawText?: string | undefined;
     mimeType?: string | null | undefined;
-    target?: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text" | undefined;
+    target?: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text" | undefined;
     fileBase64?: string | undefined;
 }>;
 export type DocumentIngestionRequest = z.infer<typeof documentIngestionRequestSchema>;
@@ -99836,13 +99838,13 @@ export declare const documentIngestionRouteSchema: z.ZodObject<{
     reason: string;
     title: string;
     enabled: boolean;
-    target: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+    target: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     endpoint: string;
 }, {
     reason: string;
     title: string;
     enabled: boolean;
-    target: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+    target: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     endpoint: string;
 }>;
 export type DocumentIngestionRoute = z.infer<typeof documentIngestionRouteSchema>;
@@ -99857,13 +99859,13 @@ export declare const documentIngestionQualitySchema: z.ZodObject<{
     signals: string[];
     nextAction: string;
     extractionQuality: "ready" | "review" | "unsupported" | "ocr_required";
-    suggestedTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+    suggestedTarget: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
 }, {
     confidence: number;
     signals: string[];
     nextAction: string;
     extractionQuality: "ready" | "review" | "unsupported" | "ocr_required";
-    suggestedTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+    suggestedTarget: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
 }>;
 export type DocumentIngestionQuality = z.infer<typeof documentIngestionQualitySchema>;
 export declare const documentIngestionExtractedFileSchema: z.ZodObject<{
@@ -99930,13 +99932,13 @@ export declare const documentIngestionResponseSchema: z.ZodObject<{
         reason: string;
         title: string;
         enabled: boolean;
-        target: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+        target: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
         endpoint: string;
     }, {
         reason: string;
         title: string;
         enabled: boolean;
-        target: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+        target: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
         endpoint: string;
     }>, "many">;
     quality: z.ZodObject<{
@@ -99950,13 +99952,13 @@ export declare const documentIngestionResponseSchema: z.ZodObject<{
         signals: string[];
         nextAction: string;
         extractionQuality: "ready" | "review" | "unsupported" | "ocr_required";
-        suggestedTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+        suggestedTarget: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     }, {
         confidence: number;
         signals: string[];
         nextAction: string;
         extractionQuality: "ready" | "review" | "unsupported" | "ocr_required";
-        suggestedTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+        suggestedTarget: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     }>;
     warnings: z.ZodArray<z.ZodString, "many">;
     parserNotes: z.ZodArray<z.ZodString, "many">;
@@ -99969,7 +99971,7 @@ export declare const documentIngestionResponseSchema: z.ZodObject<{
         signals: string[];
         nextAction: string;
         extractionQuality: "ready" | "review" | "unsupported" | "ocr_required";
-        suggestedTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+        suggestedTarget: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     };
     fileName: string;
     parserNotes: string[];
@@ -99990,7 +99992,7 @@ export declare const documentIngestionResponseSchema: z.ZodObject<{
         reason: string;
         title: string;
         enabled: boolean;
-        target: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+        target: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
         endpoint: string;
     }[];
 }, {
@@ -100002,7 +100004,7 @@ export declare const documentIngestionResponseSchema: z.ZodObject<{
         signals: string[];
         nextAction: string;
         extractionQuality: "ready" | "review" | "unsupported" | "ocr_required";
-        suggestedTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+        suggestedTarget: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     };
     fileName: string;
     parserNotes: string[];
@@ -100023,7 +100025,7 @@ export declare const documentIngestionResponseSchema: z.ZodObject<{
         reason: string;
         title: string;
         enabled: boolean;
-        target: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+        target: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
         endpoint: string;
     }[];
 }>;
@@ -100116,9 +100118,9 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     recognitionKind: "voice_transcription" | "visit_note_draft" | "image_summary" | "document_draft" | "paper_ocr";
     recognitionTarget: "document_draft" | "visit_note" | "patient_import" | "imaging_summary";
     importSourceKind: "free_text" | "csv_text" | "xlsx_copy" | "mis_export" | "image_ocr" | "voice_dictation";
-    documentIngestionTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+    documentIngestionTarget: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     imagingImportSourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-    smartImportMode: "auto" | "imaging" | "patients" | "mixed";
+    smartImportMode: "auto" | "patients" | "imaging" | "mixed";
     imagingKindFilter: "other" | "all" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     dicomWebEndpointUrl: string;
     telegramBotConfigId: string;
@@ -100165,9 +100167,9 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     recognitionKind?: "voice_transcription" | "visit_note_draft" | "image_summary" | "document_draft" | "paper_ocr" | undefined;
     recognitionTarget?: "document_draft" | "visit_note" | "patient_import" | "imaging_summary" | undefined;
     importSourceKind?: "free_text" | "csv_text" | "xlsx_copy" | "mis_export" | "image_ocr" | "voice_dictation" | undefined;
-    documentIngestionTarget?: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text" | undefined;
+    documentIngestionTarget?: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text" | undefined;
     imagingImportSourceKind?: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch" | undefined;
-    smartImportMode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
+    smartImportMode?: "auto" | "patients" | "imaging" | "mixed" | undefined;
     imagingKindFilter?: "other" | "all" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | undefined;
     dicomWebEndpointUrl?: string | undefined;
     telegramBotConfigId?: string | undefined;
@@ -100268,9 +100270,9 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     recognitionKind: "voice_transcription" | "visit_note_draft" | "image_summary" | "document_draft" | "paper_ocr";
     recognitionTarget: "document_draft" | "visit_note" | "patient_import" | "imaging_summary";
     importSourceKind: "free_text" | "csv_text" | "xlsx_copy" | "mis_export" | "image_ocr" | "voice_dictation";
-    documentIngestionTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
+    documentIngestionTarget: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text";
     imagingImportSourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-    smartImportMode: "auto" | "imaging" | "patients" | "mixed";
+    smartImportMode: "auto" | "patients" | "imaging" | "mixed";
     imagingKindFilter: "other" | "all" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     dicomWebEndpointUrl: string;
     telegramBotConfigId: string;
@@ -100319,9 +100321,9 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     recognitionKind?: "voice_transcription" | "visit_note_draft" | "image_summary" | "document_draft" | "paper_ocr" | undefined;
     recognitionTarget?: "document_draft" | "visit_note" | "patient_import" | "imaging_summary" | undefined;
     importSourceKind?: "free_text" | "csv_text" | "xlsx_copy" | "mis_export" | "image_ocr" | "voice_dictation" | undefined;
-    documentIngestionTarget?: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text" | undefined;
+    documentIngestionTarget?: "patients" | "imaging" | "smart_import" | "pricelist" | "plain_text" | undefined;
     imagingImportSourceKind?: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch" | undefined;
-    smartImportMode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
+    smartImportMode?: "auto" | "patients" | "imaging" | "mixed" | undefined;
     imagingKindFilter?: "other" | "all" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | undefined;
     dicomWebEndpointUrl?: string | undefined;
     telegramBotConfigId?: string | undefined;
@@ -100344,11 +100346,11 @@ export declare const smartImportRequestSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     sourceName: string;
     rawText: string;
-    mode: "auto" | "imaging" | "patients" | "mixed";
+    mode: "auto" | "patients" | "imaging" | "mixed";
 }, {
     rawText: string;
     sourceName?: string | undefined;
-    mode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
+    mode?: "auto" | "patients" | "imaging" | "mixed" | undefined;
 }>;
 export type SmartImportRequest = z.infer<typeof smartImportRequestSchema>;
 export declare const smartImportLineKindSchema: z.ZodEnum<["patient", "imaging", "clinic", "legacy_source", "ignored"]>;
@@ -100628,14 +100630,14 @@ export declare const smartImportMigrationPlanSchema: z.ZodObject<{
         publicLookup: z.ZodBoolean;
         legacySources: z.ZodBoolean;
     }, "strip", z.ZodTypeAny, {
-        imaging: boolean;
         patients: boolean;
+        imaging: boolean;
         clinicProfile: boolean;
         publicLookup: boolean;
         legacySources: boolean;
     }, {
-        imaging: boolean;
         patients: boolean;
+        imaging: boolean;
         clinicProfile: boolean;
         publicLookup: boolean;
         legacySources: boolean;
@@ -100671,8 +100673,8 @@ export declare const smartImportMigrationPlanSchema: z.ZodObject<{
     }[];
     nextAction: string;
     coverage: {
-        imaging: boolean;
         patients: boolean;
+        imaging: boolean;
         clinicProfile: boolean;
         publicLookup: boolean;
         legacySources: boolean;
@@ -100688,8 +100690,8 @@ export declare const smartImportMigrationPlanSchema: z.ZodObject<{
     }[];
     nextAction: string;
     coverage: {
-        imaging: boolean;
         patients: boolean;
+        imaging: boolean;
         clinicProfile: boolean;
         publicLookup: boolean;
         legacySources: boolean;
@@ -101097,14 +101099,14 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             publicLookup: z.ZodBoolean;
             legacySources: z.ZodBoolean;
         }, "strip", z.ZodTypeAny, {
-            imaging: boolean;
             patients: boolean;
+            imaging: boolean;
             clinicProfile: boolean;
             publicLookup: boolean;
             legacySources: boolean;
         }, {
-            imaging: boolean;
             patients: boolean;
+            imaging: boolean;
             clinicProfile: boolean;
             publicLookup: boolean;
             legacySources: boolean;
@@ -101140,8 +101142,8 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         }[];
         nextAction: string;
         coverage: {
-            imaging: boolean;
             patients: boolean;
+            imaging: boolean;
             clinicProfile: boolean;
             publicLookup: boolean;
             legacySources: boolean;
@@ -101157,8 +101159,8 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         }[];
         nextAction: string;
         coverage: {
-            imaging: boolean;
             patients: boolean;
+            imaging: boolean;
             clinicProfile: boolean;
             publicLookup: boolean;
             legacySources: boolean;
@@ -101296,8 +101298,8 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         }[];
         nextAction: string;
         coverage: {
-            imaging: boolean;
             patients: boolean;
+            imaging: boolean;
             clinicProfile: boolean;
             publicLookup: boolean;
             legacySources: boolean;
@@ -101422,8 +101424,8 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         }[];
         nextAction: string;
         coverage: {
-            imaging: boolean;
             patients: boolean;
+            imaging: boolean;
             clinicProfile: boolean;
             publicLookup: boolean;
             legacySources: boolean;
@@ -101840,14 +101842,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 publicLookup: z.ZodBoolean;
                 legacySources: z.ZodBoolean;
             }, "strip", z.ZodTypeAny, {
-                imaging: boolean;
                 patients: boolean;
+                imaging: boolean;
                 clinicProfile: boolean;
                 publicLookup: boolean;
                 legacySources: boolean;
             }, {
-                imaging: boolean;
                 patients: boolean;
+                imaging: boolean;
                 clinicProfile: boolean;
                 publicLookup: boolean;
                 legacySources: boolean;
@@ -101883,8 +101885,8 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             }[];
             nextAction: string;
             coverage: {
-                imaging: boolean;
                 patients: boolean;
+                imaging: boolean;
                 clinicProfile: boolean;
                 publicLookup: boolean;
                 legacySources: boolean;
@@ -101900,8 +101902,8 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             }[];
             nextAction: string;
             coverage: {
-                imaging: boolean;
                 patients: boolean;
+                imaging: boolean;
                 clinicProfile: boolean;
                 publicLookup: boolean;
                 legacySources: boolean;
@@ -102039,8 +102041,8 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             }[];
             nextAction: string;
             coverage: {
-                imaging: boolean;
                 patients: boolean;
+                imaging: boolean;
                 clinicProfile: boolean;
                 publicLookup: boolean;
                 legacySources: boolean;
@@ -102165,8 +102167,8 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             }[];
             nextAction: string;
             coverage: {
-                imaging: boolean;
                 patients: boolean;
+                imaging: boolean;
                 clinicProfile: boolean;
                 publicLookup: boolean;
                 legacySources: boolean;
@@ -102572,8 +102574,8 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             }[];
             nextAction: string;
             coverage: {
-                imaging: boolean;
                 patients: boolean;
+                imaging: boolean;
                 clinicProfile: boolean;
                 publicLookup: boolean;
                 legacySources: boolean;
@@ -102753,8 +102755,8 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             }[];
             nextAction: string;
             coverage: {
-                imaging: boolean;
                 patients: boolean;
+                imaging: boolean;
                 clinicProfile: boolean;
                 publicLookup: boolean;
                 legacySources: boolean;
@@ -103346,7 +103348,7 @@ export declare const migrationBridgeKitSchema: z.ZodObject<{
     kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
     privacyBoundary: string;
     requiredTools: string[];
-    parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+    parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
     adminActions: {
         id: string;
         title: string;
@@ -103377,7 +103379,7 @@ export declare const migrationBridgeKitSchema: z.ZodObject<{
     kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
     privacyBoundary: string;
     requiredTools: string[];
-    parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+    parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
     adminActions: {
         id: string;
         title: string;
@@ -103622,7 +103624,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -103653,7 +103655,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -103773,7 +103775,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
     sourceExists: boolean;
     sourceIsDirectory: boolean;
     fileExtension: string | null;
-    extractableEntities: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+    extractableEntities: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
     bridgeKit: {
         status: "ready" | "manual" | "blocked" | "needs_export" | "needs_admin";
         title: string;
@@ -103781,7 +103783,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -103866,7 +103868,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
     sourceExists: boolean;
     sourceIsDirectory: boolean;
     fileExtension: string | null;
-    extractableEntities: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+    extractableEntities: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
     bridgeKit: {
         status: "ready" | "manual" | "blocked" | "needs_export" | "needs_admin";
         title: string;
@@ -103874,7 +103876,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -104323,7 +104325,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -104354,7 +104356,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -104431,7 +104433,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -104548,7 +104550,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -105185,11 +105187,11 @@ export declare const migrationAutopilotRequestSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         sourceName: string;
         rawText: string;
-        mode: "auto" | "imaging" | "patients" | "mixed";
+        mode: "auto" | "patients" | "imaging" | "mixed";
     }, {
         rawText: string;
         sourceName?: string | undefined;
-        mode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
+        mode?: "auto" | "patients" | "imaging" | "mixed" | undefined;
     }>>;
     clinic: z.ZodOptional<z.ZodEffects<z.ZodObject<{
         inn: z.ZodOptional<z.ZodString>;
@@ -105275,7 +105277,7 @@ export declare const migrationAutopilotRequestSchema: z.ZodObject<{
     smartImport?: {
         sourceName: string;
         rawText: string;
-        mode: "auto" | "imaging" | "patients" | "mixed";
+        mode: "auto" | "patients" | "imaging" | "mixed";
     } | undefined;
 }, {
     clinic?: {
@@ -105320,7 +105322,7 @@ export declare const migrationAutopilotRequestSchema: z.ZodObject<{
     smartImport?: {
         rawText: string;
         sourceName?: string | undefined;
-        mode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
+        mode?: "auto" | "patients" | "imaging" | "mixed" | undefined;
     } | undefined;
 }>;
 export type MigrationAutopilotRequest = z.infer<typeof migrationAutopilotRequestSchema>;
@@ -105712,7 +105714,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -105743,7 +105745,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -105820,7 +105822,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -105937,7 +105939,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -106212,7 +106214,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -106243,7 +106245,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -106311,7 +106313,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -106408,7 +106410,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -106517,7 +106519,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
         privacyBoundary: string;
         requiredTools: string[];
-        parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+        parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
         adminActions: {
             id: string;
             title: string;
@@ -106614,7 +106616,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -106925,8 +106927,8 @@ export declare const migrationAutopilotOperatorPacketSchema: z.ZodObject<{
         smartPreviewSources: z.ZodBoolean;
     }, "strip", z.ZodTypeAny, {
         documents: boolean;
-        imaging: boolean;
         payments: boolean;
+        imaging: boolean;
         serviceCatalog: boolean;
         clinicRequisites: boolean;
         oldDatabases: boolean;
@@ -106935,8 +106937,8 @@ export declare const migrationAutopilotOperatorPacketSchema: z.ZodObject<{
         smartPreviewSources: boolean;
     }, {
         documents: boolean;
-        imaging: boolean;
         payments: boolean;
+        imaging: boolean;
         serviceCatalog: boolean;
         clinicRequisites: boolean;
         oldDatabases: boolean;
@@ -107202,8 +107204,8 @@ export declare const migrationAutopilotOperatorPacketSchema: z.ZodObject<{
     overallStatus: "empty" | "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export" | "needs_admin";
     dataClasses: {
         documents: boolean;
-        imaging: boolean;
         payments: boolean;
+        imaging: boolean;
         serviceCatalog: boolean;
         clinicRequisites: boolean;
         oldDatabases: boolean;
@@ -107289,8 +107291,8 @@ export declare const migrationAutopilotOperatorPacketSchema: z.ZodObject<{
     overallStatus: "empty" | "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export" | "needs_admin";
     dataClasses: {
         documents: boolean;
-        imaging: boolean;
         payments: boolean;
+        imaging: boolean;
         serviceCatalog: boolean;
         clinicRequisites: boolean;
         oldDatabases: boolean;
@@ -107754,7 +107756,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
                 privacyBoundary: string;
                 requiredTools: string[];
-                parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+                parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
                 adminActions: {
                     id: string;
                     title: string;
@@ -107785,7 +107787,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
                 privacyBoundary: string;
                 requiredTools: string[];
-                parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+                parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
                 adminActions: {
                     id: string;
                     title: string;
@@ -107862,7 +107864,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
                 privacyBoundary: string;
                 requiredTools: string[];
-                parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+                parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
                 adminActions: {
                     id: string;
                     title: string;
@@ -107979,7 +107981,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
                 privacyBoundary: string;
                 requiredTools: string[];
-                parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+                parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
                 adminActions: {
                     id: string;
                     title: string;
@@ -108254,7 +108256,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -108285,7 +108287,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -108353,7 +108355,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -108450,7 +108452,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
                 privacyBoundary: string;
                 requiredTools: string[];
-                parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+                parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
                 adminActions: {
                     id: string;
                     title: string;
@@ -108559,7 +108561,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -108656,7 +108658,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
                 privacyBoundary: string;
                 requiredTools: string[];
-                parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+                parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
                 adminActions: {
                     id: string;
                     title: string;
@@ -109026,8 +109028,8 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             smartPreviewSources: z.ZodBoolean;
         }, "strip", z.ZodTypeAny, {
             documents: boolean;
-            imaging: boolean;
             payments: boolean;
+            imaging: boolean;
             serviceCatalog: boolean;
             clinicRequisites: boolean;
             oldDatabases: boolean;
@@ -109036,8 +109038,8 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             smartPreviewSources: boolean;
         }, {
             documents: boolean;
-            imaging: boolean;
             payments: boolean;
+            imaging: boolean;
             serviceCatalog: boolean;
             clinicRequisites: boolean;
             oldDatabases: boolean;
@@ -109303,8 +109305,8 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
         overallStatus: "empty" | "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export" | "needs_admin";
         dataClasses: {
             documents: boolean;
-            imaging: boolean;
             payments: boolean;
+            imaging: boolean;
             serviceCatalog: boolean;
             clinicRequisites: boolean;
             oldDatabases: boolean;
@@ -109390,8 +109392,8 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
         overallStatus: "empty" | "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export" | "needs_admin";
         dataClasses: {
             documents: boolean;
-            imaging: boolean;
             payments: boolean;
+            imaging: boolean;
             serviceCatalog: boolean;
             clinicRequisites: boolean;
             oldDatabases: boolean;
@@ -109522,7 +109524,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -109619,7 +109621,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
                 privacyBoundary: string;
                 requiredTools: string[];
-                parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+                parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
                 adminActions: {
                     id: string;
                     title: string;
@@ -109774,8 +109776,8 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
         overallStatus: "empty" | "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export" | "needs_admin";
         dataClasses: {
             documents: boolean;
-            imaging: boolean;
             payments: boolean;
+            imaging: boolean;
             serviceCatalog: boolean;
             clinicRequisites: boolean;
             oldDatabases: boolean;
@@ -109884,7 +109886,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
             privacyBoundary: string;
             requiredTools: string[];
-            parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+            parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
             adminActions: {
                 id: string;
                 title: string;
@@ -109981,7 +109983,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 kind: "none" | "file_upload" | "local_db_bridge" | "dicom_export" | "image_manifest" | "network_share_bridge" | "browser_manifest_bridge" | "manual_manifest";
                 privacyBoundary: string;
                 requiredTools: string[];
-                parserTargets: ("unknown" | "documents" | "imaging" | "patients" | "appointments" | "visits" | "payments" | "clinic_profile" | "service_catalog" | "dicom_series")[];
+                parserTargets: ("unknown" | "documents" | "patients" | "payments" | "imaging" | "appointments" | "visits" | "clinic_profile" | "service_catalog" | "dicom_series")[];
                 adminActions: {
                     id: string;
                     title: string;
@@ -110136,8 +110138,8 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
         overallStatus: "empty" | "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export" | "needs_admin";
         dataClasses: {
             documents: boolean;
-            imaging: boolean;
             payments: boolean;
+            imaging: boolean;
             serviceCatalog: boolean;
             clinicRequisites: boolean;
             oldDatabases: boolean;
@@ -114082,3 +114084,4 @@ export declare class DentalInteractionMatrixEngine {
         hasSamterTriad: boolean;
     }>): CheckInteractionsResponse;
 }
+export * from "./security/index.js";

@@ -45,6 +45,11 @@
 			"types": "./dist/inventory/index.d.ts",
 			"import": "./dist/inventory/index.js",
 			"default": "./dist/inventory/index.js"
+		},
+		"./security": {
+			"types": "./dist/security/index.d.ts",
+			"import": "./dist/security/index.js",
+			"default": "./dist/security/index.js"
 		}
 	},
 	"scripts": {

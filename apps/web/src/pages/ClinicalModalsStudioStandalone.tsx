@@ -13,6 +13,7 @@ import {
 	Compass,
 	CreditCard,
 	Crown,
+	Database,
 	Eye,
 	FileBadge,
 	FileCheck2,
@@ -25,6 +26,7 @@ import {
 	Moon,
 	PackageCheck,
 	Palette,
+	Phone,
 	PhoneCall,
 	Pill,
 	Printer,
@@ -38,7 +40,6 @@ import {
 	Spline,
 	Sun,
 	Syringe,
-
 	Truck,
 	UploadCloud,
 	User,
@@ -111,6 +112,14 @@ import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar"
 import { BeforeAfterComparisonView } from "../components/photography/BeforeAfterComparisonView";
 import { PatientMemoPrintModal } from "../components/visit/PatientMemoPrintModal";
 import { ProcedureMaterialDeductionModal } from "../components/inventory/ProcedureMaterialDeductionModal";
+import { IncomingCallPopup } from "../components/telephony/IncomingCallPopup";
+import { TelephonyFloatingWidget } from "../components/telephony/TelephonyFloatingWidget";
+import { useTelephonyStore } from "../store/telephonyStore";
+import { SettingsAccessTab } from "../components/settings/SettingsAccessTab";
+import { StaffCommissionsPanel } from "../components/settings/StaffCommissionsPanel";
+import { CmoComplianceHub } from "../components/emr/audit/CmoComplianceHub";
+import { Form043PrintModal } from "../components/emr/Form043PrintModal";
+import { OfflineBackupVaultPanel } from "../components/settings/OfflineBackupVaultPanel";
 import {
 	STANDARD_12_SLOT_PROTOCOL,
 	type PhotoSlotRecord,
@@ -398,6 +407,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isDoctorShiftRosterOpen, setIsDoctorShiftRosterOpen] = useState(false);
 	const [isPatientMemoOpen, setIsPatientMemoOpen] = useState(false);
 	const [isProcedureDeductionOpen, setIsProcedureDeductionOpen] = useState(false);
+	const [isIncomingCallOpen, setIsIncomingCallOpen] = useState(false);
+	const [isTelephonyWidgetOpen, setIsTelephonyWidgetOpen] = useState(false);
+	const [isSettingsAccessOpen, setIsSettingsAccessOpen] = useState(false);
+	const [isStaffCommissionsOpen, setIsStaffCommissionsOpen] = useState(false);
+	const [isCmoHubOpen, setIsCmoHubOpen] = useState(false);
+	const [isForm043PrintOpen, setIsForm043PrintOpen] = useState(false);
+	const [isOfflineVaultOpen, setIsOfflineVaultOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -496,6 +512,35 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					}
 					if (requestedModal === "retention" || requestedModal === "recall" || requestedModal === "recalls") {
 						setIsRecallOpen(true);
+					}
+					if (requestedModal === "incoming_call" || requestedModal === "incoming_call_popup" || requestedModal === "telephony_popup") {
+						useTelephonyStore.getState().triggerIncomingCall({
+							phone: "+7 (926) 555-12-34",
+							patientName: "Смирнова Екатерина Васильевна",
+							patientId: "PAT-001",
+							provider: "mango",
+							status: "ringing",
+							timestamp: new Date().toISOString(),
+						});
+						setIsIncomingCallOpen(true);
+					}
+					if (requestedModal === "telephony_widget" || requestedModal === "telephony_softphone" || requestedModal === "softphone") {
+						setIsTelephonyWidgetOpen(true);
+					}
+					if (requestedModal === "settings_access" || requestedModal === "access_matrix" || requestedModal === "role_matrix" || requestedModal === "settings_access_matrix") {
+						setIsSettingsAccessOpen(true);
+					}
+					if (requestedModal === "staff_commissions" || requestedModal === "commissions_panel" || requestedModal === "doctor_commissions" || requestedModal === "staff_commissions_panel") {
+						setIsStaffCommissionsOpen(true);
+					}
+					if (requestedModal === "cmo_hub" || requestedModal === "cmo_compliance" || requestedModal === "cmo_compliance_hub") {
+						setIsCmoHubOpen(true);
+					}
+					if (requestedModal === "form043_print" || requestedModal === "form043" || requestedModal === "form043_modal" || requestedModal === "form043_print_modal") {
+						setIsForm043PrintOpen(true);
+					}
+					if (requestedModal === "offline_vault" || requestedModal === "backup_vault" || requestedModal === "offline_backup" || requestedModal === "offline_backup_vault") {
+						setIsOfflineVaultOpen(true);
 					}
 				}
 		};
@@ -1945,6 +1990,184 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть списание по техкартам (BOM)</span>
 						</button>
 					</div>
+
+					{/* 51. Wave 5: Domain 1 — Incoming Call Popup Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<PhoneCall className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Входящий звонок & AI STT Плеер
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Всплывающая карточка звонка, таймер разговора, 1-клик запись на прием, история посещений и расшифровка речи.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => {
+								useTelephonyStore.getState().triggerIncomingCall({
+									phone: "+7 (926) 555-12-34",
+									patientName: "Смирнова Екатерина Васильевна",
+									patientId: "PAT-001",
+									provider: "mango",
+									status: "ringing",
+									timestamp: new Date().toISOString(),
+								});
+								setIsIncomingCallOpen(true);
+							}}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-incoming-call-modal-btn"
+						>
+							<PhoneCall size={15} />
+							<span>Открыть входящий звонок</span>
+						</button>
+					</div>
+
+					{/* 52. Wave 5: Domain 1 — Telephony Floating Widget / Softphone Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Phone className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Софтфон & Плавающий виджет звонков
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Интерактивный софтфон, крупные кнопки набора (≥48px), переадресация вызова и журнал звонков.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsTelephonyWidgetOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-telephony-widget-btn"
+						>
+							<Phone size={15} />
+							<span>Открыть софтфон телефонии</span>
+						</button>
+					</div>
+
+					{/* 53. Wave 5: Domain 2 — Settings Access Matrix Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Ролевая матрица доступа сотрудников
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Матрица прав ролей (Врач, Ассистент, Администратор, Управляющий) и генерация инвайт-ссылок.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsSettingsAccessOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-settings-access-modal-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>Открыть матрицу доступа</span>
+						</button>
+					</div>
+
+					{/* 54. Wave 5: Domain 2 — Staff Commissions Panel Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Calculator className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Ставки и комиссии врачей (804н)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Индивидуальные ставки врачей, процент удержания лаборатории/материалов и даты вступления в силу.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsStaffCommissionsOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-staff-commissions-modal-btn"
+						>
+							<Calculator size={15} />
+							<span>Открыть ставки врачей</span>
+						</button>
+					</div>
+
+					{/* 55. Wave 5: Domain 3 — CMO Compliance Hub Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Центр аудита начмеда & ЕГИСЗ (РЭМД)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Пакетное подписание карт УКЭП (КриптоПро), валидация по Приказу 203н и экспорт в РЭМД ЕГИСЗ.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsCmoHubOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-cmo-compliance-modal-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>Открыть центр начмеда</span>
+						</button>
+					</div>
+
+					{/* 56. Wave 5: Domain 3 — Form 043/u Print Form Modal Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FileText className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Медкарта Форма 043/у (Приказ 834н)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Официальный медицинский бланк 043/у Минздрава России: зубная формула FDI, КПУ/CPITN и 1-клик печать А4.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsForm043PrintOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-form043-print-modal-btn"
+						>
+							<FileText size={15} />
+							<span>Открыть форму 043/у</span>
+						</button>
+					</div>
+
+					{/* 57. Wave 5: Domain 4 — Offline Backup Vault Panel Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Database className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Офлайн-хранилище & Бэкап базы
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Резервные копии клиники AES-GCM 256, расписание авто-бэкапов, проверка целостности локального кэша.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsOfflineVaultOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-offline-vault-modal-btn"
+						>
+							<Database size={15} />
+							<span>Открыть офлайн-хранилище</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -2606,7 +2829,252 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
+			{isIncomingCallOpen && (
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="incoming-call-modal-container"
+				>
+					<div className="relative w-full max-w-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+									<PhoneCall className="w-5 h-5" />
+								</div>
+								<div>
+									<h3 className="text-base font-bold text-[var(--ink)]">
+										Входящий звонок пациента & Интерактивный плеер
+									</h3>
+									<p className="text-xs text-[var(--muted)]">
+										Карточка звонящего, быстрая запись, история визитов и расшифровка AI STT
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									setIsIncomingCallOpen(false);
+									useTelephonyStore.getState().dismissCall();
+								}}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
+								data-testid="close-incoming-call-modal-btn"
+								aria-label="Закрыть модальное окно"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto">
+							<IncomingCallPopup />
+						</div>
+					</div>
+				</div>
+			)}
 
+			{isTelephonyWidgetOpen && (
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="telephony-widget-modal-container"
+				>
+					<div className="relative w-full max-w-md bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+									<Phone className="w-5 h-5" />
+								</div>
+								<div>
+									<h3 className="text-base font-bold text-[var(--ink)]">
+										Софтфон & Плавающий виджет телефонии
+									</h3>
+									<p className="text-xs text-[var(--muted)]">
+										Номеронабиратель ≥48px, быстрый набор, журнал вызовов
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsTelephonyWidgetOpen(false)}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
+								data-testid="close-telephony-widget-modal-btn"
+								aria-label="Закрыть софтфон"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto">
+							<TelephonyFloatingWidget defaultExpanded={true} showDialerDefault={true} />
+						</div>
+					</div>
+				</div>
+			)}
+
+			{isSettingsAccessOpen && (
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="settings-access-modal-container"
+				>
+					<div className="relative w-full max-w-4xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+									<ShieldCheck className="w-5 h-5" />
+								</div>
+								<div>
+									<h3 className="text-base font-bold text-[var(--ink)]">
+										Ролевая матрица доступа сотрудников
+									</h3>
+									<p className="text-xs text-[var(--muted)]">
+										Настройка прав ролей (Врач, Ассистент, Администратор, Управляющий), генерация инвайт-ссылок
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsSettingsAccessOpen(false)}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
+								data-testid="close-settings-access-modal-btn"
+								aria-label="Закрыть матрицу доступа"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto">
+							<SettingsAccessTab settingsTab="access" props={{}} />
+						</div>
+					</div>
+				</div>
+			)}
+
+			{isStaffCommissionsOpen && (
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="staff-commissions-modal-container"
+				>
+					<div className="relative w-full max-w-4xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+									<Calculator className="w-5 h-5" />
+								</div>
+								<div>
+									<h3 className="text-base font-bold text-[var(--ink)]">
+										Ставки и комиссии врачей (Номенклатура 804н)
+									</h3>
+									<p className="text-xs text-[var(--muted)]">
+										Индивидуальные ставки врачей, вычет лаборатории и материалов, даты вступления в силу
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsStaffCommissionsOpen(false)}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
+								data-testid="close-staff-commissions-modal-btn"
+								aria-label="Закрыть панель комиссий"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto">
+							<StaffCommissionsPanel />
+						</div>
+					</div>
+				</div>
+			)}
+
+			{isCmoHubOpen && (
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="cmo-compliance-modal-container"
+				>
+					<div className="relative w-full max-w-6xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+									<ShieldCheck className="w-5 h-5" />
+								</div>
+								<div>
+									<h3 className="text-base font-bold text-[var(--ink)]">
+										Центр аудита ЭМК начмеда & Реестр РЭМД ЕГИСЗ
+									</h3>
+									<p className="text-xs text-[var(--muted)]">
+										Пакетное подписание УКЭП (КриптоПро), валидация по Приказу 203н, экспорт реестров в РЭМД
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsCmoHubOpen(false)}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
+								data-testid="close-cmo-compliance-modal-btn"
+								aria-label="Закрыть центр начмеда"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto">
+							<CmoComplianceHub />
+						</div>
+					</div>
+				</div>
+			)}
+
+			{isForm043PrintOpen && (
+				<Form043PrintModal
+					isOpen={isForm043PrintOpen}
+					onClose={() => setIsForm043PrintOpen(false)}
+				/>
+			)}
+
+			{isOfflineVaultOpen && (
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="offline-vault-modal-container"
+				>
+					<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+									<Database className="w-5 h-5" />
+								</div>
+								<div>
+									<h3 className="text-base font-bold text-[var(--ink)]">
+										Офлайн-хранилище и бэкап базы (AES-GCM 256)
+									</h3>
+									<p className="text-xs text-[var(--muted)]">
+										Резервное копирование клиники, проверка целостности кэша, зашифрованные снапшоты
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsOfflineVaultOpen(false)}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
+								data-testid="close-offline-vault-modal-btn"
+								aria-label="Закрыть офлайн-хранилище"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto">
+							<OfflineBackupVaultPanel
+								organizationId="c-1"
+								clinicName="ООО «Денте Стоматология»"
+							/>
+						</div>
+					</div>
+				</div>
+			)}
 
 		</div>
 	);

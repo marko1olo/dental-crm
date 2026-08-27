@@ -150,3 +150,41 @@ test("Telephony - incoming call lifecycle and store transitions", () => {
 	assert.strictEqual(history[0]?.actionTaken, "accepted");
 });
 
+test("Telephony - agent readiness states and line switching", () => {
+	// 1. Agent readiness status transitions
+	assert.strictEqual(useTelephonyStore.getState().agentState, "online");
+
+	useTelephonyStore.getState().setAgentState("dnd");
+	assert.strictEqual(useTelephonyStore.getState().agentState, "dnd");
+
+	useTelephonyStore.getState().setAgentState("pause");
+	assert.strictEqual(useTelephonyStore.getState().agentState, "pause");
+
+	useTelephonyStore.getState().setAgentState("online");
+	assert.strictEqual(useTelephonyStore.getState().agentState, "online");
+
+	// 2. Line switching (Line 1 / Line 2)
+	assert.strictEqual(useTelephonyStore.getState().activeLineId, 1);
+
+	useTelephonyStore.getState().switchLine(2);
+	assert.strictEqual(useTelephonyStore.getState().activeLineId, 2);
+
+	useTelephonyStore.getState().switchLine(1);
+	assert.strictEqual(useTelephonyStore.getState().activeLineId, 1);
+
+	// 3. Call Hold & Unhold
+	assert.strictEqual(useTelephonyStore.getState().isHeld, false);
+
+	useTelephonyStore.getState().holdCall();
+	assert.strictEqual(useTelephonyStore.getState().isHeld, true);
+
+	useTelephonyStore.getState().unholdCall();
+	assert.strictEqual(useTelephonyStore.getState().isHeld, false);
+
+	useTelephonyStore.getState().toggleHold();
+	assert.strictEqual(useTelephonyStore.getState().isHeld, true);
+
+	useTelephonyStore.getState().toggleHold();
+	assert.strictEqual(useTelephonyStore.getState().isHeld, false);
+});
+

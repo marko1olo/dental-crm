@@ -91,12 +91,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	readonly reason: string;
 }> = [
 	{
-		file: "components/emr/Form043PrintModal.tsx",
-		name: "Form043PrintModal",
-		reason:
-			"Модальное окно официальной печати и экспорта Медицинской карты стоматологического пациента (Форма № 043/у по Приказу Минздрава России от 15.12.2014 № 834н). Предоставляет полноценный A4 предпросмотр, экспорт в HL7 CDA R2 XML (СЭМД ЕГИСЗ), JSON, копирование структурированного текста и печать с отметкой УКЭП.",
-	},
-	{
 		file: "components/diagnostics/Icd10ClinicalSelector.tsx",
 		name: "Icd10ClinicalSelector",
 		reason:
@@ -113,18 +107,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "SberbankTerminalPaymentModal",
 		reason:
 			"Резервный интерфейс оплаты через веб-шлюз Сбербанк Эквайринг (501 Not Implemented, до подключения прямых API-ключей банка). В приложении активна и смонтирована аппаратная POS-интеграция SberPosTerminalModal (протоколы Pilot-NT / Arcus-D).",
-	},
-	{
-		file: "components/finance/fiscal/Fiscal54FzReceiptModal.tsx",
-		name: "Fiscal54FzReceiptModal",
-		reason:
-			"Автономное модальное окно фискализации чеков 54-ФЗ (ФФД 1.2) с валидацией маркировки Честный ЗНАК (DataMatrix) и сплит-оплатой. Предназначено для прямого взаимодействия с ККТ АТОЛ/Штрих-М и вызова из окна быстрой оплаты.",
-	},
-	{
-		file: "components/finance/fiscal/FiscalReceiptPrintView.tsx",
-		name: "FiscalReceiptPrintView",
-		reason:
-			"Вспомогательный компонент термопечати фискального чека (ширина ленты 58/80 мм) по стандарту 54-ФЗ, визуализирующий QR-код ФНС, теги ФФД 1.2 и реквизиты клиники внутри Fiscal54FzReceiptModal.",
 	},
 	{
 		file: "components/clinical/PrescriptionsWidget.tsx",
@@ -173,12 +155,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "FoolproofConfirmDialog",
 		reason:
 			"Универсальное модальное окно защиты от случайных и опасных действий ('Защита от дурака' / Foolproof Dialog) с крупными кнопками, двойным подтверждением и понятными текстами для пожилого персонала и медсестер.",
-	},
-	{
-		file: "components/emr/audit/CmoComplianceHub.tsx",
-		name: "CmoComplianceHub",
-		reason:
-			"Сводный рабочий стол главного врача и начмеда для контроля качества ведения ЭМК 043/у, фильтрации нарушений по Приказу Минздрава № 203н и ПП РФ № 852 (просрочка >24ч), расчета штрафных рисков и пакетной подписи карт через КриптоПро ЭЦП.",
 	},
 	{
 		file: "pages/CmoAuditPage.tsx",
