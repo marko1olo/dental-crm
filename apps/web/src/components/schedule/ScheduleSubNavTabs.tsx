@@ -1,4 +1,13 @@
 import React, { type Dispatch, type ReactElement, type SetStateAction } from "react";
+import {
+	BarChart3,
+	Calendar,
+	Clipboard,
+	Clock,
+	PhoneCall,
+	UserPlus,
+	Users,
+} from "lucide-react";
 
 export interface ScheduleSubNavTabsProps {
 	showShiftAnalytics: boolean;
@@ -18,8 +27,8 @@ export interface ScheduleSubNavTabsProps {
 
 /**
  * ScheduleSubNavTabs component for header navigation in Schedule view.
- * Solves Mobile Schedule Header Tabs Text Collapse by utilizing
- * a clean horizontal scroll bar with flex shrink-0 buttons and >=44px touch targets.
+ * Solves the chaotic blue links dump by utilizing a unified, elegant
+ * Segmented Control toolbar with icons, design tokens, and >=44px touch targets.
  */
 export function ScheduleSubNavTabs({
 	showShiftAnalytics,
@@ -37,41 +46,61 @@ export function ScheduleSubNavTabs({
 	onOpenShiftRoster,
 }: ScheduleSubNavTabsProps): ReactElement {
 	return (
-		<div className="schedule-sub-nav-tabs flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none max-w-full w-full py-1 shrink-0">
+		<nav
+			className="schedule-sub-nav-tabs flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none max-w-full w-full py-0.5 shrink-0"
+			aria-label="Навигация и режимы расписания"
+		>
 			<button
-				className="secondary-button shrink-0 whitespace-nowrap min-w-fit min-h-[44px] px-3.5 text-xs font-semibold"
+				className={`shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer select-none ${
+					showShiftAnalytics
+						? "bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
+						: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
+				}`}
 				type="button"
 				onClick={() => setShowShiftAnalytics((prev) => !prev)}
+				aria-pressed={showShiftAnalytics}
 			>
-				{showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
+				<BarChart3 size={14} className={showShiftAnalytics ? "text-white" : "text-[var(--teal,var(--brand-primary))]"} />
+				<span>{showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}</span>
 			</button>
+
 			<button
-				className="text-button shrink-0 whitespace-nowrap min-w-fit min-h-[44px] px-3.5 text-xs font-semibold"
+				className="shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] flex items-center gap-1.5 transition-all cursor-pointer select-none"
 				type="button"
 				onClick={() => setScheduleDateFilter(todayScheduleDate())}
 			>
-				Сегодня
+				<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
+				<span>Сегодня</span>
 			</button>
+
 			<button
-				className="text-button shrink-0 whitespace-nowrap min-w-fit min-h-[44px] px-3.5 text-xs font-semibold"
+				className="shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] flex items-center gap-1.5 transition-all cursor-pointer select-none"
 				type="button"
 				data-testid="open-shift-roster-modal-btn"
 				onClick={() => onOpenShiftRoster?.()}
 				title="Студия графиков сменности врачей, нормы ТК РФ ст. 350 и табель Т-13"
 			>
-				График смен (ТК РФ ст. 350 / Табель Т-13)
+				<Users size={14} className="text-[var(--teal,var(--brand-primary))]" />
+				<span>График смен</span>
 			</button>
+
 			<button
-				className="text-button shrink-0 whitespace-nowrap min-w-fit min-h-[44px] px-3.5 text-xs font-semibold"
+				className="shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] flex items-center gap-1.5 transition-all cursor-pointer select-none"
 				type="button"
 				data-testid="schedule-waitlist-btn"
 				onClick={() => setWaitlistOpen(true)}
 				title="Пациенты, которые ждут свободного окна"
 			>
-				Лист ожидания{waitlistCount > 0 ? ` · ${waitlistCount}` : ""}
+				<UserPlus size={14} className="text-[var(--teal,var(--brand-primary))]" />
+				<span>Лист ожидания{waitlistCount > 0 ? ` · ${waitlistCount}` : ""}</span>
 			</button>
+
 			<button
-				className={`text-button shrink-0 whitespace-nowrap min-w-fit min-h-[44px] px-3.5 text-xs font-semibold ${showConfirmationsPanel ? "active" : ""}`}
+				className={`shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer select-none ${
+					showConfirmationsPanel
+						? "active bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
+						: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
+				}`}
 				type="button"
 				onClick={() => {
 					setShowConfirmationsPanel((prev) => !prev);
@@ -79,11 +108,18 @@ export function ScheduleSubNavTabs({
 					setShowClipboardPanel(false);
 				}}
 				title="Панель утреннего обзвона и подтверждений"
+				aria-pressed={showConfirmationsPanel}
 			>
-				Утренний обзвон
+				<PhoneCall size={14} className={showConfirmationsPanel ? "text-white" : "text-[var(--teal,var(--brand-primary))]"} />
+				<span>Утренний обзвон</span>
 			</button>
+
 			<button
-				className={`text-button shrink-0 whitespace-nowrap min-w-fit min-h-[44px] px-3.5 text-xs font-semibold ${showFreedSlotsPanel ? "active" : ""}`}
+				className={`shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer select-none ${
+					showFreedSlotsPanel
+						? "active bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
+						: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
+				}`}
 				type="button"
 				onClick={() => {
 					setShowFreedSlotsPanel((prev) => !prev);
@@ -91,11 +127,18 @@ export function ScheduleSubNavTabs({
 					setShowClipboardPanel(false);
 				}}
 				title="Освободившиеся окна и подбор из листа ожидания"
+				aria-pressed={showFreedSlotsPanel}
 			>
-				Освободившиеся окна
+				<Clock size={14} className={showFreedSlotsPanel ? "text-white" : "text-[var(--teal,var(--brand-primary))]"} />
+				<span>Освободившиеся окна</span>
 			</button>
+
 			<button
-				className={`text-button shrink-0 whitespace-nowrap min-w-fit min-h-[44px] px-3.5 text-xs font-semibold ${showClipboardPanel ? "active" : ""}`}
+				className={`shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer select-none ${
+					showClipboardPanel
+						? "active bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
+						: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
+				}`}
 				type="button"
 				onClick={() => {
 					setShowClipboardPanel((prev) => !prev);
@@ -103,9 +146,12 @@ export function ScheduleSubNavTabs({
 					setShowConfirmationsPanel(false);
 				}}
 				title="Буфер расписания: скопированные приёмы для вставки на другое время"
+				aria-pressed={showClipboardPanel}
 			>
-				Буфер
+				<Clipboard size={14} className={showClipboardPanel ? "text-white" : "text-[var(--teal,var(--brand-primary))]"} />
+				<span>Буфер</span>
 			</button>
-		</div>
+		</nav>
 	);
 }
+

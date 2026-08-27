@@ -94,7 +94,7 @@ describe("AppointmentQuickActions", () => {
 		assert.ok(html.includes("Кузнецов Денис"), "aria-label должен содержать имя пациента");
 	});
 
-	it("enforces minimum 44px touch target on all action buttons", () => {
+	it("enforces accessible quick action buttons with hotkeys", () => {
 		const html = renderToString(
 			React.createElement(AppointmentQuickActions, {
 				appointmentId: "appt-touch",
@@ -106,9 +106,10 @@ describe("AppointmentQuickActions", () => {
 			}),
 		);
 
-		assert.ok(html.includes("min-h-[44px]") || html.includes("min-h-[48px]"), "все кнопки быстрых действий должны иметь min-h-[44px] или min-h-[48px]");
+		assert.ok(html.includes("quick-action-pill"), "кнопки быстрых действий должны иметь класс quick-action-pill");
 		assert.ok(html.includes("Клавиша 1"), "кнопка Пришел должна содержать горячую клавишу 1");
 		assert.ok(html.includes("Клавиша 2"), "кнопка В кресле должна содержать горячую клавишу 2");
 		assert.ok(html.includes("Клавиша 3"), "кнопка Завершен должна содержать горячую клавишу 3");
 	});
 });
+

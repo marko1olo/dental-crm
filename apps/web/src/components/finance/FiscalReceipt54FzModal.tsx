@@ -605,19 +605,19 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+			className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6"
 			data-testid="fiscal-receipt-54fz-modal"
 		>
-			<div className="relative flex flex-col w-full max-w-5xl max-h-[92vh] bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl shadow-2xl overflow-hidden border border-[var(--border,#cbd5e1)]">
+			<div className="relative flex flex-col w-full max-w-5xl h-full max-h-[90vh] bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[var(--border,#cbd5e1)]">
 				{/* Top Modal Header */}
-				<div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] shrink-0 flex-wrap sm:flex-nowrap">
+				<div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-3 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] shrink-0">
 					<div className="flex items-center gap-3 min-w-0 max-w-full flex-1">
-						<div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
-							<Receipt size={20} />
+						<div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
+							<Receipt size={18} />
 						</div>
-						<div className="min-w-0 flex-1">
-							<div className="flex items-center gap-2 flex-wrap">
-								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] whitespace-normal break-normal">
+						<div className="min-w-0 max-w-full flex-1">
+							<div className="flex items-center gap-2.5 flex-nowrap">
+								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] whitespace-normal break-normal whitespace-nowrap truncate tracking-tight">
 									{activeTab === "refund"
 										? "Возврат прихода / Отказ от услуг"
 										: activeTab === "correction"
@@ -627,14 +627,14 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: activeTab === "act"
 													? "Акт сдачи-приемки выполненных работ (804н)"
 													: activeTab === "oneC"
-														? "1С:Экспорт XML (CommerceML 2.09)"
+														? "1С:Предприятие / Экспорт XML (CommerceML 2.09)"
 														: "Фискализация 54-ФЗ & Прием платежей"}
 								</h3>
-								<span className="text-xs font-mono px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
+								<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
 									ФФД 1.2
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted,#64748b)] whitespace-normal break-words">
+							<p className="text-xs text-[var(--muted,#64748b)] truncate mt-0.5">
 								Пациент:{" "}
 								<strong className="text-[var(--ink,#0f172a)] font-semibold">
 									{patientName}
@@ -647,102 +647,102 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2 shrink-0 flex-wrap">
-						{/* Multi-Tab Selector */}
-						<div className="inline-flex p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs flex-wrap">
-							<button
-								type="button"
-								onClick={() => setActiveTab("payment")}
-								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
-									activeTab === "payment"
-										? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-								}`}
-							>
-								Оплата 54-ФЗ
-							</button>
-							<button
-								type="button"
-								onClick={() => setActiveTab("act")}
-								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
-									activeTab === "act"
-										? "bg-emerald-600 text-white shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-								}`}
-							>
-								Акт работ (804н)
-							</button>
-							<button
-								type="button"
-								onClick={() => setActiveTab("oneC")}
-								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
-									activeTab === "oneC"
-										? "bg-amber-600 text-white shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="tab-1c-export"
-							>
-								1С:Экспорт XML
-							</button>
-							<button
-								type="button"
-								onClick={() => setActiveTab("certificate")}
-								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
-									activeTab === "certificate"
-										? "bg-indigo-600 text-white shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-								}`}
-							>
-								Справка для ФНС
-							</button>
-							<button
-								type="button"
-								onClick={() => setActiveTab("refund")}
-								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
-									activeTab === "refund"
-										? "bg-rose-600 text-white shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-								}`}
-							>
-								Возврат услуг
-							</button>
-							<button
-								type="button"
-								onClick={() => setActiveTab("correction")}
-								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
-									activeTab === "correction"
-										? "bg-amber-600 text-white shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-								}`}
-							>
-								Коррекция
-							</button>
-							<button
-								type="button"
-								onClick={() => setActiveTab("preview")}
-								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
-									activeTab === "preview"
-										? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-								}`}
-							>
-								Чек
-							</button>
-						</div>
+					<button
+						type="button"
+						onClick={onClose}
+						className="h-8 w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center justify-center cursor-pointer transition-colors border border-transparent hover:border-[var(--border,#cbd5e1)] shrink-0"
+						aria-label="Закрыть модальное окно"
+					>
+						<X size={18} />
+					</button>
+				</div>
 
+				{/* Multi-Tab Selector Subheader Strip (Compact 32px height) */}
+				<div className="px-4 sm:px-6 py-2 bg-[var(--paper-strong,var(--paper,#ffffff))] border-b border-[var(--border,#cbd5e1)] shrink-0 overflow-x-auto">
+					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs min-w-max">
 						<button
 							type="button"
-							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center cursor-pointer transition-colors"
-							aria-label="Закрыть модальное окно"
+							onClick={() => setActiveTab("payment")}
+							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
+								activeTab === "payment"
+									? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
 						>
-							<X size={18} />
+							Оплата 54-ФЗ
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("act")}
+							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
+								activeTab === "act"
+									? "bg-emerald-600 text-white shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							Акт работ (804н)
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("oneC")}
+							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
+								activeTab === "oneC"
+									? "bg-amber-600 text-white shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="tab-1c-export"
+						>
+							1С:Экспорт XML
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("certificate")}
+							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
+								activeTab === "certificate"
+									? "bg-indigo-600 text-white shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							Справка для ФНС
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("refund")}
+							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
+								activeTab === "refund"
+									? "bg-rose-600 text-white shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							Возврат услуг
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("correction")}
+							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
+								activeTab === "correction"
+									? "bg-amber-600 text-white shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							Коррекция
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("preview")}
+							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
+								activeTab === "preview"
+									? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							Чек
 						</button>
 					</div>
 				</div>
 
 				{/* Modal Body */}
-				<div className="p-6 overflow-y-auto flex-1 space-y-6">
+				<div className="p-4 sm:p-5 overflow-y-auto min-h-0 flex-1 space-y-4">
 					{activeTab === "payment" && (
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 							{/* Left Column: Split Payment Builders */}
@@ -2047,66 +2047,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</span>
 								</div>
 
-								<pre className="p-3 bg-slate-900/90 rounded-xl text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-60 border border-slate-800 select-all leading-relaxed whitespace-pre">
+								<pre className="p-3 bg-slate-900/90 rounded-xl text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-52 border border-slate-800 select-all leading-relaxed whitespace-pre">
 									{oneCXmlPreview}
 								</pre>
-							</div>
-
-							{/* Action Buttons: 1-Click Export, Copy XML, Copy Summary */}
-							<div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-								<div className="flex items-center gap-2 flex-wrap">
-									<button
-										type="button"
-										onClick={() => {
-											navigator.clipboard.writeText(oneCXmlPreview);
-											showToast("XML-код 1С:Предприятие скопирован в буфер обмена!", "success", 2500);
-										}}
-										className="min-h-[48px] px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
-									>
-										<Copy size={16} />
-										<span>Копировать XML в буфер</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => {
-											const summaryText = `ВЫГРУЗКА В 1С:ПРЕДПРИЯТИЕ 8.3
-Документ: ${oneCDocType === "act" ? "Акт выполненных работ" : "Счет на оплату"} № ${actNumber} от ${oneCDocDate}
-Клиника: ${clinicName} (ИНН ${oneCClinicInn} / КПП ${oneCClinicKpp})
-Пациент: ${patientName} (Договор ${contractNumber})
-Позиций: ${activeItems.length}
-Сумма: ${formatMoneyRu(totalSumRub)} (Без НДС - пп. 2 п. 2 ст. 149 НК РФ)`;
-											navigator.clipboard.writeText(summaryText);
-											showToast("Сводка для бухгалтера скопирована!", "success", 2500);
-										}}
-										className="min-h-[48px] px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
-									>
-										<FileText size={16} />
-										<span>Сводка для бухгалтерии</span>
-									</button>
-								</div>
-
-								{/* 1-Click Export XML Button */}
-								<OneCExportButton
-									actNumber={actNumber}
-									documentDate={oneCDocDate}
-									docType={oneCDocType}
-									patientName={patientName}
-									patientId={patientId}
-									patientPhone={customerContact || patientPhone}
-									patientAddress={oneCPatientAddress}
-									doctorName={cashierFullName}
-									clinicName={clinicName}
-									clinicInn={oneCClinicInn}
-									clinicKpp={oneCClinicKpp}
-									items={activeItems}
-									totalRub={totalSumRub}
-									contractNumber={contractNumber}
-									contractDate={oneCDocDate}
-									variant="primary"
-									label="⚡ 1-Клик Экспорт в 1С (Скачать XML)"
-									className="min-h-[48px] px-6 py-2.5 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white"
-								/>
 							</div>
 						</div>
 					)}
@@ -2118,7 +2061,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								<button
 									type="button"
 									onClick={() => window.print()}
-									className="min-h-[48px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+									className="min-h-[44px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 								>
 									<Printer size={16} />
 									<span>Печать чека</span>
@@ -2129,6 +2072,128 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						</div>
 					)}
 				</div>
+
+				{/* Fixed Modal Footer (Sticky Bottom Bar) */}
+				{activeTab === "oneC" && (
+					<div className="shrink-0 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+						<div className="flex items-center gap-2 flex-wrap">
+							<button
+								type="button"
+								onClick={() => {
+									navigator.clipboard.writeText(oneCXmlPreview);
+									showToast("XML-код 1С:Предприятие скопирован в буфер обмена!", "success", 2500);
+								}}
+								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+							>
+								<Copy size={16} />
+								<span>Копировать XML</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									const summaryText = `ВЫГРУЗКА В 1С:ПРЕДПРИЯТИЕ 8.3\nДокумент: ${oneCDocType === "act" ? "Акт выполненных работ" : "Счет на оплату"} № ${actNumber} от ${oneCDocDate}\nКлиника: ${clinicName} (ИНН ${oneCClinicInn} / КПП ${oneCClinicKpp})\nПациент: ${patientName} (Договор ${contractNumber})\nПозиций: ${activeItems.length}\nСумма: ${formatMoneyRu(totalSumRub)} (Без НДС - пп. 2 п. 2 ст. 149 НК РФ)`;
+									navigator.clipboard.writeText(summaryText);
+									showToast("Сводка для бухгалтера скопирована!", "success", 2500);
+								}}
+								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+							>
+								<FileText size={16} />
+								<span>Сводка для бухгалтерии</span>
+							</button>
+						</div>
+
+						<div className="flex items-center gap-2.5">
+							<button
+								type="button"
+								onClick={onClose}
+								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							>
+								Закрыть
+							</button>
+							<OneCExportButton
+								actNumber={actNumber}
+								documentDate={oneCDocDate}
+								docType={oneCDocType}
+								patientName={patientName}
+								patientId={patientId}
+								patientPhone={customerContact || patientPhone}
+								patientAddress={oneCPatientAddress}
+								doctorName={cashierFullName}
+								clinicName={clinicName}
+								clinicInn={oneCClinicInn}
+								clinicKpp={oneCClinicKpp}
+								items={activeItems}
+								totalRub={totalSumRub}
+								contractNumber={contractNumber}
+								contractDate={oneCDocDate}
+								variant="primary"
+								label="⚡ Экспорт в 1С (XML)"
+								className="min-h-[44px] px-6 py-2 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white"
+							/>
+						</div>
+					</div>
+				)}
+
+				{activeTab === "act" && (
+					<div className="shrink-0 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+						<button
+							type="button"
+							onClick={handleCopyActData}
+							className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+						>
+							<Copy size={16} />
+							<span>Скопировать текст Акта</span>
+						</button>
+						<div className="flex items-center gap-2.5">
+							<button
+								type="button"
+								onClick={onClose}
+								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							>
+								Закрыть
+							</button>
+							<button
+								type="button"
+								onClick={() => window.print()}
+								className="min-h-[44px] px-6 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
+							>
+								<Printer size={16} />
+								<span>Печать Акта (804н)</span>
+							</button>
+						</div>
+					</div>
+				)}
+
+				{activeTab === "certificate" && (
+					<div className="shrink-0 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+						<button
+							type="button"
+							onClick={handleCopyCertData}
+							className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+						>
+							<Copy size={16} />
+							<span>Скопировать данные справки</span>
+						</button>
+						<div className="flex items-center gap-2.5">
+							<button
+								type="button"
+								onClick={onClose}
+								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							>
+								Закрыть
+							</button>
+							<button
+								type="button"
+								onClick={() => window.print()}
+								className="min-h-[44px] px-6 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
+							>
+								<Printer size={16} />
+								<span>Печать справки КНД 1151156</span>
+							</button>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

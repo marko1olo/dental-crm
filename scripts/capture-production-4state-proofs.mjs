@@ -196,7 +196,8 @@ const TARGET_SCREENS = [
     name: "01. Schedule Multi-Chair Grid with CITO Acute Pain Emergency Reserve",
     url: "http://127.0.0.1:5173/#schedule",
     setup: async (page) => {
-      await page.waitForTimeout(800);
+      await page.waitForSelector('.schedule-subnav-panel, [data-testid="schedule-timeline-container"], .appointment-card', { timeout: 6000 }).catch(() => {});
+      await page.waitForTimeout(1000);
     },
     all4States: true,
   },

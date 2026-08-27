@@ -258,72 +258,76 @@ export function CephalometricCanvas({
 			onMouseLeave={handleMouseUp}
 			style={{ cursor: isPanning ? "grabbing" : activeTargetKey ? "crosshair" : "default" }}
 		>
-			{/* Canvas Top Floating Toolbar with >= 44px Touch Targets */}
+			{/* Canvas Top Floating Toolbar with High-Contrast Dark HUD (Theme-Agnostic) */}
 			<div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 flex-wrap pointer-events-none">
 				{/* Active Target Indicator Badge */}
-				<div className="pointer-events-auto flex items-center gap-2.5 bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-xl border border-slate-700/80 shadow-xl min-h-[44px]">
-					<Crosshair size={18} className="text-[var(--teal)] animate-pulse shrink-0" />
-					<div className="text-sm font-bold text-slate-100 min-w-0 break-words">
+				<div className="pointer-events-auto flex items-center gap-2 !bg-[#0f172a] backdrop-blur-md px-3 py-1.5 rounded-lg border !border-[#334155] shadow-xl h-8">
+					<Crosshair size={15} className="text-teal-400 animate-pulse shrink-0" />
+					<div className="text-xs font-bold !text-[#f8fafc] min-w-0">
 						{activeTargetKey ? (
 							<span>
-								Установите точку:{" "}
-								<span className="text-[var(--teal)] font-extrabold uppercase">
+								<span className="!text-[#94a3b8] font-normal mr-1">Установите точку:</span>
+								<span className="text-teal-300 font-extrabold uppercase">
 									{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
 								</span>
 							</span>
 						) : (
-							<span className="text-slate-300 font-medium">
+							<span className="!text-[#cbd5e1] font-medium">
 								Выберите ориентир в списке или перетаскивайте точки на снимке
 							</span>
 						)}
 					</div>
 				</div>
 
-				{/* Zoom, View & Calibration Controls (Touch Targets >= 44x44px) */}
-				<div className="pointer-events-auto flex items-center gap-1.5 bg-slate-900/95 backdrop-blur-md p-1 rounded-xl border border-slate-700/80 shadow-xl min-h-[44px]">
+				{/* Zoom, View & Calibration Controls */}
+				<div className="pointer-events-auto flex items-center gap-1 !bg-[#0f172a] backdrop-blur-md p-1 rounded-lg border !border-[#334155] shadow-xl h-8">
 					<button
 						type="button"
 						onClick={() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1))))}
-						className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+						className="w-7 h-7 rounded-md flex items-center justify-center !text-[#e2e8f0] hover:!text-white hover:!bg-[#1e293b] transition-colors cursor-pointer"
 						title="Приблизить (Масштаб +)"
 						aria-label="Приблизить масштаб"
 					>
-						<ZoomIn size={18} />
+						<ZoomIn size={14} />
 					</button>
-					<span className="text-sm font-mono font-bold text-slate-200 px-2 min-w-[48px] text-center">
+					<span className="text-xs font-mono font-bold !text-[#f8fafc] px-1 min-w-[40px] text-center">
 						{Math.round(zoom * 100)}%
 					</span>
 					<button
 						type="button"
 						onClick={() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1))))}
-						className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+						className="w-7 h-7 rounded-md flex items-center justify-center !text-[#e2e8f0] hover:!text-white hover:!bg-[#1e293b] transition-colors cursor-pointer"
 						title="Отдалить (Масштаб -)"
 						aria-label="Отдалить масштаб"
 					>
-						<ZoomOut size={18} />
+						<ZoomOut size={14} />
 					</button>
-					<div className="w-[1px] h-6 bg-slate-700 mx-1" />
+					<div className="w-[1px] h-4 bg-[#334155] mx-0.5" />
 					<button
 						type="button"
 						onClick={handleResetView}
-						className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+						className="w-7 h-7 rounded-md flex items-center justify-center !text-[#e2e8f0] hover:!text-white hover:!bg-[#1e293b] transition-colors cursor-pointer"
 						title="Сбросить масштаб и положение (100%)"
-						aria-label="Сбросить масштаб к 100%"
+						aria-label="Сбросить масштаб"
 					>
-						<RotateCcw size={18} />
+						<RotateCcw size={14} />
 					</button>
 					<button
 						type="button"
-						onClick={() => setIsCalibrating((prev) => !prev)}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+						onClick={() => {
+							setIsCalibrating((prev) => !prev);
+							setCalibrationPoints([]);
+						}}
+						className={`h-7 px-2 rounded-md flex items-center gap-1 text-xs font-bold transition-colors cursor-pointer ${
 							isCalibrating
-								? "bg-amber-600 text-white font-bold shadow-md shadow-amber-600/30"
-								: "text-slate-200 hover:text-white hover:bg-slate-800"
+								? "!bg-amber-600 !text-white"
+								: "!text-[#e2e8f0] hover:!text-white hover:!bg-[#1e293b]"
 						}`}
-						title="Калибровка масштаба (отметьте отрезок 10 мм)"
+						title="Калибровка масштаба по линейке (мм/px)"
 						aria-label="Калибровка масштаба"
 					>
-						<Ruler size={18} />
+						<Ruler size={13} />
+						<span className="hidden sm:inline">Линейка</span>
 					</button>
 				</div>
 			</div>

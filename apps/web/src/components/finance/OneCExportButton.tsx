@@ -158,8 +158,8 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
   };
 
   const variantStyles = {
-    primary: 'bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md font-bold',
-    secondary: 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-700/50 font-bold',
+    primary: 'bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-xs font-semibold',
+    secondary: 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-700/50 font-semibold',
     outline: 'border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]',
     compact: 'p-1.5 text-xs rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300',
   };
@@ -171,7 +171,7 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
       disabled={isExporting}
       title="Сформировать и скачать официальный файл выгрузки в 1С:Бухгалтерия 8.3 / УТ (CommerceML 2.09)"
       data-testid="1c-export-xml-button"
-      className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 select-none ${variantStyles[variant]} ${className}`.trim()}
+      className={`h-9 px-3.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 select-none ${variantStyles[variant]} ${className}`.trim()}
     >
       {isExported ? (
         <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />

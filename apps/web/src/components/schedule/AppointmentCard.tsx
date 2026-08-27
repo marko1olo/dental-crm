@@ -836,12 +836,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					) : null}
 
 					{/* Кнопки быстрого сдвига времени при опозданиях (+15 мин, +30 мин, +45 мин) */}
-					<div className="appointment-delay-shift-bar flex items-center justify-between gap-2 p-2 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs flex-wrap">
-						<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1.5 shrink-0 select-none">
-							<Clock size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+					<div className="appointment-delay-shift-bar flex items-center justify-between gap-2 p-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs flex-wrap">
+						<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1.5 shrink-0 select-none text-xs">
+							<Clock size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
 							Пациент опаздывает:
 						</span>
-						<div className="flex items-center gap-1.5 flex-wrap">
+						<div className="flex items-center gap-1 flex-wrap">
 							{[15, 30, 45].map((m) => (
 								<button
 									key={m}
@@ -851,7 +851,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										e.stopPropagation();
 										void handleShiftAppointmentTime(m);
 									}}
-									className="min-h-[44px] px-3.5 py-2 rounded-xl border border-amber-500/40 bg-[var(--paper,#ffffff)] dark:bg-amber-950/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 shadow-xs select-none active:scale-95 flex items-center justify-center"
+									className="h-7.5 px-2.5 py-1 rounded-lg border border-amber-500/40 bg-[var(--paper,#ffffff)] dark:bg-amber-950/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 shadow-2xs select-none active:scale-95 flex items-center justify-center"
 									title={`Сдвинуть время визита на +${m} минут позже`}
 									aria-label={`Сдвинуть запись на +${m} минут`}
 								>
@@ -883,9 +883,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						disabled={isQuickStatusUpdating}
 					/>
 
-					<div className="appointment-card-footer flex flex-wrap justify-end gap-2 mt-2 pt-2 border-t border-[var(--line)]">
+					<div className="appointment-card-footer flex flex-wrap justify-end gap-1.5 mt-1.5 pt-1.5 border-t border-[var(--line)]">
 						<button
-							className="secondary-button min-h-[44px] px-3.5 py-2 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+							className="secondary-button h-8 px-3 py-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none"
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
@@ -909,12 +909,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							aria-label={`Напомнить в WhatsApp / СМС: ${appointmentPatientName}`}
 							title="1-Клик: Отправить или скопировать напоминание с реквизитами клиники и временем приема"
 						>
-							<MessageSquare size={14} className="text-emerald-600 dark:text-emerald-400" />
+							<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
 							<span>Напомнить</span>
 						</button>
 
 						<button
-							className="secondary-button appointment-repeat-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
+							className="secondary-button appointment-repeat-button h-8 px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
 							type="button"
 							onClick={() => repeatAppointment(appointment)}
 							aria-label={`Повторить запись: ${appointmentPatientName}. Форма новой записи откроется заполненной, останется выбрать время`}
@@ -924,7 +924,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</button>
 						{copyAppointmentToBuffer ? (
 							<button
-								className="secondary-button appointment-buffer-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
+								className="secondary-button appointment-buffer-button h-8 px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
 								type="button"
 								onClick={() => copyAppointmentToBuffer(appointment)}
 								aria-label={`В буфер: ${appointmentPatientName}`}
@@ -934,7 +934,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							</button>
 						) : null}
 						<button
-							className="secondary-button appointment-edit-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
+							className="secondary-button appointment-edit-button h-8 px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
 							type="button"
 							onClick={() => openAppointmentEditor(appointment)}
 							aria-expanded={appointmentEditing}
