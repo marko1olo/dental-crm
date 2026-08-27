@@ -151,11 +151,16 @@ export const MedicalRadiologyDropzone: React.FC<
 
 	return (
 		<div
-			className={`flex flex-col items-center justify-center p-6 md:p-10 rounded-2xl border-2 border-dashed transition-all duration-200 text-center select-none ${
+			className={`flex flex-col items-center justify-center p-6 md:p-10 rounded-2xl border-2 border-dashed transition-all duration-200 text-center select-none shadow-2xl ${
 				isDragOver
-					? "border-teal-400 bg-teal-950/30 scale-[1.01] shadow-2xl"
-					: "border-slate-700 bg-slate-900/95 hover:border-teal-500/60 shadow-2xl"
+					? "scale-[1.01]"
+					: "hover:border-teal-500/60"
 			} ${className}`}
+			style={{
+				backgroundColor: isDragOver ? "rgba(4, 47, 46, 0.95)" : "rgba(15, 23, 42, 0.96)",
+				borderColor: isDragOver ? "#2dd4bf" : "rgba(51, 65, 85, 0.8)",
+				color: "#f8fafc",
+			}}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
@@ -172,7 +177,15 @@ export const MedicalRadiologyDropzone: React.FC<
 
 			{/* Medical Sensor Icon Badge */}
 			<div className="relative mb-5">
-				<div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-800 border border-teal-500/40 text-teal-400 shadow-xl">
+				<div
+					className="flex items-center justify-center w-20 h-20 rounded-2xl shadow-xl"
+					style={{
+						backgroundColor: "rgba(30, 41, 59, 0.95)",
+						borderColor: "rgba(45, 212, 191, 0.4)",
+						borderWidth: "1px",
+						color: "#2dd4bf",
+					}}
+				>
 					<Scan className="w-10 h-10 animate-pulse" />
 				</div>
 				<div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md bg-teal-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md border border-teal-400/30">
@@ -181,25 +194,37 @@ export const MedicalRadiologyDropzone: React.FC<
 			</div>
 
 			{/* Title & Subtitle */}
-			<h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-100 tracking-tight mb-2">
+			<h3 className="text-base sm:text-lg md:text-xl font-bold tracking-tight mb-2" style={{ color: "#f8fafc" }}>
 				{title}
 			</h3>
-			<p className="text-xs sm:text-sm text-slate-400 max-w-md leading-relaxed mb-6 font-medium">
+			<p className="text-xs sm:text-sm max-w-md leading-relaxed mb-6 font-medium" style={{ color: "#94a3b8" }}>
 				{subtitle}
 			</p>
 
 			{/* Supported Formats Tags */}
 			<div className="flex flex-wrap items-center justify-center gap-2 mb-6 max-w-lg">
-				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
+				<span
+					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg"
+					style={{ backgroundColor: "rgba(30, 41, 59, 0.9)", border: "1px solid rgba(51, 65, 85, 0.8)", color: "#cbd5e1" }}
+				>
 					DICOM 3.0 (.dcm)
 				</span>
-				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
+				<span
+					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg"
+					style={{ backgroundColor: "rgba(30, 41, 59, 0.9)", border: "1px solid rgba(51, 65, 85, 0.8)", color: "#cbd5e1" }}
+				>
 					16-bit Grayscale TIFF
 				</span>
-				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
+				<span
+					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg"
+					style={{ backgroundColor: "rgba(30, 41, 59, 0.9)", border: "1px solid rgba(51, 65, 85, 0.8)", color: "#cbd5e1" }}
+				>
 					PNG / JPG высокой четкости
 				</span>
-				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-teal-950/60 border border-teal-700/40 text-teal-300 font-bold">
+				<span
+					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg"
+					style={{ backgroundColor: "rgba(4, 47, 46, 0.8)", border: "1px solid rgba(13, 148, 136, 0.5)", color: "#5eead4", fontWeight: "bold" }}
+				>
 					Vatech / KaVo / Planmeca / Gendex
 				</span>
 			</div>
@@ -207,7 +232,8 @@ export const MedicalRadiologyDropzone: React.FC<
 			{/* Error Notification */}
 			{errorMessage && (
 				<div
-					className="flex items-center gap-2 px-4 py-2.5 mb-5 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-200 text-xs font-semibold max-w-md animate-in fade-in"
+					className="flex items-center gap-2 px-4 py-2.5 mb-5 rounded-xl text-xs font-semibold max-w-md animate-in fade-in"
+					style={{ backgroundColor: "rgba(69, 10, 10, 0.8)", border: "1px solid #991b1b", color: "#fecdd3" }}
 					data-testid="dropzone-error-message"
 				>
 					<AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
@@ -234,7 +260,12 @@ export const MedicalRadiologyDropzone: React.FC<
 					type="button"
 					onClick={handleLoadSamplePatientRadiograph}
 					disabled={disabled || isLoading}
-					className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-teal-500/60 text-slate-200 hover:text-teal-300 text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+					className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+					style={{
+						backgroundColor: "rgba(30, 41, 59, 0.95)",
+						border: "1px solid rgba(51, 65, 85, 0.8)",
+						color: "#e2e8f0",
+					}}
 					data-testid="load-sample-radiograph-btn"
 				>
 					<HardDrive className="w-4 h-4 text-teal-400" />
@@ -242,7 +273,7 @@ export const MedicalRadiologyDropzone: React.FC<
 				</button>
 			</div>
 
-			<span className="text-[11px] text-slate-400 mt-4 font-mono">
+			<span className="text-[11px] mt-4 font-mono" style={{ color: "#64748b" }}>
 				Стандарт СанПиН 2.6.1.1192-03 · Автоматическая калибровка пикселей
 			</span>
 		</div>
