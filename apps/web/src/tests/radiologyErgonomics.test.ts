@@ -99,4 +99,35 @@ describe("Radiology Ergonomics & Math Suite", () => {
 			assert.ok(LANDMARK_TYPE_LABELS[t]);
 		}
 	});
+
+	it("verifies tooth 16 diagnostic intraoral radiograph contains all anatomical structures", async () => {
+		const { TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG, TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI } = await import("../components/radiology/tooth16RadiographSvg");
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.length > 500);
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI.startsWith("data:image/svg+xml;utf8,"));
+
+		// Enamel, Dentin, Pulp Chamber
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("enamel-grad"), "Must contain enamel gradient");
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("dentin-grad"), "Must contain dentin gradient");
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("Pulp Chamber"), "Must contain pulp chamber");
+
+		// Gutta-percha obturation in all 3 root canals
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("guttapercha-grad"), "Must contain gutta-percha gradient");
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("Palatal Canal"), "Must contain Palatal canal obturation");
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("Mesiobuccal Canal"), "Must contain MB canal obturation");
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("Distobuccal Canal"), "Must contain DB canal obturation");
+
+		// Periodontal ligament (PDL) and Lamina Dura
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("PERIODONTAL LIGAMENT SPACE"), "Must contain PDL space");
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("LAMINA DURA"), "Must contain lamina dura");
+
+		// Maxillary sinus floor & Tooth 16 FDI target
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("MAXILLARY SINUS"), "Must contain maxillary sinus floor");
+		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("16"), "Must contain FDI 16 target");
+	});
+
+	it("verifies Standard WW/WL preset label is 'Стандарт' without unexpected whitespace breaks", () => {
+		const standardPreset = DEFAULT_WW_WL_PRESETS.find((p) => p.id === "standard");
+		assert.ok(standardPreset);
+		assert.equal(standardPreset.label, "Стандарт");
+	});
 });

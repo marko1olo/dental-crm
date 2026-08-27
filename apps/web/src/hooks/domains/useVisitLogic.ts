@@ -700,15 +700,14 @@ export function useVisitLogic({
 				);
 				setServerDraftSyncState("saved");
 			} catch (syncError) {
-				showToast(
-					actionFailureToast(
-						"Серверный черновик не сохранен",
-						(syncError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				setServerDraftSyncState("error");
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Серверный черновик не сохранен",
+							(syncError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Серверный черновик не сохранен",
@@ -716,6 +715,7 @@ export function useVisitLogic({
 						),
 					);
 				}
+				setServerDraftSyncState("error");
 			}
 		},
 		[
@@ -809,15 +809,14 @@ export function useVisitLogic({
 
 				await refreshPendingVisitSaveState();
 			} catch (syncError) {
-				showToast(
-					actionFailureToast(
-						"Сервер пока не принял очередь",
-						(syncError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				await refreshPendingVisitSaveState();
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Сервер пока не принял очередь",
+							(syncError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Сервер пока не принял очередь",
@@ -825,6 +824,7 @@ export function useVisitLogic({
 						),
 					);
 				}
+				await refreshPendingVisitSaveState();
 			} finally {
 				setIsPendingVisitSyncing(false);
 			}
@@ -1045,14 +1045,14 @@ export function useVisitLogic({
 				void loadSpeechRecordingRecovery({ silent: true });
 				return assembly;
 			} catch (assemblyError) {
-				showToast(
-					actionFailureToast(
-						"Не удалось собрать запись распознавания",
-						(assemblyError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Не удалось собрать запись распознавания",
+							(assemblyError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Не удалось собрать запись распознавания",
@@ -1156,15 +1156,14 @@ export function useVisitLogic({
 				await assembleSpeechRecording(recordingId, { silent: true });
 			}
 		} catch (syncError) {
-			showToast(
-				actionFailureToast(
-					"Очередь распознавания пока не отправлена",
-					(syncError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			await refreshPendingSpeechChunkState();
 			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Очередь распознавания пока не отправлена",
+						(syncError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setError(
 					operatorWorkflowFailureMessage(
 						"Очередь распознавания пока не отправлена",
@@ -1172,6 +1171,7 @@ export function useVisitLogic({
 					),
 				);
 			}
+			await refreshPendingSpeechChunkState();
 		}
 	};
 

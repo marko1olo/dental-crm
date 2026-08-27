@@ -54,33 +54,41 @@ export function WorkspaceContinuityStrip({
 
 	if (!visible) return null;
 
-	const statusBadge = isSyncingMutations
+	const isOffline = !effectiveOnline;
+	const statusText = isSyncingMutations
 		? totalPending > 0
-			? `🟠 Синхронизация... (${pluralizeChanges(totalPending)} в очереди)`
-			: "🟠 Синхронизация..."
+			? `Синхронизация... (${pluralizeChanges(totalPending)} в очереди)`
+			: "Синхронизация..."
 		: networkState
 			? networkState.mode === "cloud_online"
-				? `🟢 В сети${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
+				? `В сети${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
 				: networkState.mode === "lan_online"
-					? `🟡 Автономный режим (Wi-Fi)${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
+					? `Автономный режим (Wi-Fi)${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
 					: totalPending > 0
-						? `🟠 Автономный режим (${pluralizeChanges(totalPending)} в очереди)`
-						: "🟠 Автономный офлайн"
-			: !effectiveOnline
+						? `Автономный режим (${pluralizeChanges(totalPending)} в очереди)`
+						: "Автономный офлайн"
+			: isOffline
 				? totalPending > 0
-					? `🟠 Автономный режим (${pluralizeChanges(totalPending)} в очереди)`
-					: "🟠 Автономный офлайн"
-				: "🟢 В сети";
+					? `Автономный режим (${pluralizeChanges(totalPending)} в очереди)`
+					: "Автономный офлайн"
+				: "В сети";
 
+	const badgeEmoji = isOffline || isSyncingMutations || (networkState && networkState.mode !== "cloud_online" && networkState.mode !== "lan_online")
+		? "🟠"
+		: networkState?.mode === "lan_online"
+			? "🟡"
+			: "🟢";
 
-	const title = !effectiveOnline
-		? `Работа без сети (${statusBadge})`
+	const statusBadge = `${badgeEmoji} ${statusText}`;
+
+	const title = isOffline
+		? "Работа без сети"
 		: totalPending > 0
 			? `Есть очередь синхронизации (${statusBadge})`
 			: `Проверьте локальное хранение (${statusBadge})`;
 
 	const detailParts: string[] = [];
-	if (!effectiveOnline) {
+	if (isOffline) {
 		detailParts.push(
 			"Можно продолжать прием: все изменения врача (043/у, одонтограмма, рецепты, документы, чеки) надежно сохраняются локально на этом устройстве.",
 		);
@@ -107,14 +115,22 @@ export function WorkspaceContinuityStrip({
 
 	return (
 		<section
-			className={`workspace-continuity-strip offline-continuity-strip ${!effectiveOnline ? "offline" : "queued"}`}
+			className={`workspace-continuity-strip offline-continuity-strip ${isOffline ? "offline" : "queued"}`}
 			role="status"
 			aria-live="polite"
 		>
 			<div>
-				<strong>{title}</strong>
+				<div className="flex items-center gap-2 flex-wrap">
+					<strong>{title}</strong>
+					{isOffline && (
+						<span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+							<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+							Автономный офлайн
+						</span>
+					)}
+				</div>
 				<p>{detail}</p>
-				{!effectiveOnline ? (
+				{isOffline ? (
 					<small id={workspaceContinuityOfflineGuidanceId}>
 						Кнопки отправки станут доступны после подключения. Данные
 						сохранены в локальном защищенном хранилище и не будут утеряны.

@@ -2299,14 +2299,14 @@ export function useAppLogic(): any {
 				setPersistenceIntegrity(report);
 				setPersistenceHealth(normalizePersistenceHealth(report));
 			} catch (healthError) {
-				showToast(
-					actionFailureToast(
-						"Статус сохранности недоступен",
-						(healthError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Статус сохранности недоступен",
+							(healthError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Статус сохранности недоступен",
@@ -2316,7 +2316,7 @@ export function useAppLogic(): any {
 				}
 			}
 		},
-		[auth, setError, setPersistenceIntegrity, setPersistenceHealth],
+		[auth, setError, setPersistenceIntegrity, setPersistenceHealth, showToast],
 	);
 
 	async function loadPersistenceIntegrity(options: { silent?: boolean } = {}) {
@@ -2338,14 +2338,14 @@ export function useAppLogic(): any {
 			setPersistenceIntegrity(report);
 			if (report.meta) setPersistenceHealth(report.meta);
 		} catch (verifyError) {
-			showToast(
-				actionFailureToast(
-					"Проверка резервной копии не выполнена",
-					(verifyError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
 			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Проверка резервной копии не выполнена",
+						(verifyError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setError(
 					operatorWorkflowFailureMessage(
 						"Проверка резервной копии не выполнена",
@@ -2450,14 +2450,14 @@ export function useAppLogic(): any {
 				(await response.json()) as LocalBridgeReadinessResponse,
 			);
 		} catch (bridgeError) {
-			showToast(
-				actionFailureToast(
-					"Готовность локального модуля не проверена",
-					(bridgeError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
 			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Готовность локального модуля не проверена",
+						(bridgeError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setError(
 					operatorWorkflowFailureMessage(
 						"Готовность локального модуля не проверена",
@@ -2486,14 +2486,14 @@ export function useAppLogic(): any {
 				setLocalBridgeUsePlans(payload);
 				setLocalBridgeReadiness(payload.readiness);
 			} catch (planError) {
-				showToast(
-					actionFailureToast(
-						"План локального модуля недоступен",
-						(planError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"План локального модуля недоступен",
+							(planError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"План локального модуля недоступен",

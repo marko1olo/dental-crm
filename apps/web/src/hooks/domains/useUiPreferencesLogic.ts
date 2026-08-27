@@ -393,13 +393,6 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 			await saveServerUiPreferences(preferences, settingsAdminSecretSession);
 			if (!pendingUiPreferencesSyncRef.current) setUiPreferencesSyncError(null);
 		} catch (preferencesError) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(preferencesError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
 			if (!pendingUiPreferencesSyncRef.current)
 				pendingUiPreferencesSyncRef.current = preferences;
 			setUiPreferencesSyncError(
@@ -436,6 +429,7 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 				};
 				setPersistenceIntegrity(report);
 				setPersistenceHealth(normalizePersistenceHealth(report));
+			} catch (healthError) {
 				if (!options.silent) {
 					showToast(
 						actionFailureToast(
@@ -453,7 +447,7 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 				}
 			}
 		},
-		[auth, setError, setPersistenceIntegrity, setPersistenceHealth],
+		[auth, setError, setPersistenceIntegrity, setPersistenceHealth, showToast],
 	);
 
 	async function loadPersistenceIntegrity(options: { silent?: boolean } = {}) {
@@ -475,14 +469,14 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 			setPersistenceIntegrity(report);
 			if (report.meta) setPersistenceHealth(report.meta);
 		} catch (verifyError) {
-			showToast(
-				actionFailureToast(
-					"Проверка резервной копии не выполнена",
-					(verifyError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
 			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Проверка резервной копии не выполнена",
+						(verifyError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setError(
 					operatorWorkflowFailureMessage(
 						"Проверка резервной копии не выполнена",
@@ -588,14 +582,14 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 				(await response.json()) as LocalBridgeReadinessResponse,
 			);
 		} catch (bridgeError) {
-			showToast(
-				actionFailureToast(
-					"Готовность локального модуля не проверена",
-					(bridgeError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
 			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Готовность локального модуля не проверена",
+						(bridgeError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
 				setError(
 					operatorWorkflowFailureMessage(
 						"Готовность локального модуля не проверена",
@@ -624,14 +618,14 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 				setLocalBridgeUsePlans(payload);
 				setLocalBridgeReadiness(payload.readiness);
 			} catch (planError) {
-				showToast(
-					actionFailureToast(
-						"План локального модуля недоступен",
-						(planError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"План локального модуля недоступен",
+							(planError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"План локального модуля недоступен",
@@ -846,14 +840,9 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 			.then((response) => {
 				if (response.ok) setRecentPatientViewsVersion((version) => version + 1);
 			})
-			.catch((err) => {
-				showToast(
-					actionFailureToast(
-						"Ошибка обновления списка пациентов",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
+			.catch(() => {
+				// Ошибка запроса намеренно проглатывается: история просмотров не стоит
+				// того, чтобы мешать врачу работать сообщением о сбое.
 			});
 	}, [selectedPatientId, dashboard, auth.denteClinicalMutationHeaders]);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: currentUiPreferencesInput/queueUiPreferencesServerSync are plain closures over component state; they are intentionally excluded to prevent infinite re-render loops

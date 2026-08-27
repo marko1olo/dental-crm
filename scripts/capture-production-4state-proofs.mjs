@@ -3,7 +3,7 @@
  * Production-grade Playwright 4-State Visual Proof Capture Engine
  */
 
-import { existsSync, mkdirSync, copyFileSync, statSync } from "node:fs";
+import fs, { existsSync, mkdirSync, copyFileSync, statSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
@@ -219,11 +219,16 @@ const TARGET_SCREENS = [
     name: "03. Patient Billing with 1C XML Export Modal",
     url: "http://127.0.0.1:5173/#clinical-modals-studio",
     setup: async (page) => {
-      const btn = page.locator('[data-testid="open-fiscal-modal-btn"]');
+      const btn = page.locator('[data-testid="open-billing-1c-export-modal-btn"]').or(page.locator('[data-testid="open-fiscal-modal-btn"]')).first();
       if (await btn.isVisible()) {
         await btn.scrollIntoViewIfNeeded();
         await btn.click();
-        await page.waitForTimeout(600);
+        const modal = page.locator('[data-testid="fiscal-receipt-54fz-modal"]');
+        const oneCTab = modal.locator('button:has-text("1С:Экспорт XML")').or(modal.locator('[data-testid="tab-oneC"]')).first();
+        if (await oneCTab.isVisible()) {
+          await oneCTab.click();
+          await page.waitForTimeout(500);
+        }
       }
     },
     all4States: true,
@@ -274,7 +279,24 @@ const TARGET_SCREENS = [
       if (await btn.isVisible()) {
         await btn.scrollIntoViewIfNeeded();
         await btn.click();
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(600);
+
+        // Feed real DICOM slices from Barabash Svetlana Viktorovna
+        const dicomDir = "C:/Users/Admin/Downloads/Telegram Desktop/BARABASH_SVETLANA_VIKTOROVNA_09141256/BARABASH_SVETLANA_VIKTOROVNA_09141256/Data";
+        if (fs.existsSync(dicomDir)) {
+          const files = fs.readdirSync(dicomDir)
+            .filter((f) => f.endsWith(".dcm"))
+            .slice(150, 250) // 100 central clinical slices covering maxilla, mandible, roots and sinuses
+            .map((f) => path.join(dicomDir, f));
+
+          if (files.length > 0) {
+            const fileInput = page.locator('[data-testid="cbct-dicom-files-input"]');
+            if (await fileInput.count() > 0) {
+              await fileInput.setInputFiles(files);
+              await page.waitForTimeout(2000);
+            }
+          }
+        }
       }
     },
     all4States: true,

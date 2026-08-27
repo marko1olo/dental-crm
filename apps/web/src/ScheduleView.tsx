@@ -1034,13 +1034,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	];
 
 	const hasSummaryContent =
-		visibleAppointmentCount > 0 ||
+		showShiftAnalytics ||
 		activeScheduleFilterLabels.length > 0 ||
 		(activeScheduleFilterLabels.length === 0 &&
 			(visibleDayGroups?.length ?? 0) > 1) ||
 		scheduleOverlapCount > 0 ||
-		(shiftWarnings?.length ?? 0) > 0 ||
-		showShiftAnalytics;
+		(shiftWarnings?.length ?? 0) > 0;
 
 	return (
 		<div

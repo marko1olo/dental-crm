@@ -7,6 +7,9 @@ export * from "./planPresentationPresets";
 export * from "./planComparatorEngine";
 export {
 	TreatmentPlanComparatorModal,
+	TreatmentPlanComparatorModal as TreatmentPlanComparisonModal,
 	type TreatmentPlanComparatorModalProps,
+	type TreatmentPlanComparisonModalProps,
 	default,
 } from "./TreatmentPlanComparatorModal";
+

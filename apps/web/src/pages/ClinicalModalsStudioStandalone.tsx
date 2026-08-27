@@ -53,6 +53,7 @@ import {
 	CbctMprImplantStudioModal,
 	CbctMpr3DStudioModal,
 	ImplantCrossSectionPlanner,
+	TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI,
 	type RadiologyStudy,
 } from "../components/radiology";
 import { TreatmentPlanCompletedActPrint } from "../components/treatment-plans/TreatmentPlanCompletedActPrint";
@@ -258,13 +259,13 @@ const SAMPLE_STUDY: RadiologyStudy = {
 	teethFdi: ["16"],
 	effectiveDoseMicrosv: 3.0,
 	effectiveDoseMsv: 0.003,
-	imageUrl: "",
+	imageUrl: TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI,
 	doctorName: "Д-р Смирнов Алексей Петрович",
 	doctorSpecialty: "Врач-стоматолог терапевт-эндодонтист",
 	clinicName: "ООО «Денте Стоматология»",
 	status: "completed",
 	diagnosisIcd10: "K04.0",
-	diagnosticNotes: "Контрольная радиовизиография зуба 16 после инструментальной обработки каналов. Рабочая длина соблюдена.",
+	diagnosticNotes: "Контрольная радиовизиография зуба 16 после инструментальной обработки каналов и обтурации гуттаперчей. Плотное заполнение 3 корневых каналов (MB, DB, Palatal), верхушечный периодонт без деструктивных изменений.",
 	metadata: {
 		kv: 65,
 		ma: 7.0,
@@ -275,8 +276,8 @@ const SAMPLE_STUDY: RadiologyStudy = {
 	landmarks: [
 		{
 			id: "lm-sample-1",
-			x: 50,
-			y: 85,
+			x: 51.5,
+			y: 28.5,
 			toothFdi: "16",
 			label: "Апекс небного корня 16",
 			type: "apex",
@@ -310,6 +311,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isImplantPlannerOpen, setIsImplantPlannerOpen] = useState(false);
 	const [isActPrintOpen, setIsActPrintOpen] = useState(false);
 	const [isFiscalOpen, setIsFiscalOpen] = useState(false);
+	const [isBilling1cExportOpen, setIsBilling1cExportOpen] = useState(false);
 	const [isPediatricOpen, setIsPediatricOpen] = useState(false);
 	const [isConsentOpen, setIsConsentOpen] = useState(false);
 	const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -376,7 +378,11 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				}
 				const requestedModal = params.get("modal");
 				if (requestedModal) {
-										setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
+					setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
+					if (requestedModal === "fiscal" || requestedModal === "54fz") setIsFiscalOpen(true);
+					if (requestedModal === "billing_1c" || requestedModal === "1c" || requestedModal === "1c_export" || requestedModal === "commerceml") {
+						setIsBilling1cExportOpen(true);
+					}
 				}
 			}
 		};
@@ -481,6 +487,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Receipt size={15} />
 							<span>Открыть фискализацию</span>
+						</button>
+					</div>
+
+					{/* 2b. Billing & 1C:Enterprise XML Export Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Coins className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									1C:Предприятие & Экспорт CommerceML
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Выгрузка счетов и актов 804н в 1С:Бухгалтерия 8.3 / УТ (CommerceML 2.09), налоговые льготы 149 НК РФ и 1-клик экспорт XML.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsBilling1cExportOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-billing-1c-export-modal-btn"
+						>
+							<Coins size={15} />
+							<span>Открыть 1С:Экспорт XML</span>
 						</button>
 					</div>
 
@@ -1715,6 +1745,18 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					patientId="PAT-2026-0891"
 					patientName="Смирнова Екатерина Васильевна"
 					patientDepositRub={5000}
+				/>
+			)}
+
+			{isBilling1cExportOpen && (
+				<FiscalReceipt54FzModal
+					isOpen={isBilling1cExportOpen}
+					onClose={() => setIsBilling1cExportOpen(false)}
+					items={SAMPLE_TREATMENT_ITEMS}
+					patientId="PAT-2026-0891"
+					patientName="Смирнова Екатерина Васильевна"
+					patientDepositRub={5000}
+					initialTab="oneC"
 				/>
 			)}
 

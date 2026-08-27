@@ -528,7 +528,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 			setVolume(vol);
 			setLoadedSliceCount(vol.dimensions.depth);
-			setCrosshairMm({ x: 0, y: -5, z: jawType === "mandible" ? 16.8 : -16.0 });
+			setCrosshairMm({ x: 0, y: -5, z: 0 });
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 			const arch = buildDentalArchCurve(
@@ -565,7 +565,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				});
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
-				setCrosshairMm({ x: 0, y: -5, z: jawType === "mandible" ? 16.8 : -16.0 });
+				setCrosshairMm({ x: 0, y: -5, z: 0 });
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				setDicomLoadingStatus(null);
@@ -590,7 +590,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				});
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
-				setCrosshairMm({ x: 0, y: -5, z: jawType === "mandible" ? 16.8 : -16.0 });
+				setCrosshairMm({ x: 0, y: -5, z: 0 });
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				setDicomLoadingStatus(null);

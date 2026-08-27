@@ -7,12 +7,15 @@ import React, { useMemo, useState } from "react";
 import {
 	AlertTriangle,
 	Banknote,
+	Building2,
 	Check,
 	CheckCircle2,
+	Code2,
 	Coins,
 	Copy,
 	CreditCard,
 	FileCheck,
+	FileCode2,
 	FileText,
 	Gift,
 	Layers,
@@ -28,7 +31,12 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
-import { parseChestnyZnakDataMatrix } from "@dental/shared";
+import {
+	generateOneCEnterpriseXml,
+	type OneCDocumentType,
+	type OneCExportParams,
+	parseChestnyZnakDataMatrix,
+} from "@dental/shared";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
 import {
@@ -48,7 +56,17 @@ import {
 	TREATMENT_STAGE_LABELS,
 } from "./order804nFiscalEngine";
 import { Order804nFiscalReceiptPrint } from "./Order804nFiscalReceiptPrint";
-import { numberToWordsRu } from "../treatment-plans/TreatmentPlanCompletedActPrint";
+import { OneCExportButton } from "./OneCExportButton";
+import { numberToWordsRu } from "./invoiceEngine";
+
+export type FiscalModalTab =
+	| "payment"
+	| "act"
+	| "certificate"
+	| "oneC"
+	| "refund"
+	| "correction"
+	| "preview";
 
 export interface FiscalReceipt54FzModalProps {
 	readonly isOpen: boolean;
@@ -59,6 +77,7 @@ export interface FiscalReceipt54FzModalProps {
 	readonly patientDepositRub?: number | undefined;
 	readonly cashierFullName?: string | undefined;
 	readonly clinicName?: string | undefined;
+	readonly initialTab?: FiscalModalTab | undefined;
 	readonly onClose: () => void;
 	readonly onReceiptFiscalized?: ((receiptNumber: string) => void) | undefined;
 }
@@ -84,12 +103,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	patientDepositRub = 0,
 	cashierFullName = "Кассир-администратор",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+	initialTab = "payment",
 	onClose,
 	onReceiptFiscalized,
 }) => {
 	if (!isOpen) return null;
 
-	const [activeTab, setActiveTab] = useState<"payment" | "refund" | "correction" | "certificate" | "act" | "preview">("payment");
+	const [activeTab, setActiveTab] = useState<FiscalModalTab>(initialTab || "payment");
 	const [actNumber, setActNumber] = useState<string>(
 		`АКТ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
 	);
@@ -125,6 +145,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const [payerInn, setPayerInn] = useState<string>("");
 	const [payerRelationship, setPayerRelationship] = useState<TaxDeductionRelationship>("self");
 	const [taxYear, setTaxYear] = useState<number>(new Date().getFullYear());
+
+	// 1C:Enterprise (1С:Предприятие 8.3 XML / CommerceML 2.09) state
+	const [oneCDocType, setOneCDocType] = useState<OneCDocumentType>("act");
+	const [oneCDocDate, setOneCDocDate] = useState<string>(new Date().toISOString().slice(0, 10));
+	const [oneCDocTime] = useState<string>("12:00:00");
+	const [oneCClinicInn, setOneCClinicInn] = useState<string>("7701234567");
+	const [oneCClinicKpp, setOneCClinicKpp] = useState<string>("770101001");
+	const [oneCPatientInn, setOneCPatientInn] = useState<string>("");
+	const [oneCPatientAddress, setOneCPatientAddress] = useState<string>("г. Москва, ул. Клиническая, д. 12");
 
 	const availableStages = useMemo(() => {
 		const stages = new Set<string>();
@@ -396,6 +425,103 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		});
 	}, [fiscalReceipt, payerFullName, patientName, payerInn, payerRelationship, taxYear]);
 
+	const oneCExportParams: OneCExportParams = useMemo(() => {
+		const effectiveDate = oneCDocDate || new Date().toISOString().slice(0, 10);
+		return {
+			exportId: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+			generatedAt: new Date().toISOString(),
+			clinic: {
+				id: "clinic-dente",
+				name: clinicName,
+				fullName: clinicName,
+				inn: oneCClinicInn,
+				kpp: oneCClinicKpp,
+				isLegalEntity: true,
+				phone: "+7 (495) 123-45-67",
+				address: "г. Москва, Ломоносовский проспект, д. 24",
+				bankAccount: "40702810938000012345",
+				bankBik: "044525225",
+				bankName: "ПАО СБЕРБАНК",
+				bankCorrAccount: "30101810400000000225",
+			},
+			documents: [
+				{
+					id: `doc-${actNumber}`,
+					number: actNumber,
+					documentDate: effectiveDate,
+					documentTime: oneCDocTime,
+					docType: oneCDocType,
+					operationName:
+						oneCDocType === "act"
+							? "Реализация товаров и услуг"
+							: oneCDocType === "invoice"
+								? "Заказ покупателя"
+								: oneCDocType === "cash_order"
+									? "Приходный кассовый ордер"
+									: "Оплата платежной картой",
+					patient: {
+						id: patientId,
+						name: patientName,
+						fullName: patientName,
+						inn: oneCPatientInn.trim() || null,
+						phone: customerContact || patientPhone || null,
+						address: oneCPatientAddress || null,
+						isLegalEntity: false,
+					},
+					items: activeItems.map((it, idx) => {
+						const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
+						const unitPriceKop = Math.round(it.priceRub * 100);
+						const discKop = Math.round((it.discountRub || 0) * 100);
+						const totalKop = Math.max(0, unitPriceKop * qty - discKop);
+						return {
+							id: it.id || `item-${idx + 1}`,
+							code804n: it.code804n || null,
+							name: it.name,
+							toothNumber: it.toothNumber ? Number(it.toothNumber) : null,
+							quantity: qty,
+							priceKopecks: unitPriceKop,
+							discountPercent: it.discountRub ? Math.round((it.discountRub / (it.priceRub * qty)) * 100) : 0,
+							totalKopecks: totalKop,
+							vatRate: "Без НДС",
+							vatAmountKopecks: 0,
+						};
+					}),
+					totalKopecks: Math.round(totalSumRub * 100),
+					contractNumber: contractNumber || null,
+					contractDate: effectiveDate,
+					attendingDoctorName: cashierFullName,
+					comment: `Выгрузка из CRM DENTE: ${actNumber}`,
+				},
+			],
+		};
+	}, [
+		clinicName,
+		oneCClinicInn,
+		oneCClinicKpp,
+		actNumber,
+		oneCDocDate,
+		oneCDocTime,
+		oneCDocType,
+		patientId,
+		patientName,
+		oneCPatientInn,
+		customerContact,
+		patientPhone,
+		oneCPatientAddress,
+		activeItems,
+		totalSumRub,
+		contractNumber,
+		cashierFullName,
+	]);
+
+	const oneCXmlPreview = useMemo(() => {
+		try {
+			return generateOneCEnterpriseXml(oneCExportParams);
+		} catch (err) {
+			return `<!-- Ошибка формирования XML: ${err instanceof Error ? err.message : String(err)} -->`;
+		}
+	}, [oneCExportParams]);
+
 	const handleExecuteFiscalization = async () => {
 		if (activeTab === "payment" && !allocation.isFullyAllocated) {
 			showToast(
@@ -485,13 +611,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			<div className="relative flex flex-col w-full max-w-5xl max-h-[92vh] bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl shadow-2xl overflow-hidden border border-[var(--border,#cbd5e1)]">
 				{/* Top Modal Header */}
 				<div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] shrink-0 flex-wrap sm:flex-nowrap">
-					<div className="flex items-center gap-3 min-w-0">
+					<div className="flex items-center gap-3 min-w-0 max-w-full flex-1">
 						<div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
 							<Receipt size={20} />
 						</div>
-						<div className="min-w-0">
+						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-2 flex-wrap">
-								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] truncate">
+								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] whitespace-normal break-normal">
 									{activeTab === "refund"
 										? "Возврат прихода / Отказ от услуг"
 										: activeTab === "correction"
@@ -500,19 +626,21 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												? "Справка для налогового вычета (КНД 1151156)"
 												: activeTab === "act"
 													? "Акт сдачи-приемки выполненных работ (804н)"
-													: "Фискализация 54-ФЗ & Прием оплаты"}
+													: activeTab === "oneC"
+														? "1С:Экспорт XML (CommerceML 2.09)"
+														: "Фискализация 54-ФЗ & Прием платежей"}
 								</h3>
-								<span className="text-xs font-mono px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold">
+								<span className="text-xs font-mono px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
 									ФФД 1.2
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted,#64748b)] truncate">
+							<p className="text-xs text-[var(--muted,#64748b)] whitespace-normal break-words">
 								Пациент:{" "}
-								<strong className="text-[var(--ink,#0f172a)]">
+								<strong className="text-[var(--ink,#0f172a)] font-semibold">
 									{patientName}
 								</strong>{" "}
 								· Итого:{" "}
-								<strong className="text-emerald-600 dark:text-emerald-400 font-mono">
+								<strong className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">
 									{formatMoneyRu(activeTab === "refund" ? refundFiscalData.totalRub : totalSumRub)}
 								</strong>
 							</p>
@@ -543,6 +671,18 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								}`}
 							>
 								Акт работ (804н)
+							</button>
+							<button
+								type="button"
+								onClick={() => setActiveTab("oneC")}
+								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+									activeTab === "oneC"
+										? "bg-amber-600 text-white shadow-xs"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="tab-1c-export"
+							>
+								1С:Экспорт XML
 							</button>
 							<button
 								type="button"
@@ -622,6 +762,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										>
 											<FileText size={14} />
 											<span>Акт выполненных работ (804н)</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => setActiveTab("oneC")}
+											className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+											title="1-Клик: Экспорт в 1С:Предприятие 8.3 (CommerceML 2.09 XML)"
+										>
+											<FileCode2 size={14} />
+											<span>1С:Экспорт (XML)</span>
 										</button>
 										<button
 											type="button"
@@ -1648,6 +1797,316 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									<Printer size={16} />
 									<span>Печать Акта выполненных работ</span>
 								</button>
+							</div>
+						</div>
+					)}
+
+					{/* TAB: 1C:ENTERPRISE COMMERCEML XML EXPORT */}
+					{activeTab === "oneC" && (
+						<div className="space-y-6" data-testid="1c-enterprise-export-panel">
+							{/* Statutory Badges Bar */}
+							<div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+								<div className="flex flex-wrap items-center justify-between gap-3">
+									<div className="flex items-center gap-2.5">
+										<div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300">
+											<FileCode2 size={20} />
+										</div>
+										<div>
+											<h4 className="font-extrabold text-sm text-[var(--ink,#0f172a)] flex items-center gap-2">
+												<span>1С:Предприятие 8.3 / Бухгалтерия & УТ</span>
+												<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">
+													CommerceML 2.09
+												</span>
+											</h4>
+											<p className="text-xs text-[var(--muted,#64748b)]">
+												Выгрузка электронных первичных документов и счетов в учетную систему 1С с привязкой номенклатуры 804н и освобождением от НДС
+											</p>
+										</div>
+									</div>
+
+									{/* Badges */}
+									<div className="flex items-center gap-2 flex-wrap">
+										<span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
+											<CheckCircle2 size={13} />
+											<span>пп. 2 п. 2 ст. 149 НК РФ (Без НДС)</span>
+										</span>
+										<span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+											ОКЕИ 796 (Шт.)
+										</span>
+										<span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+											КНД 1151156 / 804н
+										</span>
+									</div>
+								</div>
+							</div>
+
+							{/* Document Configuration Parameters */}
+							<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-4">
+								<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
+									<Building2 size={16} className="text-amber-600 dark:text-amber-400" />
+									Параметры документа выгрузки в 1С:
+								</h4>
+
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Тип документа 1С:
+										</label>
+										<select
+											value={oneCDocType}
+											onChange={(e) => setOneCDocType(e.target.value as OneCDocumentType)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] cursor-pointer"
+										>
+											<option value="act">Реализация товаров и услуг (Акт 804н)</option>
+											<option value="invoice">Заказ покупателя (Счет на оплату)</option>
+											<option value="cash_order">Приходный кассовый ордер (ПКО)</option>
+											<option value="acquiring_payment">Оплата картой (Эквайринг)</option>
+										</select>
+									</div>
+
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Номер документа:
+										</label>
+										<input
+											type="text"
+											value={actNumber}
+											onChange={(e) => setActNumber(e.target.value)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Дата проведения:
+										</label>
+										<input
+											type="date"
+											value={oneCDocDate}
+											onChange={(e) => setOneCDocDate(e.target.value)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Договор пациента:
+										</label>
+										<input
+											type="text"
+											value={contractNumber}
+											onChange={(e) => setContractNumber(e.target.value)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+								</div>
+
+								{/* Parties Details Row */}
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-[var(--border,#cbd5e1)]">
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											ИНН Клиники:
+										</label>
+										<input
+											type="text"
+											value={oneCClinicInn}
+											onChange={(e) => setOneCClinicInn(e.target.value)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											КПП Клиники:
+										</label>
+										<input
+											type="text"
+											value={oneCClinicKpp}
+											onChange={(e) => setOneCClinicKpp(e.target.value)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											ИНН Пациента (опционально):
+										</label>
+										<input
+											type="text"
+											placeholder="770123456789"
+											value={oneCPatientInn}
+											onChange={(e) => setOneCPatientInn(e.target.value)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Лечащий врач:
+										</label>
+										<input
+											type="text"
+											value={cashierFullName}
+											readOnly
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] cursor-not-allowed"
+										/>
+									</div>
+								</div>
+							</div>
+
+							{/* Items Registry Table for 1C */}
+							<div className="p-4 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] space-y-3 shadow-xs">
+								<div className="flex items-center justify-between">
+									<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+										<FileCheck size={16} className="text-amber-600 dark:text-amber-400" />
+										Реестр номенклатурных позиций для 1С (Табличная часть):
+									</h4>
+									<span className="text-xs font-mono text-[var(--muted,#64748b)]">
+										Позиций: {activeItems.length} · Итого: <strong>{formatMoneyRu(totalSumRub)}</strong>
+									</span>
+								</div>
+
+								<div className="overflow-x-auto">
+									<table className="w-full text-xs font-sans border-collapse border border-[var(--border,#cbd5e1)]">
+										<thead>
+											<tr className="bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] font-bold text-center">
+												<th className="border border-[var(--border,#cbd5e1)] p-2 w-8">№</th>
+												<th className="border border-[var(--border,#cbd5e1)] p-2 w-28">Артикул / 804н</th>
+												<th className="border border-[var(--border,#cbd5e1)] p-2 text-left">Наименование номенклатуры</th>
+												<th className="border border-[var(--border,#cbd5e1)] p-2 w-16">Ед. ОКЕИ</th>
+												<th className="border border-[var(--border,#cbd5e1)] p-2 w-14">Кол-во</th>
+												<th className="border border-[var(--border,#cbd5e1)] p-2 w-24 text-right">Цена</th>
+												<th className="border border-[var(--border,#cbd5e1)] p-2 w-16 text-center">Скидка</th>
+												<th className="border border-[var(--border,#cbd5e1)] p-2 w-24 text-right">Сумма</th>
+												<th className="border border-[var(--border,#cbd5e1)] p-2 w-20 text-center">Ставка НДС</th>
+											</tr>
+										</thead>
+										<tbody>
+											{activeItems.map((it, idx) => {
+												const qty = it.quantity || 1;
+												const sum = it.priceRub * qty - (it.discountRub || 0);
+												const discPercent = it.discountRub ? Math.round((it.discountRub / (it.priceRub * qty)) * 100) : 0;
+												return (
+													<tr key={it.id || idx} className="hover:bg-[var(--paper-soft,#f8fafc)]">
+														<td className="border border-[var(--border,#cbd5e1)] p-2 text-center text-[var(--muted,#64748b)]">{idx + 1}</td>
+														<td className="border border-[var(--border,#cbd5e1)] p-2 font-mono text-center text-[11px] font-semibold text-cyan-700 dark:text-cyan-300">
+															{it.code804n || `ART-${idx + 1}`}
+														</td>
+														<td className="border border-[var(--border,#cbd5e1)] p-2 font-medium text-[var(--ink,#0f172a)]">
+															{it.name}
+															{it.toothNumber ? (
+																<span className="ml-1 text-[11px] font-bold text-teal-600 dark:text-teal-400">
+																	[Зуб {it.toothNumber}]
+																</span>
+															) : null}
+														</td>
+														<td className="border border-[var(--border,#cbd5e1)] p-2 text-center text-[var(--muted,#64748b)]">796 (шт)</td>
+														<td className="border border-[var(--border,#cbd5e1)] p-2 text-center font-bold">{qty}</td>
+														<td className="border border-[var(--border,#cbd5e1)] p-2 text-right font-mono">{formatMoneyRu(it.priceRub)}</td>
+														<td className="border border-[var(--border,#cbd5e1)] p-2 text-center font-mono">
+															{discPercent > 0 ? `${discPercent}%` : "0%"}
+														</td>
+														<td className="border border-[var(--border,#cbd5e1)] p-2 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+															{formatMoneyRu(sum)}
+														</td>
+														<td className="border border-[var(--border,#cbd5e1)] p-2 text-center text-[11px] text-[var(--muted,#64748b)]">
+															Без НДС
+														</td>
+													</tr>
+												);
+											})}
+										</tbody>
+										<tfoot>
+											<tr className="bg-[var(--paper-soft,#f8fafc)] font-bold">
+												<td colSpan={7} className="border border-[var(--border,#cbd5e1)] p-2 text-right uppercase text-[var(--muted,#64748b)]">
+													Итого по выгрузке (Копеек: {totalKopecks}):
+												</td>
+												<td className="border border-[var(--border,#cbd5e1)] p-2 text-right font-mono font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+													{formatMoneyRu(totalSumRub)}
+												</td>
+												<td className="border border-[var(--border,#cbd5e1)] p-2 text-center text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+													Освобождено
+												</td>
+											</tr>
+										</tfoot>
+									</table>
+								</div>
+							</div>
+
+							{/* CommerceML 2.09 XML Live Preview Box */}
+							<div className="p-4 rounded-2xl bg-slate-950 text-slate-100 border border-slate-800 space-y-2">
+								<div className="flex items-center justify-between pb-2 border-b border-slate-800">
+									<div className="flex items-center gap-2">
+										<Code2 size={16} className="text-amber-400" />
+										<span className="font-mono text-xs font-bold text-amber-300">
+											Предпросмотр XML-пакета CommerceML 2.09 (1С:Предприятие 8.3)
+										</span>
+									</div>
+									<span className="text-[11px] font-mono text-slate-400">
+										Размер: {new Blob([oneCXmlPreview]).size} байт · Кодировка UTF-8
+									</span>
+								</div>
+
+								<pre className="p-3 bg-slate-900/90 rounded-xl text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-60 border border-slate-800 select-all leading-relaxed whitespace-pre">
+									{oneCXmlPreview}
+								</pre>
+							</div>
+
+							{/* Action Buttons: 1-Click Export, Copy XML, Copy Summary */}
+							<div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+								<div className="flex items-center gap-2 flex-wrap">
+									<button
+										type="button"
+										onClick={() => {
+											navigator.clipboard.writeText(oneCXmlPreview);
+											showToast("XML-код 1С:Предприятие скопирован в буфер обмена!", "success", 2500);
+										}}
+										className="min-h-[48px] px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+									>
+										<Copy size={16} />
+										<span>Копировать XML в буфер</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											const summaryText = `ВЫГРУЗКА В 1С:ПРЕДПРИЯТИЕ 8.3
+Документ: ${oneCDocType === "act" ? "Акт выполненных работ" : "Счет на оплату"} № ${actNumber} от ${oneCDocDate}
+Клиника: ${clinicName} (ИНН ${oneCClinicInn} / КПП ${oneCClinicKpp})
+Пациент: ${patientName} (Договор ${contractNumber})
+Позиций: ${activeItems.length}
+Сумма: ${formatMoneyRu(totalSumRub)} (Без НДС - пп. 2 п. 2 ст. 149 НК РФ)`;
+											navigator.clipboard.writeText(summaryText);
+											showToast("Сводка для бухгалтера скопирована!", "success", 2500);
+										}}
+										className="min-h-[48px] px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+									>
+										<FileText size={16} />
+										<span>Сводка для бухгалтерии</span>
+									</button>
+								</div>
+
+								{/* 1-Click Export XML Button */}
+								<OneCExportButton
+									actNumber={actNumber}
+									documentDate={oneCDocDate}
+									docType={oneCDocType}
+									patientName={patientName}
+									patientId={patientId}
+									patientPhone={customerContact || patientPhone}
+									patientAddress={oneCPatientAddress}
+									doctorName={cashierFullName}
+									clinicName={clinicName}
+									clinicInn={oneCClinicInn}
+									clinicKpp={oneCClinicKpp}
+									items={activeItems}
+									totalRub={totalSumRub}
+									contractNumber={contractNumber}
+									contractDate={oneCDocDate}
+									variant="primary"
+									label="⚡ 1-Клик Экспорт в 1С (Скачать XML)"
+									className="min-h-[48px] px-6 py-2.5 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white"
+								/>
 							</div>
 						</div>
 					)}

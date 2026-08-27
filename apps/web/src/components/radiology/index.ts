@@ -18,3 +18,4 @@ export * from "./CbctMprImplantStudioModal";
 export * from "./CbctMpr3DStudioModal";
 export * from "./CbctViewportHud";
 export * from "./CbctLeftToolDock";
+export * from "./tooth16RadiographSvg";

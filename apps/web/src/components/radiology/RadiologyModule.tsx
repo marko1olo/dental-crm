@@ -32,6 +32,7 @@ import { formatRadiationDose } from "./radiologyMath";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { RadiologyStudyList } from "./RadiologyStudyList";
 import { RadiologyViewerModal } from "./RadiologyViewerModal";
+import { TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI } from "./tooth16RadiographSvg";
 import type { RadiologyStudy } from "./types";
 
 export interface RadiologyModuleProps {
@@ -148,20 +149,19 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 		studyDate: "2026-08-01 09:40",
 		studyType: "intraoral_radiovisiography",
 		modality: "intraoral_rvg",
-		modalityLabel: "Прицельный визиограф (RVG)",
-		anatomicalArea: "Зуб 36 (Нижний первый моляр)",
-		teethFdi: ["36"],
+		modalityLabel: "Прицельная радиовизиография",
+		anatomicalArea: "Зуб 16 (Верхний правый моляр)",
+		teethFdi: ["16"],
 		effectiveDoseMicrosv: 3.0,
 		effectiveDoseMsv: 0.003,
-		imageUrl:
-			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='1000' viewBox='0 0 800 1000'><rect width='800' height='1000' fill='%23050811'/><polygon points='300,200 500,200 550,500 450,900 350,900 250,500' fill='none' stroke='%2306b6d4' stroke-width='3'/><text x='400' y='480' fill='%2338bdf8' font-size='24' font-family='sans-serif' font-weight='bold' text-anchor='middle'>ПРИЦЕЛЬНАЯ РАДИОВИЗИОГРАФИЯ</text><text x='400' y='520' fill='%2394a3b8' font-size='16' font-family='sans-serif' text-anchor='middle'>Зуб 36 · Контроль длины каналов</text></svg>",
+		imageUrl: TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI,
 		doctorName: "Др. Смирнов А.В.",
 		doctorSpecialty: "Врач-стоматолог эндодонтист",
 		clinicName: 'ООО "Денте Клиник"',
 		status: "completed",
 		diagnosisIcd10: "K04.0",
 		diagnosticNotes:
-			"Прицельная рентгенограмма зуба 36. Визуализируются 3 корневых канала (медиально-щечный, медиально-язычный, дистальный). Рабочая длина медиальных каналов 20.5 мм, дистального 21.0 мм. Периодонтальная щель не расширена.",
+			"Прицельная контрольная радиовизиография зуба 16. Визуализируются 3 обтурированных корневых канала (медиально-щечный, дистально-щечный, небный) гуттаперчей с силером. Пломбирование плотное, на 0.5-0.8 мм до рентгенологического апекса. Периодонтальная щель равномерная.",
 		metadata: {
 			kv: 65,
 			ma: 7.0,
@@ -172,10 +172,10 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 		landmarks: [
 			{
 				id: "lm-rvg-1",
-				x: 50,
-				y: 85,
-				toothFdi: "36",
-				label: "Апекс дистального корня 36",
+				x: 51.5,
+				y: 28.5,
+				toothFdi: "16",
+				label: "Апекс небного корня 16",
 				type: "apex",
 			},
 		],

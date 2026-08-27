@@ -483,4 +483,6 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 	);
 };
 
+export const TreatmentPlanComparisonModal = TreatmentPlanComparatorModal;
+export type TreatmentPlanComparisonModalProps = TreatmentPlanComparatorModalProps;
 export default TreatmentPlanComparatorModal;

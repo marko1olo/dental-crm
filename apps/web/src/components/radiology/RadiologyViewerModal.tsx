@@ -59,6 +59,7 @@ import {
 } from "./radiologyMath";
 import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal";
 import { CbctMprViewer } from "./CbctMprViewer";
+import { TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI } from "./tooth16RadiographSvg";
 
 import {
 	DEFAULT_WW_WL_PRESETS,
@@ -127,9 +128,14 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	const [landmarkType, setLandmarkType] = useState<LandmarkPin["type"]>("tooth");
 	const [landmarkCustomLabel, setLandmarkCustomLabel] = useState<string>("");
 
-	// HUD and Panels
+	// HUD and Panels (Side drawer collapsed by default on mobile <768px)
 	const [isHudVisible, setIsHudVisible] = useState<boolean>(true);
-	const [isSideDrawerOpen, setIsSideDrawerOpen] = useState<boolean>(true);
+	const [isSideDrawerOpen, setIsSideDrawerOpen] = useState<boolean>(() => {
+		if (typeof window !== "undefined") {
+			return window.innerWidth >= 768;
+		}
+		return false;
+	});
 	const [isControlsExpanded, setIsControlsExpanded] = useState<boolean>(false);
 	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState<boolean>(false);
 	const [isMprViewerOpen, setIsMprViewerOpen] = useState<boolean>(false);
@@ -149,6 +155,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			if (study.teethFdi && study.teethFdi.length > 0 && study.teethFdi[0]) {
 				setSelectedFdiTooth(study.teethFdi[0] ?? "16");
 			}
+		}
+		if (typeof window !== "undefined") {
+			setIsSideDrawerOpen(window.innerWidth >= 768);
 		}
 		// Reset view state
 		setZoom(1.0);
@@ -516,34 +525,34 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<header className="flex items-center justify-between px-4 py-2.5 bg-slate-900/90 border-b border-[var(--teal)]/20 backdrop-blur-md z-30 shrink-0">
 				{/* Left: Study Title, Modality & Patient Info */}
-				<div className="flex items-center gap-3 min-w-0">
+				<div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-[var(--teal)] hover:border-[var(--teal)]/50 hover:bg-slate-700/60 active:scale-95 transition-all"
+						className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-[var(--teal)] hover:border-[var(--teal)]/50 hover:bg-slate-700/60 active:scale-95 transition-all shrink-0"
 						title="Закрыть просмотрщик (Esc)"
 						data-testid="radiology-viewer-close-btn"
 					>
 						<ArrowLeft className="w-5 h-5" />
 					</button>
 
-					<div className="flex flex-col min-w-0">
+					<div className="flex flex-col min-w-0 flex-1">
 						<div className="flex items-center gap-2 flex-wrap">
-							<span className="px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold uppercase tracking-wide">
+							<span className="whitespace-nowrap text-[11px] px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] font-bold uppercase tracking-wide shrink-0">
 								{modalityLabel}
 							</span>
-							<h1 className="text-sm md:text-base font-bold text-slate-100 truncate">
+							<h1 className="text-xs sm:text-sm md:text-base font-bold text-slate-100 truncate max-w-[200px] sm:max-w-none">
 								{studyTitle}
 							</h1>
 						</div>
-						<div className="flex items-center gap-3 text-xs text-slate-400 truncate mt-0.5">
-							<span className="font-semibold text-slate-200">
+						<div className="flex items-center gap-2 sm:gap-3 text-xs text-slate-400 truncate mt-0.5">
+							<span className="font-semibold text-slate-200 truncate max-w-[220px] sm:max-w-none">
 								Пациент: {patientName}
 							</span>
-							<span>•</span>
-							<span>Врач: {doctorName}</span>
-							<span>•</span>
-							<span className="font-bold text-[var(--teal)]">
+							<span className="hidden xs:inline">•</span>
+							<span className="hidden sm:inline">Врач: {doctorName}</span>
+							<span className="hidden md:inline">•</span>
+							<span className="hidden md:inline font-bold text-[var(--teal)]">
 								Дата: {studyDateFormatted}
 							</span>
 						</div>
@@ -606,12 +615,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsMprViewerOpen(true)}
-						className="flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-white text-xs font-bold transition-all shadow-sm"
+						className="flex items-center gap-2 min-h-[44px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-white text-xs font-bold transition-all shadow-sm"
 						title="Открыть 3D MPR мультипланарную реконструкцию и панораму зубной дуги"
 						data-testid="open-mpr-viewer-modal-btn"
 					>
 						<Layers className="w-4 h-4" />
-						<span>3D MPR / ОПТГ</span>
+						<span className="hidden sm:inline">3D MPR / ОПТГ</span>
 					</button>
 
 					{study?.modality === "cbct_3d" && (
@@ -857,7 +866,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 				{/* ── WW/WL PRESETS QUICK BAR (Bottom Floating) ── */}
 				<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-[var(--teal)]/30 shadow-2xl backdrop-blur-md">
-					<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-slate-400">
+					<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap">
 						Пресеты WW/WL:
 					</span>
 					{DEFAULT_WW_WL_PRESETS.map((preset) => {
@@ -867,7 +876,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								key={preset.id}
 								type="button"
 								onClick={() => handleSelectPreset(preset)}
-								className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+								className={`min-h-[44px] whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all ${
 									isSelected
 										? "bg-[var(--teal)] border border-[var(--teal)] text-white shadow-sm"
 										: "bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700"
@@ -1137,7 +1146,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					>
 						<img
 							ref={imageRef}
-							src={study?.imageUrl || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'><rect width='800' height='600' fill='%230f172a'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2338bdf8' font-size='24' font-family='sans-serif'>Рентгеновский снимок (Загрузка...)</text></svg>"}
+							src={study?.imageUrl || TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI}
 							alt={studyTitle}
 							draggable={false}
 							className="max-h-[85vh] max-w-[85vw] object-contain select-none pointer-events-none rounded-lg shadow-2xl"
@@ -1613,7 +1622,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				{isSideDrawerOpen && (
 					<aside
 						aria-label="Сведения об исследовании и диагностическое заключение"
-						className="w-80 md:w-96 bg-slate-900 border-l border-[var(--teal)]/20 flex flex-col shrink-0 z-30 overflow-y-auto"
+						className="absolute inset-y-0 right-0 z-40 w-80 max-w-[90vw] md:static md:w-96 bg-slate-900 border-l border-[var(--teal)]/20 flex flex-col shrink-0 overflow-y-auto shadow-2xl md:shadow-none animate-in slide-in-from-right-4 duration-200"
 						data-testid="radiology-viewer-side-drawer"
 					>
 						{/* Header */}
@@ -1627,8 +1636,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setIsSideDrawerOpen(false)}
-								className="p-1 rounded-lg text-slate-400 hover:text-slate-200"
+								className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800"
 								title="Скрыть панель"
+								data-testid="close-side-drawer-btn"
 							>
 								<X className="w-4 h-4" />
 							</button>

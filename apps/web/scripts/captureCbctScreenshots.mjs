@@ -6,10 +6,11 @@ import path from 'node:path';
 const DATA_DIR = 'C:/Users/Admin/Downloads/Telegram Desktop/BARABASH_SVETLANA_VIKTOROVNA_09141256/BARABASH_SVETLANA_VIKTOROVNA_09141256/Data';
 const PROOFS_DIR = 'C:/Clinic_MVP/dental-crm/docs/proofs/cbct';
 const ARTIFACT_DIR_PARENT = 'C:/Users/Admin/.gemini/antigravity/brain/0284cf50-cf45-4b19-be4c-f6f53b03120f';
-const ARTIFACT_DIR_CURRENT = 'C:/Users/Admin/.gemini/antigravity/brain/d7bfd7df-9c75-447c-b678-415f5c2e8370';
+const ARTIFACT_DIR_CURRENT = 'C:/Users/Admin/.gemini/antigravity/brain/390465f2-4099-4bae-811d-6eb86a9c6dc1';
+const ARTIFACT_DIR_OTHER1 = 'C:/Users/Admin/.gemini/antigravity/brain/d7bfd7df-9c75-447c-b678-415f5c2e8370';
 const ARTIFACT_DIR_PREV = 'C:/Users/Admin/.gemini/antigravity/brain/9ec09559-65e9-4272-a2a5-767f11373bc5';
 
-const ALL_ARTIFACT_DIRS = [PROOFS_DIR, ARTIFACT_DIR_PARENT, ARTIFACT_DIR_CURRENT, ARTIFACT_DIR_PREV];
+const ALL_ARTIFACT_DIRS = [PROOFS_DIR, ARTIFACT_DIR_PARENT, ARTIFACT_DIR_CURRENT, ARTIFACT_DIR_OTHER1, ARTIFACT_DIR_PREV];
 
 for (const dir of ALL_ARTIFACT_DIRS) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

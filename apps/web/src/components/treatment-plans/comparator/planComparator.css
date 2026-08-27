@@ -326,18 +326,31 @@
 
 .plan-roadmap-stages {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 12px;
+}
+
+@media (max-width: 1024px) {
+	.plan-roadmap-stages {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 640px) {
+	.plan-roadmap-stages {
+		grid-template-columns: 1fr;
+	}
 }
 
 .plan-stage-step {
 	background: var(--plan-bg);
 	border: 1px solid var(--plan-border);
 	border-radius: var(--plan-radius-sm);
-	padding: 14px;
+	padding: 12px 14px;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
+	min-height: 245px;
 }
 
 .plan-stage-header {
@@ -361,9 +374,10 @@
 }
 
 .plan-proc-tag {
-	font-size: 0.75rem;
+	font-size: 0.725rem;
+	line-height: 1.35;
 	background: var(--plan-surface);
-	padding: 4px 8px;
+	padding: 3px 6px;
 	border-radius: 4px;
 	color: var(--plan-text-muted);
 }
