@@ -236,6 +236,14 @@ describe("Frontend Ergonomics & Layout Defects Remediation", () => {
       pediaHtml.includes("hidden sm:inline"),
       "Age slider scale must hide verbose text in brackets on mobile (<640px)",
     );
+    assert.ok(
+      pediaHtml.includes("Сроки смены</span>") && pediaHtml.includes("Cariogram</span>"),
+      "Pediatric modal tabs must include compact mobile labels 'Сроки смены' and 'Cariogram'",
+    );
+    assert.ok(
+      pediaHtml.includes("padding-bottom: 112px") || pediaHtml.includes("padding-bottom:112px") || pediaHtml.includes("pb-28"),
+      "Pediatric modal scroll body must have 112px / pb-28 bottom padding to clear sticky footer",
+    );
 
     // 2. OneCExportButton
     const btnHtml = renderToStaticMarkup(

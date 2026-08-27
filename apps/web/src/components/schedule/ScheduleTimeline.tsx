@@ -215,7 +215,7 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 	return (
 		<div
 			ref={timelineContainerRef}
-			className="schedule-timeline timeline focus:outline-none pb-28 sm:pb-8"
+			className="schedule-timeline timeline focus:outline-none pb-32 sm:pb-8"
 			data-testid="schedule-timeline-container"
 			tabIndex={-1}
 		>

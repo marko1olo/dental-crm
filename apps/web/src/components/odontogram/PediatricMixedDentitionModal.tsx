@@ -326,68 +326,75 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 
 				{/* Navigation Tabs */}
 				<div
-					className="flex items-center gap-2 px-4 sm:px-6 pt-3 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap shrink-0"
-					style={{ display: "flex", overflowX: "auto", flexWrap: "nowrap", gap: "8px" }}
+					className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 pt-2 sm:pt-3 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap shrink-0"
+					style={{ display: "flex", overflowX: "auto", flexWrap: "nowrap", gap: "6px" }}
 				>
 					<button
 						type="button"
 						onClick={() => setActiveTab("timeline")}
 						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-						className={`flex items-center gap-2 px-4 sm:px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
+						className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
 							activeTab === "timeline"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
-						<Clock className="w-4 h-4 shrink-0" />
-						<span>Сроки смены (6–12 лет)</span>
+						<Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<span className="hidden sm:inline">Сроки смены (6–12 лет)</span>
+						<span className="sm:hidden">Сроки смены</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveTab("cariogram")}
 						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-						className={`flex items-center gap-2 px-4 sm:px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
+						className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
 							activeTab === "cariogram"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
-						<PieChartIcon className="w-4 h-4 shrink-0" />
-						<span>Cariogram (Риск кариеса)</span>
+						<PieChartIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<span className="hidden sm:inline">Cariogram (Риск кариеса)</span>
+						<span className="sm:hidden">Cariogram</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveTab("resorption")}
 						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-						className={`flex items-center gap-2 px-4 sm:px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
+						className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
 							activeTab === "resorption"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
-						<Layers className="w-4 h-4 shrink-0" />
-						<span>Шкала резорбции корней (0–100%)</span>
+						<Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<span className="hidden sm:inline">Шкала резорбции корней (0–100%)</span>
+						<span className="sm:hidden">Резорбция</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveTab("frankl")}
 						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-						className={`flex items-center gap-2 px-4 sm:px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
+						className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
 							activeTab === "frankl"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
-						<Heart className="w-4 h-4 shrink-0 text-rose-500" />
-						<span>Поведение (Франкл) &amp; Памятка</span>
+						<Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-rose-500" />
+						<span className="hidden sm:inline">Поведение (Франкл) &amp; Памятка</span>
+						<span className="sm:hidden">Франкл &amp; Памятка</span>
 					</button>
 				</div>
 
 				{/* Modal Body Container */}
-				<div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6">
+				<div
+					className="flex-1 overflow-y-auto p-4 sm:p-8 pb-28 sm:pb-8 space-y-6"
+					style={{ paddingBottom: "112px" }}
+				>
 					{/* ------------------------------------------------------------------------- */}
 					{/* TAB 1: ERUPTION & MIXED DENTITION TIMELINE */}
 					{/* ------------------------------------------------------------------------- */}

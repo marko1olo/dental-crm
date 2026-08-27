@@ -221,7 +221,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 	}, [dateKey, appointments, dashboard?.clinicSettings?.chairs, (dashboard?.clinicSettings as any)?.staff]);
 
 	return (
-		<div className="space-y-3 pb-28 sm:pb-8">
+		<div className="space-y-3 pb-32 sm:pb-8">
 			{/* Daily Chair & Doctor Occupancy Summary Bar */}
 			{dailyTally.totalAppointmentsCount > 0 && (
 				<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">

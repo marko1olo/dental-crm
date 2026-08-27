@@ -1090,7 +1090,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	return (
 		<div
-			className="panel schedule-panel min-w-0 max-w-full overflow-hidden pb-24 sm:pb-6"
+			className="panel schedule-panel min-w-0 max-w-full overflow-hidden pb-32 sm:pb-6"
 			id="schedule"
 			data-testid="schedule-view"
 		>

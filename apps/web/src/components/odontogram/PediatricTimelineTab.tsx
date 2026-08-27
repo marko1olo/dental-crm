@@ -31,7 +31,7 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 	};
 
 	return (
-		<div className="space-y-6 animate-in fade-in duration-200">
+		<div className="space-y-6 animate-in fade-in duration-200 pb-28 sm:pb-8" style={{ paddingBottom: "112px" }}>
 			{/* Age Slider & Preset Bar */}
 			<div className="p-5 rounded-2xl bg-[var(--odontogram-surface,#f8fafc)] border border-[var(--odontogram-border-subtle,#e2e8f0)] space-y-4">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
