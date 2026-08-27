@@ -103,9 +103,9 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 			{
 				id: "lm-1",
 				x: 40,
-				y: 45,
+				y: 25,
 				toothFdi: "16",
-				label: "Зона имплантации 16",
+				label: "Зона имплантации 16 (Апикальная)",
 				type: "implant_site",
 			},
 			{
@@ -225,11 +225,11 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 			{
 				id: "lm-rvg-4",
 				x: 51.5,
-				y: 53.8,
+				y: 23.5,
 				toothFdi: "16",
-				label: "Пульповая камера 16 (обтурирована)",
-				type: "canal",
-				color: "var(--teal, #06b6d4)",
+				label: "Апикальная проекция 16",
+				type: "apex",
+				color: "var(--ok, #10b981)",
 			},
 		],
 	},

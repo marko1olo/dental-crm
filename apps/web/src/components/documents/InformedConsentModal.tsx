@@ -72,8 +72,8 @@ const PRESET_BUTTONS: { key: ConsentPresetKey; label: string; icon: string }[] =
 	{ key: "base_inspection", label: "📋 Первичный осмотр и рентген (1051н)", icon: "📋" },
 	{ key: "therapy_endo_restoration", label: "🦷 Терапия / Эндодонтия", icon: "🦷" },
 	{ key: "local_anesthesia", label: "💉 Местная анестезия", icon: "💉" },
-	{ key: "surgery_extraction", label: "🔪 Хирургия / Удаление", icon: "🔪" },
-	{ key: "implantation_bone_graft", label: "🔩 Имплантация / Остеопластика", icon: "🔩" },
+	{ key: "surgery_extraction", label: "🔪 Хирургия / Имплантация", icon: "🔪" },
+	{ key: "implantation_bone_graft", label: "🔩 Остеопластика / Синус-лифт", icon: "🔩" },
 	{ key: "prosthetics", label: "👑 Ортопедия (коронки, виниры)", icon: "👑" },
 	{ key: "orthodontics", label: "📐 Ортодонтия (брекеты, элайнеры)", icon: "📐" },
 	{ key: "hygiene_whitening", label: "🪥 Профгигиена и отбеливание", icon: "🪥" },
@@ -537,16 +537,16 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				</div>
 
 				{/* ── 1-Click Clinical Presets Bar (min-h-[44px] buttons) ── */}
-				<div className="px-3 md:px-6 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] overflow-x-auto flex items-center gap-2 shrink-0 scrollbar-thin">
+				<div className="px-3 md:px-6 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] overflow-x-auto flex items-center gap-2 shrink-0 scrollbar-thin flex-nowrap">
 					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] shrink-0 hidden sm:inline">
-						Клинический профиль (1 клик):
+						КЛИНИЧЕСКИЙ ПРОФИЛЬ (1 КЛИК):
 					</span>
 					{PRESET_BUTTONS.map((p) => (
 						<button
 							key={p.key}
 							type="button"
 							onClick={() => applyPreset(p.key)}
-							className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 select-none ${
+							className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 flex-shrink-0 select-none ${
 								activePreset === p.key
 									? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] border-[var(--teal)] shadow-sm font-bold"
 									: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
@@ -597,8 +597,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								<textarea
 									value={diagnosisOrIndication}
 									onChange={(e) => setDiagnosisOrIndication(e.target.value)}
-									rows={2}
-									className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full min-h-[4.5rem] px-3 py-2 pb-2 text-xs leading-relaxed rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] resize-none focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 							<div>
@@ -608,8 +607,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								<textarea
 									value={expectedBenefit}
 									onChange={(e) => setExpectedBenefit(e.target.value)}
-									rows={2}
-									className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full min-h-[4.5rem] px-3 py-2 pb-2 text-xs leading-relaxed rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] resize-none focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
@@ -623,8 +621,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								<textarea
 									value={plannedAnesthesia}
 									onChange={(e) => setPlannedAnesthesia(e.target.value)}
-									rows={2}
-									className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full min-h-[4.5rem] px-3 py-2 pb-2 text-xs leading-relaxed rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] resize-none focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 							<div>
@@ -634,8 +631,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								<textarea
 									value={materials}
 									onChange={(e) => setMaterials(e.target.value)}
-									rows={2}
-									className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full min-h-[4.5rem] px-3 py-2 pb-2 text-xs leading-relaxed rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] resize-none focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
@@ -648,8 +644,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							<textarea
 								value={procedureRisks}
 								onChange={(e) => setProcedureRisks(e.target.value)}
-								rows={4}
-								className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+								className="w-full min-h-[4.5rem] px-3 py-2 pb-2 text-xs leading-relaxed rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] resize-none focus:outline-none focus:border-[var(--teal)]"
 							/>
 						</div>
 
@@ -662,8 +657,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								<textarea
 									value={alternatives}
 									onChange={(e) => setAlternatives(e.target.value)}
-									rows={3}
-									className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full min-h-[4.5rem] px-3 py-2 pb-2 text-xs leading-relaxed rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] resize-none focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 							<div>
@@ -673,8 +667,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								<textarea
 									value={aftercare}
 									onChange={(e) => setAftercare(e.target.value)}
-									rows={3}
-									className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full min-h-[4.5rem] px-3 py-2 pb-2 text-xs leading-relaxed rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] resize-none focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
@@ -762,114 +755,116 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							</span>
 						</div>
 
-						{/* Printable Physical Sheet Mockup */}
-						<div
-							className="print-paper-sheet p-6 md:p-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl font-serif leading-relaxed flex flex-col gap-3.5 selection:bg-[var(--teal-soft,#ccfbf1)]"
-							data-paper-sheet="true"
-						>
-							{/* Header */}
-							<div className="border-b-2 border-slate-900 pb-2 text-[10px] text-slate-700 flex justify-between gap-3">
-								<div>
-									<div className="font-extrabold text-[11px] text-slate-950 uppercase">
-										{clinic}
+						{/* Printable Physical Sheet Mockup with Dark Mode Dampening Frame */}
+						<div className="w-full dark:bg-slate-950 dark:p-4 dark:border dark:border-slate-800 dark:rounded-xl">
+							<div
+								className="print-paper-sheet p-6 md:p-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl font-serif leading-relaxed flex flex-col gap-3.5 selection:bg-[var(--teal-soft,#ccfbf1)]"
+								data-paper-sheet="true"
+							>
+								{/* Header */}
+								<div className="border-b-2 border-slate-900 pb-2 text-[10px] text-slate-700 flex justify-between gap-3">
+									<div>
+										<div className="font-extrabold text-[11px] text-slate-950 uppercase">
+											{clinic}
+										</div>
+										<div>{clinicLoc} • {clinicPh}</div>
+										<div className="text-[9px] text-slate-500">Лицензия: {licNum} · ОГРН: {clinicOrg}</div>
 									</div>
-									<div>{clinicLoc} • {clinicPh}</div>
-									<div className="text-[9px] text-slate-500">Лицензия: {licNum} · ОГРН: {clinicOrg}</div>
+									<div className="text-right text-[8.5px] text-slate-500 max-w-[200px] leading-tight">
+										В соответствии со ст. 20 ФЗ № 323-ФЗ и Приказом Минздрава России № 1051н
+									</div>
 								</div>
-								<div className="text-right text-[8.5px] text-slate-500 max-w-[200px] leading-tight">
-									В соответствии со ст. 20 ФЗ № 323-ФЗ и Приказом Минздрава России № 1051н
-								</div>
-							</div>
 
-							{/* Title */}
-							<div className="text-center my-1">
-								<div className="font-extrabold text-sm tracking-wider uppercase text-slate-950">
-									ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ
+								{/* Title */}
+								<div className="text-center my-1">
+									<div className="font-extrabold text-sm tracking-wider uppercase text-slate-950">
+										ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ
+									</div>
+									<div className="text-[10px] text-slate-600 font-sans">
+										на проведение стоматологического медицинского вмешательства
+									</div>
 								</div>
-								<div className="text-[10px] text-slate-600 font-sans">
-									на проведение стоматологического медицинского вмешательства
-								</div>
-							</div>
 
-							{/* Requisites Table */}
-							<div className="border border-slate-300 rounded overflow-hidden text-[10px] leading-snug">
-								<div className="grid grid-cols-4 border-b border-slate-200 p-1.5 bg-slate-50">
-									<span className="font-bold text-slate-700">Пациент (Ф.И.О.):</span>
-									<span className="col-span-2 font-bold text-slate-950">{patientName}</span>
-									<span>Д.Р.: <strong>{patientBirth}</strong></span>
+								{/* Requisites Table */}
+								<div className="border border-slate-300 rounded overflow-hidden text-[10px] leading-snug">
+									<div className="grid grid-cols-4 border-b border-slate-200 p-1.5 bg-slate-50">
+										<span className="font-bold text-slate-700">Пациент (Ф.И.О.):</span>
+										<span className="col-span-2 font-bold text-slate-950">{patientName}</span>
+										<span>Д.Р.: <strong>{patientBirth}</strong></span>
+									</div>
+									<div className="grid grid-cols-4 border-b border-slate-200 p-1.5">
+										<span className="font-bold text-slate-700">Паспортные данные:</span>
+										<span className="col-span-2">{patientPassport}</span>
+										<span>Карта: <strong>{patientCard}</strong></span>
+									</div>
+									<div className="grid grid-cols-4 p-1.5">
+										<span className="font-bold text-slate-700">Лечащий врач:</span>
+										<span className="col-span-3"><strong>{docName}</strong> ({docSpecialty})</span>
+									</div>
 								</div>
-								<div className="grid grid-cols-4 border-b border-slate-200 p-1.5">
-									<span className="font-bold text-slate-700">Паспортные данные:</span>
-									<span className="col-span-2">{patientPassport}</span>
-									<span>Карта: <strong>{patientCard}</strong></span>
-								</div>
-								<div className="grid grid-cols-4 p-1.5">
-									<span className="font-bold text-slate-700">Лечащий врач:</span>
-									<span className="col-span-3"><strong>{docName}</strong> ({docSpecialty})</span>
-								</div>
-							</div>
 
-							{/* Structured Text Points */}
-							<div className="flex flex-col gap-2 text-[10.5px]">
-								<div>
-									<strong>1. Вмешательство и зона:</strong> {intervention} (Область/Зубы: <u>{toothOrArea}</u>).
-								</div>
-								<div>
-									<strong>2. Диагноз и показание:</strong> {diagnosisOrIndication}.
-								</div>
-								<div>
-									<strong>3. Ожидаемая польза:</strong> {expectedBenefit}.
-								</div>
-								<div>
-									<strong>4. Анестезия и материалы:</strong> {plannedAnesthesia}; {materials}.
-								</div>
-								<div>
-									<strong>5. Разъясненные риски:</strong>
-									<div className="text-[10px] text-slate-800 ml-2 whitespace-pre-line leading-snug">
-										{procedureRisks}
+								{/* Structured Text Points */}
+								<div className="flex flex-col gap-2 text-[10.5px]">
+									<div>
+										<strong>1. Вмешательство и зона:</strong> {intervention} (Область/Зубы: <u>{toothOrArea}</u>).
+									</div>
+									<div>
+										<strong>2. Диагноз и показание:</strong> {diagnosisOrIndication}.
+									</div>
+									<div>
+										<strong>3. Ожидаемая польза:</strong> {expectedBenefit}.
+									</div>
+									<div>
+										<strong>4. Анестезия и материалы:</strong> {plannedAnesthesia}; {materials}.
+									</div>
+									<div>
+										<strong>5. Разъясненные риски:</strong>
+										<div className="text-[10px] text-slate-800 ml-2 whitespace-pre-line leading-snug">
+											{procedureRisks}
+										</div>
+									</div>
+									<div>
+										<strong>6. Альтернативы и отказ:</strong>
+										<div className="text-[10px] text-slate-800 ml-2 whitespace-pre-line leading-snug">
+											{alternatives}
+										</div>
+									</div>
+									<div>
+										<strong>7. Режим после вмешательства:</strong>
+										<div className="text-[10px] text-slate-800 ml-2 whitespace-pre-line leading-snug">
+											{aftercare}
+										</div>
+									</div>
+									<div>
+										<strong>8. Доверенные лица:</strong> {trustedContact}.
 									</div>
 								</div>
-								<div>
-									<strong>6. Альтернативы и отказ:</strong>
-									<div className="text-[10px] text-slate-800 ml-2 whitespace-pre-line leading-snug">
-										{alternatives}
-									</div>
-								</div>
-								<div>
-									<strong>7. Режим после вмешательства:</strong>
-									<div className="text-[10px] text-slate-800 ml-2 whitespace-pre-line leading-snug">
-										{aftercare}
-									</div>
-								</div>
-								<div>
-									<strong>8. Доверенные лица:</strong> {trustedContact}.
-								</div>
-							</div>
 
-							{/* Statements Box */}
-							<div className="border border-slate-300 bg-slate-50 p-2.5 rounded text-[9.5px] leading-tight flex flex-col gap-1 text-slate-800">
-								<div>✓ Пациент получил исчерпывающие ответы на все заданные вопросы.</div>
-								<div>✓ Пациент полностью понял суть вмешательства, риски и возможные осложнения.</div>
-								<div>✓ Пациенту разъяснено право отказаться от вмешательства до его начала.</div>
-							</div>
-
-							{/* Signatures */}
-							<div className="border-t-2 border-slate-900 pt-3 text-[10px] flex justify-between items-end text-slate-700">
-								<div className="w-5/12">
-									<div>Пациент (или законный представитель):</div>
-									<div className="border-b border-slate-900 min-h-[22px] mt-2"></div>
-									<div className="text-[8.5px] text-slate-500 mt-0.5">
-										(подпись) / {patientName}
-									</div>
-									<div className="mt-1">Дата: {confirmedDate}</div>
+								{/* Statements Box */}
+								<div className="border border-slate-300 bg-slate-50 p-2.5 rounded text-[9.5px] leading-tight flex flex-col gap-1 text-slate-800">
+									<div>✓ Пациент получил исчерпывающие ответы на все заданные вопросы.</div>
+									<div>✓ Пациент полностью понял суть вмешательства, риски и возможные осложнения.</div>
+									<div>✓ Пациенту разъяснено право отказаться от вмешательства до его начала.</div>
 								</div>
-								<div className="w-5/12">
-									<div>Врач, проводивший разъяснение:</div>
-									<div className="border-b border-slate-900 min-h-[22px] mt-2"></div>
-									<div className="text-[8.5px] text-slate-500 mt-0.5">
-										(подпись и личная печать) / {docName}
+
+								{/* Signatures */}
+								<div className="border-t-2 border-slate-900 pt-3 text-[10px] flex justify-between items-end text-slate-700">
+									<div className="w-5/12">
+										<div>Пациент (или законный представитель):</div>
+										<div className="border-b border-slate-900 min-h-[22px] mt-2"></div>
+										<div className="text-[8.5px] text-slate-500 mt-0.5">
+											(подпись) / {patientName}
+										</div>
+										<div className="mt-1">Дата: {confirmedDate}</div>
 									</div>
-									<div className="mt-1">Дата: {confirmedDate}</div>
+									<div className="w-5/12">
+										<div>Врач, проводивший разъяснение:</div>
+										<div className="border-b border-slate-900 min-h-[22px] mt-2"></div>
+										<div className="text-[8.5px] text-slate-500 mt-0.5">
+											(подпись и личная печать) / {docName}
+										</div>
+										<div className="mt-1">Дата: {confirmedDate}</div>
+									</div>
 								</div>
 							</div>
 						</div>

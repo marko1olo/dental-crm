@@ -105,7 +105,7 @@ export interface SignedConsentPayload {
 
 const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
 	CONSENT_THERAPY: "Терапия & Эндодонтия",
-	CONSENT_SURGERY_IMPLANT: "Хирургия & Имплантация",
+	CONSENT_SURGERY_IMPLANT: "Хирургия / Имплантация",
 	CONSENT_ORTHODONTICS: "Ортодонтия (Брекеты)",
 	CONSENT_ORTHOPEDICS: "Ортопедия (Коронки)",
 	CONSENT_HYGIENE_BLEACHING: "Профгигиена & Отбеливание",
@@ -552,7 +552,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							<button
 								key={tpl.key}
 								type="button"
-								className={`consent-tab-btn ${isActive ? "active" : ""}`}
+								className={`consent-tab-btn shrink-0 flex-shrink-0 ${isActive ? "active" : ""}`}
 								onClick={() => setActiveKey(tpl.key)}
 								aria-selected={isActive}
 							>

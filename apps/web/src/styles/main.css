@@ -1282,6 +1282,17 @@ button:disabled {
 	padding: 10px 12px;
 }
 
+@media (max-width: 639px) {
+	.workspace-continuity-strip.mobile-collapsed {
+		display: flex;
+		align-items: center;
+		padding: 2px 8px;
+		max-height: 40px;
+		min-height: 34px;
+		gap: 0;
+	}
+}
+
 .workspace-continuity-strip.offline {
 	background: #fff8eb;
 	border-color: rgba(184, 120, 31, 0.36);

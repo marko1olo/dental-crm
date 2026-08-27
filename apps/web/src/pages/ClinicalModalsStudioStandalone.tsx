@@ -191,7 +191,7 @@ const SAMPLE_COMPLETED_ACT: CompletedWorksActAndWriteOffData = {
 	actDate: "21.08.2026",
 	contractNumber: "ДОГ-2026-0891",
 	stageNumber: 1,
-	stageTitle: "Этап 1: Терапевтическое и эндодонтическое лечение зуба 1.6",
+	stageTitle: "Терапевтическое и эндодонтическое лечение зуба 1.6",
 	clinicName: "Стоматологическая клиника «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	doctorFullName: "Д-р Смирнов Алексей Петрович",
 	patientName: "Смирнова Екатерина Васильевна",
@@ -420,6 +420,21 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					}
 					if (requestedModal === "cbct" || requestedModal === "cbct_mpr" || requestedModal === "cbct_studio" || requestedModal === "mpr") {
 						setIsCbctMpr3DStudioOpen(true);
+					}
+					if (requestedModal === "pediatric" || requestedModal === "pediatric_mixed_dentition" || requestedModal === "mixed_dentition") {
+						setIsPediatricOpen(true);
+					}
+					if (requestedModal === "act" || requestedModal === "act_completed_804n" || requestedModal === "act_print") {
+						setIsActPrintOpen(true);
+					}
+					if (requestedModal === "consent" || requestedModal === "informed_consent" || requestedModal === "consent_1051n") {
+						setIsConsentOpen(true);
+					}
+					if (requestedModal === "prescription" || requestedModal === "prescription_107_1y") {
+						setIsPrescriptionOpen(true);
+					}
+					if (requestedModal === "radiology_referral" || requestedModal === "referral") {
+						setIsRadiologyOpen(true);
 					}
 					if (requestedModal === "schedule_roster" || requestedModal === "roster") {
 						setIsDoctorShiftRosterOpen(true);
@@ -1979,6 +1994,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					isOpen={isActPrintOpen}
 					onClose={() => setIsActPrintOpen(false)}
 					actData={SAMPLE_COMPLETED_ACT}
+					patientGender="female"
 				/>
 			)}
 

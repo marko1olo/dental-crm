@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { NetworkState } from "./utils/networkConnectivity";
 
 export interface WorkspaceContinuityStripProps {
@@ -43,6 +44,7 @@ export function WorkspaceContinuityStrip({
 	onSyncMutations,
 	isSyncingMutations = false,
 }: WorkspaceContinuityStripProps) {
+	const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 	const effectiveOnline = networkState ? networkState.isOnline : isOnline;
 	const totalPending =
 		pendingVisitSaveCount + pendingSpeechChunkCount + pendingMutationCount;
@@ -115,11 +117,31 @@ export function WorkspaceContinuityStrip({
 
 	return (
 		<section
-			className={`workspace-continuity-strip offline-continuity-strip ${isOffline ? "offline" : "queued"}`}
+			className={`workspace-continuity-strip offline-continuity-strip ${isOffline ? "offline" : "queued"} ${isMobileExpanded ? "mobile-expanded" : "mobile-collapsed"}`}
 			role="status"
 			aria-live="polite"
 		>
-			<div>
+			{/* Mobile Compact 1-line Status Bar (<= 40px, active when not expanded) */}
+			<div className="flex sm:hidden items-center justify-between w-full h-8 min-h-[32px] max-h-[38px] gap-2 px-1">
+				<div className="flex items-center gap-2 min-w-0 flex-1">
+					<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" aria-hidden="true" />
+					<span className="text-xs font-bold truncate text-[var(--ink,#0f172a)]">
+						{isOffline ? "Офлайн" : statusText}
+						{totalPending > 0 ? ` · ${pluralizeChanges(totalPending)}` : ""}
+					</span>
+				</div>
+				<button
+					type="button"
+					onClick={() => setIsMobileExpanded((prev) => !prev)}
+					className="min-h-[30px] px-2.5 py-0.5 text-[11px] font-bold rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-200 border border-amber-500/40 cursor-pointer shrink-0 transition-colors"
+					aria-expanded={isMobileExpanded}
+				>
+					{isMobileExpanded ? "Свернуть" : "Подробнее"}
+				</button>
+			</div>
+
+			{/* Detailed Body (shown on desktop >=sm or when expanded on mobile) */}
+			<div className={`${isMobileExpanded ? "block" : "hidden"} sm:block min-w-0`}>
 				<div className="flex items-center gap-2 flex-wrap">
 					<strong>{title}</strong>
 					{isOffline && (
@@ -137,7 +159,7 @@ export function WorkspaceContinuityStrip({
 					</small>
 				) : null}
 			</div>
-			<div className="workspace-continuity-actions">
+			<div className={`workspace-continuity-actions ${isMobileExpanded ? "flex" : "hidden"} sm:flex`}>
 				{pendingMutationCount > 0 && onSyncMutations ? (
 					<button
 						className="secondary-button"

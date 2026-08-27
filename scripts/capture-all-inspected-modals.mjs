@@ -68,6 +68,10 @@ const MODAL_BUTTON_TEST_IDS = [
 	{ id: "open-prescription-modal-btn", altId: "open-med-prescription-modal-btn", name: "prescription_107_1y" },
 	{ id: "open-act-print-modal-btn", altId: "open-act-modal-btn", name: "act_completed_804n" },
 	{ id: "open-consent-modal-btn", altId: "open-consent-1051n-modal-btn", name: "informed_consent_1051n" },
+	{ id: "open-patient-billing-modal-btn", altId: "open-patient-billing-modal-btn", name: "patient_billing_modal" },
+	{ id: "open-viewer-modal-btn", altId: "open-viewer-modal-btn", name: "radiology_viewer_modal" },
+	{ id: "open-ceph-modal-btn", altId: "open-ceph-modal-btn", name: "cephalometric_analysis_modal" },
+	{ id: "open-billing-1c-export-modal-btn", altId: "open-billing-1c-export-modal-btn", name: "billing_1c_export_modal" },
 ];
 
 for (const vp of [
@@ -89,29 +93,10 @@ for (const vp of [
 		await applyTheme(page, theme);
 
 		for (const modal of MODAL_BUTTON_TEST_IDS) {
-			const btn = page.locator(`[data-testid="${modal.id}"]`).or(page.locator(`[data-testid="${modal.altId}"]`)).first();
-			if (await btn.isVisible()) {
-				await btn.click();
-				await page.waitForTimeout(350);
-				await saveScreenshot(page, `audit_modal_${modal.name}_${theme}_${vp.name}.png`);
-
-				// Close modal
-				const closeBtn = page.locator('button[aria-label="Закрыть"], button:has-text("✕"), button:has-text("Закрыть")').first();
-				if (await closeBtn.isVisible()) {
-					await closeBtn.click().catch(() => {});
-					await page.waitForTimeout(300);
-				}
-				await page.keyboard.press("Escape");
-				await page.waitForTimeout(200);
-
-				// If modal backdrop still exists, reload page to restore clean state
-				const dialog = page.locator('[role="dialog"]').first();
-				if (await dialog.isVisible()) {
-					await page.goto(`${BASE_URL}/#clinical-modals-studio?theme=${theme}`, { waitUntil: "domcontentloaded" });
-					await applyTheme(page, theme);
-					await page.waitForTimeout(400);
-				}
-			}
+			await page.goto(`${BASE_URL}/#clinical-modals-studio?theme=${theme}&modal=${modal.name}`, { waitUntil: "domcontentloaded" }).catch(() => {});
+			await applyTheme(page, theme);
+			await page.waitForTimeout(400);
+			await saveScreenshot(page, `audit_modal_${modal.name}_${theme}_${vp.name}.png`);
 		}
 	}
 
