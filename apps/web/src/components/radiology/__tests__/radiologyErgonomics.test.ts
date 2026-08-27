@@ -100,29 +100,34 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		}
 	});
 
-	it("verifies tooth 16 diagnostic intraoral radiograph contains all anatomical structures", async () => {
-		const { TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG, TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI } = await import("../tooth16RadiographSvg");
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.length > 500);
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI.startsWith("data:image/svg+xml;utf8,"));
+	it("verifies honest medical radiology dropzone supports DICOM and clinical raster formats", async () => {
+		const {
+			SUPPORTED_RADIOLOGY_EXTENSIONS,
+			SAMPLE_PATIENT_RVG_URL,
+			MedicalRadiologyDropzone,
+		} = await import("../MedicalRadiologyDropzone");
 
-		// Enamel, Dentin, Pulp Chamber
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("enamel-grad"), "Must contain enamel gradient");
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("dentin-grad"), "Must contain dentin gradient");
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("Pulp Chamber"), "Must contain pulp chamber");
+		assert.ok(typeof MedicalRadiologyDropzone === "function");
+		assert.ok(SUPPORTED_RADIOLOGY_EXTENSIONS.includes(".dcm"), "Must support DICOM .dcm");
+		assert.ok(SUPPORTED_RADIOLOGY_EXTENSIONS.includes(".dicom"), "Must support DICOM .dicom");
+		assert.ok(SUPPORTED_RADIOLOGY_EXTENSIONS.includes(".tif"), "Must support TIFF .tif");
+		assert.ok(SUPPORTED_RADIOLOGY_EXTENSIONS.includes(".tiff"), "Must support TIFF .tiff");
+		assert.ok(SUPPORTED_RADIOLOGY_EXTENSIONS.includes(".png"), "Must support PNG .png");
+		assert.ok(SUPPORTED_RADIOLOGY_EXTENSIONS.includes(".jpg"), "Must support JPG .jpg");
+		assert.equal(SAMPLE_PATIENT_RVG_URL, "/radiology/sample_rvg_tooth16.jpg");
+	});
 
-		// Gutta-percha obturation in all 3 root canals
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("guttapercha-grad"), "Must contain gutta-percha gradient");
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("Palatal Canal"), "Must contain Palatal canal obturation");
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("Mesiobuccal Canal"), "Must contain MB canal obturation");
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("Distobuccal Canal"), "Must contain DB canal obturation");
-
-		// Periodontal ligament (PDL) and Lamina Dura
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("PERIODONTAL LIGAMENT SPACE"), "Must contain PDL space");
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("LAMINA DURA"), "Must contain lamina dura");
-
-		// Maxillary sinus floor & Tooth 16 FDI target
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("MAXILLARY SINUS"), "Must contain maxillary sinus floor");
-		assert.ok(TOOTH_16_DIAGNOSTIC_RADIOGRAPH_SVG.includes("16"), "Must contain FDI 16 target");
+	it("verifies zero vector SVG mock teeth remain in radiology exports", async () => {
+		const radiologyExports = await import("../index");
+		assert.strictEqual(
+			(radiologyExports as Record<string, unknown>).TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI,
+			undefined,
+			"TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI must be eradicated from exports",
+		);
+		assert.ok(
+			radiologyExports.MedicalRadiologyDropzone,
+			"MedicalRadiologyDropzone must be exported",
+		);
 	});
 
 	it("verifies Standard WW/WL preset label is 'Стандарт' without unexpected whitespace breaks", () => {

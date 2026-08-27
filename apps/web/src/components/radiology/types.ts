@@ -221,7 +221,7 @@ export interface RadiologyStudy {
 	teethFdi: string[]; // e.g. ["36", "37"]
 	effectiveDoseMicrosv: number; // мкЗв (например, 45.0)
 	effectiveDoseMsv: number; // мЗв (например, 0.045)
-	imageUrl: string;
+	imageUrl?: string | undefined;
 	thumbnailUrl?: string;
 	doctorName: string;
 	doctorSpecialty?: string;

@@ -32,7 +32,10 @@ import { formatRadiationDose } from "./radiologyMath";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { RadiologyStudyList } from "./RadiologyStudyList";
 import { RadiologyViewerModal } from "./RadiologyViewerModal";
-import { TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI } from "./tooth16RadiographSvg";
+import {
+	MedicalRadiologyDropzone,
+	SAMPLE_PATIENT_RVG_URL,
+} from "./MedicalRadiologyDropzone";
 import type { RadiologyStudy } from "./types";
 
 export interface RadiologyModuleProps {
@@ -154,7 +157,7 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 		teethFdi: ["16"],
 		effectiveDoseMicrosv: 3.0,
 		effectiveDoseMsv: 0.003,
-		imageUrl: TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI,
+		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		doctorName: "Др. Смирнов А.В.",
 		doctorSpecialty: "Врач-стоматолог эндодонтист",
 		clinicName: 'ООО "Денте Клиник"',
@@ -256,6 +259,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 	const [isDoseSheetModalOpen, setIsDoseSheetModalOpen] =
 		useState<boolean>(false);
 	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState<boolean>(false);
+	const [isDropzoneVisible, setIsDropzoneVisible] = useState<boolean>(false);
 
 	// Comparative Split-View state
 	const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
@@ -271,6 +275,46 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 	const patientBirth = patient?.birthDate || "1990-05-14";
 	const patientCard =
 		patient?.medicalCardNumber || patient?.cardNumber || "043/у-0012";
+
+	// Handle adding a new study directly from medical dropzone
+	const handleAddStudyFromDropzone = (
+		dataUrl: string,
+		meta?: { name: string; size: number; type: string },
+	) => {
+		const newStudy: RadiologyStudy = {
+			id: `study-rvg-${Date.now()}`,
+			patientName: patientFullName,
+			studyDate: new Date().toISOString().replace("T", " ").substring(0, 16),
+			studyType: "intraoral_radiovisiography",
+			modality: "intraoral_rvg",
+			modalityLabel: "Прицельная радиовизиография",
+			anatomicalArea: "Зуб 16 (Верхний правый моляр)",
+			teethFdi: ["16"],
+			effectiveDoseMicrosv: 3.0,
+			effectiveDoseMsv: 0.003,
+			imageUrl: dataUrl,
+			doctorName: doctorName || "Др. Смирнов А.В.",
+			doctorSpecialty: doctorSpecialty || "Врач-стоматолог",
+			clinicName: clinicName || 'ООО "Денте Клиник"',
+			status: "completed",
+			diagnosisIcd10: "K04.0",
+			diagnosticNotes: meta
+				? `Загружен снимок: ${meta.name} (${Math.round(meta.size / 1024)} КБ). Контрольная радиовизиография.`
+				: "Загружена контрольная радиовизиография зуба 16.",
+			metadata: {
+				kv: 65,
+				ma: 7.0,
+				exposureSec: 0.08,
+				pixelSpacingMm: 0.05,
+				apparatusModel: "Цифровой радиовизиограф (RVG CMOS)",
+			},
+		};
+		const updated = [newStudy, ...studies];
+		setStudies(updated);
+		if (onSaveStudies) onSaveStudies(updated);
+		setIsDropzoneVisible(false);
+		handleOpenViewer(newStudy);
+	};
 
 	// Save or update a single study
 	const handleSaveStudy = (updatedStudy: RadiologyStudy) => {
@@ -395,6 +439,21 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						>
 							<ArrowLeftRight className="w-4 h-4 text-[var(--teal)]" />
 							<span>Сравнение (Split-View)</span>
+						</button>
+
+						{/* Medical Radiology Dropzone Toggle Button */}
+						<button
+							type="button"
+							onClick={() => setIsDropzoneVisible((prev) => !prev)}
+							className={`flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl border text-xs md:text-sm font-bold shadow-sm transition-all ${
+								isDropzoneVisible
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)]"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
+							}`}
+							data-testid="toggle-dropzone-btn"
+						>
+							<UploadCloud className="w-4 h-4 text-[var(--teal)]" />
+							<span>Загрузка снимка (Дропзона)</span>
 						</button>
 					</div>
 				</div>
@@ -563,6 +622,41 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 							)}
 						</div>
 					</div>
+				</div>
+			)}
+
+			{/* ═══════════════════════════════════════════════════════════════════
+			    2B. MEDICAL RADIOLOGY DROPZONE (Immediate Upload & Ingestion)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			{(isDropzoneVisible || studies.length === 0) && (
+				<div
+					className="p-4 md:p-6 bg-[var(--paper-soft)] border-b border-[var(--line)]"
+					data-testid="radiology-module-dropzone-section"
+				>
+					<div className="flex items-center justify-between mb-3">
+						<span className="text-xs font-bold uppercase tracking-wider text-[var(--teal)]">
+							Медицинская станция приема снимков
+						</span>
+						{studies.length > 0 && (
+							<button
+								type="button"
+								onClick={() => setIsDropzoneVisible(false)}
+								className="text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+							>
+								Скрыть дропзону
+							</button>
+						)}
+					</div>
+					<MedicalRadiologyDropzone
+						onImageLoaded={handleAddStudyFromDropzone}
+						onLoadSample={() =>
+							handleAddStudyFromDropzone(SAMPLE_PATIENT_RVG_URL, {
+								name: "SMIRNOVA_E_V_tooth16_RVG_postop.jpg",
+								size: 700609,
+								type: "image/jpeg",
+							})
+						}
+					/>
 				</div>
 			)}
 

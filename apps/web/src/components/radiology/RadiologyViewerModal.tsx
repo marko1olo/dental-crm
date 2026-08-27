@@ -36,6 +36,7 @@ import {
 	Tag,
 	Target,
 	Trash2,
+	UploadCloud,
 	X,
 	ZoomIn,
 	ZoomOut,
@@ -59,7 +60,10 @@ import {
 } from "./radiologyMath";
 import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal";
 import { CbctMprViewer } from "./CbctMprViewer";
-import { TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI } from "./tooth16RadiographSvg";
+import {
+	MedicalRadiologyDropzone,
+	SAMPLE_PATIENT_RVG_URL,
+} from "./MedicalRadiologyDropzone";
 
 import {
 	DEFAULT_WW_WL_PRESETS,
@@ -139,6 +143,38 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	const [isControlsExpanded, setIsControlsExpanded] = useState<boolean>(false);
 	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState<boolean>(false);
 	const [isMprViewerOpen, setIsMprViewerOpen] = useState<boolean>(false);
+	const [loadedImageUrl, setLoadedImageUrl] = useState<string | null>(null);
+	const [isDropzoneOpen, setIsDropzoneOpen] = useState<boolean>(false);
+	const [isMobileToolbarExpanded, setIsMobileToolbarExpanded] = useState<boolean>(false);
+
+	const activeImageUrl = loadedImageUrl !== null ? loadedImageUrl : (study?.imageUrl || "");
+
+	const handleDropzoneImageLoaded = (
+		dataUrl: string,
+		meta?: { name: string; size: number; type: string },
+	) => {
+		setLoadedImageUrl(dataUrl);
+		setIsDropzoneOpen(false);
+		if (study && onSaveStudy) {
+			onSaveStudy({
+				...study,
+				imageUrl: dataUrl,
+				diagnosticNotes: study.diagnosticNotes || (meta ? `Загружен снимок: ${meta.name}` : ""),
+				metadata: {
+					...study.metadata,
+					pixelSpacingMm: study.metadata?.pixelSpacingMm || 0.05,
+				},
+			});
+		}
+	};
+
+	const handleLoadSampleRadiograph = () => {
+		handleDropzoneImageLoaded(SAMPLE_PATIENT_RVG_URL, {
+			name: "SMIRNOVA_E_V_tooth16_RVG_postop.jpg",
+			size: 700609,
+			type: "image/jpeg",
+		});
+	};
 
 	// Dragging state
 	const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -147,6 +183,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	// Sync study measurements and landmarks on load
 	useEffect(() => {
 		if (study) {
+			setLoadedImageUrl(study.imageUrl || null);
 			setMeasurements(study.measurements || []);
 			setLandmarks(study.landmarks || []);
 			setCalipers(study.calipers || []);
@@ -155,7 +192,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			if (study.teethFdi && study.teethFdi.length > 0 && study.teethFdi[0]) {
 				setSelectedFdiTooth(study.teethFdi[0] ?? "16");
 			}
+		} else {
+			setLoadedImageUrl(null);
 		}
+		setIsDropzoneOpen(false);
 		if (typeof window !== "undefined") {
 			setIsSideDrawerOpen(window.innerWidth >= 768);
 		}
@@ -537,22 +577,22 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					</button>
 
 					<div className="flex flex-col min-w-0 flex-1">
-						<div className="flex items-center gap-2 flex-wrap">
+						<div className="flex items-center gap-2 flex-wrap min-w-0">
 							<span className="whitespace-nowrap text-[11px] px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] font-bold uppercase tracking-wide shrink-0">
 								{modalityLabel}
 							</span>
-							<h1 className="text-xs sm:text-sm md:text-base font-bold text-[var(--ink,#f8fafc)] truncate max-w-[200px] sm:max-w-none">
+							<h1 className="text-xs sm:text-sm md:text-base font-bold text-[var(--ink,#f8fafc)] min-w-0 truncate">
 								{studyTitle}
 							</h1>
 						</div>
-						<div className="flex items-center gap-2 sm:gap-3 text-xs text-[var(--muted,#94a3b8)] truncate mt-0.5">
-							<span className="font-semibold text-[var(--ink,#e2e8f0)] truncate max-w-[220px] sm:max-w-none">
+						<div className="flex items-center gap-2 sm:gap-3 text-xs text-[var(--muted,#94a3b8)] min-w-0 flex-wrap mt-0.5">
+							<span className="font-semibold text-[var(--ink,#e2e8f0)] whitespace-nowrap shrink-0">
 								Пациент: {patientName}
 							</span>
-							<span className="hidden xs:inline">•</span>
-							<span className="hidden sm:inline">Врач: {doctorName}</span>
-							<span className="hidden md:inline">•</span>
-							<span className="hidden md:inline font-bold text-[var(--teal)]">
+							<span className="hidden xs:inline text-[var(--line,#475569)]">•</span>
+							<span className="hidden sm:inline whitespace-nowrap">Врач: {doctorName}</span>
+							<span className="hidden md:inline text-[var(--line,#475569)]">•</span>
+							<span className="hidden md:inline font-bold text-[var(--teal)] whitespace-nowrap">
 								Дата: {studyDateFormatted}
 							</span>
 						</div>
@@ -671,10 +711,29 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			    2. MAIN WORKSPACE: VIEWPORT + TOOLBAR + SIDE DRAWER
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<div className="relative flex-1 flex min-h-0 bg-black overflow-hidden">
+				{/* Mobile Toolbar Toggle Button (< md) */}
+				{activeImageUrl && !isDropzoneOpen && (
+					<button
+						type="button"
+						onClick={() => setIsMobileToolbarExpanded((prev) => !prev)}
+						className="md:hidden absolute left-3 top-3 z-40 flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--teal-soft,#38bdf8)]/50 text-[var(--teal)] shadow-xl cursor-pointer"
+						title="Панель инструментов"
+						data-testid="toggle-mobile-toolbar-btn"
+					>
+						<Sliders className="w-5 h-5" />
+					</button>
+				)}
+
 				{/* ── TOOLBAR (Floating Cyber Dock with >= 44x44px targets) ── */}
 				<nav
 					aria-label="Инструменты управления просмотрщиком"
-					className="absolute left-4 top-4 z-40 flex flex-col gap-1.5 p-2 rounded-2xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--teal-soft)]/30 shadow-2xl backdrop-blur-md"
+					className={`absolute left-2 sm:left-4 top-14 sm:top-4 z-40 flex flex-col gap-1.5 p-1.5 sm:p-2 rounded-2xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--teal-soft)]/30 shadow-2xl backdrop-blur-md ${
+						!activeImageUrl || isDropzoneOpen
+							? "hidden md:flex"
+							: isMobileToolbarExpanded
+								? "flex"
+								: "hidden md:flex"
+					}`}
 				>
 					{/* Primary Interactive Tools */}
 					<div className="flex flex-col gap-1 pb-2 border-b border-[var(--line,#334155)]">
@@ -809,7 +868,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							type="button"
 							onClick={() => setRotation((prev) => (prev + 90) % 360)}
 							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)] active:scale-95 transition-all"
-							title="Поворот по часовой стрелке 90° (R)"
+							title={`Поворот по часовой стрелке 90° (R) — текущий: ${rotation}°`}
+							data-testid="tool-rotate-btn"
 						>
 							<RotateCw className="w-5 h-5" />
 						</button>
@@ -839,6 +899,20 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						>
 							<Sun className="w-5 h-5" />
 						</button>
+
+						<button
+							type="button"
+							onClick={() => setIsDropzoneOpen((prev) => !prev)}
+							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
+								isDropzoneOpen
+									? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)] shadow-sm"
+									: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+							}`}
+							title="Загрузить снимок (DICOM / RVG Дропзона)"
+							data-testid="viewer-toggle-dropzone-btn"
+						>
+							<UploadCloud className="w-5 h-5" />
+						</button>
 					</div>
 
 					{/* Sliders and Reset */}
@@ -867,31 +941,6 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					</div>
 				</nav>
 
-				{/* ── WW/WL PRESETS QUICK BAR (Bottom Floating) ── */}
-				<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-2xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--teal-soft)]/30 shadow-2xl backdrop-blur-md">
-					<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[var(--muted,#94a3b8)] whitespace-nowrap">
-						Пресеты WW/WL:
-					</span>
-					{DEFAULT_WW_WL_PRESETS.map((preset) => {
-						const isSelected = activePresetId === preset.id;
-						return (
-							<button
-								key={preset.id}
-								type="button"
-								onClick={() => handleSelectPreset(preset)}
-								className={`min-h-[44px] whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-									isSelected
-										? "bg-[var(--teal-fill,var(--teal))] border border-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-sm"
-										: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
-								}`}
-								title={preset.description}
-								data-testid={`preset-btn-${preset.id}`}
-							>
-								{preset.label}
-							</button>
-						);
-					})}
-				</div>
 
 				{/* ── EXPANDED CONTROLS POPUP (Sliders for Brightness/Contrast) ── */}
 				{isControlsExpanded && (
@@ -1138,27 +1187,48 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								: "cursor-cell"
 					}`}
 				>
-					{/* Image with Transformations and CSS Filters */}
-					<div
-						className="relative transition-transform duration-75 origin-center will-change-transform"
-						style={{
-							transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${
-								flipH ? -1 : 1
-							})`,
-						}}
-					>
-						<img
-							ref={imageRef}
-							src={study?.imageUrl || TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI}
-							alt={studyTitle}
-							draggable={false}
-							className="max-h-[85vh] max-w-[85vw] object-contain select-none pointer-events-none rounded-lg shadow-2xl"
+					{/* Dropzone State (When no image is loaded or doctor requested file upload) */}
+					{!activeImageUrl || isDropzoneOpen ? (
+						<div
+							className="w-full max-w-2xl p-6 z-20 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-150"
+							data-testid="viewer-dropzone-wrapper"
+						>
+							<MedicalRadiologyDropzone
+								onImageLoaded={handleDropzoneImageLoaded}
+								onLoadSample={handleLoadSampleRadiograph}
+							/>
+							{activeImageUrl && (
+								<button
+									type="button"
+									onClick={() => setIsDropzoneOpen(false)}
+									className="mt-4 px-4 py-2 rounded-xl text-xs font-bold text-[var(--muted,#94a3b8)] hover:text-[var(--teal)] underline cursor-pointer"
+								>
+									Вернуться к текущему снимку
+								</button>
+							)}
+						</div>
+					) : (
+						/* Image with Transformations and CSS Filters */
+						<div
+							className="relative transition-transform duration-75 origin-center will-change-transform"
 							style={{
-								filter: `brightness(${brightness}%) contrast(${contrast}%) ${
-									invert ? "invert(100%)" : ""
-								}`,
+								transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${
+									flipH ? -1 : 1
+								})`,
 							}}
-						/>
+						>
+							<img
+								ref={imageRef}
+								src={activeImageUrl}
+								alt={studyTitle}
+								draggable={false}
+								className="max-h-[85vh] max-w-[85vw] object-contain select-none pointer-events-none rounded-lg shadow-2xl"
+								style={{
+									filter: `brightness(${brightness}%) contrast(${contrast}%) ${
+										invert ? "invert(100%)" : ""
+									}`,
+								}}
+							/>
 
 						{/* ── SVG HUD OVERLAY FOR MEASUREMENTS & RULERS ── */}
 						{isHudVisible && (
@@ -1518,7 +1588,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									</div>
 								</div>
 							))}
-					</div>
+						</div>
+					)}
 
 					{/* ── FLOATING PROXIMITY ALERT BANNER (NERVE SAFETY MARGIN 2.0 MM) ── */}
 					{nerveClearanceInfo && (
@@ -1599,20 +1670,52 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						</div>
 					)}
 
-					{/* ── BOTTOM-LEFT VIEWPORT HUD STATUS ── */}
-					<div className="absolute left-4 bottom-4 z-30 hidden sm:flex flex-col gap-1 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] font-mono text-slate-400 backdrop-blur-sm pointer-events-none">
-						<div className="flex items-center gap-2">
-							<span className="text-slate-300 font-bold">Масштаб:</span>
-							<span className="text-[var(--teal)] font-bold">{Math.round(zoom * 100)}%</span>
-							<span>•</span>
-							<span className="text-slate-300 font-bold">Поворот:</span>
-							<span className="text-[var(--teal)] font-bold">{rotation}°</span>
+					{/* ── WW/WL PRESETS QUICK BAR (Centered directly inside canvas viewport) ── */}
+					<div
+						className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--teal-soft,#38bdf8)]/30 shadow-2xl backdrop-blur-md max-w-[calc(100%-32px)] overflow-x-auto"
+						data-testid="viewer-presets-bar"
+					>
+						<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[var(--muted,#94a3b8)] whitespace-nowrap shrink-0">
+							Пресеты WW/WL:
+						</span>
+						{DEFAULT_WW_WL_PRESETS.map((preset) => {
+							const isSelected = activePresetId === preset.id;
+							return (
+								<button
+									key={preset.id}
+									type="button"
+									onClick={() => handleSelectPreset(preset)}
+									className={`h-8 min-h-[32px] whitespace-nowrap px-3 py-1 rounded-lg text-[11px] font-bold shrink-0 transition-all cursor-pointer ${
+										isSelected
+											? "bg-[var(--teal-fill,var(--teal))] border border-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-sm"
+											: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+									}`}
+									title={preset.description}
+									data-testid={`preset-btn-${preset.id}`}
+								>
+									{preset.label}
+								</button>
+							);
+						})}
+					</div>
+
+					{/* ── BOTTOM-LEFT VIEWPORT HUD STATUS (Safely above bottom dock, clear of left toolbar) ── */}
+					<div
+						className="absolute left-[92px] bottom-16 z-30 hidden sm:flex flex-col gap-1 p-2.5 rounded-xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--line,#334155)] text-[11px] font-mono text-[var(--muted,#94a3b8)] backdrop-blur-md pointer-events-none whitespace-nowrap shadow-xl"
+						data-testid="viewport-hud-status"
+					>
+						<div className="flex items-center gap-2 whitespace-nowrap">
+							<span className="text-[var(--ink,#f8fafc)] font-bold whitespace-nowrap">Масштаб:</span>
+							<span className="text-[var(--teal)] font-bold whitespace-nowrap">{Math.round(zoom * 100)}%</span>
+							<span className="text-[var(--line,#475569)]">•</span>
+							<span className="text-[var(--ink,#f8fafc)] font-bold whitespace-nowrap">Поворот:</span>
+							<span className="text-[var(--teal)] font-bold whitespace-nowrap">{rotation}°</span>
 						</div>
-						<div className="flex items-center gap-2">
-							<span className="text-slate-300 font-bold">Калибровка:</span>
-							<span>{study?.metadata?.pixelSpacingMm || 0.1} мм/пикс</span>
-							<span>•</span>
-							<span>
+						<div className="flex items-center gap-2 whitespace-nowrap">
+							<span className="text-[var(--ink,#f8fafc)] font-bold whitespace-nowrap">Калибровка:</span>
+							<span className="whitespace-nowrap">{study?.metadata?.pixelSpacingMm || 0.05} мм/пикс</span>
+							<span className="text-[var(--line,#475569)]">•</span>
+							<span className="whitespace-nowrap">
 								Линеек: {measurements.length}, Меток: {landmarks.length}
 							</span>
 						</div>

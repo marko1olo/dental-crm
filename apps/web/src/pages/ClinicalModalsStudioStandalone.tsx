@@ -39,6 +39,7 @@ import {
 	Syringe,
 
 	Truck,
+	UploadCloud,
 	User,
 	X,
 } from "lucide-react";
@@ -54,7 +55,7 @@ import {
 	CbctMprImplantStudioModal,
 	CbctMpr3DStudioModal,
 	ImplantCrossSectionPlanner,
-	TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI,
+	SAMPLE_PATIENT_RVG_URL,
 	type RadiologyStudy,
 } from "../components/radiology";
 import { TreatmentPlanCompletedActPrint } from "../components/treatment-plans/TreatmentPlanCompletedActPrint";
@@ -266,7 +267,7 @@ const SAMPLE_STUDY: RadiologyStudy = {
 	teethFdi: ["16"],
 	effectiveDoseMicrosv: 3.0,
 	effectiveDoseMsv: 0.003,
-	imageUrl: TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI,
+	imageUrl: SAMPLE_PATIENT_RVG_URL,
 	doctorName: "Д-р Смирнов Алексей Петрович",
 	doctorSpecialty: "Врач-стоматолог терапевт-эндодонтист",
 	clinicName: "ООО «Денте Стоматология»",
@@ -323,6 +324,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPediatricOpen, setIsPediatricOpen] = useState(false);
 	const [isConsentOpen, setIsConsentOpen] = useState(false);
 	const [isViewerOpen, setIsViewerOpen] = useState(false);
+	const [activeStudy, setActiveStudy] = useState<RadiologyStudy>(SAMPLE_STUDY);
 	const [isPayrollOpen, setIsPayrollOpen] = useState(false);
 	const [isFastCheckoutOpen, setIsFastCheckoutOpen] = useState(false);
 	const [isMedicalPrescriptionOpen, setIsMedicalPrescriptionOpen] = useState(false);
@@ -400,7 +402,16 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "cephalometry" || requestedModal === "ceph" || requestedModal === "trg") {
 						setIsCephOpen(true);
 					}
+					if (requestedModal === "dropzone" || requestedModal === "radiology_dropzone") {
+						setActiveStudy({
+							...SAMPLE_STUDY,
+							id: "sample-empty-dropzone",
+							imageUrl: undefined,
+						});
+						setIsViewerOpen(true);
+					}
 					if (requestedModal === "radiology_viewer" || requestedModal === "viewer" || requestedModal === "radiology" || requestedModal === "xray") {
+						setActiveStudy(SAMPLE_STUDY);
 						setIsViewerOpen(true);
 					}
 					if (requestedModal === "schedule_roster" || requestedModal === "roster") {
@@ -670,15 +681,36 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								Инструменты визиографа (WW/WL, зум, панорамирование, калиброванная линейка мм, пины зубов FDI).
 							</p>
 						</div>
-						<button
-							type="button"
-							onClick={() => setIsViewerOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-viewer-modal-btn"
-						>
-							<Scan size={15} />
-							<span>Открыть визиограф</span>
-						</button>
+						<div className="flex flex-col gap-2 w-full">
+							<button
+								type="button"
+								onClick={() => {
+									setActiveStudy(SAMPLE_STUDY);
+									setIsViewerOpen(true);
+								}}
+								className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+								data-testid="open-viewer-modal-btn"
+							>
+								<Scan size={15} />
+								<span>Открыть снимок пациента</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setActiveStudy({
+										...SAMPLE_STUDY,
+										id: "sample-empty-dropzone",
+										imageUrl: undefined,
+									});
+									setIsViewerOpen(true);
+								}}
+								className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:text-[var(--teal)] hover:border-[var(--teal)] shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+								data-testid="open-dropzone-viewer-btn"
+							>
+								<UploadCloud size={15} className="text-[var(--teal)]" />
+								<span>Медицинская дропзона (без снимка)</span>
+							</button>
+						</div>
 					</div>
 
 					{/* 8. Doctor & Staff Piece-Rate Payroll Trigger (Wave 11 / Task 35) */}
@@ -1943,7 +1975,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<RadiologyViewerModal
 					isOpen={isViewerOpen}
 					onClose={() => setIsViewerOpen(false)}
-					study={SAMPLE_STUDY}
+					study={activeStudy}
+					onSaveStudy={(updated) => setActiveStudy(updated)}
 				/>
 			)}
 
