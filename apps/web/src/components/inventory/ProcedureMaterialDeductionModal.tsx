@@ -12,11 +12,16 @@
 
 import {
 	AlertTriangle,
+	Check,
 	CheckCircle2,
+	Copy,
 	Package,
 	Plus,
+	Printer,
 	Search,
+	ShieldAlert,
 	ShieldCheck,
+	ShoppingCart,
 	Trash2,
 	X,
 } from "lucide-react";
@@ -26,13 +31,16 @@ import {
 	ALL_PROCEDURE_TECH_MAPS,
 	type DeductionLineItem,
 	type DeductionSummary,
+	type SupplierPurchaseOrderView,
 	TECH_MAP_CATEGORY_COLORS,
 	TECH_MAP_CATEGORY_LABELS,
 	type TechMapCategory,
 	calculateDeductionSummary,
 	calculateLineCostKopecks,
 	createDeductionLinesFromTechMaps,
+	createSupplierPurchaseOrderFromLines,
 	evaluateStockStatus,
+	formatSupplierPurchaseOrderTextRu,
 } from "./inventoryMath";
 import type { InventoryItem } from "./useInventoryLogic";
 import "./inventoryDeduction.css";
@@ -85,6 +93,13 @@ export function ProcedureMaterialDeductionModal({
 
 	// Выбор кастомного материала со склада
 	const [selectedCustomId, setSelectedCustomId] = useState("");
+
+	// Защита от отрицательных остатков (Default: true)
+	const [preventNegativeStock, setPreventNegativeStock] = useState(true);
+
+	// Модальное окно 1-кликового формирования заказа поставщику
+	const [showPoModal, setShowPoModal] = useState(false);
+	const [copiedPo, setCopiedPo] = useState(false);
 
 	// Синхронизация при открытии
 	useEffect(() => {
@@ -231,6 +246,28 @@ export function ProcedureMaterialDeductionModal({
 	// Сводный расчет
 	const summary = useMemo(() => calculateDeductionSummary(lines), [lines]);
 
+	// Автоматически сформированный проект заказа поставщику при критических остатках
+	const generatedPurchaseOrder = useMemo<SupplierPurchaseOrderView | null>(() => {
+		if (!summary.hasDeficit && summary.warningCount === 0) return null;
+		return createSupplierPurchaseOrderFromLines(lines);
+	}, [lines, summary.hasDeficit, summary.warningCount]);
+
+	const handleCopyPurchaseOrder = () => {
+		if (!generatedPurchaseOrder) return;
+		const text = formatSupplierPurchaseOrderTextRu(generatedPurchaseOrder);
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			navigator.clipboard.writeText(text);
+		}
+		setCopiedPo(true);
+		setTimeout(() => setCopiedPo(false), 2500);
+	};
+
+	const handlePrintPurchaseOrder = () => {
+		if (typeof window !== "undefined") {
+			window.print();
+		}
+	};
+
 	// Фильтрованный список строк
 	const filteredLines = useMemo(() => {
 		return lines.filter((line) => {
@@ -316,6 +353,69 @@ export function ProcedureMaterialDeductionModal({
 						})}
 					</div>
 				</div>
+
+				{/* CRITICAL THRESHOLD & DEFICIT ALERT BAR (1-CLICK PURCHASE ORDER) */}
+				{(summary.hasDeficit || summary.warningCount > 0) && (
+					<div
+						style={{
+							margin: "12px 24px 0",
+							padding: "10px 16px",
+							borderRadius: 12,
+							background: summary.hasDeficit
+								? "var(--rust-soft)"
+								: "rgba(245, 158, 11, 0.12)",
+							border: `1px solid ${
+								summary.hasDeficit ? "var(--rust)" : "rgba(245, 158, 11, 0.5)"
+							}`,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							gap: 12,
+							flexWrap: "wrap",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+							{summary.hasDeficit ? (
+								<ShieldAlert
+									size={20}
+									style={{ color: "var(--rust)", flexShrink: 0 }}
+								/>
+							) : (
+								<AlertTriangle
+									size={20}
+									style={{ color: "var(--amber, #f59e0b)", flexShrink: 0 }}
+								/>
+							)}
+							<div>
+								<div
+									style={{
+										fontSize: 13,
+										fontWeight: 700,
+										color: "var(--ink)",
+									}}
+								>
+									{summary.hasDeficit
+										? `Дефицит материалов: ${summary.criticalCount} поз. требуют пополнения!`
+										: `Внимание: ${summary.warningCount} поз. достигли критического неснижаемого остатка.`}
+								</div>
+								<div style={{ fontSize: 12, color: "var(--muted)" }}>
+									{preventNegativeStock && summary.hasDeficit
+										? "Отрицательное списание заблокировано для защиты от пересортицы. Сформируйте заказ поставщику."
+										: "Рекомендуется сформировать дозаказ поставщику для обеспечения бесперебойного приема."}
+								</div>
+							</div>
+						</div>
+
+						<button
+							type="button"
+							className="inventory-purchase-order-btn"
+							onClick={() => setShowPoModal(true)}
+						>
+							<ShoppingCart size={16} />
+							Сформировать заказ поставщику (1 клик)
+						</button>
+					</div>
+				)}
 
 				{/* SEARCH & CATEGORY TOOLBAR */}
 				<div className="inventory-filter-toolbar">
@@ -647,6 +747,18 @@ export function ProcedureMaterialDeductionModal({
 					</div>
 
 					<div className="inventory-footer-actions">
+						<label
+							className="inventory-guard-toggle"
+							title="Блокирует проведение списания при нехватке материалов на складе для предотвращения отрицательных остатков"
+						>
+							<input
+								type="checkbox"
+								checked={preventNegativeStock}
+								onChange={(e) => setPreventNegativeStock(e.target.checked)}
+							/>
+							<span>Защита от отрицательных остатков</span>
+						</label>
+
 						<button
 							type="button"
 							className="inventory-cancel-btn"
@@ -659,17 +771,209 @@ export function ProcedureMaterialDeductionModal({
 							type="button"
 							className="inventory-confirm-deduct-btn"
 							onClick={() => {
+								if (preventNegativeStock && summary.hasDeficit) {
+									return;
+								}
 								if (onConfirmDeduction) {
 									onConfirmDeduction(lines, summary);
 								}
 							}}
-							disabled={isDeducting || lines.length === 0}
+							disabled={
+								isDeducting ||
+								lines.length === 0 ||
+								(preventNegativeStock && summary.hasDeficit)
+							}
+							title={
+								preventNegativeStock && summary.hasDeficit
+									? "Списание заблокировано: обнаружен дефицит материалов на складе. Сформируйте заказ поставщику."
+									: "Провести списание выбранных материалов"
+							}
 						>
 							<ShieldCheck size={18} />
 							{isDeducting ? "Списание..." : "Списать со склада"}
 						</button>
 					</div>
 				</footer>
+
+				{/* 1-CLICK SUPPLIER PURCHASE ORDER SUB-MODAL */}
+				{showPoModal && generatedPurchaseOrder && (
+					<div
+						className="inventory-po-overlay"
+						onClick={(e) => e.target === e.currentTarget && setShowPoModal(false)}
+					>
+						<div
+							className="inventory-po-dialog"
+							role="dialog"
+							aria-modal="true"
+							aria-label="Заказ поставщику расходных материалов"
+						>
+							<div className="inventory-po-header">
+								<div>
+									<h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+										Заказ поставщику {generatedPurchaseOrder.orderNumber}
+									</h3>
+									<div
+										style={{
+											fontSize: 12,
+											color: "var(--muted)",
+											marginTop: 2,
+										}}
+									>
+										Основание:{" "}
+										{generatedPurchaseOrder.reason === "stock_deficit"
+											? "Ликвидация дефицита материалов"
+											: "Критический остаток"}{" "}
+										• {generatedPurchaseOrder.orderDate}
+									</div>
+								</div>
+								<button
+									type="button"
+									className="inventory-deduction-close-btn"
+									onClick={() => setShowPoModal(false)}
+									aria-label="Закрыть"
+								>
+									<X size={18} />
+								</button>
+							</div>
+
+							<div className="inventory-po-body">
+								<div
+									style={{
+										fontSize: 13,
+										color: "var(--muted)",
+										marginBottom: 12,
+									}}
+								>
+									Автоматически рассчитанная спецификация к заказу для восстановления неснижаемого складского запаса:
+								</div>
+
+								<table className="inventory-po-table">
+									<thead>
+										<tr>
+											<th>Артикул</th>
+											<th>Наименование материала</th>
+											<th>Ед.</th>
+											<th style={{ textAlign: "right" }}>Остаток</th>
+											<th style={{ textAlign: "right" }}>Дефицит</th>
+											<th style={{ textAlign: "right" }}>К заказу</th>
+											<th style={{ textAlign: "right" }}>Цена</th>
+											<th style={{ textAlign: "right" }}>Сумма</th>
+										</tr>
+									</thead>
+									<tbody>
+										{generatedPurchaseOrder.items.map((item) => (
+											<tr key={item.sku}>
+												<td style={{ fontFamily: "monospace", fontSize: 11 }}>
+													{item.sku}
+												</td>
+												<td style={{ fontWeight: 600 }}>{item.materialName}</td>
+												<td>{item.unit}</td>
+												<td style={{ textAlign: "right" }}>
+													{item.currentStock}
+												</td>
+												<td
+													style={{
+														textAlign: "right",
+														color:
+															item.shortfall > 0
+																? "var(--rust)"
+																: "inherit",
+														fontWeight: 700,
+													}}
+												>
+													{item.shortfall > 0 ? item.shortfall : "—"}
+												</td>
+												<td
+													style={{
+														textAlign: "right",
+														fontWeight: 700,
+														color: "var(--teal-dark)",
+													}}
+												>
+													{item.suggestedOrderQuantity}
+												</td>
+												<td style={{ textAlign: "right" }}>
+													{item.unitCostFormatted}
+												</td>
+												<td
+													style={{
+														textAlign: "right",
+														fontWeight: 700,
+													}}
+												>
+													{item.totalCostFormatted}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+
+								<div
+									style={{
+										marginTop: 16,
+										display: "flex",
+										justifyContent: "flex-end",
+										gap: 24,
+										fontSize: 14,
+									}}
+								>
+									<div>
+										Позиций: <strong>{generatedPurchaseOrder.totalItemsCount}</strong>
+									</div>
+									<div>
+										Итого к заказу:{" "}
+										<strong
+											style={{
+												color: "var(--teal-dark)",
+												fontSize: 16,
+											}}
+										>
+											{generatedPurchaseOrder.totalCostFormatted}
+										</strong>
+									</div>
+								</div>
+							</div>
+
+							<div className="inventory-po-footer">
+								<div style={{ display: "flex", gap: 10 }}>
+									<button
+										type="button"
+										className="inventory-cancel-btn"
+										onClick={handleCopyPurchaseOrder}
+										style={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 6,
+										}}
+									>
+										{copiedPo ? <Check size={16} /> : <Copy size={16} />}
+										{copiedPo ? "Скопировано!" : "Копировать текст"}
+									</button>
+									<button
+										type="button"
+										className="inventory-cancel-btn"
+										onClick={handlePrintPurchaseOrder}
+										style={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 6,
+										}}
+									>
+										<Printer size={16} />
+										Печать
+									</button>
+								</div>
+								<button
+									type="button"
+									className="inventory-confirm-deduct-btn"
+									onClick={() => setShowPoModal(false)}
+								>
+									Закрыть
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

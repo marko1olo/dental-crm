@@ -16,13 +16,17 @@ import {
 	ENDO_1_CANAL_TECH_MAP,
 	ENDO_MULTI_CANAL_TECH_MAP,
 	HYGIENE_TECH_MAP,
+	IMPLANT_PLACEMENT_TECH_MAP,
 	ProcedureMaterialDeductionModal,
 	SURGERY_EXTRACTION_TECH_MAP,
 	calculateDeductionSummary,
 	calculateLineCostKopecks,
 	calculateTotalDeductionCostKopecks,
+	canSafelyDeductLinesWithoutDeficit,
 	createDeductionLinesFromTechMaps,
+	createSupplierPurchaseOrderFromLines,
 	evaluateStockStatus,
+	formatSupplierPurchaseOrderTextRu,
 	matchMaterialToWarehouse,
 } from "../components/inventory";
 import type { InventoryItem } from "../components/inventory/useInventoryLogic";
@@ -37,6 +41,18 @@ describe("Dental Inventory BOM & Procedure Tech Maps", () => {
 		assert.ok(codes.includes("A16.07.030.003")); // Эндо многоканальная
 		assert.ok(codes.includes("A16.07.051")); // Гигиена
 		assert.ok(codes.includes("A16.07.001.001")); // Хирургия
+		assert.ok(codes.includes("A16.07.054")); // Дентальная имплантация
+	});
+
+	it("Техкарта дентальной имплантации (A16.07.054) содержит имплантат, винт-заглушку, шовник PTFE и анестетик", () => {
+		const items = IMPLANT_PLACEMENT_TECH_MAP.items;
+		const names = items.map((i) => i.materialName.toLowerCase());
+
+		assert.ok(names.some((n) => n.includes("имплантат") || n.includes("straumann") || n.includes("osstem")));
+		assert.ok(names.some((n) => n.includes("винт-заглушка") || n.includes("формирователь")));
+		assert.ok(names.some((n) => n.includes("шовный") || n.includes("ptfe")));
+		assert.ok(names.some((n) => n.includes("артикаин") || n.includes("анестетик")));
+		assert.ok(names.some((n) => n.includes("лезвие") || n.includes("скальпель")));
 	});
 
 	it("Базовый набор СИЗ (СанПиН 3.3686-21) включает все обязательные защитные расходники", () => {
@@ -198,6 +214,74 @@ describe("Stock Status & Low-Stock / Negative-Stock Alerts", () => {
 	});
 });
 
+describe("Supplier Purchase Order & Negative Stock Guard", () => {
+	it("canSafelyDeductLinesWithoutDeficit блокирует списание при наличии хотя бы одной дефицитной позиции", () => {
+		const safeLines: DeductionLineItem[] = [
+			{
+				id: "l-1",
+				materialName: "Перчатки нитриловые",
+				category: "ppe",
+				unit: "пары",
+				quantity: 2,
+				standardQuantity: 2,
+				unitCostKopecks: 3500,
+				stockQuantity: 10,
+				criticalThreshold: 2,
+				source: "tech_map",
+			},
+		];
+		assert.equal(canSafelyDeductLinesWithoutDeficit(safeLines), true);
+
+		const deficitLines: DeductionLineItem[] = [
+			...safeLines,
+			{
+				id: "l-2",
+				materialName: "Имплантат Straumann",
+				category: "surgery",
+				unit: "шт.",
+				quantity: 2,
+				standardQuantity: 2,
+				unitCostKopecks: 1450000,
+				stockQuantity: 1, // Only 1 in stock, deficit = 1
+				criticalThreshold: 3,
+				source: "tech_map",
+			},
+		];
+		assert.equal(canSafelyDeductLinesWithoutDeficit(deficitLines), false);
+	});
+
+	it("createSupplierPurchaseOrderFromLines формирует корректный заказ поставщику при дефиците", () => {
+		const lines: DeductionLineItem[] = [
+			{
+				id: "l-1",
+				materialName: "Артикаин 4% карпулы",
+				category: "anesthesia",
+				unit: "карп.",
+				quantity: 3,
+				standardQuantity: 1,
+				unitCostKopecks: 22000, // 220.00 ₽
+				stockQuantity: 1, // deficit = 2
+				criticalThreshold: 5,
+				source: "tech_map",
+			},
+		];
+
+		const po = createSupplierPurchaseOrderFromLines(lines, "DENTE Семейная");
+		assert.ok(po);
+		assert.equal(po.clinicNameRu, "DENTE Семейная");
+		assert.equal(po.reason, "stock_deficit");
+		assert.equal(po.items.length, 1);
+		assert.equal(po.items[0]?.materialName, "Артикаин 4% карпулы");
+		assert.equal(po.items[0]?.shortfall, 2);
+		assert.ok(po.items[0]!.suggestedOrderQuantity >= 7);
+		assert.ok(po.totalCostKopecks > 0);
+
+		const text = formatSupplierPurchaseOrderTextRu(po);
+		assert.ok(text.includes("ЗАКАЗ ПОСТАВЩИКУ"));
+		assert.ok(text.includes("Артикаин 4% карпулы"));
+	});
+});
+
 describe("Warehouse Inventory Matching", () => {
 	const mockWarehouse: InventoryItem[] = [
 		{
@@ -285,6 +369,31 @@ describe("SSR-Safety & Component Rendering", () => {
 		assert.ok(html.includes("Зуб №26"));
 		assert.ok(html.includes("Алексей Смирнов"));
 		assert.ok(html.includes("Списать со склада"));
+	});
+
+	it("ProcedureMaterialDeductionModal отображает предупреждение о дефиците и кнопку заказа поставщику", () => {
+		const html = renderToStaticMarkup(
+			createElement(ProcedureMaterialDeductionModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialTechMapCodes: ["A16.07.054"], // Имплантация
+				serviceName: "Установка дентального имплантата",
+				warehouseItems: [
+					{
+						id: "wh-imp-1",
+						name: "Дентальный имплантат титановый SLA стерильный (Straumann/Osstem/Dentium)",
+						stockQuantity: 0, // Дефицит
+						criticalThreshold: 2,
+						unitCostRub: "14500.00",
+						updatedAt: "2026-08-27",
+					},
+				],
+			}),
+		);
+
+		assert.ok(html.includes("Защита от отрицательных остатков"));
+		assert.ok(html.includes("Сформировать заказ поставщику"));
+		assert.ok(html.includes("disabled"));
 	});
 
 	it("ProcedureMaterialDeductionModal возвращает пустую строку при isOpen = false", () => {

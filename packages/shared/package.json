@@ -42,9 +42,9 @@
 			"default": "./dist/inventory/consumables.js"
 		},
 		"./inventory": {
-			"types": "./dist/inventory/consumables.d.ts",
-			"import": "./dist/inventory/consumables.js",
-			"default": "./dist/inventory/consumables.js"
+			"types": "./dist/inventory/index.d.ts",
+			"import": "./dist/inventory/index.js",
+			"default": "./dist/inventory/index.js"
 		}
 	},
 	"scripts": {
