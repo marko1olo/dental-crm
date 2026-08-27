@@ -1,0 +1,88 @@
+/**
+ * O'Leary Plaque Control Record (PCR) & Bleeding Index (BI) Engine.
+ * Based on O'Leary, Drake & Naylor (1972) clinical periodontal index standard.
+ *
+ * Evaluates plaque biofilm presence at the gingival margin across 4 or 6 anatomical surfaces
+ * per present tooth. Provides clinical staging, quadrant distribution, and pre-surgical clearance gates.
+ */
+import { z } from "zod";
+export const olearySurfaceSchema = z.enum(["mesial", "distal", "buccal", "lingual"]);
+export const OLEARY_4_SURFACES = [
+    "mesial",
+    "distal",
+    "buccal",
+    "lingual",
+];
+/**
+ * Calculates the O'Leary Plaque Control Record (PCR) and Bleeding Index (BI).
+ */
+export function calculateOlearyPcr(teeth) {
+    const presentTeeth = teeth.filter((t) => t.isPresent);
+    const presentTeethCount = presentTeeth.length;
+    const totalSurfaces = Math.max(1, presentTeethCount * 4);
+    let totalPlaque = 0;
+    let totalBleeding = 0;
+    let interproximalPlaque = 0;
+    let smoothPlaque = 0;
+    const quadrantPlaqueCount = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    for (const tooth of presentTeeth) {
+        const quad = Math.floor(tooth.toothFdi / 10);
+        const plaqueSurfaces = tooth.surfacesWithPlaque ?? [];
+        const bleedingSurfaces = tooth.surfacesWithBleeding ?? [];
+        for (const s of plaqueSurfaces) {
+            totalPlaque++;
+            if (quad >= 1 && quad <= 4) {
+                quadrantPlaqueCount[quad]++;
+            }
+            if (s === "mesial" || s === "distal") {
+                interproximalPlaque++;
+            }
+            else {
+                smoothPlaque++;
+            }
+        }
+        totalBleeding += bleedingSurfaces.length;
+    }
+    const pcrPercent = Number.parseFloat(((totalPlaque / totalSurfaces) * 100).toFixed(1));
+    const bleedingPercent = Number.parseFloat(((totalBleeding / totalSurfaces) * 100).toFixed(1));
+    let rating = "excellent";
+    let ratingDescriptionRu = "Отличный уровень гигиены (< 10%): биопленка под контролем, допуск к хирургии";
+    if (pcrPercent > 30.0) {
+        rating = "inadequate";
+        ratingDescriptionRu = "Неудовлетворительная гигиена (> 30%): высокий риск рецидива пародонтита, требуется ремотивация";
+    }
+    else if (pcrPercent > 20.0) {
+        rating = "moderate";
+        ratingDescriptionRu = "Умеренный налет (21-30%): показан повторный контролируемый тренинг гигиены";
+    }
+    else if (pcrPercent >= 10.0) {
+        rating = "good";
+        ratingDescriptionRu = "Хороший уровень гигиены (10-20%): стабильное состояние с небольшими зонами ретенции";
+    }
+    const interproximalTotal = Math.max(1, presentTeethCount * 2);
+    const smoothTotal = Math.max(1, presentTeethCount * 2);
+    const interproximalPlaquePercent = Number.parseFloat(((interproximalPlaque / interproximalTotal) * 100).toFixed(1));
+    const smoothSurfacePlaquePercent = Number.parseFloat(((smoothPlaque / smoothTotal) * 100).toFixed(1));
+    let highestPlaqueQuadrant = 1;
+    let maxQuadPlaque = -1;
+    for (let q = 1; q <= 4; q = (q + 1)) {
+        if (quadrantPlaqueCount[q] > maxQuadPlaque) {
+            maxQuadPlaque = quadrantPlaqueCount[q];
+            highestPlaqueQuadrant = q;
+        }
+    }
+    return {
+        presentTeethCount,
+        totalSurfaces,
+        plaqueSurfacesCount: totalPlaque,
+        bleedingSurfacesCount: totalBleeding,
+        pcrPercent,
+        bleedingPercent,
+        rating,
+        ratingDescriptionRu,
+        isSurgicalClearanceMet: pcrPercent <= 15.0 && bleedingPercent <= 15.0,
+        interproximalPlaquePercent,
+        smoothSurfacePlaquePercent,
+        highestPlaqueQuadrant,
+    };
+}
