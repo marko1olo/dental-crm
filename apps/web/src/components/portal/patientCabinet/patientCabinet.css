@@ -57,8 +57,35 @@
 }
 
 /* Multi-Theme Overrides */
-[data-theme="dark"] .patient-cabinet-modal,
-.dark .patient-cabinet-modal {
+[data-theme="light"] .patient-cabinet-modal,
+:root[data-theme="light"] .patient-cabinet-modal,
+html[data-theme="light"] .patient-cabinet-modal,
+.light .patient-cabinet-modal {
+	--pc-bg: #ffffff;
+	--pc-surface: #f8fafc;
+	--pc-surface-hover: #f1f5f9;
+	--pc-border: #e2e8f0;
+	--pc-border-focus: #0d9488;
+	--pc-text-main: #0f172a;
+	--pc-text-muted: #64748b;
+	--pc-primary: #0d9488;
+	--pc-primary-hover: #0f766e;
+	--pc-primary-light: rgba(13, 148, 136, 0.1);
+	--pc-success: #10b981;
+	--pc-success-light: rgba(16, 185, 129, 0.12);
+	--pc-warning: #f59e0b;
+	--pc-warning-light: rgba(245, 158, 11, 0.12);
+	--pc-danger: #ef4444;
+	--pc-danger-light: rgba(239, 68, 68, 0.12);
+	--pc-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .patient-cabinet-backdrop {
+	background: rgba(15, 23, 42, 0.45);
+}
+
+html.dark:not([data-theme="light"]) .patient-cabinet-modal,
+[data-theme="dark"] .patient-cabinet-modal {
 	--pc-bg: #0f172a;
 	--pc-surface: #1e293b;
 	--pc-surface-hover: #334155;
@@ -226,7 +253,7 @@
 	display: flex;
 	background: var(--pc-surface);
 	border-bottom: 1px solid var(--pc-border);
-	padding: 0 12px;
+	padding: 0 16px;
 	gap: 4px;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
@@ -241,13 +268,13 @@
 .pc-tab-btn {
 	min-height: 48px;
 	min-width: 44px;
-	padding: 0 14px;
+	padding: 0 11px;
 	background: transparent;
 	border: none;
 	border-bottom: 2.5px solid transparent;
 	color: var(--pc-text-muted);
 	font-weight: 600;
-	font-size: 0.875rem;
+	font-size: 0.8125rem;
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
@@ -283,7 +310,7 @@
 .pc-body {
 	flex: 1;
 	overflow-y: auto;
-	padding: 20px;
+	padding: 20px 20px 48px 20px;
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
@@ -859,7 +886,7 @@
 	}
 
 	.pc-body {
-		padding: 10px 8px;
+		padding: 12px 10px 56px 10px;
 		gap: 12px;
 	}
 
@@ -1138,6 +1165,50 @@
 	color: var(--pc-text-muted);
 	margin: 0;
 	line-height: 1.45;
+}
+
+
+.pc-care-actions-bar {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.pc-care-actions-bar button {
+	min-height: 44px;
+	padding: 8px 14px;
+	font-weight: 700;
+	border-radius: var(--pc-radius-md);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+	.pc-care-actions-bar {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+		width: 100%;
+		margin-top: 8px;
+	}
+
+	.pc-care-actions-bar .pc-whatsapp-btn {
+		grid-column: 1 / -1;
+		width: 100%;
+		min-height: 46px;
+	}
+
+	.pc-care-actions-bar button {
+		min-height: 44px;
+		font-size: 0.8125rem;
+		padding: 8px 10px;
+		width: 100%;
+	}
 }
 
 .pc-whatsapp-btn {

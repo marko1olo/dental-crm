@@ -344,7 +344,10 @@ export function WorkspaceSidebar({
 		: "hidden max-w-full text-[0.625rem] font-semibold leading-[1.15] break-words max-[1140px]:block";
 
 	return (
-		<aside className="sidebar" data-collapsed={collapsed}>
+		<aside
+			className="sidebar bg-[var(--side-bg,var(--paper))] text-[var(--ink)] border-r border-[var(--line)]"
+			data-collapsed={collapsed}
+		>
 			<div className="brand-mark">
 				<Stethoscope aria-hidden="true" />
 				<span>DENTE</span>

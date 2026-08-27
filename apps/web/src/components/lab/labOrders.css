@@ -114,6 +114,121 @@
 	transform: scale(1.05);
 }
 
+/* ─── QUADRANT QUICK SELECT BUTTONS ─────────────────────────────────────────── */
+
+.lab-quadrant-btn {
+	min-height: 40px;
+	padding: 6px 14px;
+	border-radius: 10px;
+	font-weight: 700;
+	font-size: 12px;
+	background: #ffffff;
+	color: #0f172a;
+	border: 1px solid #cbd5e1;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.lab-quadrant-btn:hover {
+	background: #f8fafc;
+	border-color: #0d9488;
+	color: #0d9488;
+}
+
+[data-theme="dark"] .lab-quadrant-btn {
+	background: #1e293b;
+	color: #f8fafc;
+	border-color: #334155;
+}
+
+[data-theme="dark"] .lab-quadrant-btn:hover {
+	background: #334155;
+	border-color: #0d9488;
+	color: #2dd4bf;
+}
+
+.lab-quadrant-clear-btn {
+	min-height: 40px;
+	padding: 6px 14px;
+	border-radius: 10px;
+	font-weight: 700;
+	font-size: 12px;
+	background: #fff1f2;
+	color: #be123c;
+	border: 1px solid #fecdd3;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.lab-quadrant-clear-btn:hover {
+	background: #ffe4e6;
+	border-color: #f43f5e;
+}
+
+[data-theme="dark"] .lab-quadrant-clear-btn {
+	background: rgba(159, 18, 57, 0.2);
+	color: #fda4af;
+	border-color: rgba(244, 63, 94, 0.4);
+}
+
+[data-theme="dark"] .lab-quadrant-clear-btn:hover {
+	background: rgba(159, 18, 57, 0.35);
+	border-color: #fb7185;
+}
+
+/* ─── MODAL NAVIGATION TAB BUTTONS ──────────────────────────────────────────── */
+
+.lab-modal-tab-btn {
+	min-height: 42px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 8px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s ease;
+	background: #f1f5f9;
+	color: #334155;
+	border: 1px solid #e2e8f0;
+	text-align: center;
+}
+
+.lab-modal-tab-btn:hover {
+	background: #e2e8f0;
+	color: #0f172a;
+}
+
+.lab-modal-tab-btn.is-active {
+	background: #ffffff;
+	color: #0d9488;
+	border-color: #cbd5e1;
+	box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .lab-modal-tab-btn {
+	background: #1e293b !important;
+	color: #94a3b8 !important;
+	border-color: #334155 !important;
+}
+
+[data-theme="dark"] .lab-modal-tab-btn:hover {
+	background: #334155 !important;
+	color: #f8fafc !important;
+}
+
+[data-theme="dark"] .lab-modal-tab-btn.is-active {
+	background: #0f172a !important;
+	color: #2dd4bf !important;
+	border-color: #0d9488 !important;
+	box-shadow: 0 2px 8px -2px rgba(13, 148, 136, 0.3) !important;
+}
+
 /* ─── GOST MEDICAL PRINT STYLES ──────────────────────────────────────────────── */
 
 @media print {

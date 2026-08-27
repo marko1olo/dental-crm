@@ -6,6 +6,7 @@ import {
 	calculateHourlyRevenueKopecks,
 	calculateRecallRates,
 	classifyChurnRisk,
+	formatDoctorGenitive,
 	formatKopecksPerHour,
 	formatKopecksToRub,
 	generatePersonalizedOffer,
@@ -246,16 +247,35 @@ test("генератор персональных предложений фор�
 	assert.match(offerImp.messageText, /Барабаш С\.В\./);
 	assert.equal(offerImp.channelSuggestions.includes("whatsapp"), true);
 
-	// Пациент после санации (полгода)
-	const offerSan = generatePersonalizedOffer({
-		patientName: "Иванов Петр",
-		clinicName: "Клиника Денте",
-		daysSinceLastVisit: 190,
+	// Санация: проверка склонения врача («Смирнов А.П.» -> «у д-ра Смирнова А.П.») и отсутствия двойных точек
+	const offerDoctorSan = generatePersonalizedOffer({
+		patientName: "Барабаш Сергей Владимирович",
+		clinicName: "Стоматология Дент-Премиум",
+		daysSinceLastVisit: 195,
 		category: "sanitation",
+		doctorName: "Смирнов А.П.",
 	});
 
-	assert.match(offerSan.messageText, /Петр/);
-	assert.match(offerSan.messageText, /6 месяцев/);
-	assert.match(offerSan.messageText, /Air-Flow/);
+	assert.match(offerDoctorSan.messageText, /Сергей Владимирович/);
+	assert.match(offerDoctorSan.messageText, /у д-ра Смирнова А\.П\./);
+	assert.equal(offerDoctorSan.messageText.includes(".."), false);
+
+	// Женская фамилия
+	const offerDocWoman = generatePersonalizedOffer({
+		patientName: "Ковалёва Анна Игоревна",
+		clinicName: "Стоматология Дент-Премиум",
+		daysSinceLastVisit: 215,
+		category: "sanitation",
+		doctorName: "Ковалёва А.И.",
+	});
+	assert.match(offerDocWoman.messageText, /у д-ра Ковалёвой А\.И\./);
+	assert.equal(offerDocWoman.messageText.includes(".."), false);
+});
+
+test("функция formatDoctorGenitive корректно склоняет фамилии врачей", () => {
+	assert.equal(formatDoctorGenitive("Смирнов А.П."), "Смирнова А.П.");
+	assert.equal(formatDoctorGenitive("Ковалёва А.И."), "Ковалёвой А.И.");
+	assert.equal(formatDoctorGenitive("Белый И.С."), "Белого И.С.");
+	assert.equal(formatDoctorGenitive(""), "");
 });
 

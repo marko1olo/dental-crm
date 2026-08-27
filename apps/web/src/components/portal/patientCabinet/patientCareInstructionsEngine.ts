@@ -1084,6 +1084,36 @@ export interface GenerateCareMemoInput {
 /**
  * Генерирует персональную клиническую памятку для пациента с WhatsApp текстом, SMS, QR-кодом и печатным HTML А4.
  */
+/**
+ * Очищает и нормализует имя врача и его специализацию, предотвращая задвоение скобок.
+ * Например: "Д-р Смирнов А. В. (Хирург-имплантолог, ортопед)" ->
+ * cleanName: "Д-р Смирнов А. В.", cleanSpecialty: "Хирург-имплантолог, ортопед"
+ */
+export function sanitizeDoctorInfo(
+	rawName?: string | undefined,
+	rawSpecialty?: string | undefined,
+): { cleanName: string; cleanSpecialty: string } {
+	const raw = (rawName || "").trim();
+	const specialtyInput = (rawSpecialty || "").trim();
+
+	const match = raw.match(/^(.*?)\s*\((.*?)\)$/);
+	if (match && typeof match[1] === "string" && typeof match[2] === "string") {
+		const cleanName = match[1].trim();
+		const extractedSpecialty = match[2].trim();
+		const cleanSpecialty =
+			extractedSpecialty || specialtyInput || "Врач-стоматолог";
+		return {
+			cleanName: cleanName || raw,
+			cleanSpecialty,
+		};
+	}
+
+	return {
+		cleanName: raw || "Кузнецов П. С.",
+		cleanSpecialty: specialtyInput || "Врач-стоматолог терапевт",
+	};
+}
+
 export function generateCareMemo(input: GenerateCareMemoInput): PatientCareMemo {
 	const memoId = input.memoId || `memo-${Date.now().toString(36)}`;
 	const memoDateIso = input.memoDateIso || new Date().toISOString().slice(0, 10);
@@ -1097,8 +1127,8 @@ export function generateCareMemo(input: GenerateCareMemoInput): PatientCareMemo 
 	const clinicName = input.clinicName || "Стоматологическая клиника ДЕНТЕ";
 	const clinicPhone = input.clinicPhone || "+7 (495) 789-01-23";
 	const clinicEmergencyPhone = input.clinicEmergencyPhone || "+7 (999) 123-45-67";
-	const doctorName = input.doctorName || "Кузнецов П. С.";
-	const doctorSpecialty = input.doctorSpecialty || "Врач-стоматолог терапевт";
+	const { cleanName: doctorName, cleanSpecialty: doctorSpecialty } =
+		sanitizeDoctorInfo(input.doctorName, input.doctorSpecialty);
 	const patientPhone = input.patientPhone || "+7 (999) 123-45-67";
 
 	const recommendations =

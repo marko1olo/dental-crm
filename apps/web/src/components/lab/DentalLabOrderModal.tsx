@@ -478,14 +478,14 @@ export function DentalLabOrderModal({
 				</div>
 
 				{/* ─── NAVIGATION TABS ───────────────────────────────────────────── */}
-				<div className="flex items-center gap-1.5 px-4 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/40 overflow-x-auto text-xs scrollbar-none">
+				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 px-4 sm:px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs">
 					{[
-						{ id: "main", label: "1. Зубная формула & Конструкция", icon: FlaskConical },
-						{ id: "shades", label: "2. Расцветка VITA & Культя", icon: Palette },
-						{ id: "occlusion", label: "3. Окклюзия & Текстура", icon: Layers },
-						{ id: "stages", label: "4. Этапы ЗТЛ & Примерки", icon: Clock },
-						{ id: "pricing", label: "5. Себестоимость & Сделка", icon: DollarSign },
-						{ id: "print", label: "6. Бланк наряда (ГОСТ) & QR", icon: QrCode },
+						{ id: "main", label: "1. Зубы & Вид", icon: FlaskConical, fullTitle: "1. Зубная формула & Конструкция" },
+						{ id: "shades", label: "2. Расцветка VITA", icon: Palette, fullTitle: "2. Расцветка VITA & Культя" },
+						{ id: "occlusion", label: "3. Окклюзия", icon: Layers, fullTitle: "3. Окклюзия & Текстура" },
+						{ id: "stages", label: "4. Этапы & Сроки", icon: Clock, fullTitle: "4. Этапы ЗТЛ & Примерки" },
+						{ id: "pricing", label: "5. Себестоимость", icon: DollarSign, fullTitle: "5. Себестоимость & Сделка" },
+						{ id: "print", label: "6. Бланк ГОСТ", icon: QrCode, fullTitle: "6. Бланк наряда (ГОСТ) & QR" },
 					].map((tab) => {
 						const Icon = tab.icon;
 						const isActive = activeTab === tab.id;
@@ -494,14 +494,11 @@ export function DentalLabOrderModal({
 								key={tab.id}
 								type="button"
 								onClick={() => setActiveTab(tab.id as TabKey)}
-								className={`min-h-[44px] inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl font-bold whitespace-nowrap shrink-0 transition-all ${
-									isActive
-										? "bg-white dark:bg-slate-800 text-[var(--teal)] shadow-sm border border-slate-200 dark:border-slate-700"
-										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
-								}`}
+								className={`lab-modal-tab-btn ${isActive ? "is-active" : ""}`}
+								title={tab.fullTitle}
 							>
-								<Icon className="w-4 h-4" />
-								{tab.label}
+								<Icon className="w-4 h-4 shrink-0" />
+								<span className="truncate">{tab.label}</span>
 							</button>
 						);
 					})}

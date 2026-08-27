@@ -439,7 +439,8 @@ export const LostPatientsPanel: React.FC = () => {
 				<div className="flex items-center gap-2 flex-wrap">
 					{/* Переключатель вкладок */}
 					<div
-						className="inline-flex items-center p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] min-h-[36px] flex-nowrap gap-1 overflow-x-auto max-w-full"
+						className="inline-flex items-center p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] min-h-[36px] flex-nowrap gap-1.5 overflow-x-auto max-w-full"
+						style={{ gap: "6px" }}
 						role="tablist"
 					>
 						<button

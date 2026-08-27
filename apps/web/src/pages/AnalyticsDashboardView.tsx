@@ -395,13 +395,13 @@ export function AnalyticsDashboardView() {
 														>
 															<stop
 																offset="5%"
-																stopColor="var(--teal, #0d9488)"
-																stopOpacity={0.4}
+																stopColor="#10b981"
+																stopOpacity={0.45}
 															/>
 															<stop
 																offset="95%"
-																stopColor="var(--teal, #0d9488)"
-																stopOpacity={0}
+																stopColor="#10b981"
+																stopOpacity={0.02}
 															/>
 														</linearGradient>
 													</defs>
@@ -448,10 +448,12 @@ export function AnalyticsDashboardView() {
 														type="monotone"
 														name="За год"
 														dataKey="Month 12"
-														stroke="var(--teal-dark, var(--teal))"
-														strokeWidth={2}
+														stroke="#10b981"
+														strokeWidth={3}
 														fillOpacity={1}
 														fill="url(#analyticsLtvGradient)"
+														dot={{ r: 4, fill: "#10b981", strokeWidth: 1, stroke: "#ffffff" }}
+														activeDot={{ r: 6, fill: "#06b6d4", stroke: "#ffffff" }}
 													/>
 												</AreaChart>
 											</ResponsiveContainer>
@@ -746,14 +748,14 @@ function DoctorProfitabilityTable({
 	);
 
 	return (
-		<div className="analytics-table-wrapper">
+		<div className="analytics-table-wrapper pb-24 pr-16">
 			<table className="analytics-leaderboard-table">
 				<thead>
 					<tr>
-						<th scope="col">Врач</th>
-						<th scope="col">Выручка</th>
-						<th scope="col">Прибыль</th>
-						<th scope="col">Успешность</th>
+						<th scope="col" className="whitespace-nowrap">Врач</th>
+						<th scope="col" className="whitespace-nowrap">Выручка</th>
+						<th scope="col" className="whitespace-nowrap min-w-[110px]">Прибыль</th>
+						<th scope="col" className="whitespace-nowrap">Успешность</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -762,16 +764,16 @@ function DoctorProfitabilityTable({
 						const completion = formatCompletionRate(doc?.completionRate);
 						return (
 							<tr key={doc?.name ?? "unknown"}>
-								<td className="font-medium">{doc?.name ?? "—"}</td>
+								<td className="font-medium whitespace-nowrap">{doc?.name ?? "—"}</td>
 								{/* Таблица — точная сумма с копейками, а не короткий вид плитки. */}
-								<td>{money(doc?.revenue ?? 0)}</td>
+								<td className="whitespace-nowrap">{money(doc?.revenue ?? 0)}</td>
 								<td
-									className={`font-semibold ${metricToneClass(margin.tone)}`}
+									className={`font-semibold whitespace-nowrap min-w-[110px] ${metricToneClass(margin.tone)}`}
 									title={margin.title}
 								>
 									{margin.text}
 								</td>
-								<td>
+								<td className="whitespace-nowrap">
 									<span
 										className={`font-semibold ${metricToneClass(completion.tone)}`}
 										title={completion.title}

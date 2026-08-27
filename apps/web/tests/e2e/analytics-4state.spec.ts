@@ -169,7 +169,11 @@ async function setupPage(page: Page, theme: 'light' | 'dark', viewport: { width:
 			localStorage.setItem('dental-crm:onboarding:v1', JSON.stringify({ dismissed: true, savedAt: new Date().toISOString() }));
 			localStorage.setItem('dente_ui_preferences_v1', JSON.stringify({ onboardingDismissed: true, theme: t }));
 			localStorage.setItem('dente_theme', t);
+			localStorage.setItem('dente_theme_mode', t);
 			document.documentElement.setAttribute('data-theme', t);
+			if (t === 'dark') {
+				document.documentElement.classList.add('dark');
+			}
 		},
 		{
 			clinicKey: DENTE_CLINIC_TOKEN_KEY,
@@ -299,7 +303,13 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 		await setupPage(page, 'dark', { width: 1440, height: 900 });
 		await page.goto('/#analytics', { waitUntil: 'load' });
 		await page.waitForTimeout(2000);
-		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+		await page.evaluate(() => {
+			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('dark');
+			localStorage.setItem('dente_theme_mode', 'dark');
+			localStorage.setItem('dente_theme', 'dark');
+			(window as any).__useThemeStore?.getState()?.setThemeMode?.('dark');
+		});
 		await page.waitForTimeout(500);
 
 		await expect(page.locator('#analytics')).toBeVisible({ timeout: 10000 });
@@ -390,7 +400,13 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 		await setupPage(page, 'dark', { width: 390, height: 844 });
 		await page.goto('/#analytics', { waitUntil: 'load' });
 		await page.waitForTimeout(2000);
-		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+		await page.evaluate(() => {
+			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('dark');
+			localStorage.setItem('dente_theme_mode', 'dark');
+			localStorage.setItem('dente_theme', 'dark');
+			(window as any).__useThemeStore?.getState()?.setThemeMode?.('dark');
+		});
 		await page.waitForTimeout(500);
 
 		await expect(page.locator('#analytics')).toBeVisible({ timeout: 10000 });

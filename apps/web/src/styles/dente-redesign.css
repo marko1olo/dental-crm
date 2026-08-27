@@ -624,6 +624,49 @@ select:focus {
 		width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
 		padding 0.25s;
 }
+
+/* Принудительная тёмная боковая панель во всех тёмных темах */
+[data-theme="dark"] .sidebar,
+[data-theme="night"] .sidebar,
+[data-theme="ocean"] .sidebar,
+[data-theme="emerald"] .sidebar,
+[data-theme="cyber_xray"] .sidebar,
+html.dark .sidebar,
+.dark .sidebar {
+	background: var(--side-bg, #0c1514) !important;
+	border-right-color: var(--line, rgba(150, 180, 172, 0.14)) !important;
+}
+
+[data-theme="dark"] .sidebar .brand-mark,
+[data-theme="night"] .sidebar .brand-mark,
+html.dark .sidebar .brand-mark,
+.dark .sidebar .brand-mark {
+	color: var(--ink, #e9f2ef) !important;
+}
+
+[data-theme="dark"] .sidebar .nav-item,
+[data-theme="night"] .sidebar .nav-item,
+html.dark .sidebar .nav-item,
+.dark .sidebar .nav-item {
+	color: var(--ink-2, #b9c9c4) !important;
+}
+
+[data-theme="dark"] .sidebar .nav-item:hover,
+[data-theme="night"] .sidebar .nav-item:hover,
+html.dark .sidebar .nav-item:hover,
+.dark .sidebar .nav-item:hover {
+	background: var(--teal-surface, rgba(45, 212, 191, 0.08)) !important;
+	color: var(--ink, #e9f2ef) !important;
+}
+
+[data-theme="dark"] .sidebar .nav-item.active,
+[data-theme="night"] .sidebar .nav-item.active,
+html.dark .sidebar .nav-item.active,
+.dark .sidebar .nav-item.active {
+	background: var(--teal-soft, rgba(45, 212, 191, 0.16)) !important;
+	color: var(--teal, #2dd4bf) !important;
+}
+
 .brand-mark {
 	display: flex;
 	align-items: center;

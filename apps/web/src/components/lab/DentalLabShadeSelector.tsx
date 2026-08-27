@@ -103,7 +103,7 @@ export function DentalLabShadeSelector({
 						Основной оттенок реставрации (Шкала {shadeSystem === "3d_master" ? "VITA 3D-Master" : shadeSystem === "bleach" ? "Bleach" : "VITA Classical"})
 					</label>
 					<span className="text-xs text-slate-400 font-medium">
-						Touch target: min-h-[44px] с образцом цвета
+						Клиническая шкала оттенков с образцами цвета
 					</span>
 				</div>
 
@@ -205,9 +205,10 @@ export function DentalLabShadeSelector({
 							value={shadeCervical}
 							onChange={(e) => setShadeCervical(e.target.value)}
 							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+							title={`Пришеечный оттенок: ${shadeCervical}`}
 						>
 							{VITA_CLASSICAL_SHADES.map((s) => (
-								<option key={s} value={s}>VITA {s} (Насыщенный пришеечный)</option>
+								<option key={s} value={s}>VITA {s}</option>
 							))}
 							{VITA_3D_MASTER_SHADES.map((s) => (
 								<option key={s} value={s}>3D-Master {s}</option>
@@ -225,6 +226,7 @@ export function DentalLabShadeSelector({
 							value={shadeBody}
 							onChange={(e) => setShadeBody(e.target.value)}
 							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+							title={`Тело зуба: ${shadeBody}`}
 						>
 							{VITA_CLASSICAL_SHADES.map((s) => (
 								<option key={s} value={s}>VITA {s}</option>
@@ -248,9 +250,10 @@ export function DentalLabShadeSelector({
 							value={shadeIncisal}
 							onChange={(e) => setShadeIncisal(e.target.value)}
 							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+							title={`Режущий край (эмаль): ${shadeIncisal}`}
 						>
 							{VITA_CLASSICAL_SHADES.map((s) => (
-								<option key={s} value={s}>VITA {s} (Опалесценция)</option>
+								<option key={s} value={s}>VITA {s}</option>
 							))}
 							{VITA_3D_MASTER_SHADES.map((s) => (
 								<option key={s} value={s}>3D-Master {s}</option>

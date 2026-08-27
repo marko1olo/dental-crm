@@ -584,7 +584,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						onClick={() => setActiveTab("documents")}
 					>
 						<FileCheck size={16} />
-						<span>Документы и ИДС</span>
+						<span>Документы</span>
 						{summary.pendingConsentsCount > 0 && (
 							<span className="pc-tab-counter">{summary.pendingConsentsCount}</span>
 						)}
@@ -597,7 +597,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						data-testid="tab-care-instructions"
 					>
 						<Heart size={16} />
-						<span>Памятка после приёма</span>
+						<span>Памятка</span>
 					</button>
 
 					<button
@@ -619,7 +619,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						onClick={() => setActiveTab("appointments")}
 					>
 						<Calendar size={16} />
-						<span>Запись на прием</span>
+						<span>Записи</span>
 					</button>
 				</nav>
 
@@ -663,7 +663,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										</div>
 									</div>
 
-									<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+									<div className="pc-care-actions-bar">
 										<button
 											type="button"
 											className="pc-whatsapp-btn"
@@ -2112,7 +2112,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 					{/* TAB 6: ЭЛЕКТРОННЫЕ ПАМЯТКИ И УХОД ПОСЛЕ ПРИЁМА */}
 					{activeTab === "care" && (
-						<div style={{ display: "flex", flexDirection: "column", gap: "16px" }} data-testid="care-instructions-tab-view">
+						<div style={{ display: "flex", flexDirection: "column", gap: "16px", paddingBottom: "36px" }} data-testid="care-instructions-tab-view">
 							{/* Intervention Type Selector Bar */}
 							<div className="pc-card" style={{ padding: "14px 16px" }}>
 								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "10px" }}>
@@ -2207,12 +2207,12 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												</span>
 											</div>
 											<p style={{ margin: "2px 0 0 0", fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
-												Врач: <strong>{careMemo.doctorName}</strong> ({careMemo.doctorSpecialty}) &bull; {careMemo.clinicName}
+												Врач: <strong>{careMemo.doctorName}</strong>{careMemo.doctorSpecialty ? ` (${careMemo.doctorSpecialty})` : ""} &bull; {careMemo.clinicName}
 											</p>
 										</div>
 									</div>
 
-									<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+									<div className="pc-care-actions-bar">
 										<button
 											type="button"
 											className="pc-whatsapp-btn"
@@ -2227,7 +2227,6 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											className="pc-btn-secondary"
 											onClick={handleSendCareMemoSms}
 											data-testid="btn-care-tab-sms"
-											style={{ minHeight: "44px", padding: "8px 14px", fontWeight: 700 }}
 										>
 											<MessageSquare size={16} />
 											<span>SMS</span>
@@ -2237,7 +2236,6 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											className="pc-btn-primary"
 											onClick={handlePrintCareMemo}
 											data-testid="btn-care-tab-print-direct"
-											style={{ minHeight: "44px", padding: "8px 14px", fontWeight: 800 }}
 										>
 											<Printer size={16} />
 											<span>Печать А4</span>
@@ -2247,7 +2245,6 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											className="pc-btn-secondary"
 											onClick={() => setIsPrintMemoPreviewOpen(true)}
 											data-testid="btn-care-tab-preview"
-											style={{ minHeight: "44px", padding: "8px 12px", fontWeight: 700 }}
 										>
 											<Eye size={16} />
 											<span>Лист А4</span>
@@ -2257,7 +2254,6 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											className="pc-btn-secondary"
 											onClick={() => setIsCareMemoQrOpen(true)}
 											data-testid="btn-care-tab-qr"
-											style={{ minHeight: "44px", padding: "8px 12px", fontWeight: 700 }}
 										>
 											<QrCode size={16} />
 											<span>QR</span>

@@ -400,6 +400,38 @@ export function classifyChurnRisk(
 	};
 }
 
+/**
+ * Склонение ФИО врача в родительный падеж для естественной медицинской речи:
+ * «у д-ра Смирнова А.П.», «у д-ра Ковалёвой А.И.»
+ */
+export function formatDoctorGenitive(doctorName?: string): string {
+	if (!doctorName) return "";
+	const trimmed = doctorName.trim();
+	if (!trimmed) return "";
+
+	const parts = trimmed.split(/\s+/).filter(Boolean);
+	const surname = parts[0] || "";
+	if (!surname) return "";
+	const rest = parts.slice(1).join(" ");
+
+	let genitiveSurname = surname;
+	// Фамилии на -ов, -ев, -ёв, -ин, -ын (мужские)
+	if (/^[А-ЯЁ][а-яё]+(ов|ев|ёв|ин|ын)$/i.test(surname)) {
+		genitiveSurname = `${surname}а`;
+	} else if (/^[А-ЯЁ][а-яё]+(ова|ева|ёва|ина|ына)$/i.test(surname)) {
+		// Женские на -ова, -ева, -ёва, -ина, -ына
+		genitiveSurname = `${surname.slice(0, -1)}ой`;
+	} else if (/^[А-ЯЁ][а-яё]+(ий|ый|ой)$/i.test(surname)) {
+		// Прилагательные мужские: Белый -> Белого, Великий -> Великого
+		genitiveSurname = `${surname.slice(0, -2)}ого`;
+	} else if (/^[А-ЯЁ][а-яё]+ая$/i.test(surname)) {
+		// Прилагательные женские: Белая -> Белой
+		genitiveSurname = `${surname.slice(0, -2)}ой`;
+	}
+
+	return rest ? `${genitiveSurname} ${rest}` : genitiveSurname;
+}
+
 export interface PersonalizedOfferResult {
 	readonly title: string;
 	readonly messageText: string;
@@ -429,7 +461,8 @@ export function generatePersonalizedOffer(params: {
 	const days = Number.isFinite(params.daysSinceLastVisit)
 		? Math.max(0, params.daysSinceLastVisit)
 		: 0;
-	const doctor = params.doctorName ? ` у д-ра ${params.doctorName}` : "";
+	const genitiveDoctor = formatDoctorGenitive(params.doctorName);
+	const doctor = genitiveDoctor ? ` у д-ра ${genitiveDoctor}` : "";
 
 	const risk = classifyChurnRisk(days, category);
 
@@ -463,9 +496,14 @@ export function generatePersonalizedOffer(params: {
 		messageText = `${greeting}, здравствуйте! ${clinic}: прошло более полугода с последнего визита. Приглашаем на плановый осмотр к вашему лечащему врачу${doctor}. Будем рады вас видеть!`;
 	}
 
+	// Защита от сдвоенных точек («д-ра Смирнова А.П..» -> «д-ра Смирнова А.П.»)
+	const cleanMessageText = messageText
+		.replace(/\.{2,}/g, ".")
+		.replace(/\.\s*\./g, ".");
+
 	return {
 		title,
-		messageText,
+		messageText: cleanMessageText,
 		recommendedService: risk.recommendedService,
 		urgencyText: risk.bandLabel,
 		channelSuggestions: ["whatsapp", "sms", "phone"],
