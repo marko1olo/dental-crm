@@ -48,7 +48,6 @@ import { registerFilesRoutes } from "./routes/files.js";
 import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
-import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
 import { registerImportRoutes } from "./routes/imports.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerInsuranceRoutes } from "./routes/insurance.js";
@@ -70,7 +69,6 @@ import registerToothHistoryRoutes from "./routes/toothHistory.js";
 import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
 import { registerPatientRoutes } from "./routes/patients.js";
-import { registerPerioRoutes } from "./routes/perio.js";
 import { patientPortalRoutes } from "./routes/patientPortal.js";
 import { portalRoutes } from "./routes/portal.js";
 import { registerPricelistRoutes } from "./routes/pricelist.js";
@@ -640,7 +638,6 @@ export async function createDenteApiApp(
 	// сохраниться, а вкладка «История зуба» не имела источника данных.
 	await registerOdontogramRoutes(app);
 	await registerToothHistoryRoutes(app);
-	await registerPerioRoutes(app);
 	await registerLoyaltyRoutes(app);
 	await registerReferralRoutes(app);
 	await registerAnesthesiaRoutes(app);
@@ -657,7 +654,6 @@ export async function createDenteApiApp(
 	// работающими маршрутами нет.
 	await registerFilesRoutes(app);
 	await registerFamilyFinanceRoutes(app);
-	await registerImagingPlanningRoutes(app);
 	await registerInsuranceRoutes(app);
 	await registerIntegrationsRoutes(app);
 	await registerLabRoutes(app);
