@@ -89,7 +89,9 @@ export interface TaxDeductionPaymentItem {
     readonly serviceName: string;
     readonly code804n?: string | undefined;
     readonly amountRub: number;
+    readonly amountKopecks?: number | undefined;
     readonly taxCode?: "1" | "2" | undefined;
+    readonly payerRelationship?: TaxDeductionRelationship | undefined;
 }
 export interface TaxDeductionYearSummary {
     readonly taxYear: number;
@@ -101,9 +103,13 @@ export interface TaxDeductionYearSummary {
     readonly totalKopecks: number;
     readonly receiptsCount: number;
     readonly code01StatutoryLimitRub: number;
+    readonly code01StatutoryLimitKopecks: number;
     readonly code01EligibleRub: number;
+    readonly code01EligibleKopecks: number;
     readonly refund13EstimateRub: number;
+    readonly refund13EstimateKopecks: number;
     readonly refund15EstimateRub: number;
+    readonly refund15EstimateKopecks: number;
 }
 export interface TaxDeductionCalculationResult {
     readonly yearsSummary: readonly TaxDeductionYearSummary[];
@@ -114,7 +120,9 @@ export interface TaxDeductionCalculationResult {
     readonly grandTotalRub: number;
     readonly grandTotalKopecks: number;
     readonly grandTotalRefund13Rub: number;
+    readonly grandTotalRefund13Kopecks: number;
     readonly grandTotalRefund15Rub: number;
+    readonly grandTotalRefund15Kopecks: number;
     readonly totalReceiptsCount: number;
     readonly totalAmountInWordsRu: string;
 }

@@ -12,7 +12,7 @@ export interface DataMatrixSvgOptions {
     readonly quietZone?: boolean | undefined;
     readonly margin?: number | undefined;
 }
-export interface Code128SvgOptions {
+export interface SanpinCode128SvgOptions {
     readonly height?: number | undefined;
     readonly width?: number | undefined;
     readonly showText?: boolean | undefined;
@@ -22,7 +22,7 @@ export interface Code128SvgOptions {
 /**
  * Generates Code 128 (Subset B) vector SVG string.
  */
-export declare function generateSanpinCode128Svg(value: string, options?: Code128SvgOptions): string;
+export declare function generateSanpinCode128Svg(value: string, options?: SanpinCode128SvgOptions): string;
 /**
  * Computes deterministic DataMatrix 2D bit grid (20x20 or specified dimension) with L-finder pattern and timing tracks.
  */

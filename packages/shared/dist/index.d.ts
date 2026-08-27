@@ -4541,7 +4541,7 @@ export declare const treatmentPlanItemSchema: z.ZodObject<{
     plannedChairId: z.ZodNullable<z.ZodString>;
     notes: z.ZodNullable<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
+    status: "in_progress" | "completed" | "cancelled" | "approved" | "proposed";
     id: string;
     quantity: number;
     visitId: string | null;
@@ -4557,7 +4557,7 @@ export declare const treatmentPlanItemSchema: z.ZodObject<{
     plannedChairId: string | null;
     snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "documents" | "consultation" | "imaging" | null | undefined;
 }, {
-    status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
+    status: "in_progress" | "completed" | "cancelled" | "approved" | "proposed";
     id: string;
     quantity: number;
     visitId: string | null;
@@ -49490,7 +49490,7 @@ export declare const dashboardSchema: z.ZodObject<{
         plannedChairId: z.ZodNullable<z.ZodString>;
         notes: z.ZodNullable<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
+        status: "in_progress" | "completed" | "cancelled" | "approved" | "proposed";
         id: string;
         quantity: number;
         visitId: string | null;
@@ -49506,7 +49506,7 @@ export declare const dashboardSchema: z.ZodObject<{
         plannedChairId: string | null;
         snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "documents" | "consultation" | "imaging" | null | undefined;
     }, {
-        status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
+        status: "in_progress" | "completed" | "cancelled" | "approved" | "proposed";
         id: string;
         quantity: number;
         visitId: string | null;
@@ -50631,7 +50631,7 @@ export declare const dashboardSchema: z.ZodObject<{
         taxDeductible: boolean;
     }[];
     treatmentPlanItems: {
-        status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
+        status: "in_progress" | "completed" | "cancelled" | "approved" | "proposed";
         id: string;
         quantity: number;
         visitId: string | null;
@@ -51301,7 +51301,7 @@ export declare const dashboardSchema: z.ZodObject<{
         aliases?: string[] | undefined;
     }[];
     treatmentPlanItems: {
-        status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
+        status: "in_progress" | "completed" | "cancelled" | "approved" | "proposed";
         id: string;
         quantity: number;
         visitId: string | null;
@@ -66844,6 +66844,8 @@ export declare const dicomFirstFramePreviewResponseSchema: z.ZodObject<{
     nextAction: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     status: "ready" | "unsupported" | "not_found";
+    height: number | null;
+    width: number | null;
     version: "dental-crm-dicom-first-frame-preview-v1";
     generatedAt: string;
     warnings: string[];
@@ -66856,8 +66858,6 @@ export declare const dicomFirstFramePreviewResponseSchema: z.ZodObject<{
     selectableFileCount: number;
     transferSyntaxUid: string | null;
     photometricInterpretation: string | null;
-    width: number | null;
-    height: number | null;
     sourceWidth: number | null;
     sourceHeight: number | null;
     bitsStored: number | null;
@@ -66867,6 +66867,8 @@ export declare const dicomFirstFramePreviewResponseSchema: z.ZodObject<{
     imageDataUrl: string | null;
 }, {
     status: "ready" | "unsupported" | "not_found";
+    height: number | null;
+    width: number | null;
     version: "dental-crm-dicom-first-frame-preview-v1";
     generatedAt: string;
     warnings: string[];
@@ -66879,8 +66881,6 @@ export declare const dicomFirstFramePreviewResponseSchema: z.ZodObject<{
     selectableFileCount: number;
     transferSyntaxUid: string | null;
     photometricInterpretation: string | null;
-    width: number | null;
-    height: number | null;
     sourceWidth: number | null;
     sourceHeight: number | null;
     bitsStored: number | null;

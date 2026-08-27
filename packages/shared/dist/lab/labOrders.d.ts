@@ -43,8 +43,8 @@ export declare const labOrderSchema: z.ZodObject<{
     patientId: string;
     organizationId: string;
     costKopecks: number;
-    labContactId: string;
     orderNumber: string;
+    labContactId: string;
     workType: "other" | "implant" | "inlay_onlay" | "veneer" | "crown" | "bridge" | "denture" | "orthodontic" | "splint_nightguard" | "repair";
     sentDate: string;
     isRemake: boolean;
@@ -65,8 +65,8 @@ export declare const labOrderSchema: z.ZodObject<{
 }, {
     patientId: string;
     organizationId: string;
-    labContactId: string;
     orderNumber: string;
+    labContactId: string;
     workType: "other" | "implant" | "inlay_onlay" | "veneer" | "crown" | "bridge" | "denture" | "orthodontic" | "splint_nightguard" | "repair";
     sentDate: string;
     status?: "received" | "in_progress" | "completed" | "draft" | "cancelled" | "sent" | "ready" | "fitted" | "rejected_remake" | undefined;
