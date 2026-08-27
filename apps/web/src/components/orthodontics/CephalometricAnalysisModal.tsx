@@ -225,13 +225,10 @@ export function CephalometricAnalysisModal({
 							onScaleChange={setScaleMmPerPixel}
 						/>
 
-						{/* Bottom Controls: Filters, Overlays & Upload Toolbar (Touch Targets >= 44x44px) */}
-						<div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 bg-slate-900/95 border border-slate-800 rounded-xl p-3 sm:p-3.5 shadow-lg">
-							{/* Filter Modes */}
-							<div className="flex items-center gap-2 flex-wrap">
-								<span className="text-xs font-bold text-slate-400 mr-1 flex items-center gap-1.5 shrink-0">
-									<Filter size={15} /> Фильтры:
-								</span>
+						{/* Unified Compact Clinical Toolbar under Canvas (36-38px height) */}
+						<div className="mt-2 flex flex-wrap items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl p-1.5 shadow-md">
+							{/* Filter Modes Segmented Pill */}
+							<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0">
 								{(
 									[
 										{ id: "normal", label: "Стандарт" },
@@ -244,11 +241,12 @@ export function CephalometricAnalysisModal({
 										key={flt.id}
 										type="button"
 										onClick={() => setFilterMode(flt.id)}
-										className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
+										className={`h-8 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
 											filterMode === flt.id
-												? "bg-[var(--teal)] text-white shadow-md"
-												: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
+												? "bg-[var(--teal)] text-white shadow-xs"
+												: "text-slate-300 hover:text-white hover:bg-slate-800"
 										}`}
+										title={`Фильтр рентгенограммы: ${flt.label}`}
 									>
 										{flt.label}
 									</button>
@@ -256,73 +254,77 @@ export function CephalometricAnalysisModal({
 							</div>
 
 							{/* Overlays Toggles */}
-							<div className="flex items-center gap-2 flex-wrap">
+							<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0">
 								<button
 									type="button"
 									onClick={() => setShowPolygon((prev) => !prev)}
-									className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 										showPolygon
-											? "bg-[var(--teal)] text-white shadow-md"
-											: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
+											? "bg-[var(--teal)] text-white shadow-xs"
+											: "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
 									}`}
+									title="Включить / отключить цефалометрический полигон"
 								>
-									<Layers size={15} /> Полигон
+									<Layers size={13} />
+									<span>Полигон</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setShowPlanes((prev) => !prev)}
-									className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 										showPlanes
-											? "bg-[var(--teal)] text-white shadow-md"
-											: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
+											? "bg-[var(--teal)] text-white shadow-xs"
+											: "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
 									}`}
+									title="Включить / отключить плоскости (SN, FH, MP, OP)"
 								>
-									Плоскости
+									<span>Плоскости</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setShowLabels((prev) => !prev)}
-									className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 										showLabels
-											? "bg-[var(--teal)] text-white shadow-md"
-											: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
+											? "bg-[var(--teal)] text-white shadow-xs"
+											: "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
 									}`}
+									title="Включить / отключить подписи анатомических точек"
 								>
-									Подписи
+									<span>Подписи</span>
 								</button>
 							</div>
 
-							{/* Actions: Demo preset, Upload & Clear */}
-							<div className="flex items-center gap-2.5 flex-wrap w-full pt-3 border-t border-slate-800/80 justify-between">
-								<div className="flex items-center gap-2.5 flex-wrap">
-									<label className="min-h-[44px] px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer transition-colors border border-slate-700 shadow-sm">
-										<UploadCloud size={16} />
-										<span>Загрузить снимок ТРГ</span>
-										<input
-											type="file"
-											accept="image/*"
-											onChange={handleFileUpload}
-											className="hidden"
-										/>
-									</label>
-									<button
-										type="button"
-										onClick={handleLoadPreset}
-										className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal)] text-xs sm:text-sm font-bold flex items-center gap-2 transition-colors border border-[var(--teal-soft)] cursor-pointer shadow-sm"
-										title="Загрузить эталонную разметку"
-									>
-										<Sparkles size={16} />
-										<span>Эталонная разметка</span>
-									</button>
-								</div>
-
+							{/* Actions (Upload, Preset, Reset) */}
+							<div className="flex items-center gap-1 shrink-0 flex-wrap">
+								<label
+									className="h-8 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-700 shadow-sm"
+									title="Загрузить пользовательский снимок ТРГ"
+								>
+									<UploadCloud size={14} />
+									<span>Загрузить снимок ТРГ</span>
+									<input
+										type="file"
+										accept="image/*"
+										onChange={handleFileUpload}
+										className="hidden"
+									/>
+								</label>
+								<button
+									type="button"
+									onClick={handleLoadPreset}
+									className="h-8 px-2.5 rounded-lg bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold flex items-center gap-1.5 transition-colors border border-[var(--teal-soft)] cursor-pointer shadow-sm"
+									title="Загрузить эталонную разметку"
+								>
+									<Sparkles size={14} />
+									<span>Эталонная разметка</span>
+								</button>
 								<button
 									type="button"
 									onClick={handleResetLandmarks}
-									className="min-h-[44px] px-4 py-2 rounded-xl bg-rose-950/50 hover:bg-rose-900/70 text-rose-300 text-xs sm:text-sm font-bold flex items-center gap-2 transition-colors border border-rose-800/40 cursor-pointer shadow-sm"
+									className="h-8 px-2.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-800/40 cursor-pointer shadow-sm"
 									title="Сбросить все точки"
 								>
-									<Trash2 size={15} />
+									<Trash2 size={13} />
 									<span>Сбросить</span>
 								</button>
 							</div>
@@ -331,49 +333,49 @@ export function CephalometricAnalysisModal({
 
 					{/* ── Right Column: Interactive Sidebar (Landmarks, Measurements & Form 043/y) (5 Cols) ── */}
 					<div className="lg:col-span-5 flex flex-col bg-[var(--paper,#ffffff)] dark:bg-slate-900 overflow-hidden">
-						{/* Tab Navigation with Touch Targets >= 44x44px */}
-						<div className="flex items-center border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/80 px-2 sm:px-3 pt-2 shrink-0 gap-1 overflow-x-auto w-full">
+						{/* Tab Navigation with Symmetric 3-Column Grid (Zero Truncation) */}
+						<div className="grid grid-cols-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/80 px-2 pt-1.5 shrink-0 gap-1 w-full">
 							<button
 								type="button"
 								onClick={() => setActiveTab("landmarks")}
-								className={`min-h-[44px] px-3 sm:px-3.5 py-2 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+								className={`h-9 px-1.5 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "landmarks"
-										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
+										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-lg shadow-xs"
 										: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
+								title="Ориентиры ТРГ"
 							>
-								<span>1. Ориентиры</span>
-								<span className="text-xs bg-[var(--teal-surface)] px-1.5 py-0.5 rounded-full font-extrabold text-[var(--teal)]">
-									{analysis.placedCount}/{analysis.totalCount}
-								</span>
+								<span className="whitespace-nowrap">1. Ориентиры ({analysis.placedCount})</span>
 							</button>
 
 							<button
 								type="button"
 								onClick={() => setActiveTab("metrics")}
-								className={`min-h-[44px] px-3 sm:px-3.5 py-2 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+								className={`h-9 px-1.5 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "metrics"
-										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
+										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-lg shadow-xs"
 										: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
+								title="Расчет углов (Steiner, Tweed, Downs)"
 							>
-								<span>2. Расчет углов</span>
+								<span className="whitespace-nowrap">2. Расчет углов</span>
 								{analysis.isComplete && (
-									<CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+									<CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
 								)}
 							</button>
 
 							<button
 								type="button"
 								onClick={() => setActiveTab("report")}
-								className={`min-h-[44px] px-3 sm:px-3.5 py-2 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+								className={`h-9 px-1.5 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "report"
-										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
+										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-lg shadow-xs"
 										: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
+								title="Форма 043/у-ТРГ (Ортодонтический протокол)"
 							>
-								<FileText size={16} className="shrink-0" />
-								<span>3. Форма 043/у-ТРГ</span>
+								<FileText size={14} className="shrink-0" />
+								<span className="whitespace-nowrap">3. Форма 043/у</span>
 							</button>
 						</div>
 
@@ -429,7 +431,7 @@ export function CephalometricAnalysisModal({
 														<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 min-w-0 break-words">
 															{lm.nameRu}
 														</div>
-														<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 min-w-0 break-words line-clamp-1">
+														<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 min-w-0 break-words leading-snug">
 															{lm.anatomicalDescription}
 														</div>
 													</div>

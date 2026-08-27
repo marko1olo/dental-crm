@@ -355,82 +355,211 @@ export function CephalometricCanvas({
 							className="w-full h-full"
 							aria-label="Векторная анатомическая модель ТРГ в боковой проекции"
 						>
-							{/* Radiographic Density Gradient Backing */}
+							{/* Radiographic Density Gradients & Filters */}
 							<defs>
-								<radialGradient id="cephSkullGlow" cx="45%" cy="40%" r="55%">
-									<stop offset="0%" stopColor="#1e293b" stopOpacity="0.9" />
-									<stop offset="60%" stopColor="#0f172a" stopOpacity="0.95" />
+								{/* Conical X-Ray Beam Density Field */}
+								<radialGradient id="cephBeamGlow" cx="48%" cy="46%" r="58%">
+									<stop offset="0%" stopColor="#1e293b" stopOpacity="0.95" />
+									<stop offset="50%" stopColor="#0f172a" stopOpacity="0.98" />
+									<stop offset="85%" stopColor="#050814" stopOpacity="1" />
 									<stop offset="100%" stopColor="#020617" stopOpacity="1" />
 								</radialGradient>
-								<linearGradient id="cervicalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-									<stop offset="0%" stopColor="#334155" />
-									<stop offset="100%" stopColor="#1e293b" />
+
+								{/* Cortical Bone High-Contrast Gradient */}
+								<linearGradient id="boneCortexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+									<stop offset="0%" stopColor="#94a3b8" stopOpacity="0.95" />
+									<stop offset="50%" stopColor="#64748b" stopOpacity="0.9" />
+									<stop offset="100%" stopColor="#475569" stopOpacity="0.85" />
+								</linearGradient>
+
+								{/* Sphenoid & Sella Turcica Gradient */}
+								<linearGradient id="sellaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+									<stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
+									<stop offset="100%" stopColor="#06b6d4" stopOpacity="0.8" />
+								</linearGradient>
+
+								{/* Cervical Vertebrae Texture */}
+								<linearGradient id="cervicalBoneGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+									<stop offset="0%" stopColor="#334155" stopOpacity="0.9" />
+									<stop offset="50%" stopColor="#475569" stopOpacity="0.95" />
+									<stop offset="100%" stopColor="#1e293b" stopOpacity="0.9" />
 								</linearGradient>
 							</defs>
 
-							{/* Dark Radiograph Background */}
+							{/* 1. Deep Space Dark Radiograph Background */}
 							<rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#020617" />
-							<rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="url(#cephSkullGlow)" />
+							<rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="url(#cephBeamGlow)" />
 
-							{/* Soft Tissue Profile Silhouette (Профиль мягких тканей) */}
+							{/* 2. Soft Tissue Profile Silhouette (Мягкотканный профиль лица: нос, губы, подбородок) */}
 							<path
-								d="M 400 80 C 450 90, 470 120, 465 155 C 460 175, 490 230, 505 270 C 510 285, 495 295, 480 300 C 495 320, 500 345, 495 365 C 490 380, 475 385, 465 395 C 480 405, 485 430, 480 450 C 475 470, 480 495, 465 525 C 450 550, 420 575, 380 590 L 350 660 L 220 660 L 220 80 Z"
-								fill="#0f172a"
-								stroke="#334155"
+								d="M 380 60 C 430 70, 460 100, 455 135 C 452 150, 475 200, 492 245 C 502 270, 508 285, 498 296 C 485 304, 478 308, 482 320 C 488 335, 502 355, 496 372 C 490 384, 472 388, 468 398 C 478 408, 488 428, 484 450 C 478 472, 484 498, 472 525 C 458 552, 424 578, 375 595 L 340 670 L 190 670 L 190 60 Z"
+								fill="#0b1120"
+								stroke="#1e293b"
 								strokeWidth="1.5"
-								strokeDasharray="4 2"
-								opacity="0.6"
+								opacity="0.75"
 							/>
-
-							{/* Cranial Vault & Skull Base (Свод черепа и основание) */}
+							{/* Outer Soft Tissue E-Line Profile Trace */}
 							<path
-								d="M 230 250 C 200 180, 240 100, 320 85 C 400 70, 450 110, 440 155 C 400 170, 330 180, 280 190 C 250 195, 240 230, 245 245 Z"
-								fill="#1e293b"
+								d="M 455 135 C 452 150, 475 200, 492 245 C 502 270, 508 285, 498 296 C 485 304, 478 308, 482 320 C 488 335, 502 355, 496 372 C 490 384, 472 388, 468 398 C 478 408, 488 428, 484 450 C 478 472, 484 498, 472 525 C 458 552, 424 578, 375 595"
+								fill="none"
 								stroke="#475569"
-								strokeWidth="2"
+								strokeWidth="1.8"
+								strokeDasharray="4 2"
 								opacity="0.8"
 							/>
 
-							{/* Sella Turcica Saddle Pocket (Турецкое седло) */}
+							{/* 3. Pharyngeal Airway Space (Дыхательные пути: носоглотка, ротоглотка, гортаноглотка) */}
 							<path
-								d="M 270 185 Q 280 198, 290 185"
+								d="M 320 310 Q 315 360, 310 420 Q 305 480, 300 560 L 285 560 Q 290 480, 295 420 Q 300 360, 305 310 Z"
+								fill="#020617"
+								stroke="#0f172a"
+								strokeWidth="1"
+								opacity="0.95"
+							/>
+
+							{/* 4. Cranial Vault Outer & Inner Cortex (Свод черепа: наружная и внутренняя пластинки) */}
+							<path
+								d="M 210 270 C 180 180, 220 90, 310 70 C 400 50, 455 95, 442 155 C 395 168, 335 178, 280 190 C 248 196, 235 235, 238 255 Z"
+								fill="#1e293b"
+								stroke="url(#boneCortexGrad)"
+								strokeWidth="2.2"
+								opacity="0.85"
+							/>
+							{/* Diploe Space Inner Shadow */}
+							<path
+								d="M 220 255 C 195 185, 230 105, 310 85 C 390 68, 440 105, 432 150"
+								fill="none"
+								stroke="#334155"
+								strokeWidth="4"
+								opacity="0.6"
+							/>
+
+							{/* 5. Sella Turcica, Sphenoid Bone & Clivus (Турецкое седло, клиновидная кость и скат) */}
+							<path
+								d="M 265 182 L 272 184 Q 280 198, 288 184 L 298 182 L 315 220 L 290 270 L 255 245 Z"
+								fill="#0f172a"
+								stroke="#64748b"
+								strokeWidth="1.8"
+								opacity="0.9"
+							/>
+							{/* Sella Turcica Fossa Outline (S-point pocket) */}
+							<path
+								d="M 270 183 Q 280 198, 290 183"
+								fill="none"
+								stroke="url(#sellaGrad)"
+								strokeWidth="2.8"
+							/>
+
+							{/* 6. Orbital Cavity & Orbitale Rim (Глазница и подглазничный край) */}
+							<path
+								d="M 435 175 C 445 195, 440 230, 415 230 C 390 230, 395 195, 410 178 Z"
+								fill="#090d16"
+								stroke="#64748b"
+								strokeWidth="1.8"
+								opacity="0.9"
+							/>
+							{/* Orbitale Floor Marker */}
+							<path
+								d="M 405 230 Q 415 233, 425 228"
 								fill="none"
 								stroke="#38bdf8"
-								strokeWidth="2.5"
-							/>
-
-							{/* Nasal Bone & Maxilla (Носовая кость и верхняя челюсть) */}
-							<path
-								d="M 440 155 L 455 210 L 440 235 L 475 310 L 462 342 L 468 395 L 438 325 L 305 325 L 300 290 Z"
-								fill="#1e293b"
-								stroke="#64748b"
 								strokeWidth="2"
-								opacity="0.85"
 							/>
 
-							{/* Mandible & Ramus (Нижняя челюсть: ветвь, угол, тело, подбородок) */}
-							<path
-								d="M 270 270 L 250 435 Q 260 490, 340 515 L 420 540 Q 450 535, 452 490 L 446 440 L 458 400 L 425 495 L 340 470 L 285 360 Z"
-								fill="#1e293b"
+							{/* 7. Porion / External Auditory Meatus (Слуховой проход) */}
+							<ellipse
+								cx="245"
+								cy="245"
+								rx="8"
+								ry="11"
+								fill="#020617"
 								stroke="#64748b"
-								strokeWidth="2"
-								opacity="0.85"
+								strokeWidth="1.8"
 							/>
 
-							{/* Cervical Vertebrae (Шейные позвонки C1, C2, C3, C4) */}
-							<g fill="none" stroke="#334155" strokeWidth="2" opacity="0.6">
-								<rect x="220" y="320" width="30" height="25" rx="5" />
-								<rect x="215" y="360" width="35" height="28" rx="5" />
-								<rect x="210" y="400" width="40" height="30" rx="5" />
-								<rect x="205" y="445" width="42" height="32" rx="5" />
+							{/* 8. Maxilla, Hard Palate, Maxillary Sinus (Верхняя челюсть, нёбо, гайморова пазуха) */}
+							{/* Maxillary Sinus Radiolucency */}
+							<path
+								d="M 370 260 C 430 250, 445 280, 440 310 C 410 320, 360 315, 355 285 Z"
+								fill="#090d16"
+								stroke="#334155"
+								strokeWidth="1.2"
+								opacity="0.8"
+							/>
+							{/* Hard Palate Bone Beam (ANS -> PNS) */}
+							<path
+								d="M 475 310 Q 400 312, 305 325 L 305 332 Q 400 320, 475 315 Z"
+								fill="#334155"
+								stroke="url(#boneCortexGrad)"
+								strokeWidth="2"
+								opacity="0.95"
+							/>
+							{/* Anterior Maxillary Basal Profile (Nasion -> A -> ANS) */}
+							<path
+								d="M 440 155 L 455 210 L 442 240 L 475 310 Q 460 328, 462 342 L 468 395"
+								fill="none"
+								stroke="url(#boneCortexGrad)"
+								strokeWidth="2.4"
+								opacity="0.95"
+							/>
+
+							{/* 9. Mandible (Нижняя челюсть: мыщелок, венечный отросток, ветвь, угол, тело, симфиз) */}
+							<path
+								d="M 268 258 C 265 250, 275 245, 280 252 L 285 290 Q 305 280, 318 295 L 305 335 L 275 340 L 250 435 Q 260 495, 335 515 L 415 540 Q 448 535, 452 490 Q 450 460, 446 440 L 458 400 L 425 495 Q 380 485, 330 465 L 280 355 Z"
+								fill="#1e293b"
+								stroke="url(#boneCortexGrad)"
+								strokeWidth="2.4"
+								opacity="0.9"
+							/>
+							{/* Mandibular Symphysis Cortical Contour (Контур подбородочного симфиза) */}
+							<path
+								d="M 446 440 Q 454 465, 452 490 Q 448 515, 442 520 Q 432 538, 420 540 Q 385 538, 380 500 Q 385 450, 425 440 Z"
+								fill="#334155"
+								stroke="#94a3b8"
+								strokeWidth="2"
+								opacity="0.95"
+							/>
+							{/* Mandibular Neurovascular Canal (Нижнечелюстной канал) */}
+							<path
+								d="M 275 340 Q 265 430, 335 480 Q 385 500, 420 480"
+								fill="none"
+								stroke="#475569"
+								strokeWidth="2"
+								strokeDasharray="4 3"
+								opacity="0.75"
+							/>
+
+							{/* 10. Cervical Spine C1–C4 (Шейные позвонки с зубовидным отростком) */}
+							<g fill="url(#cervicalBoneGrad)" stroke="#475569" strokeWidth="1.8" opacity="0.8">
+								{/* C1 Atlas */}
+								<rect x="235" y="280" width="28" height="20" rx="4" />
+								{/* C2 Axis with Dens */}
+								<path d="M 230 305 L 245 285 L 252 285 L 258 305 L 262 330 L 225 330 Z" />
+								{/* C3 */}
+								<rect x="220" y="340" width="36" height="26" rx="5" />
+								{/* C4 */}
+								<rect x="215" y="375" width="38" height="28" rx="5" />
+								{/* C5 */}
+								<rect x="210" y="412" width="40" height="30" rx="5" />
 							</g>
 
-							{/* Stylized Incisors (Верхний и нижний центральные резцы) */}
-							<g stroke="#94a3b8" strokeWidth="2.5" fill="#334155">
-								{/* Upper Central Incisor (U1) */}
-								<path d="M 438 325 L 462 390 Q 468 398, 470 395 L 448 335 Z" fill="#475569" />
-								{/* Lower Central Incisor (L1) */}
-								<path d="M 425 495 L 452 405 Q 458 398, 460 402 L 435 490 Z" fill="#475569" />
+							{/* 11. Central Incisors with Anatomical Roots & Pulp Chambers (Резцы с корнями) */}
+							<g stroke="#cbd5e1" strokeWidth="2" fill="#475569">
+								{/* Upper Central Incisor (U1: коронка и корень) */}
+								<path
+									d="M 438 325 Q 448 350, 460 380 L 468 395 Q 472 396, 470 392 L 452 335 Q 445 322, 438 325 Z"
+									fill="#64748b"
+								/>
+								{/* Upper Pulp Canal */}
+								<line x1="442" y1="332" x2="464" y2="390" stroke="#020617" strokeWidth="1.2" />
+
+								{/* Lower Central Incisor (L1: коронка и корень) */}
+								<path
+									d="M 425 495 Q 438 460, 448 415 L 458 400 Q 462 401, 460 405 L 440 485 Q 430 498, 425 495 Z"
+									fill="#64748b"
+								/>
+								{/* Lower Pulp Canal */}
+								<line x1="428" y1="488" x2="454" y2="406" stroke="#020617" strokeWidth="1.2" />
 							</g>
 						</svg>
 					)}
