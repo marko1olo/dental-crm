@@ -4,25 +4,21 @@ import {
   Stethoscope,
   Scissors,
   Crown,
-  Sparkles,
   ChevronDown,
   ChevronUp,
-  CheckCircle2,
-  Clock,
   Coins,
   CreditCard,
-  Layers,
+  Printer,
+  PenTool,
   ArrowRight,
-  Info,
 } from 'lucide-react';
 import {
   STAGE_CATEGORY_META,
   recalculateTreatmentPlanTotals,
   type TreatmentPlanStageCategory,
   type StageCategoryMetadata,
-  type StagedTreatmentPlan,
 } from '@dental/shared';
-import type { TreatmentPlanStage, TreatmentPlanTierId } from './types';
+import type { TreatmentPlanStage } from './types';
 
 export interface PhasedStageItem {
   id: string;
@@ -44,6 +40,8 @@ export interface TreatmentPlanPhased4StageViewProps {
   onExecuteStage?: (category: TreatmentPlanStageCategory) => void;
   onOpenStagePayment?: () => void;
   onOpenInstallment?: () => void;
+  onApproveAndSign?: () => void;
+  onPrintContract?: () => void;
   className?: string;
 }
 
@@ -68,6 +66,8 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
   onExecuteStage,
   onOpenStagePayment,
   onOpenInstallment,
+  onApproveAndSign,
+  onPrintContract,
   className = '',
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Record<TreatmentPlanStageCategory, boolean>>({
@@ -116,7 +116,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
       } else if (
         phase.includes('surgery') ||
         phase.includes('implant') ||
-        code.includes('001') && name.includes('удален') ||
+        (code.includes('001') && name.includes('удален')) ||
         code.includes('054') ||
         code.includes('041') ||
         name.includes('удален') ||
@@ -210,13 +210,13 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
       data-testid="treatment-plan-phased-4stage-view"
     >
       {/* Overview Banner */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-purple-500/10 border border-[var(--border,#cbd5e1)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-[var(--teal,#0d9488)] text-white shadow-xs">
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-purple-500/10 border border-[var(--border,#cbd5e1)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-[var(--teal,#0d9488)] text-white shadow-xs whitespace-nowrap">
               4 Клинических этапа
             </span>
-            <span className="font-bold text-sm sm:text-base text-[var(--ink,#0f172a)]">
+            <span className="font-bold text-sm sm:text-base text-[var(--ink,#0f172a)] truncate">
               {planTierTitle}
             </span>
           </div>
@@ -225,9 +225,9 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
           </p>
         </div>
 
-        <div className="text-right shrink-0">
+        <div className="text-left sm:text-right shrink-0">
           <div className="text-xs text-[var(--muted,#64748b)]">Полная стоимость плана:</div>
-          <div className="text-xl sm:text-2xl font-black text-[var(--teal,#0d9488)] font-mono">
+          <div className="text-xl sm:text-2xl font-black text-[var(--teal,#0d9488)] font-mono whitespace-nowrap">
             {grandTotalRub.toLocaleString('ru-RU')} ₽
           </div>
         </div>
@@ -251,29 +251,29 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
               {/* Header */}
               <div
                 onClick={() => toggleCategory(cat)}
-                className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-[var(--border,#cbd5e1)]/50"
+                className="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-[var(--border,#cbd5e1)]/50 gap-2"
                 role="button"
                 tabIndex={0}
                 aria-expanded={isExpanded}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs"
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs"
                     style={{ backgroundColor: meta.badgeColor }}
                   >
                     {CATEGORY_ICONS[cat]}
                   </div>
 
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-[var(--muted,#64748b)]">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                      <span className="font-mono text-xs font-bold text-[var(--muted,#64748b)] whitespace-nowrap">
                         Этап {idx + 1}
                       </span>
                       <h4 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] m-0 truncate">
                         {meta.shortLabelRu}
                       </h4>
                       <span
-                        className="px-2 py-0.5 rounded-md text-[10px] font-bold text-white shrink-0"
+                        className="px-2 py-0.5 rounded-md text-[10px] font-bold text-white shrink-0 whitespace-nowrap"
                         style={{ backgroundColor: meta.badgeColor }}
                       >
                         {items.length} {items.length === 1 ? 'услуга' : items.length >= 2 && items.length <= 4 ? 'услуги' : 'услуг'}
@@ -285,13 +285,13 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0 ml-2">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
                   <div className="text-right">
-                    <div className="font-mono font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)]">
+                    <div className="font-mono font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] whitespace-nowrap">
                       {stageTotalRub.toLocaleString('ru-RU')} ₽
                     </div>
-                    <div className="text-[10px] font-semibold text-[var(--muted,#64748b)]">
-                      {percentOfPlan}% от общего плана
+                    <div className="text-[10px] font-semibold text-[var(--muted,#64748b)] whitespace-nowrap">
+                      {percentOfPlan}% плана
                     </div>
                   </div>
 
@@ -301,38 +301,38 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                 </div>
               </div>
 
-              {/* Items Body */}
+              {/* Items Body: Isolated Scrolling for 804n services */}
               {isExpanded && (
-                <div className="p-4 space-y-3 bg-[var(--paper,#ffffff)]">
+                <div className="p-3.5 sm:p-4 space-y-3 bg-[var(--paper,#ffffff)]">
                   {items.length === 0 ? (
-                    <div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-dashed border-[var(--border,#cbd5e1)] text-center text-xs text-[var(--muted,#64748b)]">
+                    <div className="p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-dashed border-[var(--border,#cbd5e1)] text-center text-xs text-[var(--muted,#64748b)]">
                       <span>На данном этапе нет назначенных процедур (санация не требуется).</span>
                       <div className="mt-1 text-[11px] text-[var(--muted,#64748b)]">
                         Типичные услуги этапа: {meta.typicalServicesRu.join(', ')}.
                       </div>
                     </div>
                   ) : (
-                    <div className="divide-y divide-[var(--line,#e2e8f0)] border border-[var(--border,#cbd5e1)] rounded-xl overflow-hidden text-xs">
+                    <div className="max-h-64 sm:max-h-72 overflow-y-auto min-h-0 divide-y divide-[var(--line,#e2e8f0)] border border-[var(--border,#cbd5e1)] rounded-xl text-xs">
                       {items.map((it, itemIdx) => (
                         <div
                           key={it.id || itemIdx}
-                          className="p-3 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors"
+                          className="p-2.5 sm:p-3 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors"
                         >
-                          <div className="flex items-start gap-2.5 min-w-0">
-                            <span className="font-mono text-[10px] text-[var(--muted,#64748b)] mt-0.5">
+                          <div className="flex items-start gap-2 min-w-0">
+                            <span className="font-mono text-[10px] text-[var(--muted,#64748b)] mt-0.5 shrink-0">
                               {itemIdx + 1}.
                             </span>
                             <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#e2e8f0)]">
+                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#e2e8f0)] whitespace-nowrap">
                                   {it.code804n}
                                 </span>
                                 {it.toothNumber && (
-                                  <span className="font-bold text-[11px] px-1.5 py-0.5 rounded bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
+                                  <span className="font-bold text-[11px] px-1.5 py-0.5 rounded bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 whitespace-nowrap">
                                     Зуб №{it.toothNumber}
                                   </span>
                                 )}
-                                <span className="font-semibold text-[var(--ink,#0f172a)] text-xs">
+                                <span className="font-semibold text-[var(--ink,#0f172a)] text-xs leading-snug">
                                   {it.name}
                                 </span>
                               </div>
@@ -340,11 +340,11 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                           </div>
 
                           <div className="text-right shrink-0 font-mono">
-                            <div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)]">
+                            <div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] whitespace-nowrap">
                               {it.totalPriceRub.toLocaleString('ru-RU')} ₽
                             </div>
                             {it.quantity > 1 && (
-                              <div className="text-[10px] text-[var(--muted,#64748b)]">
+                              <div className="text-[10px] text-[var(--muted,#64748b)] whitespace-nowrap">
                                 {it.quantity} шт. &times; {it.unitPriceRub.toLocaleString('ru-RU')} ₽
                               </div>
                             )}
@@ -354,7 +354,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                     </div>
                   )}
 
-                  {/* Stage Action Controls */}
+                  {/* Stage Action Controls with 32px Buttons */}
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border,#cbd5e1)] text-xs">
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] text-[var(--muted,#64748b)]">
@@ -367,7 +367,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                         <button
                           type="button"
                           onClick={() => onExecuteStage(cat)}
-                          className="px-3 py-1.5 rounded-lg font-bold text-xs bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white border border-[var(--teal,#0d9488)]/30 transition-all cursor-pointer flex items-center gap-1.5"
+                          className="min-h-[32px] h-8 px-3 rounded-lg font-bold text-xs bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white border border-[var(--teal,#0d9488)]/30 transition-all cursor-pointer flex items-center gap-1.5"
                         >
                           <span>Приступить к этапу</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -381,6 +381,77 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
           );
         })}
       </div>
+
+      {/* Sticky Fixed Estimate Footer: Grand Totals & Actions */}
+      <div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] p-3 sm:p-4 rounded-2xl shadow-lg z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 backdrop-blur-md mt-2">
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="text-xs text-[var(--muted,#64748b)]">
+              Итоговая смета по 4 этапам:
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono text-lg sm:text-xl font-black text-[var(--teal,#0d9488)] whitespace-nowrap">
+                {grandTotalRub.toLocaleString('ru-RU')} ₽
+              </span>
+              <span className="text-[11px] text-[var(--muted,#64748b)] font-semibold hidden md:inline">
+                (Приказ 804н / СтАР)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Estimate Action Buttons - 32-34px */}
+        <div className="flex flex-wrap items-center gap-2">
+          {onOpenInstallment && (
+            <button
+              type="button"
+              onClick={onOpenInstallment}
+              className="min-h-[32px] h-8 px-3 rounded-lg text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+              title="Оформить рассрочку 0% на этапы лечения"
+            >
+              <CreditCard size={13} className="text-[var(--teal,#0d9488)]" />
+              <span>Рассрочка 0%</span>
+            </button>
+          )}
+
+          {onOpenStagePayment && (
+            <button
+              type="button"
+              onClick={onOpenStagePayment}
+              className="min-h-[32px] h-8 px-3 rounded-lg text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+              title="Студия поэтапной оплаты и эскроу"
+            >
+              <Coins size={13} className="text-amber-500" />
+              <span>Этапы & Эскроу</span>
+            </button>
+          )}
+
+          {onPrintContract && (
+            <button
+              type="button"
+              onClick={onPrintContract}
+              className="min-h-[32px] h-8 px-3 rounded-lg text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+              title="Печать договора и сметы"
+            >
+              <Printer size={13} />
+              <span>Печать договора</span>
+            </button>
+          )}
+
+          {onApproveAndSign && (
+            <button
+              type="button"
+              onClick={onApproveAndSign}
+              className="min-h-[34px] h-[34px] px-3.5 rounded-xl font-extrabold text-xs bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-600/20 active:scale-98 transition-all"
+              data-testid="phased-approve-plan-btn"
+            >
+              <PenTool size={13} />
+              <span>Утвердить план</span>
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
+

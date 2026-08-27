@@ -43,6 +43,7 @@ import {
 	X,
 } from "lucide-react";
 import type { Kopecks } from "@dental/shared";
+import { showToast } from "../components/GlobalToast";
 import { ToothAnesthesiaCalculator } from "../components/diagnostic/ToothAnesthesiaCalculator";
 import { PrescriptionModal } from "../components/visit/PrescriptionModal";
 import { InformedConsentModal } from "../components/documents/InformedConsentModal";
@@ -73,6 +74,10 @@ import { PatientRecallManagerModal } from "../components/recalls/PatientRecallMa
 import { AutoclaveCycleModal } from "../components/sanpin/autoclave/AutoclaveCycleModal";
 import { InsurancePreAuthModal } from "../components/insurance/InsurancePreAuthModal";
 import { TreatmentPlanComparatorModal } from "../components/treatment-plans/comparator/TreatmentPlanComparatorModal";
+import { TreatmentPlan3TierComparison } from "../components/treatment-plans/TreatmentPlan3TierComparison";
+import { TreatmentPlanPhased4StageView } from "../components/treatment-plans/TreatmentPlanPhased4StageView";
+import { generate3TierPlanComparison, generateTreatmentPlanStages } from "../components/treatment-plans/treatmentPlanStagesEngine";
+import type { ToothData } from "../components/odontogram/ToothChart";
 import { WarehouseTransferModal } from "../components/inventory/transfers/WarehouseTransferModal";
 import { PatientPortalTimelineModal } from "../components/portal/timeline/PatientPortalTimelineModal";
 import { VoiceDictationAssistantModal } from "../components/voice/VoiceDictationAssistantModal";
@@ -328,6 +333,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isAutoclaveOpen, setIsAutoclaveOpen] = useState(false);
 	const [isInsuranceOpen, setIsInsuranceOpen] = useState(false);
 	const [isPlanComparatorOpen, setIsPlanComparatorOpen] = useState(false);
+	const [is3TierPreviewOpen, setIs3TierPreviewOpen] = useState(false);
+	const [isPhased4PreviewOpen, setIsPhased4PreviewOpen] = useState(false);
 	const [isTransferOpen, setIsTransferOpen] = useState(false);
 	const [isPortalOpen, setIsPortalOpen] = useState(false);
 	const [isBeforeAfterOpen, setIsBeforeAfterOpen] = useState(false);
@@ -957,6 +964,54 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Layers size={15} />
 							<span>Открыть сравнение планов</span>
+						</button>
+					</div>
+
+					{/* 19b. 3-Tier Side-by-Side Comparison Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Layers className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									3-Tier Сравнение планов (In-View)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Эконом vs Стандарт vs Оптимум, плавающий подвал сметы, 32px кнопки выбора, 804н номенклатура.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIs3TierPreviewOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-plan-3tier-preview-btn"
+						>
+							<Layers size={15} />
+							<span>Открыть 3-Tier Сравнение</span>
+						</button>
+					</div>
+
+					{/* 19c. 4-Stage Phased View Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Activity className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									4 Клинических этапа (Смета)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Неотложная, Санация, Реконструкция, Поддержка. Зафиксированный подвал сметы и 804н номенклатура.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPhased4PreviewOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-plan-phased4-preview-btn"
+						>
+							<Activity size={15} />
+							<span>Открыть 4 Клинических этапа</span>
 						</button>
 					</div>
 
@@ -1990,6 +2045,82 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					doctorName="Д-р Смирнов Алексей Петрович"
 					clinicName="ООО «Денте Стоматология»"
 				/>
+			)}
+
+			{is3TierPreviewOpen && (
+				<div
+					className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+					data-testid="plan-3tier-preview-modal"
+				>
+					<div className="bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-3xl max-w-6xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl p-4 sm:p-6">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-3">
+							<h3 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)]">
+								3-Tier Сравнение планов лечения: Смирнова Е. В.
+							</h3>
+							<button
+								type="button"
+								onClick={() => setIs3TierPreviewOpen(false)}
+								className="p-1.5 rounded-xl hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								data-testid="close-3tier-preview-btn"
+							>
+								✕
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto min-h-0">
+							<TreatmentPlan3TierComparison
+								tiers={generate3TierPlanComparison([
+									{ toothNumber: 16, state: "Caries", systemicNotes: "Глубокий кариес" } as any,
+									{ toothNumber: 36, state: "Missing", systemicNotes: "Отсутствует зуб, показана имплантация" } as any,
+									{ toothNumber: 46, state: "Pulpitis", systemicNotes: "Острый пульпит" } as any,
+								])}
+								selectedTierId="optimum"
+								onSelectTier={() => {}}
+								onApproveAndSign={() => showToast("План утвержден и отправлен на подписание", "success")}
+								onOpenInstallment={() => showToast("Переход в модуль рассрочки 0%", "info")}
+								onPrintContract={() => showToast("Печать договора и брошюры", "info")}
+							/>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{isPhased4PreviewOpen && (
+				<div
+					className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+					data-testid="plan-phased4-preview-modal"
+				>
+					<div className="bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl p-4 sm:p-6">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-3">
+							<h3 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)]">
+								4 Клинических этапа (Поэтапная смета): Смирнова Е. В.
+							</h3>
+							<button
+								type="button"
+								onClick={() => setIsPhased4PreviewOpen(false)}
+								className="p-1.5 rounded-xl hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								data-testid="close-phased4-preview-btn"
+							>
+								✕
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto min-h-0">
+							<TreatmentPlanPhased4StageView
+								stages={generateTreatmentPlanStages([
+									{ toothNumber: 16, state: "Caries", systemicNotes: "Глубокий кариес" } as any,
+									{ toothNumber: 36, state: "Missing", systemicNotes: "Отсутствует зуб, показана имплантация" } as any,
+									{ toothNumber: 46, state: "Pulpitis", systemicNotes: "Острый пульпит" } as any,
+								])}
+								planTierTitle="Оптимальный комплексный план"
+								patientName="Смирнова Екатерина Васильевна"
+								onExecuteStage={(cat) => showToast(`Выполнение этапа «${cat}»`, "info")}
+								onOpenStagePayment={() => showToast("Открытие графика платежей и эскроу", "info")}
+								onOpenInstallment={() => showToast("Переход в модуль рассрочки 0%", "info")}
+								onApproveAndSign={() => showToast("План утвержден и отправлен на подписание", "success")}
+								onPrintContract={() => showToast("Печать договора", "info")}
+							/>
+						</div>
+					</div>
+				</div>
 			)}
 
 			{isTransferOpen && (

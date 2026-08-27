@@ -602,6 +602,17 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					onOpenComparatorStudio={() => setIsComparatorModalOpen(true)}
 					onOpenStagePaymentStudio={() => setIsStagePaymentModalOpen(true)}
 					onOpenPriceValidatorStudio={() => setIsPriceValidatorModalOpen(true)}
+					onOpenInstallment={(tier) => {
+						setSelectedTierId(tier.tierId);
+						if (stages.length > 0) {
+							setSelectedInstallmentStage(stages[0]!);
+							setIsInstallmentModalOpen(true);
+						}
+					}}
+					onPrintContract={(tier) => {
+						setSelectedTierId(tier.tierId);
+						setIsContractPrintOpen(true);
+					}}
 				/>
 			) : activeViewTab === "phased4" ? (
 				<TreatmentPlanPhased4StageView
@@ -612,6 +623,14 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						showToast(`Переход к выполнению этапа «${cat}»`, "info");
 					}}
 					onOpenStagePayment={() => setIsStagePaymentModalOpen(true)}
+					onOpenInstallment={() => {
+						if (stages.length > 0) {
+							setSelectedInstallmentStage(stages[0]!);
+							setIsInstallmentModalOpen(true);
+						}
+					}}
+					onApproveAndSign={() => setIsSignModalOpen(true)}
+					onPrintContract={() => setIsContractPrintOpen(true)}
 				/>
 			) : (
 				<div className="flex flex-col gap-4">
@@ -652,6 +671,26 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						setSelectedTierId(mappedTierId);
 						setIsComparatorModalOpen(false);
 						showToast(`Выбран вариант лечения «${tierCode}»`, "success");
+					}}
+					onApproveAndSign={(tierCode) => {
+						const mappedTierId =
+							tierCode === "economy_basic"
+								? "economy"
+								: tierCode === "standard_recommended"
+									? "standard"
+									: "optimum";
+						setSelectedTierId(mappedTierId);
+						setIsComparatorModalOpen(false);
+						setIsSignModalOpen(true);
+					}}
+					onOpenInstallment={() => {
+						if (stages.length > 0) {
+							setSelectedInstallmentStage(stages[0]!);
+							setIsInstallmentModalOpen(true);
+						}
+					}}
+					onPrintContract={() => {
+						setIsContractPrintOpen(true);
 					}}
 				/>
 			)}
