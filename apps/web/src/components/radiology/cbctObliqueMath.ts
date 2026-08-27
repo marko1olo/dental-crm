@@ -906,15 +906,15 @@ export function drawObliqueCrosshairWithRotationHandles(
 	}
 
 	// 5. Real-time Rotation Angle HUD Badge (e.g. "Поворот: +15.0°" or "Наклон: -5.0°")
+	// Positioned in the safe top-right HUD corner to avoid occluding central anatomical structures (nasal septum, palate, incisors)
 	if (showAngleBadge && Math.abs(safeRotationDeg) > 0.1) {
 		const badgeText = getObliqueRotationLabel(plane, safeRotationDeg);
 		ctx.font = "bold 10px monospace";
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
+		ctx.textAlign = "right";
+		ctx.textBaseline = "top";
 
-		const badgeDist = handleDistancePx + 24;
-		const badgeX = centerPx.x + badgeDist * cosA;
-		const badgeY = centerPx.y + badgeDist * sinA;
+		const badgeX = widthPx - 10;
+		const badgeY = 10;
 
 		ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
 		ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
@@ -922,12 +922,12 @@ export function drawObliqueCrosshairWithRotationHandles(
 
 		const textW = ctx.measureText(badgeText).width;
 		ctx.beginPath();
-		ctx.roundRect(badgeX - textW / 2 - 5, badgeY - 9, textW + 10, 18, 4);
+		ctx.roundRect(badgeX - textW - 8, badgeY, textW + 16, 20, 4);
 		ctx.fill();
 		ctx.stroke();
 
 		ctx.fillStyle = "#38bdf8";
-		ctx.fillText(badgeText, badgeX, badgeY);
+		ctx.fillText(badgeText, badgeX - 4, badgeY + 4);
 	}
 
 	ctx.restore();

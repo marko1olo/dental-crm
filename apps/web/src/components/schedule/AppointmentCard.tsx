@@ -17,6 +17,23 @@ import { openWhatsAppChat } from "../../store/telephonyStore";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
+/**
+ * Formats full patient FIO into a readable, non-truncated medical card string:
+ * "Иванов Иван Сергеевич" -> "Иванов Иван С."
+ * "Петрова Анна" -> "Петрова Анна"
+ */
+export function formatPatientDisplayFio(name: string | null | undefined): string {
+	if (!name || !name.trim()) return "Пациент";
+	const parts = name.trim().split(/\s+/);
+	if (parts.length >= 3) {
+		const lastName = parts[0];
+		const firstName = parts[1];
+		const middleInitial = parts[2]?.charAt(0);
+		return `${lastName} ${firstName} ${middleInitial ? `${middleInitial}.` : ""}`.trim();
+	}
+	return name.trim();
+}
+
 export type AppointmentCardProps = {
 	appointment: Appointment;
 	dashboard: Dashboard;
@@ -694,11 +711,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 					<div className="appointment-card-body min-w-0 max-w-full">
 						<h3
-							className="text-base font-semibold truncate break-words"
+							className="text-base font-semibold break-words leading-snug whitespace-normal"
 							style={{ color: "var(--ink)", minWidth: 0, maxWidth: "100%" }}
 							title={appointmentPatientName}
 						>
-							{appointmentPatientName}
+							{formatPatientDisplayFio(appointmentPatientName)}
 						</h3>
 						<div
 							className="chip-group min-w-0 max-w-full"

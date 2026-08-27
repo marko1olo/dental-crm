@@ -1317,12 +1317,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
 
-		// Draw Calibrated Millimeter Rulers on Panorama
+		// Draw Calibrated Millimeter Rulers on Panorama (Y-axis vertical depth only; X-axis disabled to prevent conflict with FDI tooth markers)
 		drawCalibratedMillimeterRulers(ctx, {
 			widthPx: canvas.width,
 			heightPx: canvas.height,
 			pixelSpacingMmX: volume?.spacingMm.x ?? 0.4,
 			pixelSpacingMmY: volume?.spacingMm.z ?? 0.4,
+			showXAxis: false,
+			showYAxis: true,
 			showScaleBar: true,
 		});
 
@@ -2213,7 +2215,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={`cbct-studio-title-${modalId}`}
+			data-theme="dark"
 			className="fixed inset-0 z-[100] flex flex-col bg-[#0c0e12] text-[#e2e8f0] font-sans select-none overflow-hidden"
+			style={{ color: "#e2e8f0", backgroundColor: "#0c0e12" }}
 		>
 			{/* Real DICOM Ingestion Controls (Hidden file inputs for Left Tool Dock) */}
 			<input
@@ -2235,8 +2239,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				aria-hidden="true"
 			/>
 
-			{/* ─── HEADER BAR (TIER 1 CLEAN STATUS & WORKSPACE SWITCHER) ─────────── */}
-			<header className="min-h-14 px-4 py-1.5 bg-[#14171e] border-b border-[#242a35] flex items-center justify-between shrink-0 gap-3">
+			{/* ─── HEADER BAR (TIER 1 CLEAN STATUS & WORKSPACE SWITCHER — TRUE DARK MANDATE) ─── */}
+			<header
+				data-theme="dark"
+				className="min-h-14 px-4 py-1.5 bg-[#14171e] border-b border-[#242a35] flex items-center justify-between shrink-0 gap-3 text-slate-200"
+				style={{ color: "#e2e8f0", backgroundColor: "#14171e" }}
+			>
 				{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
 				<div className="flex items-center gap-2.5 shrink-0 min-w-max">
 					<div className="w-8 h-8 rounded-lg bg-[#1e2430] border border-[#242a35] flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
@@ -2244,14 +2252,26 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</div>
 					<div className="flex flex-col min-w-0">
 						<div className="flex items-center gap-2">
-							<h2 id={`cbct-studio-title-${modalId}`} className="text-xs font-bold text-[#e2e8f0] tracking-wide flex items-center gap-1.5 whitespace-nowrap">
+							<h2
+								id={`cbct-studio-title-${modalId}`}
+								className="text-xs font-bold text-white tracking-wide flex items-center gap-1.5 whitespace-nowrap"
+								style={{ color: "#ffffff" }}
+							>
 								3D CBCT Studio
-								<span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e2430] text-[#94a3b8] font-mono border border-[#242a35]">
+								<span
+									className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e2430] text-slate-300 font-mono border border-[#242a35]"
+									style={{ color: "#cbd5e1" }}
+								>
 									Romexis 6 / Ez3D-i
 								</span>
 							</h2>
 						</div>
-						<p className="text-[10px] text-[#94a3b8] whitespace-nowrap" data-testid="cbct-patient-metadata-badge" id="cbct-patient-metadata-badge">
+						<p
+							className="text-[10px] text-slate-400 whitespace-nowrap"
+							data-testid="cbct-patient-metadata-badge"
+							id="cbct-patient-metadata-badge"
+							style={{ color: "#94a3b8" }}
+						>
 							{patientDisplayName || "Барабаш С.В."} • {loadedSliceCount > 0 ? loadedSliceCount : 400} срезов • {volume ? volume.spacingMm.x.toFixed(1) : "0.2"} мм изотропный воксель
 						</p>
 					</div>

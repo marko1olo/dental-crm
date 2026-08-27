@@ -69,13 +69,13 @@ export const CopilotGlobalHost: React.FC = () => {
 
   return (
     <>
-      {/* Floating Trigger Button */}
+      {/* Floating Trigger Button (Desktop only; on mobile Copilot is accessible via topbar/toolbar to avoid card occlusion) */}
       {!isOpen && (
         <button
           id="dente-copilot-trigger-btn"
           type="button"
           onClick={openDrawer}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--teal,#0284c7)] hover:bg-[var(--teal-strong,#0369a1)] text-white shadow-lg hover:shadow-xl transition-all font-medium text-sm border border-white/20 active:scale-95"
+          className="hidden md:flex fixed bottom-6 right-6 z-50 items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--teal,#0284c7)] hover:bg-[var(--teal-strong,#0369a1)] text-white shadow-lg hover:shadow-xl transition-all font-medium text-sm border border-white/20 active:scale-95"
           title="Открыть DENTE Copilot"
         >
           <Sparkles size={18} className="animate-pulse" />

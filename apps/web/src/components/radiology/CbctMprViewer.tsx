@@ -941,12 +941,14 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				imgData.data.set(panoramicResult.pixelData);
 				ctx.putImageData(imgData, 0, 0);
 
-				// Draw Calibrated Millimeter Rulers on Panorama
+				// Draw Calibrated Millimeter Rulers on Panorama (Y-axis only to avoid collision with tooth markers)
 				drawCalibratedMillimeterRulers(ctx, {
 					widthPx: canvas.width,
 					heightPx: canvas.height,
 					pixelSpacingMmX: volume?.spacingMm.x ?? 0.4,
 					pixelSpacingMmY: volume?.spacingMm.z ?? 0.4,
+					showXAxis: false,
+					showYAxis: true,
 					showScaleBar: true,
 				});
 

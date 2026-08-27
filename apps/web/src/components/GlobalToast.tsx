@@ -55,8 +55,8 @@ export function GlobalToast() {
 			style={{
 				zIndex: 9999,
 				position: "fixed",
-				bottom: "16px",
-				right: "16px",
+				bottom: "24px",
+				left: "24px",
 				display: "flex",
 				alignItems: "center",
 				gap: "8px",

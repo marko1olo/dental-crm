@@ -4,9 +4,9 @@
 
 .dnt-telephony-floating {
 	position: fixed;
-	bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-	right: calc(16px + env(safe-area-inset-right, 0px));
-	z-index: 40;
+	bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+	right: calc(12px + env(safe-area-inset-right, 0px));
+	z-index: 35;
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;

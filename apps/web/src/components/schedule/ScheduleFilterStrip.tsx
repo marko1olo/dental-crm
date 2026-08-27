@@ -1,5 +1,5 @@
 import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, Flame, Stethoscope, UserSearch } from "lucide-react";
-import type { ReactElement } from "react";
+import React, { type ReactElement } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
 
@@ -142,20 +142,8 @@ export function ScheduleFilterStrip({
 							</button>
 						</div>
 
-						{/* Quick Day Switchers: [📅 Сегодня], [Завтра], [Вся неделя] */}
+						{/* Quick Day Switchers: [Завтра], [Вся неделя] */}
 						<div className="hidden sm:inline-flex items-center gap-1 shrink-0">
-							<button
-								type="button"
-								onClick={() => setScheduleDateFilter(todayIso)}
-								className={`h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
-									scheduleDateFilter === todayIso
-										? "bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
-										: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
-								}`}
-								title="Расписание на сегодня"
-							>
-								<span>📅 Сегодня</span>
-							</button>
 							<button
 								type="button"
 								onClick={() => setScheduleDateFilter(tomorrowIso)}

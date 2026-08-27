@@ -28,6 +28,7 @@ import type { QuickBookingSlotInfo } from "./QuickBookingDrawer";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
+import { formatPatientDisplayFio } from "./AppointmentCard";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { calculateDailyChairDoctorTally } from "./doctorFreeSlotsEngine";
@@ -220,7 +221,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 	}, [dateKey, appointments, dashboard?.clinicSettings?.chairs, (dashboard?.clinicSettings as any)?.staff]);
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-3 pb-28 sm:pb-8">
 			{/* Daily Chair & Doctor Occupancy Summary Bar */}
 			{dailyTally.totalAppointmentsCount > 0 && (
 				<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -482,10 +483,10 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																}
 															}}
 														>
-															<div className="truncate flex-1 min-w-0">
-																<div className="font-bold truncate flex items-center gap-1">
+															<div className="flex-1 min-w-0">
+																<div className="font-bold flex items-center gap-1 leading-snug break-words">
 																	<User size={12} className="shrink-0 text-[var(--teal)]" />
-																	<span className="truncate">{pName}</span>
+																	<span className="break-words" title={pName}>{formatPatientDisplayFio(pName)}</span>
 																</div>
 																<div className="text-xs opacity-75 font-normal truncate">
 																	{aStart} - {aEnd} · {a.reason || "Прием"}

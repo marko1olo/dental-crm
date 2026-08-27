@@ -177,7 +177,7 @@ describe("ScheduleFilterStrip Component", () => {
 		assert.ok(html.includes("Ctrl+K"), "Contains hotkey title for instant patient search");
 	});
 
-	it("renders '📅 Сегодня', 'Завтра', 'Вся неделя' quick day switcher buttons", () => {
+	it("renders 'Завтра', 'Вся неделя' quick day switcher buttons", () => {
 		const todayIso = new Date().toISOString().slice(0, 10);
 		const html = renderToStaticMarkup(
 			createElement(ScheduleFilterStrip, {
@@ -195,7 +195,6 @@ describe("ScheduleFilterStrip Component", () => {
 			}),
 		);
 
-		assert.ok(html.includes("📅 Сегодня"), "Renders '📅 Сегодня' button");
 		assert.ok(html.includes("Завтра"), "Renders 'Завтра' button");
 		assert.ok(html.includes("Вся неделя"), "Renders 'Вся неделя' button");
 	});
