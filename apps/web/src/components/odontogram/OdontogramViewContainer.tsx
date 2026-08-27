@@ -62,10 +62,10 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	},
 	{
 		mode: "compact_clinical",
-		label: "Клинический 5-поверхностный",
-		shortLabel: "5-Поверхностный",
+		label: "Клинический 6-поверхностный",
+		shortLabel: "6-Поверхностный",
 		icon: <Zap size={14} className="text-amber-500 shrink-0" />,
-		tooltip: "Быстрая разметка патологий по 5 граням зуба (V, L/P, M, D, O)",
+		tooltip: "Быстрая разметка патологий по 6 граням зуба (O, V, L/P, M, D, C)",
 		badge: "FDI",
 	},
 	{
@@ -82,6 +82,8 @@ export interface OdontogramViewContainerProps {
 	teethData: ToothData[];
 	pediatricMode?: boolean | undefined;
 	mixedDentition?: boolean | undefined;
+	dentitionMode?: "adult" | "pediatric" | "mixed" | undefined;
+	onDentitionModeChange?: ((mode: "adult" | "pediatric" | "mixed") => void) | undefined;
 	topTeeth?: number[] | undefined;
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
@@ -114,6 +116,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	teethData,
 	pediatricMode,
 	mixedDentition,
+	dentitionMode,
+	onDentitionModeChange,
 	topTeeth,
 	bottomTeeth,
 	selectedTeeth = [],
@@ -289,6 +293,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		teethData,
 		pediatricMode,
 		mixedDentition,
+		dentitionMode,
+		onDentitionModeChange,
 		topTeeth,
 		bottomTeeth,
 		selectedTeeth,

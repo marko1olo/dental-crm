@@ -729,6 +729,7 @@ export declare const cdaSemd101Schema: z.ZodObject<{
         isPrimary: boolean;
         tooth?: string | number | undefined;
     }[];
+    treatmentDescription?: string | undefined;
     complaints?: string | undefined;
     anamnesis?: string | undefined;
     documentTime?: Date | undefined;
@@ -765,7 +766,6 @@ export declare const cdaSemd101Schema: z.ZodObject<{
         tooth?: string | number | undefined;
         priceRubKopecks?: number | undefined;
     }[] | undefined;
-    treatmentDescription?: string | undefined;
     recommendations?: string | string[] | undefined;
     complications?: string | undefined;
     comorbidities?: string | undefined;
@@ -832,6 +832,7 @@ export declare const cdaSemd101Schema: z.ZodObject<{
         tooth?: string | number | undefined;
         isPrimary?: boolean | undefined;
     }[];
+    treatmentDescription?: string | undefined;
     complaints?: string | undefined;
     anamnesis?: string | undefined;
     documentTime?: unknown;
@@ -870,7 +871,6 @@ export declare const cdaSemd101Schema: z.ZodObject<{
         priceRubKopecks?: number | undefined;
         serviceCategoryCode?: "1" | "2" | undefined;
     }[] | undefined;
-    treatmentDescription?: string | undefined;
     recommendations?: string | string[] | undefined;
     complications?: string | undefined;
     comorbidities?: string | undefined;
@@ -2295,6 +2295,7 @@ export declare const cdaSemd043uSchema: z.ZodObject<{
         isPrimary: boolean;
         tooth?: string | number | undefined;
     }[];
+    treatmentDescription?: string | undefined;
     complaints?: string | undefined;
     anamnesis?: string | undefined;
     documentTime?: Date | undefined;
@@ -2331,7 +2332,6 @@ export declare const cdaSemd043uSchema: z.ZodObject<{
         tooth?: string | number | undefined;
         priceRubKopecks?: number | undefined;
     }[] | undefined;
-    treatmentDescription?: string | undefined;
     recommendations?: string | string[] | undefined;
     complications?: string | undefined;
     comorbidities?: string | undefined;
@@ -2398,6 +2398,7 @@ export declare const cdaSemd043uSchema: z.ZodObject<{
         tooth?: string | number | undefined;
         isPrimary?: boolean | undefined;
     }[];
+    treatmentDescription?: string | undefined;
     complaints?: string | undefined;
     anamnesis?: string | undefined;
     documentTime?: unknown;
@@ -2436,7 +2437,6 @@ export declare const cdaSemd043uSchema: z.ZodObject<{
         priceRubKopecks?: number | undefined;
         serviceCategoryCode?: "1" | "2" | undefined;
     }[] | undefined;
-    treatmentDescription?: string | undefined;
     recommendations?: string | string[] | undefined;
     complications?: string | undefined;
     comorbidities?: string | undefined;
@@ -2807,6 +2807,7 @@ export declare const cdaSemd108Schema: z.ZodObject<{
         isPrimary: boolean;
         tooth?: string | number | undefined;
     }[];
+    treatmentDescription?: string | undefined;
     complaints?: string | undefined;
     anamnesis?: string | undefined;
     documentTime?: Date | undefined;
@@ -2843,7 +2844,6 @@ export declare const cdaSemd108Schema: z.ZodObject<{
         tooth?: string | number | undefined;
         priceRubKopecks?: number | undefined;
     }[] | undefined;
-    treatmentDescription?: string | undefined;
     recommendations?: string | string[] | undefined;
     complications?: string | undefined;
     comorbidities?: string | undefined;
@@ -2910,6 +2910,7 @@ export declare const cdaSemd108Schema: z.ZodObject<{
         tooth?: string | number | undefined;
         isPrimary?: boolean | undefined;
     }[];
+    treatmentDescription?: string | undefined;
     complaints?: string | undefined;
     anamnesis?: string | undefined;
     documentTime?: unknown;
@@ -2948,7 +2949,6 @@ export declare const cdaSemd108Schema: z.ZodObject<{
         priceRubKopecks?: number | undefined;
         serviceCategoryCode?: "1" | "2" | undefined;
     }[] | undefined;
-    treatmentDescription?: string | undefined;
     recommendations?: string | string[] | undefined;
     complications?: string | undefined;
     comorbidities?: string | undefined;
@@ -3319,6 +3319,7 @@ export declare const cdaDocumentParamsSchema: z.ZodUnion<[z.ZodObject<{
         isPrimary: boolean;
         tooth?: string | number | undefined;
     }[];
+    treatmentDescription?: string | undefined;
     complaints?: string | undefined;
     anamnesis?: string | undefined;
     documentTime?: Date | undefined;
@@ -3355,7 +3356,6 @@ export declare const cdaDocumentParamsSchema: z.ZodUnion<[z.ZodObject<{
         tooth?: string | number | undefined;
         priceRubKopecks?: number | undefined;
     }[] | undefined;
-    treatmentDescription?: string | undefined;
     recommendations?: string | string[] | undefined;
     complications?: string | undefined;
     comorbidities?: string | undefined;
@@ -3422,6 +3422,7 @@ export declare const cdaDocumentParamsSchema: z.ZodUnion<[z.ZodObject<{
         tooth?: string | number | undefined;
         isPrimary?: boolean | undefined;
     }[];
+    treatmentDescription?: string | undefined;
     complaints?: string | undefined;
     anamnesis?: string | undefined;
     documentTime?: unknown;
@@ -3460,7 +3461,6 @@ export declare const cdaDocumentParamsSchema: z.ZodUnion<[z.ZodObject<{
         priceRubKopecks?: number | undefined;
         serviceCategoryCode?: "1" | "2" | undefined;
     }[] | undefined;
-    treatmentDescription?: string | undefined;
     recommendations?: string | string[] | undefined;
     complications?: string | undefined;
     comorbidities?: string | undefined;

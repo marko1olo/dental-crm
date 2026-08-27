@@ -292,3 +292,8 @@ export function getKraftSizeDefinition(id: KraftPackageSizeId): KraftPackageSize
 	const found = KRAFT_PACKAGE_SIZES.find((s) => s.id === id);
 	return found || KRAFT_PACKAGE_SIZES[1]!;
 }
+
+export function calculateSanpinKraftLifespanDays(materialId: KraftPackageMaterialId): number {
+	const found = KRAFT_PACKAGE_MATERIALS.find((m) => m.id === materialId);
+	return found?.statutoryShelfLifeDays ?? 50;
+}

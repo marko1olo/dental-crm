@@ -25,6 +25,7 @@ import {
 	loadOfflineDraft,
 	saveOfflineDraft,
 } from "../utils/offlineMutationQueue";
+import { parseAndValidateKraftBarcode } from "@dental/shared";
 import { showToast } from "./GlobalToast";
 
 export interface DiaryState {
@@ -1823,12 +1824,27 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * В режиме isRevising только state — persist через doRevise.
 	 */
 	const assignTrayBarcode = useCallback(
-		async (rawCode: string) => {
+		async (rawCode: string, protocolTextToAppend?: string) => {
 			const code = rawCode.trim();
 			if (!code) {
 				showToast("Введите или отсканируйте штрихкод лотка.", "info", 6000);
 				return;
 			}
+
+			// Validate and parse SanPiN 3.3686-21 Kraft package details
+			const parsed = parseAndValidateKraftBarcode(code);
+			let nextTreatment = diary.treatmentDescription;
+			const textToAppend = protocolTextToAppend || parsed.formattedProtocolRecord043;
+			if (textToAppend && !nextTreatment.includes(code)) {
+				nextTreatment = nextTreatment
+					? `${nextTreatment}\n\n${textToAppend}`
+					: textToAppend;
+				setDiary((p) => ({
+					...p,
+					treatmentDescription: nextTreatment,
+				}));
+			}
+
 			/* Ревизия подписанного: barcode уйдёт с doRevise, не draft POST. */
 			if (isRevising) {
 				setTrayBarcode(code);
@@ -1887,7 +1903,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						statusLocalis: diary.statusLocalis,
 						diagnosisIcd10: diary.diagnosisIcd10,
 						diagnosisTooth: diary.diagnosisTooth,
-						treatmentDescription: diary.treatmentDescription,
+						treatmentDescription: nextTreatment,
 						complications: diary.complications,
 						comorbidities: diary.comorbidities,
 					}),
@@ -1925,7 +1941,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				}
 				autosaveFailureReportedRef.current = false;
 				setLastSavedAt(new Date());
-				showToast("Лоток записан в черновик", "success", 6000);
+				showToast(
+					parsed.isExpired
+						? "ВНИМАНИЕ: Лоток привязан, но крафт-пакет просрочен по СанПиН!"
+						: "Лоток привязан и запись стерилизации внесена в форму 043/у",
+					parsed.isExpired ? "error" : "success",
+					7000,
+				);
 			} catch (err) {
 				logger.error("[diary tray assign] запрос не выполнен", err);
 				showToast(

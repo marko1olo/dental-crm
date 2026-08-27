@@ -200,10 +200,10 @@ export declare const soapVisitDiarySchema: z.ZodObject<{
     assessmentIcd10Code: string;
     procedureProtocol: string;
     doctorFullName: string;
+    appliedMaterials?: string | null | undefined;
     toothNumber?: string | null | undefined;
     eodMicroamperes?: number | null | undefined;
     anesthesiaDetails?: string | null | undefined;
-    appliedMaterials?: string | null | undefined;
     homeCareRecommendations?: string | null | undefined;
     nextVisitDate?: string | null | undefined;
 }, {
@@ -214,6 +214,7 @@ export declare const soapVisitDiarySchema: z.ZodObject<{
     assessmentIcd10Code: string;
     procedureProtocol: string;
     doctorFullName: string;
+    appliedMaterials?: string | null | undefined;
     toothNumber?: string | null | undefined;
     percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
     percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -221,7 +222,6 @@ export declare const soapVisitDiarySchema: z.ZodObject<{
     thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
     eodMicroamperes?: number | null | undefined;
     anesthesiaDetails?: string | null | undefined;
-    appliedMaterials?: string | null | undefined;
     homeCareRecommendations?: string | null | undefined;
     nextVisitDate?: string | null | undefined;
 }>;
@@ -419,10 +419,10 @@ export declare const fullForm043uPayloadSchema: z.ZodObject<{
         assessmentIcd10Code: string;
         procedureProtocol: string;
         doctorFullName: string;
+        appliedMaterials?: string | null | undefined;
         toothNumber?: string | null | undefined;
         eodMicroamperes?: number | null | undefined;
         anesthesiaDetails?: string | null | undefined;
-        appliedMaterials?: string | null | undefined;
         homeCareRecommendations?: string | null | undefined;
         nextVisitDate?: string | null | undefined;
     }, {
@@ -433,6 +433,7 @@ export declare const fullForm043uPayloadSchema: z.ZodObject<{
         assessmentIcd10Code: string;
         procedureProtocol: string;
         doctorFullName: string;
+        appliedMaterials?: string | null | undefined;
         toothNumber?: string | null | undefined;
         percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
         percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -440,7 +441,6 @@ export declare const fullForm043uPayloadSchema: z.ZodObject<{
         thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
         eodMicroamperes?: number | null | undefined;
         anesthesiaDetails?: string | null | undefined;
-        appliedMaterials?: string | null | undefined;
         homeCareRecommendations?: string | null | undefined;
         nextVisitDate?: string | null | undefined;
     }>, "many">>;
@@ -523,10 +523,10 @@ export declare const fullForm043uPayloadSchema: z.ZodObject<{
         assessmentIcd10Code: string;
         procedureProtocol: string;
         doctorFullName: string;
+        appliedMaterials?: string | null | undefined;
         toothNumber?: string | null | undefined;
         eodMicroamperes?: number | null | undefined;
         anesthesiaDetails?: string | null | undefined;
-        appliedMaterials?: string | null | undefined;
         homeCareRecommendations?: string | null | undefined;
         nextVisitDate?: string | null | undefined;
     }[];
@@ -631,6 +631,7 @@ export declare const fullForm043uPayloadSchema: z.ZodObject<{
         assessmentIcd10Code: string;
         procedureProtocol: string;
         doctorFullName: string;
+        appliedMaterials?: string | null | undefined;
         toothNumber?: string | null | undefined;
         percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
         percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -638,7 +639,6 @@ export declare const fullForm043uPayloadSchema: z.ZodObject<{
         thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
         eodMicroamperes?: number | null | undefined;
         anesthesiaDetails?: string | null | undefined;
-        appliedMaterials?: string | null | undefined;
         homeCareRecommendations?: string | null | undefined;
         nextVisitDate?: string | null | undefined;
     }[] | undefined;

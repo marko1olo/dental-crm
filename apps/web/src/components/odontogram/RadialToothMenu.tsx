@@ -70,6 +70,26 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
 
+	const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>(() =>
+		surfaces ? [...surfaces] : [],
+	);
+
+	useEffect(() => {
+		if (surfaces) {
+			setSelectedSurfaces([...surfaces]);
+		}
+	}, [surfaces]);
+
+	const toggleSurface = (surf: string) => {
+		setSelectedSurfaces((prev) => {
+			const next = prev.includes(surf)
+				? prev.filter((s) => s !== surf)
+				: [...prev, surf];
+			onSelectSurfaces?.(next);
+			return next;
+		});
+	};
+
 	const isPrimary = isPrimaryTooth(toothNumber);
 
 	const items: RadialMenuItem[] = isPrimary
@@ -342,7 +362,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									key={item.id}
 									type="button"
 									onClick={() => {
-										if (item.state) onSelectState(item.state, surfaces);
+										if (item.state) onSelectState(item.state, selectedSurfaces.length > 0 ? selectedSurfaces : surfaces);
 										onClose();
 									}}
 									style={{ background: item.bgGradient }}
@@ -366,22 +386,25 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 						})}
 					</div>
 
-					{/* Quick Macro Bar (Black / Resorption) */}
-					<div className="flex flex-wrap items-center gap-1.5 p-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)]">
+					{/* Quick Macro Bar (Black Classes I-VI / 6-Surface Shading / Resorption) */}
+					<div className="flex flex-col gap-2 p-2.5 rounded-2xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)]">
 						{isPrimaryTooth(toothNumber) ? (
 							<>
-								<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1 shrink-0">Резорбция:</span>
-								<div className="grid grid-cols-4 gap-1 flex-1">
+								<div className="flex items-center justify-between">
+									<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1 shrink-0">Резорбция корней:</span>
+									<span className="text-[11px] text-[var(--odontogram-ink-muted)]">0–100%</span>
+								</div>
+								<div className="grid grid-cols-4 gap-1.5 w-full">
 									<button
 										type="button"
 										onClick={() => {
 											onSelectState("Healthy", undefined, "resorption_1");
 											onClose();
 										}}
-										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
-										title="Физиологическая резорбция I степени"
+										className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+										title="Физиологическая резорбция I степени (25%)"
 									>
-										[Рез I]
+										[Рез I 25%]
 									</button>
 									<button
 										type="button"
@@ -389,10 +412,10 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 											onSelectState("Healthy", undefined, "resorption_2");
 											onClose();
 										}}
-										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
-										title="Физиологическая резорбция II степени"
+										className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+										title="Физиологическая резорбция II степени (50%)"
 									>
-										[Рез II]
+										[Рез II 50%]
 									</button>
 									<button
 										type="button"
@@ -400,10 +423,10 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 											onSelectState("Healthy", undefined, "resorption_3");
 											onClose();
 										}}
-										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
-										title="Физиологическая резорбция III степени"
+										className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+										title="Физиологическая резорбция III степени (75%)"
 									>
-										[Рез III]
+										[Рез III 75%]
 									</button>
 									<button
 										type="button"
@@ -411,27 +434,66 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 											onSelectState("Missing", undefined, "exfoliation");
 											onClose();
 										}}
-										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation text-center"
-										title="Физиологическая смена / Удаление"
+										className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation text-center"
+										title="Физиологическая смена / Эксфолиация (100%)"
 									>
-										[Смена 0]
+										[Смена 100%]
 									</button>
 								</div>
 							</>
 						) : (
 							<>
-								<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1 shrink-0">Блэк:</span>
-								<div className="grid grid-cols-4 gap-1 flex-1">
+								{/* 6-Surface Toggles */}
+								<div className="flex items-center justify-between gap-1">
+									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1 shrink-0">6 Поверхностей:</span>
+									<div className="flex items-center gap-1">
+										{(["O", "V", "L", "M", "D", "C"] as const).map((surf) => {
+											const isActive = selectedSurfaces.includes(surf);
+											return (
+												<button
+													key={surf}
+													type="button"
+													onClick={() => toggleSurface(surf)}
+													className={`min-h-[38px] min-w-[38px] px-2 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none ${
+														isActive
+															? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+															: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
+													}`}
+													title={`Поверхность ${surf}`}
+												>
+													{surf}
+												</button>
+											);
+										})}
+									</div>
+								</div>
+
+								{/* Black Classes I - VI */}
+								<div className="flex items-center justify-between pt-1 border-t border-[var(--odontogram-border-subtle)]">
+									<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1 shrink-0">Классы по Блэку:</span>
+								</div>
+								<div className="grid grid-cols-4 gap-1 w-full">
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["O"]);
+											onClose();
+										}}
+										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="I класс: Окклюзионные фиссуры и ямки (O)"
+									>
+										[I: O]
+									</button>
 									<button
 										type="button"
 										onClick={() => {
 											onSelectState("Caries", ["M", "O", "D"]);
 											onClose();
 										}}
-										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
-										title="Медиально-окклюзионно-дистальная полость (II класс)"
+										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="II класс: Медиально-окклюзионно-дистальная полость (MOD)"
 									>
-										[MOD]
+										[II: MOD]
 									</button>
 									<button
 										type="button"
@@ -439,10 +501,10 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 											onSelectState("Caries", ["M", "O"]);
 											onClose();
 										}}
-										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
-										title="Медиально-окклюзионная полость (II класс)"
+										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="II класс: Медиально-окклюзионная полость (MO)"
 									>
-										[MO]
+										[II: MO]
 									</button>
 									<button
 										type="button"
@@ -450,21 +512,54 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 											onSelectState("Caries", ["O", "D"]);
 											onClose();
 										}}
-										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
-										title="Окклюзионно-дистальная полость (II класс)"
+										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="II класс: Окклюзионно-дистальная полость (OD)"
 									>
-										[OD]
+										[II: OD]
 									</button>
 									<button
 										type="button"
 										onClick={() => {
-											onSelectState("Caries", ["V"]);
+											onSelectState("Caries", ["M", "D"]);
 											onClose();
 										}}
-										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
-										title="Пришеечная полость (V класс)"
+										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="III класс: Апроксимальные поверхности резцов/клыков без режущего края (M/D)"
 									>
-										[V класс]
+										[III: M/D]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["M", "O", "D"]);
+											onClose();
+										}}
+										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="IV класс: Апроксимальные поверхности резцов/клыков с поражением режущего края (MOD)"
+									>
+										[IV: Реж]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["C"]);
+											onClose();
+										}}
+										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="V класс: Пришеечная полость у шейки зуба (C/Cervical)"
+									>
+										[V: Приш]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["O"]);
+											onClose();
+										}}
+										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="VI класс: Бугры моляров/премоляров или режущий край"
+									>
+										[VI: Бугры]
 									</button>
 								</div>
 							</>
@@ -573,7 +668,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									key={item.id}
 									type="button"
 									onClick={() => {
-										if (item.state) onSelectState(item.state, surfaces);
+										if (item.state) onSelectState(item.state, selectedSurfaces.length > 0 ? selectedSurfaces : surfaces);
 										onClose();
 									}}
 									style={{
@@ -611,17 +706,17 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 						})}
 					</div>
 
-					{/* Top Quick Bar: Pediatric Resorption & Exchange macros for deciduous teeth OR Black macros for adult teeth */}
+					{/* Top Quick Bar: Pediatric Resorption (0-100%) for primary teeth OR 6-Surfaces & Black I-VI for adult teeth */}
 					<div
-						className="absolute flex items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-xl z-20"
+						className="absolute flex flex-col items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-4 py-2 rounded-2xl border border-[var(--odontogram-border)] shadow-xl z-20"
 						style={{
 							left: "50%",
-							top: `calc(50% - ${radius + 52}px)`,
+							top: `calc(50% - ${radius + 68}px)`,
 							transform: "translate(-50%, 0)",
 						}}
 					>
 						{isPrimaryTooth(toothNumber) ? (
-							<>
+							<div className="flex items-center gap-1.5">
 								<span className="text-[11px] uppercase font-black text-purple-600 dark:text-purple-400 px-1">Резорбция:</span>
 								<button
 									type="button"
@@ -630,9 +725,9 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onClose();
 									}}
 									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
-									title="Физиологическая резорбция I степени (рассасывание верхушки до 1/3 корня)"
+									title="Физиологическая резорбция I степени (25%)"
 								>
-									[Рез I]
+									[Рез I 25%]
 								</button>
 								<button
 									type="button"
@@ -641,9 +736,9 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onClose();
 									}}
 									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
-									title="Физиологическая резорбция II степени (рассасывание до 1/2 корня)"
+									title="Физиологическая резорбция II степени (50%)"
 								>
-									[Рез II]
+									[Рез II 50%]
 								</button>
 								<button
 									type="button"
@@ -652,9 +747,9 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onClose();
 									}}
 									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
-									title="Физиологическая резорбция III степени (полное рассасывание корней / подвижность)"
+									title="Физиологическая резорбция III степени (75%)"
 								>
-									[Рез III]
+									[Рез III 75%]
 								</button>
 								<button
 									type="button"
@@ -663,59 +758,129 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onClose();
 									}}
 									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation"
-									title="Физиологическая смена / Удаление молочного зуба"
+									title="Физиологическая смена / Эксфолиация (100%)"
 								>
-									[Смена 0]
+									[Смена 100%]
 								</button>
-							</>
+							</div>
 						) : (
-							<>
-								<span className="text-[11px] uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
-								<button
-									type="button"
-									onClick={() => {
-										onSelectState("Caries", ["M", "O", "D"]);
-										onClose();
-									}}
-									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
-									title="Медиально-окклюзионно-дистальная полость (II класс)"
-								>
-									[MOD]
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										onSelectState("Caries", ["M", "O"]);
-										onClose();
-									}}
-									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
-									title="Медиально-окклюзионная полость (II класс)"
-								>
-									[MO]
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										onSelectState("Caries", ["O", "D"]);
-										onClose();
-									}}
-									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
-									title="Окклюзионно-дистальная полость (II класс)"
-								>
-									[OD]
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										onSelectState("Caries", ["V"]);
-										onClose();
-									}}
-									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
-									title="Пришеечная полость (V класс)"
-								>
-									[V класс]
-								</button>
-							</>
+							<div className="flex flex-col items-center gap-1.5">
+								{/* 6-Surface interactive toggle chips */}
+								<div className="flex items-center gap-1">
+									<span className="text-[11px] uppercase font-black text-teal-700 dark:text-teal-400 px-1">6 Поверхностей:</span>
+									{(["O", "V", "L", "M", "D", "C"] as const).map((surf) => {
+										const isActive = selectedSurfaces.includes(surf);
+										return (
+											<button
+												key={surf}
+												type="button"
+												onClick={() => toggleSurface(surf)}
+												className={`min-h-[28px] min-w-[28px] px-2 py-0.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none ${
+													isActive
+														? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+														: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
+												}`}
+												title={`Поверхность ${surf}`}
+											>
+												{surf}
+											</button>
+										);
+									})}
+								</div>
+
+								{/* Black Classes I-VI quick macros */}
+								<div className="flex items-center gap-1 pt-0.5 border-t border-[var(--odontogram-border-subtle)]">
+									<span className="text-[11px] uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["O"]);
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										title="I класс: Окклюзионные фиссуры и ямки (O)"
+									>
+										[I: O]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["M", "O", "D"]);
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										title="II класс: Медиально-окклюзионно-дистальная полость (MOD)"
+									>
+										[II: MOD]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["M", "O"]);
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										title="II класс: Медиально-окклюзионная полость (MO)"
+									>
+										[II: MO]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["O", "D"]);
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										title="II класс: Окклюзионно-дистальная полость (OD)"
+									>
+										[II: OD]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["M", "D"]);
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										title="III класс: Апроксимальные поверхности резцов/клыков без режущего края (M/D)"
+									>
+										[III: M/D]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["M", "O", "D"]);
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										title="IV класс: Апроксимальные поверхности резцов/клыков с поражением режущего края"
+									>
+										[IV: Реж]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["C"]);
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										title="V класс: Пришеечная полость у шейки зуба (C/Cervical)"
+									>
+										[V: Приш]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["O"]);
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										title="VI класс: Бугры моляров/премоляров или режущий край"
+									>
+										[VI: Бугры]
+									</button>
+								</div>
+							</div>
 						)}
 					</div>
 

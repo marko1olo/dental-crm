@@ -1616,6 +1616,49 @@ const ToothSVG = ({
 								style={{ transition: "fill 0.2s" }}
 							/>
 						</g>
+
+						{/* C - Cervical / Gingival third (V class) */}
+						<g
+							role="tab"
+							tabIndex={0}
+							aria-label={`Поверхность C зуба ${number}`}
+							style={{ cursor: "pointer" }}
+							onClick={(e) => {
+								e.stopPropagation();
+								onClick(e as unknown as React.MouseEvent, number, "C");
+							}}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									e.stopPropagation();
+									onClick(e as unknown as React.MouseEvent, number, "C");
+								}
+							}}
+							onMouseEnter={(e) => {
+								if (!surfaces?.includes("C")) {
+									const polygon = e.currentTarget.querySelector("polygon");
+									if (polygon) polygon.style.fill = "rgba(239, 68, 68, 0.35)";
+								}
+							}}
+							onMouseLeave={(e) => {
+								if (!surfaces?.includes("C")) {
+									const polygon = e.currentTarget.querySelector("polygon");
+									if (polygon) polygon.style.fill = "transparent";
+								}
+							}}
+						>
+							<polygon
+								points="0,25 24,25 20,29 4,29"
+								fill={
+									surfaces?.includes("C")
+										? state === "Filled"
+											? "#10b981"
+											: "#ef4444"
+										: "transparent"
+								}
+								style={{ transition: "fill 0.2s" }}
+							/>
+						</g>
 					</g>
 				)}
 			</g>
@@ -2033,15 +2076,15 @@ export const SurfaceSelector = ({
 		<div className="flex flex-col items-center justify-center">
 			<svg
 				width={size}
-				height={size}
-				viewBox="0 0 100 100"
+				height={Math.round(size * 1.2)}
+				viewBox="0 0 100 120"
 				className={`drop-shadow-md group ${
 					disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
 				}`}
 				role="img"
-				aria-label="Поверхности зуба"
+				aria-label="6 Анатомических поверхностей зуба (O, V, L, M, D, C)"
 			>
-				<title>Поверхности зуба</title>
+				<title>Поверхности зуба (O, V, L, M, D, C)</title>
 				{/* Top (B/V - Вестибулярная) */}
 				<polygon
 					role="tab"
@@ -2239,6 +2282,51 @@ export const SurfaceSelector = ({
 					pointerEvents="none"
 				>
 					O
+				</text>
+
+				{/* Cervical Bottom Collar (C - Пришеечная / V класс) */}
+				<rect
+					role="tab"
+					tabIndex={0}
+					x="0"
+					y="104"
+					width="100"
+					height="16"
+					rx="3"
+					fill={
+						selected.includes("C") || selected.includes("cervical")
+							? "var(--teal, #0d9488)"
+							: "var(--odontogram-surface, var(--paper-soft, #f8fafc))"
+					}
+					stroke={
+						selected.includes("C") || selected.includes("cervical")
+							? "var(--teal-dark, #0f766e)"
+							: "var(--odontogram-border-strong, var(--line-strong, #cbd5e1))"
+					}
+					strokeWidth="1.5"
+					onClick={() => toggle("C")}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("C");
+						}
+					}}
+					className="hover:opacity-90 transition-colors duration-200"
+				/>
+				<text
+					x="50"
+					y="116"
+					fill={
+						selected.includes("C") || selected.includes("cervical")
+							? "#ffffff"
+							: "var(--odontogram-ink, var(--ink, #0f172a))"
+					}
+					fontSize="10"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					C (Пришеечная)
 				</text>
 			</svg>
 		</div>

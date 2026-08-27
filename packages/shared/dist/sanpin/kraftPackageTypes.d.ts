@@ -195,3 +195,4 @@ export declare const thermalPrintJobDtoSchema: z.ZodObject<{
 export type ThermalPrintJobDto = z.infer<typeof thermalPrintJobDtoSchema>;
 export declare function getKraftMaterialDefinition(id: KraftPackageMaterialId): KraftPackageMaterialDefinition;
 export declare function getKraftSizeDefinition(id: KraftPackageSizeId): KraftPackageSizeDefinition;
+export declare function calculateSanpinKraftLifespanDays(materialId: KraftPackageMaterialId): number;

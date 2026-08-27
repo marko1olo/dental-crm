@@ -48,6 +48,7 @@ import {
 import { ClinicalQuickPresetsBar } from "./ClinicalQuickPresetsBar";
 import { CryptoProSigner } from "./CryptoProSigner";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
+import { KraftPackageQuickScanner } from "../sterilization/KraftPackageQuickScanner";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { realVisitFieldId } from "./visitIdentity";
@@ -1515,45 +1516,16 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</details>
 			)}
 
-			{/* ── Sterilization Scanner Modal ── */}
-			{showScanner &&
-				typeof document !== "undefined" &&
-				createPortal(
-					<div className="vde-043-scanner-overlay">
-						<div className="vde-043-scanner">
-							<div className="vde-043-scanner__laser" aria-hidden="true" />
-							<button
-								type="button"
-								onClick={() => setShowScanner(false)}
-								className="vde-043-scanner__close"
-								aria-label="Закрыть сканер"
-							>
-								<X className="w-5 h-5" />
-							</button>
-							<h2 className="vde-043-scanner__title">
-								<Activity className="w-5 h-5 text-red-500" />
-								Сканер СанПиН
-							</h2>
-							<p className="vde-043-scanner__hint">
-								Наведите сканер на штрихкод стерильного лотка или введите
-								вручную.
-							</p>
-							<input
-								className="vde-043-scanner__input"
-								placeholder="000000000000"
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										const val = e.currentTarget.value.trim();
-										if (val) {
-											void assignTrayBarcode(val);
-										}
-									}
-								}}
-							/>
-						</div>
-					</div>,
-					document.body,
-				)}
+			{/* ── Sterilization Kraft Package Scanner Modal (SanPiN 3.3686-21) ── */}
+			<KraftPackageQuickScanner
+				isOpen={showScanner}
+				onClose={() => setShowScanner(false)}
+				initialBarcode={trayBarcode || ""}
+				currentDiaryBarcode={trayBarcode}
+				onAttachToProtocol={async (parsed) => {
+					await assignTrayBarcode(parsed.rawInput, parsed.formattedProtocolRecord043);
+				}}
+			/>
 
 			{/* ── Summary Modal ── */}
 			<VisitSummaryModal

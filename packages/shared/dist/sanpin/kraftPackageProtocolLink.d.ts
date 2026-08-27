@@ -61,12 +61,13 @@ export declare function format043SterilizationRecord(params: {
     readonly isExpired?: boolean | undefined;
 }): string;
 /**
- * 1-клик внедрение записи стерилизации в дневник формы 043/у
+ * 1-клик внедрение записи стерилизации в дневник формы 043/у (поддерживает объект дневника или строку)
  */
+export declare function attachKraftPackageTo043Diary(diaryOrText: string, parsedKraft: ParsedKraftBarcode): string;
 export declare function attachKraftPackageTo043Diary<T extends {
     appliedMaterials?: string | null;
     treatmentDescription?: string | null;
-}>(diary: T, parsedKraft: ParsedKraftBarcode): T;
+}>(diaryOrText: T, parsedKraft: ParsedKraftBarcode): T;
 export type ProcedureKind = "filling_composite" | "endodontics" | "tooth_extraction" | "hygiene_airflow";
 export interface ProcedureDeductionItem {
     readonly id: string;

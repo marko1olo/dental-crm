@@ -327,18 +327,43 @@ export function format043SterilizationRecord(params: {
 }
 
 /**
- * 1-клик внедрение записи стерилизации в дневник формы 043/у
+ * 1-клик внедрение записи стерилизации в дневник формы 043/у (поддерживает объект дневника или строку)
  */
-export function attachKraftPackageTo043Diary<T extends { appliedMaterials?: string | null; treatmentDescription?: string | null }>(
-	diary: T,
+export function attachKraftPackageTo043Diary(
+	diaryOrText: string,
 	parsedKraft: ParsedKraftBarcode,
-): T {
+): string;
+export function attachKraftPackageTo043Diary<T extends { appliedMaterials?: string | null; treatmentDescription?: string | null }>(
+	diaryOrText: T,
+	parsedKraft: ParsedKraftBarcode,
+): T;
+export function attachKraftPackageTo043Diary(
+	diaryOrText: { appliedMaterials?: string | null; treatmentDescription?: string | null } | string,
+	parsedKraft: ParsedKraftBarcode,
+): { appliedMaterials?: string | null; treatmentDescription?: string | null } | string {
 	const sterRecord = parsedKraft.formattedProtocolRecord043;
-	const curMaterials = (diary.appliedMaterials || "").trim();
 
-	// Если уже содержит эту запись, не дублируем
-	if (curMaterials.includes(parsedKraft.rawInput) || (parsedKraft.cycleNumber && curMaterials.includes(`цикл №${parsedKraft.cycleNumber}`) && curMaterials.includes(parsedKraft.autoclaveId))) {
-		return diary;
+	if (typeof diaryOrText === "string") {
+		const curText = diaryOrText.trim();
+		if (
+			curText.includes(parsedKraft.rawInput) ||
+			(parsedKraft.cycleNumber &&
+				curText.includes(`цикл №${parsedKraft.cycleNumber}`) &&
+				curText.includes(parsedKraft.autoclaveId))
+		) {
+			return diaryOrText;
+		}
+		return curText ? `${curText}\n\n${sterRecord}` : sterRecord;
+	}
+
+	const curMaterials = (diaryOrText.appliedMaterials || "").trim();
+	if (
+		curMaterials.includes(parsedKraft.rawInput) ||
+		(parsedKraft.cycleNumber &&
+			curMaterials.includes(`цикл №${parsedKraft.cycleNumber}`) &&
+			curMaterials.includes(parsedKraft.autoclaveId))
+	) {
+		return diaryOrText;
 	}
 
 	const newMaterials = curMaterials
@@ -346,7 +371,7 @@ export function attachKraftPackageTo043Diary<T extends { appliedMaterials?: stri
 		: sterRecord;
 
 	return {
-		...diary,
+		...diaryOrText,
 		appliedMaterials: newMaterials,
 	};
 }

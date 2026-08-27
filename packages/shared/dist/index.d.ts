@@ -9787,7 +9787,7 @@ export declare const outpatientMedicalCard025uDiagnosisRowSchema: z.ZodObject<{
     date: string;
     doctorFullName: string;
     diagnosis: string;
-    firstOrRepeat: "unknown" | "first" | "repeat";
+    firstOrRepeat: "unknown" | "repeat" | "first";
     doctorSpecialty?: string | null | undefined;
     icd10Code?: string | null | undefined;
     doctorPosition?: string | null | undefined;
@@ -9795,7 +9795,7 @@ export declare const outpatientMedicalCard025uDiagnosisRowSchema: z.ZodObject<{
     date: string;
     doctorFullName: string;
     diagnosis: string;
-    firstOrRepeat: "unknown" | "first" | "repeat";
+    firstOrRepeat: "unknown" | "repeat" | "first";
     doctorSpecialty?: string | null | undefined;
     icd10Code?: string | null | undefined;
     doctorPosition?: string | null | undefined;
@@ -9974,7 +9974,7 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
         orthodonticNotes?: string | null | undefined;
     }[];
     treatmentProvided: string;
-    firstOrRepeat: "unknown" | "first" | "repeat";
+    firstOrRepeat: "unknown" | "repeat" | "first";
     sourceVisitId: string;
     objectiveData: string;
     primaryDiagnosis: string;
@@ -10010,7 +10010,7 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
         orthodonticNotes?: string | null | undefined;
     }[];
     treatmentProvided: string;
-    firstOrRepeat: "unknown" | "first" | "repeat";
+    firstOrRepeat: "unknown" | "repeat" | "first";
     sourceVisitId: string;
     objectiveData: string;
     primaryDiagnosis: string;
@@ -10082,7 +10082,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         date: string;
         doctorFullName: string;
         diagnosis: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         doctorSpecialty?: string | null | undefined;
         icd10Code?: string | null | undefined;
         doctorPosition?: string | null | undefined;
@@ -10090,7 +10090,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         date: string;
         doctorFullName: string;
         diagnosis: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         doctorSpecialty?: string | null | undefined;
         icd10Code?: string | null | undefined;
         doctorPosition?: string | null | undefined;
@@ -10107,7 +10107,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         date: string;
         doctorFullName: string;
         diagnosis: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         doctorSpecialty?: string | null | undefined;
         icd10Code?: string | null | undefined;
         doctorPosition?: string | null | undefined;
@@ -10115,7 +10115,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         date: string;
         doctorFullName: string;
         diagnosis: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         doctorSpecialty?: string | null | undefined;
         icd10Code?: string | null | undefined;
         doctorPosition?: string | null | undefined;
@@ -10196,7 +10196,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }[];
         treatmentProvided: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         sourceVisitId: string;
         objectiveData: string;
         primaryDiagnosis: string;
@@ -10232,7 +10232,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }[];
         treatmentProvided: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         sourceVisitId: string;
         objectiveData: string;
         primaryDiagnosis: string;
@@ -10623,7 +10623,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         date: string;
         doctorFullName: string;
         diagnosis: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         doctorSpecialty?: string | null | undefined;
         icd10Code?: string | null | undefined;
         doctorPosition?: string | null | undefined;
@@ -10632,7 +10632,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         date: string;
         doctorFullName: string;
         diagnosis: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         doctorSpecialty?: string | null | undefined;
         icd10Code?: string | null | undefined;
         doctorPosition?: string | null | undefined;
@@ -10655,7 +10655,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }[];
         treatmentProvided: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         sourceVisitId: string;
         objectiveData: string;
         primaryDiagnosis: string;
@@ -10821,7 +10821,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         date: string;
         doctorFullName: string;
         diagnosis: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         doctorSpecialty?: string | null | undefined;
         icd10Code?: string | null | undefined;
         doctorPosition?: string | null | undefined;
@@ -10830,7 +10830,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         date: string;
         doctorFullName: string;
         diagnosis: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         doctorSpecialty?: string | null | undefined;
         icd10Code?: string | null | undefined;
         doctorPosition?: string | null | undefined;
@@ -10853,7 +10853,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }[];
         treatmentProvided: string;
-        firstOrRepeat: "unknown" | "first" | "repeat";
+        firstOrRepeat: "unknown" | "repeat" | "first";
         sourceVisitId: string;
         objectiveData: string;
         primaryDiagnosis: string;
@@ -11305,11 +11305,11 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
         licenseAuthority: string | null;
     };
     visitId?: string | null | undefined;
+    treatmentDescription?: string | null | undefined;
     diagnosisIcd10?: string | null | undefined;
     diagnosisText?: string | null | undefined;
     anamnesis?: string | null | undefined;
     objectiveStatus?: string | null | undefined;
-    treatmentDescription?: string | null | undefined;
     recommendations?: string | null | undefined;
     complications?: string | null | undefined;
     comorbidities?: string | null | undefined;
@@ -11376,11 +11376,11 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
         licenseAuthority: string | null;
     };
     visitId?: string | null | undefined;
+    treatmentDescription?: string | null | undefined;
     diagnosisIcd10?: string | null | undefined;
     diagnosisText?: string | null | undefined;
     anamnesis?: string | null | undefined;
     objectiveStatus?: string | null | undefined;
-    treatmentDescription?: string | null | undefined;
     recommendations?: string | null | undefined;
     complications?: string | null | undefined;
     comorbidities?: string | null | undefined;
@@ -13300,7 +13300,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -13308,7 +13308,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -13325,7 +13325,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -13333,7 +13333,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -13414,7 +13414,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             treatmentProvided: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             sourceVisitId: string;
             objectiveData: string;
             primaryDiagnosis: string;
@@ -13450,7 +13450,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             treatmentProvided: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             sourceVisitId: string;
             objectiveData: string;
             primaryDiagnosis: string;
@@ -13841,7 +13841,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -13850,7 +13850,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -13873,7 +13873,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             treatmentProvided: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             sourceVisitId: string;
             objectiveData: string;
             primaryDiagnosis: string;
@@ -14039,7 +14039,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -14048,7 +14048,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -14071,7 +14071,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             treatmentProvided: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             sourceVisitId: string;
             objectiveData: string;
             primaryDiagnosis: string;
@@ -14410,11 +14410,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
             licenseAuthority: string | null;
         };
         visitId?: string | null | undefined;
+        treatmentDescription?: string | null | undefined;
         diagnosisIcd10?: string | null | undefined;
         diagnosisText?: string | null | undefined;
         anamnesis?: string | null | undefined;
         objectiveStatus?: string | null | undefined;
-        treatmentDescription?: string | null | undefined;
         recommendations?: string | null | undefined;
         complications?: string | null | undefined;
         comorbidities?: string | null | undefined;
@@ -14481,11 +14481,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
             licenseAuthority: string | null;
         };
         visitId?: string | null | undefined;
+        treatmentDescription?: string | null | undefined;
         diagnosisIcd10?: string | null | undefined;
         diagnosisText?: string | null | undefined;
         anamnesis?: string | null | undefined;
         objectiveStatus?: string | null | undefined;
-        treatmentDescription?: string | null | undefined;
         recommendations?: string | null | undefined;
         complications?: string | null | undefined;
         comorbidities?: string | null | undefined;
@@ -14715,10 +14715,10 @@ export declare const documentPayloadSchema: z.ZodObject<{
             assessmentIcd10Code: string;
             procedureProtocol: string;
             doctorFullName: string;
+            appliedMaterials?: string | null | undefined;
             toothNumber?: string | null | undefined;
             eodMicroamperes?: number | null | undefined;
             anesthesiaDetails?: string | null | undefined;
-            appliedMaterials?: string | null | undefined;
             homeCareRecommendations?: string | null | undefined;
             nextVisitDate?: string | null | undefined;
         }, {
@@ -14729,6 +14729,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             assessmentIcd10Code: string;
             procedureProtocol: string;
             doctorFullName: string;
+            appliedMaterials?: string | null | undefined;
             toothNumber?: string | null | undefined;
             percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
             percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -14736,7 +14737,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
             eodMicroamperes?: number | null | undefined;
             anesthesiaDetails?: string | null | undefined;
-            appliedMaterials?: string | null | undefined;
             homeCareRecommendations?: string | null | undefined;
             nextVisitDate?: string | null | undefined;
         }>, "many">>;
@@ -14819,10 +14819,10 @@ export declare const documentPayloadSchema: z.ZodObject<{
             assessmentIcd10Code: string;
             procedureProtocol: string;
             doctorFullName: string;
+            appliedMaterials?: string | null | undefined;
             toothNumber?: string | null | undefined;
             eodMicroamperes?: number | null | undefined;
             anesthesiaDetails?: string | null | undefined;
-            appliedMaterials?: string | null | undefined;
             homeCareRecommendations?: string | null | undefined;
             nextVisitDate?: string | null | undefined;
         }[];
@@ -14927,6 +14927,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             assessmentIcd10Code: string;
             procedureProtocol: string;
             doctorFullName: string;
+            appliedMaterials?: string | null | undefined;
             toothNumber?: string | null | undefined;
             percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
             percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -14934,7 +14935,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
             eodMicroamperes?: number | null | undefined;
             anesthesiaDetails?: string | null | undefined;
-            appliedMaterials?: string | null | undefined;
             homeCareRecommendations?: string | null | undefined;
             nextVisitDate?: string | null | undefined;
         }[] | undefined;
@@ -17094,7 +17094,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -17103,7 +17103,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -17126,7 +17126,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             treatmentProvided: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             sourceVisitId: string;
             objectiveData: string;
             primaryDiagnosis: string;
@@ -17304,11 +17304,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
             licenseAuthority: string | null;
         };
         visitId?: string | null | undefined;
+        treatmentDescription?: string | null | undefined;
         diagnosisIcd10?: string | null | undefined;
         diagnosisText?: string | null | undefined;
         anamnesis?: string | null | undefined;
         objectiveStatus?: string | null | undefined;
-        treatmentDescription?: string | null | undefined;
         recommendations?: string | null | undefined;
         complications?: string | null | undefined;
         comorbidities?: string | null | undefined;
@@ -17425,10 +17425,10 @@ export declare const documentPayloadSchema: z.ZodObject<{
             assessmentIcd10Code: string;
             procedureProtocol: string;
             doctorFullName: string;
+            appliedMaterials?: string | null | undefined;
             toothNumber?: string | null | undefined;
             eodMicroamperes?: number | null | undefined;
             anesthesiaDetails?: string | null | undefined;
-            appliedMaterials?: string | null | undefined;
             homeCareRecommendations?: string | null | undefined;
             nextVisitDate?: string | null | undefined;
         }[];
@@ -18253,7 +18253,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -18262,7 +18262,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             date: string;
             doctorFullName: string;
             diagnosis: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             doctorSpecialty?: string | null | undefined;
             icd10Code?: string | null | undefined;
             doctorPosition?: string | null | undefined;
@@ -18285,7 +18285,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             treatmentProvided: string;
-            firstOrRepeat: "unknown" | "first" | "repeat";
+            firstOrRepeat: "unknown" | "repeat" | "first";
             sourceVisitId: string;
             objectiveData: string;
             primaryDiagnosis: string;
@@ -18463,11 +18463,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
             licenseAuthority: string | null;
         };
         visitId?: string | null | undefined;
+        treatmentDescription?: string | null | undefined;
         diagnosisIcd10?: string | null | undefined;
         diagnosisText?: string | null | undefined;
         anamnesis?: string | null | undefined;
         objectiveStatus?: string | null | undefined;
-        treatmentDescription?: string | null | undefined;
         recommendations?: string | null | undefined;
         complications?: string | null | undefined;
         comorbidities?: string | null | undefined;
@@ -18593,6 +18593,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             assessmentIcd10Code: string;
             procedureProtocol: string;
             doctorFullName: string;
+            appliedMaterials?: string | null | undefined;
             toothNumber?: string | null | undefined;
             percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
             percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -18600,7 +18601,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
             eodMicroamperes?: number | null | undefined;
             anesthesiaDetails?: string | null | undefined;
-            appliedMaterials?: string | null | undefined;
             homeCareRecommendations?: string | null | undefined;
             nextVisitDate?: string | null | undefined;
         }[] | undefined;
@@ -21622,7 +21622,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -21630,7 +21630,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -21647,7 +21647,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -21655,7 +21655,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -21736,7 +21736,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -21772,7 +21772,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -22163,7 +22163,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -22172,7 +22172,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -22195,7 +22195,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -22361,7 +22361,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -22370,7 +22370,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -22393,7 +22393,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -22732,11 +22732,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -22803,11 +22803,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -23037,10 +23037,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }, {
@@ -23051,6 +23051,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -23058,7 +23059,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }>, "many">>;
@@ -23141,10 +23141,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[];
@@ -23249,6 +23249,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -23256,7 +23257,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[] | undefined;
@@ -25416,7 +25416,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -25425,7 +25425,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -25448,7 +25448,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -25626,11 +25626,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -25747,10 +25747,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[];
@@ -26575,7 +26575,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -26584,7 +26584,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -26607,7 +26607,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -26785,11 +26785,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -26915,6 +26915,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -26922,7 +26923,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[] | undefined;
@@ -28587,7 +28587,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -28596,7 +28596,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -28619,7 +28619,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -28797,11 +28797,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -28918,10 +28918,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[];
@@ -29976,7 +29976,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -29985,7 +29985,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -30008,7 +30008,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -30186,11 +30186,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -30316,6 +30316,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -30323,7 +30324,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[] | undefined;
@@ -32432,7 +32432,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -32440,7 +32440,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -32457,7 +32457,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -32465,7 +32465,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -32546,7 +32546,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -32582,7 +32582,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -32973,7 +32973,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -32982,7 +32982,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -33005,7 +33005,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -33171,7 +33171,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -33180,7 +33180,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -33203,7 +33203,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -33542,11 +33542,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -33613,11 +33613,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -33847,10 +33847,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }, {
@@ -33861,6 +33861,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -33868,7 +33869,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }>, "many">>;
@@ -33951,10 +33951,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[];
@@ -34059,6 +34059,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -34066,7 +34067,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[] | undefined;
@@ -36226,7 +36226,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -36235,7 +36235,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -36258,7 +36258,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -36436,11 +36436,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -36557,10 +36557,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[];
@@ -37385,7 +37385,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -37394,7 +37394,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -37417,7 +37417,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -37595,11 +37595,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -37725,6 +37725,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -37732,7 +37733,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[] | undefined;
@@ -42520,7 +42520,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -42528,7 +42528,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -42545,7 +42545,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -42553,7 +42553,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -42634,7 +42634,7 @@ export declare const dashboardSchema: z.ZodObject<{
                         orthodonticNotes?: string | null | undefined;
                     }[];
                     treatmentProvided: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     sourceVisitId: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
@@ -42670,7 +42670,7 @@ export declare const dashboardSchema: z.ZodObject<{
                         orthodonticNotes?: string | null | undefined;
                     }[];
                     treatmentProvided: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     sourceVisitId: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
@@ -43061,7 +43061,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -43070,7 +43070,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -43093,7 +43093,7 @@ export declare const dashboardSchema: z.ZodObject<{
                         orthodonticNotes?: string | null | undefined;
                     }[];
                     treatmentProvided: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     sourceVisitId: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
@@ -43259,7 +43259,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -43268,7 +43268,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -43291,7 +43291,7 @@ export declare const dashboardSchema: z.ZodObject<{
                         orthodonticNotes?: string | null | undefined;
                     }[];
                     treatmentProvided: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     sourceVisitId: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
@@ -43630,11 +43630,11 @@ export declare const dashboardSchema: z.ZodObject<{
                     licenseAuthority: string | null;
                 };
                 visitId?: string | null | undefined;
+                treatmentDescription?: string | null | undefined;
                 diagnosisIcd10?: string | null | undefined;
                 diagnosisText?: string | null | undefined;
                 anamnesis?: string | null | undefined;
                 objectiveStatus?: string | null | undefined;
-                treatmentDescription?: string | null | undefined;
                 recommendations?: string | null | undefined;
                 complications?: string | null | undefined;
                 comorbidities?: string | null | undefined;
@@ -43701,11 +43701,11 @@ export declare const dashboardSchema: z.ZodObject<{
                     licenseAuthority: string | null;
                 };
                 visitId?: string | null | undefined;
+                treatmentDescription?: string | null | undefined;
                 diagnosisIcd10?: string | null | undefined;
                 diagnosisText?: string | null | undefined;
                 anamnesis?: string | null | undefined;
                 objectiveStatus?: string | null | undefined;
-                treatmentDescription?: string | null | undefined;
                 recommendations?: string | null | undefined;
                 complications?: string | null | undefined;
                 comorbidities?: string | null | undefined;
@@ -43935,10 +43935,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     assessmentIcd10Code: string;
                     procedureProtocol: string;
                     doctorFullName: string;
+                    appliedMaterials?: string | null | undefined;
                     toothNumber?: string | null | undefined;
                     eodMicroamperes?: number | null | undefined;
                     anesthesiaDetails?: string | null | undefined;
-                    appliedMaterials?: string | null | undefined;
                     homeCareRecommendations?: string | null | undefined;
                     nextVisitDate?: string | null | undefined;
                 }, {
@@ -43949,6 +43949,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     assessmentIcd10Code: string;
                     procedureProtocol: string;
                     doctorFullName: string;
+                    appliedMaterials?: string | null | undefined;
                     toothNumber?: string | null | undefined;
                     percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                     percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -43956,7 +43957,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                     eodMicroamperes?: number | null | undefined;
                     anesthesiaDetails?: string | null | undefined;
-                    appliedMaterials?: string | null | undefined;
                     homeCareRecommendations?: string | null | undefined;
                     nextVisitDate?: string | null | undefined;
                 }>, "many">>;
@@ -44039,10 +44039,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     assessmentIcd10Code: string;
                     procedureProtocol: string;
                     doctorFullName: string;
+                    appliedMaterials?: string | null | undefined;
                     toothNumber?: string | null | undefined;
                     eodMicroamperes?: number | null | undefined;
                     anesthesiaDetails?: string | null | undefined;
-                    appliedMaterials?: string | null | undefined;
                     homeCareRecommendations?: string | null | undefined;
                     nextVisitDate?: string | null | undefined;
                 }[];
@@ -44147,6 +44147,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     assessmentIcd10Code: string;
                     procedureProtocol: string;
                     doctorFullName: string;
+                    appliedMaterials?: string | null | undefined;
                     toothNumber?: string | null | undefined;
                     percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                     percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -44154,7 +44155,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                     eodMicroamperes?: number | null | undefined;
                     anesthesiaDetails?: string | null | undefined;
-                    appliedMaterials?: string | null | undefined;
                     homeCareRecommendations?: string | null | undefined;
                     nextVisitDate?: string | null | undefined;
                 }[] | undefined;
@@ -46314,7 +46314,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -46323,7 +46323,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -46346,7 +46346,7 @@ export declare const dashboardSchema: z.ZodObject<{
                         orthodonticNotes?: string | null | undefined;
                     }[];
                     treatmentProvided: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     sourceVisitId: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
@@ -46524,11 +46524,11 @@ export declare const dashboardSchema: z.ZodObject<{
                     licenseAuthority: string | null;
                 };
                 visitId?: string | null | undefined;
+                treatmentDescription?: string | null | undefined;
                 diagnosisIcd10?: string | null | undefined;
                 diagnosisText?: string | null | undefined;
                 anamnesis?: string | null | undefined;
                 objectiveStatus?: string | null | undefined;
-                treatmentDescription?: string | null | undefined;
                 recommendations?: string | null | undefined;
                 complications?: string | null | undefined;
                 comorbidities?: string | null | undefined;
@@ -46645,10 +46645,10 @@ export declare const dashboardSchema: z.ZodObject<{
                     assessmentIcd10Code: string;
                     procedureProtocol: string;
                     doctorFullName: string;
+                    appliedMaterials?: string | null | undefined;
                     toothNumber?: string | null | undefined;
                     eodMicroamperes?: number | null | undefined;
                     anesthesiaDetails?: string | null | undefined;
-                    appliedMaterials?: string | null | undefined;
                     homeCareRecommendations?: string | null | undefined;
                     nextVisitDate?: string | null | undefined;
                 }[];
@@ -47473,7 +47473,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -47482,7 +47482,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     date: string;
                     doctorFullName: string;
                     diagnosis: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     doctorSpecialty?: string | null | undefined;
                     icd10Code?: string | null | undefined;
                     doctorPosition?: string | null | undefined;
@@ -47505,7 +47505,7 @@ export declare const dashboardSchema: z.ZodObject<{
                         orthodonticNotes?: string | null | undefined;
                     }[];
                     treatmentProvided: string;
-                    firstOrRepeat: "unknown" | "first" | "repeat";
+                    firstOrRepeat: "unknown" | "repeat" | "first";
                     sourceVisitId: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
@@ -47683,11 +47683,11 @@ export declare const dashboardSchema: z.ZodObject<{
                     licenseAuthority: string | null;
                 };
                 visitId?: string | null | undefined;
+                treatmentDescription?: string | null | undefined;
                 diagnosisIcd10?: string | null | undefined;
                 diagnosisText?: string | null | undefined;
                 anamnesis?: string | null | undefined;
                 objectiveStatus?: string | null | undefined;
-                treatmentDescription?: string | null | undefined;
                 recommendations?: string | null | undefined;
                 complications?: string | null | undefined;
                 comorbidities?: string | null | undefined;
@@ -47813,6 +47813,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     assessmentIcd10Code: string;
                     procedureProtocol: string;
                     doctorFullName: string;
+                    appliedMaterials?: string | null | undefined;
                     toothNumber?: string | null | undefined;
                     percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                     percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -47820,7 +47821,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                     eodMicroamperes?: number | null | undefined;
                     anesthesiaDetails?: string | null | undefined;
-                    appliedMaterials?: string | null | undefined;
                     homeCareRecommendations?: string | null | undefined;
                     nextVisitDate?: string | null | undefined;
                 }[] | undefined;
@@ -54067,7 +54067,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -54075,7 +54075,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -54092,7 +54092,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -54100,7 +54100,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -54181,7 +54181,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -54217,7 +54217,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -54608,7 +54608,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -54617,7 +54617,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -54640,7 +54640,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -54806,7 +54806,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -54815,7 +54815,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -54838,7 +54838,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -55177,11 +55177,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -55248,11 +55248,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -55482,10 +55482,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }, {
@@ -55496,6 +55496,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -55503,7 +55504,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }>, "many">>;
@@ -55586,10 +55586,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[];
@@ -55694,6 +55694,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -55701,7 +55702,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[] | undefined;
@@ -57861,7 +57861,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -57870,7 +57870,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -57893,7 +57893,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -58071,11 +58071,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -58192,10 +58192,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[];
@@ -59020,7 +59020,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -59029,7 +59029,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -59052,7 +59052,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -59230,11 +59230,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -59360,6 +59360,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -59367,7 +59368,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[] | undefined;
@@ -60187,7 +60187,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -60196,7 +60196,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -60219,7 +60219,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -60397,11 +60397,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -60518,10 +60518,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[];
@@ -61355,7 +61355,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -61364,7 +61364,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -61387,7 +61387,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -61565,11 +61565,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -61695,6 +61695,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -61702,7 +61703,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[] | undefined;
@@ -62523,7 +62523,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -62532,7 +62532,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -62555,7 +62555,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -62733,11 +62733,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -62854,10 +62854,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[];
@@ -63691,7 +63691,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -63700,7 +63700,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 date: string;
                 doctorFullName: string;
                 diagnosis: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 doctorSpecialty?: string | null | undefined;
                 icd10Code?: string | null | undefined;
                 doctorPosition?: string | null | undefined;
@@ -63723,7 +63723,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 treatmentProvided: string;
-                firstOrRepeat: "unknown" | "first" | "repeat";
+                firstOrRepeat: "unknown" | "repeat" | "first";
                 sourceVisitId: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
@@ -63901,11 +63901,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 licenseAuthority: string | null;
             };
             visitId?: string | null | undefined;
+            treatmentDescription?: string | null | undefined;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
             anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
-            treatmentDescription?: string | null | undefined;
             recommendations?: string | null | undefined;
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
@@ -64031,6 +64031,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 assessmentIcd10Code: string;
                 procedureProtocol: string;
                 doctorFullName: string;
+                appliedMaterials?: string | null | undefined;
                 toothNumber?: string | null | undefined;
                 percussionVertical?: "negative" | "positive_mild" | "positive_sharp" | undefined;
                 percussionHorizontal?: "negative" | "positive_mild" | "positive_sharp" | undefined;
@@ -64038,7 +64039,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 thermalTestResponse?: "indifferent" | "transient_pain" | "lingering_sharp_pain" | "pain_relieved_by_cold" | undefined;
                 eodMicroamperes?: number | null | undefined;
                 anesthesiaDetails?: string | null | undefined;
-                appliedMaterials?: string | null | undefined;
                 homeCareRecommendations?: string | null | undefined;
                 nextVisitDate?: string | null | undefined;
             }[] | undefined;

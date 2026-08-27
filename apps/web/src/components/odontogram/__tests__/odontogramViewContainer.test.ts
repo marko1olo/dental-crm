@@ -42,7 +42,7 @@ describe("OdontogramViewContainer — Modes Configuration & Metadata", () => {
 		assert.equal(anatomical?.badge, "3D");
 
 		const compact = ODONTOGRAM_VIEW_MODES.find((m) => m.mode === "compact_clinical");
-		assert.equal(compact?.label, "Клинический 5-поверхностный");
+		assert.equal(compact?.label, "Клинический 6-поверхностный");
 		assert.equal(compact?.badge, "FDI");
 
 		const gost = ODONTOGRAM_VIEW_MODES.find((m) => m.mode === "classic_gost");

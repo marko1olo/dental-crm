@@ -237,21 +237,30 @@ export function format043SterilizationRecord(params) {
     }
     return `Стерилизация СанПиН 3.3686-21: Автоклав ${params.autoclaveId} (цикл №${params.cycleNumber} от ${params.packDateIso}), ${indicatorText}, крафт-пакет ${params.barcode}${toolText} годен до ${params.expDateIso}. Ответственная медсестра ЦСО: ${params.operatorName}. Целостность упаковки сохранена.`;
 }
-/**
- * 1-клик внедрение записи стерилизации в дневник формы 043/у
- */
-export function attachKraftPackageTo043Diary(diary, parsedKraft) {
+export function attachKraftPackageTo043Diary(diaryOrText, parsedKraft) {
     const sterRecord = parsedKraft.formattedProtocolRecord043;
-    const curMaterials = (diary.appliedMaterials || "").trim();
-    // Если уже содержит эту запись, не дублируем
-    if (curMaterials.includes(parsedKraft.rawInput) || (parsedKraft.cycleNumber && curMaterials.includes(`цикл №${parsedKraft.cycleNumber}`) && curMaterials.includes(parsedKraft.autoclaveId))) {
-        return diary;
+    if (typeof diaryOrText === "string") {
+        const curText = diaryOrText.trim();
+        if (curText.includes(parsedKraft.rawInput) ||
+            (parsedKraft.cycleNumber &&
+                curText.includes(`цикл №${parsedKraft.cycleNumber}`) &&
+                curText.includes(parsedKraft.autoclaveId))) {
+            return diaryOrText;
+        }
+        return curText ? `${curText}\n\n${sterRecord}` : sterRecord;
+    }
+    const curMaterials = (diaryOrText.appliedMaterials || "").trim();
+    if (curMaterials.includes(parsedKraft.rawInput) ||
+        (parsedKraft.cycleNumber &&
+            curMaterials.includes(`цикл №${parsedKraft.cycleNumber}`) &&
+            curMaterials.includes(parsedKraft.autoclaveId))) {
+        return diaryOrText;
     }
     const newMaterials = curMaterials
         ? `${curMaterials}\n\n${sterRecord}`
         : sterRecord;
     return {
-        ...diary,
+        ...diaryOrText,
         appliedMaterials: newMaterials,
     };
 }
