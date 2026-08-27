@@ -6,7 +6,7 @@
 	position: fixed;
 	bottom: calc(76px + env(safe-area-inset-bottom, 0px));
 	right: calc(12px + env(safe-area-inset-right, 0px));
-	z-index: 45;
+	z-index: 40;
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;
@@ -28,7 +28,12 @@ body:has(.treatment-plan-modal) .dnt-telephony-floating,
 body:has(.dnt-modal-overlay) .dnt-telephony-floating,
 body:has(.sanpin-modal-overlay) .dnt-telephony-floating,
 body:has(.sber-pos-modal-overlay) .dnt-telephony-floating,
-body:has(.stage-payment-modal) .dnt-telephony-floating {
+body:has(.stage-payment-modal) .dnt-telephony-floating,
+body:has(.quick-booking-drawer) .dnt-telephony-floating,
+body:has(.appointment-modal) .dnt-telephony-floating,
+body:has(.waitlist-drawer) .dnt-telephony-floating,
+body:has(.doctor-shift-roster-modal) .dnt-telephony-floating,
+body:has([data-testid="doctor-shift-roster-modal"]) .dnt-telephony-floating {
 	opacity: 0 !important;
 	pointer-events: none !important;
 	visibility: hidden !important;
@@ -37,18 +42,18 @@ body:has(.stage-payment-modal) .dnt-telephony-floating {
 
 @media (min-width: 768px) {
 	.dnt-telephony-floating {
-		bottom: 24px;
-		right: 24px;
-		z-index: 400;
+		bottom: 20px;
+		right: 20px;
+		z-index: 40;
 	}
 }
 
 /* Collapsed Launcher Button */
 .dnt-telephony-launcher {
-	width: 48px;
-	height: 48px;
-	min-width: 48px;
-	min-height: 48px;
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
 	padding: 0;
 	border-radius: 50%;
 	display: inline-flex;
@@ -58,20 +63,20 @@ body:has(.stage-payment-modal) .dnt-telephony-floating {
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--teal, #0d9488);
 	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
-	box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 0 16px 1px rgba(15, 118, 110, 0.15);
+	box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.2), 0 0 12px 1px rgba(15, 118, 110, 0.12);
 	cursor: pointer;
 	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 	user-select: none;
 }
 
 .dnt-telephony-launcher:hover {
-	transform: scale(1.06);
+	transform: scale(1.04);
 	border-color: var(--teal, #0d9488);
-	box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.3), 0 0 20px 2px rgba(15, 118, 110, 0.25);
+	box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.25), 0 0 16px 2px rgba(15, 118, 110, 0.2);
 }
 
 .dnt-telephony-launcher:active {
-	transform: scale(0.94);
+	transform: scale(0.96);
 }
 
 .dnt-telephony-launcher--active {
@@ -90,10 +95,10 @@ body:has(.stage-payment-modal) .dnt-telephony-floating {
 	.dnt-telephony-launcher {
 		width: auto;
 		height: auto;
-		min-height: 48px;
-		padding: 8px 16px 8px 10px;
+		min-height: 38px;
+		padding: 5px 12px 5px 8px;
 		border-radius: 9999px;
-		gap: 10px;
+		gap: 8px;
 	}
 	.dnt-telephony-launcher-text {
 		display: flex;

@@ -299,7 +299,7 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 
 												{/* Diagnosis ICD-10 */}
 												{study.diagnosisIcd10 && (
-													<span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-mono font-bold">
+													<span className="px-2 py-0.5 rounded-lg bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] text-xs font-mono font-bold">
 														{study.diagnosisIcd10}
 													</span>
 												)}
@@ -348,11 +348,11 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 											<button
 												type="button"
 												onClick={() => onSelectStudy(study)}
-												className="flex items-center gap-2 min-h-[44px] px-4 rounded-xl bg-[var(--teal)] text-white hover:opacity-90 text-xs md:text-sm font-bold shadow-sm active:scale-95 transition-all"
+												className="flex items-center gap-2 min-h-[44px] px-4 rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 text-xs md:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
 												title="Открыть в кибер-просмотрщике с линейкой и метками"
 												data-testid={`open-cyber-viewer-${study.id}`}
 											>
-												<Eye className="w-4 h-4 text-white" />
+												<Eye className="w-4 h-4" />
 												<span>Просмотр снимка</span>
 											</button>
 

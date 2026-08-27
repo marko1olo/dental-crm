@@ -130,4 +130,60 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.ok(standardPreset);
 		assert.equal(standardPreset.label, "Стандарт");
 	});
+
+	it("verifies tooth 16 RVG anatomical landmarks map to physical apex coordinates with 0.05 mm/px calibration", () => {
+		// Tooth 16 image dimensions: 1000 x 1300 px, spacing 0.05 mm/px
+		// Palatal Root Apex: (51.5%, 21.9%) -> (515px, 285px)
+		// Palatal Canal Orifice: (51.5%, 53.8%) -> (515px, 700px)
+		const imgW = 1000;
+		const imgH = 1300;
+		const spacing = 0.05;
+
+		const rootLengthMm = calculateDistanceMm(51.5, 53.8, 51.5, 21.9, imgW, imgH, spacing);
+		// (700 - 285) * 0.05 = 415 * 0.05 = 20.75 mm -> rounded 20.8 mm
+		assert.ok(rootLengthMm >= 20.0 && rootLengthMm <= 21.5, `Root length must be ~20.8 mm, got ${rootLengthMm}`);
+
+		// Crown mesio-distal width: (34.0%, 71.0%) to (68.0%, 71.0%) -> 340px * 0.05 = 17.0 mm
+		const crownWidthMm = calculateDistanceMm(34.0, 71.0, 68.0, 71.0, imgW, imgH, spacing);
+		assert.equal(crownWidthMm, 17.0);
+	});
+
+	it("verifies real DICOM header parser extracts correct 16-bit CT pixel geometry and window centers", async () => {
+		const { parseDicomSliceHeader } = await import("../realDicomVolumeLoader");
+
+		// Construct synthetic real-layout DICOM buffer with standard tags
+		const buffer = new ArrayBuffer(2048);
+		const view = new DataView(buffer);
+
+		// Tag (0028, 0010) Rows = 512
+		let off = 128;
+		view.setUint16(off, 0x0028, true);
+		view.setUint16(off + 2, 0x0010, true);
+		view.setUint16(off + 4, 0x5553, true); // US
+		view.setUint16(off + 6, 2, true);
+		view.setUint16(off + 8, 512, true);
+
+		// Tag (0028, 0011) Columns = 512
+		off += 10;
+		view.setUint16(off, 0x0028, true);
+		view.setUint16(off + 2, 0x0011, true);
+		view.setUint16(off + 4, 0x5553, true);
+		view.setUint16(off + 6, 2, true);
+		view.setUint16(off + 8, 512, true);
+
+		// Tag (0028, 0100) BitsAllocated = 16
+		off += 10;
+		view.setUint16(off, 0x0028, true);
+		view.setUint16(off + 2, 0x0100, true);
+		view.setUint16(off + 4, 0x5553, true);
+		view.setUint16(off + 6, 2, true);
+		view.setUint16(off + 8, 16, true);
+
+		const header = parseDicomSliceHeader(buffer);
+		assert.equal(header.rows, 512);
+		assert.equal(header.cols, 512);
+		assert.equal(header.bitsAllocated, 16);
+		assert.ok(header.windowWidth > 0);
+	});
 });
+

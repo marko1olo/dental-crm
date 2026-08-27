@@ -58,6 +58,7 @@ import {
 } from "../components/radiology";
 import { TreatmentPlanCompletedActPrint } from "../components/treatment-plans/TreatmentPlanCompletedActPrint";
 import { FiscalReceipt54FzModal } from "../components/finance/FiscalReceipt54FzModal";
+import { PatientBillingModal } from "../components/finance/PatientBillingModal";
 import { SanpinRegisters } from "../components/sanpin/SanpinRegisters";
 import { PediatricMixedDentitionModal } from "../components/odontogram/PediatricMixedDentitionModal";
 import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollModal";
@@ -312,6 +313,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isActPrintOpen, setIsActPrintOpen] = useState(false);
 	const [isFiscalOpen, setIsFiscalOpen] = useState(false);
 	const [isBilling1cExportOpen, setIsBilling1cExportOpen] = useState(false);
+	const [isPatientBillingOpen, setIsPatientBillingOpen] = useState(false);
 	const [isPediatricOpen, setIsPediatricOpen] = useState(false);
 	const [isConsentOpen, setIsConsentOpen] = useState(false);
 	const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -382,6 +384,18 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "fiscal" || requestedModal === "54fz") setIsFiscalOpen(true);
 					if (requestedModal === "billing_1c" || requestedModal === "1c" || requestedModal === "1c_export" || requestedModal === "commerceml") {
 						setIsBilling1cExportOpen(true);
+					}
+					if (requestedModal === "patient_billing" || requestedModal === "billing" || requestedModal === "friendly_billing" || requestedModal === "warranty_act") {
+						setIsPatientBillingOpen(true);
+					}
+					if (requestedModal === "cephalometry" || requestedModal === "ceph" || requestedModal === "trg") {
+						setIsCephOpen(true);
+					}
+					if (requestedModal === "radiology_viewer" || requestedModal === "viewer" || requestedModal === "radiology" || requestedModal === "xray") {
+						setIsViewerOpen(true);
+					}
+					if (requestedModal === "schedule_roster" || requestedModal === "roster") {
+						setIsDoctorShiftRosterOpen(true);
 					}
 				}
 			}
@@ -511,6 +525,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Coins size={15} />
 							<span>Открыть 1С:Экспорт XML</span>
+						</button>
+					</div>
+
+					{/* 2c. Patient Billing & Friendly A4 Act Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FileCheck2 className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Понятный счет & Акт А4 (804н)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Понятная расшифровка для пациента (без латыни), Акт сдачи-приемки 804н, гарантийный талон и 1-клик отправка в WhatsApp.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPatientBillingOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-patient-billing-modal-btn"
+						>
+							<FileCheck2 size={15} />
+							<span>Открыть понятный счет А4</span>
 						</button>
 					</div>
 
@@ -1757,6 +1795,23 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					patientName="Смирнова Екатерина Васильевна"
 					patientDepositRub={5000}
 					initialTab="oneC"
+				/>
+			)}
+
+			{isPatientBillingOpen && (
+				<PatientBillingModal
+					isOpen={isPatientBillingOpen}
+					onClose={() => setIsPatientBillingOpen(false)}
+					patient={{
+						id: "PAT-2026-0891",
+						fullName: SAMPLE_PATIENT.fullName,
+						phone: SAMPLE_PATIENT.phone,
+						medicalCardNumber: SAMPLE_PATIENT.cardNumber,
+					}}
+					doctor={{
+						fullName: "Д-р Смирнов Алексей Петрович",
+						specialty: "Врач-стоматолог терапевт-эндодонтист",
+					}}
 				/>
 			)}
 

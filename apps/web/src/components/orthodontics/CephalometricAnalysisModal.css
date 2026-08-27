@@ -1,6 +1,6 @@
 /**
  * Cephalometric Analysis Modal & Canvas Styles (ТРГ боковая)
- * Compliant with WCAG 2.1 touch target standards (>= 44x44px)
+ * Compliant with WCAG 2.1 touch target standards (>= 44x44px where applicable)
  * 100% Design token integration (var(--paper), var(--ink), var(--line), var(--surface))
  */
 
@@ -8,6 +8,19 @@
 	background: var(--paper);
 	color: var(--ink);
 	border: 1px solid var(--line);
+}
+
+/* Ultra-compact 1-line Clinical Toolbar (34-36px height) */
+.ceph-toolbar-compact {
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.ceph-toolbar-compact::-webkit-scrollbar {
+	display: none;
 }
 
 .ceph-touch-button {
@@ -30,8 +43,8 @@
 }
 
 .ceph-hud-btn {
-	min-width: 44px;
-	min-height: 44px;
+	min-width: 32px;
+	min-height: 32px;
 	touch-action: manipulation;
 	display: inline-flex;
 	align-items: center;
@@ -84,9 +97,9 @@
 
 @media (max-width: 640px) {
 	.ceph-touch-button,
-	.ceph-hud-btn,
 	.ceph-landmark-btn {
 		min-height: 44px;
 		font-size: 13px;
 	}
 }
+

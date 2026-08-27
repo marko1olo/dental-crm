@@ -972,7 +972,7 @@ button:disabled {
 .boot-unlock-form input {
 	border: 1px solid var(--line);
 	border-radius: 8px;
-	min-height: 44px;
+	min-height: 36px;
 	padding: 0 12px;
 	width: 100%;
 }
@@ -3184,10 +3184,10 @@ section.imaging-panel {
 	color: #eafffa;
 	display: inline-flex;
 	font-weight: 900;
-	height: 44px;
-	min-height: 44px;
+	height: 32px;
+	min-height: 32px;
 	justify-content: center;
-	min-width: 44px;
+	min-width: 32px;
 }
 
 .viewer-tool-button.active,
@@ -6385,8 +6385,8 @@ section.imaging-panel {
 	gap: 12px;
 	justify-content: space-between;
 	list-style: none;
-	min-height: 48px;
-	padding: 10px 12px;
+	min-height: 36px;
+	padding: 6px 12px;
 }
 
 .pricelist-taxonomy summary::-webkit-details-marker {
@@ -8234,8 +8234,8 @@ section.imaging-panel {
 }
 
 .import-copy h2 {
-	font-size: 22px;
-	line-height: 1.1;
+	font-size: 18px;
+	line-height: 1.25;
 	margin: 0;
 }
 
@@ -9549,7 +9549,7 @@ section.imaging-panel {
 }
 
 .visit-primary-action {
-	min-height: 44px;
+	min-height: 36px;
 	white-space: nowrap;
 	flex-shrink: 0;
 }

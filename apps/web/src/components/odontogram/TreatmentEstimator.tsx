@@ -563,22 +563,22 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 	return (
 		<div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100">
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
-				<div className="flex flex-wrap items-center gap-3">
-					<h2 className="flex items-center gap-2 text-lg font-bold">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
+				<div className="flex flex-wrap items-center gap-3 min-w-0">
+					<h2 className="flex items-center gap-2 text-base font-bold truncate whitespace-nowrap">
 						<FileText
-							size={18}
-							className="text-indigo-500 dark:text-indigo-400"
+							size={16}
+							className="text-indigo-500 dark:text-indigo-400 shrink-0"
 						/>
-						План лечения
+						<span className="truncate">План лечения</span>
 					</h2>
-					<div className="flex items-center gap-1 bg-zinc-200/60 dark:bg-zinc-800/60 p-1 rounded-xl text-xs font-bold flex-wrap">
+					<div className="flex items-center gap-1 bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5 rounded-lg text-xs font-bold flex-wrap">
 						<button
 							type="button"
 							onClick={() => setPlannerTab("comprehensive_804n")}
-							className={`px-3.5 py-2 min-h-[44px] inline-flex items-center justify-center rounded-lg transition-all cursor-pointer touch-manipulation ${
+							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
 								plannerTab === "comprehensive_804n"
-									? "bg-teal-600 text-white shadow-xs"
+									? "bg-teal-600 text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
@@ -587,9 +587,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						<button
 							type="button"
 							onClick={() => setPlannerTab("manual_lines")}
-							className={`px-3.5 py-2 min-h-[44px] inline-flex items-center justify-center rounded-lg transition-all cursor-pointer touch-manipulation ${
+							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
 								plannerTab === "manual_lines"
-									? "bg-teal-600 text-white shadow-xs"
+									? "bg-teal-600 text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
@@ -597,9 +597,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						</button>
 					</div>
 				</div>
-				<div className="flex gap-2 flex-wrap sm:flex-nowrap">
+				<div className="flex gap-2 flex-wrap sm:flex-nowrap shrink-0">
 					{signatureUrl && (
-						<span className="px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-100/50 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-full border border-emerald-200/50 dark:border-emerald-500/30 flex items-center">
+						<span className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-100/50 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-full border border-emerald-200/50 dark:border-emerald-500/30 flex items-center">
 							ПОДПИСАНО
 						</span>
 					)}
@@ -613,20 +613,20 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						onClick={() => setShowSignModal(true)}
 						disabled={blockedReason !== null}
 						title={blockedReason ?? "Подписать план у пациента"}
-						className="flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
 					>
 						<PenTool size={14} />
-						Подписать
+						<span>Подписать</span>
 					</button>
 					<button
 						type="button"
 						onClick={savePlan}
 						disabled={isSaving || blockedReason !== null}
 						title={blockedReason ?? "Сохранить план лечения"}
-						className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+						className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
 					>
 						<Save size={14} />
-						{isSaving ? "Сохранение..." : "Сохранить"}
+						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
 					</button>
 				</div>
 			</div>
@@ -927,12 +927,12 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			    этом сказано рядом с суммой, а не спрятано. Молча просуммировать
 			    известное и выдать это за итог — то же самое, что выдумать цену. */}
 			{plannerTab === "manual_lines" && (
-				<div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-3 px-6 py-4 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
+				<div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-3 px-4 py-3 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
 					<div className="flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
 						>
 							<Printer size={14} />
 							<span>Печать сметы</span>
@@ -948,7 +948,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 								setIsFiscalModalOpen(true);
 							}}
 							disabled={treatmentPlanItemsForFiscalModal.length === 0}
-							className="min-h-[44px] px-4 py-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							<Receipt size={14} />
 							<span>В кассу (54-ФЗ)</span>

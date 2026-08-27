@@ -156,14 +156,14 @@
 }
 
 .foolproof-btn-cancel {
-	min-height: 52px;
-	padding: 0.75rem 1.5rem;
-	border-radius: 14px;
-	border: 2px solid var(--line, #cbd5e1);
+	min-height: 40px;
+	padding: 0.5rem 1.25rem;
+	border-radius: 10px;
+	border: 1.5px solid var(--line, #cbd5e1);
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
-	font-size: 1.05rem;
-	font-weight: 800;
+	font-size: 0.9375rem;
+	font-weight: 700;
 	cursor: pointer;
 	transition: all 0.15s ease-out;
 	flex: 1;
@@ -184,14 +184,14 @@
 }
 
 .foolproof-btn-danger {
-	min-height: 52px;
-	padding: 0.75rem 1.5rem;
-	border-radius: 14px;
+	min-height: 40px;
+	padding: 0.5rem 1.25rem;
+	border-radius: 10px;
 	border: none;
 	background: #dc2626;
 	color: #ffffff;
-	font-size: 1.05rem;
-	font-weight: 800;
+	font-size: 0.9375rem;
+	font-weight: 700;
 	cursor: pointer;
 	transition: all 0.15s ease-out;
 	flex: 1;
@@ -199,12 +199,12 @@
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
-	box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+	box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
 }
 
 .foolproof-btn-danger:hover:not(:disabled) {
 	background: #b91c1c;
-	box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+	box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
 }
 
 .foolproof-btn-danger:disabled {
@@ -216,6 +216,16 @@
 .foolproof-btn-danger:focus-visible {
 	outline: 3px solid #ef4444;
 	outline-offset: 2px;
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+	.foolproof-btn-cancel,
+	.foolproof-btn-danger {
+		min-height: 50px;
+		font-size: 1.05rem;
+		border-radius: 14px;
+		padding: 0.75rem 1.5rem;
+	}
 }
 
 @keyframes foolproofFadeIn {

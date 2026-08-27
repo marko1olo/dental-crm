@@ -161,22 +161,72 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 		status: "completed",
 		diagnosisIcd10: "K04.0",
 		diagnosticNotes:
-			"Прицельная контрольная радиовизиография зуба 16. Визуализируются 3 обтурированных корневых канала (медиально-щечный, дистально-щечный, небный) гуттаперчей с силером. Пломбирование плотное, на 0.5-0.8 мм до рентгенологического апекса. Периодонтальная щель равномерная.",
+			"Прицельная контрольная радиовизиография зуба 16. Визуализируются 3 обтурированных корневых канала (медиально-щечный MB1, дистально-щечный DB, небный P) гуттаперчей с силером. Пломбирование плотное, гомогенное, на 0.5-0.8 мм до рентгенологического апекса. Периодонтальная щель равномерная, кортикальная пластинка Lamina Dura интактна, периапикальных деструктивных изменений костной ткани не выявлено.",
 		metadata: {
 			kv: 65,
 			ma: 7.0,
 			exposureSec: 0.08,
 			pixelSpacingMm: 0.05,
-			apparatusModel: "Vatech EzSensor Classic",
+			apparatusModel: "Vatech EzSensor Classic (CMOS 14-bit)",
 		},
+		measurements: [
+			{
+				id: "m-rvg-1",
+				startX: 51.5,
+				startY: 53.8,
+				endX: 51.5,
+				endY: 21.9,
+				distanceMm: 20.7,
+				label: "Длина небного корня 16: 20.7 мм",
+				color: "var(--teal, #06b6d4)",
+			},
+			{
+				id: "m-rvg-2",
+				startX: 34.0,
+				startY: 71.0,
+				endX: 68.0,
+				endY: 71.0,
+				distanceMm: 17.0,
+				label: "Ширина коронки 16: 17.0 мм",
+				color: "var(--teal, #06b6d4)",
+			},
+		],
 		landmarks: [
 			{
 				id: "lm-rvg-1",
 				x: 51.5,
-				y: 28.5,
+				y: 21.9,
 				toothFdi: "16",
-				label: "Апекс небного корня 16",
+				label: "Апекс небного корня (P) 16",
 				type: "apex",
+				color: "var(--ok, #10b981)",
+			},
+			{
+				id: "lm-rvg-2",
+				x: 39.5,
+				y: 25.0,
+				toothFdi: "16",
+				label: "Апекс медиально-щечного корня (MB1) 16",
+				type: "apex",
+				color: "var(--ok, #10b981)",
+			},
+			{
+				id: "lm-rvg-3",
+				x: 64.0,
+				y: 26.2,
+				toothFdi: "16",
+				label: "Апекс дистально-щечного корня (DB) 16",
+				type: "apex",
+				color: "var(--ok, #10b981)",
+			},
+			{
+				id: "lm-rvg-4",
+				x: 51.5,
+				y: 53.8,
+				toothFdi: "16",
+				label: "Пульповая камера 16 (обтурирована)",
+				type: "canal",
+				color: "var(--teal, #06b6d4)",
 			},
 		],
 	},
@@ -405,7 +455,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 			    ═══════════════════════════════════════════════════════════════════ */}
 			{isCompareMode && (
 				<div
-					className="p-4 bg-slate-950 border-b border-[var(--teal)]/30 flex flex-col gap-4 text-slate-100 animate-in slide-in-from-top-4 duration-200"
+					className="p-4 bg-[var(--paper-soft)] border-b border-[var(--line)] flex flex-col gap-4 text-[var(--ink)] animate-in slide-in-from-top-4 duration-200"
 					data-testid="compare-split-view-container"
 				>
 					<div className="flex items-center justify-between">
@@ -416,7 +466,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsCompareMode(false)}
-							className="text-xs text-slate-400 hover:text-white underline"
+							className="text-xs text-[var(--muted)] hover:text-[var(--ink)] underline cursor-pointer"
 						>
 							Закрыть режим сравнения
 						</button>
@@ -424,7 +474,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						{/* Study A Selector & Preview */}
-						<div className="flex flex-col gap-2 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+						<div className="flex flex-col gap-2 p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)]">
 							<div className="flex items-center justify-between">
 								<span className="text-xs font-bold text-[var(--teal)] uppercase">
 									Снимок А (До лечения / База):
@@ -437,7 +487,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 										);
 										setCompareStudyA(found || null);
 									}}
-									className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
+									className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								>
 									{studies.map((s) => (
 										<option key={s.id} value={s.id}>
@@ -448,7 +498,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 							</div>
 
 							{compareStudyA && (
-								<div className="relative aspect-video bg-black rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center">
+								<div className="relative aspect-video bg-black rounded-xl border border-[var(--line)] overflow-hidden flex items-center justify-center">
 									<img
 										src={compareStudyA.imageUrl}
 										alt="Study A"
@@ -460,7 +510,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 									<button
 										type="button"
 										onClick={() => handleOpenViewer(compareStudyA)}
-										className="absolute bottom-2 right-2 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-[var(--teal)] text-white text-xs font-bold shadow-lg"
+										className="absolute bottom-2 right-2 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] text-xs font-bold shadow-lg cursor-pointer"
 									>
 										Развернуть снимок А
 									</button>
@@ -469,7 +519,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						</div>
 
 						{/* Study B Selector & Preview */}
-						<div className="flex flex-col gap-2 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+						<div className="flex flex-col gap-2 p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)]">
 							<div className="flex items-center justify-between">
 								<span className="text-xs font-bold text-[var(--teal)] uppercase">
 									Снимок B (После лечения / Контроль):
@@ -482,7 +532,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 										);
 										setCompareStudyB(found || null);
 									}}
-									className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-800 border border-slate-700 text-slate-100"
+									className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								>
 									{studies.map((s) => (
 										<option key={s.id} value={s.id}>
@@ -493,7 +543,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 							</div>
 
 							{compareStudyB && (
-								<div className="relative aspect-video bg-black rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center">
+								<div className="relative aspect-video bg-black rounded-xl border border-[var(--line)] overflow-hidden flex items-center justify-center">
 									<img
 										src={compareStudyB.imageUrl}
 										alt="Study B"
@@ -505,7 +555,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 									<button
 										type="button"
 										onClick={() => handleOpenViewer(compareStudyB)}
-										className="absolute bottom-2 right-2 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-[var(--teal)] text-white text-xs font-bold shadow-lg"
+										className="absolute bottom-2 right-2 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] text-xs font-bold shadow-lg cursor-pointer"
 									>
 										Развернуть снимок B
 									</button>

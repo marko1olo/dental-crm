@@ -231,104 +231,107 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				)}
 
 				{/* Top Header */}
-				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
-					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-2xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0">
-							<FileCheck className="w-5 h-5" />
+				<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-3">
+					<div className="flex items-center gap-3 min-w-0">
+						<div className="w-9 h-9 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0">
+							<FileCheck className="w-4 h-4" />
 						</div>
-						<div>
+						<div className="min-w-0">
 							<div className="flex items-center gap-2">
-								<h3 className="text-base font-extrabold text-[var(--ink)] m-0">
+								<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0 truncate">
 									Акт выполненных работ & Гарантийный талон (А4)
 								</h3>
-								<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase">
+								<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0">
 									Официальный бланк
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
+							<p className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate">
 								Лицензия № {clinicLicenseNumber} • Приказ МЗ РФ № 804н • Закон РФ № 2300-1
 							</p>
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 shrink-0">
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="px-4 py-2 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+							className="px-3.5 py-1.5 h-8 sm:h-9 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
 							data-testid="btn-print-billing-act"
 						>
 							<Printer className="w-4 h-4" />
-							<span>Печать бланка А4 (Ctrl+P)</span>
+							<span className="hidden sm:inline">Печать бланка А4 (Ctrl+P)</span>
+							<span className="sm:hidden">Печать А4</span>
 						</button>
 						<button
 							type="button"
 							onClick={onClose}
-							className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+							className="h-8 w-8 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer flex items-center justify-center border border-transparent hover:border-[var(--line)]"
 							aria-label="Закрыть окно"
 						>
-							<X className="w-5 h-5" />
+							<X className="w-4 h-4" />
 						</button>
 					</div>
 				</div>
 
-				{/* Tabs Navigation */}
-				<div className="flex items-center gap-2 px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0">
-					<button
-						type="button"
-						onClick={() => setActiveTab("friendly")}
-						className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-							activeTab === "friendly"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid="btn-tab-friendly-bill"
-					>
-						<Sparkles className="w-3.5 h-3.5" />
-						<span>Понятный счет (без латыни)</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab("preview")}
-						className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-							activeTab === "preview"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid="btn-tab-preview-act"
-					>
-						<Eye className="w-3.5 h-3.5" />
-						<span>Официальный бланк А4</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab("details")}
-						className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-							activeTab === "details"
-								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid="btn-tab-details-act"
-					>
-						<Layers className="w-3.5 h-3.5" />
-						<span>Спецификация и гарантии ({summary.items.length} поз.)</span>
-					</button>
+				{/* Tabs Navigation (Compact 32px SegmentedControl) */}
+				<div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0 overflow-x-auto">
+					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs min-w-max">
+						<button
+							type="button"
+							onClick={() => setActiveTab("friendly")}
+							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold ${
+								activeTab === "friendly"
+									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="btn-tab-friendly-bill"
+						>
+							<Sparkles className="w-3.5 h-3.5" />
+							<span>Понятный счет (без латыни)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("preview")}
+							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold ${
+								activeTab === "preview"
+									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="btn-tab-preview-act"
+						>
+							<Eye className="w-3.5 h-3.5" />
+							<span>Официальный бланк А4</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("details")}
+							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold ${
+								activeTab === "details"
+									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="btn-tab-details-act"
+						>
+							<Layers className="w-3.5 h-3.5" />
+							<span>Спецификация и гарантии ({summary.items.length} поз.)</span>
+						</button>
+					</div>
 
-					<div className="ml-auto flex items-center gap-2">
+					<div className="flex items-center gap-1.5 shrink-0 min-w-max">
 						{patient?.phone && (
 							<a
 								href={`tel:+${patient.phone.replace(/\D/g, "")}`}
-								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] hover:opacity-90 flex items-center gap-1 cursor-pointer transition-colors"
+								className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] hover:opacity-90 flex items-center gap-1 cursor-pointer transition-colors"
 								title="Позвонить пациенту"
 							>
 								<Phone className="w-3 h-3 text-[var(--ok-fg,#059669)]" />
-								<span>📞 Позвонить</span>
+								<span>Позвонить</span>
 							</a>
 						)}
 						<button
 							type="button"
 							onClick={handleSendWhatsApp}
-							className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#25d366] hover:bg-[#20ba59] text-white flex items-center gap-1 cursor-pointer transition-colors"
+							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[#25d366] hover:bg-[#20ba59] text-white flex items-center gap-1 cursor-pointer transition-colors"
 							data-testid="btn-quick-whatsapp-bill"
 						>
 							<Send className="w-3 h-3" />
@@ -337,7 +340,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-colors"
+							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-colors"
 						>
 							<Copy className="w-3 h-3" />
 							<span>{copied ? "Скопировано!" : "Копировать"}</span>
@@ -345,11 +348,11 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					</div>
 				</div>
 
-				{/* Loyalty Discount & Presets Toolbar */}
-				<div className="px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-2.5 shrink-0 text-xs">
+				{/* Loyalty Discount & Presets Toolbar (Compact h-8 Controls) */}
+				<div className="px-4 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
 					<div className="flex items-center gap-2 font-bold text-[var(--ink)]">
-						<Percent className="w-4 h-4 text-[var(--brand-primary,#0d9488)]" />
-						<span>Скидка и лояльность:</span>
+						<Percent className="w-3.5 h-3.5 text-[var(--brand-primary,#0d9488)]" />
+						<span>Скидка:</span>
 					</div>
 
 					<div className="flex items-center gap-1.5 flex-wrap">
@@ -358,10 +361,10 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								key={preset.id}
 								type="button"
 								onClick={() => setDiscountPreset(preset.id)}
-								className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+								className={`h-8 px-2.5 rounded-lg font-bold transition-all cursor-pointer ${
 									discountPreset === preset.id
 										? "bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-										: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-[var(--brand-primary,#0d9488)]"
+										: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:border-[var(--brand-primary,#0d9488)]"
 								}`}
 								title={preset.description}
 							>
@@ -379,7 +382,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								value={customDiscountPercent || ""}
 								onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
 								placeholder="0%"
-								className="w-20 px-2 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-[var(--line)] rounded-lg"
+								className="h-8 w-20 px-2 py-1 text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] rounded-lg text-[var(--ink)]"
 							/>
 							<span>%</span>
 						</div>
@@ -394,22 +397,22 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								value={customDiscountRub || ""}
 								onChange={(e) => setCustomDiscountRub(Math.max(0, parseFloat(e.target.value) || 0))}
 								placeholder="0 ₽"
-								className="w-24 px-2 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-[var(--line)] rounded-lg"
+								className="h-8 w-24 px-2 py-1 text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] rounded-lg text-[var(--ink)]"
 							/>
 							<span>₽</span>
 						</div>
 					)}
 
 					{discountResult.totalDiscountRub > 0 && (
-						<div className="px-3 py-1 rounded-xl bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] font-extrabold flex items-center gap-1">
-							<Sparkles className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)]" />
+						<div className="h-8 px-2.5 rounded-lg bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] font-extrabold flex items-center gap-1">
+							<Sparkles className="w-3 h-3 text-[var(--ok-fg,#059669)]" />
 							<span>{discountResult.savingsText} ({discountResult.effectivePercent}%)</span>
 						</div>
 					)}
 				</div>
 
 				{/* Body Content */}
-				<div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
 					{activeTab === "friendly" ? (
 						<div className="space-y-4" data-testid="friendly-billing-view">
 							{/* Summary Header Card */}
@@ -722,27 +725,27 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					)}
 				</div>
 
-				{/* Bottom Footer Actions */}
-				<div className="flex items-center justify-between px-6 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
+				{/* Bottom Footer Actions (Fixed Sticky Bar) */}
+				<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-3">
 					<div className="text-xs text-[var(--muted)] font-medium">
-						Итоговая сумма: <strong className="text-base text-[var(--teal,#0d9488)] font-mono">{friendlyBreakdown.totalAmountRubFormatted}</strong>
+						Итоговая сумма: <strong className="text-sm sm:text-base text-[var(--teal,#0d9488)] font-mono font-bold">{friendlyBreakdown.totalAmountRubFormatted}</strong>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
 							onClick={handleSendWhatsApp}
-							className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold bg-[#25d366] hover:bg-[#20ba59] text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+							className="h-9 px-3.5 rounded-xl text-xs font-bold bg-[#25d366] hover:bg-[#20ba59] text-white shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
 							data-testid="btn-footer-send-whatsapp"
 						>
-							<Send className="w-4 h-4" />
+							<Send className="w-3.5 h-3.5" />
 							<span>В WhatsApp</span>
 						</button>
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="px-5 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+							className="h-9 px-4 rounded-xl text-xs font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
 						>
-							<Printer className="w-4 h-4" />
+							<Printer className="w-3.5 h-3.5" />
 							<span>Печать (А4)</span>
 						</button>
 						<OneCExportButton
@@ -784,11 +787,12 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							totalRub={summary.totalNetRub}
 							contractNumber={actParams.contractNumber}
 							contractDate={actParams.contractDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]}
+							className="h-9 px-3.5 font-bold"
 						/>
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-[var(--ink)] cursor-pointer transition-colors"
+							className="h-9 px-3.5 rounded-xl text-xs font-semibold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>

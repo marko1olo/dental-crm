@@ -45,11 +45,11 @@
 
 .patients-search-box input {
 	width: 100%;
-	padding: 10px 65px 10px 38px;
+	padding: 8px 65px 8px 36px;
 	border: 1px solid var(--line-strong);
 	border-radius: 10px;
-	font-size: 0.95rem;
-	min-height: 44px;
+	font-size: 0.875rem;
+	min-height: 36px;
 	transition: all 0.2s ease;
 	background: var(--paper-soft);
 	color: var(--ink);
@@ -114,10 +114,10 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	min-height: 44px;
-	padding: 0 1.25rem;
+	min-height: 36px;
+	padding: 0 1rem;
 	font-weight: 700;
-	font-size: 0.95rem;
+	font-size: 0.875rem;
 }
 
 @media (max-width: 768px) {
@@ -165,11 +165,11 @@
 
 .smart-input-wrapper input {
 	width: 100%;
-	padding: 10px 44px 10px 14px;
+	padding: 8px 36px 8px 12px;
 	border: 1px solid var(--line-strong);
 	border-radius: 9px;
-	font-size: 0.95rem;
-	min-height: 44px;
+	font-size: 0.875rem;
+	min-height: 36px;
 	background: var(--paper-soft);
 	color: var(--ink);
 	transition: all 0.2s;
@@ -353,13 +353,13 @@
 .patient-core-form-grid select,
 .patient-admin-form-grid input,
 .patient-admin-form-grid select {
-	min-height: 44px;
-	padding: 8px 12px;
-	border-radius: 9px;
+	min-height: 34px;
+	padding: 6px 10px;
+	border-radius: 8px;
 	border: 1px solid var(--line-strong);
 	background: var(--paper-soft);
 	color: var(--ink);
-	font-size: 0.95rem;
+	font-size: 0.875rem;
 	transition: all 0.2s;
 }
 
@@ -382,8 +382,8 @@
 }
 
 .patient-docs-collapsible summary {
-	padding: 12px 16px;
-	min-height: 48px;
+	padding: 8px 12px;
+	min-height: 38px;
 	background: var(--paper-soft);
 	color: var(--ink);
 	cursor: pointer;
@@ -391,7 +391,7 @@
 	align-items: center;
 	justify-content: space-between;
 	font-weight: 700;
-	font-size: 14px;
+	font-size: 13px;
 }
 
 .patient-docs-collapsible .settings-advanced-form {
@@ -581,11 +581,11 @@
 
 .create-patient-input {
 	width: 100%;
-	padding: 10px 14px;
+	padding: 8px 12px;
 	border: 1px solid var(--line-strong);
-	border-radius: 10px;
-	font-size: 0.95rem;
-	min-height: 44px;
+	border-radius: 9px;
+	font-size: 0.875rem;
+	min-height: 36px;
 	background: var(--paper-soft);
 	color: var(--ink);
 	transition: all 0.2s ease;
@@ -634,15 +634,17 @@
 }
 
 .create-patient-cancel-btn {
-	min-height: 44px;
-	padding: 0 1.25rem;
+	min-height: 36px;
+	padding: 0 1rem;
 	font-weight: 600;
+	font-size: 0.875rem;
 }
 
 .create-patient-submit-btn {
-	min-height: 44px;
-	padding: 0 1.5rem;
+	min-height: 36px;
+	padding: 0 1.25rem;
 	font-weight: 700;
+	font-size: 0.875rem;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;

@@ -200,7 +200,7 @@ export function AppointmentQuickActions({
 			targetStatus: "arrived",
 			label: "Пришел",
 			shortLabel: "Пришел",
-			icon: <UserCheck size={14} className="shrink-0 text-current" />,
+			icon: <UserCheck size={13} className="shrink-0 text-current" />,
 			title: `Отметить прибытие: ${patientName} в клинике (Клавиша 1)`,
 			activeClass: "bg-emerald-600 text-white font-bold shadow-2xs border-emerald-600",
 		},
@@ -209,7 +209,7 @@ export function AppointmentQuickActions({
 			targetStatus: "in_treatment",
 			label: "В кресле",
 			shortLabel: "В кресле",
-			icon: <CalendarCheck size={14} className="shrink-0 text-current" />,
+			icon: <CalendarCheck size={13} className="shrink-0 text-current" />,
 			title: `Отметить: ${patientName} в кресле у врача (Клавиша 2)`,
 			activeClass: "bg-[var(--teal-dark)] text-white font-bold shadow-2xs border-[var(--teal-dark)]",
 		},
@@ -218,7 +218,7 @@ export function AppointmentQuickActions({
 			targetStatus: "completed",
 			label: "Завершен",
 			shortLabel: "Готово",
-			icon: <CheckCircle2 size={14} className="shrink-0 text-current" />,
+			icon: <CheckCircle2 size={13} className="shrink-0 text-current" />,
 			title: `Завершить прием: ${patientName} (Клавиша 3)`,
 			activeClass: "bg-slate-700 dark:bg-slate-600 text-white font-bold shadow-2xs border-slate-700 dark:border-slate-600",
 		},
@@ -227,7 +227,7 @@ export function AppointmentQuickActions({
 			targetStatus: "confirmed",
 			label: "Подтвердить",
 			shortLabel: "Подтвержден",
-			icon: <PhoneCall size={14} className="shrink-0 text-current" />,
+			icon: <PhoneCall size={13} className="shrink-0 text-current" />,
 			title: `Подтвердить запись: звонок или SMS для ${patientName}`,
 			activeClass: "bg-violet-600 text-white font-bold shadow-2xs border-violet-600",
 		},
@@ -237,7 +237,7 @@ export function AppointmentQuickActions({
 			noteAppend: "Опоздание",
 			label: "Опоздал",
 			shortLabel: "Опоздал",
-			icon: <Clock size={14} className="shrink-0 text-current" />,
+			icon: <Clock size={13} className="shrink-0 text-current" />,
 			title: `Отметить опоздание: ${patientName} (Клавиша 4)`,
 			activeClass: "bg-amber-600 text-white font-bold shadow-2xs border-amber-600",
 		},
@@ -246,7 +246,7 @@ export function AppointmentQuickActions({
 			targetStatus: "no_show",
 			label: "Не пришел",
 			shortLabel: "Не явился",
-			icon: <UserX size={14} className="shrink-0 text-current" />,
+			icon: <UserX size={13} className="shrink-0 text-current" />,
 			title: `Неявка: ${patientName} не пришел на прием (Клавиша 5)`,
 			activeClass: "bg-rose-600 text-white font-bold shadow-2xs border-rose-600",
 		},
@@ -255,7 +255,7 @@ export function AppointmentQuickActions({
 			targetStatus: "cancelled",
 			label: "Отменен",
 			shortLabel: "Отменен",
-			icon: <XCircle size={14} className="shrink-0 text-current" />,
+			icon: <XCircle size={13} className="shrink-0 text-current" />,
 			title: `Отменить прием: ${patientName}`,
 			activeClass: "bg-slate-500 text-white font-bold shadow-2xs border-slate-500",
 		},
@@ -263,7 +263,7 @@ export function AppointmentQuickActions({
 
 	return (
 		<div
-			className={`appointment-quick-actions-bar flex flex-wrap items-center justify-between gap-1.5 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-inner min-w-0 max-w-full`}
+			className={`appointment-quick-actions-bar flex flex-wrap items-center justify-between gap-1 p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] min-w-0 max-w-full`}
 			data-testid={`appointment-quick-actions-${appointmentId}`}
 			role="toolbar"
 			aria-label={`Быстрые действия по статусу: ${patientName}`}
@@ -291,7 +291,7 @@ export function AppointmentQuickActions({
 								e.stopPropagation();
 								void handleAction(action.targetStatus, action.noteAppend);
 							}}
-							className={`quick-action-pill h-8 px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 ${
+							className={`quick-action-pill h-7.5 px-2 py-0.5 rounded-md border text-xs font-medium flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 ${
 								isCurrent
 									? action.activeClass
 									: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-soft)]"
@@ -311,7 +311,7 @@ export function AppointmentQuickActions({
 								</span>
 							)}
 							{isCurrent && (
-								<Check size={12} className="shrink-0 text-current ml-0.5 opacity-90" />
+								<Check size={11} className="shrink-0 text-current ml-0.5 opacity-90" />
 							)}
 						</button>
 					);
@@ -327,11 +327,11 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							handleSendWhatsApp("reminder_24h");
 						}}
-						className="quick-action-pill h-8 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-emerald-500/10 hover:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none select-none min-w-0"
+						className="quick-action-pill h-7.5 px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-emerald-500/10 hover:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center justify-center gap-1 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none select-none min-w-0"
 						title={`Отправить напоминание за 24ч с памяткой в WhatsApp (${patientName})`}
 						aria-label={`WhatsApp напоминание: ${patientName}`}
 					>
-						<MessageSquare size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+						<MessageSquare size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
 						{showLabels && (
 							<span className="break-words leading-none text-center">
 								{compact ? "WA" : "💬 WA: 24ч"}
@@ -345,11 +345,11 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							handleCopySmsReminder("reminder_24h");
 						}}
-						className="h-8 px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] text-[var(--ink)] text-xs font-medium transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+						className="h-7.5 px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] text-[var(--ink)] text-xs font-medium transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
 						title={`Скопировать текст напоминания (SMS/мессенджер) для ${patientName}`}
 						aria-label={`Скопировать SMS: ${patientName}`}
 					>
-						<Copy size={13} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />
+						<Copy size={12} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />
 						<span>SMS</span>
 					</button>
 
@@ -359,11 +359,11 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							handleSendWhatsApp("confirmation");
 						}}
-						className="h-8 px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-violet-500/10 text-violet-700 dark:text-violet-300 text-xs font-medium transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+						className="h-7.5 px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-violet-500/10 text-violet-700 dark:text-violet-300 text-xs font-medium transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
 						title={`Отправить подтверждение визита в WhatsApp (${patientName})`}
 						aria-label={`WhatsApp подтверждение: ${patientName}`}
 					>
-						<CheckCircle2 size={13} className="shrink-0 text-violet-500" />
+						<CheckCircle2 size={12} className="shrink-0 text-violet-500" />
 						<span className="hidden sm:inline">Подтвердить</span>
 					</button>
 
@@ -373,11 +373,11 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							handleSendWhatsApp("time_shift", 15);
 						}}
-						className="h-8 px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-medium transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+						className="h-7.5 px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-medium transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
 						title={`Отправить уведомление о переносе времени (+15 мин) в WhatsApp (${patientName})`}
 						aria-label={`WhatsApp перенос: ${patientName}`}
 					>
-						<Clock size={13} className="shrink-0 text-amber-500" />
+						<Clock size={12} className="shrink-0 text-amber-500" />
 						<span className="hidden sm:inline">Перенос</span>
 					</button>
 				</div>

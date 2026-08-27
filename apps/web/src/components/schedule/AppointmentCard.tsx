@@ -5,8 +5,7 @@ import type {
 	DentalSpecialty,
 	ScheduleSuggestion,
 } from "@dental/shared";
-import type { ChangeEvent } from "react";
-import { useCallback, useMemo, useState } from "react";
+import React, { type ChangeEvent, useCallback, useMemo, useState } from "react";
 import { AlertTriangle, Check, Clock, Copy, MessageSquare, Phone, User, Zap } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
@@ -512,7 +511,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					onFocus={() => setIsHoverPreviewOpen(true)}
 					onBlur={() => setIsHoverPreviewOpen(false)}
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
-					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 max-w-full relative ${
+					className={`appointment-card mode-fit-card glass-panel rounded-xl p-3 mb-2 shadow-xs transition-all focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 max-w-full relative ${
 						isCito
 							? "border-rose-500 ring-2 ring-rose-500/40 bg-rose-500/5"
 							: displayStatus === "confirmed"
@@ -528,7 +527,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					style={{
 						display: "flex",
 						flexDirection: "column",
-						gap: "8px",
+						gap: "6px",
 						background: "var(--paper)",
 						color: "var(--ink)",
 						minWidth: 0,
@@ -836,9 +835,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					) : null}
 
 					{/* Кнопки быстрого сдвига времени при опозданиях (+15 мин, +30 мин, +45 мин) */}
-					<div className="appointment-delay-shift-bar flex items-center justify-between gap-2 p-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs flex-wrap">
-						<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1.5 shrink-0 select-none text-xs">
-							<Clock size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+					<div className="appointment-delay-shift-bar flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs flex-wrap">
+						<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1 shrink-0 select-none text-[11px]">
+							<Clock size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
 							Пациент опаздывает:
 						</span>
 						<div className="flex items-center gap-1 flex-wrap">
@@ -851,7 +850,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										e.stopPropagation();
 										void handleShiftAppointmentTime(m);
 									}}
-									className="h-7.5 px-2.5 py-1 rounded-lg border border-amber-500/40 bg-[var(--paper,#ffffff)] dark:bg-amber-950/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 shadow-2xs select-none active:scale-95 flex items-center justify-center"
+									className="h-6.5 px-2 py-0.5 rounded-md border border-amber-500/30 bg-[var(--paper,#ffffff)] dark:bg-amber-950/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-40 shadow-2xs select-none active:scale-95 flex items-center justify-center"
 									title={`Сдвинуть время визита на +${m} минут позже`}
 									aria-label={`Сдвинуть запись на +${m} минут`}
 								>
@@ -883,9 +882,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						disabled={isQuickStatusUpdating}
 					/>
 
-					<div className="appointment-card-footer flex flex-wrap justify-end gap-1.5 mt-1.5 pt-1.5 border-t border-[var(--line)]">
+					<div className="appointment-card-footer flex flex-wrap justify-end gap-1 mt-1 pt-1 border-t border-[var(--line)]">
 						<button
-							className="secondary-button h-8 px-3 py-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+							className="secondary-button h-7.5 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none"
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
@@ -914,7 +913,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</button>
 
 						<button
-							className="secondary-button appointment-repeat-button h-8 px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
+							className="secondary-button appointment-repeat-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
 							type="button"
 							onClick={() => repeatAppointment(appointment)}
 							aria-label={`Повторить запись: ${appointmentPatientName}. Форма новой записи откроется заполненной, останется выбрать время`}
@@ -924,7 +923,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</button>
 						{copyAppointmentToBuffer ? (
 							<button
-								className="secondary-button appointment-buffer-button h-8 px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
+								className="secondary-button appointment-buffer-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
 								type="button"
 								onClick={() => copyAppointmentToBuffer(appointment)}
 								aria-label={`В буфер: ${appointmentPatientName}`}
@@ -934,7 +933,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							</button>
 						) : null}
 						<button
-							className="secondary-button appointment-edit-button h-8 px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
+							className="secondary-button appointment-edit-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
 							type="button"
 							onClick={() => openAppointmentEditor(appointment)}
 							aria-expanded={appointmentEditing}
@@ -1377,7 +1376,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 														: "Изменений нет"}
 									</span>
 									<button
-										className="secondary-button min-h-[44px] px-4 py-2 text-xs font-semibold cursor-pointer shrink-0"
+										className="secondary-button h-8 px-4 py-1 text-xs font-semibold cursor-pointer shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors"
 										type="button"
 										disabled={appointmentSaveState === "saving"}
 										aria-busy={appointmentSaveState === "saving" || undefined}
@@ -1396,7 +1395,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										Закрыть
 									</button>
 									<button
-										className="primary-button min-h-[44px] px-5 py-2 text-xs font-bold cursor-pointer shrink-0"
+										className="primary-button h-8 px-4.5 py-1 text-xs font-bold cursor-pointer shrink-0 rounded-lg bg-[var(--teal-dark)] text-white hover:brightness-110 active:scale-95 transition-all shadow-2xs border border-transparent"
 										type="button"
 										onClick={() => void saveAppointmentSchedule(appointment.id)}
 										disabled={

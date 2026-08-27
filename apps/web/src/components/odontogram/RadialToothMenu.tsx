@@ -622,14 +622,14 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 					>
 						{isPrimaryTooth(toothNumber) ? (
 							<>
-								<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1">Резорбция:</span>
+								<span className="text-[11px] uppercase font-black text-purple-600 dark:text-purple-400 px-1">Резорбция:</span>
 								<button
 									type="button"
 									onClick={() => {
 										onSelectState("Healthy", undefined, "resorption_1");
 										onClose();
 									}}
-									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
 									title="Физиологическая резорбция I степени (рассасывание верхушки до 1/3 корня)"
 								>
 									[Рез I]
@@ -640,7 +640,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onSelectState("Healthy", undefined, "resorption_2");
 										onClose();
 									}}
-									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
 									title="Физиологическая резорбция II степени (рассасывание до 1/2 корня)"
 								>
 									[Рез II]
@@ -651,7 +651,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onSelectState("Healthy", undefined, "resorption_3");
 										onClose();
 									}}
-									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
 									title="Физиологическая резорбция III степени (полное рассасывание корней / подвижность)"
 								>
 									[Рез III]
@@ -662,7 +662,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onSelectState("Missing", undefined, "exfoliation");
 										onClose();
 									}}
-									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation"
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation"
 									title="Физиологическая смена / Удаление молочного зуба"
 								>
 									[Смена 0]
@@ -670,14 +670,14 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 							</>
 						) : (
 							<>
-								<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
+								<span className="text-[11px] uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
 								<button
 									type="button"
 									onClick={() => {
 										onSelectState("Caries", ["M", "O", "D"]);
 										onClose();
 									}}
-									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
 									title="Медиально-окклюзионно-дистальная полость (II класс)"
 								>
 									[MOD]
@@ -688,7 +688,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onSelectState("Caries", ["M", "O"]);
 										onClose();
 									}}
-									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
 									title="Медиально-окклюзионная полость (II класс)"
 								>
 									[MO]
@@ -699,7 +699,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onSelectState("Caries", ["O", "D"]);
 										onClose();
 									}}
-									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
 									title="Окклюзионно-дистальная полость (II класс)"
 								>
 									[OD]
@@ -710,7 +710,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										onSelectState("Caries", ["V"]);
 										onClose();
 									}}
-									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
 									title="Пришеечная полость (V класс)"
 								>
 									[V класс]
@@ -722,7 +722,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 					{/* IROPZ > 0.6 Smart Orthopedic Warning Banner */}
 					{(Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") && (
 						<div
-							className="absolute flex items-center gap-2 pointer-events-auto bg-amber-500/20 text-amber-900 dark:text-amber-200 px-3.5 py-1.5 rounded-full border border-amber-500/40 shadow-xl z-20 text-xs font-bold whitespace-nowrap"
+							className="absolute flex items-center gap-2 pointer-events-auto bg-amber-500/20 text-amber-900 dark:text-amber-200 px-3 py-1 rounded-full border border-amber-500/40 shadow-xl z-20 text-xs font-bold whitespace-nowrap"
 							style={{
 								left: "50%",
 								top: `calc(50% + ${radius + 10}px)`,
@@ -737,10 +737,10 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 					{/* Quick Action Footer Controls - centered below the radial disc */}
 					{Boolean(onOpenEndo || onAddToInvoice) && (
 						<div
-							className="absolute flex items-center gap-3 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-4 py-2 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
+							className="absolute flex items-center gap-2 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-3 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
 							style={{
 								left: "50%",
-								top: `calc(50% + ${radius + 56}px)`,
+								top: `calc(50% + ${radius + 48}px)`,
 								transform: "translate(-50%, 0)",
 							}}
 						>
@@ -754,12 +754,12 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									style={{
 										display: "inline-flex",
 										alignItems: "center",
-										gap: "8px",
+										gap: "6px",
 										background: "transparent",
 									}}
-									className="min-h-[48px] min-w-[48px] text-[14px] font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
+									className="min-h-[32px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
-									<Wrench size={18} />
+									<Wrench size={14} />
 									<span>Журнал каналов</span>
 								</button>
 							)}
@@ -773,12 +773,12 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									style={{
 										display: "inline-flex",
 										alignItems: "center",
-										gap: "8px",
+										gap: "6px",
 										background: "transparent",
 									}}
-									className="min-h-[48px] min-w-[48px] text-[14px] font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
+									className="min-h-[32px] text-xs font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
-									<Coins size={18} />
+									<Coins size={14} />
 									<span>В смету</span>
 								</button>
 							)}

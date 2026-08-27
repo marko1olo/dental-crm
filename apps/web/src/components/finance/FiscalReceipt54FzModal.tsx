@@ -1803,153 +1803,164 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 					{/* TAB: 1C:ENTERPRISE COMMERCEML XML EXPORT */}
 					{activeTab === "oneC" && (
-						<div className="space-y-6" data-testid="1c-enterprise-export-panel">
+						<div className="space-y-4" data-testid="1c-enterprise-export-panel">
 							{/* Statutory Badges Bar */}
-							<div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
-								<div className="flex flex-wrap items-center justify-between gap-3">
-									<div className="flex items-center gap-2.5">
-										<div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300">
-											<FileCode2 size={20} />
-										</div>
-										<div>
-											<h4 className="font-extrabold text-sm text-[var(--ink,#0f172a)] flex items-center gap-2">
-												<span>1С:Предприятие 8.3 / Бухгалтерия & УТ</span>
-												<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">
-													CommerceML 2.09
-												</span>
-											</h4>
-											<p className="text-xs text-[var(--muted,#64748b)]">
-												Выгрузка электронных первичных документов и счетов в учетную систему 1С с привязкой номенклатуры 804н и освобождением от НДС
-											</p>
-										</div>
+							<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2.5">
+								<div className="flex items-center gap-2">
+									<div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300">
+										<FileCode2 size={16} />
 									</div>
+									<div>
+										<h4 className="font-extrabold text-xs text-[var(--ink,#0f172a)] flex items-center gap-2">
+											<span>1С:Предприятие 8.3 / Бухгалтерия & УТ</span>
+											<span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">
+												CommerceML 2.09
+											</span>
+										</h4>
+										<p className="text-[11px] text-[var(--muted,#64748b)]">
+											Выгрузка электронных первичных документов и счетов в учетную систему 1С с привязкой номенклатуры 804н и освобождением от НДС
+										</p>
+									</div>
+								</div>
 
-									{/* Badges */}
-									<div className="flex items-center gap-2 flex-wrap">
-										<span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
-											<CheckCircle2 size={13} />
-											<span>пп. 2 п. 2 ст. 149 НК РФ (Без НДС)</span>
-										</span>
-										<span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-											ОКЕИ 796 (Шт.)
-										</span>
-										<span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-											КНД 1151156 / 804н
-										</span>
-									</div>
+								{/* Badges */}
+								<div className="flex items-center gap-1.5 flex-wrap text-xs">
+									<span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
+										<CheckCircle2 size={12} />
+										<span>пп. 2 п. 2 ст. 149 НК РФ (Без НДС)</span>
+									</span>
+									<span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+										ОКЕИ 796 (Шт.)
+									</span>
+									<span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+										КНД 1151156 / 804н
+									</span>
 								</div>
 							</div>
 
-							{/* Document Configuration Parameters */}
-							<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-4">
+							{/* Document Configuration Parameters - Compact 2-Column Grid with h-8 inputs */}
+							<div className="p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2.5">
 								<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-									<Building2 size={16} className="text-amber-600 dark:text-amber-400" />
+									<Building2 size={14} className="text-amber-600 dark:text-amber-400" />
 									Параметры документа выгрузки в 1С:
 								</h4>
 
-								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-									<div>
-										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-											Тип документа 1С:
-										</label>
-										<select
-											value={oneCDocType}
-											onChange={(e) => setOneCDocType(e.target.value as OneCDocumentType)}
-											className="w-full min-h-[44px] px-3 py-2 text-xs font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] cursor-pointer"
-										>
-											<option value="act">Реализация товаров и услуг (Акт 804н)</option>
-											<option value="invoice">Заказ покупателя (Счет на оплату)</option>
-											<option value="cash_order">Приходный кассовый ордер (ПКО)</option>
-											<option value="acquiring_payment">Оплата картой (Эквайринг)</option>
-										</select>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+									{/* Column 1: Document Requisites */}
+									<div className="space-y-2">
+										<div className="grid grid-cols-2 gap-2">
+											<div>
+												<label className="block text-[11px] font-medium text-[var(--muted,#64748b)] mb-0.5">
+													Тип документа 1С:
+												</label>
+												<select
+													value={oneCDocType}
+													onChange={(e) => setOneCDocType(e.target.value as OneCDocumentType)}
+													className="w-full h-8 px-2 text-xs font-bold rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] cursor-pointer"
+												>
+													<option value="act">Реализация товаров и услуг (Акт 804н)</option>
+													<option value="invoice">Заказ покупателя (Счет на оплату)</option>
+													<option value="cash_order">Приходный кассовый ордер (ПКО)</option>
+													<option value="acquiring_payment">Оплата картой (Эквайринг)</option>
+												</select>
+											</div>
+
+											<div>
+												<label className="block text-[11px] font-medium text-[var(--muted,#64748b)] mb-0.5">
+													Номер документа:
+												</label>
+												<input
+													type="text"
+													value={actNumber}
+													onChange={(e) => setActNumber(e.target.value)}
+													className="w-full h-8 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+												/>
+											</div>
+										</div>
+
+										<div className="grid grid-cols-2 gap-2">
+											<div>
+												<label className="block text-[11px] font-medium text-[var(--muted,#64748b)] mb-0.5">
+													Дата проведения:
+												</label>
+												<input
+													type="date"
+													value={oneCDocDate}
+													onChange={(e) => setOneCDocDate(e.target.value)}
+													className="w-full h-8 px-2.5 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+												/>
+											</div>
+
+											<div>
+												<label className="block text-[11px] font-medium text-[var(--muted,#64748b)] mb-0.5">
+													Договор пациента:
+												</label>
+												<input
+													type="text"
+													value={contractNumber}
+													onChange={(e) => setContractNumber(e.target.value)}
+													className="w-full h-8 px-2.5 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+												/>
+											</div>
+										</div>
 									</div>
 
-									<div>
-										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-											Номер документа:
-										</label>
-										<input
-											type="text"
-											value={actNumber}
-											onChange={(e) => setActNumber(e.target.value)}
-											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-										/>
-									</div>
+									{/* Column 2: Parties Requisites */}
+									<div className="space-y-2">
+										<div className="grid grid-cols-2 gap-2">
+											<div>
+												<label className="block text-[11px] font-medium text-[var(--muted,#64748b)] mb-0.5">
+													ИНН Клиники:
+												</label>
+												<input
+													type="text"
+													value={oneCClinicInn}
+													onChange={(e) => setOneCClinicInn(e.target.value)}
+													className="w-full h-8 px-2.5 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+												/>
+											</div>
 
-									<div>
-										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-											Дата проведения:
-										</label>
-										<input
-											type="date"
-											value={oneCDocDate}
-											onChange={(e) => setOneCDocDate(e.target.value)}
-											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-										/>
-									</div>
+											<div>
+												<label className="block text-[11px] font-medium text-[var(--muted,#64748b)] mb-0.5">
+													КПП Клиники:
+												</label>
+												<input
+													type="text"
+													value={oneCClinicKpp}
+													onChange={(e) => setOneCClinicKpp(e.target.value)}
+													className="w-full h-8 px-2.5 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+												/>
+											</div>
+										</div>
 
-									<div>
-										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-											Договор пациента:
-										</label>
-										<input
-											type="text"
-											value={contractNumber}
-											onChange={(e) => setContractNumber(e.target.value)}
-											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-										/>
-									</div>
-								</div>
+										<div className="grid grid-cols-2 gap-2">
+											<div>
+												<label className="block text-[11px] font-medium text-[var(--muted,#64748b)] mb-0.5">
+													ИНН Пациента (опционально):
+												</label>
+												<input
+													type="text"
+													placeholder="770123456789"
+													value={oneCPatientInn}
+													onChange={(e) => setOneCPatientInn(e.target.value)}
+													className="w-full h-8 px-2.5 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+												/>
+											</div>
 
-								{/* Parties Details Row */}
-								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-[var(--border,#cbd5e1)]">
-									<div>
-										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-											ИНН Клиники:
-										</label>
-										<input
-											type="text"
-											value={oneCClinicInn}
-											onChange={(e) => setOneCClinicInn(e.target.value)}
-											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-										/>
-									</div>
-
-									<div>
-										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-											КПП Клиники:
-										</label>
-										<input
-											type="text"
-											value={oneCClinicKpp}
-											onChange={(e) => setOneCClinicKpp(e.target.value)}
-											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-										/>
-									</div>
-
-									<div>
-										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-											ИНН Пациента (опционально):
-										</label>
-										<input
-											type="text"
-											placeholder="770123456789"
-											value={oneCPatientInn}
-											onChange={(e) => setOneCPatientInn(e.target.value)}
-											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-										/>
-									</div>
-
-									<div>
-										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-											Лечащий врач:
-										</label>
-										<input
-											type="text"
-											value={cashierFullName}
-											readOnly
-											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] cursor-not-allowed"
-										/>
+											<div>
+												<label className="block text-[11px] font-medium text-[var(--muted,#64748b)] mb-0.5">
+													Адрес / Врач:
+												</label>
+												<input
+													type="text"
+													value={oneCPatientAddress}
+													onChange={(e) => setOneCPatientAddress(e.target.value)}
+													placeholder="г. Москва, ул. Клиническая..."
+													className="w-full h-8 px-2.5 text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] truncate"
+													title={`Адрес: ${oneCPatientAddress} | Врач: ${cashierFullName}`}
+												/>
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -1983,7 +1994,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										</thead>
 										<tbody>
 											{activeItems.map((it, idx) => {
-												const qty = it.quantity || 1;
+												const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
 												const sum = it.priceRub * qty - (it.discountRub || 0);
 												const discPercent = it.discountRub ? Math.round((it.discountRub / (it.priceRub * qty)) * 100) : 0;
 												return (
@@ -2073,127 +2084,236 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 					)}
 				</div>
 
-				{/* Fixed Modal Footer (Sticky Bottom Bar) */}
-				{activeTab === "oneC" && (
-					<div className="shrink-0 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
-						<div className="flex items-center gap-2 flex-wrap">
-							<button
-								type="button"
-								onClick={() => {
-									navigator.clipboard.writeText(oneCXmlPreview);
-									showToast("XML-код 1С:Предприятие скопирован в буфер обмена!", "success", 2500);
-								}}
-								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
-							>
-								<Copy size={16} />
-								<span>Копировать XML</span>
-							</button>
+				{/* Fixed Modal Footer (Sticky Bottom Bar across all tabs) */}
+				<div className="shrink-0 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+					{activeTab === "payment" && (
+						<>
+							<div className="text-xs text-[var(--muted,#64748b)] flex items-center gap-2">
+								<span>К оплате: <strong className="text-sm font-mono text-[var(--ink,#0f172a)] font-bold">{formatMoneyRu(totalSumRub)}</strong></span>
+								<span>·</span>
+								<span className={allocation.isFullyAllocated ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-amber-600 dark:text-amber-400 font-bold"}>
+									{allocation.isFullyAllocated ? "✓ Сумма распределена" : `Остаток: ${formatMoneyRu(remainingRub)}`}
+								</span>
+							</div>
+							<div className="flex items-center gap-2.5">
+								<button
+									type="button"
+									onClick={onClose}
+									className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+								>
+									Закрыть
+								</button>
+								<button
+									type="button"
+									onClick={handleExecuteFiscalization}
+									disabled={!allocation.isFullyAllocated || isFiscalizing}
+									className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
+								>
+									<ShieldCheck size={16} />
+									<span>{isFiscalizing ? "Фискализация..." : `Пробить чек на ${formatMoneyRu(totalSumRub)}`}</span>
+								</button>
+							</div>
+						</>
+					)}
 
-							<button
-								type="button"
-								onClick={() => {
-									const summaryText = `ВЫГРУЗКА В 1С:ПРЕДПРИЯТИЕ 8.3\nДокумент: ${oneCDocType === "act" ? "Акт выполненных работ" : "Счет на оплату"} № ${actNumber} от ${oneCDocDate}\nКлиника: ${clinicName} (ИНН ${oneCClinicInn} / КПП ${oneCClinicKpp})\nПациент: ${patientName} (Договор ${contractNumber})\nПозиций: ${activeItems.length}\nСумма: ${formatMoneyRu(totalSumRub)} (Без НДС - пп. 2 п. 2 ст. 149 НК РФ)`;
-									navigator.clipboard.writeText(summaryText);
-									showToast("Сводка для бухгалтера скопирована!", "success", 2500);
-								}}
-								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
-							>
-								<FileText size={16} />
-								<span>Сводка для бухгалтерии</span>
-							</button>
-						</div>
+					{activeTab === "oneC" && (
+						<>
+							<div className="flex items-center gap-2 flex-wrap">
+								<button
+									type="button"
+									onClick={() => {
+										navigator.clipboard.writeText(oneCXmlPreview);
+										showToast("XML-код 1С:Предприятие скопирован в буфер обмена!", "success", 2500);
+									}}
+									className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+								>
+									<Copy size={14} />
+									<span>Копировать XML</span>
+								</button>
 
-						<div className="flex items-center gap-2.5">
-							<button
-								type="button"
-								onClick={onClose}
-								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-							>
-								Закрыть
-							</button>
-							<OneCExportButton
-								actNumber={actNumber}
-								documentDate={oneCDocDate}
-								docType={oneCDocType}
-								patientName={patientName}
-								patientId={patientId}
-								patientPhone={customerContact || patientPhone}
-								patientAddress={oneCPatientAddress}
-								doctorName={cashierFullName}
-								clinicName={clinicName}
-								clinicInn={oneCClinicInn}
-								clinicKpp={oneCClinicKpp}
-								items={activeItems}
-								totalRub={totalSumRub}
-								contractNumber={contractNumber}
-								contractDate={oneCDocDate}
-								variant="primary"
-								label="⚡ Экспорт в 1С (XML)"
-								className="min-h-[44px] px-6 py-2 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white"
-							/>
-						</div>
-					</div>
-				)}
+								<button
+									type="button"
+									onClick={() => {
+										const summaryText = `ВЫГРУЗКА В 1С:ПРЕДПРИЯТИЕ 8.3\nДокумент: ${oneCDocType === "act" ? "Акт выполненных работ" : "Счет на оплату"} № ${actNumber} от ${oneCDocDate}\nКлиника: ${clinicName} (ИНН ${oneCClinicInn} / КПП ${oneCClinicKpp})\nПациент: ${patientName} (Договор ${contractNumber})\nПозиций: ${activeItems.length}\nСумма: ${formatMoneyRu(totalSumRub)} (Без НДС - пп. 2 п. 2 ст. 149 НК РФ)`;
+										navigator.clipboard.writeText(summaryText);
+										showToast("Сводка для бухгалтера скопирована!", "success", 2500);
+									}}
+									className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+								>
+									<FileText size={14} />
+									<span>Сводка для бухгалтерии</span>
+								</button>
+							</div>
 
-				{activeTab === "act" && (
-					<div className="shrink-0 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
-						<button
-							type="button"
-							onClick={handleCopyActData}
-							className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
-						>
-							<Copy size={16} />
-							<span>Скопировать текст Акта</span>
-						</button>
-						<div className="flex items-center gap-2.5">
-							<button
-								type="button"
-								onClick={onClose}
-								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-							>
-								Закрыть
-							</button>
-							<button
-								type="button"
-								onClick={() => window.print()}
-								className="min-h-[44px] px-6 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
-							>
-								<Printer size={16} />
-								<span>Печать Акта (804н)</span>
-							</button>
-						</div>
-					</div>
-				)}
+							<div className="flex items-center gap-2.5">
+								<button
+									type="button"
+									onClick={onClose}
+									className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+								>
+									Закрыть
+								</button>
+								<OneCExportButton
+									actNumber={actNumber}
+									documentDate={oneCDocDate}
+									docType={oneCDocType}
+									patientName={patientName}
+									patientId={patientId}
+									patientPhone={customerContact || patientPhone}
+									patientAddress={oneCPatientAddress}
+									doctorName={cashierFullName}
+									clinicName={clinicName}
+									clinicInn={oneCClinicInn}
+									clinicKpp={oneCClinicKpp}
+									items={activeItems}
+									totalRub={totalSumRub}
+									contractNumber={contractNumber}
+									contractDate={oneCDocDate}
+									variant="primary"
+									label="⚡ Экспорт в 1С (XML)"
+									className="h-9 px-5 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white"
+								/>
+							</div>
+						</>
+					)}
 
-				{activeTab === "certificate" && (
-					<div className="shrink-0 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
-						<button
-							type="button"
-							onClick={handleCopyCertData}
-							className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
-						>
-							<Copy size={16} />
-							<span>Скопировать данные справки</span>
-						</button>
-						<div className="flex items-center gap-2.5">
+					{activeTab === "act" && (
+						<>
 							<button
 								type="button"
-								onClick={onClose}
-								className="min-h-[44px] px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+								onClick={handleCopyActData}
+								className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 							>
-								Закрыть
+								<Copy size={14} />
+								<span>Скопировать текст Акта</span>
 							</button>
+							<div className="flex items-center gap-2.5">
+								<button
+									type="button"
+									onClick={onClose}
+									className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+								>
+									Закрыть
+								</button>
+								<button
+									type="button"
+									onClick={() => window.print()}
+									className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
+								>
+									<Printer size={15} />
+									<span>Печать Акта (804н)</span>
+								</button>
+							</div>
+						</>
+					)}
+
+					{activeTab === "certificate" && (
+						<>
 							<button
 								type="button"
-								onClick={() => window.print()}
-								className="min-h-[44px] px-6 py-2 rounded-xl font-bold text-xs sm:text-sm bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
+								onClick={handleCopyCertData}
+								className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 							>
-								<Printer size={16} />
-								<span>Печать справки КНД 1151156</span>
+								<Copy size={14} />
+								<span>Скопировать данные справки</span>
 							</button>
-						</div>
-					</div>
-				)}
+							<div className="flex items-center gap-2.5">
+								<button
+									type="button"
+									onClick={onClose}
+									className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+								>
+									Закрыть
+								</button>
+								<button
+									type="button"
+									onClick={() => window.print()}
+									className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
+								>
+									<Printer size={15} />
+									<span>Печать справки КНД 1151156</span>
+								</button>
+							</div>
+						</>
+					)}
+
+					{activeTab === "refund" && (
+						<>
+							<div className="text-xs text-[var(--muted,#64748b)]">
+								К возврату: <strong className="text-sm font-mono text-rose-600 dark:text-rose-400 font-bold">{formatMoneyRu(refundFiscalData.totalRub)}</strong>
+							</div>
+							<div className="flex items-center gap-2.5">
+								<button
+									type="button"
+									onClick={onClose}
+									className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+								>
+									Закрыть
+								</button>
+								<button
+									type="button"
+									onClick={handleExecuteFiscalization}
+									disabled={refundFiscalData.totalRub <= 0 || isFiscalizing}
+									className="h-9 px-5 rounded-xl font-bold text-xs bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
+								>
+									<RotateCcw size={15} />
+									<span>{isFiscalizing ? "Фискализация..." : `Пробить чек возврата на ${formatMoneyRu(refundFiscalData.totalRub)}`}</span>
+								</button>
+							</div>
+						</>
+					)}
+
+					{activeTab === "correction" && (
+						<>
+							<div className="text-xs text-[var(--muted,#64748b)]">
+								Сумма коррекции: <strong className="text-sm font-mono text-amber-600 dark:text-amber-400 font-bold">{formatMoneyRu(totalSumRub)}</strong>
+							</div>
+							<div className="flex items-center gap-2.5">
+								<button
+									type="button"
+									onClick={onClose}
+									className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+								>
+									Закрыть
+								</button>
+								<button
+									type="button"
+									onClick={handleExecuteFiscalization}
+									disabled={isFiscalizing}
+									className="h-9 px-5 rounded-xl font-bold text-xs bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
+								>
+									<ShieldCheck size={15} />
+									<span>{isFiscalizing ? "Фискализация..." : `Пробить чек коррекции на ${formatMoneyRu(totalSumRub)}`}</span>
+								</button>
+							</div>
+						</>
+					)}
+
+					{activeTab === "preview" && (
+						<>
+							<div className="text-xs text-[var(--muted,#64748b)]">
+								Чек 54-ФЗ (ФФД 1.2) · <strong className="font-mono text-[var(--ink,#0f172a)]">{fiscalReceipt.receiptNumber}</strong>
+							</div>
+							<div className="flex items-center gap-2.5">
+								<button
+									type="button"
+									onClick={onClose}
+									className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+								>
+									Закрыть
+								</button>
+								<button
+									type="button"
+									onClick={() => window.print()}
+									className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
+								>
+									<Printer size={15} />
+									<span>Печать чека</span>
+								</button>
+							</div>
+						</>
+					)}
+				</div>
 			</div>
 		</div>
 	);

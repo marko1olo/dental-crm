@@ -143,14 +143,14 @@
 .dente-diagnostic-tab-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
-	min-height: 44px;
-	padding: 8px 16px;
+	gap: 6px;
+	min-height: 32px;
+	padding: 4px 12px;
 	border-radius: 6px;
 	border: none;
 	background: transparent;
 	color: var(--muted, #64748b);
-	font-size: 13px;
+	font-size: 12.5px;
 	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.15s ease;
@@ -174,7 +174,7 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 10px;
-	padding: 12px 20px;
+	padding: 8px 16px;
 	background: var(--paper-strong, #ffffff);
 	border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
 }
@@ -185,8 +185,8 @@
 	gap: 8px;
 	flex: 1;
 	min-width: 200px;
-	min-height: 44px;
-	padding: 0 12px;
+	min-height: 32px;
+	padding: 0 10px;
 	border-radius: 8px;
 	background: var(--paper, #f1f5f9);
 	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
@@ -196,7 +196,7 @@
 	flex: 1;
 	border: none;
 	background: transparent;
-	font-size: 13px;
+	font-size: 12.5px;
 	color: var(--ink, #0f172a);
 	outline: none;
 }
@@ -208,13 +208,13 @@
 }
 
 .dente-diagnostic-select {
-	min-height: 44px;
-	padding: 0 12px;
+	min-height: 32px;
+	padding: 0 10px;
 	border-radius: 8px;
 	background: var(--paper, #f1f5f9);
 	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
 	color: var(--ink, #0f172a);
-	font-size: 13px;
+	font-size: 12.5px;
 	outline: none;
 	cursor: pointer;
 }
@@ -223,16 +223,25 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	min-height: 44px;
-	padding: 8px 14px;
+	min-height: 32px;
+	padding: 4px 12px;
 	border-radius: 8px;
 	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
 	background: var(--paper, #f1f5f9);
 	color: var(--ink, #0f172a);
-	font-size: 13px;
-	font-weight: 500;
+	font-size: 12.5px;
+	font-weight: 600;
 	cursor: pointer;
 	transition: background 0.15s ease;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.dente-diagnostic-tab-btn,
+	.dente-diagnostic-search-box,
+	.dente-diagnostic-select,
+	.dente-diagnostic-action-btn {
+		min-height: 44px;
+	}
 }
 
 .dente-diagnostic-action-btn:hover {

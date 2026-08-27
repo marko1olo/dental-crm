@@ -117,28 +117,28 @@ export function ScheduleFilterStrip({
 						<div className="schedule-date-stepper inline-flex items-center gap-1">
 							<button
 								type="button"
-								className="secondary-button schedule-day-step-prev h-8.5 w-8.5 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
+								className="secondary-button schedule-day-step-prev h-8 w-8 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
 								onClick={() => stepScheduleDay(-1)}
 								aria-label="Показать предыдущий день"
 								title="День назад"
 							>
-								<ChevronLeft size={16} aria-hidden="true" />
+								<ChevronLeft size={15} aria-hidden="true" />
 							</button>
 							<input
 								type="date"
 								aria-label="Фильтр расписания по дате"
 								value={scheduleDateFilter}
 								onChange={(event) => setScheduleDateFilter(event.target.value)}
-								className="schedule-date-input h-8.5 px-2.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all"
+								className="schedule-date-input h-8 px-2 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all"
 							/>
 							<button
 								type="button"
-								className="secondary-button schedule-day-step-next h-8.5 w-8.5 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
+								className="secondary-button schedule-day-step-next h-8 w-8 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
 								onClick={() => stepScheduleDay(1)}
 								aria-label="Показать следующий день"
 								title="День вперёд"
 							>
-								<ChevronRight size={16} aria-hidden="true" />
+								<ChevronRight size={15} aria-hidden="true" />
 							</button>
 						</div>
 
@@ -147,9 +147,9 @@ export function ScheduleFilterStrip({
 							<button
 								type="button"
 								onClick={() => setScheduleDateFilter(todayIso)}
-								className={`h-8.5 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
 									scheduleDateFilter === todayIso
-										? "bg-[var(--teal-dark)] text-white shadow-2xs"
+										? "bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
 										: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
 								}`}
 								title="Расписание на сегодня"
@@ -159,9 +159,9 @@ export function ScheduleFilterStrip({
 							<button
 								type="button"
 								onClick={() => setScheduleDateFilter(tomorrowIso)}
-								className={`h-8.5 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
 									scheduleDateFilter === tomorrowIso
-										? "bg-[var(--teal-dark)] text-white shadow-2xs"
+										? "bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
 										: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
 								}`}
 								title="Расписание на завтра"
@@ -177,7 +177,7 @@ export function ScheduleFilterStrip({
 										setScheduleViewMode("timeline");
 									}
 								}}
-								className="h-8.5 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1.5"
+								className="h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1.5"
 								title="Обзор на всю неделю"
 							>
 								<span>Вся неделя</span>
@@ -189,7 +189,7 @@ export function ScheduleFilterStrip({
 							<button
 								type="button"
 								onClick={() => handleRepeatBookingOffset(7)}
-								className="h-8.5 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+								className="h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
 								title="1-Клик: Быстрая повторная запись через 7 дней у того же врача"
 								aria-label="Записать через 7 дней"
 							>
@@ -199,7 +199,7 @@ export function ScheduleFilterStrip({
 							<button
 								type="button"
 								onClick={() => handleRepeatBookingOffset(14)}
-								className="h-8.5 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+								className="h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
 								title="1-Клик: Быстрая повторная запись через 14 дней у того же врача"
 								aria-label="Записать через 14 дней"
 							>
@@ -209,7 +209,7 @@ export function ScheduleFilterStrip({
 							<button
 								type="button"
 								onClick={() => handleRepeatBookingOffset(30)}
-								className="h-8.5 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+								className="h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
 								title="1-Клик: Быстрая повторная запись через 1 месяц (30 дней) у того же врача"
 								aria-label="Записать через 1 месяц"
 							>
@@ -226,7 +226,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={onOpenPatientSearch}
-							className="secondary-button h-8.5 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] hover:text-[var(--teal,var(--brand-primary))] shrink-0"
+							className="secondary-button h-8 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] hover:text-[var(--teal,var(--brand-primary))] shrink-0"
 							title="Мгновенный поиск пациента по телефону или фамилии (Ctrl+K)"
 							aria-label="Поиск пациента"
 						>
@@ -238,8 +238,8 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={onToggleSmartAi}
-							className={`secondary-button h-8.5 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] ${
-								isSmartAiOpen ? "border-[var(--teal,var(--brand-primary))] text-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))]" : ""
+							className={`secondary-button h-8 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] ${
+								isSmartAiOpen ? "border-[var(--teal-dark)] text-[var(--teal-dark)] bg-[var(--teal-soft,var(--paper-soft))]" : ""
 							}`}
 							title="Голосовой и текстовый ИИ ввод записи"
 						>
@@ -250,7 +250,7 @@ export function ScheduleFilterStrip({
 
 					{setScheduleViewMode && (
 						<div
-							className="flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)]"
+							className="h-8 flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)]"
 							role="tablist"
 							aria-label="Вид расписания"
 						>
@@ -291,7 +291,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={onOpenDoctorFreeSlots}
-							className="secondary-button h-8.5 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] shrink-0"
+							className="secondary-button h-8 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] shrink-0"
 							title="Поиск свободных окон врача на 7–14 дней"
 						>
 							<Search size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -303,7 +303,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={onOpenTomorrowReminders}
-							className="secondary-button h-8.5 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] shrink-0 shadow-2xs"
+							className="secondary-button h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] shrink-0 shadow-2xs"
 							title="1-клик массовая рассылка напоминаний и инструкций пациентам на завтра"
 							aria-label="Напомнить всем на завтра: рассылка WhatsApp и СМС"
 						>
@@ -317,11 +317,11 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={onEmergencyCitoBooking}
-							className="h-8.5 px-3 py-1 rounded-lg bg-[var(--bad-bg,#dc2626)] hover:brightness-110 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0 border border-transparent"
+							className="h-8 px-3 py-1 rounded-lg border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
 							title="Пациент с острой болью (CITO!) — экстренная 1-клик вставка слота дежурному врачу (Горячая клавиша C)"
 							aria-label="Пациент с острой болью CITO: быстрая запись дежурному врачу"
 						>
-							<Flame size={15} className="text-amber-300 animate-pulse" />
+							<Flame size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
 							<span className="truncate hidden sm:inline">Острая боль (CITO!)</span>
 							<span className="truncate sm:hidden">CITO!</span>
 						</button>
@@ -331,10 +331,10 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={onQuickBooking}
-							className="primary-button h-8.5 px-3.5 py-1 rounded-lg bg-[var(--teal-dark)] hover:brightness-110 active:scale-95 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0"
+							className="primary-button h-8 px-3.5 py-1 rounded-lg bg-[var(--teal-dark)] hover:brightness-110 active:scale-95 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0 border border-transparent"
 							title="Быстрая 1-клик запись на прием (горячая клавиша N)"
 						>
-							<Sparkles size={15} />
+							<Sparkles size={14} />
 							<span className="truncate hidden sm:inline">+ Быстрая запись (N)</span>
 							<span className="truncate sm:hidden">+ Запись</span>
 						</button>
@@ -347,7 +347,7 @@ export function ScheduleFilterStrip({
 				{/* "Все записи" filter chip button */}
 				<button
 					type="button"
-					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} min-h-[44px] px-3.5 min-w-fit whitespace-nowrap text-xs sm:text-sm font-semibold shrink-0 cursor-pointer`}
+					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} h-7.5 px-3 min-w-fit whitespace-nowrap text-xs font-medium shrink-0 cursor-pointer`}
 					onClick={resetScheduleFilters}
 				>
 					Все записи
@@ -365,7 +365,7 @@ export function ScheduleFilterStrip({
 							<button
 								key={member.id}
 								type="button"
-								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] min-w-fit flex-shrink-0 px-3 whitespace-nowrap text-xs sm:text-sm font-semibold cursor-pointer`}
+								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} h-7.5 min-w-fit flex-shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer`}
 								onClick={() =>
 									setScheduleDoctorFilterId(
 										scheduleDoctorFilterId === member.id ? null : member.id,
@@ -392,7 +392,7 @@ export function ScheduleFilterStrip({
 						<button
 							key={chair.id}
 							type="button"
-							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] min-w-fit flex-shrink-0 px-3 whitespace-nowrap text-xs sm:text-sm font-semibold cursor-pointer flex items-center gap-1.5`}
+							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} h-7.5 min-w-fit flex-shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer flex items-center gap-1.5`}
 							onClick={() =>
 								setScheduleChairFilterId(
 									scheduleChairFilterId === chair.id ? null : chair.id,

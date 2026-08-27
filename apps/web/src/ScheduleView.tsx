@@ -1194,10 +1194,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								Отбор: {activeScheduleFilterLabels.join(", ")}
 							</span>
 							<button
-								className="text-button shrink-0"
+								className="text-button shrink-0 h-7.5 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
 								type="button"
 								onClick={resetScheduleFilters}
-								style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", padding: "0 10px" }}
 							>
 								Снять отбор
 							</button>
@@ -1215,10 +1214,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								Показаны все дни: {visibleDayGroups?.length}
 							</span>
 							<button
-								className="text-button shrink-0"
+								className="text-button shrink-0 h-7.5 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
 								type="button"
 								onClick={() => setScheduleDateFilter(todayScheduleDate())}
-								style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", padding: "0 10px" }}
 							>
 								Только сегодня
 							</button>
@@ -1242,10 +1240,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						<button
 							key={warning.id}
 							type="button"
-							className={`status-pill schedule-warning-chip max-w-full text-left ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
+							className={`status-pill schedule-warning-chip max-w-full text-left h-7.5 px-2.5 inline-flex items-center cursor-pointer ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
 							onClick={() => openScheduleWarning(warning)}
 							title={`${warning.title}: ${warning.detail}`}
-							style={{ minHeight: "44px", display: "inline-flex", alignItems: "center" }}
 						>
 							<span className="truncate">{warning.title} — {warning.actionLabel.toLowerCase()}</span>
 						</button>

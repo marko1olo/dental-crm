@@ -428,7 +428,6 @@ export function SettingsPricesTab() {
 									display: "inline-flex",
 									alignItems: "center",
 									gap: "6px",
-									minHeight: "44px",
 									fontWeight: 600,
 								}}
 							>
@@ -445,7 +444,6 @@ export function SettingsPricesTab() {
 									setPriceProblem(null);
 									setEditServiceId("new");
 								}}
-								style={{ minHeight: "44px" }}
 							>
 								<Plus size={18} /> Добавить услугу
 							</button>

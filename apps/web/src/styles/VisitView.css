@@ -95,13 +95,13 @@
 }
 ._ccm-btn {
 	width: 100%;
-	min-height: 48px;
-	padding: 0.7rem 0.9rem;
-	border-radius: 12px;
+	min-height: 36px;
+	padding: 0.45rem 0.75rem;
+	border-radius: 10px;
 	border: 1px solid var(--line, #e2e8f0);
 	background: var(--paper, #fff);
 	color: var(--ink, #334155);
-	font-size: 0.95rem;
+	font-size: 0.875rem;
 	font-weight: 700;
 	text-align: left;
 	cursor: pointer;
@@ -175,10 +175,10 @@
 }
 ._ccm-close-btn {
 	width: 100%;
-	min-height: 44px;
-	border-radius: 12px;
-	padding: 0.6rem 0.8rem;
-	font-size: 0.875rem;
+	min-height: 34px;
+	border-radius: 10px;
+	padding: 0.4rem 0.75rem;
+	font-size: 0.8125rem;
 	font-weight: 700;
 	border: 1px solid var(--line, #cbd5e1);
 	background: var(--paper-soft, #f8fafc);
@@ -348,12 +348,12 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	padding: 6px 12px;
-	border-radius: 14px;
+	padding: 4px 12px;
+	border-radius: 12px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
-	min-height: 48px;
-	margin-top: 12px !important;
+	min-height: 38px;
+	margin-top: 10px !important;
 	margin-bottom: 6px;
 	transition: all 0.2s ease;
 }
@@ -382,17 +382,17 @@
 }
 
 .visit-focus-bar.odontogram-compact {
-	min-height: 38px !important;
-	max-height: 42px !important;
+	min-height: 34px !important;
+	max-height: 38px !important;
 	padding: 2px 10px !important;
 	margin-bottom: 4px !important;
 }
 
 .visit-focus-bar.odontogram-compact .visit-focus-patient .avatar {
-	width: 26px !important;
-	height: 26px !important;
-	min-width: 26px !important;
-	min-height: 26px !important;
+	width: 24px !important;
+	height: 24px !important;
+	min-width: 24px !important;
+	min-height: 24px !important;
 	font-size: 11px !important;
 }
 
@@ -407,9 +407,10 @@
 }
 
 .visit-focus-bar.odontogram-compact .visit-focus-actions button {
-	min-height: 44px !important;
-	padding: 4px 10px !important;
-	font-size: 13px !important;
+	min-height: 30px !important;
+	height: 30px !important;
+	padding: 2px 8px !important;
+	font-size: 12px !important;
 }
 
 @media (max-width: 768px) {

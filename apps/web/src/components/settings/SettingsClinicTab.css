@@ -92,12 +92,14 @@
 
 .clinic-form-group input,
 .clinic-form-group select {
-	height: 44px;
+	height: 36px;
+	padding: 0 10px;
+	font-size: 13.5px;
 }
 
 .clinic-form-group textarea {
-	padding: 12px 14px;
-	min-height: 80px;
+	padding: 10px 12px;
+	min-height: 70px;
 	resize: vertical;
 }
 
@@ -207,17 +209,18 @@
 
 .chair-quick-create-row input {
 	flex: 1;
-	height: 44px;
+	height: 36px;
 	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper);
-	padding: 0 14px;
-	font-size: 14px;
+	padding: 0 12px;
+	font-size: 13.5px;
 }
 
 .chair-quick-create-row button {
-	height: 44px;
-	padding: 0 20px;
+	height: 36px;
+	padding: 0 16px;
+	font-size: 13px;
 }
 
 .chair-equipment-picker {

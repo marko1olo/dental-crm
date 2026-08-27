@@ -2452,14 +2452,14 @@ button:focus-visible {
 }
 
 .doc-nav-cat-btn {
-	min-height: 44px;
-	min-width: 44px;
-	padding: 8px 14px;
+	min-height: 32px;
+	min-width: 32px;
+	padding: 4px 10px;
 	border-radius: 8px;
 	border: 1px solid transparent;
 	background: transparent;
 	color: var(--muted);
-	font-size: 13px;
+	font-size: 12.5px;
 	font-weight: 600;
 	cursor: pointer;
 	display: inline-flex;
@@ -2520,15 +2520,15 @@ button:focus-visible {
 }
 
 .doc-nav-search-wrap {
-	min-height: 44px;
+	min-height: 32px;
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	background: var(--paper);
 	border: 1px solid var(--line-strong);
 	border-radius: 8px;
-	padding: 0 12px;
-	flex: 0 1 280px;
+	padding: 0 10px;
+	flex: 0 1 240px;
 	transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -2548,11 +2548,11 @@ button:focus-visible {
 	padding: 0 !important;
 	color: var(--ink) !important;
 	font: inherit !important;
-	font-size: 13px !important;
+	font-size: 12.5px !important;
 	width: 100% !important;
 	outline: none !important;
 	box-shadow: none !important;
-	min-height: 38px !important;
+	min-height: 28px !important;
 }
 
 .doc-nav-search-input::placeholder {
@@ -2570,8 +2570,8 @@ button:focus-visible {
 	align-items: center;
 	justify-content: center;
 	border-radius: 4px;
-	min-height: 32px;
-	min-width: 32px;
+	min-height: 28px;
+	min-width: 28px;
 	transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
@@ -2589,26 +2589,26 @@ button:focus-visible {
 
 .doc-nav-quick-actions {
 	display: flex;
-	gap: 8px;
+	gap: 6px;
 	flex-wrap: wrap;
 	align-items: center;
 }
 
 .doc-nav-action-btn {
-	min-height: 44px;
-	min-width: 44px;
-	padding: 8px 14px;
+	min-height: 32px;
+	min-width: 32px;
+	padding: 4px 10px;
 	border-radius: 8px;
 	border: 1px solid var(--line-strong);
 	background: var(--paper);
 	color: var(--ink);
-	font-size: 13px;
+	font-size: 12.5px;
 	font-weight: 600;
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: 6px;
 	transition: all var(--transition-fast);
 	user-select: none;
 	font-family: inherit;
@@ -2675,14 +2675,14 @@ button:focus-visible {
 }
 
 .doc-nav-template-chip {
-	min-height: 44px;
-	min-width: 44px;
-	padding: 6px 12px;
+	min-height: 28px;
+	min-width: 28px;
+	padding: 3px 8px;
 	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
-	font-size: 12.5px;
+	font-size: 12px;
 	font-weight: 600;
 	cursor: pointer;
 	display: inline-flex;
