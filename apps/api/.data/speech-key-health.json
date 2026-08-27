@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "savedAt": "2026-08-26T21:36:14.303Z",
+  "savedAt": "2026-08-27T20:42:41.326Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
-      "successes": 563,
-      "lastUsedAt": 1787780174303,
+      "successes": 566,
+      "lastUsedAt": 1787863361325,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -79,14 +79,6 @@
       "failures": 0,
       "successes": 2,
       "lastUsedAt": 1786010939747,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "groq_whisper:6058314b22ec": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "successes": 1,
-      "lastUsedAt": 1785239300896,
       "lastStatusCode": null,
       "lastError": null
     },

@@ -434,36 +434,36 @@ export function DentalLabOrderModal({
 			<div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
 				
 				{/* ─── MODAL HEADER ──────────────────────────────────────────────── */}
-				<div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
-					<div className="flex items-center gap-3">
-						<div className="w-11 h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] shadow-sm">
-							<FlaskConical className="w-6 h-6" />
+				<div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
+					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+						<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] shadow-sm shrink-0">
+							<FlaskConical className="w-5 h-5 sm:w-6 sm:h-6" />
 						</div>
-						<div>
+						<div className="min-w-0">
 							<h2
 								id="dental-lab-modal-title"
-								className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 m-0"
+								className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-1.5 sm:gap-2 m-0 truncate"
 							>
-								Наряд-заказ в зуботехническую лабораторию (ЗТЛ)
-								<span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
+								<span>Наряд-заказ в ЗТЛ</span>
+								<span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shrink-0">
 									CAD/CAM Pro
 								</span>
 							</h2>
-							<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
+							<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5 truncate">
 								Пациент: <span className="font-bold text-slate-800 dark:text-slate-200">{formPatientName}</span> · Врач: <span className="font-bold text-slate-800 dark:text-slate-200">{formDoctorName}</span>
 							</p>
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="min-h-[44px] inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm"
+							className="min-h-[44px] inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm"
 							title="Печать наряда (ГОСТ)"
 						>
 							<Printer className="w-4 h-4" />
-							Печать (ГОСТ)
+							<span className="hidden sm:inline">Печать (ГОСТ)</span>
 						</button>
 						<button
 							type="button"
@@ -478,7 +478,7 @@ export function DentalLabOrderModal({
 				</div>
 
 				{/* ─── NAVIGATION TABS ───────────────────────────────────────────── */}
-				<div className="flex items-center gap-1.5 px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/40 overflow-x-auto text-xs scrollbar-none">
+				<div className="flex items-center gap-1.5 px-4 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/40 overflow-x-auto text-xs scrollbar-none">
 					{[
 						{ id: "main", label: "1. Зубная формула & Конструкция", icon: FlaskConical },
 						{ id: "shades", label: "2. Расцветка VITA & Культя", icon: Palette },
@@ -494,7 +494,7 @@ export function DentalLabOrderModal({
 								key={tab.id}
 								type="button"
 								onClick={() => setActiveTab(tab.id as TabKey)}
-								className={`min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold whitespace-nowrap shrink-0 transition-all ${
+								className={`min-h-[44px] inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl font-bold whitespace-nowrap shrink-0 transition-all ${
 									isActive
 										? "bg-white dark:bg-slate-800 text-[var(--teal)] shadow-sm border border-slate-200 dark:border-slate-700"
 										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"

@@ -42,6 +42,28 @@ describe("Dental Inventory BOM & Procedure Tech Maps", () => {
 		assert.ok(codes.includes("A16.07.051")); // Гигиена
 		assert.ok(codes.includes("A16.07.001.001")); // Хирургия
 		assert.ok(codes.includes("A16.07.054")); // Дентальная имплантация
+		assert.ok(codes.includes("A16.07.055")); // Синус-лифтинг и НКР (Bio-Oss + Bio-Gide)
+	});
+
+	it("Техкарта костной пластики и НКР (A16.07.055) содержит Bio-Oss, Bio-Gide, Prolene 5-0 и микропины", () => {
+		const gbrMap = ALL_PROCEDURE_TECH_MAPS.find((t) => t.code === "A16.07.055");
+		assert.ok(gbrMap, "Техкарта A16.07.055 должна существовать в каталоге");
+
+		const names = gbrMap.items.map((i) => i.materialName.toLowerCase());
+		assert.ok(names.some((n) => n.includes("bio-oss") || n.includes("графт")));
+		assert.ok(names.some((n) => n.includes("bio-gide") || n.includes("мембран")));
+		assert.ok(names.some((n) => n.includes("пины") || n.includes("микропины")));
+		assert.ok(names.some((n) => n.includes("prolene") || n.includes("пролен")));
+		assert.ok(names.some((n) => n.includes("артикаин") || n.includes("ультракаин")));
+
+		// Проверка точных копеечных цен
+		const bioOss = gbrMap.items.find((i) => i.materialName.includes("Bio-Oss"));
+		assert.ok(bioOss);
+		assert.equal(bioOss.defaultUnitCostKopecks, 1250000); // 12 500.00 ₽
+
+		const bioGide = gbrMap.items.find((i) => i.materialName.includes("Bio-Gide"));
+		assert.ok(bioGide);
+		assert.equal(bioGide.defaultUnitCostKopecks, 1680000); // 16 800.00 ₽
 	});
 
 	it("Техкарта дентальной имплантации (A16.07.054) содержит имплантат, винт-заглушку, шовник PTFE и анестетик", () => {

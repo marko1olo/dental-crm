@@ -185,3 +185,289 @@ export function roleLabel(
 	const key = ROLE_KEY_ALIASES[raw.toLowerCase()];
 	return key ? staffRoleLabels[key] : raw;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Финансовые расчеты и утилизация кресел (Chair-Hour Rate)          */
+/* ------------------------------------------------------------------ */
+
+export interface ChairHourMetrics {
+	readonly chairId: string | null;
+	readonly chairName: string;
+	readonly occupiedMinutes: number;
+	readonly availableMinutes: number;
+	readonly utilizationRatePercent: number;
+	readonly revenueKopecks: number;
+	readonly revenuePerHourKopecks: number;
+	readonly capacityYieldPerHourKopecks: number;
+}
+
+/**
+ * Расчет коэффициента утилизации кресла в процентах (0–100%).
+ */
+export function calculateChairUtilizationPercent(
+	occupiedMinutes: number,
+	availableMinutes: number,
+): number {
+	if (
+		!Number.isFinite(occupiedMinutes) ||
+		!Number.isFinite(availableMinutes) ||
+		availableMinutes <= 0
+	) {
+		return 0;
+	}
+	const safeOccupied = Math.max(0, occupiedMinutes);
+	const rate = (safeOccupied / availableMinutes) * 100;
+	return Math.max(0, Math.min(100, Math.round(rate * 10) / 10));
+}
+
+/**
+ * Выручка на фактически отработанный кресло-час в целых копейках.
+ */
+export function calculateHourlyRevenueKopecks(
+	revenueKopecks: number,
+	occupiedMinutes: number,
+): number {
+	if (
+		!Number.isFinite(revenueKopecks) ||
+		revenueKopecks <= 0 ||
+		!Number.isFinite(occupiedMinutes) ||
+		occupiedMinutes <= 0
+	) {
+		return 0;
+	}
+	const hours = occupiedMinutes / 60;
+	return Math.round(revenueKopecks / hours);
+}
+
+/**
+ * Выручка на доступный кресло-час (Capacity Yield) в целых копейках.
+ */
+export function calculateCapacityYieldKopecks(
+	revenueKopecks: number,
+	availableMinutes: number,
+): number {
+	if (
+		!Number.isFinite(revenueKopecks) ||
+		revenueKopecks <= 0 ||
+		!Number.isFinite(availableMinutes) ||
+		availableMinutes <= 0
+	) {
+		return 0;
+	}
+	const hours = availableMinutes / 60;
+	return Math.round(revenueKopecks / hours);
+}
+
+/**
+ * Форматирование суммы в копейках в стандартный рублёвый вид.
+ * 14500000 коп. -> "145 000,00 ₽" (или "145 000 ₽" при includeKopecks=false)
+ */
+export function formatKopecksToRub(
+	kopecks: number,
+	includeKopecks = true,
+): string {
+	if (!Number.isFinite(kopecks) || kopecks === 0) {
+		return includeKopecks ? "0,00 ₽" : "0 ₽";
+	}
+	const isNegative = kopecks < 0;
+	const absKopecks = Math.abs(Math.round(kopecks));
+	const rubles = Math.floor(absKopecks / 100);
+	const remainderKopecks = absKopecks % 100;
+	const formattedRubles = rubles
+		.toLocaleString("ru-RU")
+		.replace(/\u00A0/g, " ");
+
+	if (includeKopecks) {
+		const kopStr = remainderKopecks.toString().padStart(2, "0");
+		return `${isNegative ? "-" : ""}${formattedRubles},${kopStr} ₽`;
+	}
+	return `${isNegative ? "-" : ""}${formattedRubles} ₽`;
+}
+
+/**
+ * Форматирование часовой ставки выручки на кресло: "4 250 ₽/час".
+ */
+export function formatKopecksPerHour(kopecksPerHour: number): string {
+	return `${formatKopecksToRub(kopecksPerHour, false)}/час`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Когортный анализ возвращаемости (Recall 6 / 12 мес)               */
+/* ------------------------------------------------------------------ */
+
+export type CohortTreatmentCategory =
+	| "sanitation"
+	| "implantation"
+	| "general_therapy";
+
+export interface RecallCohortData {
+	readonly cohortKey: string;
+	readonly cohortLabel: string;
+	readonly category: CohortTreatmentCategory;
+	readonly categoryLabel: string;
+	readonly totalPatients: number;
+	readonly returned6m: number;
+	readonly rate6m: number;
+	readonly returned12m: number;
+	readonly rate12m: number;
+	readonly recallRevenueKopecks: number;
+	readonly healthTone: "ok" | "warn" | "bad";
+}
+
+/**
+ * Расчет процента возврата пациентов через 6 и 12 месяцев с определением статуса.
+ */
+export function calculateRecallRates(
+	totalPatients: number,
+	returned6m: number,
+	returned12m: number,
+): { rate6m: number; rate12m: number; healthTone: "ok" | "warn" | "bad" } {
+	if (!Number.isFinite(totalPatients) || totalPatients <= 0) {
+		return { rate6m: 0, rate12m: 0, healthTone: "bad" };
+	}
+	const safe6m = Math.max(
+		0,
+		Math.min(totalPatients, Number.isFinite(returned6m) ? returned6m : 0),
+	);
+	const safe12m = Math.max(
+		0,
+		Math.min(totalPatients, Number.isFinite(returned12m) ? returned12m : 0),
+	);
+
+	const rate6m = Math.round((safe6m / totalPatients) * 1000) / 10;
+	const rate12m = Math.round((safe12m / totalPatients) * 1000) / 10;
+
+	// Для стоматологии: возвращаемость >= 65% - норма (ok), 45-64% - требует внимания (warn), < 45% - критично (bad)
+	const healthTone: "ok" | "warn" | "bad" =
+		rate6m >= 65 || rate12m >= 65
+			? "ok"
+			: rate6m >= 45 || rate12m >= 45
+				? "warn"
+				: "bad";
+
+	return { rate6m, rate12m, healthTone };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Зона риска оттока и 1-кликовые предложения                        */
+/* ------------------------------------------------------------------ */
+
+export type ChurnRiskBand = "due_6m" | "overdue_12m" | "critical_24m";
+
+export interface ChurnRiskProfile {
+	readonly band: ChurnRiskBand;
+	readonly bandLabel: string;
+	readonly badgeTone: "ok" | "warn" | "bad";
+	readonly recommendedService: string;
+}
+
+export function classifyChurnRisk(
+	daysSinceLastVisit: number,
+	category: CohortTreatmentCategory = "sanitation",
+): ChurnRiskProfile {
+	const days = Number.isFinite(daysSinceLastVisit)
+		? Math.max(0, daysSinceLastVisit)
+		: 0;
+
+	if (days >= 730) {
+		return {
+			band: "critical_24m",
+			bandLabel: "Критический отток (>2 лет)",
+			badgeTone: "bad",
+			recommendedService:
+				"Комплексный перезапуск лечения и профосмотр главврача",
+		};
+	}
+	if (days >= 365) {
+		return {
+			band: "overdue_12m",
+			bandLabel: "Пропущен осмотр (12+ мес)",
+			badgeTone: "warn",
+			recommendedService:
+				category === "implantation"
+					? "КТ-контроль остеоинтеграции имплантов + осмотр хирурга"
+					: "Годовой профосмотр + диагностика скрытого кариеса",
+		};
+	}
+	return {
+		band: "due_6m",
+		bandLabel: "Срок профгигиены (6+ мес)",
+		badgeTone: "ok",
+		recommendedService:
+			category === "implantation"
+				? "Профгигиена имплантов (Air-Flow глицин) + полировка"
+				: "Профессиональная гигиена Air-Flow + реминерализация",
+	};
+}
+
+export interface PersonalizedOfferResult {
+	readonly title: string;
+	readonly messageText: string;
+	readonly recommendedService: string;
+	readonly urgencyText: string;
+	readonly channelSuggestions: readonly ("sms" | "whatsapp" | "phone")[];
+}
+
+export function generatePersonalizedOffer(params: {
+	patientName: string;
+	clinicName?: string;
+	daysSinceLastVisit: number;
+	category?: CohortTreatmentCategory;
+	doctorName?: string;
+}): PersonalizedOfferResult {
+	const rawName = (params.patientName || "").trim();
+	const nameParts = rawName.split(/\s+/).filter(Boolean);
+	const firstName =
+		nameParts.length >= 2
+			? nameParts[1]
+			: nameParts[0] || "Уважаемый пациент";
+	const patronymic = nameParts.length >= 3 ? ` ${nameParts[2]}` : "";
+	const greeting = `${firstName}${patronymic}`.trim();
+
+	const clinic = params.clinicName || "Стоматологическая клиника";
+	const category = params.category || "sanitation";
+	const days = Number.isFinite(params.daysSinceLastVisit)
+		? Math.max(0, params.daysSinceLastVisit)
+		: 0;
+	const doctor = params.doctorName ? ` у д-ра ${params.doctorName}` : "";
+
+	const risk = classifyChurnRisk(days, category);
+
+	let messageText = "";
+	let title = "";
+
+	if (category === "implantation") {
+		if (risk.band === "critical_24m") {
+			title = "Приглашение на ревизию имплантов и КТ-контроль";
+			messageText = `${greeting}, здравствуйте! ${clinic}: прошло более двух лет с момента установки имплантов/протезирования. Для сохранения гарантии и здоровья десен приглашаем вас на контрольный 3D-снимок и осмотр хирурга${doctor}. Записаться на удобное время можно по телефону клиники.`;
+		} else if (risk.band === "overdue_12m") {
+			title = "Годовой контроль остеоинтеграции имплантов";
+			messageText = `${greeting}, добрый день! ${clinic}: прошёл 1 год с момента имплантации/протезирования. Напоминаем о важности ежегодного контрольного осмотра для сохранения гарантии. Рекомендуем пройти осмотр${doctor} и сделать контрольный снимок. Ждём вас!`;
+		} else {
+			title = "Плановая гигиена в области имплантов";
+			messageText = `${greeting}, здравствуйте! ${clinic}: подошёл 6-месячный срок специализированной гигиены в зоне имплантов (Air-Flow мягким порошком). Процедура защищает от воспаления тканей. Записаться можно по телефону клиники.`;
+		}
+	} else if (category === "sanitation") {
+		if (risk.band === "critical_24m") {
+			title = "Приглашение на повторную диагностику после санации";
+			messageText = `${greeting}, здравствуйте! ${clinic}: прошло более двух лет после завершения санации полости рта. Приглашаем вас на комплексный бесплатный осмотр${doctor} и оценку состояния пломб. Записаться можно по телефону клиники.`;
+		} else if (risk.band === "overdue_12m") {
+			title = "Годовой профилактический осмотр";
+			messageText = `${greeting}, добрый день! ${clinic}: прошло больше года с вашего последнего визита. Напоминаем о необходимости планового профосмотра${doctor} для сохранения гарантии на выполненное лечение. Ждём вас!`;
+		} else {
+			title = "Плановая профгигиена через 6 месяцев";
+			messageText = `${greeting}, здравствуйте! ${clinic}: прошло 6 месяцев после завершения лечения — самое время для плановой профгигиены Air-Flow и осмотра терапевта${doctor}. Записаться можно по телефону клиники.`;
+		}
+	} else {
+		title = "Плановый профилактический осмотр";
+		messageText = `${greeting}, здравствуйте! ${clinic}: прошло более полугода с последнего визита. Приглашаем на плановый осмотр к вашему лечащему врачу${doctor}. Будем рады вас видеть!`;
+	}
+
+	return {
+		title,
+		messageText,
+		recommendedService: risk.recommendedService,
+		urgencyText: risk.bandLabel,
+		channelSuggestions: ["whatsapp", "sms", "phone"],
+	};
+}

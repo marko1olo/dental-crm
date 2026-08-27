@@ -5,16 +5,26 @@ import {
 	generateSeniorNurseDisposalActHtml,
 } from "@dental/shared";
 import {
+	AlertTriangle,
 	Check,
+	Copy,
 	Download,
 	FileText,
 	Printer,
+	ShieldAlert,
 	ShieldCheck,
+	ShoppingCart,
 	UserCheck,
 	X,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+	type DeductionLineItem,
+	type SupplierPurchaseOrderView,
+	createSupplierPurchaseOrderFromLines,
+	formatSupplierPurchaseOrderTextRu,
+} from "../inventoryMath.js";
 import "./mdlpInventory.css";
 
 export interface SeniorNurseDisposalActModalProps {
@@ -63,6 +73,10 @@ export const SeniorNurseDisposalActModal: React.FC<
 	const [dentistName, setDentistName] = useState<string>(initialDentistName);
 	const [notes, setNotes] = useState<string>("");
 
+	// 1-Click заказ поставщику
+	const [showPoModal, setShowPoModal] = useState<boolean>(false);
+	const [copiedPo, setCopiedPo] = useState<boolean>(false);
+
 	const actData: SeniorNurseDisposalActData = useMemo(() => {
 		return formatSeniorNurseDisposalActData({
 			actNumber,
@@ -97,6 +111,53 @@ export const SeniorNurseDisposalActModal: React.FC<
 		return generateSeniorNurseDisposalActHtml(actData);
 	}, [actData]);
 
+	// Преобразование списанных позиций в строки списания для расчета неснижаемого остатка
+	const deductionLines = useMemo<DeductionLineItem[]>(() => {
+		if (!items || items.length === 0) {
+			// Демо/стандартная позиция анестетика при пустом списке
+			return [
+				{
+					id: "anes-disposal-def",
+					materialName: "Анестетик артикаиновый 4% с эпинефрином 1:100 000 (Ультракаин Д-С Форте)",
+					category: "anesthesia",
+					unit: "карп.",
+					quantity: 10,
+					standardQuantity: 10,
+					unitCostKopecks: 23000,
+					stockQuantity: 2, // остаток ниже критического порога
+					criticalThreshold: 10,
+					source: "tech_map",
+					mandatory: true,
+				},
+			];
+		}
+
+		return items.map((it, idx) => ({
+			id: `mdlp-item-${it.id || idx}`,
+			materialName:
+				it.drugInfo?.tradeName || "Анестетик артикаиновый 1.7 мл (карпула)",
+			category: "anesthesia" as const,
+			unit: "карп.",
+			quantity: 1,
+			standardQuantity: 1,
+			unitCostKopecks: 23000,
+			stockQuantity: 0, // списано в 0
+			criticalThreshold: 5,
+			lotNumber: it.series ?? undefined,
+			expirationDate: it.expirationDate ?? undefined,
+			source: "tech_map" as const,
+			mandatory: true,
+		}));
+	}, [items]);
+
+	// Автоматический проект заказа поставщику при срабатывании порога
+	const generatedPurchaseOrder = useMemo<SupplierPurchaseOrderView | null>(() => {
+		return createSupplierPurchaseOrderFromLines(
+			deductionLines,
+			organizationName,
+		);
+	}, [deductionLines, organizationName]);
+
 	const handlePrint = () => {
 		const printWin = window.open("", "_blank");
 		if (printWin) {
@@ -119,6 +180,22 @@ export const SeniorNurseDisposalActModal: React.FC<
 		link.click();
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
+	};
+
+	const handleCopyPoText = () => {
+		if (!generatedPurchaseOrder) return;
+		const text = formatSupplierPurchaseOrderTextRu(generatedPurchaseOrder);
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			navigator.clipboard.writeText(text);
+		}
+		setCopiedPo(true);
+		setTimeout(() => setCopiedPo(false), 2500);
+	};
+
+	const handlePrintPo = () => {
+		if (typeof window !== "undefined") {
+			window.print();
+		}
 	};
 
 	if (!isOpen) return null;
@@ -145,7 +222,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 								Акт списания медикаментов и анестетиков (Старшая медсестра)
 							</div>
 							<div className="text-xs text-muted mt-0.5">
-								Официальная медицинская форма • Честный ЗНАК (Схема 10560) •
+								СанПиН 3.3686-21 • Честный ЗНАК (Схема 10560) •
 								Позиций: {items.length}
 							</div>
 						</div>
@@ -162,6 +239,46 @@ export const SeniorNurseDisposalActModal: React.FC<
 				</header>
 
 				<div className="mdlp-modal-body">
+					{/* СанПиН 3.3686-21 и Critical Threshold Alert Banner */}
+					<div
+						style={{
+							marginBottom: 12,
+							padding: "10px 14px",
+							borderRadius: 10,
+							background: "rgba(245, 158, 11, 0.1)",
+							border: "1px solid rgba(245, 158, 11, 0.4)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							gap: 12,
+							flexWrap: "wrap",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+							<ShieldAlert size={20} style={{ color: "#d97706", flexShrink: 0 }} />
+							<div>
+								<div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>
+									СанПиН 3.3686-21: Контроль неснижаемого остатка медикаментов
+								</div>
+								<div style={{ fontSize: 12, color: "var(--muted)" }}>
+									При списании зафиксировано достижение критического порога остатков. Рекомендуется 1-кликовое пополнение.
+								</div>
+							</div>
+						</div>
+
+						{generatedPurchaseOrder && (
+							<button
+								type="button"
+								className="mdlp-btn mdlp-btn-primary"
+								style={{ fontSize: 12, padding: "6px 12px" }}
+								onClick={() => setShowPoModal(true)}
+							>
+								<ShoppingCart size={15} />
+								Заказ поставщику (1 клик)
+							</button>
+						)}
+					</div>
+
 					{/* Паспорт и комиссия */}
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-lg border border-line bg-paper-soft">
 						<div>
@@ -263,11 +380,11 @@ export const SeniorNurseDisposalActModal: React.FC<
 					</div>
 
 					{/* Предпросмотр печатной формы */}
-					<div className="border border-line rounded-lg overflow-hidden bg-white">
+					<div className="border border-line rounded-lg overflow-hidden bg-white mt-3">
 						<iframe
 							title="Предпросмотр акта списания"
 							srcDoc={actHtml}
-							className="w-full h-[400px] border-0"
+							className="w-full h-[380px] border-0"
 						/>
 					</div>
 				</div>
@@ -302,6 +419,120 @@ export const SeniorNurseDisposalActModal: React.FC<
 						</button>
 					</div>
 				</footer>
+
+				{/* 1-Click Заказ поставщику Sub-Modal */}
+				{showPoModal && generatedPurchaseOrder && (
+					<div
+						className="mdlp-modal-overlay"
+						style={{ zIndex: 1100 }}
+						onClick={() => setShowPoModal(false)}
+					>
+						<div
+							className="mdlp-modal-container"
+							style={{ maxWidth: "800px" }}
+							onClick={(e) => e.stopPropagation()}
+						>
+							<header className="mdlp-modal-header">
+								<div className="mdlp-modal-title">
+									<ShoppingCart size={22} className="text-teal-600" />
+									<div>
+										<div className="font-bold text-base">
+											Заказ поставщику {generatedPurchaseOrder.orderNumber}
+										</div>
+										<div className="text-xs text-muted">
+											Автоматическое пополнение неснижаемого остатка (СанПиН 3.3686-21)
+										</div>
+									</div>
+								</div>
+								<button
+									type="button"
+									className="mdlp-btn mdlp-btn-ghost p-1.5"
+									onClick={() => setShowPoModal(false)}
+								>
+									<X size={18} />
+								</button>
+							</header>
+
+							<div className="mdlp-modal-body">
+								<table
+									style={{
+										width: "100%",
+										borderCollapse: "collapse",
+										fontSize: 12,
+									}}
+								>
+									<thead>
+										<tr style={{ background: "var(--paper-soft)", borderBottom: "1px solid var(--line)" }}>
+											<th style={{ padding: "6px 8px", textAlign: "left" }}>Материал</th>
+											<th style={{ padding: "6px 8px", textAlign: "center" }}>Ед.</th>
+											<th style={{ padding: "6px 8px", textAlign: "right" }}>Остаток</th>
+											<th style={{ padding: "6px 8px", textAlign: "right" }}>К заказу</th>
+											<th style={{ padding: "6px 8px", textAlign: "right" }}>Сумма</th>
+										</tr>
+									</thead>
+									<tbody>
+										{generatedPurchaseOrder.items.map((item) => (
+											<tr key={item.sku} style={{ borderBottom: "1px solid var(--line)" }}>
+												<td style={{ padding: "6px 8px", fontWeight: 600 }}>{item.materialName}</td>
+												<td style={{ padding: "6px 8px", textAlign: "center" }}>{item.unit}</td>
+												<td style={{ padding: "6px 8px", textAlign: "right" }}>{item.currentStock}</td>
+												<td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: "var(--teal-dark, #0f766e)" }}>
+													{item.suggestedOrderQuantity}
+												</td>
+												<td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>
+													{item.totalCostFormatted}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+
+								<div
+									style={{
+										marginTop: 16,
+										display: "flex",
+										justifyContent: "flex-end",
+										gap: 20,
+										fontSize: 14,
+										fontWeight: 700,
+									}}
+								>
+									<div>Позиций: {generatedPurchaseOrder.totalItemsCount}</div>
+									<div style={{ color: "var(--teal-dark, #0f766e)" }}>
+										Итого: {generatedPurchaseOrder.totalCostFormatted}
+									</div>
+								</div>
+							</div>
+
+							<footer className="mdlp-modal-footer">
+								<div className="flex gap-2">
+									<button
+										type="button"
+										className="mdlp-btn mdlp-btn-secondary"
+										onClick={handleCopyPoText}
+									>
+										{copiedPo ? <Check size={16} /> : <Copy size={16} />}
+										{copiedPo ? "Скопировано" : "Копировать"}
+									</button>
+									<button
+										type="button"
+										className="mdlp-btn mdlp-btn-secondary"
+										onClick={handlePrintPo}
+									>
+										<Printer size={16} /> Печать
+									</button>
+								</div>
+								<button
+									type="button"
+									className="mdlp-btn mdlp-btn-primary"
+									onClick={() => setShowPoModal(false)}
+								>
+									Закрыть
+								</button>
+							</footer>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

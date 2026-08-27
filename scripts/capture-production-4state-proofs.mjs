@@ -9,8 +9,10 @@ import { chromium } from "playwright";
 
 const DOCS_SCREENSHOTS_DIR = "C:/Clinic_MVP/dental-crm/docs/screenshots";
 const BRAIN_DIRS = [
+  "C:/Users/Admin/.gemini/antigravity/brain/28922cfe-a09a-4693-aa79-8e62cf0bac22",
   "C:/Users/Admin/.gemini/antigravity/brain/69ded610-4c1d-4d3f-8359-693851dbbfd7",
   "C:/Users/Admin/.gemini/antigravity/brain/0284cf50-cf45-4b19-be4c-f6f53b03120f",
+  "C:/Clinic_MVP/dental-crm/docs/proofs/audit",
   process.env.BRAIN_DIR,
 ].filter(Boolean);
 
@@ -342,21 +344,109 @@ const TARGET_SCREENS = [
     },
     all4States: true,
   },
+
+  // Wave 4: Domain 1 — Лаборатория (ЗТЛ / Dental Lab Orders & Work Orders)
+  {
+    prefix: "09_dental_lab_work_order",
+    name: "09. Dental Laboratory (ЗТЛ) CAD/CAM Work Order & Shade Matrix",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=lab_work_order",
+    setup: async (page) => {
+      await page.waitForTimeout(800);
+      const trigger = page.locator('[data-testid="open-lab-work-order-modal-btn"]').or(page.locator('[data-testid="open-lab-order-modal-btn"]')).first();
+      if (await trigger.isVisible()) {
+        await trigger.scrollIntoViewIfNeeded();
+        await trigger.click();
+        await page.waitForTimeout(600);
+      }
+    },
+    all4States: true,
+  },
+  {
+    prefix: "09_guest_lab_portal",
+    name: "09. Guest Laboratory External Portal for Dental Technician",
+    url: "http://127.0.0.1:5173/#/portal/lab-order/demo-token-123",
+    setup: async (page) => {
+      await page.waitForSelector('.guest-lab-portal, .lab-orders-container, .panel, [data-testid="guest-lab-portal"]', { timeout: 6000 }).catch(() => {});
+      await page.waitForTimeout(800);
+    },
+    all4States: true,
+  },
+
+  // Wave 4: Domain 2 — Списание материалов (BOM / 804n Consumption Norms)
+  {
+    prefix: "10_material_bom_deduction",
+    name: "10. Material Write-off & BOM Tech Maps Deduction (Order 804n / FEFO)",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=procedure_deduction",
+    setup: async (page) => {
+      await page.waitForTimeout(800);
+      const trigger = page.locator('[data-testid="open-procedure-deduction-modal-btn"]').or(page.locator('[data-testid="open-clinical-writeoff-modal-btn"]')).first();
+      if (await trigger.isVisible()) {
+        await trigger.scrollIntoViewIfNeeded();
+        await trigger.click();
+        await page.waitForTimeout(600);
+      }
+    },
+    all4States: true,
+  },
+  {
+    prefix: "10_material_bom_settings",
+    name: "10. Material BOMs & Consumption Norms Management Panel (Order 804n)",
+    url: "http://127.0.0.1:5173/#inventory",
+    setup: async (page) => {
+      await page.waitForSelector('.material-boms-container, .inventory-panel, .inventory-container', { timeout: 6000 }).catch(() => {});
+      await page.waitForTimeout(800);
+    },
+    all4States: true,
+  },
+
+  // Wave 4: Domain 3 — Памятка пациенту (Post-Op Care Memos / Форма 043/у)
+  {
+    prefix: "11_post_op_care_patient_memo",
+    name: "11. Post-Op Patient Care Memo & Clinical Guidelines (1-Click Print A4/A5)",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=patient_memo",
+    setup: async (page) => {
+      await page.waitForTimeout(800);
+      const trigger = page.locator('[data-testid="open-patient-memo-modal-btn"]').first();
+      if (await trigger.isVisible()) {
+        await trigger.scrollIntoViewIfNeeded();
+        await trigger.click();
+        await page.waitForTimeout(600);
+      }
+    },
+    all4States: true,
+  },
+
+  // Wave 4: Domain 4 — Аналитика возвращаемости (Retention & Recalls)
+  {
+    prefix: "12_retention_lost_patients_analytics",
+    name: "12. Patient Retention Analytics, Lost Patients & Recall Manager",
+    url: "http://127.0.0.1:5173/#analytics",
+    setup: async (page) => {
+      await page.waitForSelector('.analytics-dashboard, [data-testid="lost-patients-panel"], [data-testid="analytics-dashboard-view"]', { timeout: 6000 }).catch(() => {});
+      await page.waitForTimeout(800);
+      const lostPanel = page.locator('[data-testid="lost-patients-panel"]').or(page.locator('.lost-patients-panel')).first();
+      if (await lostPanel.isVisible()) {
+        await lostPanel.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(400);
+      }
+    },
+    all4States: true,
+  },
 ];
 
 const CONFIGS = [
   {
     key: "pc_light",
-    label: "PC Light (1920x1080)",
-    viewport: { width: 1920, height: 1080 },
+    label: "PC Light (1440x900)",
+    viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 1.5,
     theme: "light",
     isMobile: false,
   },
   {
     key: "pc_dark",
-    label: "PC Dark (1920x1080)",
-    viewport: { width: 1920, height: 1080 },
+    label: "PC Dark (1440x900)",
+    viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 1.5,
     theme: "dark",
     isMobile: false,

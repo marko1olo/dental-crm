@@ -16,7 +16,7 @@ import {
 	generateBarcodeSvg,
 	generateQrCodeSvg,
 	formatGostOrderNumber,
-} from "../DentalLabOrderModal";
+} from "../labMath";
 
 describe("DentalLabOrderModal — Prosthetic Construction Types", () => {
 	test("Содержит все ключевые ортопедические конструкции (Коронка, Мост, Винир, All-on-4/6, Абатмент, Бюгель, Элайнеры)", () => {

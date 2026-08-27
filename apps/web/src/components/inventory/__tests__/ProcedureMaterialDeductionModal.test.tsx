@@ -38,6 +38,8 @@ describe("Dental Inventory BOM & Procedure Tech Maps", () => {
 		assert.ok(codes.includes("A16.07.030.003")); // Эндо многоканальная
 		assert.ok(codes.includes("A16.07.051")); // Гигиена
 		assert.ok(codes.includes("A16.07.001.001")); // Хирургия
+		assert.ok(codes.includes("A16.07.054")); // Дентальная имплантация
+		assert.ok(codes.includes("A16.07.055")); // Костная пластика и НКР (Bio-Oss + Bio-Gide)
 	});
 
 	it("Базовый набор СИЗ (СанПиН 3.3686-21) включает все обязательные защитные расходники", () => {

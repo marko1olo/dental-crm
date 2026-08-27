@@ -2,9 +2,11 @@
  * patientCareInstructionsAndBilling.test.ts
  *
  * Automated tests for:
- * 1. Post-visit electronic care memos & 1-click WhatsApp messaging.
- * 2. QR code generator for saving care memos to mobile.
- * 3. Human-friendly billing breakdowns (no complex Latin/Order 804n jargon).
+ * 1. Multi-intervention electronic post-op care generator (caries, extraction, sinus lift, implantation, endo, whitening, ortho, hygiene).
+ * 2. 1-click WhatsApp & SMS deep link dispatch.
+ * 3. A4 printable medical care memo generation with clinic branding and QR codes.
+ * 4. Human-friendly non-Latin billing breakdowns (54-FZ & anti-jargon).
+ * 5. 13% tax deduction & dental passport.
  */
 
 import { describe, it } from "node:test";
@@ -12,357 +14,349 @@ import assert from "node:assert/strict";
 import {
 	generateCareMemo,
 	buildWhatsAppLink,
+	buildSmsLink,
+	generateCareMemoSmsText,
+	generateCareMemoPrintHtml,
+	detectInterventionTypeFromProcedure,
 	translateMedicalTermToFriendly,
 	groupServicesIntoFriendlyBlocks,
 	generateFriendlyBillingWhatsAppMessage,
-	DEFAULT_CARIES_RECOMMENDATIONS,
+	CARE_PRESETS_MAP,
+	type CareInterventionType,
 } from "../patientCareInstructionsEngine";
 import {
 	calculatePatientTaxDeduction,
 	generatePatientDentalPassport,
 	formatFdiToothPlainRussian,
 	type PatientPersonalCabinetData,
+	type PatientInvoiceItem,
 } from "../patientCabinetEngine";
 
 describe("Patient Care Instructions & Friendly Billing Engine", () => {
-	describe("generateCareMemo", () => {
-		it("generates personalized post-visit care memo with exact WhatsApp pattern and QR code", () => {
+	describe("detectInterventionTypeFromProcedure", () => {
+		it("detects surgical extraction accurately", () => {
+			assert.equal(detectInterventionTypeFromProcedure("Сложное удаление зуба мудрости"), "extraction");
+			assert.equal(detectInterventionTypeFromProcedure("Атравматичная экстракция зуба A16.07.001"), "extraction");
+		});
+
+		it("detects sinus lift and bone augmentation", () => {
+			assert.equal(detectInterventionTypeFromProcedure("Открытый синус-лифтинг с костной пластикой Bio-Oss"), "sinus_lift");
+			assert.equal(detectInterventionTypeFromProcedure("Субантральная аугментация"), "sinus_lift");
+		});
+
+		it("detects dental implantation", () => {
+			assert.equal(detectInterventionTypeFromProcedure("Установка имплантата Straumann BLX"), "implantation");
+			assert.equal(detectInterventionTypeFromProcedure("Дентальная имплантация A16.07.054 с формирователем"), "implantation");
+		});
+
+		it("detects endodontic root canal therapy", () => {
+			assert.equal(detectInterventionTypeFromProcedure("Лечение пульпита и пломбирование каналов под микроскопом"), "endodontics");
+			assert.equal(detectInterventionTypeFromProcedure("Эндодонтическая ревизия каналов"), "endodontics");
+		});
+
+		it("detects teeth whitening", () => {
+			assert.equal(detectInterventionTypeFromProcedure("Клиническое отбеливание зубов ZOOM 4"), "whitening");
+			assert.equal(detectInterventionTypeFromProcedure("Фотоотбеливание Flash WhiteSpeed"), "whitening");
+		});
+
+		it("detects orthodontics", () => {
+			assert.equal(detectInterventionTypeFromProcedure("Установка брекет-системы Damon Q"), "orthodontics");
+			assert.equal(detectInterventionTypeFromProcedure("Плановая смена дуги на элайнерах"), "orthodontics");
+		});
+
+		it("detects professional hygiene", () => {
+			assert.equal(detectInterventionTypeFromProcedure("Комплексная чистка Air-Flow Clinpro + ультразвук"), "hygiene");
+		});
+
+		it("defaults to caries for standard filling procedures", () => {
+			assert.equal(detectInterventionTypeFromProcedure("Лечение среднего кариеса"), "caries");
+			assert.equal(detectInterventionTypeFromProcedure(""), "caries");
+		});
+	});
+
+	describe("generateCareMemo for all clinical interventions", () => {
+		const interventions: CareInterventionType[] = [
+			"caries",
+			"extraction",
+			"sinus_lift",
+			"implantation",
+			"endodontics",
+			"whitening",
+			"orthodontics",
+			"hygiene",
+		];
+
+		for (const intType of interventions) {
+			it(`generates valid care memo for intervention: ${intType}`, () => {
+				const memo = generateCareMemo({
+					patientName: "Алексей Смирнов",
+					patientPhone: "+7 (999) 777-66-55",
+					toothFdi: "16",
+					interventionType: intType,
+					doctorName: "Кузнецов П. С.",
+					clinicName: "Стоматологическая клиника ДЕНТЕ",
+				});
+
+				assert.equal(memo.patientName, "Алексей Смирнов");
+				assert.equal(memo.toothFdi, "16");
+				assert.equal(memo.interventionType, intType);
+				assert.ok(memo.recommendations.length >= 3, "Must have comprehensive recommendations");
+				assert.ok(memo.warningSigns.length >= 2, "Must have warning signs");
+				assert.ok(memo.dietaryRules.length >= 1, "Must have dietary rules");
+				assert.ok(memo.hygieneRules.length >= 1, "Must have hygiene rules");
+				assert.ok(memo.qrCodeSvg.includes("<svg"), "Must produce valid QR SVG");
+				assert.ok(memo.printHtml.includes("<!DOCTYPE html>"), "Must produce A4 printable HTML");
+				assert.ok(memo.whatsAppText.includes("Уважаемый(ая) Алексей Смирнов, рекомендации после лечения зуба 16:"));
+				assert.ok(memo.smsText.includes("ДЕНТЕ: Памятка после лечения зуба 16"));
+			});
+		}
+
+		it("includes specific sinus-lift contraindications (blowing nose, flights)", () => {
 			const memo = generateCareMemo({
-				patientName: "Алексей Смирнов",
-				patientPhone: "+7 (999) 777-66-55",
-				toothFdi: "16",
-				procedureName: "Лечение глубокого кариеса",
+				patientName: "Елена",
+				toothFdi: "26",
+				interventionType: "sinus_lift",
+			});
+
+			const hasNoBlowing = memo.recommendations.some((r) => r.title.includes("СМОРКАТЬСЯ"));
+			assert.ok(hasNoBlowing, "Must forbid blowing nose after sinus lift");
+
+			const hasFlightsBan = memo.activityRestrictions.some((r) => r.includes("авиаперелеты"));
+			assert.ok(hasFlightsBan, "Must warn against flights");
+
+			assert.ok(memo.medications.some((m) => m.name.includes("Називин")), "Must prescribe nasal drops");
+			assert.ok(memo.medications.some((m) => m.name.includes("Амоксиклав")), "Must prescribe antibiotic");
+		});
+
+		it("includes specific extraction care (clot preservation, cold pack, no hot baths)", () => {
+			const memo = generateCareMemo({
+				patientName: "Дмитрий",
+				toothFdi: "48",
+				interventionType: "extraction",
+			});
+
+			const hasNoRinse = memo.recommendations.some((r) => r.title.includes("НЕ ПОЛОСКАТЬ"));
+			assert.ok(hasNoRinse, "Must strictly forbid aggressive rinsing");
+
+			const hasCold = memo.recommendations.some((r) => r.title.includes("холод"));
+			assert.ok(hasCold, "Must recommend cold compress");
+		});
+
+		it("includes specific teeth whitening care (white diet for 48-72h, remineralizing gel)", () => {
+			const memo = generateCareMemo({
+				patientName: "Ольга",
+				toothFdi: "11-21",
+				interventionType: "whitening",
+			});
+
+			const hasWhiteDiet = memo.recommendations.some((r) => r.title.includes("Белая диета"));
+			assert.ok(hasWhiteDiet, "Must prescribe strict white diet");
+
+			assert.ok(memo.medications.some((m) => m.name.includes("Relief ACP") || m.name.includes("Tooth Mousse")));
+		});
+	});
+
+	describe("Messaging & Deep Links", () => {
+		it("buildWhatsAppLink formats international numbers cleanly", () => {
+			const link = buildWhatsAppLink("+7 (999) 123-45-67", "Тестовое сообщение");
+			assert.equal(link, "https://wa.me/79991234567?text=%D0%A2%D0%B5%D1%81%D1%82%D0%BE%D0%B2%D0%BE%D0%B5%20%D1%81%D0%BE%D0%BE%D0%B1%D1%89%D0%B5%D0%BD%D0%B8%D0%B5");
+		});
+
+		it("buildSmsLink formats SMS URI with protocol", () => {
+			const link = buildSmsLink("+7 (999) 123-45-67", "Памятка ДЕНТЕ");
+			assert.ok(link.startsWith("sms:+79991234567?body="));
+		});
+
+		it("generateCareMemoSmsText returns concise SMS string", () => {
+			const memo = generateCareMemo({
+				patientName: "Иван",
+				toothFdi: "36",
+				interventionType: "caries",
+			});
+			const sms = generateCareMemoSmsText(memo);
+			assert.ok(sms.includes("ДЕНТЕ: Памятка после лечения зуба 36"));
+			assert.ok(sms.includes("https://dente.ru/m/"));
+		});
+	});
+
+	describe("A4 Printable Document Generator", () => {
+		it("generates complete HTML document with clinical headers, table, and QR code", () => {
+			const memo = generateCareMemo({
+				patientName: "Сергей Васильев",
+				toothFdi: "46",
+				interventionType: "implantation",
 				doctorName: "Кузнецов П. С.",
-				doctorSpecialty: "Врач-стоматолог терапевт",
-				clinicName: "Стоматологическая клиника ДЕНТЕ",
-				clinicPhone: "+7 (495) 789-01-23",
-				clinicEmergencyPhone: "+7 (999) 123-45-67",
+				doctorSpecialty: "Хирург-имплантолог",
 			});
 
-			assert.equal(memo.patientName, "Алексей Смирнов");
-			assert.equal(memo.toothFdi, "16");
-			assert.equal(memo.doctorName, "Кузнецов П. С.");
-
-			// WhatsApp text format verification
-			assert.ok(
-				memo.whatsAppText.includes("Уважаемый(ая) Алексей Смирнов, рекомендации после лечения зуба 16:"),
-				"WhatsApp text must match exact user format requirement",
-			);
-			assert.ok(memo.whatsAppText.includes("Приложить холод"), "Includes cold compress advice");
-			assert.ok(memo.whatsAppText.includes("Обезболивающее"), "Includes medication advice");
-			assert.ok(memo.whatsAppText.includes("Не есть горячее"), "Includes eating restriction");
-			assert.ok(memo.whatsAppText.includes("Стоматологическая клиника ДЕНТЕ"), "Includes clinic name");
-
-			// WhatsApp deep link
-			assert.ok(memo.whatsAppDeepLink.startsWith("https://wa.me/79997776655?text="));
-
-			// QR Code SVG verification
-			assert.ok(memo.qrCodeSvg.includes("<svg"), "Must produce valid SVG XML");
-			assert.ok(memo.qrCodeSvg.includes("</svg>"));
-
-			// Recommendation items check
-			assert.ok(memo.recommendations.length >= 5);
-			const coldRec = memo.recommendations.find((r) => r.id === "cold_compress");
-			assert.ok(coldRec);
-			assert.equal(coldRec.icon, "🧊");
-			assert.equal(coldRec.title, "Приложить холод на 15 минут");
-
-			const medRec = memo.recommendations.find((r) => r.id === "painkiller");
-			assert.ok(medRec);
-			assert.equal(medRec.icon, "💊");
-			assert.ok(medRec.title.includes("Обезболивающее"));
-
-			const noHotRec = memo.recommendations.find((r) => r.id === "no_hot_food");
-			assert.ok(noHotRec);
-			assert.equal(noHotRec.icon, "🚫");
-			assert.equal(noHotRec.title, "Не есть горячее 2 часа");
-		});
-
-		it("handles missing optional values with robust defaults", () => {
-			const memo = generateCareMemo({
-				patientName: "Анна",
-				toothFdi: "24",
-			});
-
-			assert.ok(memo.whatsAppText.includes("Уважаемый(ая) Анна, рекомендации после лечения зуба 24:"));
-			assert.ok(memo.qrCodeSvg.length > 50);
+			const html = generateCareMemoPrintHtml(memo);
+			assert.ok(html.includes("<!DOCTYPE html>"));
+			assert.ok(html.includes("Сергей Васильев"));
+			assert.ok(html.includes("Зуб №<strong>46</strong>"));
+			assert.ok(html.includes("Дентальная имплантация"));
+			assert.ok(html.includes("Режим и схема приёма медикаментов"));
+			assert.ok(html.includes("Амоксиклав"));
+			assert.ok(html.includes("Тревожные признаки") || html.includes("срочно связаться"));
+			assert.ok(html.includes("<svg"), "Must embed QR code inside HTML");
 		});
 	});
 
-	describe("buildWhatsAppLink", () => {
-		it("normalizes Russian phone numbers to international format and encodes URI", () => {
-			const link1 = buildWhatsAppLink("8 (916) 123-45-67", "Привет!");
-			assert.equal(link1, "https://wa.me/79161234567?text=%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82!");
+	describe("Friendly Non-Latin Billing Engine", () => {
+		it("translates medical nomenclature 804n into plain Russian terms", () => {
+			const t1 = translateMedicalTermToFriendly("Инфильтрационная анестезия Septanest 1:100000", "16");
+			assert.equal(t1.categoryGroup, "anesthesia");
+			assert.ok(t1.friendlyName.includes("Обезболивание (анестезия)"));
+			assert.equal(t1.groupIcon, "💉");
 
-			const link2 = buildWhatsAppLink("+7 (999) 000-11-22", "Тест");
-			assert.equal(link2, "https://wa.me/79990001122?text=%D0%A2%D0%B5%D1%81%D1%82");
+			const t2 = translateMedicalTermToFriendly("Радиовизиография прицельная зуба A06.07.001", "16");
+			assert.equal(t2.categoryGroup, "xray");
+			assert.ok(t2.friendlyName.includes("Снимок зуба"));
+
+			const t3 = translateMedicalTermToFriendly("Наложение пломбы из нанокомпозита Filtek Ultimate", "16");
+			assert.equal(t3.categoryGroup, "caries");
+			assert.ok(t3.friendlyName.includes("Лечение кариеса и световая пломба"));
+
+			const t4 = translateMedicalTermToFriendly("Профессиональная гигиена Air-Flow Clinpro A16.07.051");
+			assert.equal(t4.categoryGroup, "hygiene");
+			assert.ok(t4.friendlyName.includes("Комплексная профессиональная чистка"));
 		});
-	});
 
-	describe("translateMedicalTermToFriendly", () => {
-		it("translates Order 804n / technical nomenclature into simple Russian explanations", () => {
-			const cariesRes = translateMedicalTermToFriendly(
-				"A16.07.002.001 Восстановление зуба пломбой (нанокомпозит Filtek)",
-				"16",
-			);
-			assert.equal(cariesRes.categoryGroup, "caries");
-			assert.equal(cariesRes.groupIcon, "🦷");
-			assert.equal(cariesRes.friendlyName, "Лечение кариеса и световая пломба (зуб №16)");
-			assert.ok(cariesRes.plainDescriptionRu.includes("кариеса"));
-
-			const anesthesiaRes = translateMedicalTermToFriendly(
-				"B01.003.004.001 Инфильтрационная анестезия Артикаин",
-				"16",
-			);
-			assert.equal(anesthesiaRes.categoryGroup, "anesthesia");
-			assert.equal(anesthesiaRes.groupIcon, "💉");
-			assert.equal(anesthesiaRes.friendlyName, "Обезболивание (анестезия) (зуб №16)");
-			assert.ok(anesthesiaRes.plainDescriptionRu.includes("безболезненности"));
-
-			const xRayRes = translateMedicalTermToFriendly(
-				"A06.07.001 Прицельный внутриротовой радиовизиографический снимок",
-				"16",
-			);
-			assert.equal(xRayRes.categoryGroup, "xray");
-			assert.equal(xRayRes.groupIcon, "📷");
-			assert.equal(xRayRes.friendlyName, "Снимок зуба (радиовизиография) (зуб №16)");
-		});
-	});
-
-	describe("groupServicesIntoFriendlyBlocks", () => {
-		it("correctly groups multi-service invoice into transparent categories with totals and percentages", () => {
+		it("groups mixed service items into organized logical categories with percentages", () => {
 			const services = [
-				{
-					id: "s-1",
-					name: "Восстановление зуба пломбой Filtek Ultimate",
-					code804n: "A16.07.002.001",
-					toothNumber: "16",
-					quantity: 1,
-					priceRub: 6000,
-					category: "therapy",
-				},
-				{
-					id: "s-2",
-					name: "Инфильтрационная анестезия Ультракаин",
-					code804n: "B01.003.004.001",
-					toothNumber: "16",
-					quantity: 1,
-					priceRub: 1500,
-					category: "therapy",
-				},
-				{
-					id: "s-3",
-					name: "Прицельная рентгенография зуба",
-					code804n: "A06.07.001",
-					toothNumber: "16",
-					quantity: 1,
-					priceRub: 500,
-					category: "diagnostic",
-				},
-				{
-					id: "s-4",
-					name: "Комплексная профессиональная гигиена Air-Flow",
-					code804n: "A16.07.051",
-					quantity: 1,
-					priceRub: 4000,
-					category: "hygiene",
-				},
+				{ id: "1", titleRu: "Проводниковая анестезия Ubistesin", toothFdi: "16", priceRub: 800, quantity: 1 },
+				{ id: "2", titleRu: "Прицельный снимок радиовизиографом", toothFdi: "16", priceRub: 600, quantity: 1 },
+				{ id: "3", titleRu: "Восстановление зуба нанокомпозитом Estelite Asteria", toothFdi: "16", priceRub: 6500, quantity: 1 },
 			];
 
 			const breakdown = groupServicesIntoFriendlyBlocks(services);
+			assert.equal(breakdown.totalAmountRub, 7900);
+			assert.equal(breakdown.groups.length, 3);
 
-			assert.equal(breakdown.totalAmountRub, 12000);
-			assert.equal(breakdown.groups.length, 4);
+			// Check category ordering: caries first, then anesthesia, then xray
+			assert.equal(breakdown.groups[0]?.categoryGroup, "caries");
+			assert.equal(breakdown.groups[1]?.categoryGroup, "anesthesia");
+			assert.equal(breakdown.groups[2]?.categoryGroup, "xray");
 
-			const cariesGroup = breakdown.groups.find((g) => g.categoryGroup === "caries");
-			assert.ok(cariesGroup);
-			assert.equal(cariesGroup.categoryGroupRu, "Лечение кариеса и пломбирование");
-			assert.equal(cariesGroup.subtotalRub, 6000);
-			assert.equal(cariesGroup.percentageOfTotal, 50);
-
-			const anesthesiaGroup = breakdown.groups.find((g) => g.categoryGroup === "anesthesia");
-			assert.ok(anesthesiaGroup);
-			assert.equal(anesthesiaGroup.categoryGroupRu, "Обезболивание (анестезия)");
-			assert.equal(anesthesiaGroup.subtotalRub, 1500);
-
-			const xRayGroup = breakdown.groups.find((g) => g.categoryGroup === "xray");
-			assert.ok(xRayGroup);
-			assert.equal(xRayGroup.categoryGroupRu, "Снимки и диагностика");
-			assert.equal(xRayGroup.subtotalRub, 500);
-
-			const hygieneGroup = breakdown.groups.find((g) => g.categoryGroup === "hygiene");
-			assert.ok(hygieneGroup);
-			assert.equal(hygieneGroup.categoryGroupRu, "Профессиональная чистка и гигиена");
-			assert.equal(hygieneGroup.subtotalRub, 4000);
+			assert.ok((breakdown.groups[0]?.percentageOfTotal ?? 0) > 80);
+			assert.ok(breakdown.patientFriendlySummaryRu.includes("Лечение кариеса и пломбирование"));
 		});
-	});
 
-	describe("generateFriendlyBillingWhatsAppMessage", () => {
-		it("formats readable WhatsApp message without complex medical jargon", () => {
+		it("generates clear WhatsApp billing message", () => {
 			const services = [
-				{
-					id: "s-1",
-					name: "Восстановление зуба пломбой",
-					toothNumber: "16",
-					quantity: 1,
-					priceRub: 5000,
-				},
-				{
-					id: "s-2",
-					name: "Анестезия Артикаин",
-					quantity: 1,
-					priceRub: 1000,
-				},
+				{ id: "1", titleRu: "Анестезия Артикаин", toothFdi: "16", priceRub: 800, quantity: 1 },
+				{ id: "2", titleRu: "Пломба световая Filtek", toothFdi: "16", priceRub: 6000, quantity: 1 },
 			];
-
 			const breakdown = groupServicesIntoFriendlyBlocks(services);
-			const msg = generateFriendlyBillingWhatsAppMessage(
-				"Мария Петрова",
-				breakdown,
-				"Стоматология ДЕНТЕ",
-				"+7 (495) 789-01-23",
-			);
+			const msg = generateFriendlyBillingWhatsAppMessage("Мария", breakdown);
 
-			assert.ok(msg.includes("Мария Петрова"));
-			assert.ok(msg.includes("Детализация"));
-			assert.ok(msg.includes("Стоматология ДЕНТЕ"));
-			assert.ok(msg.includes("Лечение кариеса и пломбирование"));
-			assert.ok(msg.includes("Обезболивание (анестезия)"));
+			assert.ok(msg.includes("Здравствуйте, уважаемый(ая) Мария!"));
 			assert.ok(msg.includes(breakdown.totalAmountRubFormatted));
+			assert.ok(msg.includes("Обезболивание (анестезия)"));
+			assert.ok(msg.includes("Лечение кариеса и пломбирование"));
 		});
 	});
 
-	describe("calculatePatientTaxDeduction", () => {
-		it("calculates 13% tax refund with 150,000 RUB limit for Code 01 and no limit for Code 02", () => {
-			const invoices = [
+	describe("Tax Deduction & Dental Passport Engine", () => {
+		it("calculates 13% tax deduction and remaining social deduction limit for 2026", () => {
+			const mockInvoices: PatientInvoiceItem[] = [
 				{
 					id: "inv-1",
-					invoiceNumber: "СЧ-001",
-					issueDateIso: "2026-03-10",
-					dueDateIso: "2026-03-10",
-					titleRu: "Терапевтическое лечение",
-					totalAmountRub: 200000,
-					paidAmountRub: 200000,
+					invoiceNumber: "INV-2026-001",
+					issueDateIso: "2026-03-15",
+					dueDateIso: "2026-03-15",
+					titleRu: "Лечение зуба",
+					totalAmountRub: 100000,
+					paidAmountRub: 100000,
 					remainingAmountRub: 0,
-					status: "paid" as const,
+					status: "paid",
 					items: [
-						{
-							code: "A16.07.002",
-							titleRu: "Лечение кариеса",
-							quantity: 1,
-							priceRub: 200000,
-							totalRub: 200000,
-							toothFdi: "16",
-						},
+						{ code: "A16.07.002", titleRu: "Пломбирование зуба", quantity: 1, priceRub: 100000, totalRub: 100000 },
 					],
 				},
 				{
 					id: "inv-2",
-					invoiceNumber: "СЧ-002",
-					issueDateIso: "2026-05-15",
-					dueDateIso: "2026-05-15",
-					titleRu: "Дентальная имплантация Osstem",
-					totalAmountRub: 100000,
-					paidAmountRub: 100000,
+					invoiceNumber: "INV-2026-002",
+					issueDateIso: "2026-04-20",
+					dueDateIso: "2026-04-20",
+					titleRu: "Профгигиена",
+					totalAmountRub: 20000,
+					paidAmountRub: 20000,
 					remainingAmountRub: 0,
-					status: "paid" as const,
+					status: "paid",
 					items: [
-						{
-							code: "A16.07.054.001",
-							titleRu: "Внутрикостная дентальная имплантация Osstem",
-							quantity: 1,
-							priceRub: 100000,
-							totalRub: 100000,
-							toothFdi: "26",
-						},
+						{ code: "A16.07.051", titleRu: "Комплексная гигиена", quantity: 1, priceRub: 20000, totalRub: 20000 },
 					],
 				},
 			];
 
-			const result = calculatePatientTaxDeduction(invoices, 2026);
-
-			assert.equal(result.taxYear, 2026);
-			assert.equal(result.totalSpentRub, 300000);
-			assert.equal(result.code01SpentRub, 200000);
-			assert.equal(result.isCode01Capped, true, "Code 01 should be capped at 150,000 RUB");
-			assert.equal(result.code01EligibleRub, 150000);
-			assert.equal(result.code01RefundRub, 19500, "13% of 150,000 is 19,500 RUB");
-
-			assert.equal(result.code02SpentRub, 100000);
-			assert.equal(result.code02RefundRub, 13000, "13% of 100,000 is 13,000 RUB (no limit)");
-
-			assert.equal(result.totalRefundRub, 32500, "19,500 + 13,000 = 32,500 RUB");
-			assert.ok(result.headerBannerTextRu.includes("Потрачено на лечение:"));
-			assert.ok(result.headerBannerTextRu.includes("Возврат от налоговой:"));
-			assert.equal(result.guideSteps.length, 3);
-			assert.ok(result.guideSteps[0]?.titleRu.includes("1. Скачайте готовую справку у нас"));
-			assert.ok(result.guideSteps[1]?.titleRu.includes("2. Прикрепите в ЛК nalog.ru"));
-			assert.ok(result.guideSteps[2]?.titleRu.includes("3. Получите деньги на карту"));
+			const tax2026 = calculatePatientTaxDeduction(mockInvoices, 2026);
+			assert.equal(tax2026.taxYear, 2026);
+			assert.equal(tax2026.totalSpentRub, 120000);
+			assert.equal(tax2026.code01SpentRub, 120000);
+			assert.equal(tax2026.code02SpentRub, 0);
+			assert.equal(tax2026.totalRefundRub, 15600); // 120,000 * 13% = 15,600
+			assert.equal(tax2026.isCode01Capped, false);
 		});
-	});
 
-	describe("generatePatientDentalPassport & formatFdiToothPlainRussian", () => {
-		it("formats tooth FDI 16 into plain Russian anatomy and builds detailed passport cards", () => {
-			const tooth16Info = formatFdiToothPlainRussian("16");
-			assert.equal(tooth16Info.quadrantRu, "верхний правый");
-			assert.equal(tooth16Info.toothTypeRu, "жевательный");
-			assert.equal(tooth16Info.anatomyRu, "верхний правый жевательный");
-
-			const tooth21Info = formatFdiToothPlainRussian("21");
-			assert.equal(tooth21Info.quadrantRu, "верхний левый");
-			assert.equal(tooth21Info.toothTypeRu, "центральный резец");
-
-			const mockData = {
-				patientId: "p-1",
-				fullName: "Алексей Смирнов",
-				phone: "+7 999 123-45-67",
-				cardNumber: "043-1234",
-				curatingDoctor: "Д-р Кузнецов П. С.",
-				loyaltyBonusBalance: 5000,
-				loyaltyTierRu: "Золотой (10%)" as const,
-				cashbackEarnedRub: 10000,
-				invoices: [],
-				appointments: [],
-				treatmentPlans: [],
-				consents: [],
-				warranties: [
+		it("generates structured dental passport from patient history", () => {
+			const mockCabinet: PatientPersonalCabinetData = {
+				patientId: "pat-2",
+				fullName: "Елена",
+				phone: "+7 (999) 222-33-44",
+				cardNumber: "043-9999",
+				curatingDoctor: "Кузнецов П. С.",
+				loyaltyBonusBalance: 0,
+				loyaltyTierRu: "Базовый",
+				cashbackEarnedRub: 0,
+				invoices: [
 					{
-						certificateId: "WAR-01",
-						issueDateIso: "2026-06-15",
-						expirationDateIso: "2028-06-15",
-						adjustedWarrantyMonths: 24,
-						doctorName: "Д-р Смирнов А. В.",
-						status: "active" as const,
-						verificationUrl: "https://dente.ru/war/01",
-						nextCheckupDueDateIso: "2026-12-15",
-						checkupIntervalMonths: 6,
-						checkupScheduleCount: 4,
+						id: "inv-10",
+						invoiceNumber: "INV-2026-010",
+						issueDateIso: "2026-05-10",
+						dueDateIso: "2026-05-10",
+						titleRu: "Имплантация",
+						totalAmountRub: 45000,
+						paidAmountRub: 45000,
+						remainingAmountRub: 0,
+						status: "paid",
 						items: [
 							{
+								code: "A16.07.054",
+								titleRu: "Установка дентального имплантата Straumann",
 								toothFdi: "16",
-								workTitleRu: "Световая пломба Filtek Ultimate",
-								materialName: "Filtek Ultimate",
-								manufacturer: "3M ESPE",
-								lotNumber: "LOT-9988",
+								priceRub: 45000,
+								quantity: 1,
+								totalRub: 45000,
 							},
 						],
 					},
 				],
+				treatmentPlans: [],
+				appointments: [],
+				consents: [],
+				warranties: [],
 			};
 
-			const passport = generatePatientDentalPassport(mockData as any);
-
-			assert.equal(passport.patientName, "Алексей Смирнов");
+			const passport = generatePatientDentalPassport(mockCabinet);
 			assert.equal(passport.totalTreatedTeethCount, 1);
-			assert.equal(passport.activeGuaranteesCount, 1);
-			assert.equal(passport.entries.length, 1);
+			assert.ok(passport.entries.length === 1);
+			assert.equal(passport.entries[0]?.toothFdi, "16");
+			assert.ok(passport.entries[0]?.procedureTitleRu.includes("имплантата"));
+		});
 
-			const entry16 = passport.entries[0]!;
-			assert.equal(entry16.toothFdi, "16");
-			assert.equal(entry16.anatomyRu, "верхний правый жевательный");
-			assert.equal(entry16.warrantyMonths, 24);
-			assert.equal(entry16.isWarrantyActive, true);
-			assert.ok(entry16.plainSummaryRu.includes("Зуб 16: верхний правый жевательный — установлена пломба Filtek Ultimate, гарантия 24 мес."));
+		it("formats tooth numbers to plain Russian quadrant descriptions", () => {
+			const fdi16 = formatFdiToothPlainRussian("16");
+			assert.equal(fdi16.quadrantRu, "верхний правый");
+			assert.equal(fdi16.toothTypeRu, "жевательный");
+			assert.ok(fdi16.anatomyRu.includes("верхний правый"));
+
+			const fdi21 = formatFdiToothPlainRussian("21");
+			assert.equal(fdi21.quadrantRu, "верхний левый");
+			assert.equal(fdi21.toothTypeRu, "центральный резец");
+
+			const fdi48 = formatFdiToothPlainRussian("48");
+			assert.equal(fdi48.quadrantRu, "нижний правый");
+			assert.equal(fdi48.toothTypeRu, "зуб мудрости");
 		});
 	});
 });

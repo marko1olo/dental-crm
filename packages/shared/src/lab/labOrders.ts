@@ -1,12 +1,12 @@
 /**
  * Dental Laboratory Work Orders & Prosthodontic Job Tracking Engine.
- * Adapted from dentalpin lab_orders module for DENTE Dental CRM.
- *
- * Provides typed Zod schemas, VITA 3D-Master & Classical shade catalog,
- * turnaround SLA calculations, and prosthetic lifecycle state machine.
+ * Shared domain models, typed Zod schemas, VITA & Natural Die shade catalogs,
+ * turnaround SLA calculations, and integer-kopeck financial clearing.
  */
 
 import { z } from "zod";
+
+// ─── WORK TYPES & PROSTHETIC CONSTRUCTIONS ────────────────────────────────────
 
 export const labWorkTypeSchema = z.enum([
 	"crown",
@@ -22,6 +22,36 @@ export const labWorkTypeSchema = z.enum([
 ]);
 export type LabWorkType = z.infer<typeof labWorkTypeSchema>;
 
+export const prostheticConstructionTypeSchema = z.enum([
+	"single_crown",
+	"bridge",
+	"veneer",
+	"inlay_onlay",
+	"all_on_4_6",
+	"all_on_arch",
+	"implant_abutment",
+	"clasp_denture",
+	"aligner_nightguard",
+	"aligners_nightguard",
+	"endocrown",
+	"custom",
+]);
+export type ProstheticConstructionType = z.infer<typeof prostheticConstructionTypeSchema>;
+
+export const prostheticMaterialSchema = z.enum([
+	"zirconia_multilayer",
+	"emax_lithium_disilicate",
+	"pfm_cocr",
+	"pmma_temporary",
+	"titanium_custom_abutment",
+	"peek_biohpp",
+	"biocompatible_3d_resin",
+	"other",
+]);
+export type ProstheticMaterial = z.infer<typeof prostheticMaterialSchema>;
+
+// ─── ORDER STATUSES & 7-STAGE PIPELINE ────────────────────────────────────────
+
 export const labOrderStatusSchema = z.enum([
 	"draft",
 	"sent",
@@ -35,6 +65,23 @@ export const labOrderStatusSchema = z.enum([
 ]);
 export type LabOrderStatus = z.infer<typeof labOrderStatusSchema>;
 
+export const labWorkflowStageSchema = z.enum([
+	"impression_sent",
+	"sent_to_lab",
+	"cad_design",
+	"model_cad_design",
+	"milling_wax_up",
+	"framework_wax_milling",
+	"sintering_ceramic_layering",
+	"try_in_fitting",
+	"fitting_in_mouth",
+	"glaze_finish",
+	"final_glaze",
+	"delivered_to_clinic",
+	"installed_in_mouth",
+]);
+export type LabWorkflowStage = z.infer<typeof labWorkflowStageSchema>;
+
 export const impressionTypeSchema = z.enum([
 	"alginate",
 	"pvs_silicone",
@@ -43,6 +90,8 @@ export const impressionTypeSchema = z.enum([
 	"other",
 ]);
 export type ImpressionType = z.infer<typeof impressionTypeSchema>;
+
+// ─── VITA SHADES & NATURAL DIE STUMP SCALES ───────────────────────────────────
 
 export const vitaClassicalShadeSchema = z.enum([
 	"A1",
@@ -71,6 +120,41 @@ export const vitaClassicalShadeSchema = z.enum([
 ]);
 export type VitaClassicalShade = z.infer<typeof vitaClassicalShadeSchema>;
 
+export const vitaBleachShadeSchema = z.enum([
+	"BL1",
+	"BL2",
+	"BL3",
+	"BL4",
+	"0M1",
+	"0M2",
+	"0M3",
+]);
+export type VitaBleachShade = z.infer<typeof vitaBleachShadeSchema>;
+
+export const vita3dMasterShadeSchema = z.enum([
+	"1M1", "1M2",
+	"2L1.5", "2L2.5", "2M1", "2M2", "2M3", "2R1.5", "2R2.5",
+	"3L1.5", "3L2.5", "3M1", "3M2", "3M3", "3R1.5", "3R2.5",
+	"4L1.5", "4L2.5", "4M1", "4M2", "4M3", "4R1.5", "4R2.5",
+	"5M1", "5M2", "5M3",
+]);
+export type Vita3dMasterShade = z.infer<typeof vita3dMasterShadeSchema>;
+
+export const stumpNaturalDieShadeSchema = z.enum([
+	"ND1",
+	"ND2",
+	"ND3",
+	"ND4",
+	"ND5",
+	"ND6",
+	"ND7",
+	"ND8",
+	"ND9",
+]);
+export type StumpNaturalDieShade = z.infer<typeof stumpNaturalDieShadeSchema>;
+
+// ─── MAIN LAB ORDER SCHEMA ───────────────────────────────────────────────────
+
 export const labOrderSchema = z.object({
 	id: z.string().uuid().optional(),
 	organizationId: z.string().uuid(),
@@ -98,6 +182,8 @@ export const labOrderSchema = z.object({
 });
 export type LabOrder = z.infer<typeof labOrderSchema>;
 
+// ─── TURNAROUND SLA CALCULATIONS ─────────────────────────────────────────────
+
 /**
  * Standard turnaround SLA days for common lab work types.
  */
@@ -115,19 +201,14 @@ export const DEFAULT_LAB_TURNAROUND_DAYS: Record<LabWorkType, number> = {
 };
 
 /**
- * Calculates default expected delivery date based on work type and business days.
+ * Adds business working days to a start date, skipping weekends (Saturday & Sunday).
  */
-export function calculateExpectedDeliveryDate(
-	sentDate: Date | string,
-	workType: LabWorkType,
-	customTurnaroundDays?: number,
-): Date {
-	const start = typeof sentDate === "string" ? new Date(sentDate) : new Date(sentDate);
-	const daysToAdd = customTurnaroundDays ?? DEFAULT_LAB_TURNAROUND_DAYS[workType] ?? 7;
-
+export function addBusinessDays(startDate: Date | string, daysToAdd: number): Date {
+	const start = typeof startDate === "string" ? new Date(startDate) : new Date(startDate);
+	const safeDays = Math.max(0, Math.round(daysToAdd));
 	const result = new Date(start.getTime());
 	let added = 0;
-	while (added < daysToAdd) {
+	while (added < safeDays) {
 		result.setDate(result.getDate() + 1);
 		const day = result.getDay();
 		// Skip weekends (0 = Sunday, 6 = Saturday)
@@ -136,6 +217,18 @@ export function calculateExpectedDeliveryDate(
 		}
 	}
 	return result;
+}
+
+/**
+ * Calculates default expected delivery date based on work type and business days.
+ */
+export function calculateExpectedDeliveryDate(
+	sentDate: Date | string,
+	workType: LabWorkType,
+	customTurnaroundDays?: number,
+): Date {
+	const daysToAdd = customTurnaroundDays ?? DEFAULT_LAB_TURNAROUND_DAYS[workType] ?? 7;
+	return addBusinessDays(sentDate, daysToAdd);
 }
 
 /**
@@ -172,4 +265,96 @@ export function canTransitionLabOrderStatus(
 	};
 
 	return transitions[current]?.includes(target) ?? false;
+}
+
+// ─── KOPECK-EXACT FINANCIAL CLEARING (NO FLOATS) ─────────────────────────────
+
+export interface LabFinancialSplitKopecksResult {
+	clinicKopecks: number;
+	doctorKopecks: number;
+	totalKopecks: number;
+	clinicAmountRub: number;
+	doctorAmountRub: number;
+	isBalanced: boolean;
+}
+
+/**
+ * Strict kopeck-exact calculation of clinic vs doctor split.
+ * Invariant: clinicKopecks + doctorKopecks === totalKopecks (Zero penny-drift).
+ */
+export function calculateLabFinancialSplitKopecks(
+	totalKopecks: number,
+	doctorSharePct: number,
+): LabFinancialSplitKopecksResult {
+	const safeTotalKopecks = Math.max(0, Math.round(Number.isFinite(totalKopecks) ? totalKopecks : 0));
+	const safeDoctorPct = Math.min(100, Math.max(0, Number.isFinite(doctorSharePct) ? doctorSharePct : 50));
+
+	const doctorKopecks = Math.round((safeTotalKopecks * safeDoctorPct) / 100);
+	const clinicKopecks = safeTotalKopecks - doctorKopecks;
+
+	return {
+		clinicKopecks,
+		doctorKopecks,
+		totalKopecks: safeTotalKopecks,
+		clinicAmountRub: Number((clinicKopecks / 100).toFixed(2)),
+		doctorAmountRub: Number((doctorKopecks / 100).toFixed(2)),
+		isBalanced: clinicKopecks + doctorKopecks === safeTotalKopecks,
+	};
+}
+
+export interface LabOrderFinancialClearingResult {
+	patientPriceTotalKopecks: number;
+	labCostTotalKopecks: number;
+	grossMarginKopecks: number;
+	grossMarginPercent: number;
+	doctorCommissionKopecks: number;
+	doctorPercent: number;
+	clinicNetProfitKopecks: number;
+	unitsCount: number;
+	pricePerUnitKopecks: number;
+	costPerUnitKopecks: number;
+	isBalanced: boolean;
+}
+
+/**
+ * Calculates complete order financial clearing in integer kopecks.
+ */
+export function calculateLabOrderFinancialsKopecks(params: {
+	unitsCount: number;
+	pricePerUnitKopecks: number;
+	costPerUnitKopecks: number;
+	doctorPercent?: number;
+}): LabOrderFinancialClearingResult {
+	const count = Math.max(1, Math.round(params.unitsCount || 1));
+	const pricePerUnit = Math.max(0, Math.round(params.pricePerUnitKopecks || 0));
+	const costPerUnit = Math.max(0, Math.round(params.costPerUnitKopecks || 0));
+	const doctorPct = Math.max(0, Math.min(100, params.doctorPercent ?? 20));
+
+	const patientPriceTotalKopecks = pricePerUnit * count;
+	const labCostTotalKopecks = costPerUnit * count;
+	const grossMarginKopecks = Math.max(0, patientPriceTotalKopecks - labCostTotalKopecks);
+
+	const grossMarginPercent = patientPriceTotalKopecks > 0
+		? Number(((grossMarginKopecks / patientPriceTotalKopecks) * 100).toFixed(1))
+		: 0;
+
+	const doctorCommissionKopecks = grossMarginKopecks > 0
+		? Math.round((grossMarginKopecks * doctorPct) / 100)
+		: 0;
+
+	const clinicNetProfitKopecks = grossMarginKopecks - doctorCommissionKopecks;
+
+	return {
+		patientPriceTotalKopecks,
+		labCostTotalKopecks,
+		grossMarginKopecks,
+		grossMarginPercent,
+		doctorCommissionKopecks,
+		doctorPercent: doctorPct,
+		clinicNetProfitKopecks,
+		unitsCount: count,
+		pricePerUnitKopecks: pricePerUnit,
+		costPerUnitKopecks: costPerUnit,
+		isBalanced: (doctorCommissionKopecks + clinicNetProfitKopecks) === grossMarginKopecks,
+	};
 }

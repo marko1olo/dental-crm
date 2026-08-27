@@ -46,25 +46,25 @@ export function DentalLabRestorationTab({
 								: "Выберите зубы для наряда"}
 						</span>
 					</div>
-					<div className="flex items-center gap-2 text-xs">
+					<div className="flex items-center gap-2 text-xs flex-wrap">
 						<button
 							type="button"
 							onClick={() => selectQuadrant([18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28])}
-							className="min-h-[44px] px-3 py-2 rounded-xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+							className="min-h-[44px] px-3.5 py-2 rounded-xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-600 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors shadow-sm"
 						>
 							Верхняя челюсть
 						</button>
 						<button
 							type="button"
 							onClick={() => selectQuadrant([48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38])}
-							className="min-h-[44px] px-3 py-2 rounded-xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+							className="min-h-[44px] px-3.5 py-2 rounded-xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-600 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors shadow-sm"
 						>
 							Нижняя челюсть
 						</button>
 						<button
 							type="button"
 							onClick={() => setSelectedTeeth([])}
-							className="min-h-[44px] px-3 py-2 rounded-xl font-bold bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900/50 transition-colors"
+							className="min-h-[44px] px-3.5 py-2 rounded-xl font-bold bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800 hover:bg-rose-200 dark:hover:bg-rose-900 transition-colors shadow-sm"
 						>
 							Очистить
 						</button>
@@ -74,59 +74,63 @@ export function DentalLabRestorationTab({
 				{/* Quadrant Visual Grid with >= 44x44px touch targets */}
 				<div className="space-y-3 select-none pt-2">
 					{/* Upper Maxilla */}
-					<div className="flex justify-center items-center gap-1 sm:gap-1.5 flex-wrap">
-						<span className="text-xs uppercase font-bold text-slate-400 w-16 text-right pr-2">
-							Верх (Q1-Q2)
-						</span>
-						{[18, 17, 16, 15, 14, 13, 12, 11].map((t) => (
-							<button
-								key={t}
-								type="button"
-								onClick={() => toggleTooth(t)}
-								className={`lab-tooth-btn ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
-							>
-								{t}
-							</button>
-						))}
-						<div className="w-px h-10 bg-slate-300 dark:bg-slate-700 mx-1.5" />
-						{[21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
-							<button
-								key={t}
-								type="button"
-								onClick={() => toggleTooth(t)}
-								className={`lab-tooth-btn ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
-							>
-								{t}
-							</button>
-						))}
+					<div className="overflow-x-auto pb-1.5 scrollbar-none">
+						<div className="flex items-center gap-1 sm:gap-1.5 min-w-fit justify-start sm:justify-center">
+							<span className="text-xs uppercase font-bold text-slate-400 w-16 text-right pr-2 shrink-0">
+								Верх (Q1-Q2)
+							</span>
+							{[18, 17, 16, 15, 14, 13, 12, 11].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => toggleTooth(t)}
+									className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+								>
+									{t}
+								</button>
+							))}
+							<div className="w-px h-10 bg-slate-300 dark:bg-slate-700 mx-1.5 shrink-0" />
+							{[21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => toggleTooth(t)}
+									className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+								>
+									{t}
+								</button>
+							))}
+						</div>
 					</div>
 
 					{/* Lower Mandible */}
-					<div className="flex justify-center items-center gap-1 sm:gap-1.5 flex-wrap">
-						<span className="text-xs uppercase font-bold text-slate-400 w-16 text-right pr-2">
-							Низ (Q4-Q3)
-						</span>
-						{[48, 47, 46, 45, 44, 43, 42, 41].map((t) => (
-							<button
-								key={t}
-								type="button"
-								onClick={() => toggleTooth(t)}
-								className={`lab-tooth-btn ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
-							>
-								{t}
-							</button>
-						))}
-						<div className="w-px h-10 bg-slate-300 dark:bg-slate-700 mx-1.5" />
-						{[31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
-							<button
-								key={t}
-								type="button"
-								onClick={() => toggleTooth(t)}
-								className={`lab-tooth-btn ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
-							>
-								{t}
-							</button>
-						))}
+					<div className="overflow-x-auto pb-1.5 scrollbar-none">
+						<div className="flex items-center gap-1 sm:gap-1.5 min-w-fit justify-start sm:justify-center">
+							<span className="text-xs uppercase font-bold text-slate-400 w-16 text-right pr-2 shrink-0">
+								Низ (Q4-Q3)
+							</span>
+							{[48, 47, 46, 45, 44, 43, 42, 41].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => toggleTooth(t)}
+									className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+								>
+									{t}
+								</button>
+							))}
+							<div className="w-px h-10 bg-slate-300 dark:bg-slate-700 mx-1.5 shrink-0" />
+							{[31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => toggleTooth(t)}
+									className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+								>
+									{t}
+								</button>
+							))}
+						</div>
 					</div>
 				</div>
 			</div>

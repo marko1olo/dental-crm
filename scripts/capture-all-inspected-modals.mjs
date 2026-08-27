@@ -6,8 +6,11 @@ const THEMES = ["light", "dark"];
 
 const OUT_DIRS = [
 	"C:/Clinic_MVP/dental-crm/docs/proofs/audit",
+	"C:/Clinic_MVP/dental-crm/docs/screenshots",
+	"C:/Users/Admin/.gemini/antigravity/brain/28922cfe-a09a-4693-aa79-8e62cf0bac22",
 	"C:/Users/Admin/.gemini/antigravity/brain/69ded610-4c1d-4d3f-8359-693851dbbfd7",
 	"C:/Users/Admin/.gemini/antigravity/brain/597374ff-ac94-40b8-8848-ea236f205038",
+	process.env.BRAIN_DIR,
 ].filter(Boolean);
 
 for (const dir of OUT_DIRS) {
@@ -63,6 +66,7 @@ async function applyTheme(page, theme) {
 const BASE_URL = "http://127.0.0.1:5173";
 
 const MODAL_BUTTON_TEST_IDS = [
+	// Clinical Core Modals
 	{ id: "open-mixed-dentition-modal-btn", altId: "open-pediatric-modal-btn", name: "pediatric_mixed_dentition" },
 	{ id: "open-radiology-modal-btn", altId: "open-radiology-referral-modal-btn", name: "radiology_referral" },
 	{ id: "open-prescription-modal-btn", altId: "open-med-prescription-modal-btn", name: "prescription_107_1y" },
@@ -72,6 +76,21 @@ const MODAL_BUTTON_TEST_IDS = [
 	{ id: "open-viewer-modal-btn", altId: "open-viewer-modal-btn", name: "radiology_viewer_modal" },
 	{ id: "open-ceph-modal-btn", altId: "open-ceph-modal-btn", name: "cephalometric_analysis_modal" },
 	{ id: "open-billing-1c-export-modal-btn", altId: "open-billing-1c-export-modal-btn", name: "billing_1c_export_modal" },
+
+	// Wave 4: Domain 1 — Лаборатория (ЗТЛ / Dental Lab Orders)
+	{ id: "open-lab-work-order-modal-btn", altId: "open-lab-order-modal-btn", name: "lab_work_order" },
+	{ id: "open-lab-order-modal-btn", altId: "open-lab-stl-modal-btn", name: "dental_lab_order" },
+
+	// Wave 4: Domain 2 — Списание материалов (BOM / 804n Consumption Norms)
+	{ id: "open-procedure-deduction-modal-btn", altId: "open-clinical-writeoff-modal-btn", name: "procedure_material_deduction" },
+	{ id: "open-clinical-writeoff-modal-btn", altId: "open-clinical-writeoff-modal-btn", name: "clinical_writeoff" },
+
+	// Wave 4: Domain 3 — Памятка пациенту (Post-Op Care Memos / Форма 043/у)
+	{ id: "open-patient-memo-modal-btn", altId: "open-patient-memo-modal-btn", name: "post_op_patient_memo" },
+
+	// Wave 4: Domain 4 — Аналитика возвращаемости (Retention & Recalls)
+	{ id: "open-recall-modal-btn", altId: "open-recall-modal-btn", name: "patient_retention_recalls" },
+	{ id: "open-before-after-modal-btn", altId: "open-photo-protocol-modal-btn", name: "before_after_slider" },
 ];
 
 for (const vp of [
@@ -96,6 +115,14 @@ for (const vp of [
 			await page.goto(`${BASE_URL}/#clinical-modals-studio?theme=${theme}&modal=${modal.name}`, { waitUntil: "domcontentloaded" }).catch(() => {});
 			await applyTheme(page, theme);
 			await page.waitForTimeout(400);
+
+			// Fallback: If modal trigger button is present and modal needs a click trigger
+			const trigger = page.locator(`[data-testid="${modal.id}"]`).or(page.locator(`[data-testid="${modal.altId}"]`)).first();
+			if (await trigger.isVisible()) {
+				await trigger.click().catch(() => {});
+				await page.waitForTimeout(350);
+			}
+
 			await saveScreenshot(page, `audit_modal_${modal.name}_${theme}_${vp.name}.png`);
 		}
 	}

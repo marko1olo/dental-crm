@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+	calculateCapacityYieldKopecks,
+	calculateChairUtilizationPercent,
+	calculateHourlyRevenueKopecks,
+	calculateRecallRates,
+	classifyChurnRisk,
+	formatKopecksPerHour,
+	formatKopecksToRub,
+	generatePersonalizedOffer,
 	numberOrNull,
 	parseWidgetListPayload,
 	roleLabel,
@@ -121,3 +129,133 @@ test("число: numeric-строка из базы читается, мусо�
 	assert.equal(numberOrNull(undefined), null);
 	assert.equal(numberOrNull(Number.NaN), null);
 });
+
+/* ------------------------------------------------------------------ */
+/*  Тесты утилизации кресел и точных финансовых расчётов в копейках    */
+/* ------------------------------------------------------------------ */
+
+test("калькулятор утилизации кресла корректно считает процент загрузки", () => {
+	// 360 минут занято из 720 минут доступно = 50.0%
+	assert.equal(calculateChairUtilizationPercent(360, 720), 50);
+	// 540 минут занято из 720 минут = 75.0%
+	assert.equal(calculateChairUtilizationPercent(540, 720), 75);
+	// 0 минут = 0%
+	assert.equal(calculateChairUtilizationPercent(0, 720), 0);
+	// Защита от деления на 0 и отрицательных чисел
+	assert.equal(calculateChairUtilizationPercent(100, 0), 0);
+	assert.equal(calculateChairUtilizationPercent(100, -10), 0);
+	assert.equal(calculateChairUtilizationPercent(Number.NaN, 720), 0);
+	// Ограничение максимума 100%
+	assert.equal(calculateChairUtilizationPercent(800, 720), 100);
+});
+
+test("выручка на кресло-час в целых копейках считается без потери точности", () => {
+	// 100 000 руб (10 000 000 коп) за 120 минут (2 часа) = 50 000 руб/час (5 000 000 коп/час)
+	const hourlyKopecks = calculateHourlyRevenueKopecks(10_000_000, 120);
+	assert.equal(hourlyKopecks, 5_000_000);
+	assert.equal(formatKopecksToRub(hourlyKopecks, false), "50 000 ₽");
+	assert.equal(formatKopecksPerHour(hourlyKopecks), "50 000 ₽/час");
+
+	// Проверка capacity yield (выручка на доступный час мощности)
+	// 10 000 000 коп на 480 минут смены (8 часов) = 1 250 000 коп/час (12 500 руб/час)
+	const capacityYield = calculateCapacityYieldKopecks(10_000_000, 480);
+	assert.equal(capacityYield, 1_250_000);
+	assert.equal(formatKopecksPerHour(capacityYield), "12 500 ₽/час");
+
+	// Граничные условия
+	assert.equal(calculateHourlyRevenueKopecks(0, 120), 0);
+	assert.equal(calculateHourlyRevenueKopecks(1000, 0), 0);
+	assert.equal(calculateHourlyRevenueKopecks(-500, 120), 0);
+});
+
+test("форматирование копеек в рубли работает точно и с разделителями тысяч", () => {
+	assert.equal(formatKopecksToRub(14_500_050, true), "145 000,50 ₽");
+	assert.equal(formatKopecksToRub(14_500_000, true), "145 000,00 ₽");
+	assert.equal(formatKopecksToRub(14_500_000, false), "145 000 ₽");
+	assert.equal(formatKopecksToRub(0, true), "0,00 ₽");
+	assert.equal(formatKopecksToRub(0, false), "0 ₽");
+	assert.equal(formatKopecksToRub(99, true), "0,99 ₽");
+});
+
+/* ------------------------------------------------------------------ */
+/*  Тесты когортного анализа возвращаемости (Recall 6 / 12 мес)       */
+/* ------------------------------------------------------------------ */
+
+test("когортный анализ возвращаемости корректно вычисляет проценты и статусы", () => {
+	// 100 пациентов, 72 вернулись на 6 мес, 68 на 12 мес -> отличная возвращаемость (ok)
+	const cohortGood = calculateRecallRates(100, 72, 68);
+	assert.equal(cohortGood.rate6m, 72);
+	assert.equal(cohortGood.rate12m, 68);
+	assert.equal(cohortGood.healthTone, "ok");
+
+	// 50 пациентов, 26 вернулись на 6 мес (52%) -> требует внимания (warn)
+	const cohortWarn = calculateRecallRates(50, 26, 20);
+	assert.equal(cohortWarn.rate6m, 52);
+	assert.equal(cohortWarn.rate12m, 40);
+	assert.equal(cohortWarn.healthTone, "warn");
+
+	// 80 пациентов, 16 вернулись на 6 мес (20%), 8 на 12 мес (10%) -> критический отток (bad)
+	const cohortBad = calculateRecallRates(80, 16, 8);
+	assert.equal(cohortBad.rate6m, 20);
+	assert.equal(cohortBad.rate12m, 10);
+	assert.equal(cohortBad.healthTone, "bad");
+
+	// 0 пациентов не вызывает деления на 0
+	const cohortZero = calculateRecallRates(0, 0, 0);
+	assert.equal(cohortZero.rate6m, 0);
+	assert.equal(cohortZero.rate12m, 0);
+	assert.equal(cohortZero.healthTone, "bad");
+});
+
+/* ------------------------------------------------------------------ */
+/*  Тесты классификации риска оттока и генератора предложений         */
+/* ------------------------------------------------------------------ */
+
+test("классификация риска оттока делит пациентов по срокам и профилю лечения", () => {
+	// Санация: 190 дней (~6.3 мес) -> срок профгигиены
+	const risk6m = classifyChurnRisk(190, "sanitation");
+	assert.equal(risk6m.band, "due_6m");
+	assert.equal(risk6m.badgeTone, "ok");
+	assert.match(risk6m.recommendedService, /Air-Flow/);
+
+	// Имплантация: 400 дней (~13 мес) -> пропущен годовой осмотр
+	const risk12mImp = classifyChurnRisk(400, "implantation");
+	assert.equal(risk12mImp.band, "overdue_12m");
+	assert.equal(risk12mImp.badgeTone, "warn");
+	assert.match(risk12mImp.recommendedService, /КТ-контроль|остеоинтеграции/);
+
+	// 800 дней (>2 лет) -> критический отток
+	const risk24m = classifyChurnRisk(800, "general_therapy");
+	assert.equal(risk24m.band, "critical_24m");
+	assert.equal(risk24m.badgeTone, "bad");
+});
+
+test("генератор персональных предложений формирует корректный текст по 38-ФЗ и ФИО", () => {
+	// Пациент после имплантации (год без визита)
+	const offerImp = generatePersonalizedOffer({
+		patientName: "Смирнова Елена Александровна",
+		clinicName: "Дент-Премиум",
+		daysSinceLastVisit: 380,
+		category: "implantation",
+		doctorName: "Барабаш С.В.",
+	});
+
+	assert.match(offerImp.messageText, /Елена Александровна/);
+	assert.match(offerImp.messageText, /Дент-Премиум/);
+	assert.match(offerImp.messageText, /имплантации/);
+	assert.match(offerImp.messageText, /Барабаш С\.В\./);
+	assert.equal(offerImp.channelSuggestions.includes("whatsapp"), true);
+
+	// Пациент после санации (полгода)
+	const offerSan = generatePersonalizedOffer({
+		patientName: "Иванов Петр",
+		clinicName: "Клиника Денте",
+		daysSinceLastVisit: 190,
+		category: "sanitation",
+	});
+
+	assert.match(offerSan.messageText, /Петр/);
+	assert.match(offerSan.messageText, /6 месяцев/);
+	assert.match(offerSan.messageText, /Air-Flow/);
+});
+

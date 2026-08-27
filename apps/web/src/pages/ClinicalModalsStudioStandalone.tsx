@@ -8,6 +8,7 @@ import {
 	Camera,
 	CheckCircle2,
 	Award,
+	Clock,
 	Coins,
 	Compass,
 	CreditCard,
@@ -61,6 +62,7 @@ import {
 import { TreatmentPlanCompletedActPrint } from "../components/treatment-plans/TreatmentPlanCompletedActPrint";
 import { FiscalReceipt54FzModal } from "../components/finance/FiscalReceipt54FzModal";
 import { PatientBillingModal } from "../components/finance/PatientBillingModal";
+import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { SanpinRegisters } from "../components/sanpin/SanpinRegisters";
 import { PediatricMixedDentitionModal } from "../components/odontogram/PediatricMixedDentitionModal";
 import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollModal";
@@ -71,6 +73,7 @@ import { CephalometricAnalysisModal } from "../components/orthodontics/Cephalome
 import { SAMPLE_TRG_CEPHALOGRAM_URL } from "../components/orthodontics/CephalometricCanvas";
 import { ImplantIsqProtocolModal } from "../components/implant/isq/ImplantIsqProtocolModal";
 import { DentalLabOrderModal } from "../components/lab/DentalLabOrderModal";
+import { LabTrackingDrawer } from "../components/lab/LabTrackingDrawer";
 import { ClinicalPhotoProtocolModal } from "../components/photography/ClinicalPhotoProtocolModal";
 import { PatientRecallManagerModal } from "../components/recalls/PatientRecallManagerModal";
 import { AutoclaveCycleModal } from "../components/sanpin/autoclave/AutoclaveCycleModal";
@@ -106,6 +109,8 @@ import { SterilizationStudioModal } from "../components/sterilization/Sterilizat
 import { DoctorShiftRosterModal } from "../components/schedule/roster/DoctorShiftRosterModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import { BeforeAfterComparisonView } from "../components/photography/BeforeAfterComparisonView";
+import { PatientMemoPrintModal } from "../components/visit/PatientMemoPrintModal";
+import { ProcedureMaterialDeductionModal } from "../components/inventory/ProcedureMaterialDeductionModal";
 import {
 	STANDARD_12_SLOT_PROTOCOL,
 	type PhotoSlotRecord,
@@ -294,6 +299,31 @@ const SAMPLE_STUDY: RadiologyStudy = {
 	],
 };
 
+const SAMPLE_LAB_TRACKING_ORDER = {
+	id: "lab-sample-01",
+	patientId: "pat-1",
+	patientName: "Барабаш Сергей Владимирович",
+	doctorId: "doc-1",
+	doctorName: "Д-р Смирнов Алексей Петрович",
+	secureToken: "A942F1",
+	toothFdi: "21, 22",
+	selectedTeeth: [21, 22],
+	constructionType: "Диоксид циркония Prettau (Multi-layer)",
+	material: "Диоксид циркония Katana / Prettau (Multi-layer)",
+	colorVita: "A2",
+	shadeStump: "ND2",
+	status: "in_progress",
+	currentStage: "framework_wax_milling" as const,
+	dueDate: "2026-09-02",
+	frameworkTrialDate: "2026-08-28",
+	ceramicTrialDate: "2026-08-30",
+	priceRub: 36000,
+	clinicSharePct: 50,
+	doctorSharePct: 50,
+	doctorDeductionRub: 18000,
+	clinicalNotes: "Коронки 21, 22 под цвет соседних зубов. Умеренная прозрачность HT.",
+};
+
 const SAMPLE_PHOTO_SLOTS: Record<string, PhotoSlotRecord> = {
 	portrait_smile: {
 		slotId: "portrait_smile",
@@ -356,6 +386,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPatientCabinetOpen, setIsPatientCabinetOpen] = useState(false);
 	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
 	const [isLabWorkOrderOpen, setIsLabWorkOrderOpen] = useState(false);
+	const [isLabTrackingOpen, setIsLabTrackingOpen] = useState(false);
 	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
 	const [isDmsManagerOpen, setIsDmsManagerOpen] = useState(false);
 	const [isKraftBarcodeOpen, setIsKraftBarcodeOpen] = useState(false);
@@ -365,6 +396,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isAutoclaveLog257Open, setIsAutoclaveLog257Open] = useState(false);
 	const [isSterilizationStudioOpen, setIsSterilizationStudioOpen] = useState(false);
 	const [isDoctorShiftRosterOpen, setIsDoctorShiftRosterOpen] = useState(false);
+	const [isPatientMemoOpen, setIsPatientMemoOpen] = useState(false);
+	const [isProcedureDeductionOpen, setIsProcedureDeductionOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -383,15 +416,16 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 
 	useEffect(() => {
 		const handleHashOrSearch = () => {
-			const raw = window.location.hash || window.location.search;
-			const queryPart = raw.includes("?") ? raw.split("?")[1] : "";
-			if (queryPart) {
-				const params = new URLSearchParams(queryPart);
-				const requestedTheme = params.get("theme");
-				if (requestedTheme && THEMES.some((t) => t.id === requestedTheme)) {
-					handleThemeChange(requestedTheme);
-				}
-				const requestedModal = params.get("modal");
+			const searchParams = new URLSearchParams(window.location.search);
+			const hashQuery = window.location.hash.includes("?") ? window.location.hash.split("?")[1] : "";
+			const hashParams = new URLSearchParams(hashQuery);
+			const getParam = (key: string) => searchParams.get(key) || hashParams.get(key);
+
+			const requestedTheme = getParam("theme");
+			if (requestedTheme && THEMES.some((t) => t.id === requestedTheme)) {
+				handleThemeChange(requestedTheme);
+			}
+			const requestedModal = getParam("modal");
 				if (requestedModal) {
 					setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
 					if (requestedModal === "fiscal" || requestedModal === "54fz") setIsFiscalOpen(true);
@@ -402,7 +436,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						setIsPatientBillingOpen(true);
 					}
 					if (requestedModal === "cephalometry" || requestedModal === "ceph" || requestedModal === "trg") {
-						const isLoaded = params.get("loaded") !== "false" && params.get("state") !== "empty";
+						const isLoaded = getParam("loaded") !== "false" && getParam("state") !== "empty";
 						setCephInitialImageUrl(isLoaded ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined);
 						setIsCephOpen(true);
 					}
@@ -439,8 +473,31 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "schedule_roster" || requestedModal === "roster") {
 						setIsDoctorShiftRosterOpen(true);
 					}
+					if (requestedModal === "lab_work_order" || requestedModal === "laboratory" || requestedModal === "lab") {
+						setIsLabWorkOrderOpen(true);
+					}
+					if (requestedModal === "lab_order" || requestedModal === "dental_lab_order") {
+						setIsLabOrderOpen(true);
+					}
+					if (requestedModal === "lab_tracking" || requestedModal === "tracking" || requestedModal === "lab_drawer") {
+						setIsLabTrackingOpen(true);
+					}
+					if (requestedModal === "clinical_writeoff" || requestedModal === "writeoff") {
+						setIsClinicalWriteoffOpen(true);
+					}
+					if (requestedModal === "procedure_deduction" || requestedModal === "material_deduction" || requestedModal === "bom" || requestedModal === "bom_deduction") {
+						setIsProcedureDeductionOpen(true);
+					}
+					if (requestedModal === "patient_cabinet" || requestedModal === "cabinet" || requestedModal === "patient_portal") {
+						setIsPatientCabinetOpen(true);
+					}
+					if (requestedModal === "patient_memo" || requestedModal === "post_op" || requestedModal === "care_memo" || requestedModal === "memo") {
+						setIsPatientMemoOpen(true);
+					}
+					if (requestedModal === "retention" || requestedModal === "recall" || requestedModal === "recalls") {
+						setIsRecallOpen(true);
+					}
 				}
-			}
 		};
 		handleHashOrSearch();
 		window.addEventListener("hashchange", handleHashOrSearch);
@@ -1558,15 +1615,26 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								Наряд в лабораторию: 7 конструкций (ZrO2 Katana, E.max), расцветка VITA/ND, 7 этапов с примеркой, расчет маржи и бланк А4.
 							</p>
 						</div>
-						<button
-							type="button"
-							onClick={() => setIsLabWorkOrderOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-lab-work-order-modal-btn"
-						>
-							<FlaskConical size={15} />
-							<span>Открыть наряд-заказ лаборатории</span>
-						</button>
+						<div className="flex gap-2 flex-wrap">
+							<button
+								type="button"
+								onClick={() => setIsLabWorkOrderOpen(true)}
+								className="flex-1 min-w-[130px] min-h-[44px] px-3 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+								data-testid="open-lab-work-order-modal-btn"
+							>
+								<FlaskConical size={15} />
+								<span>Наряд-заказ</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setIsLabTrackingOpen(true)}
+								className="flex-1 min-w-[130px] min-h-[44px] px-3 py-2.5 rounded-xl text-xs font-bold bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-surface)] shadow-sm transition-all flex items-center justify-center gap-2"
+								data-testid="open-lab-tracking-drawer-btn"
+							>
+								<Clock size={15} />
+								<span>Трекинг ЗТЛ</span>
+							</button>
+						</div>
 					</div>
 
 					{/* 37. Clinical Material Auto-Writeoff Order 804n Trigger */}
@@ -1827,6 +1895,54 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Compass size={15} />
 							<span>Открыть кросс-секционный планировщик</span>
+						</button>
+					</div>
+
+					{/* 49. Post-Op Patient Care Memo Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FileText className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Памятка пациенту (Post-Op Care) & Форма 043/у
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Клинические рекомендации по уходу после удаления/эндодонтии/имплантации, копирование в WhatsApp и печать А4/А5.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPatientMemoOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-patient-memo-modal-btn"
+						>
+							<FileText size={15} />
+							<span>Открыть памятку пациенту</span>
+						</button>
+					</div>
+
+					{/* 50. Procedure Material Deduction (BOM) Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Boxes className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Списание материалов (BOM) & Техкарты 804н
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Интерактивное списание расходников по технологическим картам, степперы ≥48px, себестоимость и контроль дефицита FEFO.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsProcedureDeductionOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-procedure-deduction-modal-btn"
+						>
+							<Boxes size={15} />
+							<span>Открыть списание по техкартам (BOM)</span>
 						</button>
 					</div>
 				</div>
@@ -2348,6 +2464,14 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
+			{isLabTrackingOpen && (
+				<LabTrackingDrawer
+					isOpen={isLabTrackingOpen}
+					onClose={() => setIsLabTrackingOpen(false)}
+					order={SAMPLE_LAB_TRACKING_ORDER}
+				/>
+			)}
+
 			{isDmsManagerOpen && (
 				<DmsInsuranceManagerModal
 					isOpen={isDmsManagerOpen}
@@ -2458,9 +2582,32 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				</div>
 			)}
 
-			
+			{isPatientMemoOpen && (
+				<PatientMemoPrintModal
+					isOpen={isPatientMemoOpen}
+					onClose={() => setIsPatientMemoOpen(false)}
+					patient={SAMPLE_PATIENT}
+					doctorName="Д-р Смирнов Алексей Петрович"
+					doctorSpecialty="Врач-стоматолог терапевт-хирург"
+					clinicName="ООО «Денте Стоматология»"
+					clinicPhone="+7 (495) 777-88-99"
+					toothNumber="16"
+				/>
+			)}
 
-			
+			{isProcedureDeductionOpen && (
+				<ProcedureMaterialDeductionModal
+					isOpen={isProcedureDeductionOpen}
+					onClose={() => setIsProcedureDeductionOpen(false)}
+					serviceName="Лечение кариеса и реставрация зуба 1.6"
+					patientName={SAMPLE_PATIENT.fullName}
+					toothNumber="16"
+					initialTechMapCodes={["SANPIN_PPE", "CARIES_RESTO_DIRECT"]}
+				/>
+			)}
+
+
+
 		</div>
 	);
 };

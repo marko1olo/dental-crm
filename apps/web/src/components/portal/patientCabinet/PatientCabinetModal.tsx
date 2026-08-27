@@ -38,6 +38,8 @@ import {
 	Percent,
 	Phone,
 	Plus,
+	Printer,
+	MessageSquare,
 	QrCode,
 	RefreshCw,
 	Send,
@@ -92,10 +94,17 @@ import {
 import {
 	generateCareMemo,
 	buildWhatsAppLink,
+	buildSmsLink,
+	generateCareMemoSmsText,
+	generateCareMemoPrintHtml,
 	groupServicesIntoFriendlyBlocks,
+	detectInterventionTypeFromProcedure,
 	DEFAULT_CARIES_RECOMMENDATIONS,
+	CARE_PRESETS_MAP,
 	type PatientCareMemo,
 	type CareRecommendationItem,
+	type CareInterventionType,
+	type PrescribedMedicationItem,
 	type FriendlyBillingBreakdown,
 } from "./patientCareInstructionsEngine";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
@@ -134,6 +143,13 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 	// Состояние модального окна QR памятки для телефона
 	const [isCareMemoQrOpen, setIsCareMemoQrOpen] = useState(false);
+
+	// Выбранный тип клинического вмешательства для памятки и номер зуба
+	const [selectedInterventionType, setSelectedInterventionType] = useState<CareInterventionType>("caries");
+	const [selectedCareTooth, setSelectedCareTooth] = useState<string>("16");
+
+	// Состояние модального окна интерактивного предпросмотра печатного листа памятки А4
+	const [isPrintMemoPreviewOpen, setIsPrintMemoPreviewOpen] = useState(false);
 
 	// Налоговый вычет 13%: выбранный год и модальное окно заказа справки КНД 1151156
 	const [selectedTaxYear, setSelectedTaxYear] = useState<number>(2026);
@@ -253,24 +269,43 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		setTimeout(() => setToastNotice(null), 4000);
 	};
 
-	// Персональная электронная памятка после лечения
+	// Персональная электронная памятка после лечения (динамически по типу вмешательства)
 	const careMemo: PatientCareMemo = useMemo(() => {
 		return generateCareMemo({
 			patientName: data.fullName,
 			patientPhone: data.phone,
-			toothFdi: "16",
-			procedureName: "Лечение кариеса и эстетическая нанокомпозитная реставрация",
+			toothFdi: selectedCareTooth,
+			interventionType: selectedInterventionType,
 			doctorName: data.curatingDoctor,
 			clinicName: "Стоматологическая клиника ДЕНТЕ",
 			clinicPhone: "+7 (495) 789-01-23",
 			clinicEmergencyPhone: "+7 (999) 123-45-67",
 		});
-	}, [data.fullName, data.phone, data.curatingDoctor]);
+	}, [data.fullName, data.phone, data.curatingDoctor, selectedInterventionType, selectedCareTooth]);
 
 	// 1-Клик отправка персональных рекомендаций врача в WhatsApp
 	const handleSendCareMemoWhatsApp = () => {
 		window.open(careMemo.whatsAppDeepLink, "_blank");
-		showToast(`Рекомендации после лечения зуба №${careMemo.toothFdi} отправлены в WhatsApp!`);
+		showToast(`Памятка после лечения зуба №${careMemo.toothFdi} (${careMemo.interventionTypeNameRu}) отправлена в WhatsApp!`);
+	};
+
+	// 1-Клик отправка / копирование памятки по SMS
+	const handleSendCareMemoSms = () => {
+		try {
+			if (typeof navigator !== "undefined" && navigator.clipboard) {
+				navigator.clipboard.writeText(careMemo.smsText);
+			}
+		} catch (_e) {
+			// ignore clipboard error
+		}
+		window.open(careMemo.smsDeepLink, "_blank");
+		showToast(`Текст SMS-памятки скопирован и открыт для отправки на номер ${careMemo.patientPhone}!`);
+	};
+
+	// Печать памятки А4
+	const handlePrintCareMemo = () => {
+		openPrintWindow(careMemo.printHtml);
+		showToast(`Печатный лист памятки А4 (${careMemo.interventionTypeNameRu}) отправлен на печать!`);
 	};
 
 	// 1-Клик вызов СБП QR оплаты
@@ -2078,15 +2113,79 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					{/* TAB 6: ЭЛЕКТРОННЫЕ ПАМЯТКИ И УХОД ПОСЛЕ ПРИЁМА */}
 					{activeTab === "care" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "16px" }} data-testid="care-instructions-tab-view">
+							{/* Intervention Type Selector Bar */}
+							<div className="pc-card" style={{ padding: "14px 16px" }}>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "10px" }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+										<Sparkles size={18} style={{ color: "var(--pc-primary)" }} />
+										<strong style={{ fontSize: "0.9375rem", color: "var(--pc-text-main)" }}>
+											Тип проведенного стоматологического вмешательства:
+										</strong>
+									</div>
+
+									<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+										<label style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--pc-text-muted)" }}>
+											Зуб №:
+										</label>
+										<input
+											type="text"
+											value={selectedCareTooth}
+											onChange={(e) => setSelectedCareTooth(e.target.value)}
+											placeholder="16, 2.6..."
+											data-testid="input-care-tooth-fdi"
+											style={{
+												width: "80px",
+												minHeight: "36px",
+												padding: "4px 8px",
+												borderRadius: "6px",
+												border: "1px solid var(--pc-border)",
+												background: "var(--pc-bg)",
+												color: "var(--pc-text-main)",
+												fontWeight: 800,
+												textAlign: "center",
+												fontSize: "0.875rem",
+											}}
+										/>
+									</div>
+								</div>
+
+								{/* Chips row */}
+								<div className="pc-intervention-chips-grid" data-testid="intervention-type-chips">
+									{[
+										{ id: "caries", label: "🦷 Лечение кариеса", short: "Кариес" },
+										{ id: "extraction", label: "🩹 Удаление зуба", short: "Удаление" },
+										{ id: "sinus_lift", label: "💨 Синус-лифтинг", short: "Синус-лифтинг" },
+										{ id: "implantation", label: "🔩 Имплантация", short: "Имплантация" },
+										{ id: "endodontics", label: "👑 Эндодонтия (каналы)", short: "Эндодонтия" },
+										{ id: "whitening", label: "🥛 Отбеливание ZOOM", short: "Отбеливание" },
+										{ id: "orthodontics", label: "📐 Ортодонтия", short: "Ортодонтия" },
+										{ id: "hygiene", label: "🪥 Профгигиена", short: "Гигиена" },
+									].map((chip) => {
+										const isSelected = selectedInterventionType === chip.id;
+										return (
+											<button
+												key={chip.id}
+												type="button"
+												onClick={() => setSelectedInterventionType(chip.id as CareInterventionType)}
+												className={`pc-chip-btn ${isSelected ? "active" : ""}`}
+												data-testid={`chip-intervention-${chip.id}`}
+											>
+												{chip.label}
+											</button>
+										);
+									})}
+								</div>
+							</div>
+
 							{/* Hero Care Card */}
 							<div className="pc-care-memo-card">
 								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
 									<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
 										<div
 											style={{
-												width: "52px",
-												height: "52px",
-												borderRadius: "16px",
+												width: "48px",
+												height: "48px",
+												borderRadius: "14px",
 												background: "var(--pc-primary)",
 												color: "#ffffff",
 												display: "flex",
@@ -2096,48 +2195,78 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												boxShadow: "0 6px 16px rgba(13, 148, 136, 0.35)",
 											}}
 										>
-											<Heart size={28} />
+											<Heart size={26} />
 										</div>
 										<div>
 											<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-												<h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "var(--pc-text-main)" }}>
-													Персональная памятка пациента после лечения
+												<h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 900, color: "var(--pc-text-main)" }}>
+													{careMemo.interventionTypeNameRu} (Зуб №{careMemo.toothFdi})
 												</h3>
-												<span className="pc-status-badge paid" style={{ fontSize: "0.8125rem", padding: "4px 10px" }}>
-													Зуб №{careMemo.toothFdi}
+												<span className="pc-status-badge paid" style={{ fontSize: "0.75rem", padding: "3px 8px" }}>
+													{careMemo.interventionType.toUpperCase()}
 												</span>
 											</div>
-											<p style={{ margin: "4px 0 0 0", fontSize: "0.875rem", color: "var(--pc-text-muted)" }}>
-												Лечащий врач: <strong>{careMemo.doctorName}</strong> ({careMemo.doctorSpecialty}) &bull; {careMemo.clinicName}
+											<p style={{ margin: "2px 0 0 0", fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+												Врач: <strong>{careMemo.doctorName}</strong> ({careMemo.doctorSpecialty}) &bull; {careMemo.clinicName}
 											</p>
 										</div>
 									</div>
 
-									<div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+									<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
 										<button
 											type="button"
 											className="pc-whatsapp-btn"
 											onClick={handleSendCareMemoWhatsApp}
 											data-testid="btn-care-tab-whatsapp"
 										>
-											<Send size={18} />
-											<span>Отправить в WhatsApp (1 клик)</span>
+											<Send size={16} />
+											<span>WhatsApp</span>
+										</button>
+										<button
+											type="button"
+											className="pc-btn-secondary"
+											onClick={handleSendCareMemoSms}
+											data-testid="btn-care-tab-sms"
+											style={{ minHeight: "44px", padding: "8px 14px", fontWeight: 700 }}
+										>
+											<MessageSquare size={16} />
+											<span>SMS</span>
 										</button>
 										<button
 											type="button"
 											className="pc-btn-primary"
-											style={{ minHeight: "48px", padding: "10px 18px", fontWeight: 800 }}
+											onClick={handlePrintCareMemo}
+											data-testid="btn-care-tab-print-direct"
+											style={{ minHeight: "44px", padding: "8px 14px", fontWeight: 800 }}
+										>
+											<Printer size={16} />
+											<span>Печать А4</span>
+										</button>
+										<button
+											type="button"
+											className="pc-btn-secondary"
+											onClick={() => setIsPrintMemoPreviewOpen(true)}
+											data-testid="btn-care-tab-preview"
+											style={{ minHeight: "44px", padding: "8px 12px", fontWeight: 700 }}
+										>
+											<Eye size={16} />
+											<span>Лист А4</span>
+										</button>
+										<button
+											type="button"
+											className="pc-btn-secondary"
 											onClick={() => setIsCareMemoQrOpen(true)}
 											data-testid="btn-care-tab-qr"
+											style={{ minHeight: "44px", padding: "8px 12px", fontWeight: 700 }}
 										>
-											<QrCode size={18} />
-											<span>QR для телефона</span>
+											<QrCode size={16} />
+											<span>QR</span>
 										</button>
 									</div>
 								</div>
 
-								{/* Large High-Contrast Recommendation Cards */}
-								<div className="pc-care-rec-grid" style={{ marginTop: "6px" }}>
+								{/* Recommendation Cards */}
+								<div className="pc-care-rec-grid" style={{ marginTop: "4px" }}>
 									{careMemo.recommendations.map((rec) => (
 										<div
 											key={rec.id}
@@ -2176,39 +2305,96 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								</div>
 							</div>
 
-							{/* Prescribed Medications & Safety Information */}
-							<div className="pc-card" style={{ background: "var(--pc-surface)" }}>
-								<div className="pc-card-header">
-									<h3 className="pc-card-title" style={{ margin: 0 }}>
-										<FileText size={18} style={{ color: "var(--pc-primary)" }} />
-										<span>Назначенные медикаменты и схема приёма</span>
-									</h3>
+							{/* Prescribed Medications & Dosage Regimen */}
+							{careMemo.medications.length > 0 && (
+								<div className="pc-card" style={{ background: "var(--pc-surface)" }} data-testid="care-medications-card">
+									<div className="pc-card-header">
+										<h3 className="pc-card-title" style={{ margin: 0 }}>
+											<FileText size={18} style={{ color: "var(--pc-primary)" }} />
+											<span>Схема приёма и дозировки медикаментов:</span>
+										</h3>
+										<span style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
+											Назначения лечащего врача
+										</span>
+									</div>
+
+									<div style={{ overflowX: "auto" }}>
+										<table className="pc-meds-table">
+											<thead>
+												<tr>
+													<th>Препарат / Форма</th>
+													<th>Дозировка и способ</th>
+													<th>Кратность</th>
+													<th>Длительность</th>
+													<th>Назначение</th>
+												</tr>
+											</thead>
+											<tbody>
+												{careMemo.medications.map((med) => (
+													<tr key={med.id} data-testid={`care-med-${med.id}`}>
+														<td>
+															<strong style={{ color: "var(--pc-text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
+																<span>{med.icon}</span>
+																<span>{med.name}</span>
+															</strong>
+															<div style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>{med.formRu}</div>
+														</td>
+														<td style={{ color: "var(--pc-text-main)" }}>{med.dosageRu}</td>
+														<td style={{ color: "var(--pc-text-main)" }}>{med.frequencyRu}</td>
+														<td>
+															<span style={{ fontWeight: 700, color: "var(--pc-primary)" }}>{med.durationRu}</span>
+														</td>
+														<td style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>{med.purposeRu}</td>
+													</tr>
+												))}
+											</tbody>
+										</table>
+									</div>
 								</div>
-								<div style={{ fontSize: "0.875rem", color: "var(--pc-text-main)", lineHeight: 1.6 }}>
-									<p style={{ margin: "0 0 8px 0" }}>
-										💊 <strong>Обезболивающее:</strong> Нимесил 100 мг (1 саше) растворить в 100 мл теплой воды после еды при появлении боли (не более 2 раз в сутки). Альтернатива: Ибупрофен 400 мг.
-									</p>
-									<p style={{ margin: "0 0 8px 0" }}>
-										🍵 <strong>Антисептический уход:</strong> Ротовые ванночки с хлоргексидином 0.05% или мирамистином (подержать во рту 1 минуту, не полоскать активно) 2–3 раза в день после еды, начиная со 2-х суток.
-									</p>
+							)}
+
+							{/* Clinical Rules & Hygiene Protocols */}
+							<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
+								<div className="pc-card" style={{ background: "var(--pc-surface)" }}>
+									<h4 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 800, color: "var(--pc-text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
+										<span>🍲</span>
+										<span>Режим питания и диета:</span>
+									</h4>
+									<ul style={{ margin: "4px 0 0 0", paddingLeft: "18px", fontSize: "0.8125rem", color: "var(--pc-text-muted)", lineHeight: 1.45 }}>
+										{careMemo.dietaryRules.map((rule, idx) => (
+											<li key={idx} style={{ marginBottom: "3px" }}>{rule}</li>
+										))}
+									</ul>
+								</div>
+
+								<div className="pc-card" style={{ background: "var(--pc-surface)" }}>
+									<h4 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 800, color: "var(--pc-text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
+										<span>🪥</span>
+										<span>Гигиена полости рта:</span>
+									</h4>
+									<ul style={{ margin: "4px 0 0 0", paddingLeft: "18px", fontSize: "0.8125rem", color: "var(--pc-text-muted)", lineHeight: 1.45 }}>
+										{careMemo.hygieneRules.map((rule, idx) => (
+											<li key={idx} style={{ marginBottom: "3px" }}>{rule}</li>
+										))}
+									</ul>
 								</div>
 							</div>
 
 							{/* Warning signs & Clinic SOS Hotline */}
-							<div className="pc-alert-banner danger" style={{ padding: "16px" }}>
-								<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+							<div className="pc-alert-banner danger" style={{ padding: "16px" }} data-testid="care-warning-banner">
+								<div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%" }}>
 									<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 										<AlertTriangle size={20} style={{ color: "var(--pc-danger)" }} />
-										<strong style={{ fontSize: "0.9375rem" }}>Когда необходимо срочно связаться с клиникой:</strong>
+										<strong style={{ fontSize: "0.9375rem" }}>Тревожные симптомы (когда срочно связаться с врачом):</strong>
 									</div>
-									<ul style={{ margin: "4px 0 0 0", paddingLeft: "20px", fontSize: "0.8125rem", color: "var(--pc-text-main)" }}>
+									<ul style={{ margin: "4px 0 0 0", paddingLeft: "20px", fontSize: "0.8125rem", color: "var(--pc-text-main)", lineHeight: 1.4 }}>
 										{careMemo.warningSigns.map((w, idx) => (
-											<li key={idx}>{w}</li>
+											<li key={idx} style={{ marginBottom: "2px" }}>{w}</li>
 										))}
 									</ul>
-									<div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+									<div style={{ marginTop: "8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
 										<span style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
-											Телефон клиники: <strong>{careMemo.clinicPhone}</strong> &bull; Дежурный врач: <strong>{careMemo.clinicEmergencyPhone}</strong>
+											📞 Клиника: <strong>{careMemo.clinicPhone}</strong> &bull; 🚨 Дежурный врач (круглосуточно): <strong>{careMemo.clinicEmergencyPhone}</strong>
 										</span>
 										<a
 											href={`tel:${careMemo.clinicEmergencyPhone?.replace(/\D/g, "")}`}
@@ -2987,6 +3173,90 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								>
 									Готово
 								</button>
+							</div>
+						</div>
+					</div>
+				)}
+
+				
+				{/* MODAL: ИНТЕРАКТИВНЫЙ ПРЕДПРОСМОТР ПЕЧАТНОГО ЛИСТА ПАМЯТКИ А4 */}
+				{isPrintMemoPreviewOpen && (
+					<div
+						className="pc-modal-backdrop"
+						data-testid="care-memo-print-preview-modal"
+						style={{
+							position: "fixed",
+							inset: 0,
+							backgroundColor: "rgba(0, 0, 0, 0.85)",
+							backdropFilter: "blur(8px)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							zIndex: 99999,
+							padding: "16px",
+							boxSizing: "border-box",
+						}}
+						onClick={(e) => {
+							if (e.target === e.currentTarget) setIsPrintMemoPreviewOpen(false);
+						}}
+					>
+						<div
+							className="pc-submodal-card"
+							style={{
+								width: "100%",
+								maxWidth: "800px",
+								maxHeight: "92vh",
+								backgroundColor: "var(--pc-bg)",
+								borderRadius: "16px",
+								display: "flex",
+								flexDirection: "column",
+								overflow: "hidden",
+								boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.5)",
+							}}
+						>
+							<div className="pc-submodal-header">
+								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+									<Printer size={20} style={{ color: "var(--pc-primary)" }} />
+									<h3 style={{ margin: 0, fontSize: "1.0625rem", fontWeight: 800, color: "var(--pc-text-main)" }}>
+										Предпросмотр печатного листа памятки (Формат А4)
+									</h3>
+								</div>
+								<div style={{ display: "flex", gap: "8px" }}>
+									<button
+										type="button"
+										className="pc-btn-primary"
+										onClick={handlePrintCareMemo}
+										style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem", fontWeight: 800 }}
+										data-testid="btn-print-from-preview"
+									>
+										<Printer size={14} />
+										<span>Распечатать на принтере</span>
+									</button>
+									<button
+										type="button"
+										className="pc-close-btn"
+										onClick={() => setIsPrintMemoPreviewOpen(false)}
+										aria-label="Закрыть предпросмотр"
+									>
+										<X size={18} />
+									</button>
+								</div>
+							</div>
+
+							<div style={{ flex: 1, overflowY: "auto", padding: "16px", background: "#f1f5f9" }}>
+								<div
+									className="pc-a4-preview-container"
+									style={{
+										background: "#ffffff",
+										maxWidth: "700px",
+										margin: "0 auto",
+										padding: "24px",
+										boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+										borderRadius: "4px",
+										color: "#0f172a",
+									}}
+									dangerouslySetInnerHTML={{ __html: careMemo.printHtml }}
+								/>
 							</div>
 						</div>
 					</div>

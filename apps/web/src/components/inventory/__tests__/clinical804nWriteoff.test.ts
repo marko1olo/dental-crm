@@ -96,6 +96,18 @@ describe("Order 804n Clinical Service Norms & BOM Specifications", () => {
 		assert.ok(materialIds.includes("mat_cotton_rolls"), "Должны быть ватные валики");
 	});
 
+	it("Спецификация A16.07.055 (Синус-лифтинг и НКР) включает Bio-Oss, Bio-Gide, Prolene 5-0 и артикаин Форте", () => {
+		const gbrNorm = getOrder804nServiceNorm("A16.07.055");
+		assert.ok(gbrNorm, "Норма расхода A16.07.055 должна присутствовать в каталоге");
+
+		const materialIds = gbrNorm.materials.map((m) => m.materialId);
+		assert.ok(materialIds.includes("mat_bio_oss_graft"), "Должен быть костный графт Bio-Oss");
+		assert.ok(materialIds.includes("mat_bio_gide_membrane"), "Должна быть мембрана Bio-Gide");
+		assert.ok(materialIds.includes("mat_prolene_50"), "Должен быть шовный материал Prolene 5-0");
+		assert.ok(materialIds.includes("mat_articaine_ultracain"), "Должен быть артикаин Форте 1:100000");
+		assert.ok(materialIds.includes("mat_surg_blade_15"), "Должно быть хирургическое лезвие");
+	});
+
 	it("aggregateWriteoffFromServices формирует точные строки списания со склада кабинета", () => {
 		const completedServices: CompletedClinicalService[] = [
 			{

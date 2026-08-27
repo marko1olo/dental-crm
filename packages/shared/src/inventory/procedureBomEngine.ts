@@ -568,6 +568,107 @@ export const STANDARD_PROCEDURE_BOM_MAPS: Record<string, ProcedureBomMap> = {
 			},
 		],
 	},
+
+	// 12. A16.07.055 — Синус-лифтинг и направленная костная регенерация (НКР / Bio-Oss + Bio-Gide)
+	"A16.07.055": {
+		code804n: "A16.07.055",
+		procedureTitleRu: "Синус-лифтинг (костная пластика) с использованием остеопластического материала и мембраны",
+		category: "surgery",
+		defaultDurationMinutes: 75,
+		materials: [
+			{
+				sku: "MAT-GRAFT-01",
+				nameRu: "Костнозамещающий натуральный графт (Geistlich Bio-Oss гранулы 0.5г)",
+				category: "Остеопластика",
+				standardQuantity: 1,
+				unitOfMeasure: "pack",
+				estimatedUnitCostKopecks: 1250000, // 12 500.00 ₽
+				isOptional: false,
+			},
+			{
+				sku: "MAT-MEMB-01",
+				nameRu: "Коллагеновая резорбируемая барьерная мембрана (Geistlich Bio-Gide 25×25 мм)",
+				category: "Остеопластика",
+				standardQuantity: 1,
+				unitOfMeasure: "pcs",
+				estimatedUnitCostKopecks: 1680000, // 16 800.00 ₽
+				isOptional: false,
+			},
+			{
+				sku: "MAT-PIN-02",
+				nameRu: "Титановые микропины для фиксации барьерной мембраны (комплект 2 шт)",
+				category: "Хирургия",
+				standardQuantity: 2,
+				unitOfMeasure: "pcs",
+				estimatedUnitCostKopecks: 240000, // 2 400.00 ₽
+				isOptional: false,
+			},
+			{
+				sku: "MAT-PROL-01",
+				nameRu: "Шовный материал монофиламентный нерассасывающийся Prolene 5-0 (Ethicon)",
+				category: "Хирургия",
+				standardQuantity: 1,
+				unitOfMeasure: "pcs",
+				estimatedUnitCostKopecks: 54000, // 540.00 ₽
+				isOptional: false,
+			},
+			{
+				sku: "MAT-ANES-02",
+				nameRu: "Анестетик артикаиновый 4% с эпинефрином 1:100 000 (Ультракаин Д-С Форте, 2 карпулы)",
+				category: "Анестезия",
+				standardQuantity: 2,
+				unitOfMeasure: "carpule",
+				estimatedUnitCostKopecks: 29000, // 290.00 ₽
+				isOptional: false,
+			},
+		],
+	},
+
+	// 13. A16.07.041 — Костная пластика челюсти / аугментация альвеолярного отростка
+	"A16.07.041": {
+		code804n: "A16.07.041",
+		procedureTitleRu: "Костная пластика челюсти с применением биодеградируемых мембран и костных графтов",
+		category: "surgery",
+		defaultDurationMinutes: 60,
+		materials: [
+			{
+				sku: "MAT-GRAFT-01",
+				nameRu: "Костнозамещающий натуральный графт (Geistlich Bio-Oss гранулы 0.5г)",
+				category: "Остеопластика",
+				standardQuantity: 1,
+				unitOfMeasure: "pack",
+				estimatedUnitCostKopecks: 1250000, // 12 500.00 ₽
+				isOptional: false,
+			},
+			{
+				sku: "MAT-MEMB-01",
+				nameRu: "Коллагеновая резорбируемая барьерная мембрана (Geistlich Bio-Gide 25×25 мм)",
+				category: "Остеопластика",
+				standardQuantity: 1,
+				unitOfMeasure: "pcs",
+				estimatedUnitCostKopecks: 1680000, // 16 800.00 ₽
+				isOptional: false,
+			},
+			{
+				sku: "MAT-SUTR-01",
+				nameRu: "Шовный материал рассасывающийся Vicryl 4-0 с атравматической иглой",
+				category: "Хирургия",
+				standardQuantity: 1,
+				unitOfMeasure: "pcs",
+				estimatedUnitCostKopecks: 48000, // 480.00 ₽
+				isOptional: false,
+			},
+			{
+				sku: "MAT-ANES-02",
+				nameRu: "Анестетик артикаиновый 4% с эпинефрином 1:100 000 (Ультракаин Д-С Форте, 2 карпулы)",
+				category: "Анестезия",
+				standardQuantity: 2,
+				unitOfMeasure: "carpule",
+				estimatedUnitCostKopecks: 29000, // 290.00 ₽
+				isOptional: false,
+			},
+		],
+	},
 };
 
 /**
@@ -724,6 +825,10 @@ export const PROCEDURE_804N_ALIASES: Readonly<Record<string, string>> = {
 	"A16.07.004.001": "A16.07.004",
 	"A16.07.082.001": "A16.07.082",
 	"A16.07.050.001": "A16.07.050",
+	"A16.07.055.001": "A16.07.055",
+	"A16.07.055.002": "A16.07.055",
+	"A16.07.041.001": "A16.07.041",
+	"A16.07.041.002": "A16.07.041",
 };
 
 /**

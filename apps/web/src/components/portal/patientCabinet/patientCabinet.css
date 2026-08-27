@@ -226,16 +226,22 @@
 	display: flex;
 	background: var(--pc-surface);
 	border-bottom: 1px solid var(--pc-border);
-	padding: 0 16px;
+	padding: 0 12px;
 	gap: 4px;
 	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 	flex-shrink: 0;
+	scrollbar-width: none;
+}
+
+.pc-nav-bar::-webkit-scrollbar {
+	display: none;
 }
 
 .pc-tab-btn {
 	min-height: 48px;
 	min-width: 44px;
-	padding: 0 16px;
+	padding: 0 14px;
 	background: transparent;
 	border: none;
 	border-bottom: 2.5px solid transparent;
@@ -248,6 +254,7 @@
 	gap: 8px;
 	transition: all 0.15s ease;
 	white-space: nowrap;
+	flex-shrink: 0;
 	touch-action: manipulation;
 }
 
@@ -1391,3 +1398,105 @@
 
 
 
+
+/* ==========================================================================
+   CARE INTERVENTIONS & MEDICATION REGIMEN ENHANCEMENTS
+   ========================================================================== */
+
+.pc-intervention-chips-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.pc-chip-btn {
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	color: var(--pc-text-main);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	padding: 8px 10px;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+
+.pc-chip-btn:hover {
+	border-color: var(--pc-primary);
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+}
+
+.pc-chip-btn.active {
+	background: var(--pc-primary);
+	border-color: var(--pc-primary);
+	color: #ffffff;
+	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.3);
+}
+
+.pc-meds-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	margin-top: 8px;
+}
+
+.pc-meds-table th {
+	background: var(--pc-bg);
+	color: var(--pc-text-muted);
+	font-weight: 800;
+	text-align: left;
+	padding: 10px 12px;
+	border-bottom: 2px solid var(--pc-border);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.pc-meds-table td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--pc-border);
+	vertical-align: middle;
+}
+
+.pc-meds-table tbody tr:hover {
+	background: var(--pc-primary-light);
+}
+
+.pc-a4-preview-container {
+	border: 1px solid #cbd5e1;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+	.pc-intervention-chips-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.pc-meds-table th:nth-child(5),
+	.pc-meds-table td:nth-child(5) {
+		display: none;
+	}
+}
+
+@media (max-width: 480px) {
+	.pc-intervention-chips-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 6px;
+	}
+
+	.pc-chip-btn {
+		font-size: 0.75rem;
+		min-height: 44px;
+		padding: 6px 8px;
+		justify-content: center;
+	}
+}

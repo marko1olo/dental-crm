@@ -1404,7 +1404,7 @@ export function ManagerReportsPanel({
 										</tr>
 									</thead>
 									<tbody>
-										{services.data.rows.map((row) => (
+										{(services.data.rows ?? []).map((row) => (
 											<tr key={row?.title ?? Math.random()}>
 												<td className="ops-strong" data-label="Услуга">
 													{row?.title ?? "—"}

@@ -60,14 +60,14 @@ export function DentalLabShadeSelector({
 	return (
 		<div className="space-y-6">
 			{/* Shade System Switcher */}
-			<div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 w-fit flex-wrap">
+			<div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-fit flex-wrap">
 				<button
 					type="button"
 					onClick={() => setShadeSystem("classical")}
 					className={`min-h-[44px] px-4 py-2 text-xs font-bold rounded-lg transition-all ${
 						shadeSystem === "classical"
-							? "bg-white dark:bg-slate-700 text-[var(--teal)] shadow-sm"
-							: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+							? "bg-[var(--teal)] text-white shadow-sm"
+							: "bg-transparent text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
 					}`}
 				>
 					VITA Classical (A1–D4)
@@ -77,8 +77,8 @@ export function DentalLabShadeSelector({
 					onClick={() => setShadeSystem("3d_master")}
 					className={`min-h-[44px] px-4 py-2 text-xs font-bold rounded-lg transition-all ${
 						shadeSystem === "3d_master"
-							? "bg-white dark:bg-slate-700 text-[var(--teal)] shadow-sm"
-							: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+							? "bg-[var(--teal)] text-white shadow-sm"
+							: "bg-transparent text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
 					}`}
 				>
 					VITA 3D-Master (1M1–5M3)
@@ -88,8 +88,8 @@ export function DentalLabShadeSelector({
 					onClick={() => setShadeSystem("bleach")}
 					className={`min-h-[44px] px-4 py-2 text-xs font-bold rounded-lg transition-all ${
 						shadeSystem === "bleach"
-							? "bg-white dark:bg-slate-700 text-[var(--teal)] shadow-sm"
-							: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+							? "bg-[var(--teal)] text-white shadow-sm"
+							: "bg-transparent text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
 					}`}
 				>
 					Bleach Shades (BL1–BL4, 0M1–0M3)

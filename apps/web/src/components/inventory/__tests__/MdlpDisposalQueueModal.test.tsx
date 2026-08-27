@@ -37,7 +37,7 @@ describe("MDLP / Chestny Znak Frontend Modals (SSR & Static Markup Tests)", () =
 		assert.strictEqual(html, "");
 	});
 
-	it("SeniorNurseDisposalActModal renders static markup with act preview", () => {
+	it("SeniorNurseDisposalActModal renders static markup with act preview, SanPiN 3.3686-21 banner and 1-click supplier order", () => {
 		const html = renderToStaticMarkup(
 			createElement(SeniorNurseDisposalActModal, {
 				isOpen: true,
@@ -50,6 +50,8 @@ describe("MDLP / Chestny Znak Frontend Modals (SSR & Static Markup Tests)", () =
 
 		assert.ok(html.includes("data-testid=\"senior-nurse-disposal-act-modal\""));
 		assert.ok(html.includes("Акт списания медикаментов и анестетиков (Старшая медсестра)"));
+		assert.ok(html.includes("СанПиН 3.3686-21"));
+		assert.ok(html.includes("Заказ поставщику (1 клик)"));
 		assert.ok(html.includes("Старшая медицинская сестра"));
 		assert.ok(html.includes("Иванова Е.В."));
 		assert.ok(html.includes("Печать акта списания"));
