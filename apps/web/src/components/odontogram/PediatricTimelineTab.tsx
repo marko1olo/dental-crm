@@ -67,12 +67,12 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 						aria-label="Возраст ребенка для расчета смены прикуса"
 					/>
 					<div className="flex justify-between text-[12px] sm:text-[13px] text-[var(--odontogram-ink-muted,#64748b)] font-mono font-semibold">
-						<span>5.0 лет</span>
-						<span>6.0 (1-е моляры)</span>
-						<span>8.0 (Резцы)</span>
-						<span>10.0 (Премоляры)</span>
-						<span>12.0 (2-е моляры)</span>
-						<span>13.5 лет</span>
+						<span>5.0<span className="hidden sm:inline"> лет</span></span>
+						<span>6.0<span className="hidden sm:inline"> (1-е моляры)</span></span>
+						<span>8.0<span className="hidden sm:inline"> (Резцы)</span></span>
+						<span>10.0<span className="hidden sm:inline"> (Премоляры)</span></span>
+						<span>12.0<span className="hidden sm:inline"> (2-е моляры)</span></span>
+						<span>13.5<span className="hidden sm:inline"> лет</span></span>
 					</div>
 				</div>
 

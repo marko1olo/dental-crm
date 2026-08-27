@@ -218,7 +218,7 @@ export function CephalometricAnalysisModal({
 					{/* ── Left Column: Lateral Cephalogram Viewer & Image Controls (7 Cols) ── */}
 					<div className="lg:col-span-7 flex flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden">
 						{/* Clean 32px Clinical Toolbar with overflow-x-auto Segmented Controls (No Truncation) */}
-						<div className="mb-2 flex items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl p-1.5 shadow-md shrink-0 select-none ceph-toolbar-compact overflow-x-auto whitespace-nowrap max-w-full">
+						<div className="mb-2 flex items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl p-1.5 shadow-md shrink-0 select-none ceph-toolbar-compact overflow-x-auto whitespace-nowrap scrollbar-none max-w-full">
 							{/* Filter Modes Segmented Pill */}
 							<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0">
 								{(
@@ -235,7 +235,7 @@ export function CephalometricAnalysisModal({
 										onClick={() => setFilterMode(flt.id)}
 										className={`h-8 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
 											filterMode === flt.id
-												? "bg-[var(--teal,#0d9488)] text-white shadow-xs border border-teal-400/40"
+												? "bg-teal-950/40 border border-teal-500/50 text-teal-300 shadow-xs hover:bg-teal-900/50"
 												: "bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700/60"
 										}`}
 										title={`Фильтр рентгенограммы: ${flt.label}`}
@@ -252,7 +252,7 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowPolygon((prev) => !prev)}
 									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showPolygon
-											? "bg-[var(--teal,#0d9488)] text-white shadow-xs border border-teal-400/40"
+											? "bg-teal-950/40 border border-teal-500/50 text-teal-300 shadow-xs hover:bg-teal-900/50"
 											: "bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60"
 									}`}
 									title="Включить / отключить цефалометрический полигон"
@@ -265,7 +265,7 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowPlanes((prev) => !prev)}
 									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showPlanes
-											? "bg-[var(--teal,#0d9488)] text-white shadow-xs border border-teal-400/40"
+											? "bg-teal-950/40 border border-teal-500/50 text-teal-300 shadow-xs hover:bg-teal-900/50"
 											: "bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60"
 									}`}
 									title="Включить / отключить плоскости (SN, FH, MP, OP)"
@@ -278,7 +278,7 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowLabels((prev) => !prev)}
 									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showLabels
-											? "bg-[var(--teal,#0d9488)] text-white shadow-xs border border-teal-400/40"
+											? "bg-teal-950/40 border border-teal-500/50 text-teal-300 shadow-xs hover:bg-teal-900/50"
 											: "bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60"
 									}`}
 									title="Включить / отключить подписи анатомических точек"
@@ -434,7 +434,7 @@ export function CephalometricAnalysisModal({
 								</div>
 
 								{/* Landmark Item Cards with Touch Targets >= 44x44px (min-h-[52px]) */}
-								<div className="space-y-2 flex-1 overflow-y-auto pr-1">
+								<div className="space-y-2 flex-1 overflow-y-auto pr-1 pb-24">
 									{CEPHALOMETRIC_LANDMARKS.map((lm) => {
 										const isPlaced = isImageLoaded && landmarks[lm.key] !== undefined;
 										const isTarget = isImageLoaded && activeTargetKey === lm.key;

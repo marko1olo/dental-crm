@@ -3,7 +3,6 @@
    Adapted from ShadowAnalyst standalone UI to CRM design tokens
    ========================================================= */
 
-/* ---- AI Toast Notification ---- */
 .sa-toast {
 	position: fixed;
 	bottom: 1.5rem;
@@ -19,6 +18,17 @@
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 	animation: sa-slide-up 0.25s ease-out;
 	max-width: 380px;
+}
+
+/* Position toast in top-right when CBCT Studio / 3D viewer is active so it does not occlude the bottom slice toolbar */
+body:has([id^="cbct-mpr-studio-modal"]) .sa-toast,
+body:has([data-testid="cbct-mpr-studio-modal"]) .sa-toast,
+body:has([data-testid="cbct-viewport-container-axial"]) .sa-toast {
+	top: 1rem !important;
+	right: 1rem !important;
+	bottom: auto !important;
+	left: auto !important;
+	z-index: 10001 !important;
 }
 
 @keyframes sa-slide-up {

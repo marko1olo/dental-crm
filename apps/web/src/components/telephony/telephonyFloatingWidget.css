@@ -4,8 +4,8 @@
 
 .dnt-telephony-floating {
 	position: fixed;
-	bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-	right: calc(12px + env(safe-area-inset-right, 0px));
+	bottom: calc(var(--bottom-nav-height, 64px) + 16px);
+	right: 16px;
 	z-index: 35;
 	display: flex;
 	flex-direction: column;
@@ -40,11 +40,25 @@ body:has([data-testid="doctor-shift-roster-modal"]) .dnt-telephony-floating {
 	transform: scale(0.8) translateY(20px) !important;
 }
 
+@media (max-width: 640px) {
+	.dnt-telephony-floating {
+		bottom: calc(var(--bottom-nav-height, 64px) + 16px + env(safe-area-inset-bottom, 0px));
+		right: 16px;
+		z-index: 35;
+		pointer-events: none;
+	}
+	.dnt-telephony-floating .dnt-telephony-launcher,
+	.dnt-telephony-floating .dnt-telephony-card {
+		pointer-events: auto;
+	}
+}
+
 @media (min-width: 768px) {
 	.dnt-telephony-floating {
 		bottom: 84px;
 		right: 24px;
 		z-index: 40;
+		pointer-events: none;
 	}
 }
 

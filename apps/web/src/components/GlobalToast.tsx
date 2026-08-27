@@ -52,11 +52,9 @@ export function GlobalToast() {
 	return (
 		<div
 			className={`sa-toast sa-toast--${toast.type}`}
+			data-testid="global-toast"
 			style={{
-				zIndex: 9999,
 				position: "fixed",
-				bottom: "24px",
-				left: "24px",
 				display: "flex",
 				alignItems: "center",
 				gap: "8px",

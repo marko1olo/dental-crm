@@ -439,7 +439,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					showScaleBar: true,
 				});
 
-				const zPx = h - 1 - vox.z;
+				const zNorm = volume ? Math.max(0, Math.min(1, 1.0 - (vox.z / Math.max(1, volume.dimensions.depth - 1)))) : 0.5;
+				const zPx = Math.round(zNorm * (h - 1));
 
 				// Draw Oblique Crosshair with Rotation Handles
 				drawObliqueCrosshairWithRotationHandles(ctx, {
@@ -505,7 +506,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					showScaleBar: true,
 				});
 
-				const zPx = h - 1 - vox.z;
+				const zNorm = volume ? Math.max(0, Math.min(1, 1.0 - (vox.z / Math.max(1, volume.dimensions.depth - 1)))) : 0.5;
+				const zPx = Math.round(zNorm * (h - 1));
 
 				// Draw Oblique Crosshair with Rotation Handles
 				drawObliqueCrosshairWithRotationHandles(ctx, {
@@ -1347,7 +1349,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 											onPointerUp={handlePointerUp}
 											onWheel={(e) => handleWheelZoom("axial", e)}
 											style={{ cursor: getCanvasCursor("axial") }}
-											className="w-full h-full object-contain rounded-lg"
+											className="max-w-full max-h-full object-contain rounded-lg block m-auto"
 										/>
 										<CbctViewportHud
 											viewportType="axial"
@@ -1396,7 +1398,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 											onPointerUp={handlePointerUp}
 											onWheel={(e) => handleWheelZoom("coronal", e)}
 											style={{ cursor: getCanvasCursor("coronal") }}
-											className="w-full h-full object-contain rounded-lg"
+											className="max-w-full max-h-full object-contain rounded-lg block m-auto"
 										/>
 										<CbctViewportHud
 											viewportType="coronal"
@@ -1445,7 +1447,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 											onPointerUp={handlePointerUp}
 											onWheel={(e) => handleWheelZoom("sagittal", e)}
 											style={{ cursor: getCanvasCursor("sagittal") }}
-											className="w-full h-full object-contain rounded-lg"
+											className="max-w-full max-h-full object-contain rounded-lg block m-auto"
 										/>
 										<CbctViewportHud
 											viewportType="sagittal"

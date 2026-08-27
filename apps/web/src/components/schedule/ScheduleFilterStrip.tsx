@@ -91,6 +91,16 @@ export function ScheduleFilterStrip({
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
 	const todayIso = new Date().toISOString().slice(0, 10);
 	const tomorrowIso = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+	const currentDateIso = scheduleDateFilter || todayIso;
+
+	// Real selected date formatted as dd.MM.yyyy
+	const formattedCurrentDate = (() => {
+		const parts = currentDateIso.split("-");
+		if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+			return `${parts[2]}.${parts[1]}.${parts[0]}`;
+		}
+		return currentDateIso;
+	})();
 
 	const handleRepeatBookingOffset = (days: 7 | 14 | 30) => {
 		if (onQuickBookRepeatOffset) {
@@ -106,7 +116,7 @@ export function ScheduleFilterStrip({
 
 	return (
 		<section
-			className="schedule-filter-strip flex flex-col gap-2 px-3 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper)] max-w-full"
+			className="schedule-filter-strip flex flex-col gap-2 px-3 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden"
 			aria-label="Сохраненные фильтры расписания"
 		>
 			{/* Row 1: Date picker, Quick date offsets & Action Controls */}
@@ -127,8 +137,10 @@ export function ScheduleFilterStrip({
 							<input
 								type="date"
 								aria-label="Фильтр расписания по дате"
-								value={scheduleDateFilter}
+								value={currentDateIso}
 								onChange={(event) => setScheduleDateFilter(event.target.value)}
+								placeholder={formattedCurrentDate}
+								title={`Выбранная дата: ${formattedCurrentDate}`}
 								className="schedule-date-input h-8 px-2 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all"
 							/>
 							<button
@@ -209,7 +221,7 @@ export function ScheduleFilterStrip({
 				</div>
 
 				{/* Integrated View Switcher & Action Controls */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0">
 					{onOpenPatientSearch && (
 						<button
 							type="button"
@@ -238,7 +250,7 @@ export function ScheduleFilterStrip({
 
 					{setScheduleViewMode && (
 						<div
-							className="h-8 flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)]"
+							className="h-8 flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] shrink-0"
 							role="tablist"
 							aria-label="Вид расписания"
 						>
@@ -331,7 +343,7 @@ export function ScheduleFilterStrip({
 			</div>
 
 			{/* Row 2: Horizontal Scrollable Chips Container */}
-			<div className="schedule-filter-chips flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none w-full py-1 border-t border-[var(--line)]/50 pt-2 pr-16 sm:pr-0">
+			<div className="schedule-filter-chips flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none w-full py-1 border-t border-[var(--line)]/50 pt-2 pr-24 sm:pr-0">
 				{/* "Все записи" filter chip button */}
 				<button
 					type="button"
