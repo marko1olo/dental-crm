@@ -9,16 +9,25 @@ import { canonicalizeCdaXml } from "./c14n.js";
 import { generateSemd101Xml } from "./generator101.js";
 import { generateSemd104Xml } from "./generator104.js";
 import { generateSemd130Xml } from "./generator130.js";
-import { cdaSemd101Schema, cdaSemd104Schema, cdaSemd130Schema } from "./schemas.js";
+import { generateSemd043_1uXml } from "./generator043_1u.js";
+import {
+	cdaSemd101Schema,
+	cdaSemd104Schema,
+	cdaSemd130Schema,
+	cdaSemd043_1uSchema,
+} from "./schemas.js";
 
 export const generateSemd043uXml = generateSemd101Xml;
 export const generateSemd108Xml = generateSemd101Xml;
+export const generateSemd109Xml = generateSemd043_1uXml;
+export { generateSemd043_1uXml };
 import type {
 	CdaDocumentParams,
 	CdaGenerationResult,
 	CdaSemd101Params,
 	CdaSemd104Params,
 	CdaSemd130Params,
+	CdaSemd043_1uParams,
 } from "./types.js";
 import { validateCdaParams } from "./validator.js";
 
@@ -46,6 +55,13 @@ export function generateCdaXml(params: unknown): CdaGenerationResult {
 	} else if (docParams.docKind === "130") {
 		const parsed = cdaSemd130Schema.parse(params);
 		xml = generateSemd130Xml(parsed as CdaSemd130Params);
+	} else if (
+		docParams.docKind === "043-1u" ||
+		docParams.docKind === "0431u" ||
+		docParams.docKind === "109"
+	) {
+		const parsed = cdaSemd043_1uSchema.parse(params);
+		xml = generateSemd043_1uXml(parsed as CdaSemd043_1uParams);
 	} else {
 		const parsed = cdaSemd101Schema.parse(params);
 		xml = generateSemd101Xml(parsed as CdaSemd101Params);

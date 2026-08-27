@@ -14,7 +14,7 @@ export interface DataMatrixSvgOptions {
 	readonly margin?: number | undefined;
 }
 
-export interface Code128SvgOptions {
+export interface SanpinCode128SvgOptions {
 	readonly height?: number | undefined;
 	readonly width?: number | undefined;
 	readonly showText?: boolean | undefined;
@@ -42,7 +42,7 @@ const CODE128_B_PATTERNS: readonly string[] = [
 /**
  * Generates Code 128 (Subset B) vector SVG string.
  */
-export function generateSanpinCode128Svg(value: string, options: Code128SvgOptions = {}): string {
+export function generateSanpinCode128Svg(value: string, options: SanpinCode128SvgOptions = {}): string {
 	const height = options.height ?? 40;
 	const showText = options.showText ?? true;
 	const barColor = options.barColor ?? "#000000";

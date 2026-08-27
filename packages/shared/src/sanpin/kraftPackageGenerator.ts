@@ -12,7 +12,7 @@ import {
 	generateSanpinDataMatrixSvg,
 	formatKraftDataMatrixPayload,
 	generate1DBarcodeString,
-	type Code128SvgOptions,
+	type SanpinCode128SvgOptions,
 	type DataMatrixSvgOptions,
 } from "./barcodeGenerators.js";
 import {

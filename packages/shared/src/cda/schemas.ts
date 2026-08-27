@@ -255,13 +255,103 @@ export const cdaSemd130Schema = z.object({
 	totalSumKopecks: z.number().int().positive(),
 });
 
-export const cdaSemd043uSchema = cdaSemd101Schema;
-export const cdaSemd108Schema = cdaSemd101Schema;
+// ─── СЭМД 109 / 043-1/у: Карта ортодонтического пациента ──────────────────
+
+export const cdaOrthodonticAnthropometrySchema = z.object({
+	facialType: z.enum(["leptoprosopic", "mesoprosopic", "euryprosopic"]).optional(),
+	profileType: z.enum(["straight", "convex", "concave"]).optional(),
+	facialSymmetry: z.enum(["symmetric", "chin_deviation_left", "chin_deviation_right"]).optional(),
+	chinDeviationMm: z.number().nonnegative().optional(),
+	nasolabialAngleDegrees: z.number().optional(),
+	mentolabialSulcus: z.enum(["normal", "deep_pronounced", "smoothed"]).optional(),
+	lipCompetenceAtRest: z.enum(["competent_closed", "incompetent_open", "closed_with_strain"]).optional(),
+	incisalDisplayAtSmileMm: z.number().optional(),
+	gummySmileMm: z.number().nonnegative().optional(),
+	photoProtocolCompleted: z.boolean().optional(),
+});
+
+export const cdaOrthodonticCephalometrySchema = z.object({
+	snaAngle: z.number().optional(),
+	snbAngle: z.number().optional(),
+	anbAngle: z.number().optional(),
+	witsAppraisalMm: z.number().optional(),
+	fmaAngle: z.number().optional(),
+	snGoGnAngle: z.number().optional(),
+	upperIncisorToNaAngle: z.number().optional(),
+	upperIncisorToNaMm: z.number().optional(),
+	lowerIncisorToNbAngle: z.number().optional(),
+	lowerIncisorToNbMm: z.number().optional(),
+	interincisalAngle: z.number().optional(),
+	growthPattern: z.enum(["normodivergent", "hyperdivergent_vertical", "hypodivergent_horizontal"]).optional(),
+	skeletalClass: z.enum(["class_1", "class_2_sub_1", "class_2_sub_2", "class_3"]).optional(),
+});
+
+export const cdaOrthodonticIndicesSchema = z.object({
+	tonnIndexNotes: z.string().optional(),
+	pontIndexNotes: z.string().optional(),
+	boltonIndexNotes: z.string().optional(),
+	korkhausIndexNotes: z.string().optional(),
+});
+
+export const cdaOrthodonticAppliancePlanSchema = z.object({
+	applianceType: z.string().optional(),
+	alignerStepsCount: z.number().int().nonnegative().optional(),
+	extractionPlan: z.string().optional(),
+	treatmentStages: z.array(z.string()).optional(),
+	estimatedDurationMonths: z.number().int().positive().optional(),
+	retentionProtocol: z.string().optional(),
+});
+
+export const cdaSemd043_1uSchema = z.object({
+	docKind: z.enum(["043-1u", "0431u", "109"]).default("043-1u"),
+	documentId: z.string().min(1),
+	documentVersion: z.number().int().positive().optional().default(1),
+	documentTime: z.preprocess((v) => {
+		if (!v) return undefined;
+		const d = v instanceof Date ? v : new Date(String(v));
+		return Number.isNaN(d.getTime()) ? undefined : d;
+	}, z.date().optional()),
+	visitDate: z.coerce.date(),
+	encounterId: z.string().optional(),
+	documentSetId: z.string().optional(),
+	replacesDocumentId: z.string().optional(),
+
+	patient: patientCdaSchema,
+	doctor: doctorCdaSchema,
+	clinic: clinicCdaSchema,
+	legalAuthenticator: legalAuthenticatorCdaSchema.optional(),
+
+	orthodonticDiagnosis: z.string().min(1, "Ортодонтический диагноз обязателен"),
+	icd10Code: z.string().optional().default("K07.2"),
+	diagnoses: z.array(diagnosisItemSchema).optional(),
+	angleMolarClassRight: z.enum(["class_1", "class_2_sub_1", "class_2_sub_2", "class_3"]).optional(),
+	angleMolarClassLeft: z.enum(["class_1", "class_2_sub_1", "class_2_sub_2", "class_3"]).optional(),
+	angleCanineClassRight: z.enum(["class_1", "class_2", "class_3"]).optional(),
+	angleCanineClassLeft: z.enum(["class_1", "class_2", "class_3"]).optional(),
+
+	complaints: z.string().optional(),
+	anamnesis: z.string().optional(),
+	anamnesisVitae: z.string().optional(),
+
+	anthropometry: cdaOrthodonticAnthropometrySchema.optional(),
+	cephalometry: cdaOrthodonticCephalometrySchema.optional(),
+	indices: cdaOrthodonticIndicesSchema.optional(),
+
+	appliancePlan: cdaOrthodonticAppliancePlanSchema.optional(),
+	dentalStatus: z.array(dentalStatusItemSchema).optional(),
+	objectiveStatus: z.string().optional(),
+
+	services: z.array(serviceRenderedItemSchema).optional(),
+	recommendations: z.union([z.string(), z.array(z.string())]).optional(),
+});
+
+export const cdaSemd109Schema = cdaSemd043_1uSchema;
 
 export const cdaDocumentParamsSchema = z.union([
 	cdaSemd101Schema,
 	cdaSemd104Schema,
 	cdaSemd130Schema,
+	cdaSemd043_1uSchema,
 ]);
 
 // ─── Отсоединенная подпись и пакет РЭМД ────────────────────────────────────

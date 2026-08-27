@@ -33,6 +33,11 @@ export declare const EGISZ_OIDS: {
     /** СЭМД вид 104: Эпикриз стоматологический в стационаре / амбулаторный */
     readonly SEMD_KIND_104_EPICRISIS: "104";
     readonly SEMD_TEMPLATE_104: "1.2.643.5.1.13.13.11.104";
+    /** СЭМД вид 109 / 043-1/у: Медицинская карта ортодонтического пациента */
+    readonly SEMD_KIND_043_1U_ORTHODONTIC: "043-1u";
+    readonly SEMD_KIND_109_ORTHODONTIC: "109";
+    readonly SEMD_TEMPLATE_109: "1.2.643.5.1.13.13.11.109";
+    readonly SEMD_TEMPLATE_043_1U: "1.2.643.5.1.13.13.11.109";
     /** СЭМД вид 130: Справка об оплате медицинских услуг для налогового органа */
     readonly SEMD_KIND_130_TAX_PAYMENT: "130";
     readonly SEMD_TEMPLATE_130: "1.2.643.5.1.13.13.11.130";
@@ -99,6 +104,18 @@ export declare const EGISZ_OIDS: {
     readonly LOINC_PAYMENTS_AND_CONTRACT: "48768-6";
     /** Сведения о налогоплательщике */
     readonly LOINC_TAXPAYER_INFO: "55752-0";
+    /** Антропометрия и фотометрия лица */
+    readonly LOINC_FACIAL_ANTHROPOMETRY: "55286-9";
+    /** Цефалометрический анализ ТРГ черепа в боковой проекции */
+    readonly LOINC_CEPHALOMETRICS: "55287-7";
+    /** Биометрические индексы диагностических моделей (Тон, Пон, Болтон, Коркхауз) */
+    readonly LOINC_ORTHODONTIC_INDICES: "55288-5";
+    /** План ортодонтического аппаратурного лечения */
+    readonly LOINC_APPLIANCE_PLAN: "18776-5";
+    /** Классификатор окклюзии по Энглю (Класс I, Класс II/1, Класс II/2, Класс III) */
+    readonly ANGLE_OCCLUSION_CLASSIFIER: "1.2.643.5.1.13.13.11.1470";
+    /** Морфологический тип лица (лептопрозоп, мезопрозоп, эурипрозоп) */
+    readonly FACIAL_MORPHOLOGY_CLASSIFIER: "1.2.643.5.1.13.13.11.1471";
     /** ГОСТ Р 34.10-2012 (256 бит, открытый ключ / ЭЦП) */
     readonly GOST_3410_2012_256: "1.2.643.7.1.1.1.1";
     /** ГОСТ Р 34.10-2012 (512 бит, открытый ключ / ЭЦП) */

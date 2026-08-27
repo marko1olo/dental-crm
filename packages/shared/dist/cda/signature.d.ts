@@ -38,3 +38,38 @@ export declare function createDemonstrationGostSignature(params: {
     clinicName: string;
     isMoSignature?: boolean | undefined;
 }): DetachedSignature;
+/**
+ * Generates an XML-DSig / XAdES-BES structured signature fragment for enveloped or detached signing.
+ */
+export declare function generateXadesXmlSignatureBlock(sig: DetachedSignature, referenceUri?: string): string;
+/**
+ * Builds all individual file artifacts for 1-click export of an EGISZ REMD signed package.
+ */
+export declare function build1ClickExportPackage(params: {
+    documentId: string;
+    documentVersion: number;
+    docTypeNsiCode: string;
+    rawXml: string;
+    doctorSignature: DetachedSignature;
+    moSignature?: DetachedSignature | undefined;
+    patientSnils?: string | undefined;
+    clinicOid: string;
+    clinicOgrn?: string | undefined;
+}): {
+    xmlFileName: string;
+    xmlContent: string;
+    doctorSigFileName: string;
+    doctorSigBase64: string;
+    moSigFileName?: string | undefined;
+    moSigBase64?: string | undefined;
+    manifestFileName: string;
+    manifestJson: string;
+    packageMeta: {
+        documentId: string;
+        sha256Hex: string;
+        docTypeNsiCode: string;
+        signedAt: string;
+        doctorCertSerial: string;
+        hasMoSignature: boolean;
+    };
+};

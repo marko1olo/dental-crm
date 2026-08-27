@@ -6,7 +6,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 import { EGISZ_OIDS } from "./oids.js";
-import { cdaSemd101Schema, cdaSemd104Schema, cdaSemd130Schema, detachedSignatureSchema, } from "./schemas.js";
+import { cdaSemd043_1uSchema, cdaSemd101Schema, cdaSemd104Schema, cdaSemd130Schema, detachedSignatureSchema, } from "./schemas.js";
 /**
  * Validates OID (Object Identifier) syntax per ITU-T X.660 / ISO 8824.
  */
@@ -182,6 +182,9 @@ export function validateCdaParams(params) {
     else if (docKind === "130") {
         parsedResult = cdaSemd130Schema.safeParse(params);
     }
+    else if (docKind === "043-1u" || docKind === "0431u" || docKind === "109") {
+        parsedResult = cdaSemd043_1uSchema.safeParse(params);
+    }
     else {
         parsedResult = cdaSemd101Schema.safeParse(params);
     }
@@ -344,6 +347,33 @@ export function validateCdaParams(params) {
             issues.push({ path: "totalSumKopecks", field: "totalSumKopecks", message: "Не сходится итоговая сумма в копейках", severity: "error" });
         }
     }
+    else if (data.docKind === "043-1u" || data.docKind === "0431u" || data.docKind === "109") {
+        const d043 = data;
+        if (!d043.orthodonticDiagnosis.trim()) {
+            errors.push("Ортодонтия 043-1/у: Клинический ортодонтический диагноз обязателен");
+            issues.push({ path: "orthodonticDiagnosis", field: "orthodonticDiagnosis", message: "Диагноз не указан", severity: "error" });
+        }
+        const icdToCheck = d043.icd10Code || "K07.2";
+        if (!validateIcd10Code(icdToCheck)) {
+            errors.push(`Ортодонтия 043-1/у: Некорректный код МКБ-10 "${icdToCheck}"`);
+            issues.push({ path: "icd10Code", field: "icd10Code", message: `Некорректный МКБ-10 "${icdToCheck}"`, severity: "error", oid: EGISZ_OIDS.ICD10 });
+        }
+        if (d043.dentalStatus) {
+            for (const st of d043.dentalStatus) {
+                if (!validateFdiToothNumber(st.tooth)) {
+                    errors.push(`Зубная формула: Недопустимый номер зуба FDI "${st.tooth}"`);
+                    issues.push({ path: "dentalStatus.tooth", field: "tooth", message: `Недопустимый зуб "${st.tooth}"`, severity: "error", oid: EGISZ_OIDS.DENTAL_TOOTH });
+                }
+            }
+        }
+        if (d043.services) {
+            for (const s of d043.services) {
+                if (!validateOrder804nCode(s.code)) {
+                    warnings.push(`Услуги: Код услуги "${s.code}" не соответствует Номенклатуре 804н`);
+                }
+            }
+        }
+    }
     return {
         valid: errors.length === 0,
         errors,
@@ -370,5 +400,77 @@ export function validateDetachedSignature(sig) {
     return {
         valid: errors.length === 0,
         errors,
+    };
+}
+/**
+ * Validates UKEP Certificate attributes (validity timeframe, issuer, subject CN, SNILS and OGRN matching).
+ */
+export function validateUkepCertificate(params) {
+    const errors = [];
+    const warnings = [];
+    const cert = params.certificate;
+    const checkTime = params.checkDate ?? new Date();
+    // 1. Срок действия
+    let notExpired = true;
+    if (cert.validFrom) {
+        const fromDate = new Date(cert.validFrom);
+        if (!Number.isNaN(fromDate.getTime()) && checkTime < fromDate) {
+            notExpired = false;
+            errors.push(`Сертификат еще не вступил в силу (действителен с ${fromDate.toLocaleDateString("ru-RU")})`);
+        }
+    }
+    if (cert.validTo) {
+        const toDate = new Date(cert.validTo);
+        if (!Number.isNaN(toDate.getTime()) && checkTime > toDate) {
+            notExpired = false;
+            errors.push(`Срок действия сертификата истек ${toDate.toLocaleDateString("ru-RU")}`);
+        }
+    }
+    // 2. Издатель (Удостоверяющий Центр)
+    const issuerValid = Boolean(cert.issuer && cert.issuer.trim().length > 0);
+    if (!issuerValid) {
+        warnings.push("Издатель сертификата (УЦ) не указан в атрибутах подписи");
+    }
+    // 3. Субъект
+    const subjectMatched = Boolean(cert.subject && cert.subject.trim().length > 0);
+    if (!subjectMatched) {
+        errors.push("Владелец сертификата (Subject) пуст");
+    }
+    // 4. Сверка СНИЛС врача
+    let snilsMatched;
+    if (params.expectedDoctorSnils && cert.subject) {
+        const normalizedExpected = normalizeSnils(params.expectedDoctorSnils);
+        const snilsMatch = cert.subject.match(/SNILS(?:=|\s+)(\d{3}-?\d{3}-?\d{3}\s?\d{2}|\d{11})/i);
+        if (snilsMatch && snilsMatch[1]) {
+            const certSnils = normalizeSnils(snilsMatch[1]);
+            snilsMatched = certSnils === normalizedExpected;
+            if (!snilsMatched) {
+                errors.push(`СНИЛС в сертификате УКЭП (${certSnils}) не совпадает со СНИЛС врача в документе (${normalizedExpected})`);
+            }
+        }
+        else {
+            warnings.push("Атрибут SNILS не найден в строке владельца сертификата");
+        }
+    }
+    // 5. Сверка ОГРН / ИНН клиники
+    let ogrnMatched;
+    if (params.expectedClinicOgrn && cert.subject) {
+        const ogrnMatch = cert.subject.match(/OGRN(?:=|\s+)(\d{13}|\d{15})/i);
+        if (ogrnMatch && ogrnMatch[1]) {
+            ogrnMatched = ogrnMatch[1].trim() === params.expectedClinicOgrn.trim();
+            if (!ogrnMatched) {
+                warnings.push(`ОГРН в сертификате (${ogrnMatch[1]}) отличается от ОГРН клиники (${params.expectedClinicOgrn})`);
+            }
+        }
+    }
+    return {
+        valid: errors.length === 0,
+        notExpired,
+        issuerValid,
+        subjectMatched,
+        snilsMatched,
+        ogrnMatched,
+        errors,
+        warnings,
     };
 }

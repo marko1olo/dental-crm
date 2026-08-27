@@ -5,7 +5,7 @@
  * regulatory rules, XSD schema constraints, and digital signature standards.
  * ═══════════════════════════════════════════════════════════════════════════
  */
-import type { CdaValidationResult } from "./types.js";
+import type { CdaValidationResult, CertificateValidationDetails } from "./types.js";
 /**
  * Validates OID (Object Identifier) syntax per ITU-T X.660 / ISO 8824.
  */
@@ -56,3 +56,19 @@ export declare function validateDetachedSignature(sig: unknown): {
     valid: boolean;
     errors: string[];
 };
+/**
+ * Validates UKEP Certificate attributes (validity timeframe, issuer, subject CN, SNILS and OGRN matching).
+ */
+export declare function validateUkepCertificate(params: {
+    certificate: {
+        validFrom?: string | undefined;
+        validTo?: string | undefined;
+        subject: string;
+        issuer?: string | undefined;
+        serialNumber?: string | undefined;
+    };
+    expectedDoctorSnils?: string | undefined;
+    expectedClinicOgrn?: string | undefined;
+    expectedClinicInn?: string | undefined;
+    checkDate?: Date | undefined;
+}): CertificateValidationDetails;

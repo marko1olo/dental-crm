@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export type SemdDocKind = "101" | "104" | "130" | "302" | "303" | "043u" | "108";
+export type SemdDocKind = "101" | "104" | "130" | "302" | "303" | "043u" | "108" | "043-1u" | "0431u" | "109";
 
 export interface PersonName {
 	first: string;
@@ -268,10 +268,110 @@ export interface CdaSemd130Params {
 export type CdaSemd043uParams = CdaSemd101Params;
 export type CdaSemd108Params = CdaSemd101Params;
 
+// ─── Параметры для генерации СЭМД 109 / 043-1/у: Карта ортодонтического пациента ───
+
+export interface CdaOrthodonticAnthropometry {
+	facialType?: "leptoprosopic" | "mesoprosopic" | "euryprosopic" | undefined;
+	profileType?: "straight" | "convex" | "concave" | undefined;
+	facialSymmetry?: "symmetric" | "chin_deviation_left" | "chin_deviation_right" | undefined;
+	chinDeviationMm?: number | undefined;
+	nasolabialAngleDegrees?: number | undefined;
+	mentolabialSulcus?: "normal" | "deep_pronounced" | "smoothed" | undefined;
+	lipCompetenceAtRest?: "competent_closed" | "incompetent_open" | "closed_with_strain" | undefined;
+	incisalDisplayAtSmileMm?: number | undefined;
+	gummySmileMm?: number | undefined;
+	photoProtocolCompleted?: boolean | undefined;
+}
+
+export interface CdaOrthodonticCephalometry {
+	snaAngle?: number | undefined;
+	snbAngle?: number | undefined;
+	anbAngle?: number | undefined;
+	witsAppraisalMm?: number | undefined;
+	fmaAngle?: number | undefined;
+	snGoGnAngle?: number | undefined;
+	upperIncisorToNaAngle?: number | undefined;
+	upperIncisorToNaMm?: number | undefined;
+	lowerIncisorToNbAngle?: number | undefined;
+	lowerIncisorToNbMm?: number | undefined;
+	interincisalAngle?: number | undefined;
+	growthPattern?: "normodivergent" | "hyperdivergent_vertical" | "hypodivergent_horizontal" | undefined;
+	skeletalClass?: "class_1" | "class_2_sub_1" | "class_2_sub_2" | "class_3" | undefined;
+}
+
+export interface CdaOrthodonticIndices {
+	tonnIndexNotes?: string | undefined;
+	pontIndexNotes?: string | undefined;
+	boltonIndexNotes?: string | undefined;
+	korkhausIndexNotes?: string | undefined;
+}
+
+export interface CdaOrthodonticAppliancePlan {
+	applianceType?: string | undefined;
+	alignerStepsCount?: number | undefined;
+	extractionPlan?: string | undefined;
+	treatmentStages?: string[] | undefined;
+	estimatedDurationMonths?: number | undefined;
+	retentionProtocol?: string | undefined;
+}
+
+export interface CdaSemd043_1uParams {
+	docKind: "043-1u" | "0431u" | "109";
+	documentId: string;
+	documentVersion?: number | undefined;
+	documentTime?: Date | undefined;
+	visitDate: Date;
+	encounterId?: string | undefined;
+	documentSetId?: string | undefined;
+	replacesDocumentId?: string | undefined;
+
+	patient: PatientCdaInfo;
+	doctor: DoctorCdaInfo;
+	clinic: ClinicCdaInfo;
+	legalAuthenticator?: LegalAuthenticatorCdaInfo | undefined;
+
+	// Секция 1: Клинический ортодонтический диагноз
+	orthodonticDiagnosis: string;
+	icd10Code?: string | undefined;
+	diagnoses?: DiagnosisItem[] | undefined;
+	angleMolarClassRight?: "class_1" | "class_2_sub_1" | "class_2_sub_2" | "class_3" | undefined;
+	angleMolarClassLeft?: "class_1" | "class_2_sub_1" | "class_2_sub_2" | "class_3" | undefined;
+	angleCanineClassRight?: "class_1" | "class_2" | "class_3" | undefined;
+	angleCanineClassLeft?: "class_1" | "class_2" | "class_3" | undefined;
+
+	// Секция 2: Анамнез и жалобы
+	complaints?: string | undefined;
+	anamnesis?: string | undefined;
+	anamnesisVitae?: string | undefined;
+
+	// Секция 3: Антропометрия и фотометрия лица
+	anthropometry?: CdaOrthodonticAnthropometry | undefined;
+
+	// Секция 4: Цефалометрический анализ ТРГ
+	cephalometry?: CdaOrthodonticCephalometry | undefined;
+
+	// Секция 5: Биометрические индексы контрольно-диагностических моделей
+	indices?: CdaOrthodonticIndices | undefined;
+
+	// Секция 6: План аппаратурного лечения
+	appliancePlan?: CdaOrthodonticAppliancePlan | undefined;
+
+	// Секция 7: Стоматологический статус
+	dentalStatus?: DentalStatusItem[] | undefined;
+	objectiveStatus?: string | undefined;
+
+	// Секция 8: Оказанные услуги и рекомендации
+	services?: ServiceRenderedItem[] | undefined;
+	recommendations?: string | string[] | undefined;
+}
+
+export type CdaSemd109Params = CdaSemd043_1uParams;
+
 export type CdaDocumentParams =
 	| CdaSemd101Params
 	| CdaSemd104Params
-	| CdaSemd130Params;
+	| CdaSemd130Params
+	| CdaSemd043_1uParams;
 
 // ─── Отсоединенная электронная подпись УКЭП (ГОСТ Р 34.10-2012 / CAdES-BES) ─
 
@@ -330,3 +430,25 @@ export interface CdaValidationResult {
 export type CdaGenerationResult =
 	| { success: true; xml: string; canonicalXml: string; docType: SemdDocKind }
 	| { success: false; errors: string[]; issues?: CdaValidationIssue[] };
+
+export interface CertificateValidationDetails {
+	valid: boolean;
+	notExpired: boolean;
+	issuerValid: boolean;
+	subjectMatched: boolean;
+	snilsMatched?: boolean | undefined;
+	ogrnMatched?: boolean | undefined;
+	errors: string[];
+	warnings: string[];
+}
+
+export interface EgiszExportPackageFiles {
+	xmlFileName: string;
+	xmlContent: string;
+	doctorSigFileName: string;
+	doctorSigBase64: string;
+	moSigFileName?: string | undefined;
+	moSigBase64?: string | undefined;
+	manifestFileName: string;
+	manifestJson: string;
+}

@@ -3,12 +3,18 @@ import { describe, it } from "node:test";
 import {
 	type CabinetStockItem,
 	type CompletedProcedureInput,
+	PROCEDURE_804N_ALIASES,
 	STANDARD_PROCEDURE_BOM_MAPS,
 	calculateProcedureMaterialsCost,
 	deductMaterialsFromCabinetStock,
+	executeVisitAutoBomDeduction,
+	formatSupplierPurchaseOrderText,
+	generateSupplierPurchaseOrder,
+	generateSupplierPurchaseOrderHtml,
 	getStandardBOMForProcedure,
 	procedureBomMapSchema,
 	resolveProcedureMaterials,
+	supplierPurchaseOrderSchema,
 } from "../inventory/procedureBomEngine.js";
 
 describe("Clinical Procedure BOM & Material Deduction Engine (procedureBomEngine.ts)", () => {
@@ -292,5 +298,268 @@ describe("Clinical Procedure BOM & Material Deduction Engine (procedureBomEngine
 		const costUnknown = calculateProcedureMaterialsCost("UNKNOWN_CODE", 1);
 		assert.equal(costUnknown.totalCostKopecks, 0);
 		assert.equal(costUnknown.materials.length, 0);
+	});
+
+	it("8. getStandardBOMForProcedure resolves sub-codes and aliases properly", () => {
+		// Child code with dot suffix should resolve to parent
+		const bomCariesSub = getStandardBOMForProcedure("A16.07.002.001");
+		assert.ok(bomCariesSub);
+		assert.equal(bomCariesSub.code804n, "A16.07.002");
+
+		const bomEndoSub = getStandardBOMForProcedure("A16.07.030.003");
+		assert.ok(bomEndoSub);
+		assert.equal(bomEndoSub.code804n, "A16.07.030");
+
+		const bomImplantSub = getStandardBOMForProcedure("A16.07.054.001");
+		assert.ok(bomImplantSub);
+		assert.equal(bomImplantSub.code804n, "A16.07.054");
+
+		// New procedure maps
+		const bomExtraction = getStandardBOMForProcedure("A16.07.001");
+		assert.ok(bomExtraction);
+		assert.equal(bomExtraction.category, "surgery");
+
+		const bomObturation = getStandardBOMForProcedure("A16.07.008");
+		assert.ok(bomObturation);
+		assert.equal(bomObturation.category, "endo");
+
+		const bomAnes = getStandardBOMForProcedure("A11.07.012");
+		assert.ok(bomAnes);
+		assert.equal(bomAnes.code804n, "A11.07.012");
+	});
+
+	it("9. deductMaterialsFromCabinetStock strictly prevents negative stock when preventNegativeStock = true", () => {
+		const stock: CabinetStockItem[] = [
+			{
+				id: "STK-10",
+				organizationId: "org-1",
+				cabinetId: "CAB-SURG",
+				sku: "MAT-IMPL-01",
+				nameRu: "Дентальный имплантат Straumann",
+				currentQuantity: 1,
+				minThresholdQuantity: 3,
+				unitOfMeasure: "pcs",
+				costKopecks: 1450000,
+			},
+		];
+
+		const requirements = [
+			{
+				sku: "MAT-IMPL-01",
+				nameRu: "Дентальный имплантат Straumann",
+				category: "Имплантаты",
+				totalQuantityRequired: 2, // Exceeds available stock (1)
+				unitOfMeasure: "pcs" as const,
+				totalEstimatedCostKopecks: 2900000,
+				procedureBreakdown: [],
+				isAvailableInStock: false,
+				currentStockQuantity: 1,
+				shortfallQuantity: 1,
+			},
+		];
+
+		const result = deductMaterialsFromCabinetStock(stock, requirements, {
+			preventNegativeStock: true,
+			autoGeneratePurchaseOrder: true,
+			clinicNameRu: "DENTE VIP",
+		});
+
+		assert.equal(result.success, false);
+		assert.equal(result.preventedNegativeStock, true);
+		assert.equal(result.hasShortfall, true);
+		// Stock must NOT be modified
+		assert.equal(result.updatedStock[0]?.currentQuantity, 1);
+		assert.equal(result.deductedItems.length, 0);
+		assert.ok(result.shortfallItems);
+		assert.equal(result.shortfallItems.length, 1);
+		assert.equal(result.shortfallItems[0]?.deficitQuantity, 1);
+
+		// Purchase order should be automatically drafted in 1 click
+		assert.ok(result.purchaseOrder);
+		assert.equal(result.purchaseOrder.reason, "stock_deficit");
+		assert.equal(result.purchaseOrder.clinicNameRu, "DENTE VIP");
+		assert.equal(result.purchaseOrder.items.length, 1);
+		assert.equal(result.purchaseOrder.items[0]?.sku, "MAT-IMPL-01");
+		// Minimum recommended order: shortfall (1) + minThreshold (3) = 4 pcs or threshold * 2 = 6 pcs
+		assert.ok(result.purchaseOrder.items[0]!.suggestedOrderQuantity >= 4);
+		assert.ok(result.purchaseOrder.totalOrderCostKopecks > 0);
+	});
+
+	it("10. generateSupplierPurchaseOrder generates valid draft compliant with schema and whole kopecks", () => {
+		const stock: CabinetStockItem[] = [
+			{
+				id: "STK-A1",
+				organizationId: "org-1",
+				cabinetId: "CAB-1",
+				sku: "MAT-ANES-01",
+				nameRu: "Анестетик артикаиновый",
+				currentQuantity: 2,
+				minThresholdQuantity: 10,
+				unitOfMeasure: "carpule",
+				costKopecks: 14500, // 145.00 ₽
+			},
+			{
+				id: "STK-A2",
+				organizationId: "org-1",
+				cabinetId: "CAB-1",
+				sku: "MAT-SUTR-01",
+				nameRu: "Шовный материал Vicryl 4-0",
+				currentQuantity: 0,
+				minThresholdQuantity: 5,
+				unitOfMeasure: "pcs",
+				costKopecks: 48000, // 480.00 ₽
+			},
+		];
+
+		const requirements = [
+			{
+				sku: "MAT-ANES-01",
+				nameRu: "Анестетик артикаиновый",
+				category: "Анестезия",
+				totalQuantityRequired: 5,
+				unitOfMeasure: "carpule" as const,
+				totalEstimatedCostKopecks: 72500,
+				procedureBreakdown: [],
+				isAvailableInStock: false,
+				currentStockQuantity: 2,
+				shortfallQuantity: 3,
+			},
+			{
+				sku: "MAT-SUTR-01",
+				nameRu: "Шовный материал Vicryl 4-0",
+				category: "Хирургия",
+				totalQuantityRequired: 2,
+				unitOfMeasure: "pcs" as const,
+				totalEstimatedCostKopecks: 96000,
+				procedureBreakdown: [],
+				isAvailableInStock: false,
+				currentStockQuantity: 0,
+				shortfallQuantity: 2,
+			},
+		];
+
+		const po = generateSupplierPurchaseOrder({
+			requirements,
+			stock,
+			clinicNameRu: "Стоматология DENTE Премиум",
+			visitId: "VISIT-804N-99",
+		});
+
+		assert.ok(po);
+		const parsed = supplierPurchaseOrderSchema.safeParse(po);
+		assert.ok(parsed.success, `Schema validation failed: ${JSON.stringify(parsed)}`);
+		assert.equal(po.items.length, 2);
+		assert.equal(po.clinicNameRu, "Стоматология DENTE Премиум");
+		assert.equal(po.visitId, "VISIT-804N-99");
+		assert.equal(po.status, "draft");
+		assert.ok(po.totalOrderCostKopecks > 0);
+		assert.ok(po.totalOrderCostFormattedRu.includes("₽"));
+
+		// Verify text and HTML representation
+		const text = formatSupplierPurchaseOrderText(po);
+		assert.ok(text.includes("ЗАКАЗ ПОСТАВЩИКУ"));
+		assert.ok(text.includes("MAT-ANES-01"));
+		assert.ok(text.includes("MAT-SUTR-01"));
+
+		const html = generateSupplierPurchaseOrderHtml(po);
+		assert.ok(html.includes("<!DOCTYPE html>"));
+		assert.ok(html.includes("Заказ поставщику"));
+		assert.ok(html.includes("Стоматология DENTE Премиум"));
+	});
+
+	it("11. executeVisitAutoBomDeduction handles full procedure batch deduction and negative stock prevention", () => {
+		const stock: CabinetStockItem[] = [
+			{
+				id: "S-1",
+				organizationId: "org-1",
+				cabinetId: "CAB-2",
+				sku: "MAT-ANES-01",
+				nameRu: "Анестетик артикаиновый",
+				currentQuantity: 10,
+				minThresholdQuantity: 5,
+				unitOfMeasure: "carpule",
+				costKopecks: 14500,
+			},
+			{
+				id: "S-2",
+				organizationId: "org-1",
+				cabinetId: "CAB-2",
+				sku: "MAT-COMP-01",
+				nameRu: "Светоотверждаемый нанокомпозит",
+				currentQuantity: 1.0,
+				minThresholdQuantity: 0.5,
+				unitOfMeasure: "gram",
+				costKopecks: 38000,
+			},
+			{
+				id: "S-3",
+				organizationId: "org-1",
+				cabinetId: "CAB-2",
+				sku: "MAT-MATR-01",
+				nameRu: "Секционная матрица",
+				currentQuantity: 20,
+				minThresholdQuantity: 5,
+				unitOfMeasure: "pcs",
+				costKopecks: 4500,
+			},
+			{
+				id: "S-4",
+				organizationId: "org-1",
+				cabinetId: "CAB-2",
+				sku: "MAT-BRUSH-01",
+				nameRu: "Микроаппликаторы (браши)",
+				currentQuantity: 50,
+				minThresholdQuantity: 10,
+				unitOfMeasure: "pcs",
+				costKopecks: 350,
+			},
+			{
+				id: "S-5",
+				organizationId: "org-1",
+				cabinetId: "CAB-2",
+				sku: "MAT-ROLL-01",
+				nameRu: "Ватные валики стоматологические",
+				currentQuantity: 100,
+				minThresholdQuantity: 20,
+				unitOfMeasure: "pcs",
+				costKopecks: 150,
+			},
+			{
+				id: "S-6",
+				organizationId: "org-1",
+				cabinetId: "CAB-2",
+				sku: "MAT-SUCT-01",
+				nameRu: "Слюноотсос одноразовый",
+				currentQuantity: 40,
+				minThresholdQuantity: 10,
+				unitOfMeasure: "pcs",
+				costKopecks: 250,
+			},
+		];
+
+		const procedures: CompletedProcedureInput[] = [
+			{ procedureCode804n: "A16.07.002.001", quantity: 2, toothNumber: 15 }, // 2 fillings
+		];
+
+		const summary = executeVisitAutoBomDeduction({
+			visitId: "VISIT-2026-08-27-01",
+			procedures,
+			currentStock: stock,
+			options: {
+				preventNegativeStock: true,
+				autoGeneratePurchaseOrder: true,
+			},
+		});
+
+		assert.equal(summary.success, true);
+		assert.equal(summary.hasShortfall, false);
+		assert.equal(summary.preventedNegativeStock, false);
+		assert.ok(summary.totalCostKopecks > 0);
+		assert.ok(summary.totalCostFormattedRu.includes("₽"));
+
+		// Verify that stock decremented correctly
+		const anes = summary.deductionResult.updatedStock.find((s) => s.sku === "MAT-ANES-01");
+		assert.ok(anes);
+		assert.equal(anes.currentQuantity, 8); // 10 - 2 = 8
 	});
 });
