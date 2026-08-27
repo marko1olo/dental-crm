@@ -23,6 +23,9 @@ import {
 	type DentalLabOrderData,
 	type DentalLabOrderModalProps,
 	type LabOrderStageKey,
+	type CanonicalLabOrderStatus,
+	type CanonicalLabStatusInfo,
+	type LabScheduleSlotInfo,
 	CONSTRUCTION_TYPES,
 	MATERIALS,
 	LAB_MATERIALS,
@@ -35,6 +38,10 @@ import {
 	CONTACT_TIGHTNESS_OPTIONS,
 	SURFACE_TEXTURE_OPTIONS,
 	LAB_ORDER_STAGES,
+	CANONICAL_LAB_STATUSES,
+	mapToCanonicalStatus,
+	calculateMaterialTotalCostKopecks,
+	buildLabAppointmentDraft,
 	calculateLabFinancialSplit,
 	generateBarcodeSvg,
 	generateQrCodeSvg,
@@ -51,25 +58,7 @@ import { DentalLabPricingTab } from "./DentalLabPricingTab";
 import { DentalLabPrintBlank } from "./DentalLabPrintBlank";
 
 // Re-export all types and constants for backwards compatibility with tests and callers
-export type { DentalLabOrderData, DentalLabOrderModalProps, LabOrderStageKey };
-export {
-	CONSTRUCTION_TYPES,
-	MATERIALS,
-	LAB_MATERIALS,
-	VITA_CLASSICAL_SHADES,
-	VITA_BLEACH_SHADES,
-	VITA_3D_MASTER_SHADES,
-	SHADE_SWATCH_MAP,
-	STUMP_NATURAL_DIE_SHADES,
-	OCCLUSAL_SCHEMES,
-	CONTACT_TIGHTNESS_OPTIONS,
-	SURFACE_TEXTURE_OPTIONS,
-	LAB_ORDER_STAGES,
-	calculateLabFinancialSplit,
-	generateBarcodeSvg,
-	generateQrCodeSvg,
-	formatGostOrderNumber,
-};
+export * from "./labMath";
 
 type TabKey = "main" | "shades" | "occlusion" | "stages" | "pricing" | "print";
 

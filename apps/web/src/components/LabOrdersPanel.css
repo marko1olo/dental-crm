@@ -1,3 +1,5 @@
+/* LabOrdersPanel.css — Medical Density 32px Toolbars & 1-Line Status Workflow */
+
 .lab-orders-panel {
 	background: transparent;
 	border: none;
@@ -6,176 +8,285 @@
 	padding: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 12px;
 	color: var(--ink);
 	width: 100%;
 }
 
-.lab-orders-empty {
-	padding: 20px;
-	text-align: center;
-	color: var(--muted);
+.lab-orders-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
 }
 
 .lab-orders-header h3 {
 	margin: 0;
-	font-size: 1.25rem;
+	font-size: 1rem;
 	color: var(--ink);
-	font-weight: 600;
+	font-weight: 700;
 	letter-spacing: 0.01em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.lab-orders-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.lab-btn-32 {
+	min-height: 32px;
+	height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	cursor: pointer;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	transition: all 0.15s ease-in-out;
+	white-space: nowrap;
+}
+
+.lab-btn-32:hover:not(:disabled) {
+	background: var(--paper-elevated, var(--paper-soft));
+	border-color: var(--line-strong, var(--teal));
+	color: var(--teal);
+}
+
+.lab-btn-32.is-primary {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal-dark, var(--teal));
+}
+
+.lab-btn-32.is-primary:hover:not(:disabled) {
+	opacity: 0.92;
+	color: var(--on-teal, #ffffff);
+}
+
+.lab-btn-32:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 .lab-orders-list {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-	gap: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 }
 
 .lab-order-card {
 	border: 1px solid var(--line);
 	border-radius: 12px;
-	padding: 16px;
+	padding: 12px 14px;
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
+	gap: 10px;
 	background: var(--paper-soft);
-	transition: border-color 0.2s ease, transform 0.2s ease;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .lab-order-card:hover {
-	background: var(--paper-elevated, var(--paper-soft));
-	border-color: var(--line-strong);
-	transform: translateY(-2px);
+	border-color: var(--line-strong, var(--teal));
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.lab-order-main {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-}
-
-.fdi-badge {
-	background: var(--info-bg, rgba(59, 130, 246, 0.15));
-	color: var(--info-fg, #0284c7);
-	border: 1px solid var(--info-fg, rgba(59, 130, 246, 0.3));
-	font-weight: bold;
-	font-size: 1.2rem;
-	padding: 8px 12px;
-	border-radius: 8px;
-	min-width: 44px;
-	text-align: center;
-}
-
-.order-details {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
-
-.order-details strong {
-	font-size: 1.05rem;
-	color: var(--ink);
-	letter-spacing: 0.02em;
-}
-
-.order-details small {
-	color: var(--muted);
-	font-size: 0.85rem;
-}
-
-.lab-order-meta {
+.lab-order-main-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	border-top: 1px solid var(--line);
-	padding-top: 14px;
-	font-size: 0.9rem;
+	gap: 12px;
+	flex-wrap: wrap;
 }
 
-.status-badge {
-	padding: 4px 10px;
+.lab-order-info-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	flex: 1;
+}
+
+.fdi-badge-compact {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	color: var(--teal-dark, var(--teal));
+	border: 1px solid var(--teal-soft, rgba(13, 148, 136, 0.25));
+	font-weight: 800;
+	font-size: 0.85rem;
+	padding: 4px 8px;
 	border-radius: 6px;
-	font-weight: 600;
-	font-size: 0.8rem;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
+	font-family: monospace;
+	white-space: nowrap;
+}
+
+.lab-order-title-block {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.lab-order-title-block strong {
+	font-size: 0.875rem;
+	color: var(--ink);
+	font-weight: 700;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	flex-shrink: 1;
-	min-width: 0;
-	max-width: 55%;
 }
 
-.status-badge.draft {
-	background: var(--paper-strong);
+.lab-order-spec-line {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.75rem;
 	color: var(--muted);
-	border: 1px solid var(--line);
+	flex-wrap: wrap;
 }
-.status-badge.sent {
+
+.lab-order-spec-chip {
+	font-weight: 600;
+	color: var(--ink);
+}
+
+/* 1-Line 4-Status Progression Strip */
+.lab-status-strip-1line {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 4px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 3px;
+}
+
+.lab-status-step {
+	min-height: 28px;
+	height: 28px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	border-radius: 6px;
+	font-size: 0.725rem;
+	font-weight: 700;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	padding: 0 6px;
+}
+
+.lab-status-step:hover:not(.is-active) {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.lab-status-step.is-active.status-sent {
 	background: var(--info-bg, rgba(59, 130, 246, 0.15));
 	color: var(--info-fg, #0284c7);
-	border: 1px solid var(--info-fg, rgba(59, 130, 246, 0.3));
-}
-.status-badge.in_progress {
-	background: var(--warn-bg, rgba(234, 179, 8, 0.15));
-	color: var(--warn-fg, #d97706);
-	border: 1px solid var(--warn-fg, rgba(234, 179, 8, 0.3));
-}
-.status-badge.delivered {
-	background: var(--ok-bg, rgba(34, 197, 94, 0.15));
-	color: var(--ok-fg, #15803d);
-	border: 1px solid var(--ok-fg, rgba(34, 197, 94, 0.3));
-}
-.status-badge.fitting {
-	background: var(--info-bg);
-	color: var(--info-fg);
-	border: 1px solid var(--info-fg);
-}
-.status-badge.refitting {
-	background: var(--bad-bg, rgba(239, 68, 68, 0.15));
-	color: var(--bad-fg, #b91c1c);
-	border: 1px solid var(--bad-fg, rgba(239, 68, 68, 0.3));
-}
-.status-badge.completed {
-	background: var(--ok-bg, rgba(16, 185, 129, 0.15));
-	color: var(--ok-fg, #15803d);
-	border: 1px solid var(--ok-fg, rgba(16, 185, 129, 0.3));
+	border-color: var(--info-fg, rgba(59, 130, 246, 0.3));
 }
 
-.delivery-date {
+.lab-status-step.is-active.status-fitting {
+	background: var(--warn-bg, rgba(234, 179, 8, 0.15));
+	color: var(--warn-fg, #d97706);
+	border-color: var(--warn-fg, rgba(234, 179, 8, 0.3));
+}
+
+.lab-status-step.is-active.status-ready {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	color: var(--teal-dark, var(--teal));
+	border-color: var(--teal, rgba(13, 148, 136, 0.3));
+}
+
+.lab-status-step.is-active.status-completed {
+	background: var(--ok-bg, rgba(34, 197, 94, 0.15));
+	color: var(--ok-fg, #15803d);
+	border-color: var(--ok-fg, rgba(34, 197, 94, 0.3));
+}
+
+.lab-status-step.is-passed {
+	color: var(--ink);
+	font-weight: 600;
+}
+
+/* Card Bottom Action Toolbar */
+.lab-card-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	border-top: 1px solid var(--line);
+	padding-top: 8px;
+	flex-wrap: wrap;
+}
+
+.lab-card-financials {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	font-size: 0.75rem;
 	color: var(--muted);
 }
 
-.cost {
-	font-weight: bold;
+.lab-card-price {
+	font-size: 0.95rem;
+	font-weight: 800;
 	color: var(--ink);
 	font-family: monospace;
-	font-size: 1.05rem;
+}
+
+.lab-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.lab-orders-empty {
+	padding: 24px;
+	text-align: center;
+	color: var(--muted);
+	font-size: 0.85rem;
+	border: 1px dashed var(--line);
+	border-radius: 12px;
+	background: var(--paper-soft);
 }
 
 .lab-order-warning {
-	margin-top: 12px;
-	padding: 12px;
+	padding: 8px 12px;
 	background: var(--warn-bg, rgba(234, 179, 8, 0.1));
 	border: 1px solid var(--warn-fg, rgba(234, 179, 8, 0.3));
 	color: var(--warn-fg, #92400e);
 	border-radius: 8px;
-	font-size: 0.85rem;
-	font-weight: 500;
-	line-height: 1.4;
+	font-size: 0.75rem;
+	font-weight: 600;
 }
 
-:is([data-theme="dark"], [data-theme="night"], .dark) .lab-order-warning {
-	color: var(--warn-fg, #fde047);
+@media (max-width: 640px) {
+	.lab-status-strip-1line {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	.lab-order-main-row {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.lab-card-footer {
+		flex-direction: column;
+		align-items: flex-start;
+	}
 }
 
-@media (max-width: 480px) {
-	.lab-orders-panel {
-		padding: 16px;
-	}
-	.lab-order-meta {
-		flex-wrap: wrap;
-		gap: 12px;
-	}
-}

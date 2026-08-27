@@ -194,9 +194,14 @@ export function DentalLabRestorationTab({
 										{m.desc}
 									</div>
 								</div>
-								<span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap flex-shrink-0">
-									{m.tag}
-								</span>
+								<div className="flex flex-col items-end gap-1 flex-shrink-0">
+									<span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap">
+										{m.tag}
+									</span>
+									<span className="text-[11px] font-mono font-bold text-[var(--teal)]">
+										{(m as any).unitCostRub ? `${(m as any).unitCostRub.toLocaleString("ru-RU")} ₽/ед.` : "6 500 ₽/ед."}
+									</span>
+								</div>
 							</button>
 						);
 					})}

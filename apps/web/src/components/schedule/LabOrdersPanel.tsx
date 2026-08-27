@@ -688,10 +688,36 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										«цены нет» (null) по-прежнему не показывается вовсе.
 									*/}
 									{order.priceRub !== null && order.priceRub !== undefined ? (
-										<span className="font-semibold text-[var(--teal,var(--brand-primary))] mr-2">
+										<span className="font-semibold text-[var(--teal,var(--brand-primary))] mr-1 font-mono">
 											{money(order.priceRub)}
 										</span>
 									) : null}
+
+									{order.dueDate && (
+										<button
+											type="button"
+											onClick={() => {
+												const toothStr = order.toothFdi ? `зуб ${order.toothFdi}` : "ортопедия";
+												const matStr = order.material ? ` (${materialLabels[order.material] || order.material})` : "";
+												const isFitting = (order.status as string) === "fitting" || order.status === "refitting";
+												const actionName = isFitting ? "Примерка конструкции ЗТЛ" : "Установка конструкции ЗТЛ";
+												const reason = `${actionName}: ${toothStr}${matStr}`;
+
+												if (auth && (dashboard as any)) {
+													// Navigate to schedule
+													window.location.hash = "#schedule";
+													const dateLabel = order.dueDate ? new Date(order.dueDate).toLocaleDateString("ru-RU") : "";
+													showToast(`Переход в расписание на дату готовности: ${dateLabel} (${reason})`, "success");
+												}
+											}}
+											className="py-1 px-2 min-h-[32px] bg-[var(--teal)] hover:opacity-90 text-white rounded-lg font-bold transition-all flex items-center gap-1 text-xs cursor-pointer shadow-sm"
+											title="Запланировать слот приема на дату готовности наряда ЗТЛ"
+										>
+											<Calendar className="w-3.5 h-3.5" />
+											Запланировать прием
+										</button>
+									)}
+
 									<select
 										value={order.status}
 										onChange={(e) =>
@@ -700,7 +726,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 												e.target.value as LabOrder["status"],
 											)
 										}
-										className="py-1.5 px-2.5 min-h-[44px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-200 focus:outline-none focus:border-[var(--teal,var(--brand-primary))] text-xs"
+										className="py-1 px-2 min-h-[32px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-200 focus:outline-none focus:border-[var(--teal,var(--brand-primary))] text-xs font-semibold"
 										title="Изменить статус заказа ЗТЛ"
 									>
 										{clinicStatusFlow.map((s) => (
@@ -719,7 +745,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 									<button
 										type="button"
 										onClick={() => copyPortalLink(order.secureToken)}
-										className="py-1.5 px-2.5 min-h-[44px] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20 rounded-lg font-semibold transition-colors flex items-center gap-1 text-xs cursor-pointer"
+										className="py-1 px-2 min-h-[32px] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20 rounded-lg font-semibold transition-colors flex items-center gap-1 text-xs cursor-pointer"
 									>
 										<Link className="w-3.5 h-3.5" />
 										Ссылка технику
@@ -729,7 +755,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										disabled={deletingId === order.id}
 										aria-busy={deletingId === order.id}
 										onClick={() => handleDeleteOrder(order.id)}
-										className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+										className="p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
 									>
 										<Trash2 className="w-3.5 h-3.5" />
 									</button>

@@ -373,8 +373,46 @@ export function LabOrdersPage() {
 									)}
 								</div>
 
+								{/* Compact 1-Line 4-Status Progression Strip */}
+								<div className="grid grid-cols-4 gap-1 p-1 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl" role="group" aria-label="Статус наряда ЗТЛ">
+									{[
+										{ id: "sent", label: "Отправлен", activeClass: "bg-blue-600 text-white" },
+										{ id: "fitting", label: "Примерка", activeClass: "bg-amber-600 text-white" },
+										{ id: "ready", label: "Готов", activeClass: "bg-teal-600 text-white" },
+										{ id: "completed", label: "Сдан", activeClass: "bg-emerald-600 text-white" },
+									].map((st) => {
+										const currentCanon = (order.status === "fitting" || order.status === "refitting")
+											? "fitting"
+											: (order.status === "shipped" || order.status === "delivered" || order.status === "received")
+											? "ready"
+											: (order.status === "completed")
+											? "completed"
+											: "sent";
+										const isActive = currentCanon === st.id;
+
+										return (
+											<button
+												key={st.id}
+												type="button"
+												onClick={() => {
+													const targetApiStatus = st.id === "ready" ? "received" : st.id;
+													handleStatusChange(order.id!, targetApiStatus);
+												}}
+												className={`h-7 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all ${
+													isActive
+														? `${st.activeClass} shadow-sm`
+														: "text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)]"
+												}`}
+											>
+												{isActive && <CheckCircle2 className="w-3 h-3" />}
+												<span>{st.label}</span>
+											</button>
+										);
+									})}
+								</div>
+
 								{/* Card Bottom: Financials & Action Buttons */}
-								<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-2">
+								<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-2 flex-wrap">
 									<div>
 										<span className="text-xs text-[var(--muted)] block">Себестоимость ЗТЛ:</span>
 										<span className="text-sm font-black text-[var(--ink)] font-mono">
@@ -382,12 +420,28 @@ export function LabOrdersPage() {
 										</span>
 									</div>
 
-									<div className="flex items-center gap-1.5">
+									<div className="flex items-center gap-1.5 flex-wrap">
+										{order.dueDate && (
+											<button
+												type="button"
+												onClick={() => {
+													window.location.hash = "#schedule";
+													const d = new Date(order.dueDate!).toLocaleDateString("ru-RU");
+													showToast(`Переход в расписание на дату готовности: ${d} (зуб ${order.toothFdi || ""})`, "success");
+												}}
+												className="h-8 px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1 shadow-sm transition-all"
+												title="Запланировать слот в расписании"
+											>
+												<Calendar className="w-3.5 h-3.5" />
+												Запись
+											</button>
+										)}
+
 										{order.secureToken && (
 											<button
 												type="button"
 												onClick={() => copyPortalLink(order.secureToken)}
-												className="p-2 rounded-lg border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink-2)] transition-colors"
+												className="h-8 px-2.5 rounded-lg border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors inline-flex items-center gap-1 text-xs"
 												title="Скопировать ссылку для зубного техника"
 											>
 												<Link className="w-3.5 h-3.5" />
@@ -397,7 +451,7 @@ export function LabOrdersPage() {
 										<button
 											type="button"
 											onClick={() => handleOpenTracking(order)}
-											className="min-h-[36px] px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-xs border border-indigo-200 dark:border-indigo-800 transition-colors"
+											className="h-8 px-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-xs border border-indigo-200 dark:border-indigo-800 transition-colors"
 										>
 											Трекинг
 										</button>
@@ -405,9 +459,9 @@ export function LabOrdersPage() {
 										<button
 											type="button"
 											onClick={() => handleOpenEditOrder(order)}
-											className="min-h-[36px] px-3 py-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors"
+											className="h-8 px-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors"
 										>
-											Детали наряда
+											Детали
 										</button>
 									</div>
 								</div>

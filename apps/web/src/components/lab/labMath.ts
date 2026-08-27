@@ -166,6 +166,8 @@ export const MATERIALS = [
 		category: "Цирконий",
 		tag: "Премиум",
 		costTier: "Премиум",
+		baseCostKopecks: 650000,
+		unitCostRub: 6500,
 	},
 	{
 		id: "emax_lithium_disilicate",
@@ -174,6 +176,8 @@ export const MATERIALS = [
 		category: "Стеклокерамика",
 		tag: "Эстетика",
 		costTier: "Эстетик",
+		baseCostKopecks: 750000,
+		unitCostRub: 7500,
 	},
 	{
 		id: "pfm_cocr",
@@ -182,6 +186,8 @@ export const MATERIALS = [
 		category: "Металл",
 		tag: "Стандарт",
 		costTier: "Стандарт",
+		baseCostKopecks: 400000,
+		unitCostRub: 4000,
 	},
 	{
 		id: "pmma_temporary",
@@ -190,6 +196,8 @@ export const MATERIALS = [
 		category: "Временные",
 		tag: "Временная",
 		costTier: "Эконом",
+		baseCostKopecks: 150000,
+		unitCostRub: 1500,
 	},
 	{
 		id: "titanium_custom_abutment",
@@ -198,6 +206,8 @@ export const MATERIALS = [
 		category: "Титан",
 		tag: "Импланты",
 		costTier: "Премиум",
+		baseCostKopecks: 550000,
+		unitCostRub: 5500,
 	},
 	{
 		id: "peek_biohpp",
@@ -206,6 +216,8 @@ export const MATERIALS = [
 		category: "Полимер",
 		tag: "Инновация",
 		costTier: "Премиум",
+		baseCostKopecks: 800000,
+		unitCostRub: 8000,
 	},
 	{
 		id: "biocompatible_3d_resin",
@@ -214,6 +226,8 @@ export const MATERIALS = [
 		category: "3D-печать",
 		tag: "3D-печать",
 		costTier: "Стандарт",
+		baseCostKopecks: 300000,
+		unitCostRub: 3000,
 	},
 ] as const;
 
@@ -465,6 +479,146 @@ export const LAB_ORDER_STAGES = [
 ] as const;
 
 export type LabOrderStageKey = (typeof LAB_ORDER_STAGES)[number]["id"];
+
+// ─── CANONICAL 4-STATUS DENTAL LAB WORKFLOW ───────────────────────────────────
+
+export type CanonicalLabOrderStatus = "sent" | "fitting" | "ready" | "completed";
+
+export interface CanonicalLabStatusInfo {
+	readonly id: CanonicalLabOrderStatus;
+	readonly label: string;
+	readonly shortLabel: string;
+	readonly desc: string;
+	readonly bgClass: string;
+	readonly textClass: string;
+	readonly borderClass: string;
+	readonly activeClass: string;
+}
+
+export const CANONICAL_LAB_STATUSES: readonly CanonicalLabStatusInfo[] = [
+	{
+		id: "sent",
+		label: "Отправлен в ЗТЛ",
+		shortLabel: "Отправлен",
+		desc: "Наряд передан в лабораторию / CAD/CAM моделирование",
+		bgClass: "bg-blue-50 dark:bg-blue-950/40",
+		textClass: "text-blue-700 dark:text-blue-300",
+		borderClass: "border-blue-200 dark:border-blue-800",
+		activeClass: "bg-blue-600 text-white border-blue-700",
+	},
+	{
+		id: "fitting",
+		label: "Примерка у пациента",
+		shortLabel: "Примерка",
+		desc: "Клиническая примерка каркаса / бисквита",
+		bgClass: "bg-amber-50 dark:bg-amber-950/40",
+		textClass: "text-amber-700 dark:text-amber-300",
+		borderClass: "border-amber-200 dark:border-amber-800",
+		activeClass: "bg-amber-600 text-white border-amber-700",
+	},
+	{
+		id: "ready",
+		label: "Готов в клинике",
+		shortLabel: "Готов",
+		desc: "Конструкция доставлена в клинику и готова к фиксации",
+		bgClass: "bg-teal-50 dark:bg-teal-950/40",
+		textClass: "text-teal-700 dark:text-teal-300",
+		borderClass: "border-teal-200 dark:border-teal-800",
+		activeClass: "bg-teal-600 text-white border-teal-700",
+	},
+	{
+		id: "completed",
+		label: "Сдан / Установлен",
+		shortLabel: "Сдан",
+		desc: "Работа успешно зафиксирована в полости рта",
+		bgClass: "bg-emerald-50 dark:bg-emerald-950/40",
+		textClass: "text-emerald-700 dark:text-emerald-300",
+		borderClass: "border-emerald-200 dark:border-emerald-800",
+		activeClass: "bg-emerald-600 text-white border-emerald-700",
+	},
+] as const;
+
+/**
+ * Maps any granular raw status / stage key into the canonical 4-step workflow.
+ */
+export function mapToCanonicalStatus(rawStatus?: string | null): CanonicalLabOrderStatus {
+	if (!rawStatus) return "sent";
+	const s = rawStatus.toLowerCase();
+	if (s === "draft" || s === "sent" || s === "sent_to_lab" || s === "in_progress" || s === "model_cad_design" || s === "framework_wax_milling" || s === "sintering_ceramic_layering") {
+		return "sent";
+	}
+	if (s === "fitting" || s === "refitting" || s === "fitting_in_mouth") {
+		return "fitting";
+	}
+	if (s === "shipped" || s === "delivered" || s === "received" || s === "ready" || s === "final_glaze" || s === "delivered_to_clinic") {
+		return "ready";
+	}
+	if (s === "completed" || s === "fitted") {
+		return "completed";
+	}
+	return "sent";
+}
+
+/**
+ * Calculates total material cost in whole kopecks based on selected teeth count.
+ */
+export function calculateMaterialTotalCostKopecks(materialId: string, teethCount = 1): number {
+	const count = Math.max(1, teethCount);
+	const mat = MATERIALS.find((m) => m.id === materialId);
+	const unitKopecks = (mat as any)?.baseCostKopecks ?? 650000;
+	return unitKopecks * count;
+}
+
+// ─── LAB ORDER TO SCHEDULE SLOT PLANNING HELPER ───────────────────────────────
+
+export interface LabScheduleSlotInfo {
+	patientId: string;
+	patientName?: string | undefined;
+	doctorId?: string | null | undefined;
+	doctorName?: string | null | undefined;
+	targetDateIso: string;
+	reason: string;
+	toothFdi?: string | null | undefined;
+	material?: string | null | undefined;
+}
+
+/**
+ * Extracts slot planning info from a lab order to seamlessly bind dueDate with ScheduleView.
+ */
+export function buildLabAppointmentDraft(order: DentalLabOrderData | {
+	patientId: string;
+	patientName?: string;
+	doctorId?: string | null;
+	doctorName?: string | null;
+	toothFdi?: string | null;
+	material?: string | null;
+	dueDate?: string | null;
+	status?: string;
+}): LabScheduleSlotInfo | null {
+	const targetDate =
+		order.dueDate ||
+		(order as any).deliveryDate ||
+		(order as any).ceramicTrialDate ||
+		(order as any).frameworkTrialDate;
+
+	if (!targetDate) return null;
+
+	const toothStr = order.toothFdi ? `зуб ${order.toothFdi}` : "ортопедия";
+	const matStr = order.material ? ` (${order.material})` : "";
+	const isFitting = order.status === "fitting" || order.status === "refitting";
+	const actionName = isFitting ? "Примерка конструкции ЗТЛ" : "Установка / фиксация конструкции ЗТЛ";
+
+	return {
+		patientId: order.patientId,
+		patientName: order.patientName ?? undefined,
+		doctorId: order.doctorId ?? undefined,
+		doctorName: order.doctorName ?? undefined,
+		targetDateIso: String(targetDate),
+		reason: `${actionName}: ${toothStr}${matStr}`,
+		toothFdi: order.toothFdi ?? undefined,
+		material: order.material ?? undefined,
+	};
+}
 
 // ─── KOPECK-EXACT FINANCIAL CALCULATIONS ───────────────────────────────────────
 

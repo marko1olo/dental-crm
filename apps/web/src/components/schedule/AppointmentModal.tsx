@@ -9,6 +9,7 @@ import {
 	Check,
 	Clock,
 	Copy,
+	FlaskConical,
 	Repeat,
 	User,
 	X,
@@ -16,6 +17,7 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 
@@ -99,6 +101,42 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		setError(null);
 		setIsSaving(false);
 	}, [appointment, isOpen, toDateTimeLocalValue, timezone]);
+
+	// Track active lab orders for the patient to align appointment slots with due dates
+	const [activeLabOrders, setActiveLabOrders] = useState<any[]>([]);
+
+	useEffect(() => {
+		if (!patientId || !isOpen) {
+			setActiveLabOrders([]);
+			return;
+		}
+		let cancelled = false;
+		fetch(`/api/clinical/lab-orders?patientId=${encodeURIComponent(patientId)}`, {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : []))
+			.then((data) => {
+				if (!cancelled) {
+					const list = Array.isArray(data)
+						? data
+						: Array.isArray(data?.orders)
+						? data.orders
+						: Array.isArray(data?.data)
+						? data.data
+						: [];
+					const active = list.filter(
+						(o: any) => o.status !== "completed" && o.status !== "cancelled",
+					);
+					setActiveLabOrders(active);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) setActiveLabOrders([]);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [patientId, isOpen]);
 
 	const staff = dashboard?.clinicSettings?.staff ?? [];
 	const doctors = useMemo(
@@ -311,6 +349,81 @@ export function AppointmentModal(props: AppointmentModalProps) {
 					{(appointment.status === "cancelled" || appointment.status === "no_show") && (
 						<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 							<WaitlistMatchesBlock appointmentId={appointment.id} compact />
+						</div>
+					)}
+
+					{/* Active Dental Lab Orders & Due Date Sync */}
+					{activeLabOrders.length > 0 && (
+						<div className="space-y-2">
+							{activeLabOrders.map((lo: any) => {
+								const hasDue = Boolean(lo.dueDate);
+								const dueDateObj = hasDue ? new Date(lo.dueDate) : null;
+								const isBeforeLab =
+									dueDateObj &&
+									startsAtLocal &&
+									new Date(startsAtLocal).getTime() < dueDateObj.getTime();
+
+								return (
+									<div
+										key={lo.id}
+										className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-sm transition-all ${
+											isBeforeLab
+												? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-300"
+												: "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/20 text-[var(--ink)]"
+										}`}
+									>
+										<div className="space-y-0.5">
+											<div className="font-bold flex items-center gap-1.5 flex-wrap">
+												<FlaskConical className="w-4 h-4 text-[var(--teal)] shrink-0" />
+												<span>Наряд ЗТЛ: {lo.material || "Ортопедия"} (Зуб {lo.toothFdi || "—"})</span>
+												<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] text-[10px] font-bold uppercase border border-[var(--line)]">
+													{lo.status}
+												</span>
+											</div>
+											{hasDue && (
+												<div className="text-[11px] text-[var(--muted)]">
+													Срок готовности:{" "}
+													<strong className="text-[var(--ink)]">
+														{dueDateObj?.toLocaleDateString("ru-RU")}
+													</strong>
+													{isBeforeLab && (
+														<span className="text-amber-600 dark:text-amber-400 font-bold ml-1">
+															(⚠️ прием назначен раньше готовности ЗТЛ)
+														</span>
+													)}
+												</div>
+											)}
+										</div>
+
+										{hasDue && (
+											<button
+												type="button"
+												onClick={() => {
+													if (dueDateObj) {
+														const year = dueDateObj.getFullYear();
+														const month = String(dueDateObj.getMonth() + 1).padStart(2, "0");
+														const day = String(dueDateObj.getDate()).padStart(2, "0");
+														const timePart = startsAtLocal ? startsAtLocal.slice(11, 16) : "10:00";
+														const newStart = `${year}-${month}-${day}T${timePart}`;
+														setStartsAtLocal(newStart);
+
+														const [hh, mm] = timePart.split(":").map(Number);
+														const endHh = String(Math.min(23, (hh || 10) + 1)).padStart(2, "0");
+														setEndsAtLocal(
+															`${year}-${month}-${day}T${endHh}:${String(mm || 0).padStart(2, "0")}`,
+														);
+													}
+												}}
+												className="h-8 px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1 shrink-0 cursor-pointer shadow-sm transition-all"
+												title="Синхронизировать время приема со сроком готовности наряда ЗТЛ"
+											>
+												<Calendar className="w-3.5 h-3.5" />
+												На дату ЗТЛ
+											</button>
+										)}
+									</div>
+								);
+							})}
 						</div>
 					)}
 

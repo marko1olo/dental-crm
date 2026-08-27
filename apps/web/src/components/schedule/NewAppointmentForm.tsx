@@ -1,11 +1,12 @@
 import type { Appointment, Dashboard } from "@dental/shared";
-import { Bot, Plus } from "lucide-react";
+import { Bot, Calendar, FlaskConical, Plus } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppConstants";
 import { appointmentScheduleMissingFields } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { smartBookingParser } from "../../lib/smartBookingParser";
 import {
@@ -162,6 +163,43 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 				}
 			});
 
+		return () => {
+			cancelled = true;
+		};
+	}, [newAppointmentDraft?.patientId]);
+
+	// Fetch active dental lab orders for patient to sync appointment slot with due dates
+	const [activeLabOrders, setActiveLabOrders] = useState<any[]>([]);
+
+	useEffect(() => {
+		const pid = newAppointmentDraft?.patientId;
+		if (!pid) {
+			setActiveLabOrders([]);
+			return;
+		}
+		let cancelled = false;
+		fetch(`/api/clinical/lab-orders?patientId=${encodeURIComponent(pid)}`, {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : []))
+			.then((data) => {
+				if (!cancelled) {
+					const list = Array.isArray(data)
+						? data
+						: Array.isArray(data?.orders)
+						? data.orders
+						: Array.isArray(data?.data)
+						? data.data
+						: [];
+					const active = list.filter(
+						(o: any) => o.status !== "completed" && o.status !== "cancelled",
+					);
+					setActiveLabOrders(active);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) setActiveLabOrders([]);
+			});
 		return () => {
 			cancelled = true;
 		};
@@ -616,6 +654,85 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           элементов, чтобы правка пережила перестановку блоков.
         */
 				<div className="appointment-editor appointment-manual-form mb-6 p-4 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] text-[var(--ink)]">
+					{/* Active Lab Orders notification & Due Date Sync */}
+					{activeLabOrders.length > 0 && (
+						<div className="mb-4 space-y-2">
+							{activeLabOrders.map((lo: any) => {
+								const hasDue = Boolean(lo.dueDate);
+								const dueDateObj = hasDue ? new Date(lo.dueDate) : null;
+								const isBeforeLab =
+									dueDateObj &&
+									newAppointmentDraft.startsAt &&
+									new Date(newAppointmentDraft.startsAt).getTime() < dueDateObj.getTime();
+
+								return (
+									<div
+										key={lo.id}
+										className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-sm transition-all ${
+											isBeforeLab
+												? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-300"
+												: "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/20 text-[var(--ink)]"
+										}`}
+									>
+										<div className="space-y-0.5">
+											<div className="font-bold flex items-center gap-1.5 flex-wrap">
+												<FlaskConical className="w-4 h-4 text-[var(--teal)] shrink-0" />
+												<span>Наряд ЗТЛ: {lo.material || "Ортопедия"} (Зуб {lo.toothFdi || "—"})</span>
+												<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] text-[10px] font-bold uppercase border border-[var(--line)]">
+													{lo.status}
+												</span>
+											</div>
+											{hasDue && (
+												<div className="text-[11px] text-[var(--muted)]">
+													Срок готовности:{" "}
+													<strong className="text-[var(--ink)]">
+														{dueDateObj?.toLocaleDateString("ru-RU")}
+													</strong>
+													{isBeforeLab && (
+														<span className="text-amber-600 dark:text-amber-400 font-bold ml-1">
+															(⚠️ прием раньше готовности ЗТЛ)
+														</span>
+													)}
+												</div>
+											)}
+										</div>
+
+										{hasDue && (
+											<button
+												type="button"
+												onClick={() => {
+													if (dueDateObj) {
+														const targetIso = dueDateObj.toISOString();
+														const endIso = new Date(
+															dueDateObj.getTime() + 60 * 60 * 1000,
+														).toISOString();
+														updateNewAppointmentDraft("startsAt", targetIso);
+														updateNewAppointmentDraft("endsAt", endIso);
+														if (!newAppointmentDraft.reason) {
+															updateNewAppointmentDraft(
+																"reason",
+																`Установка конструкции ЗТЛ (зуб ${lo.toothFdi || "ортопедия"})`,
+															);
+														}
+														showToast(
+															`Дата приема выставлена на готовность ЗТЛ: ${dueDateObj.toLocaleDateString("ru-RU")}`,
+															"success",
+														);
+													}
+												}}
+												className="h-8 px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1 shrink-0 cursor-pointer shadow-sm transition-all"
+												title="Синхронизировать время приема со сроком готовности наряда ЗТЛ"
+											>
+												<Calendar className="w-3.5 h-3.5" />
+												На дату ЗТЛ
+											</button>
+										)}
+									</div>
+								);
+							})}
+						</div>
+					)}
+
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-4">
 						<label>
 							Начало

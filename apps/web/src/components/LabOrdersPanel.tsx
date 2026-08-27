@@ -1,8 +1,40 @@
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	Calendar,
+	Check,
+	CheckCircle2,
+	Clock,
+	Copy,
+	ExternalLink,
+	FlaskConical,
+	Layers,
+	Link,
+	Loader2,
+	Plus,
+	RefreshCw,
+	Sparkles,
+	Trash2,
+	X,
+} from "lucide-react";
+import { denteAdminSecretRequestHeaders, money } from "../AppHelpers";
 import { showToast } from "./GlobalToast";
+import { LAB_ORDER_PORTAL_PATH } from "../lib/publicPortalRoute";
 import { LabOrdersPage } from "../pages/LabOrdersPage";
+import { DentalLabOrderModal } from "./lab/DentalLabOrderModal";
+import { LabTrackingDrawer } from "./lab/LabTrackingDrawer";
+import {
+	type DentalLabOrderData,
+	type CanonicalLabOrderStatus,
+	CANONICAL_LAB_STATUSES,
+	mapToCanonicalStatus,
+	buildLabAppointmentDraft,
+	MATERIALS,
+	VITA_CLASSICAL_SHADES,
+	STUMP_NATURAL_DIE_SHADES,
+	calculateMaterialTotalCostKopecks,
+} from "./lab/labMath";
+import { useOptionalAppLogicContext } from "../contexts/AppLogicContext";
 import "./LabOrdersPanel.css";
 
 export interface LabOrder {
@@ -41,59 +73,49 @@ interface LabOrdersPanelProps {
 	patientId?: string;
 }
 
-const VITA_CLASSICAL_SHADES = [
-	"A1", "A2", "A3", "A3.5", "A4",
-	"B1", "B2", "B3", "B4",
-	"C1", "C2", "C3", "C4",
-	"D2", "D3", "D4",
-];
-
-const STUMP_SHADES = [
-	"ND1", "ND2", "ND3", "ND4", "ND5", "ND6", "ND7", "ND8", "ND9",
-];
-
 const RESTORATION_TYPES = [
-	{ value: "crown_monolithic", label: "Коронка монолитная (Full Zirconia)" },
-	{ value: "crown_layered_cutback", label: "Коронка с редукцией (Cut-back)" },
-	{ value: "emax_press_cad", label: "Коронка / Вкладка E.max CAD" },
-	{ value: "veneer_laminate", label: "Винир керамический" },
-	{ value: "inlay_onlay", label: "Вкладка Inlay / Onlay / Overlay" },
-	{ value: "custom_abutment_tibase", label: "Индивидуальный абатмент Ti-Base" },
-	{ value: "surgical_guide", label: "Хирургический навигационный шаблон" },
+	{ value: "single_crown", label: "Коронка анатомическая" },
+	{ value: "bridge", label: "Мостовидный протез" },
+	{ value: "veneer", label: "Керамический винир E.max" },
+	{ value: "inlay_onlay", label: "Вкладка / Накладка" },
+	{ value: "custom_abutment_tibase", label: "Абатмент Ti-Base + коронка" },
+	{ value: "all_on_4_6", label: "Тотал All-on-4 / All-on-6" },
 	{ value: "pmma_provisional", label: "Временная коронка PMMA" },
-	{ value: "occlusal_splint", label: "Окклюзионная сплинт-шина / каппа" },
-];
-
-const MATERIALS = [
-	{ value: "zirconia_multilayer_gradient", label: "Диоксид циркония Multi-Layer 3D Pro" },
-	{ value: "zirconia_high_translucent", label: "Диоксид циркония HT / ST (Высокая прочность)" },
-	{ value: "emax_lithium_disilicate", label: "Дисиликат лития IPS e.max CAD" },
-	{ value: "pmma_milled", label: "CAD/CAM PMMA медицинский полимер" },
-	{ value: "titanium_grade_5", label: "Титан Grade 5 (Ti-6Al-4V ELI)" },
-	{ value: "cocr_milled", label: "Кобальт-хром фрезерованный (CoCr)" },
-	{ value: "resin_3d_print", label: "Биосовместимый 3D фотополимер" },
+	{ value: "occlusal_splint", label: "Окклюзионная сплинт-каппа" },
 ];
 
 export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	if (!patientId) {
 		return <LabOrdersPage />;
 	}
+
+	const appLogic = useOptionalAppLogicContext();
 	const [orders, setOrders] = useState<LabOrder[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const [showForm, setShowForm] = useState(false);
-	const [formPatientId, setFormPatientId] = useState(patientId || "");
+	// Modals & Drawer state
+	const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
+	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
+	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
+
+	// Quick Inline Create State
+	const [showQuickForm, setShowQuickForm] = useState(false);
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
-	const [restorationType, setRestorationType] = useState("crown_monolithic");
-	const [material, setMaterial] = useState("zirconia_multilayer_gradient");
+	const [restorationType, setRestorationType] = useState("single_crown");
+	const [material, setMaterial] = useState("zirconia_multilayer");
 	const [colorVita, setColorVita] = useState("A2");
 	const [stumpShade, setStumpShade] = useState<string>("");
 	const [cementGap, setCementGap] = useState(30);
 	const [dueDate, setDueDate] = useState("");
 	const [clinicalNotes, setClinicalNotes] = useState("");
-	const [priceRub, setPriceRub] = useState("");
 	const [submitting, setSubmitting] = useState(false);
+
+	// Calculated material cost in whole kopecks
+	const calculatedMaterialCostKopecks = useMemo(() => {
+		return calculateMaterialTotalCostKopecks(material, selectedTeeth.length || 1);
+	}, [material, selectedTeeth.length]);
 
 	const fetchOrders = useCallback(async () => {
 		setLoading(true);
@@ -106,12 +128,20 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				headers: denteAdminSecretRequestHeaders(),
 			});
 			if (!res.ok) {
-				throw new Error("Failed to fetch lab orders");
+				throw new Error("Не удалось загрузить список заказов лаборатории");
 			}
 			const data = await res.json();
-			setOrders(Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : Array.isArray(data?.data) ? data.data : []);
+			setOrders(
+				Array.isArray(data)
+					? data
+					: Array.isArray(data?.orders)
+					? data.orders
+					: Array.isArray(data?.data)
+					? data.data
+					: [],
+			);
 		} catch (err: any) {
-			setError(err.message || "Error fetching lab orders");
+			setError(err.message || "Ошибка загрузки заказов ЗТЛ");
 		} finally {
 			setLoading(false);
 		}
@@ -123,13 +153,113 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 	const toggleTooth = (tooth: number) => {
 		setSelectedTeeth((prev) =>
-			prev.includes(tooth) ? prev.filter((t) => t !== tooth) : [...prev, tooth].sort((a, b) => a - b),
+			prev.includes(tooth)
+				? prev.filter((t) => t !== tooth)
+				: [...prev, tooth].sort((a, b) => a - b),
 		);
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
+	// 1-Click Status Transition Handler
+	const handleStatusTransition = async (orderId: string, targetStatus: CanonicalLabOrderStatus) => {
+		// Map canonical status to API status
+		const apiStatusMap: Record<CanonicalLabOrderStatus, string> = {
+			sent: "sent",
+			fitting: "fitting",
+			ready: "received",
+			completed: "completed",
+		};
+		const statusToSend = apiStatusMap[targetStatus];
+
+		// Optimistic update
+		const previousOrders = orders;
+		setOrders((prev) =>
+			prev.map((o) => (o.id === orderId ? { ...o, status: statusToSend } : o)),
+		);
+
+		try {
+			const res = await fetch(`/api/clinical/lab-orders/${orderId}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({ status: statusToSend }),
+			});
+
+			if (!res.ok) {
+				const errData = await res.json().catch(() => ({}));
+				throw new Error(errData.message || "Не удалось обновить статус наряда");
+			}
+
+			showToast(
+				`Статус наряда ЗТЛ изменен на: ${CANONICAL_LAB_STATUSES.find((s) => s.id === targetStatus)?.label}`,
+				"success",
+			);
+			fetchOrders();
+		} catch (err: any) {
+			setOrders(previousOrders);
+			showToast(err.message || "Ошибка смены статуса наряда", "error");
+		}
+	};
+
+	// 1-Click Schedule Slot Planning on Ready Date
+	const handleScheduleAppointment = (order: LabOrder) => {
+		const draftInfo = buildLabAppointmentDraft(order);
+		if (!draftInfo || !draftInfo.targetDateIso) {
+			showToast("У наряда ЗТЛ не указан срок готовности", "warning");
+			return;
+		}
+
+		if (appLogic?.updateNewAppointmentDraft) {
+			appLogic.updateNewAppointmentDraft("patientId", order.patientId);
+			if (order.doctorId) {
+				appLogic.updateNewAppointmentDraft("doctorUserId", order.doctorId);
+			}
+			appLogic.updateNewAppointmentDraft("startsAt", draftInfo.targetDateIso);
+			appLogic.updateNewAppointmentDraft("reason", draftInfo.reason);
+			if (appLogic.setShowCreateForm) {
+				appLogic.setShowCreateForm(true);
+			}
+		}
+
+		window.location.hash = "#schedule";
+		const dateFormatted = new Date(draftInfo.targetDateIso).toLocaleDateString("ru-RU", {
+			day: "numeric",
+			month: "long",
+		});
+		showToast(
+			`Слот приема запланирован на дату готовности ЗТЛ: ${dateFormatted} (${draftInfo.reason})`,
+			"success",
+		);
+	};
+
+	const copyPortalLink = (token: string) => {
+		const url = `${window.location.origin}/#${LAB_ORDER_PORTAL_PATH}${token}`;
+		navigator.clipboard.writeText(url);
+		showToast("Ссылка для зуботехника скопирована в буфер обмена", "success");
+	};
+
+	const handleDeleteOrder = async (id: string) => {
+		if (!window.confirm("Удалить заказ зуботехнической лаборатории?")) return;
+		try {
+			const res = await fetch(`/api/clinical/lab-orders/${id}`, {
+				method: "DELETE",
+				headers: denteAdminSecretRequestHeaders(),
+			});
+			if (res.ok) {
+				showToast("Заказ ЗТЛ удален", "success");
+				fetchOrders();
+			} else {
+				showToast("Ошибка удаления заказа", "error");
+			}
+		} catch (err: any) {
+			showToast(err.message || "Ошибка удаления заказа", "error");
+		}
+	};
+
+	const handleQuickSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!formPatientId) {
+		if (!patientId) {
 			showToast("ID пациента обязателен", "error");
 			return;
 		}
@@ -140,10 +270,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			const fullNotes = [
 				clinicalNotes,
 				stumpShade ? `Культя: ${stumpShade}` : null,
-				`Зазор под цемент: ${cementGap} мкм`,
+				`Зазор: ${cementGap} мкм`,
 			]
 				.filter(Boolean)
 				.join(" | ");
+
+			const finalPriceRub = calculatedMaterialCostKopecks / 100;
+			const matObj = MATERIALS.find((m) => m.id === material);
 
 			const res = await fetch("/api/clinical/lab-orders", {
 				method: "POST",
@@ -152,13 +285,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					...denteAdminSecretRequestHeaders(),
 				},
 				body: JSON.stringify({
-					patientId: formPatientId,
+					patientId,
 					toothFdi: toothFdiStr,
-					material,
+					material: matObj?.name || material,
 					colorVita,
-					dueDate: dueDate || null,
+					dueDate: dueDate ? new Date(dueDate).toISOString() : null,
 					clinicalNotes: fullNotes || null,
-					priceRub: priceRub ? parseFloat(priceRub) : null,
+					priceRub: finalPriceRub,
 				}),
 			});
 
@@ -169,7 +302,6 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 			const createdOrder = await res.json();
 
-			// If items were selected, add itemized records
 			if (selectedTeeth.length > 0 && createdOrder?.id) {
 				for (const tooth of selectedTeeth) {
 					await fetch(`/api/clinical/lab-orders/${createdOrder.id}/items`, {
@@ -181,22 +313,21 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						body: JSON.stringify({
 							toothFdi: tooth,
 							restorationType,
-							material,
+							material: matObj?.name || material,
 							shadeFinal: colorVita,
 							shadeStump: stumpShade || null,
 							cementGapMicrons: cementGap,
+							priceRub: finalPriceRub / selectedTeeth.length,
 						}),
 					}).catch(() => {});
 				}
 			}
 
-			showToast("Наряд в лабораторию успешно оформлен", "success");
-			setShowForm(false);
-			setFormPatientId(patientId || "");
+			showToast("Наряд в лабораторию успешно оформлен!", "success");
+			setShowQuickForm(false);
 			setSelectedTeeth([]);
 			setDueDate("");
 			setClinicalNotes("");
-			setPriceRub("");
 			await fetchOrders();
 		} catch (err: any) {
 			showToast(err.message || "Ошибка создания наряда в ЗТЛ", "error");
@@ -205,142 +336,110 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 		}
 	};
 
-	const getStatusLabel = (status: string) => {
-		const mapping: Record<string, string> = {
-			draft: "Черновик",
-			sent: "Отправлен в ЗТЛ",
-			in_progress: "В моделировании CAD/CAM",
-			shipped: "Передан курьеру",
-			received: "Поступил в клинику",
-			fitting: "Клиническая примерка",
-			refitting: "Переделка / коррекция",
-			completed: "Сдан / Зафиксирован",
-			cancelled: "Аннулирован",
-		};
-		return mapping[status] || status;
-	};
-
 	return (
 		<div className="lab-orders-panel">
-			<div
-				className="lab-orders-header"
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: "16px",
-				}}
-			>
+			{/* Dense Header & 32px Toolbar */}
+			<div className="lab-orders-header">
 				<div>
-					<h3 style={{ margin: 0, color: "var(--ink)", fontSize: "1.1rem" }}>
-						🦷 Зуботехническая лаборатория (CAD/CAM ЗТЛ)
+					<h3>
+						<FlaskConical className="w-4 h-4 text-[var(--teal)]" />
+						Зуботехническая лаборатория (CAD/CAM ЗТЛ)
 					</h3>
-					<small style={{ color: "var(--muted)" }}>
-						Оформление нарядов, выбор реставраций, шкалы VITA, культей ND1-ND9 и трекинг статусов
-					</small>
+					<div className="text-xs text-[var(--muted)] mt-0.5">
+						Наряды ЗТЛ, материалы, расцветка VITA и точный учет себестоимости
+					</div>
 				</div>
-				<button
-					type="button"
-					onClick={() => setShowForm(!showForm)}
-					style={{
-						padding: "8px 16px",
-						background: showForm ? "var(--bad-bg)" : "var(--info-bg)",
-						color: showForm ? "var(--bad-fg)" : "var(--info-fg)",
-						border: `1px solid ${showForm ? "var(--bad-fg)" : "var(--info-fg)"}`,
-						borderRadius: "6px",
-						cursor: "pointer",
-						fontWeight: 500,
-						minHeight: "44px",
-					}}
-				>
-					{showForm ? "✕ Отмена" : "+ Новый наряд в ЗТЛ"}
-				</button>
+
+				<div className="lab-orders-toolbar">
+					<button
+						type="button"
+						onClick={fetchOrders}
+						className="lab-btn-32"
+						title="Обновить список"
+					>
+						<RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[var(--teal)]" : ""}`} />
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							setSelectedOrderForEdit(null);
+							setIsOrderModalOpen(true);
+						}}
+						className="lab-btn-32 is-primary"
+					>
+						<Sparkles className="w-3.5 h-3.5" />
+						+ Полный наряд CAD/CAM
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setShowQuickForm(!showQuickForm)}
+						className="lab-btn-32"
+					>
+						{showQuickForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+						{showQuickForm ? "Отмена" : "Быстрый наряд"}
+					</button>
+				</div>
 			</div>
 
-			{showForm && (
+			{/* Inline Quick Creation Form */}
+			{showQuickForm && (
 				<form
-					onSubmit={handleSubmit}
-					className="lab-order-form"
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: "12px",
-						background: "var(--paper-soft)",
-						padding: "18px",
-						borderRadius: "8px",
-						border: "1px solid var(--line)",
-						marginBottom: "20px",
-					}}
+					onSubmit={handleQuickSubmit}
+					className="bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl p-3.5 space-y-3 shadow-sm"
 				>
-					<h4 style={{ margin: 0, color: "var(--ink)" }}>Параметры ортопедической работы</h4>
+					<div className="flex items-center justify-between">
+						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+							<FlaskConical className="w-3.5 h-3.5 text-[var(--teal)]" />
+							Параметры ортопедической работы (Быстрое оформление)
+						</span>
+						<span className="text-xs font-mono font-bold text-[var(--teal)]">
+							Себестоимость: {money(calculatedMaterialCostKopecks / 100)}
+						</span>
+					</div>
 
-					{!patientId && (
-						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-								ID Пациента
-							</label>
-							<input
-								type="text"
-								placeholder="UUID Пациента"
-								value={formPatientId}
-								onChange={(e) => setFormPatientId(e.target.value)}
-								required
-								style={{
-									width: "100%",
-									padding: "8px",
-									borderRadius: "4px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-								}}
-							/>
+					{/* Tooth Selection Quadrant Buttons */}
+					<div className="space-y-1.5">
+						<div className="flex justify-between text-xs text-[var(--muted)]">
+							<span>Зубы по FDI: {selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "не выбрано"}</span>
+							{selectedTeeth.length > 0 && (
+								<button
+									type="button"
+									onClick={() => setSelectedTeeth([])}
+									className="text-xs text-rose-600 hover:underline font-bold"
+								>
+									Сбросить
+								</button>
+							)}
 						</div>
-					)}
-
-					{/* Зубная формула быстрый выбор */}
-					<div>
-						<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-							Зубы по FDI (выбрано: {selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "не выбрано"})
-						</label>
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "4px 0" }}>
+						<div className="flex flex-wrap gap-1">
 							{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
 								<button
 									key={t}
 									type="button"
 									onClick={() => toggleTooth(t)}
-									style={{
-										padding: "4px 8px",
-										fontSize: "12px",
-										borderRadius: "6px",
-										background: selectedTeeth.includes(t) ? "var(--teal)" : "var(--paper)",
-										color: selectedTeeth.includes(t) ? "var(--on-teal, #ffffff)" : "var(--ink)",
-										border: "1px solid var(--line)",
-										cursor: "pointer",
-										minHeight: "36px",
-										minWidth: "36px",
-									}}
+									className={`min-h-[28px] h-7 px-1.5 rounded-md text-xs font-bold font-mono border transition-all ${
+										selectedTeeth.includes(t)
+											? "bg-[var(--teal)] text-white border-[var(--teal-dark)]"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+									}`}
 								>
 									{t}
 								</button>
 							))}
 						</div>
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "4px 0", marginTop: "2px" }}>
+						<div className="flex flex-wrap gap-1">
 							{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
 								<button
 									key={t}
 									type="button"
 									onClick={() => toggleTooth(t)}
-									style={{
-										padding: "4px 8px",
-										fontSize: "12px",
-										borderRadius: "6px",
-										background: selectedTeeth.includes(t) ? "var(--teal)" : "var(--paper)",
-										color: selectedTeeth.includes(t) ? "var(--on-teal, #ffffff)" : "var(--ink)",
-										border: "1px solid var(--line)",
-										cursor: "pointer",
-										minHeight: "36px",
-										minWidth: "36px",
-									}}
+									className={`min-h-[28px] h-7 px-1.5 rounded-md text-xs font-bold font-mono border transition-all ${
+										selectedTeeth.includes(t)
+											? "bg-[var(--teal)] text-white border-[var(--teal-dark)]"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+									}`}
 								>
 									{t}
 								</button>
@@ -348,22 +447,15 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						</div>
 					</div>
 
-					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-								Тип конструкции
+							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
+								Конструкция
 							</label>
 							<select
 								value={restorationType}
 								onChange={(e) => setRestorationType(e.target.value)}
-								style={{
-									width: "100%",
-									padding: "8px",
-									borderRadius: "4px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-								}}
+								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
 							>
 								{RESTORATION_TYPES.map((rt) => (
 									<option key={rt.value} value={rt.value}>
@@ -374,46 +466,30 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						</div>
 
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-								Материал
+							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
+								Материал (Копеечный учет)
 							</label>
 							<select
 								value={material}
 								onChange={(e) => setMaterial(e.target.value)}
-								style={{
-									width: "100%",
-									padding: "8px",
-									borderRadius: "4px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-								}}
+								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
 							>
 								{MATERIALS.map((m) => (
-									<option key={m.value} value={m.value}>
-										{m.label}
+									<option key={m.id} value={m.id}>
+										{m.name} ({money((m as any).unitCostRub || 6500)})
 									</option>
 								))}
 							</select>
 						</div>
-					</div>
 
-					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-								Цвет реставрации (VITA)
+							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
+								Цвет (Шкала VITA)
 							</label>
 							<select
 								value={colorVita}
 								onChange={(e) => setColorVita(e.target.value)}
-								style={{
-									width: "100%",
-									padding: "8px",
-									borderRadius: "4px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-								}}
+								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
 							>
 								{VITA_CLASSICAL_SHADES.map((s) => (
 									<option key={s} value={s}>
@@ -422,188 +498,231 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								))}
 							</select>
 						</div>
-
-						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-								Цвет культи (IPS Natural Die)
-							</label>
-							<select
-								value={stumpShade}
-								onChange={(e) => setStumpShade(e.target.value)}
-								style={{
-									width: "100%",
-									padding: "8px",
-									borderRadius: "4px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-								}}
-							>
-								<option value="">Не указан (обычная)</option>
-								{STUMP_SHADES.map((nd) => (
-									<option key={nd} value={nd}>
-										{nd} {nd === "ND1" ? "(Bleach)" : nd === "ND9" ? "(Металл/Литой)" : ""}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-								Цементный зазор (мкм)
-							</label>
-							<input
-								type="number"
-								min="10"
-								max="100"
-								value={cementGap}
-								onChange={(e) => setCementGap(Number(e.target.value))}
-								style={{
-									width: "100%",
-									padding: "8px",
-									borderRadius: "4px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-								}}
-							/>
-						</div>
 					</div>
 
-					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-								Срок сдачи работы
+							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
+								Срок сдачи / Дедлайн ЗТЛ
 							</label>
 							<input
 								type="date"
 								value={dueDate}
 								onChange={(e) => setDueDate(e.target.value)}
-								style={{
-									width: "100%",
-									padding: "8px",
-									borderRadius: "4px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-									minHeight: "44px",
-								}}
+								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
 							/>
 						</div>
 
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-								Стоимость ЗТЛ (₽)
+							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
+								Клинические примечания технику
 							</label>
 							<input
-								type="number"
-								step="0.01"
-								placeholder="0.00"
-								value={priceRub}
-								onChange={(e) => setPriceRub(e.target.value)}
-								style={{
-									width: "100%",
-									padding: "8px",
-									borderRadius: "4px",
-									border: "1px solid var(--line)",
-									background: "var(--paper)",
-									color: "var(--ink)",
-								}}
+								type="text"
+								placeholder="Контакты, прикус, мамелоны..."
+								value={clinicalNotes}
+								onChange={(e) => setClinicalNotes(e.target.value)}
+								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
 							/>
 						</div>
 					</div>
 
-					<div>
-						<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
-							Клинические заметки технику
-						</label>
-						<textarea
-							placeholder="Анатомические ориентиры, контакты, мамелоны, прозрачность режущего края..."
-							value={clinicalNotes}
-							onChange={(e) => setClinicalNotes(e.target.value)}
-							style={{
-								width: "100%",
-								padding: "8px",
-								borderRadius: "4px",
-								border: "1px solid var(--line)",
-								background: "var(--paper)",
-								color: "var(--ink)",
-								minHeight: "60px",
-							}}
-						/>
+					<div className="flex justify-end gap-2 pt-1">
+						<button
+							type="button"
+							onClick={() => setShowQuickForm(false)}
+							className="lab-btn-32"
+						>
+							Отмена
+						</button>
+						<button
+							type="submit"
+							disabled={submitting}
+							className="lab-btn-32 is-primary"
+						>
+							{submitting ? "Оформление..." : "🚀 Отправить заказ в ЗТЛ"}
+						</button>
 					</div>
-
-					<button
-						type="submit"
-						disabled={submitting}
-						style={{
-							padding: "10px",
-							borderRadius: "6px",
-							background: "var(--teal)",
-							color: "var(--on-teal, #ffffff)",
-							border: "none",
-							cursor: "pointer",
-							fontWeight: "bold",
-							opacity: submitting ? 0.7 : 1,
-							marginTop: "8px",
-							minHeight: "44px",
-						}}
-					>
-						{submitting ? "Оформление наряда..." : "🚀 Отправить заказ в лабораторию"}
-					</button>
 				</form>
 			)}
 
 			{error && <div className="lab-order-warning">{error}</div>}
 
-			{loading ? (
-				<div style={{ color: "var(--muted)", textAlign: "center", padding: "20px" }}>
-					Загрузка заказов...
+			{/* Orders List */}
+			{loading && orders.length === 0 ? (
+				<div className="py-6 text-center text-xs text-[var(--muted)] flex items-center justify-center gap-2">
+					<Loader2 className="w-4 h-4 animate-spin text-[var(--teal)]" />
+					Загрузка нарядов лаборатории...
 				</div>
 			) : orders.length === 0 ? (
-				<div className="lab-orders-empty" style={{ textAlign: "center", padding: "30px", color: "var(--muted)" }}>
-					Нет оформленных нарядов в зуботехническую лабораторию
+				<div className="lab-orders-empty">
+					Нет оформленных нарядов в зуботехническую лабораторию по данному пациенту
 				</div>
 			) : (
 				<div className="lab-orders-list">
-					{orders.map((order) => (
-						<div
-							key={order.id}
-							className="lab-order-card"
-						>
-							<div className="lab-order-main">
-								{order.toothFdi && (
-									<div className="fdi-badge">
-										Зуб {order.toothFdi}
+					{orders.map((order) => {
+						const canonicalStatus = mapToCanonicalStatus(order.status);
+
+						return (
+							<div key={order.id} className="lab-order-card">
+								{/* Card Top Row */}
+								<div className="lab-order-main-row">
+									<div className="lab-order-info-group">
+										<div className="fdi-badge-compact">
+											Зуб {order.toothFdi || "—"}
+										</div>
+										<div className="lab-order-title-block">
+											<strong>{order.patientName || "Пациент"}</strong>
+											<div className="lab-order-spec-line">
+												<span className="lab-order-spec-chip">{order.material || "Цирконий"}</span>
+												<span>·</span>
+												<span>Цвет VITA: <strong className="text-[var(--teal)]">{order.colorVita || "A2"}</strong></span>
+												{order.doctorName && (
+													<>
+														<span>·</span>
+														<span>Врач: {order.doctorName}</span>
+													</>
+												)}
+												{order.dueDate && (
+													<>
+														<span>·</span>
+														<span className="text-[var(--ink)] font-semibold flex items-center gap-1">
+															<Calendar className="w-3 h-3 text-[var(--teal)]" />
+															Срок: {new Date(order.dueDate).toLocaleDateString("ru-RU")}
+														</span>
+													</>
+												)}
+											</div>
+										</div>
 									</div>
+
+									{/* Cost */}
+									<div className="lab-card-financials">
+										<span>Себестоимость:</span>
+										<span className="lab-card-price">
+											{order.priceRub != null ? money(order.priceRub) : "—"}
+										</span>
+									</div>
+								</div>
+
+								{/* Compact 1-Line 4-Status Progression Strip */}
+								<div className="lab-status-strip-1line" role="group" aria-label="Статус наряда ЗТЛ">
+									{CANONICAL_LAB_STATUSES.map((st) => {
+										const isActive = canonicalStatus === st.id;
+										return (
+											<button
+												key={st.id}
+												type="button"
+												onClick={() => handleStatusTransition(order.id, st.id)}
+												className={`lab-status-step ${isActive ? `is-active status-${st.id}` : ""}`}
+												title={`Переключить статус на: ${st.label}`}
+											>
+												{isActive && <Check className="w-3 h-3" />}
+												<span>{st.shortLabel}</span>
+											</button>
+										);
+									})}
+								</div>
+
+								{/* Clinical Notes (if present) */}
+								{order.clinicalNotes && (
+									<p className="text-xs text-[var(--muted)] italic line-clamp-1 m-0">
+										«{order.clinicalNotes}»
+									</p>
 								)}
-								<div className="order-details">
-									<strong style={{ color: "var(--ink)", display: "block" }}>{order.patientName}</strong>
-									<div style={{ display: "flex", gap: "12px", color: "var(--muted)", fontSize: "12px", marginTop: "2px" }}>
-										{order.material && <span>{order.material}</span>}
-										{order.colorVita && <span>Цвет: VITA {order.colorVita}</span>}
+
+								{/* Card Bottom 32px Action Toolbar */}
+								<div className="lab-card-footer">
+									<div className="flex items-center gap-1 text-xs text-[var(--muted)]">
+										<Clock className="w-3 h-3" />
+										<span>Создан: {new Date(order.createdAt).toLocaleDateString("ru-RU")}</span>
+									</div>
+
+									<div className="lab-card-actions">
+										{order.dueDate && (
+											<button
+												type="button"
+												onClick={() => handleScheduleAppointment(order)}
+												className="lab-btn-32 is-primary"
+												title="Запланировать слот приема в расписании на дату готовности работы"
+											>
+												<Calendar className="w-3.5 h-3.5" />
+												Запланировать прием
+											</button>
+										)}
+
+										{order.secureToken && (
+											<button
+												type="button"
+												onClick={() => copyPortalLink(order.secureToken)}
+												className="lab-btn-32"
+												title="Скопировать ссылку для зубного техника"
+											>
+												<Link className="w-3.5 h-3.5" />
+												Ссылка технику
+											</button>
+										)}
+
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedOrderForTracking(order as any);
+												setIsTrackingDrawerOpen(true);
+											}}
+											className="lab-btn-32"
+											title="Открыть трекер этапов ЗТЛ"
+										>
+											<Layers className="w-3.5 h-3.5" />
+											Трекинг
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedOrderForEdit(order as any);
+												setIsOrderModalOpen(true);
+											}}
+											className="lab-btn-32"
+											title="Открыть полный наряд для редактирования"
+										>
+											Детали
+										</button>
+
+										<button
+											type="button"
+											onClick={() => handleDeleteOrder(order.id)}
+											className="lab-btn-32 text-rose-600 hover:text-rose-700"
+											title="Удалить наряд ЗТЛ"
+										>
+											<Trash2 className="w-3.5 h-3.5" />
+										</button>
 									</div>
 								</div>
 							</div>
-							<div className="lab-order-meta">
-								<span className={`status-badge ${order.status}`}>
-									{getStatusLabel(order.status)}
-								</span>
-								{order.dueDate && (
-									<span className="delivery-date">
-										Срок: {new Date(order.dueDate).toLocaleDateString()}
-									</span>
-								)}
-								{order.priceRub != null && (
-									<span className="cost">
-										{order.priceRub.toLocaleString("ru-RU")} ₽
-									</span>
-								)}
-							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 			)}
+
+			{/* Full CAD/CAM Order Modal */}
+			<DentalLabOrderModal
+				isOpen={isOrderModalOpen}
+				onClose={() => setIsOrderModalOpen(false)}
+				initialOrder={selectedOrderForEdit}
+				patientId={patientId}
+				onOrderSaved={() => fetchOrders()}
+			/>
+
+			{/* 7-Stage Tracking Drawer */}
+			<LabTrackingDrawer
+				isOpen={isTrackingDrawerOpen}
+				onClose={() => setIsTrackingDrawerOpen(false)}
+				order={selectedOrderForTracking}
+				onStageUpdate={async (orderId, newStage) => {
+					await fetchOrders();
+				}}
+			/>
 		</div>
 	);
 }
+

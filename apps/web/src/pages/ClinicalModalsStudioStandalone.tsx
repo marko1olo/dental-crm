@@ -100,6 +100,7 @@ import { ServicePricelistManagerModal } from "../components/catalog/pricelist/Se
 import { LoyaltyProgramModal } from "../components/loyalty/program/LoyaltyProgramModal";
 import { SickLeaveElnModal } from "../components/documents/sickLeave/SickLeaveElnModal";
 import { AutoclaveLog257Modal } from "../components/sanpin/autoclaveLog/AutoclaveLog257Modal";
+import { SterilizationStudioModal } from "../components/sterilization/SterilizationStudioModal";
 import { DoctorShiftRosterModal } from "../components/schedule/roster/DoctorShiftRosterModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import { BeforeAfterComparisonView } from "../components/photography/BeforeAfterComparisonView";
@@ -358,6 +359,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isLoyaltyProgramOpen, setIsLoyaltyProgramOpen] = useState(false);
 	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
 	const [isAutoclaveLog257Open, setIsAutoclaveLog257Open] = useState(false);
+	const [isSterilizationStudioOpen, setIsSterilizationStudioOpen] = useState(false);
 	const [isDoctorShiftRosterOpen, setIsDoctorShiftRosterOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
@@ -2323,6 +2325,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<DoctorShiftRosterModal
 					isOpen={isDoctorShiftRosterOpen}
 					onClose={() => setIsDoctorShiftRosterOpen(false)}
+				/>
+			)}
+
+			{isSterilizationStudioOpen && (
+				<SterilizationStudioModal
+					isOpen={isSterilizationStudioOpen}
+					onClose={() => setIsSterilizationStudioOpen(false)}
 				/>
 			)}
 
