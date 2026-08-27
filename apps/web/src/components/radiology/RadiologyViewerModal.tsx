@@ -509,7 +509,14 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		}
 	};
 
-	// Nerve proximity clearance calculation
+	// Dynamic jaw check (Upper jaw: teeth 11-28, 51-65 => Maxillary Sinus; Lower jaw: 31-48, 71-85 => Mandibular Canal)
+	const isUpperJaw = useMemo(() => {
+		const toothStr = selectedFdiTooth || (study?.teethFdi && study.teethFdi[0]) || "16";
+		const toothNum = Number.parseInt(toothStr, 10);
+		return (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
+	}, [selectedFdiTooth, study?.teethFdi]);
+
+	// Nerve & Maxillary sinus proximity clearance calculation
 	const nerveClearanceInfo = useMemo(() => {
 		if (nerves.length === 0) return null;
 		const pixelSpacing = study?.metadata?.pixelSpacingMm || 0.1;
@@ -535,8 +542,17 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		}
 
 		if (!Number.isFinite(minClearanceMm)) return null;
-		return evaluateNerveClearance(minClearanceMm, MANDIBULAR_NERVE_SAFETY_MARGIN_MM);
-	}, [nerves, calipers, landmarks, activeCaliperStart, mousePosPercent, study?.metadata?.pixelSpacingMm]);
+		const clearance = evaluateNerveClearance(minClearanceMm, MANDIBULAR_NERVE_SAFETY_MARGIN_MM);
+		if (isUpperJaw) {
+			return {
+				...clearance,
+				messageRu: clearance.isDanger
+					? `ОПАСНОСТЬ: Расстояние до дна гайморовой пазухи ${minClearanceMm.toFixed(1)} мм < 2.0 мм!`
+					: `Субантральный зазор до дна гайморовой пазухи: ${minClearanceMm.toFixed(1)} мм (Безопасная зона)`,
+			};
+		}
+		return clearance;
+	}, [nerves, calipers, landmarks, activeCaliperStart, mousePosPercent, study?.metadata?.pixelSpacingMm, isUpperJaw]);
 
 	// Dose calculations
 	const doseInfo = useMemo(() => {
@@ -786,7 +802,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									? "bg-[var(--warn-bg)] border-2 border-[var(--warn-fg)] text-[var(--warn-fg)] shadow-sm"
 									: "bg-[var(--paper,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--warn-fg)] hover:bg-[var(--paper-soft,#0f172a)]"
 							}`}
-							title="Трассировщик нижнечелюстного канала (Safety Margin 2.0 мм) (N)"
+							title={
+								isUpperJaw
+									? "Трассировщик дна гайморовой пазухи (Sinus maxillaris) (N)"
+									: "Трассировщик нижнечелюстного канала (Safety Margin 2.0 мм) (N)"
+							}
 							data-testid="tool-nerve-tracer-btn"
 						>
 							<Spline className="w-5 h-5" />
@@ -1555,7 +1575,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							</svg>
 						)}
 
-						{/* ── LANDMARK PINS OVERLAY ── */}
+						{/* ── LANDMARK PINS OVERLAY (Delicate non-occluding badge with leader line) ── */}
 						{isHudVisible &&
 							landmarks.map((pin) => (
 								<div
@@ -1567,9 +1587,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 										transform: "translate(-50%, -100%)",
 									}}
 								>
-									<div className="flex flex-col items-center cursor-pointer">
-										{/* Badge pill */}
-										<div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-950/90 border border-[var(--teal)] text-[var(--teal)] text-[11px] font-bold shadow-lg whitespace-nowrap group-hover:scale-110 transition-transform">
+									<div className="flex flex-col items-center cursor-pointer relative -top-2.5">
+										{/* Delicate semi-transparent badge */}
+										<div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/80 hover:bg-slate-900/95 border border-teal-400/50 text-teal-300 text-[10px] font-bold shadow-lg backdrop-blur-md whitespace-nowrap group-hover:scale-105 transition-all">
+											<span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
 											<span>FDI: {pin.toothFdi}</span>
 											<button
 												type="button"
@@ -1577,21 +1598,25 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 													e.stopPropagation();
 													handleDeleteLandmark(pin.id);
 												}}
-												className="text-rose-400 hover:text-rose-200 ml-1"
+												className="text-rose-400 hover:text-rose-200 ml-1 text-xs font-bold leading-none cursor-pointer"
 												title="Удалить метку"
 											>
 												×
 											</button>
 										</div>
-										{/* Pin Needle Indicator */}
-										<div className="w-2.5 h-2.5 rounded-full bg-[var(--teal)] border border-slate-950 shadow-md -mt-0.5 animate-pulse" />
+										{/* Subtle leader line to anatomical point */}
+										<div className="w-[1px] h-2.5 bg-teal-400/70" />
+										{/* Non-occluding delicate anatomical target needle */}
+										<div className="w-2.5 h-2.5 rounded-full border border-teal-300 bg-teal-400/30 flex items-center justify-center -mt-0.5 shadow-sm">
+											<div className="w-1 h-1 rounded-full bg-white shadow-xs" />
+										</div>
 									</div>
 								</div>
 							))}
 						</div>
 					)}
 
-					{/* ── FLOATING PROXIMITY ALERT BANNER (NERVE SAFETY MARGIN 2.0 MM) ── */}
+					{/* ── FLOATING PROXIMITY ALERT BANNER (SAFETY MARGIN 2.0 MM) ── */}
 					{nerveClearanceInfo && (
 						<div
 							role={nerveClearanceInfo.isDanger ? "alert" : "status"}
@@ -1615,7 +1640,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						</div>
 					)}
 
-					{/* ── ACTIVE NERVE TRACER FLOATING CONTROLS ── */}
+					{/* ── ACTIVE TRACER FLOATING CONTROLS (MAXILLARY SINUS / MANDIBULAR CANAL) ── */}
 					{activeTool === "nerve_tracer" && (
 						<div
 							className="absolute bottom-16 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/95 border-2 border-amber-500 shadow-2xl backdrop-blur-md text-xs"
@@ -1623,7 +1648,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						>
 							<div className="flex items-center gap-1.5 font-bold text-amber-400 mr-2">
 								<Spline className="w-4 h-4" />
-								<span>Трассировка нерва (точек: {activeNervePoints.length}):</span>
+								<span>
+									{isUpperJaw
+										? `Контур пазухи (точек: ${activeNervePoints.length}):`
+										: `Трассировка нерва (точек: ${activeNervePoints.length}):`}
+								</span>
 							</div>
 							<div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl">
 								<button
@@ -1653,16 +1682,16 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								type="button"
 								disabled={activeNervePoints.length < 2}
 								onClick={handleFinishNerveSpline}
-								className="min-h-[38px] px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+								className="min-h-[38px] px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-md cursor-pointer"
 								data-testid="finish-nerve-spline-btn"
 							>
-								Завершить канал
+								{isUpperJaw ? "Завершить контур пазухи" : "Завершить канал"}
 							</button>
 							{activeNervePoints.length > 0 && (
 								<button
 									type="button"
 									onClick={() => setActiveNervePoints([])}
-									className="px-2.5 py-1 text-slate-400 hover:text-rose-300"
+									className="px-2.5 py-1 text-slate-400 hover:text-rose-300 cursor-pointer"
 								>
 									Сбросить
 								</button>
@@ -1672,10 +1701,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 					{/* ── WW/WL PRESETS QUICK BAR (Centered directly inside canvas viewport) ── */}
 					<div
-						className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--teal-soft,#38bdf8)]/30 shadow-2xl backdrop-blur-md max-w-[calc(100%-32px)] overflow-x-auto"
+						className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-900/95 border border-slate-700/60 shadow-2xl backdrop-blur-md max-w-[calc(100%-32px)] overflow-x-auto scrollbar-none"
 						data-testid="viewer-presets-bar"
 					>
-						<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[var(--muted,#94a3b8)] whitespace-nowrap shrink-0">
+						<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">
 							Пресеты WW/WL:
 						</span>
 						{DEFAULT_WW_WL_PRESETS.map((preset) => {
@@ -1685,10 +1714,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									key={preset.id}
 									type="button"
 									onClick={() => handleSelectPreset(preset)}
-									className={`h-8 min-h-[32px] whitespace-nowrap px-3 py-1 rounded-lg text-[11px] font-bold shrink-0 transition-all cursor-pointer ${
+									className={`h-8 min-h-[32px] min-w-fit shrink-0 whitespace-nowrap px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
 										isSelected
-											? "bg-[var(--teal-fill,var(--teal))] border border-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-sm"
-											: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+											? "bg-[var(--teal,#0d9488)] border border-teal-400 text-white shadow-sm"
+											: "bg-slate-800/90 border border-slate-700 text-slate-200 hover:text-white hover:bg-slate-700"
 									}`}
 									title={preset.description}
 									data-testid={`preset-btn-${preset.id}`}
@@ -1902,17 +1931,19 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									)}
 								</div>
 
-								{/* ── MANDIBULAR NERVE TRACINGS ── */}
+								{/* ── ANATOMICAL STRUCTURE: MAXILLARY SINUS (UPPER JAW) vs MANDIBULAR NERVE (LOWER JAW) ── */}
 								<div className="flex flex-col gap-2" data-testid="side-drawer-nerves-section">
 									<div className="flex items-center justify-between">
 										<span className="text-xs font-bold text-[var(--muted,#94a3b8)] uppercase tracking-wider">
-											Нижнечелюстной нерв ({nerves.length}):
+											{isUpperJaw
+												? `Гайморова пазуха (Sinus maxillaris) (${nerves.length}):`
+												: `Нижнечелюстной канал (N. Alveolaris Inferior) (${nerves.length}):`}
 										</span>
 										{nerves.length > 0 && (
 											<button
 												type="button"
 												onClick={() => setNerves([])}
-												className="text-[11px] text-rose-400 hover:text-rose-200"
+												className="text-[11px] text-rose-400 hover:text-rose-200 cursor-pointer"
 											>
 												Очистить
 											</button>
@@ -1921,7 +1952,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 									{nerves.length === 0 ? (
 										<div className="p-3 rounded-xl bg-[var(--paper,#020617)]/60 border border-[var(--line,#1e293b)] text-xs text-[var(--muted,#94a3b8)] italic text-center">
-											Трассировка не выполнена. Выберите инструмент «Нерв» (N).
+											{isUpperJaw
+												? "Трассировка дна пазухи не выполнена. Выберите инструмент «Контур пазухи» (N)."
+												: "Трассировка канала не выполнена. Выберите инструмент «Нерв» (N)."}
 										</div>
 									) : (
 										<div className="flex flex-col gap-2">
@@ -1932,20 +1965,27 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 												>
 													<div className="flex items-center justify-between">
 														<span className="font-bold text-amber-400">
-															#{idx + 1} {nerve.label}
+															#{idx + 1}{" "}
+															{isUpperJaw
+																? `Дно гайморовой пазухи (${nerve.side === "left" ? "Левая" : "Правая"})`
+																: nerve.label}
 														</span>
 														<button
 															type="button"
 															onClick={() => handleDeleteNerve(nerve.id)}
-															className="text-[var(--muted,#94a3b8)] hover:text-rose-400 p-0.5"
+															className="text-[var(--muted,#94a3b8)] hover:text-rose-400 p-0.5 cursor-pointer"
+															title="Удалить"
 														>
 															<Trash2 className="w-3.5 h-3.5" />
 														</button>
 													</div>
 													<div className="flex items-center justify-between text-[11px] text-[var(--ink,#cbd5e1)]">
-														<span>Длина: <strong className="text-[var(--ink,#f8fafc)]">{nerve.lengthMm} мм</strong></span>
+														<span>
+															{isUpperJaw ? "Длина контура: " : "Длина канала: "}
+															<strong className="text-[var(--ink,#f8fafc)]">{nerve.lengthMm} мм</strong>
+														</span>
 														<span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold text-[10px]">
-															Коридор безопасности 2.0 мм
+															{isUpperJaw ? "Субантральный зазор: безопасная зона" : "Коридор безопасности 2.0 мм"}
 														</span>
 													</div>
 												</div>

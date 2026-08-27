@@ -28,6 +28,8 @@ import {
 
 export type XrayFilterMode = "normal" | "invert" | "bone" | "edge";
 
+export const SAMPLE_TRG_CEPHALOGRAM_URL = "/radiology/sample_trg_cephalogram.jpg";
+
 export interface CephalometricCanvasProps {
 	landmarks: LandmarkMap;
 	onLandmarkChange: (key: LandmarkKey, point: Point2D) => void;
@@ -354,7 +356,7 @@ export function CephalometricCanvas({
 						</button>
 						<button
 							type="button"
-							onClick={() => fileInputRef.current?.click()}
+							onClick={() => onImageUpload?.(SAMPLE_TRG_CEPHALOGRAM_URL)}
 							className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl !bg-[#1e293b] hover:!bg-[#334155] !text-[#f8fafc] border !border-[#334155] text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
 						>
 							<span>Загрузить клинический снимок ТРГ пациента</span>
@@ -418,12 +420,11 @@ export function CephalometricCanvas({
 							<button
 								type="button"
 								onClick={handleResetView}
-								className="h-7 px-2 rounded-md flex items-center gap-1 !bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] transition-colors cursor-pointer text-xs font-bold"
-								title="Сбросить масштаб и положение (100%)"
+								className="w-7 h-7 rounded-md flex items-center justify-center !bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] transition-colors cursor-pointer"
+								title="Сбросить масштаб и положение"
 								aria-label="Сбросить масштаб"
 							>
 								<RotateCcw size={13} />
-								<span>100%</span>
 							</button>
 							<button
 								type="button"
@@ -729,9 +730,9 @@ export function CephalometricCanvas({
 							Gn: { dx: 26, dy: 18, align: "start" },
 							Me: { dx: -6, dy: 30, align: "middle" },
 							Go: { dx: -34, dy: 18, align: "end" },
-							U1t: { dx: 18, dy: -14, align: "start" },
+							U1t: { dx: -42, dy: -16, align: "end" },
 							U1a: { dx: -54, dy: -4, align: "end" },
-							L1t: { dx: 22, dy: -6, align: "start" },
+							L1t: { dx: 26, dy: 14, align: "start" },
 							L1a: { dx: -54, dy: 4, align: "end" },
 						};
 

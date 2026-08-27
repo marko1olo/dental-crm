@@ -153,8 +153,8 @@ export const MedicalRadiologyDropzone: React.FC<
 		<div
 			className={`flex flex-col items-center justify-center p-6 md:p-10 rounded-2xl border-2 border-dashed transition-all duration-200 text-center select-none ${
 				isDragOver
-					? "border-[var(--teal)] bg-[var(--teal-surface)]/30 scale-[1.01] shadow-2xl"
-					: "border-[var(--line,#334155)] bg-[var(--paper-soft,#0f172a)]/95 hover:border-[var(--teal-soft,#38bdf8)]/60"
+					? "border-teal-400 bg-teal-950/30 scale-[1.01] shadow-2xl"
+					: "border-slate-700 bg-slate-900/95 hover:border-teal-500/60 shadow-2xl"
 			} ${className}`}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
@@ -172,34 +172,34 @@ export const MedicalRadiologyDropzone: React.FC<
 
 			{/* Medical Sensor Icon Badge */}
 			<div className="relative mb-5">
-				<div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-[var(--paper,#1e293b)] border border-[var(--teal-soft,#38bdf8)]/40 text-[var(--teal,#06b6d4)] shadow-xl">
+				<div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-800 border border-teal-500/40 text-teal-400 shadow-xl">
 					<Scan className="w-10 h-10 animate-pulse" />
 				</div>
-				<div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] text-[10px] font-extrabold uppercase tracking-wider shadow-md">
+				<div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md bg-teal-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md border border-teal-400/30">
 					DICOM / RVG
 				</div>
 			</div>
 
 			{/* Title & Subtitle */}
-			<h3 className="text-base sm:text-lg md:text-xl font-bold text-[var(--ink,#f8fafc)] tracking-tight mb-2">
+			<h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-100 tracking-tight mb-2">
 				{title}
 			</h3>
-			<p className="text-xs sm:text-sm text-[var(--muted,#94a3b8)] max-w-md leading-relaxed mb-6 font-medium">
+			<p className="text-xs sm:text-sm text-slate-400 max-w-md leading-relaxed mb-6 font-medium">
 				{subtitle}
 			</p>
 
 			{/* Supported Formats Tags */}
 			<div className="flex flex-wrap items-center justify-center gap-2 mb-6 max-w-lg">
-				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)]">
+				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
 					DICOM 3.0 (.dcm)
 				</span>
-				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)]">
+				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
 					16-bit Grayscale TIFF
 				</span>
-				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)]">
+				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
 					PNG / JPG высокой четкости
 				</span>
-				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)]/30 text-[var(--teal)] font-bold">
+				<span className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-teal-950/60 border border-teal-700/40 text-teal-300 font-bold">
 					Vatech / KaVo / Planmeca / Gendex
 				</span>
 			</div>
@@ -222,7 +222,7 @@ export const MedicalRadiologyDropzone: React.FC<
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
 					disabled={disabled || isLoading}
-					className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-6 py-2.5 rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] text-xs sm:text-sm font-bold shadow-lg hover:opacity-95 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+					className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-bold shadow-lg active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
 					data-testid="dropzone-browse-file-btn"
 				>
 					<FileUp className="w-4 h-4" />
@@ -234,15 +234,15 @@ export const MedicalRadiologyDropzone: React.FC<
 					type="button"
 					onClick={handleLoadSamplePatientRadiograph}
 					disabled={disabled || isLoading}
-					className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-[var(--teal-soft,#38bdf8)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal,#06b6d4)] text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+					className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-teal-500/60 text-slate-200 hover:text-teal-300 text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
 					data-testid="load-sample-radiograph-btn"
 				>
-					<HardDrive className="w-4 h-4 text-[var(--teal)]" />
+					<HardDrive className="w-4 h-4 text-teal-400" />
 					<span>Загрузить тестовый снимок пациента</span>
 				</button>
 			</div>
 
-			<span className="text-[11px] text-[var(--muted,#94a3b8)] mt-4 font-mono">
+			<span className="text-[11px] text-slate-400 mt-4 font-mono">
 				Стандарт СанПиН 2.6.1.1192-03 · Автоматическая калибровка пикселей
 			</span>
 		</div>

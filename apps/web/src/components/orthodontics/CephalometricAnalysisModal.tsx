@@ -32,6 +32,7 @@ import { showToast } from "../GlobalToast";
 import "./CephalometricAnalysisModal.css";
 import {
 	CephalometricCanvas,
+	SAMPLE_TRG_CEPHALOGRAM_URL,
 	type XrayFilterMode,
 } from "./CephalometricCanvas";
 import {
@@ -46,10 +47,10 @@ import {
 export interface CephalometricAnalysisModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientId?: string;
-	readonly patientName?: string;
-	readonly initialImageUrl?: string;
-	readonly onInsertToProtocol?: (protocolText: string) => void;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly initialImageUrl?: string | undefined;
+	readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined;
 }
 
 export function CephalometricAnalysisModal({
@@ -63,12 +64,17 @@ export function CephalometricAnalysisModal({
 	// Active Tab inside the sidebar: 'landmarks' | 'metrics' | 'report'
 	const [activeTab, setActiveTab] = useState<"landmarks" | "metrics" | "report">("landmarks");
 
-	// Landmarks State
-	const [landmarks, setLandmarks] = useState<LandmarkMap>(DEFAULT_CEPH_LANDMARKS_PRESET);
-	const [activeTargetKey, setActiveTargetKey] = useState<LandmarkKey | null>("S");
+	// Landmarks State (Initialized empty when no image is loaded to prevent fake 100% status)
+	const [landmarks, setLandmarks] = useState<LandmarkMap>(() =>
+		initialImageUrl ? DEFAULT_CEPH_LANDMARKS_PRESET : {},
+	);
+	const [activeTargetKey, setActiveTargetKey] = useState<LandmarkKey | null>(
+		initialImageUrl ? "S" : null,
+	);
 
 	// Image & Filters State
 	const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl ?? null);
+	const isImageLoaded = Boolean(imageUrl);
 	const [filterMode, setFilterMode] = useState<XrayFilterMode>("normal");
 	const [brightness, setBrightness] = useState<number>(100);
 	const [contrast, setContrast] = useState<number>(100);
@@ -107,14 +113,15 @@ export function CephalometricAnalysisModal({
 
 	const handleResetLandmarks = () => {
 		setLandmarks({});
-		setActiveTargetKey("S");
+		setActiveTargetKey(null);
 		showToast("Разметка ориентиров сброшена", "info");
 	};
 
 	const handleLoadPreset = () => {
+		setImageUrl(SAMPLE_TRG_CEPHALOGRAM_URL);
 		setLandmarks(DEFAULT_CEPH_LANDMARKS_PRESET);
 		setActiveTargetKey(null);
-		showToast("Загружена эталонная анатомическая разметка ТРГ", "success");
+		showToast("Загружена эталонная анатомическая разметка ТРГ со снимком", "success");
 	};
 
 	// File Upload Handler for Custom Ceph X-ray
@@ -129,6 +136,9 @@ export function CephalometricAnalysisModal({
 		reader.onload = (ev) => {
 			if (typeof ev.target?.result === "string") {
 				setImageUrl(ev.target.result);
+				if (Object.keys(landmarks).length === 0) {
+					setLandmarks(DEFAULT_CEPH_LANDMARKS_PRESET);
+				}
 				showToast(`Снимок ТРГ "${file.name}" успешно загружен`, "success");
 			}
 		};
@@ -207,8 +217,8 @@ export function CephalometricAnalysisModal({
 				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto lg:overflow-hidden">
 					{/* ── Left Column: Lateral Cephalogram Viewer & Image Controls (7 Cols) ── */}
 					<div className="lg:col-span-7 flex flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden">
-						{/* Clean 32px Clinical Toolbar with flex-wrap Segmented Controls (No Truncation) */}
-						<div className="mb-2 flex flex-wrap items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl p-1.5 shadow-md shrink-0 select-none ceph-toolbar-compact">
+						{/* Clean 32px Clinical Toolbar with overflow-x-auto Segmented Controls (No Truncation) */}
+						<div className="mb-2 flex items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl p-1.5 shadow-md shrink-0 select-none ceph-toolbar-compact overflow-x-auto whitespace-nowrap max-w-full">
 							{/* Filter Modes Segmented Pill */}
 							<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0">
 								{(
@@ -225,8 +235,8 @@ export function CephalometricAnalysisModal({
 										onClick={() => setFilterMode(flt.id)}
 										className={`h-8 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
 											filterMode === flt.id
-												? "bg-[var(--teal)] text-white shadow-xs"
-												: "text-slate-300 hover:text-white hover:bg-slate-800"
+												? "bg-[var(--teal,#0d9488)] text-white shadow-xs border border-teal-400/40"
+												: "bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700/60"
 										}`}
 										title={`Фильтр рентгенограммы: ${flt.label}`}
 									>
@@ -242,8 +252,8 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowPolygon((prev) => !prev)}
 									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showPolygon
-											? "bg-[var(--teal)] text-white shadow-xs"
-											: "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+											? "bg-[var(--teal,#0d9488)] text-white shadow-xs border border-teal-400/40"
+											: "bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60"
 									}`}
 									title="Включить / отключить цефалометрический полигон"
 								>
@@ -255,8 +265,8 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowPlanes((prev) => !prev)}
 									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showPlanes
-											? "bg-[var(--teal)] text-white shadow-xs"
-											: "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+											? "bg-[var(--teal,#0d9488)] text-white shadow-xs border border-teal-400/40"
+											: "bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60"
 									}`}
 									title="Включить / отключить плоскости (SN, FH, MP, OP)"
 								>
@@ -268,8 +278,8 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowLabels((prev) => !prev)}
 									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showLabels
-											? "bg-[var(--teal)] text-white shadow-xs"
-											: "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+											? "bg-[var(--teal,#0d9488)] text-white shadow-xs border border-teal-400/40"
+											: "bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60"
 									}`}
 									title="Включить / отключить подписи анатомических точек"
 								>
@@ -279,9 +289,9 @@ export function CephalometricAnalysisModal({
 							</div>
 
 							{/* Actions (Upload, Preset, Reset) */}
-							<div className="flex items-center gap-1.5 flex-wrap shrink-0">
+							<div className="flex items-center gap-1.5 flex-nowrap shrink-0">
 								<label
-									className="h-8 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-700 shadow-sm whitespace-nowrap"
+									className="h-8 px-2.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-700/70 shadow-sm whitespace-nowrap"
 									title="Загрузить пользовательский снимок ТРГ"
 								>
 									<UploadCloud size={14} />
@@ -296,8 +306,8 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={handleLoadPreset}
-									className="h-8 px-2.5 rounded-lg bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold flex items-center gap-1.5 transition-colors border border-[var(--teal-soft)] cursor-pointer shadow-sm whitespace-nowrap"
-									title="Загрузить эталонную анатомическую разметку"
+									className="h-8 px-2.5 rounded-lg bg-teal-950/70 hover:bg-teal-900/90 text-teal-300 text-xs font-bold flex items-center gap-1.5 transition-colors border border-teal-700/60 cursor-pointer shadow-sm whitespace-nowrap"
+									title="Загрузить эталонную анатомическую разметку со снимком"
 								>
 									<Sparkles size={14} />
 									<span>Эталонная разметка</span>
@@ -305,7 +315,7 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={handleResetLandmarks}
-									className="h-8 px-2.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-800/40 cursor-pointer shadow-sm whitespace-nowrap"
+									className="h-8 px-2.5 rounded-lg bg-rose-950/70 hover:bg-rose-900/90 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-800/60 cursor-pointer shadow-sm whitespace-nowrap"
 									title="Сбросить все точки"
 								>
 									<Trash2 size={13} />
@@ -325,6 +335,9 @@ export function CephalometricAnalysisModal({
 								imageUrl={imageUrl}
 								onImageUpload={(url) => {
 									setImageUrl(url);
+									if (Object.keys(landmarks).length === 0) {
+										setLandmarks(DEFAULT_CEPH_LANDMARKS_PRESET);
+									}
 									showToast("Снимок ТРГ успешно загружен", "success");
 								}}
 								filterMode={filterMode}
@@ -353,35 +366,41 @@ export function CephalometricAnalysisModal({
 								}`}
 								title="Ориентиры ТРГ"
 							>
-								<span className="hidden sm:inline whitespace-nowrap">1. Ориентиры ({analysis.placedCount})</span>
-								<span className="sm:hidden whitespace-nowrap">1. Точки ({analysis.placedCount})</span>
+								<span className="hidden sm:inline whitespace-nowrap">1. Ориентиры ({isImageLoaded ? analysis.placedCount : 0})</span>
+								<span className="sm:hidden whitespace-nowrap">1. Точки ({isImageLoaded ? analysis.placedCount : 0})</span>
 							</button>
 
 							<button
 								type="button"
-								onClick={() => setActiveTab("metrics")}
+								onClick={() => {
+									if (isImageLoaded) setActiveTab("metrics");
+									else showToast("Сначала загрузите снимок ТРГ", "warning");
+								}}
 								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "metrics"
 										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper)] rounded-t-lg shadow-xs"
 										: "border-transparent text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
-								}`}
+								} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
 								title="Расчет углов (Steiner, Tweed, Downs)"
 							>
 								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов</span>
 								<span className="sm:hidden whitespace-nowrap">2. Углы</span>
-								{analysis.isComplete && (
+								{isImageLoaded && analysis.isComplete && (
 									<CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
 								)}
 							</button>
 
 							<button
 								type="button"
-								onClick={() => setActiveTab("report")}
+								onClick={() => {
+									if (isImageLoaded) setActiveTab("report");
+									else showToast("Сначала загрузите снимок ТРГ", "warning");
+								}}
 								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "report"
 										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper)] rounded-t-lg shadow-xs"
 										: "border-transparent text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
-								}`}
+								} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
 								title="Форма 043/у-ТРГ (Ортодонтический протокол)"
 							>
 								<FileText size={14} className="shrink-0" />
@@ -408,21 +427,29 @@ export function CephalometricAnalysisModal({
 										/>
 									</div>
 									<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 m-0 mt-2 min-w-0 break-words">
-										Кликните ориентир ниже, затем укажите его положение на снимке ТРГ слева.
+										{isImageLoaded
+											? "Кликните ориентир ниже, затем укажите его положение на снимке ТРГ слева."
+											: "Загрузите боковую ТРГ пациента или выберите эталонный снимок для начала анализа."}
 									</p>
 								</div>
 
 								{/* Landmark Item Cards with Touch Targets >= 44x44px (min-h-[52px]) */}
 								<div className="space-y-2 flex-1 overflow-y-auto pr-1">
 									{CEPHALOMETRIC_LANDMARKS.map((lm) => {
-										const isPlaced = landmarks[lm.key] !== undefined;
-										const isTarget = activeTargetKey === lm.key;
+										const isPlaced = isImageLoaded && landmarks[lm.key] !== undefined;
+										const isTarget = isImageLoaded && activeTargetKey === lm.key;
 
 										return (
 											<button
 												key={lm.key}
 												type="button"
-												onClick={() => setActiveTargetKey(lm.key)}
+												onClick={() => {
+													if (!isImageLoaded) {
+														showToast("Сначала загрузите снимок ТРГ", "warning");
+														return;
+													}
+													setActiveTargetKey(lm.key);
+												}}
 												className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer min-h-[52px] ${
 													isTarget
 														? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-md ring-1 ring-[var(--teal-soft)]"
@@ -434,7 +461,7 @@ export function CephalometricAnalysisModal({
 												<div className="flex items-center gap-3 min-w-0">
 													<div
 														className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 text-white shadow-sm"
-														style={{ backgroundColor: lm.color }}
+														style={{ backgroundColor: isImageLoaded ? lm.color : "#64748b" }}
 													>
 														{lm.code}
 													</div>
@@ -454,8 +481,8 @@ export function CephalometricAnalysisModal({
 															<Check size={13} /> Задана
 														</span>
 													) : (
-														<span className="text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 px-2.5 py-1 rounded-lg border border-amber-500/40">
-															Ожидает
+														<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/70 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700">
+															Не задана
 														</span>
 													)}
 												</div>
@@ -468,8 +495,13 @@ export function CephalometricAnalysisModal({
 								<div className="mt-3 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
 									<button
 										type="button"
+										disabled={!isImageLoaded || placedPercent === 0}
 										onClick={() => setActiveTab("metrics")}
-										className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+										className={`w-full min-h-[48px] py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
+											!isImageLoaded || placedPercent === 0
+												? "bg-slate-700 text-slate-400 opacity-60 cursor-not-allowed"
+												: "bg-[var(--teal)] hover:opacity-90 text-white cursor-pointer"
+										}`}
 									>
 										<span>Перейти к расчету углов (Steiner, Tweed, Downs)</span>
 										<ArrowRight size={16} />

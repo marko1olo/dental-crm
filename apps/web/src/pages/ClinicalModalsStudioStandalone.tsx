@@ -68,6 +68,7 @@ import { FastCheckoutModal } from "../components/payments/checkout/FastCheckoutM
 import { MedicalPrescriptionModal } from "../components/prescriptions/generator/MedicalPrescriptionModal";
 import { CashShiftWidget } from "../components/finance/CashShiftWidget";
 import { CephalometricAnalysisModal } from "../components/orthodontics/CephalometricAnalysisModal";
+import { SAMPLE_TRG_CEPHALOGRAM_URL } from "../components/orthodontics/CephalometricCanvas";
 import { ImplantIsqProtocolModal } from "../components/implant/isq/ImplantIsqProtocolModal";
 import { DentalLabOrderModal } from "../components/lab/DentalLabOrderModal";
 import { ClinicalPhotoProtocolModal } from "../components/photography/ClinicalPhotoProtocolModal";
@@ -329,6 +330,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isFastCheckoutOpen, setIsFastCheckoutOpen] = useState(false);
 	const [isMedicalPrescriptionOpen, setIsMedicalPrescriptionOpen] = useState(false);
 	const [isCephOpen, setIsCephOpen] = useState(false);
+	const [cephInitialImageUrl, setCephInitialImageUrl] = useState<string | undefined>(SAMPLE_TRG_CEPHALOGRAM_URL);
 	const [isIsqOpen, setIsIsqOpen] = useState(false);
 	const [isLabOrderOpen, setIsLabOrderOpen] = useState(false);
 	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState(false);
@@ -400,6 +402,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						setIsPatientBillingOpen(true);
 					}
 					if (requestedModal === "cephalometry" || requestedModal === "ceph" || requestedModal === "trg") {
+						const isLoaded = params.get("loaded") !== "false" && params.get("state") !== "empty";
+						setCephInitialImageUrl(isLoaded ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined);
 						setIsCephOpen(true);
 					}
 					if (requestedModal === "dropzone" || requestedModal === "radiology_dropzone") {
@@ -798,15 +802,31 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								Расчет углов Steiner (SNA, SNB, ANB), Tweed (FMA, IMPA), Wits appraisal и экспорт в форму 043/у.
 							</p>
 						</div>
-						<button
-							type="button"
-							onClick={() => setIsCephOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-ceph-modal-btn"
-						>
-							<Compass size={15} />
-							<span>Открыть анализ ТРГ</span>
-						</button>
+						<div className="flex flex-col gap-2">
+							<button
+								type="button"
+								onClick={() => {
+									setCephInitialImageUrl(SAMPLE_TRG_CEPHALOGRAM_URL);
+									setIsCephOpen(true);
+								}}
+								className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+								data-testid="open-ceph-modal-btn"
+							>
+								<Compass size={15} />
+								<span>Открыть анализ ТРГ (со снимком)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setCephInitialImageUrl(undefined);
+									setIsCephOpen(true);
+								}}
+								className="w-full min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#cbd5e1)] hover:bg-[var(--line,#334155)] border border-[var(--line,#334155)] transition-all flex items-center justify-center gap-2"
+								data-testid="open-ceph-empty-btn"
+							>
+								<span>Дропзона ТРГ (без снимка)</span>
+							</button>
+						</div>
 					</div>
 
 					{/* 12. Implant ISQ & RFA Osstell Stability Trigger (Wave 12 / Task 39) */}
@@ -2010,6 +2030,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					isOpen={isCephOpen}
 					onClose={() => setIsCephOpen(false)}
 					patientName="Смирнова Екатерина Васильевна"
+					initialImageUrl={cephInitialImageUrl}
 				/>
 			)}
 
