@@ -42,11 +42,11 @@ export declare const labOrderSchema: z.ZodObject<{
     status: "received" | "in_progress" | "completed" | "draft" | "cancelled" | "sent" | "ready" | "fitted" | "rejected_remake";
     patientId: string;
     organizationId: string;
+    costKopecks: number;
     labContactId: string;
     orderNumber: string;
     workType: "other" | "implant" | "inlay_onlay" | "veneer" | "crown" | "bridge" | "denture" | "orthodontic" | "splint_nightguard" | "repair";
     sentDate: string;
-    costKopecks: number;
     isRemake: boolean;
     id?: string | undefined;
     notes?: string | null | undefined;
@@ -76,6 +76,7 @@ export declare const labOrderSchema: z.ZodObject<{
     updatedAt?: string | undefined;
     doctorId?: string | null | undefined;
     clinicId?: string | null | undefined;
+    costKopecks?: number | undefined;
     toothReference?: string | null | undefined;
     impressionType?: "other" | "alginate" | "pvs_silicone" | "polyether" | "digital_scan" | null | undefined;
     antagonistInfo?: string | null | undefined;
@@ -83,7 +84,6 @@ export declare const labOrderSchema: z.ZodObject<{
     expectedDate?: string | null | undefined;
     receivedDate?: string | null | undefined;
     fittedDate?: string | null | undefined;
-    costKopecks?: number | undefined;
     isRemake?: boolean | undefined;
     remakeReason?: string | null | undefined;
 }>;

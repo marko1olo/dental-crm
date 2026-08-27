@@ -1347,6 +1347,60 @@ export function disposeCbctVolume(volume: CbctVoxelVolume): void {
 	}
 }
 
+/**
+ * Calculates the exact un-letterboxed canvas pixel coordinate and normalized 0..1 coordinate
+ * from a mouse/pointer event on a canvas styled with object-fit: contain (Fit-to-Viewport).
+ */
+export function getCanvasPointerPos(
+	canvas: HTMLCanvasElement,
+	clientX: number,
+	clientY: number,
+): { x: number; y: number; normX: number; normY: number } {
+	const rect = canvas.getBoundingClientRect();
+	const elemW = rect.width;
+	const elemH = rect.height;
+	const bufW = canvas.width;
+	const bufH = canvas.height;
+
+	if (elemW <= 0 || elemH <= 0 || bufW <= 0 || bufH <= 0) {
+		return { x: 0, y: 0, normX: 0, normY: 0 };
+	}
+
+	const elemAspect = elemW / elemH;
+	const bufAspect = bufW / bufH;
+
+	let renderedW = elemW;
+	let renderedH = elemH;
+	let offsetX = 0;
+	let offsetY = 0;
+
+	if (elemAspect > bufAspect) {
+		// Element is wider than buffer -> vertical fit, horizontal letterbox bars
+		renderedH = elemH;
+		renderedW = elemH * bufAspect;
+		offsetX = (elemW - renderedW) / 2;
+	} else {
+		// Element is taller than buffer -> horizontal fit, vertical letterbox bars
+		renderedW = elemW;
+		renderedH = elemW / bufAspect;
+		offsetY = (elemH - renderedH) / 2;
+	}
+
+	const localX = clientX - rect.left - offsetX;
+	const localY = clientY - rect.top - offsetY;
+
+	const normX = Math.max(0, Math.min(1, renderedW > 0 ? localX / renderedW : 0));
+	const normY = Math.max(0, Math.min(1, renderedH > 0 ? localY / renderedH : 0));
+
+	return {
+		x: normX * (bufW - 1),
+		y: normY * (bufH - 1),
+		normX,
+		normY,
+	};
+}
+
 // ─── 5. FORWARDING RE-EXPORTS FOR OBLIQUE MPR ENGINE ────────────────────────
 export * from "./cbctObliqueMath";
+
 

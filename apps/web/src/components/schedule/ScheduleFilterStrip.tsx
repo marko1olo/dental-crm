@@ -140,11 +140,11 @@ export function ScheduleFilterStrip({
 				</div>
 
 				{/* Quick Day Switchers: [📅 Сегодня], [Завтра], [Вся неделя] */}
-				<div className="hidden sm:inline-flex items-center gap-1">
+				<div className="hidden sm:inline-flex items-center gap-1 shrink-0">
 					<button
 						type="button"
 						onClick={() => setScheduleDateFilter(todayIso)}
-						className={`min-h-[44px] px-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 ${
+						className={`min-h-[44px] px-2.5 min-w-fit whitespace-nowrap rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 ${
 							scheduleDateFilter === todayIso
 								? "bg-[var(--teal-dark)] text-white shadow-xs"
 								: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]"
@@ -156,7 +156,7 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={() => setScheduleDateFilter(tomorrowIso)}
-						className={`min-h-[44px] px-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 ${
+						className={`min-h-[44px] px-2.5 min-w-fit whitespace-nowrap rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 ${
 							scheduleDateFilter === tomorrowIso
 								? "bg-[var(--teal-dark)] text-white shadow-xs"
 								: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]"
@@ -174,7 +174,7 @@ export function ScheduleFilterStrip({
 								setScheduleViewMode("timeline");
 							}
 						}}
-						className="min-h-[44px] px-2.5 rounded-xl text-xs sm:text-sm font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] transition-all cursor-pointer flex items-center gap-1"
+						className="min-h-[44px] px-2.5 min-w-fit whitespace-nowrap rounded-xl text-xs sm:text-sm font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] transition-all cursor-pointer flex items-center gap-1"
 						title="Обзор на всю неделю"
 					>
 						<span>Вся неделя</span>
@@ -182,11 +182,11 @@ export function ScheduleFilterStrip({
 				</div>
 
 				{/* 1-Click Fast Repeat Booking Presets: [+ Через 7 дней], [+ Через 14 дней], [+ Через 1 месяц] */}
-				<div className="hidden xl:inline-flex items-center gap-1 pl-1 border-l border-[var(--line)]">
+				<div className="hidden xl:inline-flex items-center gap-1 pl-1 border-l border-[var(--line)] shrink-0">
 					<button
 						type="button"
 						onClick={() => handleRepeatBookingOffset(7)}
-						className="min-h-[44px] px-2 rounded-xl text-xs font-bold border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+						className="min-h-[44px] px-2 min-w-fit whitespace-nowrap rounded-xl text-xs font-bold border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-all cursor-pointer flex items-center gap-1 shrink-0"
 						title="1-Клик: Быстрая повторная запись через 7 дней у того же врача"
 						aria-label="Записать через 7 дней"
 					>
@@ -196,7 +196,7 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={() => handleRepeatBookingOffset(14)}
-						className="min-h-[44px] px-2 rounded-xl text-xs font-bold border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+						className="min-h-[44px] px-2 min-w-fit whitespace-nowrap rounded-xl text-xs font-bold border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-all cursor-pointer flex items-center gap-1 shrink-0"
 						title="1-Клик: Быстрая повторная запись через 14 дней у того же врача"
 						aria-label="Записать через 14 дней"
 					>
@@ -206,7 +206,7 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={() => handleRepeatBookingOffset(30)}
-						className="min-h-[44px] px-2 rounded-xl text-xs font-bold border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+						className="min-h-[44px] px-2 min-w-fit whitespace-nowrap rounded-xl text-xs font-bold border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-all cursor-pointer flex items-center gap-1 shrink-0"
 						title="1-Клик: Быстрая повторная запись через 1 месяц (30 дней) у того же врача"
 						aria-label="Записать через 1 месяц"
 					>
@@ -221,7 +221,7 @@ export function ScheduleFilterStrip({
 				{/* "Все записи" filter chip button */}
 				<button
 					type="button"
-					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer`}
+					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} min-h-[44px] px-3.5 min-w-fit whitespace-nowrap text-xs sm:text-sm font-semibold shrink-0 cursor-pointer`}
 					onClick={resetScheduleFilters}
 				>
 					Все записи
@@ -239,7 +239,7 @@ export function ScheduleFilterStrip({
 							<button
 								key={member.id}
 								type="button"
-								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer`}
+								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] px-3.5 min-w-fit whitespace-nowrap text-xs sm:text-sm font-semibold shrink-0 cursor-pointer`}
 								onClick={() =>
 									setScheduleDoctorFilterId(
 										scheduleDoctorFilterId === member.id ? null : member.id,
@@ -266,7 +266,7 @@ export function ScheduleFilterStrip({
 						<button
 							key={chair.id}
 							type="button"
-							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer flex items-center gap-1.5`}
+							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] px-3.5 min-w-fit whitespace-nowrap text-xs sm:text-sm font-semibold shrink-0 cursor-pointer flex items-center gap-1.5`}
 							onClick={() =>
 								setScheduleChairFilterId(
 									scheduleChairFilterId === chair.id ? null : chair.id,
@@ -275,9 +275,9 @@ export function ScheduleFilterStrip({
 							title={`Фильтр по кабинету / креслу: ${chairLabel}${chair.room ? ` (${chair.room})` : ""}`}
 							aria-label={`Фильтр по кабинету / креслу: ${chairLabel}`}
 						>
-							<span>{chairLabel}</span>
+							<span className="whitespace-nowrap">{chairLabel}</span>
 							{chair.room && (
-								<span className="text-[10px] opacity-75 font-normal px-1 py-0.2 rounded bg-black/5 dark:bg-white/10 shrink-0">
+								<span className="text-[10px] opacity-75 font-normal px-1 py-0.2 rounded bg-black/5 dark:bg-white/10 shrink-0 whitespace-nowrap">
 									{chair.room.split(" ")[0]}
 								</span>
 							)}

@@ -436,15 +436,14 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 				};
 				setPersistenceIntegrity(report);
 				setPersistenceHealth(normalizePersistenceHealth(report));
-			} catch (healthError) {
-				showToast(
-					actionFailureToast(
-						"Статус сохранности недоступен",
-						(healthError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Статус сохранности недоступен",
+							(healthError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Статус сохранности недоступен",

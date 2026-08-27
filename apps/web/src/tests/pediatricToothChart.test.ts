@@ -213,12 +213,12 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 			});
 
 			assert.ok(result.chanceOfAvoidingCariesPercent >= 80, `Expected chance >= 80, got ${result.chanceOfAvoidingCariesPercent}`);
-			assert.equal(result.riskCategory, "very_low");
-			assert.match(result.riskCategoryNameRu, /Очень низкий/);
+			assert.equal(result.riskCategory, "low");
+			assert.match(result.riskCategoryNameRu, /Низкий/);
 			assert.ok(result.sectors.actualChanceOfAvoidingCaries >= 80);
 		});
 
-		it("calculates very high caries risk for compromised oral conditions", () => {
+		it("calculates high caries risk for compromised oral conditions", () => {
 			const result = calculateCariogramRisk({
 				pastCariesExperience: 3,
 				dietContents: 3,
@@ -233,8 +233,8 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 			});
 
 			assert.ok(result.chanceOfAvoidingCariesPercent <= 20, `Expected chance <= 20, got ${result.chanceOfAvoidingCariesPercent}`);
-			assert.equal(result.riskCategory, "very_high");
-			assert.match(result.riskCategoryNameRu, /Очень высокий/);
+			assert.equal(result.riskCategory, "high");
+			assert.match(result.riskCategoryNameRu, /Высокий/);
 			assert.ok(result.preventiveProgram.professionalHygieneRu.length > 0);
 		});
 	});

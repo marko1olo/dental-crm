@@ -85,6 +85,7 @@ import {
 	resetObliqueRotationAngles,
 	getTissueNameFromHU,
 	mapCanvasPointerToWorldMmWithTransform,
+	getCanvasPointerPos,
 	huToGrayscale,
 	sampleVoxelHU,
 	voxelToWorldMm,
@@ -1655,8 +1656,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const handlePanoMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (crossSections.length === 0 || !panoCanvasRef.current) return;
 		setIsDraggingPano(true);
-		const rect = e.currentTarget.getBoundingClientRect();
-		const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+		const { normX } = getCanvasPointerPos(e.currentTarget, e.clientX, e.clientY);
 		const panoX = normX * (panoCanvasRef.current.width - 1);
 		const closestIdx = findNearestCrossSectionIndexByPanoX(
 			panoX,
@@ -1673,8 +1673,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	const handlePanoMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!isDraggingPano || crossSections.length === 0 || !panoCanvasRef.current) return;
-		const rect = e.currentTarget.getBoundingClientRect();
-		const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+		const { normX } = getCanvasPointerPos(e.currentTarget, e.clientX, e.clientY);
 		const panoX = normX * (panoCanvasRef.current.width - 1);
 		const closestIdx = findNearestCrossSectionIndexByPanoX(
 			panoX,
@@ -1697,11 +1696,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const handleCanvasMouseDown = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
 		const canvas = e.currentTarget;
-		const rect = canvas.getBoundingClientRect();
-		const pointerPx = {
-			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
-			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
-		};
+		const { x, y, normX, normY } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const pointerPx = { x, y };
 
 		const vox = worldMmToVoxel(crosshairMm, volume);
 		const zPx = volume.dimensions.depth - 1 - vox.z;
@@ -1775,8 +1771,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		// 3. Normal Crosshair Translation Drag
 		setIsDraggingCrosshair(plane);
-		const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-		const normY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
 		const dims = volume.dimensions;
 		setCrosshairMm((prev) => {
 			const v = worldMmToVoxel(prev, volume);
@@ -1800,11 +1794,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const handleCanvasMouseMove = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
 		const canvas = e.currentTarget;
-		const rect = canvas.getBoundingClientRect();
-		const pointerPx = {
-			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
-			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
-		};
+		const { x, y, normX, normY } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const pointerPx = { x, y };
 
 		// 0a. Window/Level Drag
 		if (isDraggingWL) {
@@ -1869,8 +1860,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		// 3. Normal Crosshair Drag
 		if (isDraggingCrosshair === plane) {
-			const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-			const normY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
 			const dims = volume.dimensions;
 			setCrosshairMm((prev) => {
 				const v = worldMmToVoxel(prev, volume);
@@ -1930,11 +1919,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		e.stopPropagation();
 		if (!volume) return;
 		const canvas = e.currentTarget;
-		const rect = canvas.getBoundingClientRect();
-		const pointerPx = {
-			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
-			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
-		};
+		const { x, y, normX, normY } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const pointerPx = { x, y };
 		const vox = worldMmToVoxel(crosshairMm, volume);
 		const zPx = volume.dimensions.depth - 1 - vox.z;
 		const centerPx = plane === "axial"
@@ -1949,8 +1935,24 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
-		handleToggleMaximize(plane);
-	}, [volume, crosshairMm, handleToggleMaximize]);
+		const dims = volume.dimensions;
+		setCrosshairMm((prev) => {
+			const v = worldMmToVoxel(prev, volume);
+			if (plane === "axial") {
+				const vx = Math.round(normX * (dims.width - 1));
+				const vy = Math.round(normY * (dims.height - 1));
+				return voxelToWorldMm({ x: vx, y: vy, z: v.z }, volume);
+			}
+			if (plane === "coronal") {
+				const vx = Math.round(normX * (dims.width - 1));
+				const vz = Math.round((1 - normY) * (dims.depth - 1));
+				return voxelToWorldMm({ x: vx, y: v.y, z: vz }, volume);
+			}
+			const vy = Math.round(normX * (dims.height - 1));
+			const vz = Math.round((1 - normY) * (dims.depth - 1));
+			return voxelToWorldMm({ x: v.x, y: vy, z: vz }, volume);
+		});
+	}, [volume, crosshairMm, obliqueAngles]);
 
 	const getCanvasCursor = useCallback((plane: MprPlane) => {
 		if (isShiftRotating?.plane === plane || activeRotationHandle?.plane === plane) return "grabbing";
@@ -1994,11 +1996,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		// Cursor-anchored smooth zoom
 		const canvas = e.currentTarget;
-		const rect = canvas.getBoundingClientRect();
-		const cursorPx = {
-			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
-			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
-		};
+		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const cursorPx = { x, y };
 
 		setTransforms((prev) => ({
 			...prev,
@@ -2038,7 +2037,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-axial"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={axialCanvasRef}
 					onDoubleClick={(e) => handleCanvasDoubleClick("axial", e)}
@@ -2047,7 +2046,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("axial", e)}
 					style={{ cursor: getCanvasCursor("axial") }}
-					className="max-w-full max-h-full object-contain"
+					className="w-full h-full object-contain"
 				/>
 				<CbctViewportHud
 					viewportType="axial"
@@ -2076,7 +2075,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-coronal"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={coronalCanvasRef}
 					onDoubleClick={(e) => handleCanvasDoubleClick("coronal", e)}
@@ -2085,7 +2084,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("coronal", e)}
 					style={{ cursor: getCanvasCursor("coronal") }}
-					className="max-w-full max-h-full object-contain"
+					className="w-full h-full object-contain"
 				/>
 				<CbctViewportHud
 					viewportType="coronal"
@@ -2114,7 +2113,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-sagittal"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={sagittalCanvasRef}
 					onDoubleClick={(e) => handleCanvasDoubleClick("sagittal", e)}
@@ -2123,7 +2122,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("sagittal", e)}
 					style={{ cursor: getCanvasCursor("sagittal") }}
-					className="max-w-full max-h-full object-contain"
+					className="w-full h-full object-contain"
 				/>
 				<CbctViewportHud
 					viewportType="sagittal"
@@ -2152,7 +2151,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-panoramic"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={panoCanvasRef}
 					onMouseDown={handlePanoMouseDown}
@@ -2160,7 +2159,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseUp={handlePanoMouseUp}
 					onMouseLeave={handlePanoMouseUp}
 					onWheel={(e) => handleCanvasWheel("panoramic", e)}
-					className="max-w-full max-h-full object-contain cursor-pointer"
+					className="w-full h-full object-contain cursor-pointer"
 					data-testid="cbct-panorama-canvas"
 				/>
 				<CbctViewportHud
@@ -2188,11 +2187,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}`}
 			data-testid="cbct-viewport-container-cross-section"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={crossSectionCanvasRef}
 					onWheel={(e) => handleCanvasWheel("cross_section", e)}
-					className="max-w-full max-h-full object-contain"
+					className="w-full h-full object-contain"
 				/>
 				<CbctViewportHud
 					viewportType="cross_section"
@@ -2252,7 +2251,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								</span>
 							</h2>
 						</div>
-						<p className="text-[10px] text-[#94a3b8] whitespace-nowrap" data-testid="cbct-study-quiet-status">
+						<p className="text-[10px] text-[#94a3b8] whitespace-nowrap" data-testid="cbct-patient-metadata-badge" id="cbct-patient-metadata-badge">
 							{patientDisplayName || "Барабаш С.В."} • {loadedSliceCount > 0 ? loadedSliceCount : 400} срезов • {volume ? volume.spacingMm.x.toFixed(1) : "0.2"} мм изотропный воксель
 						</p>
 					</div>
@@ -2579,11 +2578,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					{/* Cross-Section Viewport Canvas */}
 					<div
 						onDoubleClick={() => handleToggleMaximize("cross_section")}
-						className="relative h-56 bg-black rounded-md overflow-hidden border border-[#242a35] flex items-center justify-center shrink-0"
+						className="relative h-56 bg-black rounded-md overflow-hidden border border-[#242a35] flex items-center justify-center shrink-0 w-full"
 					>
 						<canvas
 							ref={crossSectionCanvasRef}
-							className="max-w-full max-h-full object-contain"
+							className="w-full h-full object-contain"
 						/>
 						<CbctViewportHud
 							viewportType="cross_section"

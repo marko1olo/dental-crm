@@ -27,6 +27,7 @@ import {
 import type React from "react";
 import { useMemo, useState } from "react";
 import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal";
+import { RadiationDoseSheetModal } from "./RadiationDoseSheetModal";
 import { formatRadiationDose } from "./radiologyMath";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { RadiologyStudyList } from "./RadiologyStudyList";
@@ -202,6 +203,8 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 	const [isViewerModalOpen, setIsViewerModalOpen] = useState<boolean>(false);
 	const [isReferralModalOpen, setIsReferralModalOpen] =
 		useState<boolean>(false);
+	const [isDoseSheetModalOpen, setIsDoseSheetModalOpen] =
+		useState<boolean>(false);
 	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState<boolean>(false);
 
 	// Comparative Split-View state
@@ -299,6 +302,17 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						>
 							<FileText className="w-4 h-4" />
 							<span>Направление на КЛКТ/ОПТГ</span>
+						</button>
+
+						{/* Radiation Dose Sheet Button */}
+						<button
+							type="button"
+							onClick={() => setIsDoseSheetModalOpen(true)}
+							className="flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] hover:text-[var(--teal)] text-xs md:text-sm font-bold shadow-sm transition-all"
+							data-testid="open-dose-sheet-modal-btn"
+						>
+							<Activity className="w-4 h-4 text-[var(--teal)]" />
+							<span>Лист дозовых нагрузок</span>
 						</button>
 
 						{/* 3D CBCT MPR & Implant Studio Button */}
@@ -510,12 +524,13 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					studies={studies}
 					onSelectStudy={handleOpenViewer}
 					onOpenReferralModal={() => setIsReferralModalOpen(true)}
+					onOpenDoseSheetModal={() => setIsDoseSheetModalOpen(true)}
 					onDeleteStudy={handleDeleteStudy}
 				/>
 			</div>
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    4. MODALS (Viewer, Referral)
+			    4. MODALS (Viewer, Referral, Dose Sheet)
 			    ═══════════════════════════════════════════════════════════════════ */}
 			{isViewerModalOpen && activeViewerStudy && (
 				<RadiologyViewerModal
@@ -529,6 +544,10 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					onOpenReferralModal={() => {
 						setIsViewerModalOpen(false);
 						setIsReferralModalOpen(true);
+					}}
+					onOpenDoseSheetModal={() => {
+						setIsViewerModalOpen(false);
+						setIsDoseSheetModalOpen(true);
 					}}
 				/>
 			)}
@@ -547,6 +566,19 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					doctorName={doctorName ?? undefined}
 					doctorSpecialty={doctorSpecialty ?? undefined}
 					clinicName={clinicName ?? undefined}
+				/>
+			)}
+
+			{isDoseSheetModalOpen && (
+				<RadiationDoseSheetModal
+					isOpen={isDoseSheetModalOpen}
+					onClose={() => setIsDoseSheetModalOpen(false)}
+					studies={studies}
+					patientName={patientFullName}
+					patientBirthDate={patientBirth}
+					medicalCardNumber={patientCard}
+					clinicName={clinicName ?? undefined}
+					doctorName={doctorName ?? undefined}
 				/>
 			)}
 

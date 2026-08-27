@@ -25,7 +25,7 @@ import {
 	MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
 	type AlveolarRidgeCaliperMeasurement,
 	type MandibularNerveSpline,
-} from "../radiology/cbctCaliperNerveMath";
+} from "../radiology/radiologyMath";
 import {
 	calculateImplantBoneDensity,
 	distancePointToSpline,

@@ -423,6 +423,11 @@ export const workspaceTopbarLabels = {
 		label: "Заблокировать",
 		title: "Запереть рабочее место — вернуться можно по ПИН-коду сотрудника",
 	},
+	/** Кнопка вызова клинического ИИ-ассистента Copilot. */
+	copilot: {
+		label: "Copilot",
+		title: "DENTE Copilot — Клинический ИИ-ассистент (Ctrl+K)",
+	},
 } as const;
 
 export const workloadStateLabels: Record<ResourceLoad["state"], string> = {

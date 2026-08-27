@@ -73,6 +73,7 @@ import {
 	resetObliqueRotationAngles,
 	getObliqueRotationLabel,
 	mapCanvasPointerToWorldMmWithTransform,
+	getCanvasPointerPos,
 	worldMmToVoxel,
 	voxelToWorldMm,
 } from "./cbctMprMath";
@@ -160,6 +161,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const [crossSections, setCrossSections] = useState<CrossSectionSliceData[]>([]);
 	const [selectedCrossSectionIndex, setSelectedCrossSectionIndex] = useState<number>(0);
 	const [activeTab, setActiveTab] = useState<"mpr" | "panoramic" | "cross_sections">("mpr");
+	const [mobileMprSlice, setMobileMprSlice] = useState<"axial" | "coronal" | "sagittal" | "panoramic">("axial");
 
 	// ─── 4. CANVAS REFS ────────────────────────────────────────────────────────
 	const axialCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -555,13 +557,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const handlePointerDown = (plane: MprPlane, e: React.PointerEvent<HTMLCanvasElement>) => {
 		e.currentTarget.setPointerCapture(e.pointerId);
 		const canvas = e.currentTarget;
-		const rect = canvas.getBoundingClientRect();
 		const clientX = e.clientX;
 		const clientY = e.clientY;
-		const pointerPx = {
-			x: ((clientX - rect.left) / rect.width) * canvas.width,
-			y: ((clientY - rect.top) / rect.height) * canvas.height,
-		};
+		const { x, y } = getCanvasPointerPos(canvas, clientX, clientY);
+		const pointerPx = { x, y };
 
 		// 1. Right Click -> Adjust Window / Level (Contrast & Brightness)
 		if (e.button === 2) {
@@ -642,13 +641,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 	const handlePointerMove = (plane: MprPlane, e: React.PointerEvent<HTMLCanvasElement>) => {
 		const canvas = e.currentTarget;
-		const rect = canvas.getBoundingClientRect();
 		const clientX = e.clientX;
 		const clientY = e.clientY;
-		const pointerPx = {
-			x: ((clientX - rect.left) / rect.width) * canvas.width,
-			y: ((clientY - rect.top) / rect.height) * canvas.height,
-		};
+		const { x, y } = getCanvasPointerPos(canvas, clientX, clientY);
+		const pointerPx = { x, y };
 
 		// 1. Right Click Drag -> Adjust Window / Level
 		if (isDraggingWL) {
@@ -668,14 +664,14 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 		// 2. Middle Click Drag -> Pan Viewport
 		if (isPanning && isPanning.plane === plane) {
-			const deltaX = (clientX - isPanning.startX) * (canvas.width / rect.width);
-			const deltaY = (clientY - isPanning.startY) * (canvas.height / rect.height);
+			const dx = clientX - isPanning.startX;
+			const dy = clientY - isPanning.startY;
 			setTransforms((prev) => ({
 				...prev,
 				[plane]: {
 					...prev[plane],
-					panX: Number((isPanning.startPanX + deltaX).toFixed(1)),
-					panY: Number((isPanning.startPanY + deltaY).toFixed(1)),
+					panX: Number((isPanning.startPanX + dx).toFixed(1)),
+					panY: Number((isPanning.startPanY + dy).toFixed(1)),
 				},
 			}));
 			return;
@@ -796,11 +792,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		e.stopPropagation();
 		if (!volume) return;
 		const canvas = e.currentTarget;
-		const rect = canvas.getBoundingClientRect();
-		const pointerPx = {
-			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
-			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
-		};
+		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const pointerPx = { x, y };
 		const transform = transforms[plane];
 		const untransformedPx = {
 			x: (pointerPx.x - transform.panX) / transform.zoom,
@@ -826,11 +819,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const handleWheelZoom = (viewport: CbctViewportType, e: React.WheelEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
 		const canvas = e.currentTarget;
-		const rect = canvas.getBoundingClientRect();
-		const cursorPx = {
-			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
-			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
-		};
+		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const cursorPx = { x, y };
 
 		setTransforms((prev) => ({
 			...prev,
@@ -1261,144 +1251,218 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			</div>
 
 			{/* ── MAIN WORKSPACE CONTENT ── */}
-			<main className="flex-1 min-h-0 relative bg-black flex overflow-hidden">
+			<main className="flex-1 min-h-0 relative bg-black flex flex-col overflow-hidden">
 				{/* 1. 3-PLANE MPR VIEW */}
 				{activeTab === "mpr" && (
-					<div className="flex-1 flex min-h-0 overflow-hidden p-2 bg-slate-950">
-						{/* Axial Plane */}
-						{(!maximizedViewport || maximizedViewport === "axial") && (
-							<div
-								onDoubleClick={() => handleToggleMaximize("axial")}
-								onContextMenu={(e) => e.preventDefault()}
-								onPointerDownCapture={() => setActiveViewport("axial")}
-								className={`flex flex-col rounded-2xl bg-slate-900 overflow-hidden relative shadow-lg transition-all ${
-									activeViewport === "axial"
-										? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
-										: "border border-slate-800"
-								} ${
-									maximizedViewport === "axial" ? "flex-1 w-full h-full" : "flex-1 min-w-0"
+					<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+						{/* Mobile Slice Switcher Tabs (<768px) */}
+						<div className="md:hidden flex items-center bg-slate-900 border-b border-slate-800 p-1.5 shrink-0 gap-1.5 overflow-x-auto min-w-0">
+							<button
+								type="button"
+								onClick={() => setMobileMprSlice("axial")}
+								data-testid="cbct-mobile-tab-axial"
+								className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 border ${
+									mobileMprSlice === "axial"
+										? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-md"
+										: "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
 								}`}
-								data-testid="cbct-viewport-container-axial"
 							>
-								<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden">
-									<canvas
-										ref={axialCanvasRef}
-										onContextMenu={(e) => e.preventDefault()}
-										onDoubleClick={(e) => handleCanvasDoubleClick("axial", e)}
-										onPointerDown={(e) => handlePointerDown("axial", e)}
-										onPointerMove={(e) => handlePointerMove("axial", e)}
-										onPointerUp={handlePointerUp}
-										onWheel={(e) => handleWheelZoom("axial", e)}
-										style={{ cursor: getCanvasCursor("axial") }}
-										className="max-h-full max-w-full object-contain rounded-lg"
-									/>
-									<CbctViewportHud
-										viewportType="axial"
-										coordinateMm={{ z: crosshairMm.z }}
-										slabMode={slabMode}
-										slabThicknessMm={slabThicknessMm}
-										pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
-										obliqueAngleDeg={obliqueAngles.axialAngleDeg}
-										onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "axial"))}
-										zoomFactor={transforms.axial.zoom}
-										windowWidth={windowWidth}
-										windowLevel={windowLevel}
-										isMaximized={maximizedViewport === "axial"}
-										onToggleMaximize={() => handleToggleMaximize("axial")}
-									/>
-								</div>
-							</div>
-						)}
+								<Eye className="w-3.5 h-3.5" />
+								<span>Аксиал</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setMobileMprSlice("coronal")}
+								data-testid="cbct-mobile-tab-coronal"
+								className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 border ${
+									mobileMprSlice === "coronal"
+										? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-md"
+										: "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
+								}`}
+							>
+								<Eye className="w-3.5 h-3.5" />
+								<span>Коронал</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setMobileMprSlice("sagittal")}
+								data-testid="cbct-mobile-tab-sagittal"
+								className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 border ${
+									mobileMprSlice === "sagittal"
+										? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-md"
+										: "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
+								}`}
+							>
+								<Eye className="w-3.5 h-3.5" />
+								<span>Сагиттал</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setMobileMprSlice("panoramic");
+									setActiveTab("panoramic");
+									if (!panoramicResult) handleReconstructPanorama();
+								}}
+								data-testid="cbct-mobile-tab-panoramic"
+								className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 border ${
+									mobileMprSlice === "panoramic"
+										? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-md"
+										: "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
+								}`}
+							>
+								<Spline className="w-3.5 h-3.5" />
+								<span>Панорама</span>
+							</button>
+						</div>
 
-						{/* Coronal Plane */}
-						{(!maximizedViewport || maximizedViewport === "coronal") && (
-							<div
-								onDoubleClick={() => handleToggleMaximize("coronal")}
-								onContextMenu={(e) => e.preventDefault()}
-								onPointerDownCapture={() => setActiveViewport("coronal")}
-								className={`flex flex-col rounded-2xl bg-slate-900 overflow-hidden relative shadow-lg transition-all ${
-									activeViewport === "coronal"
-										? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
-										: "border border-slate-800"
-								} ${
-									maximizedViewport === "coronal" ? "flex-1 w-full h-full" : "flex-1 min-w-0 ml-2"
-								}`}
-								data-testid="cbct-viewport-container-coronal"
-							>
-								<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden">
-									<canvas
-										ref={coronalCanvasRef}
-										onContextMenu={(e) => e.preventDefault()}
-										onDoubleClick={(e) => handleCanvasDoubleClick("coronal", e)}
-										onPointerDown={(e) => handlePointerDown("coronal", e)}
-										onPointerMove={(e) => handlePointerMove("coronal", e)}
-										onPointerUp={handlePointerUp}
-										onWheel={(e) => handleWheelZoom("coronal", e)}
-										style={{ cursor: getCanvasCursor("coronal") }}
-										className="max-h-full max-w-full object-contain rounded-lg"
-									/>
-									<CbctViewportHud
-										viewportType="coronal"
-										coordinateMm={{ y: crosshairMm.y }}
-										slabMode={slabMode}
-										slabThicknessMm={slabThicknessMm}
-										pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
-										obliqueAngleDeg={obliqueAngles.coronalTiltDeg}
-										onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "coronal"))}
-										zoomFactor={transforms.coronal.zoom}
-										windowWidth={windowWidth}
-										windowLevel={windowLevel}
-										isMaximized={maximizedViewport === "coronal"}
-										onToggleMaximize={() => handleToggleMaximize("coronal")}
-									/>
+						<div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden p-2 bg-slate-950 gap-2">
+							{/* Axial Plane */}
+							{(!maximizedViewport || maximizedViewport === "axial") && (
+								<div
+									onDoubleClick={() => handleToggleMaximize("axial")}
+									onContextMenu={(e) => e.preventDefault()}
+									onPointerDownCapture={() => setActiveViewport("axial")}
+									className={`rounded-2xl bg-slate-900 overflow-hidden relative shadow-lg transition-all min-h-0 ${
+										activeViewport === "axial"
+											? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+											: "border border-slate-800"
+									} ${
+										maximizedViewport === "axial"
+											? "flex-1 w-full h-full flex flex-col"
+											: mobileMprSlice === "axial"
+											? "flex-1 w-full h-full flex flex-col"
+											: "hidden md:flex md:flex-1 md:flex-col md:min-w-0"
+									}`}
+									data-testid="cbct-viewport-container-axial"
+								>
+									<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden w-full h-full">
+										<canvas
+											ref={axialCanvasRef}
+											onContextMenu={(e) => e.preventDefault()}
+											onDoubleClick={(e) => handleCanvasDoubleClick("axial", e)}
+											onPointerDown={(e) => handlePointerDown("axial", e)}
+											onPointerMove={(e) => handlePointerMove("axial", e)}
+											onPointerUp={handlePointerUp}
+											onWheel={(e) => handleWheelZoom("axial", e)}
+											style={{ cursor: getCanvasCursor("axial") }}
+											className="w-full h-full object-contain rounded-lg"
+										/>
+										<CbctViewportHud
+											viewportType="axial"
+											coordinateMm={{ z: crosshairMm.z }}
+											slabMode={slabMode}
+											slabThicknessMm={slabThicknessMm}
+											pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+											obliqueAngleDeg={obliqueAngles.axialAngleDeg}
+											onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "axial"))}
+											zoomFactor={transforms.axial.zoom}
+											windowWidth={windowWidth}
+											windowLevel={windowLevel}
+											isMaximized={maximizedViewport === "axial"}
+											onToggleMaximize={() => handleToggleMaximize("axial")}
+										/>
+									</div>
 								</div>
-							</div>
-						)}
+							)}
 
-						{/* Sagittal Plane */}
-						{(!maximizedViewport || maximizedViewport === "sagittal") && (
-							<div
-								onDoubleClick={() => handleToggleMaximize("sagittal")}
-								onContextMenu={(e) => e.preventDefault()}
-								onPointerDownCapture={() => setActiveViewport("sagittal")}
-								className={`flex flex-col rounded-2xl bg-slate-900 overflow-hidden relative shadow-lg transition-all ${
-									activeViewport === "sagittal"
-										? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
-										: "border border-slate-800"
-								} ${
-									maximizedViewport === "sagittal" ? "flex-1 w-full h-full" : "flex-1 min-w-0 ml-2"
-								}`}
-								data-testid="cbct-viewport-container-sagittal"
-							>
-								<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden">
-									<canvas
-										ref={sagittalCanvasRef}
-										onContextMenu={(e) => e.preventDefault()}
-										onDoubleClick={(e) => handleCanvasDoubleClick("sagittal", e)}
-										onPointerDown={(e) => handlePointerDown("sagittal", e)}
-										onPointerMove={(e) => handlePointerMove("sagittal", e)}
-										onPointerUp={handlePointerUp}
-										onWheel={(e) => handleWheelZoom("sagittal", e)}
-										style={{ cursor: getCanvasCursor("sagittal") }}
-										className="max-h-full max-w-full object-contain rounded-lg"
-									/>
-									<CbctViewportHud
-										viewportType="sagittal"
-										coordinateMm={{ x: crosshairMm.x }}
-										slabMode={slabMode}
-										slabThicknessMm={slabThicknessMm}
-										pixelSpacingMm={volume?.spacingMm.y ?? 0.4}
-										obliqueAngleDeg={obliqueAngles.sagittalTiltDeg}
-										onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "sagittal"))}
-										zoomFactor={transforms.sagittal.zoom}
-										windowWidth={windowWidth}
-										windowLevel={windowLevel}
-										isMaximized={maximizedViewport === "sagittal"}
-										onToggleMaximize={() => handleToggleMaximize("sagittal")}
-									/>
+							{/* Coronal Plane */}
+							{(!maximizedViewport || maximizedViewport === "coronal") && (
+								<div
+									onDoubleClick={() => handleToggleMaximize("coronal")}
+									onContextMenu={(e) => e.preventDefault()}
+									onPointerDownCapture={() => setActiveViewport("coronal")}
+									className={`rounded-2xl bg-slate-900 overflow-hidden relative shadow-lg transition-all min-h-0 ${
+										activeViewport === "coronal"
+											? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+											: "border border-slate-800"
+									} ${
+										maximizedViewport === "coronal"
+											? "flex-1 w-full h-full flex flex-col"
+											: mobileMprSlice === "coronal"
+											? "flex-1 w-full h-full flex flex-col"
+											: "hidden md:flex md:flex-1 md:flex-col md:min-w-0"
+									}`}
+									data-testid="cbct-viewport-container-coronal"
+								>
+									<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden w-full h-full">
+										<canvas
+											ref={coronalCanvasRef}
+											onContextMenu={(e) => e.preventDefault()}
+											onDoubleClick={(e) => handleCanvasDoubleClick("coronal", e)}
+											onPointerDown={(e) => handlePointerDown("coronal", e)}
+											onPointerMove={(e) => handlePointerMove("coronal", e)}
+											onPointerUp={handlePointerUp}
+											onWheel={(e) => handleWheelZoom("coronal", e)}
+											style={{ cursor: getCanvasCursor("coronal") }}
+											className="w-full h-full object-contain rounded-lg"
+										/>
+										<CbctViewportHud
+											viewportType="coronal"
+											coordinateMm={{ y: crosshairMm.y }}
+											slabMode={slabMode}
+											slabThicknessMm={slabThicknessMm}
+											pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+											obliqueAngleDeg={obliqueAngles.coronalTiltDeg}
+											onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "coronal"))}
+											zoomFactor={transforms.coronal.zoom}
+											windowWidth={windowWidth}
+											windowLevel={windowLevel}
+											isMaximized={maximizedViewport === "coronal"}
+											onToggleMaximize={() => handleToggleMaximize("coronal")}
+										/>
+									</div>
 								</div>
-							</div>
-						)}
+							)}
+
+							{/* Sagittal Plane */}
+							{(!maximizedViewport || maximizedViewport === "sagittal") && (
+								<div
+									onDoubleClick={() => handleToggleMaximize("sagittal")}
+									onContextMenu={(e) => e.preventDefault()}
+									onPointerDownCapture={() => setActiveViewport("sagittal")}
+									className={`rounded-2xl bg-slate-900 overflow-hidden relative shadow-lg transition-all min-h-0 ${
+										activeViewport === "sagittal"
+											? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+											: "border border-slate-800"
+									} ${
+										maximizedViewport === "sagittal"
+											? "flex-1 w-full h-full flex flex-col"
+											: mobileMprSlice === "sagittal"
+											? "flex-1 w-full h-full flex flex-col"
+											: "hidden md:flex md:flex-1 md:flex-col md:min-w-0"
+									}`}
+									data-testid="cbct-viewport-container-sagittal"
+								>
+									<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden w-full h-full">
+										<canvas
+											ref={sagittalCanvasRef}
+											onContextMenu={(e) => e.preventDefault()}
+											onDoubleClick={(e) => handleCanvasDoubleClick("sagittal", e)}
+											onPointerDown={(e) => handlePointerDown("sagittal", e)}
+											onPointerMove={(e) => handlePointerMove("sagittal", e)}
+											onPointerUp={handlePointerUp}
+											onWheel={(e) => handleWheelZoom("sagittal", e)}
+											style={{ cursor: getCanvasCursor("sagittal") }}
+											className="w-full h-full object-contain rounded-lg"
+										/>
+										<CbctViewportHud
+											viewportType="sagittal"
+											coordinateMm={{ x: crosshairMm.x }}
+											slabMode={slabMode}
+											slabThicknessMm={slabThicknessMm}
+											pixelSpacingMm={volume?.spacingMm.y ?? 0.4}
+											obliqueAngleDeg={obliqueAngles.sagittalTiltDeg}
+											onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "sagittal"))}
+											zoomFactor={transforms.sagittal.zoom}
+											windowWidth={windowWidth}
+											windowLevel={windowLevel}
+											isMaximized={maximizedViewport === "sagittal"}
+											onToggleMaximize={() => handleToggleMaximize("sagittal")}
+										/>
+									</div>
+								</div>
+							)}
+						</div>
 					</div>
 				)}
 
@@ -1442,7 +1506,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									<canvas
 										ref={panoCanvasRef}
 										onWheel={(e) => handleWheelZoom("panoramic", e)}
-										className="max-h-full max-w-full object-contain rounded-lg shadow-2xl cursor-pointer"
+										className="w-full h-full object-contain rounded-lg shadow-2xl cursor-pointer"
 										data-testid="cbct-panorama-canvas"
 									/>
 									<CbctViewportHud
@@ -1515,7 +1579,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										<canvas
 											ref={crossSectionCanvasRef}
 											onWheel={(e) => handleWheelZoom("cross_section", e)}
-											className="max-h-full max-w-full object-contain rounded-lg shadow-2xl"
+											className="w-full h-full object-contain rounded-lg shadow-2xl"
 										/>
 										<CbctViewportHud
 											viewportType="cross_section"

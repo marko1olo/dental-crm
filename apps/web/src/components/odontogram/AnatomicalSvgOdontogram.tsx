@@ -322,9 +322,9 @@ const AnatomicalToothSVG = ({
 	const transform = `scaleX(${isRightSide ? -1 : 1})`;
 
 	const isPeriodontitis = state === "Periodontitis" || periapicalLesion;
-	const isEndoTreated = state === "Filled" || canalObturation !== undefined;
+	const isEndoTreated = canalObturation !== undefined && canalObturation !== "unfilled";
 	const effectiveObturation: CanalObturationMaterial =
-		canalObturation ?? (state === "Filled" ? "gutta_percha" : "unfilled");
+		canalObturation ?? "unfilled";
 
 	const effectiveResorption: RootResorptionStage = rootResorptionStage ?? rootResorption ?? 0;
 	const resorptionGeom = getPhysiologicalRootResorptionGeometry(number, effectiveResorption);
@@ -1546,24 +1546,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 		<div className={`tooth-chart-container anatomical-svg-mode ${className}`.trim()} ref={containerRef}>
 			<DenteToothSvgDefs />
 
-			{/* Responsive Mobile & Desktop Quadrant Adapter Bar */}
+			{/* Responsive Mobile & Desktop Quadrant Adapter Bar (Compact Space-Efficient) */}
 			{!hideQuadrantSwitcher && (
-				<div className="odontogram-quadrant-bar mb-3 select-none" data-testid="odontogram-quadrant-bar">
-					<div className="flex items-center justify-between gap-2 mb-2 w-full">
-						<div className="flex items-center gap-1.5">
-							<span className="text-xs font-black uppercase text-[var(--odontogram-ink-muted)]">
-								Квадранты челюсти:
-							</span>
-							{isQuadrantView && (
-								<span className="text-xs font-black px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-mono">
-									{currentQuadrant}
-								</span>
-							)}
-						</div>
+				<div className="odontogram-quadrant-bar mb-2 select-none" data-testid="odontogram-quadrant-bar">
+					<div className="flex items-center gap-1.5 flex-wrap w-full">
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant("all")}
-							className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
 								currentQuadrant === "all"
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -1573,73 +1563,75 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 						>
 							Все зубы ({pediatricMode ? "20" : showWisdomTeeth ? "32" : "28"})
 						</button>
-					</div>
 
-					{/* 2x2 Quadrants Dental Layout Grid */}
-					<div className="grid grid-cols-2 gap-2 w-full">
-						{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
-						<button
-							type="button"
-							onClick={() => handleSelectQuadrant(pediatricMode ? "Q5" : "Q1")}
-							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
-								currentQuadrant === (pediatricMode ? "Q5" : "Q1")
-									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
-									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
-							}`}
-							title={pediatricMode ? "Q5 55–51 (Верхняя челюсть, Правый)" : "Q1 18–11 (Верхняя челюсть, Правый)"}
-							data-testid={pediatricMode ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
-						>
-							<span className="font-extrabold">{pediatricMode ? "Q5 55–51 (Правый)" : "Q1 18–11 (Правый)"}</span>
-							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">ВЧ</span>
-						</button>
+						<div className="h-4 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
 
-						{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
-						<button
-							type="button"
-							onClick={() => handleSelectQuadrant(pediatricMode ? "Q6" : "Q2")}
-							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
-								currentQuadrant === (pediatricMode ? "Q6" : "Q2")
-									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
-									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
-							}`}
-							title={pediatricMode ? "Q6 61–65 (Верхняя челюсть, Левый)" : "Q2 21–28 (Верхняя челюсть, Левый)"}
-							data-testid={pediatricMode ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
-						>
-							<span className="font-extrabold">{pediatricMode ? "Q6 61–65 (Левый)" : "Q2 21–28 (Левый)"}</span>
-							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">ВЧ</span>
-						</button>
+						{/* Quadrant buttons in a sleek inline strip */}
+						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-1.5 flex-1 min-w-0">
+							{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
+							<button
+								type="button"
+								onClick={() => handleSelectQuadrant(pediatricMode ? "Q5" : "Q1")}
+								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+									currentQuadrant === (pediatricMode ? "Q5" : "Q1")
+										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
+										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
+								}`}
+								title={pediatricMode ? "Q5 55–51 (Верхняя челюсть, Правый)" : "Q1 18–11 (Верхняя челюсть, Правый)"}
+								data-testid={pediatricMode ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
+							>
+								<span className="font-extrabold truncate">{pediatricMode ? "Q5 55–51" : "Q1 18–11"}</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">ВЧ·П</span>
+							</button>
 
-						{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
-						<button
-							type="button"
-							onClick={() => handleSelectQuadrant(pediatricMode ? "Q8" : "Q4")}
-							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
-								currentQuadrant === (pediatricMode ? "Q8" : "Q4")
-									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
-									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
-							}`}
-							title={pediatricMode ? "Q8 85–81 (Нижняя челюсть, Правый)" : "Q4 48–41 (Нижняя челюсть, Правый)"}
-							data-testid={pediatricMode ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
-						>
-							<span className="font-extrabold">{pediatricMode ? "Q8 85–81 (Правый)" : "Q4 48–41 (Правый)"}</span>
-							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">НЧ</span>
-						</button>
+							{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
+							<button
+								type="button"
+								onClick={() => handleSelectQuadrant(pediatricMode ? "Q6" : "Q2")}
+								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+									currentQuadrant === (pediatricMode ? "Q6" : "Q2")
+										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
+										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
+								}`}
+								title={pediatricMode ? "Q6 61–65 (Верхняя челюсть, Левый)" : "Q2 21–28 (Верхняя челюсть, Левый)"}
+								data-testid={pediatricMode ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
+							>
+								<span className="font-extrabold truncate">{pediatricMode ? "Q6 61–65" : "Q2 21–28"}</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">ВЧ·Л</span>
+							</button>
 
-						{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
-						<button
-							type="button"
-							onClick={() => handleSelectQuadrant(pediatricMode ? "Q7" : "Q3")}
-							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
-								currentQuadrant === (pediatricMode ? "Q7" : "Q3")
-									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
-									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
-							}`}
-							title={pediatricMode ? "Q7 71–75 (Нижняя челюсть, Левый)" : "Q3 31–38 (Нижняя челюсть, Левый)"}
-							data-testid={pediatricMode ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
-						>
-							<span className="font-extrabold">{pediatricMode ? "Q7 71–75 (Левый)" : "Q3 31–38 (Левый)"}</span>
-							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">НЧ</span>
-						</button>
+							{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
+							<button
+								type="button"
+								onClick={() => handleSelectQuadrant(pediatricMode ? "Q8" : "Q4")}
+								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+									currentQuadrant === (pediatricMode ? "Q8" : "Q4")
+										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
+										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
+								}`}
+								title={pediatricMode ? "Q8 85–81 (Нижняя челюсть, Правый)" : "Q4 48–41 (Нижняя челюсть, Правый)"}
+								data-testid={pediatricMode ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
+							>
+								<span className="font-extrabold truncate">{pediatricMode ? "Q8 85–81" : "Q4 48–41"}</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">НЧ·П</span>
+							</button>
+
+							{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
+							<button
+								type="button"
+								onClick={() => handleSelectQuadrant(pediatricMode ? "Q7" : "Q3")}
+								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+									currentQuadrant === (pediatricMode ? "Q7" : "Q3")
+										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
+										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
+								}`}
+								title={pediatricMode ? "Q7 71–75 (Нижняя челюсть, Левый)" : "Q3 31–38 (Нижняя челюсть, Левый)"}
+								data-testid={pediatricMode ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
+							>
+								<span className="font-extrabold truncate">{pediatricMode ? "Q7 71–75" : "Q3 31–38"}</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">НЧ·Л</span>
+							</button>
+						</div>
 					</div>
 				</div>
 			)}

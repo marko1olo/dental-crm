@@ -332,18 +332,18 @@ export function CephalometricAnalysisModal({
 					{/* ── Right Column: Interactive Sidebar (Landmarks, Measurements & Form 043/y) (5 Cols) ── */}
 					<div className="lg:col-span-5 flex flex-col bg-[var(--paper,#ffffff)] dark:bg-slate-900 overflow-hidden">
 						{/* Tab Navigation with Touch Targets >= 44x44px */}
-						<div className="flex items-center border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/80 px-3 sm:px-4 pt-2.5 shrink-0 gap-1 overflow-x-auto">
+						<div className="flex items-center border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/80 px-2 sm:px-3 pt-2 shrink-0 gap-1 overflow-x-auto w-full">
 							<button
 								type="button"
 								onClick={() => setActiveTab("landmarks")}
-								className={`min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+								className={`min-h-[44px] px-3 sm:px-3.5 py-2 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
 									activeTab === "landmarks"
 										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
 										: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
 							>
 								<span>1. Ориентиры</span>
-								<span className="text-xs bg-[var(--teal-surface)] px-2 py-0.5 rounded-full font-extrabold text-[var(--teal)]">
+								<span className="text-xs bg-[var(--teal-surface)] px-1.5 py-0.5 rounded-full font-extrabold text-[var(--teal)]">
 									{analysis.placedCount}/{analysis.totalCount}
 								</span>
 							</button>
@@ -351,7 +351,7 @@ export function CephalometricAnalysisModal({
 							<button
 								type="button"
 								onClick={() => setActiveTab("metrics")}
-								className={`min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+								className={`min-h-[44px] px-3 sm:px-3.5 py-2 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
 									activeTab === "metrics"
 										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
 										: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
@@ -359,21 +359,21 @@ export function CephalometricAnalysisModal({
 							>
 								<span>2. Расчет углов</span>
 								{analysis.isComplete && (
-									<CheckCircle2 size={16} className="text-emerald-500" />
+									<CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
 								)}
 							</button>
 
 							<button
 								type="button"
 								onClick={() => setActiveTab("report")}
-								className={`min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+								className={`min-h-[44px] px-3 sm:px-3.5 py-2 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
 									activeTab === "report"
 										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
 										: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
 							>
-								<FileText size={16} />
-								<span>3. Форма 043/у</span>
+								<FileText size={16} className="shrink-0" />
+								<span>3. Форма 043/у-ТРГ</span>
 							</button>
 						</div>
 

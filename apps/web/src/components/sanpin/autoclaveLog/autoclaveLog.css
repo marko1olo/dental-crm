@@ -41,8 +41,8 @@
 	border-radius: 20px;
 	width: 100%;
 	max-width: 1200px;
-	height: 92vh;
-	max-height: 900px;
+	max-height: 85vh;
+	height: auto;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -204,9 +204,11 @@
 
 /* Body / Main Content Area */
 .autoclave-log-body {
-	flex: 1;
+	flex: 1 1 auto;
+	min-height: 0;
+	max-height: calc(85vh - 130px);
 	overflow-y: auto;
-	padding: 1.5rem;
+	padding: 1.5rem 1.5rem 2.5rem 1.5rem;
 	display: flex;
 	flex-direction: column;
 	gap: 1.5rem;

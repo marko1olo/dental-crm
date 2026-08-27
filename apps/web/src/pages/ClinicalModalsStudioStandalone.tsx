@@ -50,6 +50,7 @@ import {
 	RadiologyModule,
 	RadiologyReferralModal,
 	RadiologyViewerModal,
+	CbctMprImplantStudioModal,
 	CbctMpr3DStudioModal,
 	ImplantCrossSectionPlanner,
 	type RadiologyStudy,
@@ -257,8 +258,7 @@ const SAMPLE_STUDY: RadiologyStudy = {
 	teethFdi: ["16"],
 	effectiveDoseMicrosv: 3.0,
 	effectiveDoseMsv: 0.003,
-	imageUrl:
-		"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='1000' viewBox='0 0 800 1000'><rect width='800' height='1000' fill='%23050811'/><polygon points='300,200 500,200 550,500 450,900 350,900 250,500' fill='none' stroke='%2306b6d4' stroke-width='3'/><text x='400' y='480' fill='%2338bdf8' font-size='24' font-family='sans-serif' font-weight='bold' text-anchor='middle'>ПРИЦЕЛЬНЫЙ ВИЗИОГРАФ</text><text x='400' y='520' fill='%2394a3b8' font-size='16' font-family='sans-serif' text-anchor='middle'>Зуб 16 · Эндодонтический контроль</text></svg>",
+	imageUrl: "",
 	doctorName: "Д-р Смирнов Алексей Петрович",
 	doctorSpecialty: "Врач-стоматолог терапевт-эндодонтист",
 	clinicName: "ООО «Денте Стоматология»",
@@ -287,16 +287,14 @@ const SAMPLE_STUDY: RadiologyStudy = {
 const SAMPLE_PHOTO_SLOTS: Record<string, PhotoSlotRecord> = {
 	portrait_smile: {
 		slotId: "portrait_smile",
-		imageUrl:
-			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'><rect width='800' height='600' fill='%23221b18'/><ellipse cx='400' cy='320' rx='280' ry='120' fill='%23632828'/><path d='M200 320 Q400 240 600 320 Q400 420 200 320 Z' fill='%231a0808'/><rect x='250' y='270' width='50' height='70' rx='10' fill='%23e6c99c' stroke='%23332211' stroke-width='2'/><rect x='305' y='265' width='45' height='75' rx='10' fill='%23e0c395' stroke='%23332211' stroke-width='2'/><rect x='355' y='260' width='42' height='80' rx='10' fill='%23dbbe8e' stroke='%23332211' stroke-width='2'/><rect x='402' y='260' width='42' height='80' rx='10' fill='%23dbbe8e' stroke='%23332211' stroke-width='2'/><rect x='449' y='265' width='45' height='75' rx='10' fill='%23e0c395' stroke='%23332211' stroke-width='2'/><rect x='499' y='270' width='50' height='70' rx='10' fill='%23e6c99c' stroke='%23332211' stroke-width='2'/><text x='400' y='120' fill='%23ffffff' font-size='28' font-family='sans-serif' font-weight='bold' text-anchor='middle'>ДО ЛЕЧЕНИЯ (VITA A3)</text><text x='400' y='160' fill='%23fb923c' font-size='18' font-family='sans-serif' text-anchor='middle'>Дисколорит · Скученность во фронтальном отделе</text></svg>",
+		imageUrl: "",
 		detectedVitaShade: "A3",
 		stage: "before",
 		uploadedAt: "2026-08-20T10:15:00.000Z",
 	},
 	intraoral_frontal_occlusion: {
 		slotId: "intraoral_frontal_occlusion",
-		imageUrl:
-			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'><rect width='800' height='600' fill='%23141a29'/><ellipse cx='400' cy='320' rx='280' ry='120' fill='%23782d2d'/><path d='M200 320 Q400 240 600 320 Q400 420 200 320 Z' fill='%231f0a0a'/><rect x='250' y='265' width='50' height='75' rx='10' fill='%23ffffff' stroke='%2394a3b8' stroke-width='2'/><rect x='305' y='260' width='45' height='80' rx='10' fill='%23f8fafc' stroke='%2394a3b8' stroke-width='2'/><rect x='355' y='255' width='42' height='88' rx='10' fill='%23ffffff' stroke='%2306b6d4' stroke-width='2'/><rect x='402' y='255' width='42' height='88' rx='10' fill='%23ffffff' stroke='%2306b6d4' stroke-width='2'/><rect x='449' y='260' width='45' height='80' rx='10' fill='%23f8fafc' stroke='%2394a3b8' stroke-width='2'/><rect x='499' y='265' width='50' height='75' rx='10' fill='%23ffffff' stroke='%2394a3b8' stroke-width='2'/><text x='400' y='120' fill='%23ffffff' font-size='28' font-family='sans-serif' font-weight='bold' text-anchor='middle'>ПОСЛЕ ЛЕЧЕНИЯ (VITA BL2)</text><text x='400' y='160' fill='%2338bdf8' font-size='18' font-family='sans-serif' text-anchor='middle'>E.max Виниры · Идеальная зенитная симметрия</text></svg>",
+		imageUrl: "",
 		detectedVitaShade: "BL2",
 		stage: "after",
 		uploadedAt: "2026-08-26T14:30:00.000Z",
@@ -307,6 +305,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [activeTheme, setActiveTheme] = useState<string>("dark");
 	const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
 	const [isRadiologyOpen, setIsRadiologyOpen] = useState(false);
+	const [isCbct3DStudioOpen, setIsCbct3DStudioOpen] = useState(false);
+	const [isCbctMpr3DStudioOpen, setIsCbctMpr3DStudioOpen] = useState(false);
+	const [isImplantPlannerOpen, setIsImplantPlannerOpen] = useState(false);
 	const [isActPrintOpen, setIsActPrintOpen] = useState(false);
 	const [isFiscalOpen, setIsFiscalOpen] = useState(false);
 	const [isPediatricOpen, setIsPediatricOpen] = useState(false);
@@ -347,9 +348,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
 	const [isAutoclaveLog257Open, setIsAutoclaveLog257Open] = useState(false);
 	const [isDoctorShiftRosterOpen, setIsDoctorShiftRosterOpen] = useState(false);
-	const [isCbctMpr3DStudioOpen, setIsCbctMpr3DStudioOpen] = useState(false);
-	const [isImplantCrossSectionPlannerOpen, setIsImplantCrossSectionPlannerOpen] = useState(false);
-
+		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
 		document.documentElement.setAttribute("data-theme", themeId);
@@ -377,8 +376,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				}
 				const requestedModal = params.get("modal");
 				if (requestedModal) {
-					setIsImplantCrossSectionPlannerOpen(requestedModal === "implant" || requestedModal === "abutment" || requestedModal === "emergence");
-					setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
+										setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
 				}
 			}
 		};
@@ -981,7 +979,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 						<button
 							type="button"
-							onClick={() => setIsImplantCrossSectionPlannerOpen(true)}
+							onClick={() => setIsRadiologyOpen(true)}
 							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
 							data-testid="open-implant-planning-modal-btn"
 						>
@@ -1005,7 +1003,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 						<button
 							type="button"
-							onClick={() => setIsImplantCrossSectionPlannerOpen(true)}
+							onClick={() => setIsRadiologyOpen(true)}
 							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
 							data-testid="open-implant-abutment-studio-modal-btn"
 						>
@@ -1604,7 +1602,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 						<button
 							type="button"
-							onClick={() => setIsCbctMpr3DStudioOpen(true)}
+							onClick={() => setIsCbct3DStudioOpen(true)}
 							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
 							data-testid="open-cbct-mpr-3d-studio-modal-btn"
 						>
@@ -1628,7 +1626,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 						<button
 							type="button"
-							onClick={() => setIsImplantCrossSectionPlannerOpen(true)}
+							onClick={() => setIsImplantPlannerOpen(true)}
 							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
 							data-testid="open-implant-cross-section-planner-modal-btn"
 						>
@@ -1732,6 +1730,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
+			{isCbct3DStudioOpen && (
+				<CbctMprImplantStudioModal
+					isOpen={isCbct3DStudioOpen}
+					onClose={() => setIsCbct3DStudioOpen(false)}
+				/>
+			)}
+
+			{isCbctMpr3DStudioOpen && (
+				<CbctMpr3DStudioModal
+					isOpen={isCbctMpr3DStudioOpen}
+					onClose={() => setIsCbctMpr3DStudioOpen(false)}
+				/>
+			)}
+
+			{isImplantPlannerOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+					<div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-4">
+						<ImplantCrossSectionPlanner
+							onClose={() => setIsImplantPlannerOpen(false)}
+						/>
+					</div>
+				</div>
+			)}
+  
 			{isRadiologyOpen && (
 				<RadiologyReferralModal
 					isOpen={isRadiologyOpen}
@@ -2126,54 +2148,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				</div>
 			)}
 
-			{isCbctMpr3DStudioOpen && (
-				<CbctMpr3DStudioModal
-					isOpen={isCbctMpr3DStudioOpen}
-					onClose={() => setIsCbctMpr3DStudioOpen(false)}
-					studyTitle="3D КЛКТ Челюсти (8x8 см) — Пациент: Смирнова Е. В."
-				/>
-			)}
+			
 
-			{isImplantCrossSectionPlannerOpen && (
-				<div
-					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
-					role="dialog"
-					aria-modal="true"
-					data-testid="implant-cross-section-planner-modal"
-				>
-					<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
-						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
-							<div className="flex items-center gap-2.5">
-								<div className="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold">
-									<Compass className="w-5 h-5" />
-								</div>
-								<div>
-									<h3 className="text-base font-bold text-[var(--ink)]">
-										2D Кросс-секционный планировщик имплантации
-									</h3>
-									<p className="text-xs text-[var(--muted)]">
-										Аудит коридора безопасности нижнечелюстного нерва (IAN 2.0 мм) и плотности кости по Misch
-									</p>
-								</div>
-							</div>
-							<button
-								type="button"
-								onClick={() => setIsImplantCrossSectionPlannerOpen(false)}
-								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
-								data-testid="close-implant-planner-modal-btn"
-								aria-label="Закрыть модальное окно"
-							>
-								<X className="w-5 h-5" />
-							</button>
-						</div>
-						<div className="flex-1 overflow-y-auto">
-							<ImplantCrossSectionPlanner
-								onPlanApproved={() => setIsImplantCrossSectionPlannerOpen(false)}
-							/>
-						</div>
-					</div>
-				</div>
-			)}
+			
 		</div>
 	);
 };

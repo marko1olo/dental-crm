@@ -297,14 +297,14 @@ export function useVisitLogic({
 				setSpeechGatewayStatus(status);
 				return status;
 			} catch (speechError) {
-				showToast(
-					actionFailureToast(
-						"Шлюз распознавания речи недоступен",
-						(speechError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Шлюз распознавания речи недоступен",
+							(speechError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Шлюз распознавания речи недоступен",
@@ -315,7 +315,7 @@ export function useVisitLogic({
 				return null;
 			}
 		},
-		[auth.denteClinicalReadHeaders, setError, setSpeechGatewayStatus],
+		[auth.denteClinicalReadHeaders, setError, setSpeechGatewayStatus, showToast],
 	);
 
 	const loadSpeechGatewayHealthReport = useCallback(
@@ -481,14 +481,14 @@ export function useVisitLogic({
 					(await response.json()) as SpeechRecordingRecoveryList,
 				);
 			} catch (speechRecoveryError) {
-				showToast(
-					actionFailureToast(
-						"Восстановление диктовки недоступно",
-						(speechRecoveryError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Восстановление диктовки недоступно",
+							(speechRecoveryError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						operatorWorkflowFailureMessage(
 							"Восстановление диктовки недоступно",
@@ -504,6 +504,7 @@ export function useVisitLogic({
 			setSpeechRecordingRecovery,
 			dashboard?.activeVisit?.id,
 			auth.denteClinicalReadHeaders,
+			showToast,
 		],
 	);
 

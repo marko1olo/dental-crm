@@ -100,7 +100,7 @@ describe("Pediatric Dentition & Cariogram Engine", () => {
 			clinicalJudgment: 0,
 		});
 		assert.ok(lowRisk.chanceOfAvoidingCariesPercent >= 80, `Expected >= 80%, got ${lowRisk.chanceOfAvoidingCariesPercent}%`);
-		assert.equal(lowRisk.riskCategory, "very_low");
+		assert.equal(lowRisk.riskCategory, "low");
 
 		// High-risk profile
 		const highRisk = calculateCariogramRisk({

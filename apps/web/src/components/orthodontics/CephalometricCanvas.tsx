@@ -685,6 +685,52 @@ export function CephalometricCanvas({
 						const isHovered = hoveredKey === lm.key;
 						const isDragging = draggingKey === lm.key;
 
+						// Smart directional offsets to prevent label collision on chin (L1-tip, Pog, Gn, Me, L1-apex, B) and cranial base
+						const offsets: Record<string, { dx: number; dy: number; align?: "start" | "middle" | "end" }> = {
+							S: { dx: -30, dy: -14, align: "end" },
+							N: { dx: 18, dy: -10, align: "start" },
+							Or: { dx: 18, dy: 16, align: "start" },
+							Po: { dx: -34, dy: -12, align: "end" },
+							ANS: { dx: 18, dy: -6, align: "start" },
+							PNS: { dx: -40, dy: -4, align: "end" },
+							A: { dx: 18, dy: 2, align: "start" },
+							B: { dx: 18, dy: 0, align: "start" },
+							Pog: { dx: 26, dy: -6, align: "start" },
+							Gn: { dx: 26, dy: 18, align: "start" },
+							Me: { dx: -6, dy: 30, align: "middle" },
+							Go: { dx: -34, dy: 18, align: "end" },
+							U1t: { dx: 18, dy: -14, align: "start" },
+							U1a: { dx: -54, dy: -4, align: "end" },
+							L1t: { dx: 22, dy: -6, align: "start" },
+							L1a: { dx: -54, dy: 4, align: "end" },
+						};
+
+						const offset = offsets[lm.key] ?? { dx: 16, dy: 4, align: "start" };
+						const targetX = pt.x + offset.dx;
+						const targetY = pt.y + offset.dy;
+						const codeLength = lm.code.length;
+						const badgeWidth = Math.max(22, codeLength * 7.5 + 8);
+						const badgeHeight = 18;
+						const badgeX =
+							offset.align === "end"
+								? targetX - badgeWidth
+								: offset.align === "middle"
+									? targetX - badgeWidth / 2
+									: targetX;
+						const badgeY = targetY - badgeHeight / 2;
+						const textAnchorX = badgeX + badgeWidth / 2;
+						const textAnchorY = targetY + 0.5;
+
+						// Leader line anchor calculation
+						const hasLeader = Math.hypot(offset.dx, offset.dy) > 16;
+						const leaderEndX =
+							offset.align === "end"
+								? badgeX + badgeWidth
+								: offset.align === "middle"
+									? targetX
+									: badgeX;
+						const leaderEndY = targetY;
+
 						return (
 							<g
 								key={lm.key}
@@ -697,6 +743,21 @@ export function CephalometricCanvas({
 									onSelectTargetKey(lm.key);
 								}}
 							>
+								{/* Leader Line to avoid label collision */}
+								{showLabels && hasLeader && (
+									<line
+										x1={pt.x}
+										y1={pt.y}
+										x2={leaderEndX}
+										y2={leaderEndY}
+										stroke={lm.color}
+										strokeWidth="1.2"
+										strokeDasharray="2 2"
+										opacity="0.85"
+										pointerEvents="none"
+									/>
+								)}
+
 								{/* Invisible Touch Hit Area Circle: Radius 22px = 44px touch diameter (WCAG 2.1) */}
 								<circle
 									cx={pt.x}
@@ -740,19 +801,32 @@ export function CephalometricCanvas({
 									strokeWidth="2"
 								/>
 
-								{/* Landmark Text Label (High-Contrast >= 13px) */}
+								{/* Landmark Pill Badge with High-Contrast Text */}
 								{showLabels && (
-									<text
-										x={pt.x + 11}
-										y={pt.y + 5}
-										fill="#ffffff"
-										fontSize={isHovered || isActive ? "14" : "13"}
-										fontWeight="bold"
-										className="pointer-events-none select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]"
-										style={{ textShadow: "0 1px 3px #000, 0 0 5px #000" }}
-									>
-										{lm.code}
-									</text>
+									<g className="landmark-label-badge pointer-events-none select-none">
+										<rect
+											x={badgeX}
+											y={badgeY}
+											width={badgeWidth}
+											height={badgeHeight}
+											rx={4}
+											fill="rgba(15, 23, 42, 0.88)"
+											stroke={isActive || isHovered || isDragging ? lm.color : "rgba(255, 255, 255, 0.3)"}
+											strokeWidth={isActive || isHovered || isDragging ? "1.6" : "0.8"}
+										/>
+										<text
+											x={textAnchorX}
+											y={textAnchorY}
+											fill={isActive || isHovered || isDragging ? "#38bdf8" : "#ffffff"}
+											fontSize={isHovered || isActive ? "12" : "11"}
+											fontWeight="bold"
+											fontFamily="ui-monospace, monospace"
+											textAnchor="middle"
+											dominantBaseline="central"
+										>
+											{lm.code}
+										</text>
+									</g>
 								)}
 							</g>
 						);

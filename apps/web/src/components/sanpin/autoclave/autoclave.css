@@ -25,7 +25,8 @@
 	border-radius: 12px;
 	width: 100%;
 	max-width: 1060px;
-	max-height: 90vh;
+	max-height: 85vh;
+	height: auto;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -39,6 +40,7 @@
 	padding: 1rem 1.25rem;
 	border-bottom: 1px solid var(--line, #e2e8f0);
 	background: var(--paper-strong, #f8fafc);
+	flex-shrink: 0;
 }
 
 .autoclave-header-title {
@@ -63,7 +65,9 @@
 .autoclave-modal-body {
 	padding: 1.25rem;
 	overflow-y: auto;
-	flex: 1;
+	flex: 1 1 auto;
+	min-height: 0;
+	max-height: calc(85vh - 75px);
 	display: flex;
 	flex-direction: column;
 	gap: 1.25rem;

@@ -272,9 +272,9 @@ export function SanpinCycleModal({
 
 	return (
 		<div className="sanpin-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="sanpin-cycle-title">
-			<div className="sanpin-modal sanpin-cycle-modal" style={{ maxWidth: "780px" }}>
+			<div className="sanpin-modal sanpin-cycle-modal" style={{ maxWidth: "780px", maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 				{/* Modal Header */}
-				<div className="sanpin-modal-header" style={{ padding: "1.25rem 1.5rem" }}>
+				<div className="sanpin-modal-header" style={{ padding: "1.25rem 1.5rem", flexShrink: 0 }}>
 					<div>
 						<h3 id="sanpin-cycle-title" style={{ fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
 							<Flame size={22} color="var(--brand-primary, #2563eb)" />
@@ -305,8 +305,8 @@ export function SanpinCycleModal({
 					</button>
 				</div>
 
-				<form onSubmit={handleSubmit}>
-					<div className="sanpin-modal-body" style={{ padding: "1.5rem", gap: "1.25rem" }}>
+				<form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
+					<div className="sanpin-modal-body" style={{ padding: "1.5rem", gap: "1.25rem", overflowY: "auto", flex: "1 1 auto", minHeight: 0 }}>
 						{/* Quick Apparatus Presets */}
 						<div>
 							<div style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.5rem", color: "var(--ink)" }}>

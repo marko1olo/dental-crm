@@ -13,3 +13,4 @@ export * from "./clinicExpenses.js";
 export * from "./oneCEnterpriseExport.js";
 export * from "./estimateHtmlRenderer.js";
 export * from "./treatmentPlanStages.js";
+export * from "./expensesEngine.js";

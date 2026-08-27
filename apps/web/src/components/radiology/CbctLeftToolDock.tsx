@@ -320,6 +320,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						title="Вращение осей (Oblique MPR) [R]"
 						aria-label="Вращение осей"
 						data-testid="cbct-tool-rotate"
+						data-testid-oblique="cbct-toggle-oblique-btn"
+						id="cbct-toggle-oblique-btn"
 					>
 						<RotateCw className="w-5 h-5" />
 					</button>

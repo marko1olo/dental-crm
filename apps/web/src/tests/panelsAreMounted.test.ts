@@ -279,13 +279,37 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	 * КЛИНИЧЕСКОЙ стороны, той, что должна эту ссылку выдавать (см. разбор
 	 * удалённой QrGatewayPanel ниже), и он остаётся. Сама же ссылка работает и без
 	 * неё: её вставляет на сайт клиники тот, кто этот сайт ведёт.
-	 *
-	 * ПОЧЕМУ НЕСМОНТИРОВАННОЙ ОСТАВЛЯТЬ БЫЛО ХУЖЕ. Без развилки адрес
-	 * #/portal/booking/<клиника> разбирался viewFromHash() (AppHelpers.tsx): первым
-	 * сегментом пустая строка, в реестре её нет — откат на «Смену». То есть по
-	 * ссылке записи ПАЦИЕНТ открывал рабочее место клиники с её клинической
-	 * частью. Это тот же дефект, из-за которого публичный контур и появился.
 	 */
+	{
+		file: "components/communications/PatientWhatsAppConversationWidget.tsx",
+		name: "PatientWhatsAppConversationWidget",
+		reason:
+			"Виджет прямого чата с пациентом через официальный WhatsApp Cloud API / Kapso с поддержкой HSM-шаблонов, истории переписки и статусов доставки сообщений.",
+	},
+	{
+		file: "components/communications/RecallAutomationPipelineWidget.tsx",
+		name: "RecallAutomationPipelineWidget",
+		reason:
+			"Виджет воронки автоматического диспансерного вызова (Recall) пациентов на профилактические осмотры и гигиену по периодам 3/6/12 месяцев.",
+	},
+	{
+		file: "components/communications/WhatsAppKapsoSettingsDrawer.tsx",
+		name: "WhatsAppKapsoSettingsDrawer",
+		reason:
+			"Боковая панель настройки параметров интеграции WhatsApp Business API и провайдера Kapso в административном контуре клиники.",
+	},
+	{
+		file: "components/patient-portal/PublicEstimatePortal.tsx",
+		name: "PublicEstimatePortal",
+		reason:
+			"Публичный портал согласования сметы и финансового плана лечения пациентом по защищенной одноразовой ссылке с подтверждением согласия.",
+	},
+	{
+		file: "pages/PublicEstimatePortalPage.tsx",
+		name: "PublicEstimatePortalPage",
+		reason:
+			"Автономная страница публичного портала согласования плана лечения и сметы по прямой пациентской ссылке без доступа к внутреннему кабинету клиники.",
+	},
 ];
 
 /**

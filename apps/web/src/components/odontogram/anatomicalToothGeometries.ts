@@ -1137,7 +1137,7 @@ const UPPER_PREMOLAR_GEOMETRY: AnatomicalTemplateData = {
 	crown:
 		"M 22 96 C 16 108, 16 136, 32 146 C 42 150, 58 150, 68 146 C 84 136, 84 108, 78 96 Q 50 92 22 96 Z",
 	root:
-		"M 22 96 C 19 74, 24 44, 34 10 C 40 26, 46 46, 50 62 C 54 46, 60 26, 66 10 C 76 44, 81 74, 78 96 Z",
+		"M 22 96 C 19 74, 24 44, 32 12 C 38 26, 46 48, 50 62 C 54 48, 62 26, 68 12 C 76 44, 81 74, 78 96 Z",
 	cej: "M 22 96 Q 50 92 78 96",
 	fissures: "M 34 130 Q 50 134 66 130 M 50 120 L 50 140",
 	pulpChamber: "M 36 122 C 34 114, 38 102, 42 96 C 46 92, 54 92, 58 96 C 62 102, 66 114, 64 122 C 58 126, 54 118, 50 122 C 46 118, 42 126, 36 122 Z",
@@ -1145,21 +1145,21 @@ const UPPER_PREMOLAR_GEOMETRY: AnatomicalTemplateData = {
 		{
 			id: "B",
 			nameRu: "Щечный (Buccal)",
-			path: "M 42 102 C 38 76, 34 40, 34 10",
-			apex: { x: 34, y: 10 },
+			path: "M 40 102 C 36 76, 32 40, 32 14",
+			apex: { x: 32, y: 14 },
 			defaultLengthMm: 21.5,
 		},
 		{
 			id: "P",
 			nameRu: "Нёбный (Palatal)",
-			path: "M 58 102 C 62 76, 66 40, 66 10",
-			apex: { x: 66, y: 10 },
+			path: "M 60 102 C 64 76, 68 40, 68 14",
+			apex: { x: 68, y: 14 },
 			defaultLengthMm: 21.5,
 		},
 	],
 	apexHalos: [
-		{ x: 34, y: 10 },
-		{ x: 66, y: 10 },
+		{ x: 32, y: 14 },
+		{ x: 68, y: 14 },
 	],
 	periodontal: {
 		boneCrestNormal: "M 20 86 Q 50 81 80 86",
@@ -1232,20 +1232,20 @@ const UPPER_CANINE_GEOMETRY: AnatomicalTemplateData = {
 const UPPER_INCISOR_GEOMETRY: AnatomicalTemplateData = {
 	crown:
 		"M 26 96 C 20 110, 18 138, 24 150 C 36 153, 64 153, 76 150 C 82 138, 80 110, 74 96 Q 50 92 26 96 Z",
-	root: "M 26 96 C 25 70, 36 36, 50 8 C 64 36, 75 70, 74 96 Z",
+	root: "M 26 96 C 25 70, 36 36, 50 10 C 64 36, 75 70, 74 96 Z",
 	cej: "M 26 96 Q 50 92 74 96",
 	fissures: "M 34 146 L 66 146",
-	pulpChamber: "M 40 122 C 38 114, 40 100, 46 72 C 48 44, 49 20, 50 8 C 51 20, 52 44, 54 72 C 60 100, 62 114, 60 122 C 56 126, 44 126, 40 122 Z",
+	pulpChamber: "M 40 122 C 38 114, 40 100, 46 72 C 48 44, 49 20, 50 10 C 51 20, 52 44, 54 72 C 60 100, 62 114, 60 122 C 56 126, 44 126, 40 122 Z",
 	canals: [
 		{
 			id: "Main",
 			nameRu: "Центральный канал",
-			path: "M 50 120 C 50 88, 50 44, 50 8",
-			apex: { x: 50, y: 8 },
+			path: "M 50 120 C 50 88, 50 44, 50 10",
+			apex: { x: 50, y: 10 },
 			defaultLengthMm: 22.5,
 		},
 	],
-	apexHalos: [{ x: 50, y: 8 }],
+	apexHalos: [{ x: 50, y: 10 }],
 	periodontal: {
 		boneCrestNormal: "M 22 86 Q 50 82 78 86",
 		boneResorptionMild: "M 22 74 Q 50 70 78 74",
@@ -1267,7 +1267,7 @@ const UPPER_INCISOR_GEOMETRY: AnatomicalTemplateData = {
 };
 
 // --- 5. НИЖНИЕ МОЛЯРЫ (36, 37, 38, 46, 47, 48) ---
-// 2 мощных изогнутых корня: M (Медиальный, 2 канала: MB, ML) и D (Дистальный)
+// 2 мощных изогнутых корня: M (Медиальный) и D (Дистальный)
 const LOWER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 	crown:
 		"M 16 64 C 10 50, 8 22, 24 12 C 34 7, 48 10, 50 18 C 52 10, 66 7, 76 12 C 92 22, 90 50, 84 64 Q 50 68 16 64 Z",
@@ -1280,28 +1280,28 @@ const LOWER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		{
 			id: "MB",
 			nameRu: "Медиально-щечный (MB)",
-			path: "M 36 56 C 32 84, 22 122, 22 154",
-			apex: { x: 22, y: 154 },
+			path: "M 32 56 C 26 84, 18 122, 18 152",
+			apex: { x: 18, y: 152 },
 			defaultLengthMm: 21.0,
 		},
 		{
 			id: "ML",
 			nameRu: "Медиально-язычный (ML)",
-			path: "M 42 56 C 38 84, 28 120, 26 148",
-			apex: { x: 26, y: 148 },
+			path: "M 42 56 C 40 84, 32 120, 28 146",
+			apex: { x: 28, y: 146 },
 			defaultLengthMm: 21.0,
 		},
 		{
 			id: "D",
 			nameRu: "Дистальный (Distal)",
-			path: "M 64 56 C 68 84, 78 120, 78 150",
-			apex: { x: 78, y: 150 },
+			path: "M 66 56 C 70 84, 78 120, 78 148",
+			apex: { x: 78, y: 148 },
 			defaultLengthMm: 21.5,
 		},
 	],
 	apexHalos: [
-		{ x: 22, y: 154 },
-		{ x: 78, y: 150 },
+		{ x: 20, y: 150 },
+		{ x: 78, y: 148 },
 	],
 	periodontal: {
 		boneCrestNormal: "M 12 74 Q 50 78 88 74",

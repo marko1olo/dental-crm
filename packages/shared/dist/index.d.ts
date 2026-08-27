@@ -17,12 +17,13 @@ export * from "./imaging/index.js";
 export * from "./cda/index.js";
 export * from "./logging/index.js";
 export * from "./hardware/index.js";
-export * from "./inventory/consumables.js";
+export * from "./inventory/index.js";
 export * from "./lab/index.js";
 export * from "./communications/index.js";
 export * from "./schedule/index.js";
 export * from "./recalls/index.js";
 export * from "./tasks/index.js";
+export * from "./patients/index.js";
 export declare function isHttpUrl(value: string): boolean;
 export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
@@ -4067,8 +4068,8 @@ export declare const protocolTemplateSchema: z.ZodObject<{
     updatedAt: string;
     title: string;
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    visitReason: string;
     defaultDurationMinutes: number;
+    visitReason: string;
     complaintPrompt: string;
     objectiveTemplate: string;
     diagnosisHints: string[];
@@ -4082,8 +4083,8 @@ export declare const protocolTemplateSchema: z.ZodObject<{
     updatedAt: string;
     title: string;
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    visitReason: string;
     defaultDurationMinutes: number;
+    visitReason: string;
     complaintPrompt: string;
     objectiveTemplate: string;
     diagnosisHints: string[];
@@ -4197,8 +4198,8 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     sourceText: string;
     normalizedTitle: string;
     treatmentKind: string;
-    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab";
-    restorationType: "implant" | "none" | "unknown" | "veneer" | "crown" | "bridge" | "denture" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+    restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
     toothScope: string | null;
@@ -4218,8 +4219,8 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     sourceText: string;
     normalizedTitle: string;
     treatmentKind: string;
-    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab";
-    restorationType: "implant" | "none" | "unknown" | "veneer" | "crown" | "bridge" | "denture" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+    restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
     toothScope: string | null;
@@ -4245,7 +4246,7 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     minPriceRub: number | null;
     maxPriceRub: number | null;
     averagePriceRub: number | null;
-    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab")[];
+    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
     brands: string[];
 }, {
     count: number;
@@ -4255,7 +4256,7 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     minPriceRub: number | null;
     maxPriceRub: number | null;
     averagePriceRub: number | null;
-    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab")[];
+    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
     brands: string[];
 }>;
 export type DentalPricelistCategorySummary = z.infer<typeof dentalPricelistCategorySummarySchema>;
@@ -4341,8 +4342,8 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab";
-        restorationType: "implant" | "none" | "unknown" | "veneer" | "crown" | "bridge" | "denture" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+        restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4362,8 +4363,8 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab";
-        restorationType: "implant" | "none" | "unknown" | "veneer" | "crown" | "bridge" | "denture" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+        restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4388,7 +4389,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
         brands: string[];
     }, {
         count: number;
@@ -4398,7 +4399,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
         brands: string[];
     }>, "many">;
     warnings: z.ZodArray<z.ZodString, "many">;
@@ -4440,8 +4441,8 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab";
-        restorationType: "implant" | "none" | "unknown" | "veneer" | "crown" | "bridge" | "denture" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+        restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4456,7 +4457,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
         brands: string[];
     }[];
     generatedAt: string;
@@ -4488,8 +4489,8 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab";
-        restorationType: "implant" | "none" | "unknown" | "veneer" | "crown" | "bridge" | "denture" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+        restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4504,7 +4505,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "whitening" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
         brands: string[];
     }[];
     generatedAt: string;
@@ -9486,24 +9487,24 @@ export declare const photoVideoConsentPayloadSchema: z.ZodObject<{
     revocationChannel: z.ZodString;
     scopeNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
+    materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
     clinicalRecordUse: true;
     labTransferAllowed: boolean;
     colleagueConsultationAllowed: boolean;
     educationUseAllowed: boolean;
     marketingUseAllowed: boolean;
     recognizablePublicationAllowed: boolean;
-    materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
     anonymizationRequired: true;
     revocationChannel: string;
     scopeNotes?: string | null | undefined;
 }, {
+    materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
     clinicalRecordUse: true;
     labTransferAllowed: boolean;
     colleagueConsultationAllowed: boolean;
     educationUseAllowed: boolean;
     marketingUseAllowed: boolean;
     recognizablePublicationAllowed: boolean;
-    materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
     anonymizationRequired: true;
     revocationChannel: string;
     scopeNotes?: string | null | undefined;
@@ -9886,14 +9887,14 @@ export declare const outpatientMedicalCard025uXrayDoseRowSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     study: string;
     date?: string | null | undefined;
-    area?: string | null | undefined;
     dose?: string | null | undefined;
+    area?: string | null | undefined;
     sourceDocument?: string | null | undefined;
 }, {
     study: string;
     date?: string | null | undefined;
-    area?: string | null | undefined;
     dose?: string | null | undefined;
+    area?: string | null | undefined;
     sourceDocument?: string | null | undefined;
 }>;
 export type OutpatientMedicalCard025uXrayDoseRow = z.infer<typeof outpatientMedicalCard025uXrayDoseRowSchema>;
@@ -10517,14 +10518,14 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         study: string;
         date?: string | null | undefined;
-        area?: string | null | undefined;
         dose?: string | null | undefined;
+        area?: string | null | undefined;
         sourceDocument?: string | null | undefined;
     }, {
         study: string;
         date?: string | null | undefined;
-        area?: string | null | undefined;
         dose?: string | null | undefined;
+        area?: string | null | undefined;
         sourceDocument?: string | null | undefined;
     }>, "many">;
     functionalResults: z.ZodArray<z.ZodObject<{
@@ -10748,8 +10749,8 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     xrayDoseRows: {
         study: string;
         date?: string | null | undefined;
-        area?: string | null | undefined;
         dose?: string | null | undefined;
+        area?: string | null | undefined;
         sourceDocument?: string | null | undefined;
     }[];
     functionalResults: {
@@ -10946,8 +10947,8 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     xrayDoseRows: {
         study: string;
         date?: string | null | undefined;
-        area?: string | null | undefined;
         dose?: string | null | undefined;
+        area?: string | null | undefined;
         sourceDocument?: string | null | undefined;
     }[];
     functionalResults: {
@@ -13087,24 +13088,24 @@ export declare const documentPayloadSchema: z.ZodObject<{
         revocationChannel: z.ZodString;
         scopeNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
+        materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
         clinicalRecordUse: true;
         labTransferAllowed: boolean;
         colleagueConsultationAllowed: boolean;
         educationUseAllowed: boolean;
         marketingUseAllowed: boolean;
         recognizablePublicationAllowed: boolean;
-        materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
         anonymizationRequired: true;
         revocationChannel: string;
         scopeNotes?: string | null | undefined;
     }, {
+        materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
         clinicalRecordUse: true;
         labTransferAllowed: boolean;
         colleagueConsultationAllowed: boolean;
         educationUseAllowed: boolean;
         marketingUseAllowed: boolean;
         recognizablePublicationAllowed: boolean;
-        materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
         anonymizationRequired: true;
         revocationChannel: string;
         scopeNotes?: string | null | undefined;
@@ -13735,14 +13736,14 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             study: string;
             date?: string | null | undefined;
-            area?: string | null | undefined;
             dose?: string | null | undefined;
+            area?: string | null | undefined;
             sourceDocument?: string | null | undefined;
         }, {
             study: string;
             date?: string | null | undefined;
-            area?: string | null | undefined;
             dose?: string | null | undefined;
+            area?: string | null | undefined;
             sourceDocument?: string | null | undefined;
         }>, "many">;
         functionalResults: z.ZodArray<z.ZodObject<{
@@ -13966,8 +13967,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         xrayDoseRows: {
             study: string;
             date?: string | null | undefined;
-            area?: string | null | undefined;
             dose?: string | null | undefined;
+            area?: string | null | undefined;
             sourceDocument?: string | null | undefined;
         }[];
         functionalResults: {
@@ -14164,8 +14165,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         xrayDoseRows: {
             study: string;
             date?: string | null | undefined;
-            area?: string | null | undefined;
             dose?: string | null | undefined;
+            area?: string | null | undefined;
             sourceDocument?: string | null | undefined;
         }[];
         functionalResults: {
@@ -17023,13 +17024,13 @@ export declare const documentPayloadSchema: z.ZodObject<{
         technicianNotes?: string | null | undefined;
     } | undefined;
     photoVideoConsent?: {
+        materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
         clinicalRecordUse: true;
         labTransferAllowed: boolean;
         colleagueConsultationAllowed: boolean;
         educationUseAllowed: boolean;
         marketingUseAllowed: boolean;
         recognizablePublicationAllowed: boolean;
-        materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
         anonymizationRequired: true;
         revocationChannel: string;
         scopeNotes?: string | null | undefined;
@@ -17219,8 +17220,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         xrayDoseRows: {
             study: string;
             date?: string | null | undefined;
-            area?: string | null | undefined;
             dose?: string | null | undefined;
+            area?: string | null | undefined;
             sourceDocument?: string | null | undefined;
         }[];
         functionalResults: {
@@ -18182,13 +18183,13 @@ export declare const documentPayloadSchema: z.ZodObject<{
         technicianNotes?: string | null | undefined;
     } | undefined;
     photoVideoConsent?: {
+        materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
         clinicalRecordUse: true;
         labTransferAllowed: boolean;
         colleagueConsultationAllowed: boolean;
         educationUseAllowed: boolean;
         marketingUseAllowed: boolean;
         recognizablePublicationAllowed: boolean;
-        materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
         anonymizationRequired: true;
         revocationChannel: string;
         scopeNotes?: string | null | undefined;
@@ -18378,8 +18379,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         xrayDoseRows: {
             study: string;
             date?: string | null | undefined;
-            area?: string | null | undefined;
             dose?: string | null | undefined;
+            area?: string | null | undefined;
             sourceDocument?: string | null | undefined;
         }[];
         functionalResults: {
@@ -21409,24 +21410,24 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             revocationChannel: z.ZodString;
             scopeNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
         }, {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -22057,14 +22058,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }, "strip", z.ZodTypeAny, {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }, {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }>, "many">;
             functionalResults: z.ZodArray<z.ZodObject<{
@@ -22288,8 +22289,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -22486,8 +22487,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -25345,13 +25346,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -25541,8 +25542,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -26504,13 +26505,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -26700,8 +26701,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -28516,13 +28517,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -28712,8 +28713,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -29905,13 +29906,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -30101,8 +30102,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -32219,24 +32220,24 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             revocationChannel: z.ZodString;
             scopeNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
         }, {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -32867,14 +32868,14 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }, "strip", z.ZodTypeAny, {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }, {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }>, "many">;
             functionalResults: z.ZodArray<z.ZodObject<{
@@ -33098,8 +33099,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -33296,8 +33297,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -36155,13 +36156,13 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -36351,8 +36352,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -37314,13 +37315,13 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -37510,8 +37511,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -42307,24 +42308,24 @@ export declare const dashboardSchema: z.ZodObject<{
                 revocationChannel: z.ZodString;
                 scopeNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
+                materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
                 clinicalRecordUse: true;
                 labTransferAllowed: boolean;
                 colleagueConsultationAllowed: boolean;
                 educationUseAllowed: boolean;
                 marketingUseAllowed: boolean;
                 recognizablePublicationAllowed: boolean;
-                materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
                 anonymizationRequired: true;
                 revocationChannel: string;
                 scopeNotes?: string | null | undefined;
             }, {
+                materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
                 clinicalRecordUse: true;
                 labTransferAllowed: boolean;
                 colleagueConsultationAllowed: boolean;
                 educationUseAllowed: boolean;
                 marketingUseAllowed: boolean;
                 recognizablePublicationAllowed: boolean;
-                materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
                 anonymizationRequired: true;
                 revocationChannel: string;
                 scopeNotes?: string | null | undefined;
@@ -42955,14 +42956,14 @@ export declare const dashboardSchema: z.ZodObject<{
                 }, "strip", z.ZodTypeAny, {
                     study: string;
                     date?: string | null | undefined;
-                    area?: string | null | undefined;
                     dose?: string | null | undefined;
+                    area?: string | null | undefined;
                     sourceDocument?: string | null | undefined;
                 }, {
                     study: string;
                     date?: string | null | undefined;
-                    area?: string | null | undefined;
                     dose?: string | null | undefined;
+                    area?: string | null | undefined;
                     sourceDocument?: string | null | undefined;
                 }>, "many">;
                 functionalResults: z.ZodArray<z.ZodObject<{
@@ -43186,8 +43187,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 xrayDoseRows: {
                     study: string;
                     date?: string | null | undefined;
-                    area?: string | null | undefined;
                     dose?: string | null | undefined;
+                    area?: string | null | undefined;
                     sourceDocument?: string | null | undefined;
                 }[];
                 functionalResults: {
@@ -43384,8 +43385,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 xrayDoseRows: {
                     study: string;
                     date?: string | null | undefined;
-                    area?: string | null | undefined;
                     dose?: string | null | undefined;
+                    area?: string | null | undefined;
                     sourceDocument?: string | null | undefined;
                 }[];
                 functionalResults: {
@@ -46243,13 +46244,13 @@ export declare const dashboardSchema: z.ZodObject<{
                 technicianNotes?: string | null | undefined;
             } | undefined;
             photoVideoConsent?: {
+                materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
                 clinicalRecordUse: true;
                 labTransferAllowed: boolean;
                 colleagueConsultationAllowed: boolean;
                 educationUseAllowed: boolean;
                 marketingUseAllowed: boolean;
                 recognizablePublicationAllowed: boolean;
-                materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
                 anonymizationRequired: true;
                 revocationChannel: string;
                 scopeNotes?: string | null | undefined;
@@ -46439,8 +46440,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 xrayDoseRows: {
                     study: string;
                     date?: string | null | undefined;
-                    area?: string | null | undefined;
                     dose?: string | null | undefined;
+                    area?: string | null | undefined;
                     sourceDocument?: string | null | undefined;
                 }[];
                 functionalResults: {
@@ -47402,13 +47403,13 @@ export declare const dashboardSchema: z.ZodObject<{
                 technicianNotes?: string | null | undefined;
             } | undefined;
             photoVideoConsent?: {
+                materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
                 clinicalRecordUse: true;
                 labTransferAllowed: boolean;
                 colleagueConsultationAllowed: boolean;
                 educationUseAllowed: boolean;
                 marketingUseAllowed: boolean;
                 recognizablePublicationAllowed: boolean;
-                materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
                 anonymizationRequired: true;
                 revocationChannel: string;
                 scopeNotes?: string | null | undefined;
@@ -47598,8 +47599,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 xrayDoseRows: {
                     study: string;
                     date?: string | null | undefined;
-                    area?: string | null | undefined;
                     dose?: string | null | undefined;
+                    area?: string | null | undefined;
                     sourceDocument?: string | null | undefined;
                 }[];
                 functionalResults: {
@@ -49410,8 +49411,8 @@ export declare const dashboardSchema: z.ZodObject<{
         updatedAt: string;
         title: string;
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        visitReason: string;
         defaultDurationMinutes: number;
+        visitReason: string;
         complaintPrompt: string;
         objectiveTemplate: string;
         diagnosisHints: string[];
@@ -49425,8 +49426,8 @@ export declare const dashboardSchema: z.ZodObject<{
         updatedAt: string;
         title: string;
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        visitReason: string;
         defaultDurationMinutes: number;
+        visitReason: string;
         complaintPrompt: string;
         objectiveTemplate: string;
         diagnosisHints: string[];
@@ -50606,8 +50607,8 @@ export declare const dashboardSchema: z.ZodObject<{
         updatedAt: string;
         title: string;
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        visitReason: string;
         defaultDurationMinutes: number;
+        visitReason: string;
         complaintPrompt: string;
         objectiveTemplate: string;
         diagnosisHints: string[];
@@ -51276,8 +51277,8 @@ export declare const dashboardSchema: z.ZodObject<{
         updatedAt: string;
         title: string;
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        visitReason: string;
         defaultDurationMinutes: number;
+        visitReason: string;
         complaintPrompt: string;
         objectiveTemplate: string;
         diagnosisHints: string[];
@@ -53854,24 +53855,24 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             revocationChannel: z.ZodString;
             scopeNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
         }, {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -54502,14 +54503,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }, "strip", z.ZodTypeAny, {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }, {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }>, "many">;
             functionalResults: z.ZodArray<z.ZodObject<{
@@ -54733,8 +54734,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -54931,8 +54932,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -57790,13 +57791,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -57986,8 +57987,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -58949,13 +58950,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -59145,8 +59146,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -60116,13 +60117,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -60312,8 +60313,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -61284,13 +61285,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -61480,8 +61481,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -62452,13 +62453,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -62648,8 +62649,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -63620,13 +63621,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             technicianNotes?: string | null | undefined;
         } | undefined;
         photoVideoConsent?: {
+            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             clinicalRecordUse: true;
             labTransferAllowed: boolean;
             colleagueConsultationAllowed: boolean;
             educationUseAllowed: boolean;
             marketingUseAllowed: boolean;
             recognizablePublicationAllowed: boolean;
-            materials: ("other" | "xray" | "cbct" | "video" | "intraoral_photo" | "face_photo" | "scan")[];
             anonymizationRequired: true;
             revocationChannel: string;
             scopeNotes?: string | null | undefined;
@@ -63816,8 +63817,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             xrayDoseRows: {
                 study: string;
                 date?: string | null | undefined;
-                area?: string | null | undefined;
                 dose?: string | null | undefined;
+                area?: string | null | undefined;
                 sourceDocument?: string | null | undefined;
             }[];
             functionalResults: {
@@ -68993,7 +68994,7 @@ export declare const imagingViewerSessionStateSchema: z.ZodObject<{
     windowWidth: number | null;
     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
     activeQuickActionId: string | null;
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
     brightness: number;
     contrast: number;
     inverted: boolean;
@@ -69023,7 +69024,7 @@ export declare const imagingViewerSessionStateSchema: z.ZodObject<{
     windowCenter: number | null;
     windowWidth: number | null;
     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
     brightness: number;
     contrast: number;
     inverted: boolean;
@@ -69175,7 +69176,7 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69205,7 +69206,7 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69306,7 +69307,7 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69360,7 +69361,7 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69471,7 +69472,7 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69501,7 +69502,7 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69611,7 +69612,7 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69672,7 +69673,7 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69786,7 +69787,7 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -69816,7 +69817,7 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -69926,7 +69927,7 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -69987,7 +69988,7 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -70054,7 +70055,7 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -70118,7 +70119,7 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -70437,7 +70438,7 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70467,7 +70468,7 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70638,7 +70639,7 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70740,7 +70741,7 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70953,7 +70954,7 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70983,7 +70984,7 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71120,7 +71121,7 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71206,7 +71207,7 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71294,7 +71295,7 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71380,7 +71381,7 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71474,7 +71475,7 @@ export declare const dicomViewerViewportStateSchema: z.ZodObject<{
     crosshair: boolean;
     windowCenter: number | null;
     windowWidth: number | null;
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
     rotationDeg: number;
     sliceIndex: number | null;
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -71490,7 +71491,7 @@ export declare const dicomViewerViewportStateSchema: z.ZodObject<{
     crosshair: boolean;
     windowCenter: number | null;
     windowWidth: number | null;
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
     rotationDeg: number;
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
     axisDeg: number;
@@ -71664,7 +71665,7 @@ export declare const dicomViewerPlanningTaskSchema: z.ZodObject<{
     title: string;
     warnings: string[];
     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
     axisDeg: number;
     slabMm: number;
@@ -71688,7 +71689,7 @@ export declare const dicomViewerPlanningTaskSchema: z.ZodObject<{
     title: string;
     warnings: string[];
     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
     axisDeg: number;
     slabMm: number;
@@ -72370,7 +72371,7 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -72400,7 +72401,7 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -72501,7 +72502,7 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -72600,7 +72601,7 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73184,7 +73185,7 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73214,7 +73215,7 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73439,7 +73440,7 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73558,7 +73559,7 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73709,7 +73710,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         rotationDeg: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -73725,7 +73726,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         rotationDeg: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -73897,7 +73898,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -73921,7 +73922,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -74168,7 +74169,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         rotationDeg: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -74187,7 +74188,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -74303,7 +74304,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         rotationDeg: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -74322,7 +74323,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -75438,7 +75439,7 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -75468,7 +75469,7 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -75678,7 +75679,7 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -75818,7 +75819,7 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -76507,7 +76508,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76537,7 +76538,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76674,7 +76675,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76760,7 +76761,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76848,7 +76849,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76934,7 +76935,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -77081,7 +77082,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             rotationDeg: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -77097,7 +77098,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             rotationDeg: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -77269,7 +77270,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -77293,7 +77294,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -77540,7 +77541,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             rotationDeg: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -77559,7 +77560,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -77675,7 +77676,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             rotationDeg: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -77694,7 +77695,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -77899,7 +77900,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -78050,7 +78051,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             rotationDeg: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -78069,7 +78070,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -78260,7 +78261,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -78401,7 +78402,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             rotationDeg: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -78420,7 +78421,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -79123,7 +79124,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79153,7 +79154,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79290,7 +79291,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79376,7 +79377,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79464,7 +79465,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79550,7 +79551,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79697,7 +79698,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -79713,7 +79714,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -79885,7 +79886,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -79909,7 +79910,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -80156,7 +80157,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -80175,7 +80176,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -80291,7 +80292,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -80310,7 +80311,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -80515,7 +80516,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -80666,7 +80667,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -80685,7 +80686,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -80876,7 +80877,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -81017,7 +81018,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -81036,7 +81037,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -81260,7 +81261,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -81411,7 +81412,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -81430,7 +81431,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -81637,7 +81638,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -81778,7 +81779,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -81797,7 +81798,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -82490,7 +82491,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82520,7 +82521,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82657,7 +82658,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82743,7 +82744,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82831,7 +82832,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82917,7 +82918,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -83064,7 +83065,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -83080,7 +83081,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -83252,7 +83253,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -83276,7 +83277,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -83523,7 +83524,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -83542,7 +83543,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -83658,7 +83659,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -83677,7 +83678,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -83882,7 +83883,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -84033,7 +84034,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -84052,7 +84053,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -84243,7 +84244,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -84384,7 +84385,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -84403,7 +84404,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -84610,7 +84611,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -84761,7 +84762,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -84780,7 +84781,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -84975,7 +84976,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -85116,7 +85117,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -85135,7 +85136,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -85840,7 +85841,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -85870,7 +85871,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86007,7 +86008,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86093,7 +86094,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86181,7 +86182,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86267,7 +86268,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86414,7 +86415,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -86430,7 +86431,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -86602,7 +86603,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -86626,7 +86627,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -86873,7 +86874,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -86892,7 +86893,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87008,7 +87009,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -87027,7 +87028,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87232,7 +87233,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -87383,7 +87384,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -87402,7 +87403,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87593,7 +87594,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -87734,7 +87735,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -87753,7 +87754,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87977,7 +87978,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -88128,7 +88129,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -88147,7 +88148,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -88354,7 +88355,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -88495,7 +88496,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -88514,7 +88515,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -88737,7 +88738,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -88888,7 +88889,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -88907,7 +88908,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -89117,7 +89118,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -89258,7 +89259,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -89277,7 +89278,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -89981,7 +89982,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90011,7 +90012,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90148,7 +90149,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90234,7 +90235,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90322,7 +90323,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90408,7 +90409,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90555,7 +90556,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -90571,7 +90572,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -90743,7 +90744,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -90767,7 +90768,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -91014,7 +91015,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -91033,7 +91034,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -91149,7 +91150,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -91168,7 +91169,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -91373,7 +91374,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -91524,7 +91525,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -91543,7 +91544,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -91734,7 +91735,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -91875,7 +91876,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -91894,7 +91895,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -92118,7 +92119,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -92269,7 +92270,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -92288,7 +92289,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -92495,7 +92496,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -92636,7 +92637,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -92655,7 +92656,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -92883,7 +92884,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -93034,7 +93035,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -93053,7 +93054,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -93266,7 +93267,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -93407,7 +93408,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -93426,7 +93427,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -93597,7 +93598,7 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -93627,7 +93628,7 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -93691,7 +93692,7 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -93753,7 +93754,7 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "photo" | "caries" | "perio";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
         brightness: number;
         contrast: number;
         inverted: boolean;

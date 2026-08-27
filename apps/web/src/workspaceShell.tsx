@@ -779,7 +779,7 @@ export function WorkspaceTopbar({
 					id="topbar-copilot-btn"
 					className="secondary-button topbar-copilot-button"
 					type="button"
-					title="DENTE Copilot — Клинический ИИ-ассистент (Ctrl+K)"
+					title={workspaceTopbarLabels.copilot.title}
 					onClick={() => {
 						if (typeof window !== "undefined") {
 							if (window.__denteCopilot) {
@@ -800,7 +800,7 @@ export function WorkspaceTopbar({
 					}}
 				>
 					<Sparkles className="w-4 h-4 text-[var(--teal)] animate-pulse" aria-hidden="true" />
-					<span>Copilot</span>
+					{workspaceTopbarLabels.copilot.label}
 				</button>
 
 				{/*
