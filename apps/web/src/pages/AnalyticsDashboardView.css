@@ -1,113 +1,290 @@
+/* ============================================================
+   АНАЛИТИКА КЛИНИКИ (ANALYTICS DASHBOARD)
+   Плотный медицинский интерфейс, 32px SegmentedControl,
+   CRM дизайн-токены (--teal-dark, --paper-soft, --ink, --line),
+   отсутствие слепящих белых пятен в Dark Mode и адаптивность 390px.
+   ============================================================ */
+
 .analytics-dashboard {
-	padding: 32px;
+	padding: 20px 24px;
 	display: flex;
 	flex-direction: column;
-	gap: 24px;
+	gap: 18px;
 	height: 100%;
 	overflow-y: auto;
-	color: var(--ink, #f4f4f5);
+	color: var(--ink);
+	background: var(--paper);
+	box-sizing: border-box;
+	max-width: 100%;
 }
+
+/* ─── Шапка и Segmented Controls (32px / h-8) ──────────────── */
 
 .analytics-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line);
 }
 
-.analytics-header h2 {
-	font-size: 1.5rem;
-	font-weight: 600;
+.analytics-header-title-group {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.analytics-title {
+	font-size: 1.25rem;
+	font-weight: 700;
 	margin: 0;
-	color: var(--ink, #0f172a);
+	color: var(--ink);
+	letter-spacing: -0.01em;
 }
 
-[data-theme="dark"] .analytics-header h2,
-[data-theme="night"] .analytics-header h2 {
+.analytics-updated-badge {
+	font-size: 0.75rem;
+	color: var(--muted);
+	font-weight: 400;
+}
+
+.analytics-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	max-width: 100%;
+}
+
+.analytics-segmented {
+	display: inline-flex;
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 2px;
+	height: 32px;
+	box-sizing: border-box;
+	gap: 2px;
+}
+
+.analytics-segmented-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 26px;
+	padding: 0 10px;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--ink-2, var(--ink));
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease-in-out;
+	user-select: none;
+	line-height: 1;
+}
+
+.analytics-segmented-btn:hover {
 	color: var(--ink);
+	background: var(--paper);
+}
+
+.analytics-segmented-btn--active {
+	background: var(--teal-dark);
+	color: var(--on-teal, #ffffff);
+	box-shadow: var(--shadow-1);
+	font-weight: 600;
+}
+
+[data-theme="dark"] .analytics-segmented-btn--active,
+[data-theme="night"] .analytics-segmented-btn--active {
+	background: var(--teal);
+	color: var(--paper);
+}
+
+.analytics-segmented-btn--active:hover {
+	background: var(--teal-dark);
+	color: var(--on-teal, #ffffff);
+}
+
+[data-theme="dark"] .analytics-segmented-btn--active:hover,
+[data-theme="night"] .analytics-segmented-btn--active:hover {
+	background: var(--teal);
+	color: var(--paper);
+}
+
+/* ─── KPI Density Grid ─────────────────────────────────────── */
+
+.analytics-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.analytics-kpi-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 10px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 6px;
+	min-height: 64px;
+	box-shadow: var(--shadow-1);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	box-sizing: border-box;
+}
+
+.analytics-kpi-card:hover {
+	border-color: var(--teal);
+}
+
+.analytics-kpi-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--ink-2, var(--muted));
+	font-size: 0.8125rem;
+	font-weight: 500;
+}
+
+.analytics-kpi-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 6px;
+	background: var(--paper-soft);
+	flex-shrink: 0;
+}
+
+.analytics-kpi-value {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: var(--ink);
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+}
+
+/* ─── Сетка графиков (Analytics Grid) ──────────────────────── */
+
+.analytics-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .glass-widget {
 	background: var(--paper);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
 	border: 1px solid var(--line);
-	border-radius: 16px;
-	padding: 24px;
+	border-radius: 12px;
+	padding: 16px 18px;
 	box-shadow: var(--shadow-1);
-	transition: border-color 0.3s ease;
+	transition: border-color 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	overflow: hidden;
+	box-sizing: border-box;
 }
 
 .glass-widget:hover {
-	border-color: rgba(20, 184, 166, 0.4);
+	border-color: var(--teal);
 }
 
 .glass-widget h3 {
-	font-size: 1.125rem;
-	font-weight: 500;
-	margin: 0 0 16px 0;
-	color: var(--ink, #e4e4e7);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	margin: 0 0 12px 0;
+	color: var(--ink);
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
 
-.analytics-grid {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 24px;
+.analytics-chart-container,
+.widget-chart-container {
+	height: 240px;
+	width: 100%;
+	min-width: 0;
+	position: relative;
 }
 
-.widget-chart-container {
-	height: 300px;
+.analytics-table-container {
+	overflow-y: auto;
+}
+
+/* ─── Таблица выработки врачей ─────────────────────────────── */
+
+.analytics-table-wrapper {
 	width: 100%;
+	max-width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 .analytics-leaderboard-table {
 	width: 100%;
+	min-width: 280px;
 	border-collapse: collapse;
 }
 
 .analytics-leaderboard-table th,
 .analytics-leaderboard-table td {
-	padding: 12px;
+	padding: 8px 10px;
 	text-align: left;
 	border-bottom: 1px solid var(--line);
 }
 
 .analytics-leaderboard-table th {
 	color: var(--muted);
-	font-weight: 500;
-	font-size: 0.875rem;
+	font-weight: 600;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	background: var(--paper-soft);
 }
 
 .analytics-leaderboard-table td {
-	font-size: 0.95rem;
+	font-size: 0.8125rem;
 	color: var(--ink);
+}
+
+.analytics-leaderboard-table tr:hover td {
+	background: var(--paper-soft);
 }
 
 .analytics-leaderboard-table tr:last-child td {
 	border-bottom: none;
 }
 
-.margin-positive {
-	color: var(--good-fg, #10b981);
-}
+/* ─── Пустые состояния графиков ────────────────────────────── */
 
 .analytics-empty-state {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	height: 100%;
-	color: var(--muted, #a1a1aa);
-	font-size: 0.95rem;
-	background: var(--glass-panel, rgba(255, 255, 255, 0.02));
-	border: 1px dashed var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--muted);
+	font-size: 0.875rem;
+	background: var(--paper-soft);
+	border: 1px dashed var(--line);
 	border-radius: 8px;
 	font-style: italic;
 }
 
-/* The dashboard can be empty during a valid early clinic lifecycle. These panels
-   must therefore read as a guided next step rather than an inactive chart frame. */
 .analytics-chart-empty {
 	gap: 0;
 	min-height: 100%;
@@ -118,7 +295,7 @@
 .analytics-chart-empty::before {
 	background: radial-gradient(
 		circle at 50% 0%,
-		var(--teal-surface),
+		var(--teal-surface, rgba(13, 148, 136, 0.08)),
 		transparent 62%
 	);
 	content: "";
@@ -148,7 +325,13 @@
 	max-width: 30rem;
 }
 
+/* ─── Адаптивность и мобильный режим (max-width: 1024px & 640px) */
+
 @media (max-width: 1024px) {
+	.analytics-kpi-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
 	.analytics-grid {
 		grid-template-columns: 1fr;
 	}
@@ -156,35 +339,85 @@
 
 @media (max-width: 640px) {
 	.analytics-dashboard {
-		gap: 1rem;
-		padding: 1rem;
+		gap: 14px;
+		padding: 12px;
 	}
 
 	.analytics-header {
-		align-items: flex-start;
-		gap: 0.75rem;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+		padding-bottom: 10px;
+	}
+
+	.analytics-toolbar {
+		width: 100%;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 6px;
+	}
+
+	.analytics-segmented {
+		width: 100%;
+		display: flex;
+		height: 32px;
+		min-height: 32px;
+		max-height: 32px;
+		box-sizing: border-box;
+		align-items: center;
+		overflow: hidden;
+	}
+
+	.analytics-segmented-btn {
+		flex: 1 1 0%;
+		min-width: 0;
+		height: 26px;
+		min-height: 26px;
+		max-height: 26px;
+		padding: 0 4px;
+		font-size: 0.6875rem;
+		text-align: center;
+		box-sizing: border-box;
+		border-radius: 6px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.analytics-kpi-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
+	.analytics-kpi-card {
+		padding: 8px 10px;
+		min-height: 56px;
+	}
+
+	.analytics-kpi-header {
+		font-size: 0.75rem;
+	}
+
+	.analytics-kpi-value {
+		font-size: 1.125rem;
 	}
 
 	.glass-widget {
-		border-radius: 1rem;
-		padding: 1rem;
+		border-radius: 10px;
+		padding: 12px;
 	}
 
 	.glass-widget h3 {
-		font-size: 1rem;
-		line-height: 1.35;
-		margin-bottom: 0.75rem;
+		font-size: 0.875rem;
+		margin-bottom: 8px;
 	}
 
+	.analytics-chart-container,
 	.widget-chart-container {
-		height: 17.5rem;
+		height: 200px;
 	}
 
 	.analytics-chart-empty {
-		min-height: 17.5rem;
-	}
-
-	.analytics-chart-empty .dnt-empty-state-icon {
-		margin-bottom: 0.75rem;
+		min-height: 200px;
 	}
 }

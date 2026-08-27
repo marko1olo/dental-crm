@@ -1138,7 +1138,7 @@ export function ManagerReportsPanel({
 											</tr>
 										</thead>
 										<tbody>
-											{summary.patientFlow.points.map((point) => (
+											{(summary?.patientFlow?.points ?? []).map((point) => (
 												<tr key={point?.bucket ?? Math.random()}>
 													<td className="ops-strong" data-label="Месяц">
 														{point?.bucket ?? "—"}
@@ -1475,7 +1475,7 @@ export function ManagerReportsPanel({
 					) : (
 						<>
 							<ul className="ops-bars">
-								{scheduleMargins.byWeekday.map((row) => (
+								{(scheduleMargins?.byWeekday ?? []).map((row) => (
 									<li className="ops-bar" key={`weekday-${row?.key}`}>
 										<span className="ops-bar__label">
 											{weekdayNames[row?.key] ?? row?.key}
@@ -1496,7 +1496,7 @@ export function ManagerReportsPanel({
 							</ul>
 							<h3 className="ops-section-title">Часы приёма</h3>
 							<ul className="ops-bars">
-								{scheduleMargins.byHour.map((row) => (
+								{(scheduleMargins?.byHour ?? []).map((row) => (
 									<li className="ops-bar" key={`hour-${row?.key}`}>
 										<span className="ops-bar__label">
 											{String(row.key).padStart(2, "0")}:00
@@ -1505,7 +1505,7 @@ export function ManagerReportsPanel({
 											<span
 												className="ops-bar__fill"
 												style={{
-													width: `${row.minutes > 0 && scheduleMargins.peakHourMinutes > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakHourMinutes) * 100)) : 0}%`,
+													width: `${row.minutes > 0 && (scheduleMargins?.peakHourMinutes ?? 0) > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakHourMinutes) * 100)) : 0}%`,
 												}}
 											/>
 										</span>
@@ -1574,7 +1574,7 @@ export function ManagerReportsPanel({
 										</tr>
 									</thead>
 									<tbody>
-										{debtors.data.rows.map((row) => (
+										{(debtors?.data?.rows ?? []).map((row) => (
 											<tr key={row?.patientId ?? Math.random()}>
 												<td className="ops-strong" data-label="Пациент">
 													{row?.patientName ?? "—"}

@@ -2,6 +2,7 @@ import {
 	Activity,
 	AlertTriangle,
 	BarChart3,
+	Building2,
 	Calendar,
 	DollarSign,
 	RefreshCw,
@@ -42,10 +43,15 @@ import {
 import "./AnalyticsDashboardView.css";
 
 const DATE_RANGES = [
-	{ value: "all", label: "За всё время" },
-	{ value: "last_month", label: "Последний месяц" },
-	{ value: "last_3_months", label: "Последние 3 месяца" },
-	{ value: "this_year", label: "Текущий год" },
+	{ value: "all", label: "Всё время" },
+	{ value: "this_year", label: "Этот год" },
+	{ value: "last_3_months", label: "3 месяца" },
+	{ value: "last_month", label: "Месяц" },
+];
+
+const BRANCH_OPTIONS = [
+	{ value: "all", label: "Все филиалы" },
+	{ value: "main", label: "Основной" },
 ];
 
 /** Период фонового обновления. Оно НЕ должно гасить уже показанный дашборд. */
@@ -105,6 +111,7 @@ export function AnalyticsDashboardView() {
 	const [error, setError] = useState<string | null>(null);
 	const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 	const [dateRange, setDateRange] = useState<string>("all");
+	const [branchFilter, setBranchFilter] = useState<string>("all");
 	// Счётчик ручных повторов. Кнопка «Повторить» без него не работает: период
 	// не менялся, значит зависимости эффекта те же и он бы не перезапустился.
 	const [_retryToken, setRetryToken] = useState(0);
@@ -190,9 +197,9 @@ export function AnalyticsDashboardView() {
 		<button
 			type="button"
 			onClick={retry}
-			className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium hover:border-[var(--teal)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-colors"
+			className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-colors cursor-pointer"
 		>
-			<RefreshCw size={16} aria-hidden="true" />
+			<RefreshCw size={14} aria-hidden="true" />
 			Повторить
 		</button>
 	);
@@ -207,30 +214,62 @@ export function AnalyticsDashboardView() {
 		// раздела попадает под именем другого.
 		<section
 			id="analytics"
-			className="analytics-dashboard panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+			className="analytics-dashboard panel"
 			aria-label="Аналитика клиники"
 			data-testid="analytics-dashboard-view"
 		>
-			<header className="analytics-header flex flex-wrap gap-3 justify-between items-center mb-5 pb-3 border-b border-[var(--line)]">
-				<h2
-					className="m-0 text-xl font-bold text-[var(--ink)]"
-					title="Панель руководителя: путь планов лечения, загрузка кресел, сколько приносит пациент со временем и выработка врачей"
-				>
-					Аналитика клиники
-				</h2>
-				<select
-					value={dateRange}
-					onChange={(e) => setDateRange(e.target.value)}
-					title="Период, за который считаются показатели"
-					aria-label="Период, за который считаются показатели"
-					className="px-3 py-1.5 rounded-lg bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-all cursor-pointer hover:border-[var(--teal)]"
-				>
-					{DATE_RANGES.map((r) => (
-						<option key={r.value} value={r.value}>
-							{r.label}
-						</option>
-					))}
-				</select>
+			<header className="analytics-header">
+				<div className="analytics-header-title-group">
+					<h2
+						className="analytics-title"
+						title="Панель руководителя: путь планов лечения, загрузка кресел, сколько приносит пациент со временем и выработка врачей"
+					>
+						Аналитика клиники
+					</h2>
+					{updatedAt && (
+						<span
+							className="analytics-updated-badge"
+							title="Время последнего успешного обновления показателей"
+						>
+							Обновлено {updatedAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+						</span>
+					)}
+				</div>
+
+				<div className="analytics-toolbar" role="toolbar" aria-label="Фильтры аналитики">
+					{/* Филиал (Compact 32px SegmentedControl) */}
+					<div className="analytics-segmented" role="radiogroup" aria-label="Выбор филиала">
+						{BRANCH_OPTIONS.map((b) => (
+							<button
+								key={b.value}
+								type="button"
+								className={`analytics-segmented-btn ${branchFilter === b.value ? "analytics-segmented-btn--active" : ""}`}
+								onClick={() => setBranchFilter(b.value)}
+								aria-checked={branchFilter === b.value}
+								role="radio"
+							>
+								{b.value === "all" && <Building2 size={12} aria-hidden="true" className="mr-1 inline-block" />}
+								{b.label}
+							</button>
+						))}
+					</div>
+
+					{/* Период (Compact 32px SegmentedControl) */}
+					<div className="analytics-segmented" role="radiogroup" aria-label="Выбор периода">
+						{DATE_RANGES.map((r) => (
+							<button
+								key={r.value}
+								type="button"
+								className={`analytics-segmented-btn ${dateRange === r.value ? "analytics-segmented-btn--active" : ""}`}
+								onClick={() => setDateRange(r.value)}
+								aria-checked={dateRange === r.value}
+								role="radio"
+							>
+								{r.label}
+							</button>
+						))}
+					</div>
+				</div>
 			</header>
 
 			{/* Состояние 1 — загрузка. */}
@@ -300,71 +339,55 @@ export function AnalyticsDashboardView() {
 						/>
 					) : (
 						<>
-							{/* Плитки главных чисел. Формат короткий: в плитке длинная сумма не читается. */}
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-									gap: 16,
-									marginBottom: 24,
-								}}
-							>
+							{/* Плитки главных чисел (Density KPI Grid) */}
+							<div className="analytics-kpi-grid">
 								<KpiCard
-									icon={<Users size={18} />}
+									icon={<Users size={14} />}
 									label="Пациентов"
 									value={(data?.kpis?.totalPatients ?? 0).toLocaleString(
 										"ru-RU",
 									)}
-									color="#3b82f6"
+									color="var(--teal, #0d9488)"
 								/>
 								<KpiCard
-									icon={<DollarSign size={18} />}
+									icon={<DollarSign size={14} />}
 									label="Выручка"
 									value={formatRub(data?.kpis?.totalRevenue ?? 0)}
-									color="#10b981"
+									color="var(--ok-fg, #10b981)"
 								/>
 								<KpiCard
-									icon={<Activity size={18} />}
+									icon={<Activity size={14} />}
 									label="Приёмов"
 									value={(data?.kpis?.totalAppointments ?? 0).toLocaleString(
 										"ru-RU",
 									)}
-									color="#8b5cf6"
+									color="var(--brand-300, var(--teal))"
 								/>
 								<KpiCard
-									icon={<TrendingUp size={18} />}
-									label="Выручка на пациента"
+									icon={<TrendingUp size={14} />}
+									label="Выручка / пациент"
 									value={formatRub(data?.kpis?.avgRevenuePerPatient ?? 0)}
-									color="#f59e0b"
+									color="var(--warn-fg, #f59e0b)"
 								/>
 							</div>
 
 							<div className="analytics-grid">
-								{/* Виджет 1 — сколько денег приносит пациент со временем.
-							    БЫЛО в заголовке: «Выручка по когортам (LTV)». Ни «когорта», ни
-							    «LTV» врачу и администратору ничего не говорят. Название теперь
-							    объясняет смысл, термин остался в подсказке для тех, кто ищет
-							    именно его. */}
+								{/* Виджет 1 — сколько денег приносит пациент со временем. */}
 								<article className="glass-widget">
-									{/*
-									Термины в подсказке оставлены намеренно — для тех, кто ищет
-									именно их, — но каждый объяснён по-русски, а заголовок
-									обходится без них.
-								*/}
-									<h3 title="Пациенты сгруппированы по месяцу первого визита (это и называют когортами), и для каждой группы видно, сколько денег она принесла за год — то есть LTV.">
-										<TrendingUp className="w-5 h-5 text-dente-teal" /> Сколько
-										приносит пациент со временем
+									<h3 title="Пациенты сгруппированы по месяцу первого визита (когорты), и для каждой группы видно, сколько денег она принесла за год — LTV.">
+										<TrendingUp className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
+										<span>Сколько приносит пациент со временем</span>
 									</h3>
 									<div className="analytics-chart-container">
 										{(data?.cohortLtvJson ?? []).length > 0 ? (
 											<ResponsiveContainer width="100%" height="100%">
 												<AreaChart
 													data={data?.cohortLtvJson as CohortChartRow[]}
-													margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+													margin={{ top: 10, right: 15, left: 0, bottom: 0 }}
 												>
 													<defs>
 														<linearGradient
-															id="colorMonth12"
+															id="analyticsLtvGradient"
 															x1="0"
 															y1="0"
 															x2="0"
@@ -372,39 +395,33 @@ export function AnalyticsDashboardView() {
 														>
 															<stop
 																offset="5%"
-																stopColor="#8b5cf6"
-																stopOpacity={0.8}
+																stopColor="var(--teal, #0d9488)"
+																stopOpacity={0.4}
 															/>
 															<stop
 																offset="95%"
-																stopColor="#8b5cf6"
+																stopColor="var(--teal, #0d9488)"
 																stopOpacity={0}
 															/>
 														</linearGradient>
 													</defs>
 													<CartesianGrid
 														strokeDasharray="3 3"
-														stroke="var(--line, #e4e4e7)"
+														stroke="var(--line)"
 														vertical={false}
 													/>
 													<XAxis
 														dataKey="cohort"
-														stroke="var(--muted, #a1a1aa)"
-														fontSize={12}
+														stroke="var(--muted)"
+														fontSize={11}
 														tickLine={false}
 														axisLine={false}
 													/>
 													<YAxis
-														stroke="var(--muted, #a1a1aa)"
-														fontSize={12}
+														stroke="var(--muted)"
+														fontSize={11}
 														tickLine={false}
 														axisLine={false}
-														/*
-														БЫЛО: `${Math.round(val / 1000)}k` — латинская «k» в
-														русском интерфейсе, и округление до целых тысяч: и
-														1 400 ₽, и 1 500 ₽ давали одну подпись. Общий короткий
-														формат считает честно: «1,4 тыс. ₽».
-													*/
 														tickFormatter={(val: number) => formatRub(val)}
 													/>
 													<RechartsTooltip
@@ -413,39 +430,32 @@ export function AnalyticsDashboardView() {
 															borderColor: "var(--line)",
 															borderRadius: "8px",
 															color: "var(--ink)",
+															boxShadow: "var(--shadow-2)",
+															fontSize: "12px",
 														}}
 														itemStyle={{ color: "var(--ink)" }}
-														/*
-														Подсказка показывает точную сумму, поэтому здесь полный
-														денежный формат `money` из AppHelpers. БЫЛО: местный
-														`val.toLocaleString("ru-RU") + " ₽"` — без ограничения
-														дробной части, а деньги приходят с копейками, поэтому в
-														подсказке появлялось «3 416,666666666667 ₽».
-													*/
+														labelStyle={{ color: "var(--ink)", fontWeight: 600 }}
 														formatter={moneyTooltip}
 													/>
-													<Legend />
-													{/*
-													БЫЛО: здесь стояла вторая область с dataKey="Month 1"
-													и подписью «1-й месяц». Сервер это поле считать
-													перестал (analytics.ts:213-218, `void m1;`), поэтому
-													в легенде висела строка, под которой никогда не было
-													линии. Осталась одна область — та, которую считают.
-												*/}
+													<Legend
+														wrapperStyle={{
+															fontSize: "11px",
+															color: "var(--muted)",
+															paddingTop: "4px",
+														}}
+													/>
 													<Area
 														type="monotone"
 														name="За год"
 														dataKey="Month 12"
-														stroke="#8b5cf6"
+														stroke="var(--teal-dark, var(--teal))"
+														strokeWidth={2}
 														fillOpacity={1}
-														fill="url(#colorMonth12)"
+														fill="url(#analyticsLtvGradient)"
 													/>
 												</AreaChart>
 											</ResponsiveContainer>
 										) : (
-											/* БЫЛО: одна серая строка курсивом «Недостаточно данных по
-										   когортам» в пустой рамке на 300 пикселей. Она сообщает, что
-										   всё плохо, но не говорит ни почему, ни что делать. */
 											<EmptyState
 												glass={false}
 												icon={<TrendingUp size={24} aria-hidden="true" />}
@@ -457,22 +467,11 @@ export function AnalyticsDashboardView() {
 									</div>
 								</article>
 
-								{/*
-								Виджет 2 — состояния плана лечения: черновик, в работе,
-								согласован, завершён, отклонён. Подписи ветвей приходят с
-								сервера и выведены из перечисления `treatment_plan_status`.
-
-								БЫЛО: в этом поле сервер отдавал ПРИЁМЫ по их статусу
-								(`routes/analytics.ts`), поэтому под заголовком «Воронка планов
-								лечения» стояло 27 «планов» у клиники, где планов лечения ноль,
-								а трое неявившихся пациентов (`no_show`) попадали в ветвь
-								«Запланированы». Пустое состояние ниже не показывалось никогда,
-								пока в клинике есть хоть один приём.
-							*/}
+								{/* Виджет 2 — воронка планов лечения. */}
 								<article className="glass-widget">
-									<h3>
-										<BarChart3 className="w-5 h-5 text-sky-500" /> Воронка
-										планов лечения
+									<h3 title="Состояния планов лечения: черновик, в работе, согласован, завершён, отклонён">
+										<BarChart3 className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
+										<span>Воронка планов лечения</span>
 									</h3>
 									<div className="analytics-chart-container">
 										{Array.isArray(data?.planFunnelJson) &&
@@ -483,25 +482,25 @@ export function AnalyticsDashboardView() {
 												<ComposedChart
 													data={data?.planFunnelJson as NamedValueChartRow[]}
 													layout="vertical"
-													margin={{ top: 10, right: 30, left: 20, bottom: 5 }}
+													margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
 												>
 													<CartesianGrid
 														strokeDasharray="3 3"
-														stroke="var(--line, #e4e4e7)"
+														stroke="var(--line)"
 														horizontal={false}
 													/>
 													<XAxis
 														type="number"
-														stroke="var(--muted, #a1a1aa)"
-														fontSize={12}
+														stroke="var(--muted)"
+														fontSize={11}
 														tickLine={false}
 														axisLine={false}
 													/>
 													<YAxis
 														dataKey="name"
 														type="category"
-														stroke="var(--muted, #a1a1aa)"
-														fontSize={12}
+														stroke="var(--muted)"
+														fontSize={11}
 														tickLine={false}
 														axisLine={false}
 														width={90}
@@ -512,16 +511,19 @@ export function AnalyticsDashboardView() {
 															borderColor: "var(--line)",
 															borderRadius: "8px",
 															color: "var(--ink)",
+															boxShadow: "var(--shadow-2)",
+															fontSize: "12px",
 														}}
 														itemStyle={{ color: "var(--ink)" }}
-														/* Склонение: «1 план», «2 плана», «5 планов». */
+														labelStyle={{ color: "var(--ink)", fontWeight: 600 }}
 														formatter={planCountTooltip}
 													/>
 													<Bar
 														dataKey="value"
 														name="Количество"
-														barSize={32}
+														barSize={24}
 														radius={[0, 4, 4, 0]}
+														fill="var(--teal, #0d9488)"
 													/>
 												</ComposedChart>
 											</ResponsiveContainer>
@@ -530,13 +532,6 @@ export function AnalyticsDashboardView() {
 												glass={false}
 												icon={<BarChart3 size={24} aria-hidden="true" />}
 												title="Планов лечения ещё нет"
-												/*
-														«сколько оплачено» здесь обещало ветвь, которой у плана
-														оплата — это платежи, отдельная сущность и
-														отдельный виджет. Названы настоящие состояния плана,
-														включая отказ пациента от сметы — ровно то, по чему
-														видно, что смета не продаётся.
-													*/
 												description="Составьте план в карточке пациента — здесь будет видно, сколько смет в черновиках, сколько согласовано, сколько доведено до конца и от скольких пациент отказался."
 												className="analytics-chart-empty"
 											/>
@@ -546,11 +541,11 @@ export function AnalyticsDashboardView() {
 
 								{/* Виджет 3 — загруженность кресел по фактическим приёмам. */}
 								<article className="glass-widget">
-									<h3>
-										<Activity className="w-5 h-5 text-emerald-500" />{" "}
-										Загруженность кресел
+									<h3 title="Загруженность кресел по фактическим приёмам">
+										<Activity className="w-4 h-4 text-[var(--ok-fg)]" aria-hidden="true" />
+										<span>Загруженность кресел</span>
 									</h3>
-									<div className="widget-chart-container">
+									<div className="analytics-chart-container">
 										{Array.isArray(data?.chairUtilizationJson) &&
 										(data?.chairUtilizationJson ?? []).filter(
 											(x) => (x?.value ?? 0) > 0,
@@ -561,7 +556,7 @@ export function AnalyticsDashboardView() {
 													cy="50%"
 													innerRadius="20%"
 													outerRadius="100%"
-													barSize={16}
+													barSize={14}
 													data={
 														data?.chairUtilizationJson as NamedValueChartRow[]
 													}
@@ -570,17 +565,18 @@ export function AnalyticsDashboardView() {
 														label={{
 															position: "insideStart",
 															fill: "var(--on-teal, #ffffff)",
-															fontSize: 12,
+															fontSize: 11,
+															fontWeight: 600,
 														}}
-														background={{ fill: "var(--paper-soft, #f4f4f5)" }}
+														background={{ fill: "var(--paper-soft)" }}
 														dataKey="value"
-														cornerRadius={8}
+														cornerRadius={6}
 													/>
 													<Legend
-														iconSize={10}
+														iconSize={8}
 														layout="vertical"
 														verticalAlign="middle"
-														wrapperStyle={{ right: 0, color: "var(--muted, #a1a1aa)" }}
+														wrapperStyle={{ right: 0, color: "var(--muted)", fontSize: "11px" }}
 													/>
 													<RechartsTooltip
 														contentStyle={{
@@ -588,8 +584,11 @@ export function AnalyticsDashboardView() {
 															borderColor: "var(--line)",
 															borderRadius: "8px",
 															color: "var(--ink)",
+															boxShadow: "var(--shadow-2)",
+															fontSize: "12px",
 														}}
 														itemStyle={{ color: "var(--ink)" }}
+														labelStyle={{ color: "var(--ink)", fontWeight: 600 }}
 														formatter={appointmentCountTooltip}
 													/>
 												</RadialBarChart>
@@ -608,14 +607,11 @@ export function AnalyticsDashboardView() {
 
 								{/* Виджет 4 — выработка врачей по завершённым визитам. */}
 								<article className="glass-widget">
-									<h3>
-										<Users className="w-5 h-5 text-teal-600 dark:text-teal-400" /> Эффективность
-										врачей
+									<h3 title="Выработка врачей по завершённым визитам">
+										<Users className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
+										<span>Эффективность врачей</span>
 									</h3>
-									<div
-										className="widget-chart-container"
-										style={{ overflowY: "auto" }}
-									>
+									<div className="analytics-chart-container analytics-table-container">
 										{Array.isArray(data?.doctorProfitabilityJson) &&
 										(data?.doctorProfitabilityJson ?? []).filter(
 											(x) => (x?.revenue ?? 0) > 0,
@@ -750,7 +746,7 @@ function DoctorProfitabilityTable({
 	);
 
 	return (
-		<>
+		<div className="analytics-table-wrapper">
 			<table className="analytics-leaderboard-table">
 				<thead>
 					<tr>
@@ -766,7 +762,7 @@ function DoctorProfitabilityTable({
 						const completion = formatCompletionRate(doc?.completionRate);
 						return (
 							<tr key={doc?.name ?? "unknown"}>
-								<td>{doc?.name ?? "—"}</td>
+								<td className="font-medium">{doc?.name ?? "—"}</td>
 								{/* Таблица — точная сумма с копейками, а не короткий вид плитки. */}
 								<td>{money(doc?.revenue ?? 0)}</td>
 								<td
@@ -794,13 +790,13 @@ function DoctorProfitabilityTable({
 				читается как сбой выгрузки.
 			*/}
 			{hasUnknownMetric && (
-				<p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
+				<p className="mt-2.5 text-xs leading-relaxed text-[var(--muted)]">
 					Прочерк — величина не рассчитывается, а не ноль. Прибыль по врачу
 					требует себестоимости материалов и процента врача; в системе они не
 					заданы. Выручка — только фактически полученные платежи.
 				</p>
 			)}
-		</>
+		</div>
 	);
 }
 
@@ -816,53 +812,18 @@ function KpiCard({
 	color: string;
 }) {
 	return (
-		<div
-			style={{
-				background: "var(--paper)",
-				border: "1px solid var(--line)",
-				borderRadius: 12,
-				padding: "16px 20px",
-				display: "flex",
-				flexDirection: "column",
-				gap: 8,
-			}}
-		>
-			{/*
-			  БЫЛО: акцентный цвет применялся ко всей строке, то есть и к
-			  иконке, и к подписи. Подписи ключевых показателей выходили
-			  нечитаемыми: «Ср. выручка / пациент» amber-500 на белом — 2.15,
-			  «Выручка» emerald-500 — 2.54, «Пациентов» blue-500 — 3.68,
-			  «Приёмов» violet-500 на тёмном фоне ночной темы — 4.2.
-			  Это показатели, по которым руководитель читает состояние клиники.
-
-			  Иконке достаточно 3:1 как графическому элементу, поэтому акцент
-			  остаётся на ней, а подпись переведена на текстовый токен темы.
-			*/}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: 8,
-					color: "var(--ink-2, var(--ink))",
-					fontSize: 13,
-					fontWeight: 500,
-				}}
-			>
-				<span style={{ color, display: "inline-flex" }} aria-hidden="true">
+		<div className="analytics-kpi-card">
+			<div className="analytics-kpi-header">
+				<span
+					className="analytics-kpi-icon"
+					style={{ color }}
+					aria-hidden="true"
+				>
 					{icon}
 				</span>
-				{label}
+				<span className="truncate">{label}</span>
 			</div>
-			<div
-				style={{
-					fontSize: "22px",
-					fontWeight: 700,
-					color: "var(--ink)",
-					letterSpacing: "-0.01em",
-				}}
-			>
-				{value}
-			</div>
+			<div className="analytics-kpi-value">{value}</div>
 		</div>
 	);
 }
