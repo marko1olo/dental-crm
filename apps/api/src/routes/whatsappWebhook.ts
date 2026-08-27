@@ -16,6 +16,7 @@ import { db } from "../db/client.js";
 import {
 	appointments,
 	communicationEvents,
+	communicationTasks,
 	denteWhatsappBotConfigs,
 	messengerInboundEvents,
 	patients,
@@ -31,8 +32,9 @@ import {
 const DEFAULT_VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || "dente_whatsapp_verify_token";
 
 export interface ParsedWebhookAction {
-	type: "confirm_appointment" | "cancel_appointment" | "reschedule_request" | "general_message";
+	type: "confirm_appointment" | "cancel_appointment" | "reschedule_request" | "recall_book" | "recall_snooze" | "general_message";
 	appointmentId?: string | null;
+	recallId?: string | null;
 	buttonId?: string | null;
 	rawText: string;
 	fromPhone: string;
@@ -52,6 +54,33 @@ export function parseIncomingAction(
 ): ParsedWebhookAction {
 	const rawBtn = (buttonId || "").trim();
 	const cleanText = (bodyText || "").trim().toLowerCase();
+
+	// Explicit recall action buttons: RECALL_BOOK_<id> or RECALL_SNOOZE_<id>
+	const recallBookMatch = rawBtn.match(/^recall_book[-_:](.+)$/i);
+	if (recallBookMatch) {
+		return {
+			type: "recall_book",
+			recallId: recallBookMatch[1] ?? null,
+			buttonId: rawBtn,
+			rawText: bodyText,
+			fromPhone,
+			messageId,
+			timestamp,
+		};
+	}
+
+	const recallSnoozeMatch = rawBtn.match(/^recall_snooze[-_:](.+)$/i);
+	if (recallSnoozeMatch) {
+		return {
+			type: "recall_snooze",
+			recallId: recallSnoozeMatch[1] ?? null,
+			buttonId: rawBtn,
+			rawText: bodyText,
+			fromPhone,
+			messageId,
+			timestamp,
+		};
+	}
 
 	// Explicit appointment confirmation button: confirm_appointment_<id> or APPT_CONFIRM_<id>
 	const confirmMatch = rawBtn.match(/^(?:confirm_appointment|appt_confirm)[-_:]([0-9a-f-]{36})$/i);
@@ -80,6 +109,7 @@ export function parseIncomingAction(
 			timestamp,
 		};
 	}
+
 
 	const isConfirm =
 		rawBtn === "APPT_CONFIRM" ||
@@ -354,7 +384,141 @@ export async function processAppointmentCancellation(
 	};
 }
 
+/**
+ * Executes recall quick booking request from WhatsApp button.
+ */
+export async function processRecallBooking(
+	organizationId: string,
+	patient: { id: string; fullName: string; phone: string | null },
+	action: ParsedWebhookAction,
+	config: typeof denteWhatsappBotConfigs.$inferSelect | null,
+) {
+	if (action.recallId) {
+		await db
+			.update(communicationTasks)
+			.set({
+				status: "delivered",
+				lastEventAt: new Date(),
+			})
+			.where(
+				and(
+					eq(communicationTasks.id, action.recallId),
+					eq(communicationTasks.organizationId, organizationId),
+				),
+			)
+			.catch(() => null);
+	}
+
+	const receiptText = `Спасибо, ${patient.fullName}! Мы приняли вашу заявку на профилактический осмотр. Администратор клиники ДЕНТЕ свяжется с вами для согласования удобного времени.`;
+
+	if (config && patient.phone) {
+		const creds = readWhatsappCredentials(config);
+		const recipient = normalizeWhatsappRecipient(patient.phone);
+		if (creds && recipient) {
+			await sendWhatsappTextMessage({
+				...creds,
+				toPhoneE164: recipient,
+				text: receiptText,
+			}).catch(() => null);
+		}
+	}
+
+	await db.insert(communicationEvents).values({
+		organizationId,
+		patientId: patient.id,
+		channel: "whatsapp",
+		direction: "outbound",
+		status: "sent",
+		message: receiptText,
+	});
+
+	wsBroker.broadcastToOrganization(organizationId, {
+		type: "RECALL_BOOKING_REQUESTED",
+		payload: {
+			recallId: action.recallId,
+			patientId: patient.id,
+			patientName: patient.fullName,
+			requestedVia: "whatsapp_interactive",
+		},
+	});
+
+	return {
+		status: "booking_requested",
+		receiptSent: true,
+	};
+}
+
+/**
+ * Executes recall snooze (postpone by 30 days) from WhatsApp button.
+ */
+export async function processRecallSnooze(
+	organizationId: string,
+	patient: { id: string; fullName: string; phone: string | null },
+	action: ParsedWebhookAction,
+	config: typeof denteWhatsappBotConfigs.$inferSelect | null,
+) {
+	const newDueDate = new Date();
+	newDueDate.setDate(newDueDate.getDate() + 30);
+
+	if (action.recallId) {
+		await db
+			.update(communicationTasks)
+			.set({
+				status: "queued",
+				dueAt: newDueDate,
+				lastEventAt: new Date(),
+			})
+			.where(
+				and(
+					eq(communicationTasks.id, action.recallId),
+					eq(communicationTasks.organizationId, organizationId),
+				),
+			)
+			.catch(() => null);
+	}
+
+	const receiptText = `Хорошо, ${patient.fullName}! Мы отложили напоминание и свяжемся с вами через месяц. Желаем здоровья вашим зубам!`;
+
+	if (config && patient.phone) {
+		const creds = readWhatsappCredentials(config);
+		const recipient = normalizeWhatsappRecipient(patient.phone);
+		if (creds && recipient) {
+			await sendWhatsappTextMessage({
+				...creds,
+				toPhoneE164: recipient,
+				text: receiptText,
+			}).catch(() => null);
+		}
+	}
+
+	await db.insert(communicationEvents).values({
+		organizationId,
+		patientId: patient.id,
+		channel: "whatsapp",
+		direction: "outbound",
+		status: "sent",
+		message: receiptText,
+	});
+
+	wsBroker.broadcastToOrganization(organizationId, {
+		type: "RECALL_SNOOZED",
+		payload: {
+			recallId: action.recallId,
+			patientId: patient.id,
+			patientName: patient.fullName,
+			snoozeDays: 30,
+			snoozedVia: "whatsapp_interactive",
+		},
+	});
+
+	return {
+		status: "snoozed",
+		receiptSent: true,
+	};
+}
+
 export async function registerWhatsappWebhookRoutes(app: FastifyInstance) {
+
 	/**
 	 * Meta Webhook Handshake (GET /api/v1/webhooks/whatsapp)
 	 */
@@ -505,7 +669,12 @@ export async function registerWhatsappWebhookRoutes(app: FastifyInstance) {
 								await processAppointmentConfirmation(organizationId, patient, action, config);
 							} else if (action.type === "cancel_appointment") {
 								await processAppointmentCancellation(organizationId, patient, action, config);
+							} else if (action.type === "recall_book") {
+								await processRecallBooking(organizationId, patient, action, config);
+							} else if (action.type === "recall_snooze") {
+								await processRecallSnooze(organizationId, patient, action, config);
 							}
+
 						}
 
 						// Broadcast incoming message to CRM UI

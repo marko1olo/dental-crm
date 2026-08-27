@@ -1,7 +1,7 @@
-# BRIEFING — 2026-08-26T23:40:00Z
+# BRIEFING — 2026-08-27T07:32:00Z
 
 ## Mission
-Build inbound WhatsApp Meta Webhook router in Fastify (`apps/api/src/routes/whatsappWebhook.ts`), automated interactive appointment confirmation/cancellation lifecycle, WebSocket reception broadcast, and test suite.
+Implement automated recall notification dispatch via WhatsApp, Fastify recall routes (`/api/v1/recalls/due`, `/api/v1/recalls/dispatch`, `/api/v1/recalls/snooze`, `/api/v1/recalls/book`), interactive button webhook parsing (`RECALL_BOOK`, `RECALL_SNOOZE`), and test suites.
 
 ## 🔒 My Identity
 - Archetype: sentinel
@@ -15,13 +15,16 @@ Build inbound WhatsApp Meta Webhook router in Fastify (`apps/api/src/routes/what
 - Follow DENTE Dental CRM mandates (HEAD-hash reporting, compiles != works, per-file git add, kopeck-exact money, complete migrations, ast-grep read/write split)
 
 ## User Context
-- **Last user request**: MASSIVE DOMAIN DIRECTIVE: WHATSAPP WEBHOOK ROUTER & APPOINTMENT AUTO-CONFIRMATION.
+- **Last user request**: MASSIVE DIRECTIVE 3: RECALL WHATSAPP AUTOMATION & FASTIFY ROUTES.
 - **Pending clarifications**: none
 - **Delivered results**:
-  - `apps/api/src/routes/whatsappWebhook.ts`: Handshake verification (`GET /api/v1/webhooks/whatsapp`) and webhook receiver (`POST /api/v1/webhooks/whatsapp`) with interactive button reply parsing (`confirm_appointment_<id>`, `cancel_appointment_<id>`, `APPT_CONFIRM`, `APPT_CANCEL`), PostgreSQL appointment status updates (`confirmed` / `cancelled`), communication event logging, WhatsApp confirmation receipt sending, and live WebSocket broadcasts to reception.
-  - `apps/api/src/routes/whatsappWebhook.test.ts`: 9 unit and Fastify inject tests for verification handshake, 403 handling, button parsing, and webhook event processing (**9/9 passed**).
-  - `apps/api/src/server.ts`: Registered `registerWhatsappWebhookRoutes(app)`.
-  - Full messaging test suite (35/35 passed) and full root typecheck (Exit Code 0).
+  - `apps/api/src/services/recallReminderService.ts`: Automated preventive dental recall scanning, interactive WhatsApp reminder formatting with action buttons (`[📅 Записаться на прием]`, `[⏰ Напомнить через месяц]`), batch dispatching, and snooze / booking handling.
+  - `apps/api/src/routes/whatsappWebhook.ts`: Added parsing and execution for `RECALL_BOOK` and `RECALL_SNOOZE` buttons, database task updating, confirmation receipts, and live reception WebSocket broadcasts.
+  - `apps/api/src/routes/recalls.ts`: Fastify routes `GET /api/v1/recalls/due`, `POST /api/v1/recalls/dispatch`, `POST /api/v1/recalls/snooze`, `POST /api/v1/recalls/book`.
+  - `apps/api/src/server.ts`: Registered `registerRecallRoutes(app)`.
+  - `apps/api/src/routes/recalls.test.ts`: 8 unit and Fastify inject tests (**8/8 passed**).
+  - Full messaging and recall suite: 43/43 tests passed.
+  - Full root `npm run typecheck` across all 3 workspaces: **Exit Code 0 (0 errors)**.
 
 ## Project Status
 - **Phase**: complete
@@ -34,5 +37,7 @@ Build inbound WhatsApp Meta Webhook router in Fastify (`apps/api/src/routes/what
 ## Artifact Index
 - C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — user intent record
 - C:\Clinic_MVP\dental-crm\.agents\BRIEFING.md — Sentinel persistent briefing
-- C:\Clinic_MVP\dental-crm\apps\api\src\routes\whatsappWebhook.ts — Inbound WhatsApp webhook router
-- C:\Clinic_MVP\dental-crm\apps\api\src\routes\whatsappWebhook.test.ts — Webhook unit & inject tests
+- C:\Clinic_MVP\dental-crm\apps\api\src\services\recallReminderService.ts — Recall Reminder Service
+- C:\Clinic_MVP\dental-crm\apps\api\src\routes\recalls.ts — Recalls Fastify routes
+- C:\Clinic_MVP\dental-crm\apps\api\src\routes\recalls.test.ts — Recalls route tests
+- C:\Clinic_MVP\dental-crm\apps\api\src\routes\whatsappWebhook.ts — WhatsApp webhook router

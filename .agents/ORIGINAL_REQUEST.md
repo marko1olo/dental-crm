@@ -61,32 +61,16 @@ You own the implementation of interactive appointment mutation tools in the Agen
 3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and verify 100% pass.
 4. Run `npm run typecheck -w @dental/api` and report results.
 
-## 2026-08-26T23:34:14Z
+## 2026-08-27T07:24:46Z
 
-[MASSIVE DOMAIN DIRECTIVE: 1C:ENTERPRISE XML EXPORT & ESTIMATE GENERATION]
-Reference repo: `C:\Users\Admin\.gemini\antigravity\scratch\dentalpin\backend\app\modules`
-Target project: `C:\Clinic_MVP\dental-crm`
-
-You own the implementation of Russian statutory 1C:Enterprise XML invoice/payment export and estimate generator:
-1. `packages/shared/src/finance/oneCEnterpriseExport.ts`:
-   - Generates compliant 1C:Enterprise (1С:Бухгалтерия 8.3 / УТ) XML documents for invoices, completed medical acts, and cash operations.
-   - Exact kopeck matching, Russian INN/KPP validation, VAT exemptions (НДС Не облагается ст. 149 НК РФ).
-2. `packages/shared/src/finance/estimateHtmlRenderer.ts`:
-   - Generates clean, printable HTML/PDF estimate sheets with treatment plan stages, tooth numbers, and statutory clinic signatures.
-3. Unit tests: `packages/shared/src/tests/oneCEnterpriseExport.test.ts`.
-4. Run `npm test -w @dental/shared` and `npm run typecheck -w @dental/shared`. Report verified results.
-
-## 2026-08-26T23:35:18Z
-
-[GLOBAL EXPEDITION: DEEP SCAN FOR ANY REMAINING ACADEMIC / THEORETICAL BLOAT]
+[MASSIVE DIRECTIVE 4: AGENTIC RECALLS & STAFF TASK TOOLS]
 Working directory: `C:\Clinic_MVP\dental-crm`
 
-Scan 100% of remaining files in the entire project:
-1. `apps/web/src/components/sanpin/` (400+ KB of SanPin tabs: find if there are theoretical autoclave chamber point matrices, complex disinfectant concentration cubic equations, or fake test logs).
-2. `apps/web/src/components/documents/` (Check all medical forms for 50-field obsolete questionnaires, complex theoretical indices like PMA/Fedorov-Volodkina).
-3. `apps/web/src/components/radiology/` and `apps/web/src/components/diagnostic/`.
-4. `apps/api/src/` and `packages/shared/src/`.
-
-Check every single folder line-by-line.
-List every found academic bloat module with exact file paths, line numbers, line counts, and why it's useless for a real commercial dental clinic.
-Generate a structured report in `docs/audit/GLOBAL_BLOAT_INVENTORY.md`.
+You own the implementation of Recalls & Staff Tasks tools in the AI Copilot Tool Registry:
+1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, add:
+   - `create_staff_task`: creates internal clinic task for admin/nurse/doctor (title, description, priority, assignedRole, patientId, dueDate). Category: `"write"`, requires human confirmation in supervised mode.
+   - `get_patient_recalls`: returns upcoming or overdue preventive recalls for a patient (hygiene, implant, ortho check). Category: `"read"`.
+   - `schedule_recall`: creates a preventive recall reminder for a patient. Category: `"write"`.
+2. Register the 3 tools in `ToolRegistry`.
+3. Update `apps/api/src/services/agent/agent.test.ts` with test coverage for the new tools.
+4. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`. Report verified results.
