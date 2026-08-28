@@ -136,8 +136,8 @@ import { CmoComplianceHub } from "../components/emr/audit/CmoComplianceHub";
 import { Form043PrintModal } from "../components/emr/Form043PrintModal";
 import { OfflineBackupVaultPanel } from "../components/settings/OfflineBackupVaultPanel";
 import { ClinicalPnlHubModal } from "../components/finance/pnl/ClinicalPnlHubModal";
-import { AuditTrailHubModal } from "../components/security";
-import { CmoQualityAuditModal } from "../components/emr/audit/CmoQualityAuditModal";
+import { AuditTrailHubModal } from "../components/security/AuditTrailHubModal";
+import { CmoQualityAuditModal } from "../components/cmo/CmoQualityAuditModal";
 import {
 	STANDARD_12_SLOT_PROTOCOL,
 	type PhotoSlotRecord,

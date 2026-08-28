@@ -1,11 +1,8 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * CMO EMR QUALITY AUDIT & COMPLIANCE HUB MODULE
+ * CMO CLINICAL QUALITY & STATUTORY AUDIT BARREL (WAVE 9)
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./cmoEmrAuditPresets";
-export * from "./cmoEmrAuditEngine";
-export * from "./CmoEmrAuditModal";
-export * from "./cmoComplianceHubEngine";
-export * from "./CmoComplianceHub";
+export * from "./clinicalQualityEngine";
+export * from "./CmoQualityAuditModal";

@@ -14,6 +14,7 @@ const OUT_DIRS = [
 	"C:/Users/Admin/.gemini/antigravity/brain/69ded610-4c1d-4d3f-8359-693851dbbfd7",
 	"C:/Users/Admin/.gemini/antigravity/brain/597374ff-ac94-40b8-8848-ea236f205038",
 	"C:/Users/Admin/.gemini/antigravity/brain/dff68eac-163e-4466-ad77-bb5c3a4c69cb",
+	"C:/Users/Admin/.gemini/antigravity/brain/f1d0a24f-0935-4ab8-8898-8e890e178c76",
 	process.env.BRAIN_DIR,
 ].filter(Boolean);
 
@@ -140,6 +141,15 @@ const MODAL_BUTTON_TEST_IDS = [
 
 	// Wave 5: Domain 4 — Офлайн-хранилище и бэкап базы
 	{ id: "open-offline-vault-modal-btn", altId: "open-backup-vault-modal-btn", name: "offline_backup_vault" },
+
+	// Wave 9: Domain 1 — Финансовый P&L и юнит-экономика клиники
+	{ id: "open-clinical-pnl-hub-modal-btn", altId: "open-clinical-pnl-hub-modal-btn", name: "clinical_pnl_hub" },
+
+	// Wave 9: Domain 2 — Центр аудита безопасности и журнал событий (152-ФЗ)
+	{ id: "open-audit-trail-hub-modal-btn", altId: "open-audit-trail-hub-modal-btn", name: "audit_trail_hub" },
+
+	// Wave 9: Domain 3 — Экспертиза качества медпомощи (ЭКМП 203н)
+	{ id: "open-cmo-quality-audit-modal-btn", altId: "open-cmo-quality-audit-modal-btn", name: "cmo_quality_audit" },
 ];
 
 const VIEWPORTS = [
