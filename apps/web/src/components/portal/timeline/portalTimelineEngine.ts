@@ -14,7 +14,7 @@ import {
 	type PatientPortalVisitItem,
 } from "./portalTimelinePresets";
 
-export interface PortalFinancialSummary {
+export interface PortalTimelineFinancialSummary {
 	readonly totalPlanCostRub: number;
 	readonly totalPaidRub: number;
 	readonly remainingDueRub: number;
@@ -24,6 +24,8 @@ export interface PortalFinancialSummary {
 	readonly totalClientBenefitsRub: number;
 	readonly isFullySettled: boolean;
 }
+
+export type PortalFinancialSummary = PortalTimelineFinancialSummary;
 
 export interface PortalProgressSummary {
 	readonly overallProgressPercent: number;

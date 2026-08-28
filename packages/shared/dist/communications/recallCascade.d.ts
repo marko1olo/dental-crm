@@ -29,7 +29,7 @@ export declare const recallCreateSchema: z.ZodObject<{
     linkedTreatmentCategoryKey: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     patientId: string;
-    reason: "other" | "endodontics" | "surgery" | "hygiene" | "preventive" | "checkup" | "ortho_review" | "implant_review" | "post_op" | "treatment_followup";
+    reason: "other" | "endodontics" | "surgery" | "hygiene" | "preventive" | "post_op" | "checkup" | "ortho_review" | "implant_review" | "treatment_followup";
     dueMonth: string;
     priority: "normal" | "low" | "high";
     dueDate?: string | null | undefined;
@@ -39,7 +39,7 @@ export declare const recallCreateSchema: z.ZodObject<{
     linkedTreatmentCategoryKey?: string | null | undefined;
 }, {
     patientId: string;
-    reason: "other" | "endodontics" | "surgery" | "hygiene" | "preventive" | "checkup" | "ortho_review" | "implant_review" | "post_op" | "treatment_followup";
+    reason: "other" | "endodontics" | "surgery" | "hygiene" | "preventive" | "post_op" | "checkup" | "ortho_review" | "implant_review" | "treatment_followup";
     dueMonth: string;
     dueDate?: string | null | undefined;
     reasonNote?: string | null | undefined;
@@ -57,14 +57,14 @@ export declare const recallUpdateSchema: z.ZodObject<{
     priority: z.ZodOptional<z.ZodEnum<["low", "normal", "high"]>>;
     assignedProfessionalId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    reason?: "other" | "endodontics" | "surgery" | "hygiene" | "preventive" | "checkup" | "ortho_review" | "implant_review" | "post_op" | "treatment_followup" | undefined;
+    reason?: "other" | "endodontics" | "surgery" | "hygiene" | "preventive" | "post_op" | "checkup" | "ortho_review" | "implant_review" | "treatment_followup" | undefined;
     dueMonth?: string | undefined;
     dueDate?: string | null | undefined;
     reasonNote?: string | null | undefined;
     priority?: "normal" | "low" | "high" | undefined;
     assignedProfessionalId?: string | null | undefined;
 }, {
-    reason?: "other" | "endodontics" | "surgery" | "hygiene" | "preventive" | "checkup" | "ortho_review" | "implant_review" | "post_op" | "treatment_followup" | undefined;
+    reason?: "other" | "endodontics" | "surgery" | "hygiene" | "preventive" | "post_op" | "checkup" | "ortho_review" | "implant_review" | "treatment_followup" | undefined;
     dueMonth?: string | undefined;
     dueDate?: string | null | undefined;
     reasonNote?: string | null | undefined;

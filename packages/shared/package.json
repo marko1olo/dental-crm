@@ -31,6 +31,11 @@
 			"import": "./dist/imaging/index.js",
 			"default": "./dist/imaging/index.js"
 		},
+		"./radiology": {
+			"types": "./dist/radiology/index.d.ts",
+			"import": "./dist/radiology/index.js",
+			"default": "./dist/radiology/index.js"
+		},
 		"./hardware": {
 			"types": "./dist/hardware/index.d.ts",
 			"import": "./dist/hardware/index.js",
@@ -70,6 +75,11 @@
 			"types": "./dist/messaging/index.d.ts",
 			"import": "./dist/messaging/index.js",
 			"default": "./dist/messaging/index.js"
+		},
+		"./portal": {
+			"types": "./dist/portal/index.d.ts",
+			"import": "./dist/portal/index.js",
+			"default": "./dist/portal/index.js"
 		}
 	},
 	"scripts": {

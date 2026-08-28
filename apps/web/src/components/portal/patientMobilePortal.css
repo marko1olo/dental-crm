@@ -1,0 +1,1029 @@
+/**
+ * Patient Mobile Portal & Online Booking CSS Stylesheet
+ * (DOMAIN: PORTAL & ONLINE BOOKING PWA / DESKTOP)
+ */
+
+/* Container & Backdrop */
+.patient-portal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	overflow-y: auto;
+}
+
+.patient-portal-modal-window {
+	background: var(--paper, #1e293b);
+	color: var(--ink, #f8fafc);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 1.5rem;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+	width: 100%;
+	max-width: 960px;
+	height: 90vh;
+	max-height: 880px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	position: relative;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smartphone PWA View Mode */
+.patient-portal-modal-window.mode-mobile-pwa {
+	max-width: 410px;
+	height: 840px;
+	border-radius: 2.5rem;
+	border: 6px solid #0f172a;
+	box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--line, rgba(255, 255, 255, 0.1));
+}
+
+/* Top Phone Notch / Dynamic Island */
+.patient-portal-notch {
+	width: 120px;
+	height: 22px;
+	background: #000000;
+	border-radius: 0 0 14px 14px;
+	margin: 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	z-index: 50;
+}
+
+.patient-portal-notch-camera {
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: #111827;
+	border: 1px solid #1f2937;
+}
+
+.patient-portal-notch-speaker {
+	width: 32px;
+	height: 3px;
+	border-radius: 2px;
+	background: #1f2937;
+}
+
+/* ==========================================================================
+   SMS AUTHENTICATION / LOGIN SCREEN
+   ========================================================================== */
+
+.portal-auth-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem 1.5rem;
+	text-align: center;
+	gap: 1.25rem;
+	max-width: 380px;
+	margin: auto;
+}
+
+.portal-auth-logo-badge {
+	width: 4rem;
+	height: 4rem;
+	border-radius: 1.25rem;
+	background: linear-gradient(135deg, #0d9488 0%, #10b981 100%);
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 8px 20px rgba(13, 148, 136, 0.35);
+}
+
+.portal-auth-title {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--ink, #f8fafc);
+	margin-bottom: 0.25rem;
+}
+
+.portal-auth-subtitle {
+	font-size: 0.8rem;
+	color: var(--muted, #94a3b8);
+	line-height: 1.4;
+}
+
+.portal-auth-input-group {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	text-align: left;
+}
+
+.portal-auth-input-label {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--muted, #94a3b8);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.portal-phone-input {
+	width: 100%;
+	min-height: 48px;
+	padding: 0.75rem 1rem;
+	border-radius: 0.85rem;
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.2));
+	color: var(--ink, #f8fafc);
+	font-size: 1.1rem;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	transition: all 0.2s ease;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.portal-phone-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px var(--teal-surface, rgba(13, 148, 136, 0.2));
+}
+
+/* SMS PIN Code 4-Boxes */
+.portal-otp-boxes {
+	display: flex;
+	justify-content: center;
+	gap: 0.5rem;
+	margin: 0.5rem 0;
+}
+
+.portal-otp-digit {
+	width: 52px;
+	height: 56px;
+	border-radius: 0.85rem;
+	background: var(--paper-strong, #0f172a);
+	border: 2px solid var(--line, rgba(204, 251, 241, 0.2));
+	color: var(--ink, #f8fafc);
+	font-size: 1.5rem;
+	font-weight: 900;
+	text-align: center;
+	outline: none;
+	transition: all 0.2s ease;
+}
+
+.portal-otp-digit:focus,
+.portal-otp-digit.filled {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
+}
+
+.portal-sms-timer {
+	font-size: 0.78rem;
+	color: var(--muted, #94a3b8);
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.portal-resend-sms-btn {
+	background: none;
+	border: none;
+	color: var(--teal, #0d9488);
+	font-size: 0.78rem;
+	font-weight: 700;
+	cursor: pointer;
+	text-decoration: underline;
+	padding: 0.25rem;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+}
+
+/* Header & Patient Quick Identity */
+.patient-portal-header {
+	background: var(--paper-strong, #0f172a);
+	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	padding: 1rem 1.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.patient-portal-brand {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.patient-portal-brand-logo {
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 0.75rem;
+	background: linear-gradient(135deg, #0d9488 0%, #10b981 100%);
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 800;
+	box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);
+}
+
+.patient-portal-brand-text h2 {
+	font-size: 0.95rem;
+	font-weight: 800;
+	line-height: 1.2;
+	color: var(--ink, #f8fafc);
+	margin: 0;
+}
+
+.patient-portal-brand-text p {
+	font-size: 0.7rem;
+	color: var(--muted, #94a3b8);
+	margin: 0;
+}
+
+/* Patient Identity Ribbon */
+.patient-identity-ribbon {
+	background: var(--paper-soft, #1e293b);
+	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.1));
+	padding: 0.75rem 1.25rem;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.patient-info-block {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.patient-avatar {
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.15));
+	border: 2px solid var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 0.9rem;
+	overflow: hidden;
+}
+
+.patient-avatar img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.patient-details-name {
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	margin-bottom: 0.15rem;
+}
+
+.patient-details-meta {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.72rem;
+	color: var(--muted, #94a3b8);
+}
+
+.patient-card-badge {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
+	color: var(--teal, #0d9488);
+	padding: 0.15rem 0.45rem;
+	border-radius: 0.35rem;
+	font-family: monospace;
+	font-weight: 700;
+}
+
+.patient-finances-quick {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.quick-balance-chip {
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 0.65rem;
+	padding: 0.4rem 0.65rem;
+	text-align: right;
+}
+
+.quick-balance-label {
+	font-size: 0.65rem;
+	color: var(--muted, #94a3b8);
+	text-transform: uppercase;
+	font-weight: 600;
+}
+
+.quick-balance-val {
+	font-size: 0.85rem;
+	font-weight: 800;
+	color: #10b981;
+}
+
+/* Tabs Navigation Bar */
+.patient-portal-tabs {
+	display: flex;
+	background: var(--paper-strong, #0f172a);
+	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	padding: 0 0.5rem;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.patient-portal-tabs::-webkit-scrollbar {
+	display: none;
+}
+
+.patient-portal-tab-btn {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding: 0.75rem 1rem;
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: var(--muted, #94a3b8);
+	border: none;
+	background: transparent;
+	border-bottom: 2px solid transparent;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.2s ease;
+	min-height: 44px;
+}
+
+.patient-portal-tab-btn:hover {
+	color: var(--ink, #f8fafc);
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.patient-portal-tab-btn.active {
+	color: var(--teal, #0d9488);
+	border-bottom-color: var(--teal, #0d9488);
+	font-weight: 700;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+}
+
+.tab-counter-badge {
+	font-size: 0.65rem;
+	padding: 0.1rem 0.4rem;
+	border-radius: 9999px;
+	background: var(--paper-soft, #334155);
+	color: var(--muted, #94a3b8);
+	font-weight: 700;
+}
+
+.patient-portal-tab-btn.active .tab-counter-badge {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+/* Body Content Area */
+.patient-portal-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1.25rem;
+	background: var(--paper, #1e293b);
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+/* Visits & Protocols Tab */
+.visit-protocol-card {
+	background: var(--paper-soft, #1e293b);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 1rem;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	transition: border-color 0.2s ease;
+}
+
+.visit-protocol-card:hover {
+	border-color: var(--teal, #0d9488);
+}
+
+.visit-protocol-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.visit-date-badge {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--teal, #0d9488);
+}
+
+.visit-diagnosis-badge {
+	background: rgba(14, 165, 233, 0.12);
+	color: #0284c7;
+	border: 1px solid rgba(14, 165, 233, 0.25);
+	border-radius: 0.5rem;
+	padding: 0.25rem 0.55rem;
+	font-size: 0.75rem;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.visit-tooth-tag {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.15));
+	color: var(--teal, #0d9488);
+	font-weight: 800;
+	padding: 0.15rem 0.45rem;
+	border-radius: 0.35rem;
+	font-size: 0.75rem;
+}
+
+.visit-doctor-meta {
+	font-size: 0.78rem;
+	color: var(--muted, #94a3b8);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.visit-protocol-body {
+	font-size: 0.8rem;
+	color: var(--ink, #f8fafc);
+	line-height: 1.5;
+	background: var(--paper-strong, #0f172a);
+	padding: 0.75rem;
+	border-radius: 0.65rem;
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.08));
+}
+
+.post-op-memo-box {
+	background: rgba(245, 158, 11, 0.08);
+	border: 1px solid rgba(245, 158, 11, 0.25);
+	border-radius: 0.75rem;
+	padding: 0.75rem;
+	margin-top: 0.5rem;
+}
+
+.post-op-memo-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: #f59e0b;
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+	margin-bottom: 0.35rem;
+}
+
+.post-op-memo-list {
+	margin: 0;
+	padding-left: 1.2rem;
+	font-size: 0.74rem;
+	color: var(--ink, #f8fafc);
+	line-height: 1.4;
+}
+
+/* ==========================================================================
+   TREATMENT PLAN & FDI TEETH STAGES
+   ========================================================================== */
+
+.treatment-plan-hero {
+	background: linear-gradient(135deg, var(--paper-strong, #0f172a) 0%, var(--paper-soft, #1e293b) 100%);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.18));
+	border-radius: 1.25rem;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.plan-progress-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.plan-progress-bar-bg {
+	width: 100%;
+	height: 10px;
+	border-radius: 9999px;
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.1));
+	overflow: hidden;
+}
+
+.plan-progress-bar-fill {
+	height: 100%;
+	background: linear-gradient(90deg, #0d9488 0%, #10b981 100%);
+	border-radius: 9999px;
+	transition: width 0.4s ease;
+}
+
+.plan-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 0.75rem;
+	text-align: center;
+}
+
+.plan-metric-box {
+	background: var(--paper-strong, #0f172a);
+	padding: 0.5rem;
+	border-radius: 0.75rem;
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.1));
+}
+
+.plan-metric-box-label {
+	font-size: 0.65rem;
+	color: var(--muted, #94a3b8);
+	text-transform: uppercase;
+	font-weight: 700;
+}
+
+.plan-metric-box-val {
+	font-size: 1rem;
+	font-weight: 900;
+	color: var(--ink, #f8fafc);
+	margin-top: 0.15rem;
+}
+
+.plan-teeth-chips-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	align-items: center;
+}
+
+.plan-tooth-chip {
+	padding: 0.25rem 0.55rem;
+	border-radius: 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.plan-tooth-chip.completed {
+	background: rgba(16, 185, 129, 0.15);
+	color: #10b981;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.plan-tooth-chip.in_progress {
+	background: rgba(14, 165, 233, 0.15);
+	color: #0284c7;
+	border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.plan-tooth-chip.planned {
+	background: rgba(245, 158, 11, 0.15);
+	color: #f59e0b;
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Treatment Plan Stage Item */
+.plan-stage-card {
+	background: var(--paper-soft, #1e293b);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 1rem;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	transition: all 0.2s ease;
+}
+
+.plan-stage-card.completed {
+	border-left: 4px solid #10b981;
+}
+
+.plan-stage-card.in_progress {
+	border-left: 4px solid #0ea5e9;
+}
+
+.plan-stage-card.planned {
+	border-left: 4px solid #f59e0b;
+}
+
+.plan-stage-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.stage-status-badge {
+	font-size: 0.7rem;
+	font-weight: 800;
+	padding: 0.2rem 0.5rem;
+	border-radius: 9999px;
+	text-transform: uppercase;
+}
+
+.stage-status-badge.completed {
+	background: rgba(16, 185, 129, 0.15);
+	color: #10b981;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.stage-status-badge.in_progress {
+	background: rgba(14, 165, 233, 0.15);
+	color: #38bdf8;
+	border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.stage-status-badge.planned {
+	background: rgba(245, 158, 11, 0.15);
+	color: #fbbf24;
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.stage-procedures-list {
+	background: var(--paper-strong, #0f172a);
+	border-radius: 0.75rem;
+	padding: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	font-size: 0.75rem;
+}
+
+.stage-proc-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding-bottom: 0.35rem;
+	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.06));
+}
+
+.stage-proc-row:last-child {
+	border-bottom: none;
+	padding-bottom: 0;
+}
+
+/* Radiology Gallery */
+.radiology-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 1rem;
+}
+
+.radiology-card {
+	background: var(--paper-soft, #1e293b);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 1rem;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.radiology-card:hover {
+	transform: translateY(-2px);
+	border-color: var(--teal, #0d9488);
+}
+
+.radiology-thumb-container {
+	position: relative;
+	width: 100%;
+	height: 150px;
+	background: #000000;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.radiology-thumb-container img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.3s ease;
+}
+
+.radiology-thumb-container:hover img {
+	transform: scale(1.05);
+}
+
+.radiology-dose-tag {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	background: rgba(0, 0, 0, 0.75);
+	backdrop-filter: blur(4px);
+	color: #38bdf8;
+	font-size: 0.65rem;
+	font-weight: 700;
+	padding: 0.2rem 0.45rem;
+	border-radius: 0.35rem;
+	border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.radiology-card-body {
+	padding: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	flex: 1;
+}
+
+.radiology-card-title {
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	line-height: 1.3;
+}
+
+.radiology-card-conclusion {
+	font-size: 0.72rem;
+	color: var(--muted, #94a3b8);
+	line-height: 1.4;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+/* Finances & 54-FZ Tab */
+.finances-summary-hero {
+	background: linear-gradient(135deg, var(--paper-strong, #0f172a) 0%, var(--paper-soft, #1e293b) 100%);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.18));
+	border-radius: 1.25rem;
+	padding: 1.25rem;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 1rem;
+}
+
+.fin-metric-item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.fin-metric-label {
+	font-size: 0.7rem;
+	color: var(--muted, #94a3b8);
+	text-transform: uppercase;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+}
+
+.fin-metric-val {
+	font-size: 1.35rem;
+	font-weight: 900;
+	color: var(--ink, #f8fafc);
+}
+
+.fin-metric-val.deposit {
+	color: #10b981;
+}
+
+.fin-metric-val.unpaid {
+	color: #f43f5e;
+}
+
+.fin-metric-val.bonus {
+	color: #f59e0b;
+}
+
+.invoice-item-card {
+	background: var(--paper-soft, #1e293b);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 1rem;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.invoice-item-card.unpaid {
+	border-color: rgba(244, 63, 94, 0.4);
+	background: rgba(244, 63, 94, 0.03);
+}
+
+/* Fiscal Receipt 54-FZ Thermal Paper Preview */
+.fiscal-receipt-thermal {
+	background: #ffffff;
+	color: #0f172a;
+	border-radius: 0.75rem;
+	padding: 1.25rem;
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 0.75rem;
+	line-height: 1.4;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+	border: 1px dashed #cbd5e1;
+	position: relative;
+	max-width: 320px;
+	margin: 0 auto;
+}
+
+.fiscal-receipt-header {
+	text-align: center;
+	border-bottom: 1px dashed #64748b;
+	padding-bottom: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.fiscal-receipt-qr {
+	display: flex;
+	justify-content: center;
+	margin: 0.75rem 0;
+}
+
+/* Online Booking Stepper */
+.booking-stepper-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: var(--paper-strong, #0f172a);
+	padding: 0.75rem 1.25rem;
+	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	overflow-x: auto;
+}
+
+.booking-step-node {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--muted, #94a3b8);
+	opacity: 0.7;
+}
+
+.booking-step-node.active {
+	color: var(--teal, #0d9488);
+	opacity: 1;
+}
+
+.booking-step-node.completed {
+	color: #10b981;
+	opacity: 1;
+}
+
+.booking-step-circle {
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 50%;
+	background: var(--paper-soft, #334155);
+	color: var(--ink, #f8fafc);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.7rem;
+	font-weight: 800;
+}
+
+.booking-step-node.active .booking-step-circle {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 0 10px var(--teal, #0d9488);
+}
+
+.booking-step-node.completed .booking-step-circle {
+	background: #10b981;
+	color: #ffffff;
+}
+
+/* Time Slots Grid */
+.time-slots-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.time-slot-period-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--muted, #94a3b8);
+	text-transform: uppercase;
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.time-slots-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+	gap: 0.5rem;
+}
+
+.time-slot-btn {
+	min-height: 44px;
+	padding: 0.5rem;
+	border-radius: 0.65rem;
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	background: var(--paper-soft, #1e293b);
+	color: var(--ink, #f8fafc);
+	font-size: 0.85rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+}
+
+.time-slot-btn:hover:not(:disabled) {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.15));
+	color: var(--teal, #0d9488);
+}
+
+.time-slot-btn.selected {
+	background: var(--teal-fill, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+}
+
+.time-slot-btn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+	text-decoration: line-through;
+}
+
+/* SBP 1-Click Payment Container */
+.sbp-payment-card {
+	background: var(--paper-soft, #1e293b);
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.2));
+	border-radius: 1.25rem;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 1rem;
+}
+
+.sbp-logo-badge {
+	background: #ffffff;
+	border-radius: 0.5rem;
+	padding: 0.25rem 0.65rem;
+	color: #1e3a8a;
+	font-weight: 900;
+	font-size: 0.8rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+/* Bottom Safe Area / PWA Home Bar */
+.patient-portal-home-bar {
+	width: 130px;
+	height: 4px;
+	border-radius: 9999px;
+	background: var(--muted, #64748b);
+	opacity: 0.5;
+	margin: 0.5rem auto;
+}
+
+/* Mobile Screen Overrides */
+@media (max-width: 640px) {
+	.patient-portal-overlay {
+		padding: 0;
+	}
+
+	.patient-portal-modal-window,
+	.patient-portal-modal-window.mode-mobile-pwa {
+		max-width: 100%;
+		height: 100dvh;
+		max-height: 100dvh;
+		border-radius: 0;
+		border: none;
+	}
+
+	.patient-portal-notch {
+		display: none;
+	}
+
+	.radiology-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.finances-summary-hero {
+		grid-template-columns: 1fr 1fr;
+	}
+}

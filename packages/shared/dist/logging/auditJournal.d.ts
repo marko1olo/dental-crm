@@ -31,7 +31,7 @@ export declare const activityJournalEntrySchema: z.ZodObject<{
     organizationId: string;
     eventType: string;
     sourceTable: string;
-    action: "sign" | "create" | "update" | "delete" | "view" | "export" | "auth" | "state_change";
+    action: "sign" | "create" | "update" | "delete" | "export" | "view" | "auth" | "state_change";
     payload: Record<string, unknown>;
     scope: "financial" | "clinical" | "schedule" | "radiology_3d" | "security" | "system" | "inventory";
     id?: string | undefined;
@@ -48,7 +48,7 @@ export declare const activityJournalEntrySchema: z.ZodObject<{
     organizationId: string;
     eventType: string;
     sourceTable: string;
-    action: "sign" | "create" | "update" | "delete" | "view" | "export" | "auth" | "state_change";
+    action: "sign" | "create" | "update" | "delete" | "export" | "view" | "auth" | "state_change";
     scope: "financial" | "clinical" | "schedule" | "radiology_3d" | "security" | "system" | "inventory";
     id?: string | undefined;
     patientId?: string | null | undefined;

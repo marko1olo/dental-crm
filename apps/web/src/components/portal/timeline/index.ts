@@ -4,7 +4,18 @@
  */
 
 export * from "./portalTimelinePresets";
-export * from "./portalTimelineEngine";
+export {
+	calculateFinancialLedger,
+	calculatePortalProgress,
+	generateTaxCertificateRequest,
+	aggregateToothStatuses,
+	filterTimelineEvents,
+	type PortalTimelineFinancialSummary,
+	type PortalProgressSummary,
+	type PortalTaxCertificateRequest,
+	type ToothGroupCount,
+	type PortalToothAggregation,
+} from "./portalTimelineEngine";
 export {
 	PatientPortalTimelineModal,
 	type PatientPortalTimelineModalProps,

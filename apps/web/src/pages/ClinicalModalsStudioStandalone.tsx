@@ -22,6 +22,7 @@ import {
 	FileText,
 	Flame,
 	FlaskConical,
+	FolderSync,
 	Gauge,
 	HeartPulse,
 	KeyRound,
@@ -69,6 +70,8 @@ import {
 	CbctMprImplantStudioModal,
 	CbctMpr3DStudioModal,
 	ImplantCrossSectionPlanner,
+	HotFolderIntakeModal,
+	DirectRvgCaptureModal,
 	SAMPLE_PATIENT_RVG_URL,
 	type RadiologyStudy,
 } from "../components/radiology";
@@ -116,7 +119,7 @@ import { FnsNdflXmlModal } from "../components/documents/ndflXml/index";
 import { FnsTaxDeductionModal } from "../components/billing/tax/FnsTaxDeductionModal";
 import { TreatmentPlanPriceValidatorModal } from "../components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal";
-import { PatientPortalModal } from "../components/portal/PatientPortalModal";
+import { PatientPortalModal, PatientMobilePortalModal, PatientOnlineBookingModal } from "../components/portal";
 import { PatientWebappPortalModal } from "../components/patient-portal/PatientWebappPortalModal";
 import { EgiszRemdHubModal } from "../components/egisz/EgiszRemdHubModal";
 import { EgiszCdaExportModal } from "../components/egisz/EgiszCdaExportModal";
@@ -576,6 +579,10 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isEgiszSigningOpen, setIsEgiszSigningOpen] = useState(false);
 	const [isOmnichannelHubOpen, setIsOmnichannelHubOpen] = useState(false);
 	const [isSbpPaymentQrOpen, setIsSbpPaymentQrOpen] = useState(false);
+	const [isHotFolderIntakeOpen, setIsHotFolderIntakeOpen] = useState(false);
+	const [isDirectRvgCaptureOpen, setIsDirectRvgCaptureOpen] = useState(false);
+	const [isPatientMobilePortalOpen, setIsPatientMobilePortalOpen] = useState(false);
+	const [isPatientOnlineBookingOpen, setIsPatientOnlineBookingOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -701,7 +708,23 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsEgiszSigningOpen(false);
 					setIsOmnichannelHubOpen(false);
 					setIsSbpPaymentQrOpen(false);
+					setIsHotFolderIntakeOpen(false);
+					setIsDirectRvgCaptureOpen(false);
+					setIsPatientMobilePortalOpen(false);
+					setIsPatientOnlineBookingOpen(false);
 
+					if (requestedModal === "hotfolder_intake" || requestedModal === "hot_folder" || requestedModal === "xray_intake" || requestedModal === "hotfolder" || requestedModal === "ezdent" || requestedModal === "romexis") {
+						setIsHotFolderIntakeOpen(true);
+					}
+					if (requestedModal === "direct_rvg" || requestedModal === "rvg_capture" || requestedModal === "direct_rvg_capture" || requestedModal === "rvg_direct" || requestedModal === "rvg_modal") {
+						setIsDirectRvgCaptureOpen(true);
+					}
+					if (requestedModal === "mobile_portal" || requestedModal === "patient_mobile_portal" || requestedModal === "pwa_portal" || requestedModal === "mobile_patient_portal" || requestedModal === "patient_mobile_modal" || requestedModal === "patient_portal") {
+						setIsPatientMobilePortalOpen(true);
+					}
+					if (requestedModal === "online_booking" || requestedModal === "patient_booking" || requestedModal === "booking_modal" || requestedModal === "booking" || requestedModal === "patient_record") {
+						setIsPatientOnlineBookingOpen(true);
+					}
 					if (requestedModal === "egisz_cda_export" || requestedModal === "cda_export" || requestedModal === "egisz_cda" || requestedModal === "cda_modal") {
 						setIsEgiszCdaExportOpen(true);
 					}
@@ -1184,6 +1207,102 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								<span>Медицинская дропзона (без снимка)</span>
 							</button>
 						</div>
+					</div>
+
+					{/* 7b. Hot-Folder Network Intake Modal Trigger (Wave 17) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FolderSync className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Импорт из рентген-папки (Hot-Folder)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Авто-захват снимков из сетевой папки EzDent-i, Romexis, Sidexis, привязка к формуле FDI (11–48) и протоколу ф. 043/у.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsHotFolderIntakeOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+							data-testid="open-hotfolder-intake-modal-btn"
+						>
+							<FolderSync size={15} />
+							<span>Открыть Hot-Folder импорт</span>
+						</button>
+					</div>
+
+					{/* 7b. Direct RVG Capture Modal (Wave 17 / Sensor Capture) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Camera className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Прямой захват RVG (Визиограф)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Захват со стоматологического визиографа (Vatech, KaVo, Planmeca), 16-бит фильтры CLAHE, резкость, инверсия и 1-клик привязка к зубу.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsDirectRvgCaptureOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+							data-testid="open-direct-rvg-modal-btn"
+						>
+							<Camera size={15} />
+							<span>Открыть RVG визиограф</span>
+						</button>
+					</div>
+
+					{/* 7c. Patient Mobile Portal PWA Modal (Wave 18 / Patient Cabinet) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Tablet className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Мобильный PWA-кабинет пациента
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Личный кабинет пациента со СМС-авторизацией 63-ФЗ: протоколы приемов 043/у, снимки зубов, чеки 54-ФЗ, оплата СБП и справка для ФНС.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPatientMobilePortalOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+							data-testid="open-patient-mobile-portal-modal-btn"
+						>
+							<Tablet size={15} />
+							<span>Открыть PWA-кабинет</span>
+						</button>
+					</div>
+
+					{/* 7d. Patient Online Booking Modal (Wave 18 / Online Booking Flow) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Calendar className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Онлайн-запись на прием
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								3-шаговый мобильный флоу бронирования: выбор врача и услуги 804н, сетка слотов, согласие 152-ФЗ, СМС-код и талон .ics.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPatientOnlineBookingOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+							data-testid="open-patient-online-booking-modal-btn"
+						>
+							<Calendar size={15} />
+							<span>Записаться онлайн</span>
+						</button>
 					</div>
 
 					{/* 8. Doctor & Staff Piece-Rate Payroll Trigger (Wave 11 / Task 35) */}
@@ -4180,6 +4299,57 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						purpose: "Оплата стоматологических услуг (ООО «ДЕНТЕ»)",
 						clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
 						totalInvoiceRub: 14500,
+					}}
+				/>
+			)}
+
+			{isHotFolderIntakeOpen && (
+				<HotFolderIntakeModal
+					isOpen={isHotFolderIntakeOpen}
+					onClose={() => setIsHotFolderIntakeOpen(false)}
+					patientId="PAT-001"
+					patientName={SAMPLE_PATIENT.fullName}
+					patientCardNumber={SAMPLE_PATIENT.cardNumber}
+					patientBirthDate={SAMPLE_PATIENT.birthDate}
+					doctorName="Д-р Смирнов Алексей Петрович"
+					onAttachToEmr={({ teethFdi }) => {
+						showToast(`Снимок зубов ${teethFdi.join(", ")} прикреплен к карте ${SAMPLE_PATIENT.fullName}`, "success");
+					}}
+				/>
+			)}
+
+			{isDirectRvgCaptureOpen && (
+				<DirectRvgCaptureModal
+					isOpen={isDirectRvgCaptureOpen}
+					onClose={() => setIsDirectRvgCaptureOpen(false)}
+					patientId="PAT-001"
+					patientName={SAMPLE_PATIENT.fullName}
+					patientCardNumber={SAMPLE_PATIENT.cardNumber}
+					doctorName="Д-р Смирнов Алексей Петрович"
+					initialToothFdi="16"
+					onSaveToEmr={(study) => {
+						showToast(`RVG снимок зуба ${study.teethFdi.join(", ")} сохранен в карту ${SAMPLE_PATIENT.fullName}`, "success");
+					}}
+				/>
+			)}
+
+			{isPatientMobilePortalOpen && (
+				<PatientMobilePortalModal
+					isOpen={isPatientMobilePortalOpen}
+					onClose={() => setIsPatientMobilePortalOpen(false)}
+					onBookOnlineClick={() => {
+						setIsPatientMobilePortalOpen(false);
+						setIsPatientOnlineBookingOpen(true);
+					}}
+				/>
+			)}
+
+			{isPatientOnlineBookingOpen && (
+				<PatientOnlineBookingModal
+					isOpen={isPatientOnlineBookingOpen}
+					onClose={() => setIsPatientOnlineBookingOpen(false)}
+					onBookingComplete={(booking) => {
+						showToast(`Запись подтверждена: ${booking.patientFullName} на ${booking.dateIso} в ${booking.timeRu}`, "success");
 					}}
 				/>
 			)}

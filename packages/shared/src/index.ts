@@ -15,6 +15,7 @@ export * from "./emr/index.js";
 export * from "./sync/index.js";
 export * from "./finance/index.js";
 export * from "./imaging/index.js";
+export * from "./radiology/index.js";
 export * from "./cda/index.js";
 export * from "./egisz/index.js";
 export * from "./logging/index.js";
@@ -32,6 +33,8 @@ export * from "./marketing/index.js";
 export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
 export * from "./messaging/index.js";
+export * from "./portal/index.js";
+export { validateRussianSnils } from "./fiscal/index.js";
 export {
 	calculateEmployeeTimesheetT13,
 	aggregateTimesheetDays,

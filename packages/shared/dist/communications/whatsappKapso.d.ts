@@ -184,10 +184,10 @@ export declare const whatsappInteractiveButtonMessageSchema: z.ZodObject<{
             type: z.ZodEnum<["text", "image", "document", "video"]>;
             text: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            type: "text" | "image" | "document" | "video";
+            type: "image" | "text" | "document" | "video";
             text?: string | undefined;
         }, {
-            type: "text" | "image" | "document" | "video";
+            type: "image" | "text" | "document" | "video";
             text?: string | undefined;
         }>>;
         body: z.ZodObject<{
@@ -262,7 +262,7 @@ export declare const whatsappInteractiveButtonMessageSchema: z.ZodObject<{
             text: string;
         };
         header?: {
-            type: "text" | "image" | "document" | "video";
+            type: "image" | "text" | "document" | "video";
             text?: string | undefined;
         } | undefined;
         footer?: {
@@ -283,7 +283,7 @@ export declare const whatsappInteractiveButtonMessageSchema: z.ZodObject<{
             text: string;
         };
         header?: {
-            type: "text" | "image" | "document" | "video";
+            type: "image" | "text" | "document" | "video";
             text?: string | undefined;
         } | undefined;
         footer?: {
@@ -310,7 +310,7 @@ export declare const whatsappInteractiveButtonMessageSchema: z.ZodObject<{
             text: string;
         };
         header?: {
-            type: "text" | "image" | "document" | "video";
+            type: "image" | "text" | "document" | "video";
             text?: string | undefined;
         } | undefined;
         footer?: {
@@ -334,7 +334,7 @@ export declare const whatsappInteractiveButtonMessageSchema: z.ZodObject<{
             text: string;
         };
         header?: {
-            type: "text" | "image" | "document" | "video";
+            type: "image" | "text" | "document" | "video";
             text?: string | undefined;
         } | undefined;
         footer?: {

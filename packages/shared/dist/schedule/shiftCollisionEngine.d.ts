@@ -49,8 +49,8 @@ export declare const scheduledAppointmentSchema: z.ZodObject<{
     isEmergency: boolean;
     notes?: string | null | undefined;
     patientFullName?: string | undefined;
-    cabinetId?: string | null | undefined;
     cabinetName?: string | undefined;
+    cabinetId?: string | null | undefined;
 }, {
     status: "completed" | "scheduled" | "confirmed" | "cancelled" | "planned" | "in_treatment" | "no_show" | "checked_in";
     id: string;
@@ -61,8 +61,8 @@ export declare const scheduledAppointmentSchema: z.ZodObject<{
     endTime: string;
     notes?: string | null | undefined;
     patientFullName?: string | undefined;
-    cabinetId?: string | null | undefined;
     cabinetName?: string | undefined;
+    cabinetId?: string | null | undefined;
     isEmergency?: boolean | undefined;
 }>;
 export type ScheduledAppointment = z.input<typeof scheduledAppointmentSchema>;

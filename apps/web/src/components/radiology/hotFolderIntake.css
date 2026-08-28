@@ -1,0 +1,892 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * HOT-FOLDER INTAKE & NETWORK RADIOLOGY IMPORT MODAL CSS
+ * DENTE Design Tokens · Dark Radiologist Canvas · FDI Tooth Formula
+ * Medical Density · Touch-Targets >= 44px · WCAG 4.5:1 Contrast
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+/* ─── MODAL OVERLAY & SHELL ───────────────────────────────────────────────── */
+
+.hfi-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1050;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.88);
+	backdrop-filter: blur(10px);
+	padding: 0.75rem;
+	animation: hfiFadeIn 0.2s ease-out;
+}
+
+@keyframes hfiFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.985);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.hfi-modal-shell {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 1440px;
+	height: 95vh;
+	max-height: 980px;
+	background: var(--paper-strong, #0f172a);
+	color: var(--ink, #f8fafc);
+	border: 1px solid var(--line, #334155);
+	border-radius: 1.25rem;
+	box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
+	overflow: hidden;
+	font-family: inherit;
+}
+
+/* ─── TOP BAR & HEADER ────────────────────────────────────────────────────── */
+
+.hfi-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1.25rem;
+	background: var(--paper, #1e293b);
+	border-bottom: 1px solid var(--line, #334155);
+	gap: 1rem;
+	flex-shrink: 0;
+}
+
+.hfi-header-left {
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+	min-width: 0;
+}
+
+.hfi-header-icon-box {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 0.875rem;
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.25), rgba(16, 185, 129, 0.2));
+	color: var(--teal, #14b8a6);
+	border: 1px solid rgba(20, 184, 166, 0.35);
+	flex-shrink: 0;
+	box-shadow: 0 2px 8px rgba(20, 184, 166, 0.15);
+}
+
+.hfi-header-info {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.hfi-header-title-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.hfi-header-title {
+	font-size: 1.0625rem;
+	font-weight: 800;
+	color: var(--ink, #ffffff);
+	margin: 0;
+	line-height: 1.25;
+	letter-spacing: -0.01em;
+}
+
+.hfi-header-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	background: rgba(20, 184, 166, 0.15);
+	color: var(--teal, #14b8a6);
+	border: 1px solid rgba(20, 184, 166, 0.3);
+}
+
+.hfi-header-subtitle {
+	font-size: 0.75rem;
+	color: var(--muted, #94a3b8);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hfi-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	flex-shrink: 0;
+}
+
+.hfi-close-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	min-height: 38px;
+	border-radius: 0.625rem;
+	background: transparent;
+	border: 1px solid var(--line, #334155);
+	color: var(--muted, #94a3b8);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.hfi-close-btn:hover {
+	background: rgba(239, 68, 68, 0.15);
+	color: #ef4444;
+	border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* ─── MAIN 3-PANEL LAYOUT ─────────────────────────────────────────────────── */
+
+.hfi-modal-body {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	background: var(--paper-strong, #0f172a);
+	overflow: hidden;
+}
+
+/* ─── LEFT PANEL: HOT-FOLDER INBOX & DROPZONE ─────────────────────────────── */
+
+.hfi-left-panel {
+	width: 340px;
+	min-width: 300px;
+	max-width: 360px;
+	background: var(--paper, #1e293b);
+	border-right: 1px solid var(--line, #334155);
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	overflow: hidden;
+}
+
+.hfi-left-header {
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--line, #334155);
+	background: var(--paper-soft, rgba(30, 41, 59, 0.7));
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	flex-shrink: 0;
+}
+
+.hfi-folder-status-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.75rem;
+}
+
+.hfi-folder-status-indicator {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-weight: 600;
+	color: #10b981;
+}
+
+.hfi-status-pulse-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #10b981;
+	box-shadow: 0 0 8px #10b981;
+	animation: hfiPulse 1.8s infinite;
+}
+
+@keyframes hfiPulse {
+	0%, 100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.5;
+		transform: scale(0.85);
+	}
+}
+
+.hfi-rescan-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.375rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	background: var(--paper, #1e293b);
+	border: 1px solid var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.hfi-rescan-btn:hover {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--teal, #14b8a6);
+	color: var(--teal, #14b8a6);
+}
+
+.hfi-source-filter-select {
+	width: 100%;
+	padding: 0.375rem 0.625rem;
+	border-radius: 0.5rem;
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	font-size: 0.75rem;
+	outline: none;
+	cursor: pointer;
+	transition: border-color 0.15s ease;
+}
+
+.hfi-source-filter-select:focus {
+	border-color: var(--teal, #14b8a6);
+}
+
+.hfi-files-list {
+	flex: 1;
+	overflow-y: auto;
+	padding: 0.625rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.hfi-file-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+	padding: 0.625rem 0.75rem;
+	border-radius: 0.75rem;
+	background: var(--paper-soft, rgba(15, 23, 42, 0.6));
+	border: 1px solid var(--line, #334155);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	position: relative;
+	text-align: left;
+	width: 100%;
+}
+
+.hfi-file-card:hover {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--teal, #14b8a6);
+	transform: translateY(-1px);
+}
+
+.hfi-file-card.active {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: var(--teal, #14b8a6);
+	box-shadow: 0 0 0 1px var(--teal, #14b8a6), 0 4px 12px rgba(20, 184, 166, 0.15);
+}
+
+.hfi-file-card-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.hfi-file-modality-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.25rem;
+	font-size: 0.625rem;
+	font-weight: 700;
+	background: rgba(20, 184, 166, 0.2);
+	color: var(--teal, #14b8a6);
+	border: 1px solid rgba(20, 184, 166, 0.3);
+}
+
+.hfi-file-status-badge {
+	font-size: 0.625rem;
+	font-weight: 700;
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.25rem;
+}
+
+.hfi-file-status-badge.new {
+	background: rgba(16, 185, 129, 0.2);
+	color: #10b981;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.hfi-file-status-badge.imported {
+	background: rgba(148, 163, 184, 0.2);
+	color: #94a3b8;
+	border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.hfi-file-name {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--ink, #ffffff);
+	margin: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-height: 1.3;
+}
+
+.hfi-file-meta-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.6875rem;
+	color: var(--muted, #94a3b8);
+}
+
+.hfi-file-teeth-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-weight: 700;
+	color: #38bdf8;
+}
+
+.hfi-left-dropzone {
+	padding: 0.75rem;
+	border-top: 1px solid var(--line, #334155);
+	background: var(--paper-soft, rgba(30, 41, 59, 0.5));
+	flex-shrink: 0;
+}
+
+.hfi-dropzone-box {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 0.875rem 0.5rem;
+	border: 1.5px dashed var(--line, #334155);
+	border-radius: 0.75rem;
+	background: var(--paper-strong, #0f172a);
+	color: var(--muted, #94a3b8);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	text-align: center;
+	gap: 0.375rem;
+}
+
+.hfi-dropzone-box:hover,
+.hfi-dropzone-box.dragover {
+	border-color: var(--teal, #14b8a6);
+	background: rgba(20, 184, 166, 0.08);
+	color: var(--ink, #ffffff);
+}
+
+.hfi-dropzone-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--ink, #ffffff);
+	margin: 0;
+}
+
+.hfi-dropzone-sub {
+	font-size: 0.625rem;
+	color: var(--muted, #94a3b8);
+	margin: 0;
+}
+
+/* ─── CENTER PANEL: DARK RADIOLOGIST CANVAS & CONTROLS ────────────────────── */
+
+.hfi-center-panel {
+	flex: 1;
+	min-width: 0;
+	background: #000000;
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	overflow: hidden;
+}
+
+.hfi-canvas-top-hud {
+	position: absolute;
+	top: 0.75rem;
+	left: 0.75rem;
+	right: 0.75rem;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	pointer-events: none;
+}
+
+.hfi-hud-chip {
+	pointer-events: auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.3125rem 0.625rem;
+	border-radius: 0.5rem;
+	background: rgba(15, 23, 42, 0.85);
+	border: 1px solid rgba(51, 65, 85, 0.8);
+	backdrop-filter: blur(8px);
+	font-size: 0.6875rem;
+	color: #e2e8f0;
+	font-family: monospace;
+}
+
+.hfi-viewport-area {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	overflow: hidden;
+	cursor: grab;
+	background:
+		radial-gradient(circle at center, rgba(30, 41, 59, 0.25) 0%, #000000 100%),
+		repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255, 255, 255, 0.02) 40px),
+		repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255, 255, 255, 0.02) 40px);
+}
+
+.hfi-viewport-area:active {
+	cursor: grabbing;
+}
+
+.hfi-image-stage {
+	position: relative;
+	display: inline-block;
+	max-width: 90%;
+	max-height: 85%;
+	transition: transform 0.05s ease-out;
+	user-select: none;
+}
+
+.hfi-radiology-image {
+	display: block;
+	max-width: 100%;
+	max-height: 72vh;
+	object-fit: contain;
+	border-radius: 0.375rem;
+	box-shadow: 0 0 30px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.1);
+	pointer-events: none;
+}
+
+/* ─── BOTTOM FLOATING TOOLBAR DOCK ────────────────────────────────────────── */
+
+.hfi-bottom-dock {
+	position: absolute;
+	bottom: 0.75rem;
+	left: 0.75rem;
+	right: 0.75rem;
+	z-index: 20;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	align-items: center;
+	pointer-events: none;
+}
+
+.hfi-dock-pill {
+	pointer-events: auto;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.5rem 0.875rem;
+	background: rgba(15, 23, 42, 0.9);
+	border: 1px solid rgba(51, 65, 85, 0.9);
+	backdrop-filter: blur(12px);
+	border-radius: 0.875rem;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.hfi-slider-group {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.6875rem;
+	color: #94a3b8;
+}
+
+.hfi-slider-label {
+	font-weight: 700;
+	color: #e2e8f0;
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	white-space: nowrap;
+}
+
+.hfi-dock-slider {
+	width: 80px;
+	height: 4px;
+	accent-color: var(--teal, #14b8a6);
+	cursor: pointer;
+}
+
+.hfi-dock-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 0.5rem;
+	border-radius: 0.5rem;
+	background: var(--paper, #1e293b);
+	border: 1px solid var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.hfi-dock-btn:hover {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--teal, #14b8a6);
+	color: var(--teal, #14b8a6);
+}
+
+.hfi-dock-btn.active {
+	background: rgba(20, 184, 166, 0.25);
+	border-color: var(--teal, #14b8a6);
+	color: var(--teal, #14b8a6);
+	box-shadow: 0 0 0 1px var(--teal, #14b8a6);
+}
+
+.hfi-presets-strip {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+.hfi-preset-chip {
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.375rem;
+	font-size: 0.625rem;
+	font-weight: 700;
+	background: rgba(30, 41, 59, 0.8);
+	border: 1px solid rgba(51, 65, 85, 0.8);
+	color: #94a3b8;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.hfi-preset-chip:hover {
+	color: #ffffff;
+	border-color: var(--teal, #14b8a6);
+}
+
+.hfi-preset-chip.active {
+	background: rgba(20, 184, 166, 0.2);
+	border-color: var(--teal, #14b8a6);
+	color: var(--teal, #14b8a6);
+}
+
+/* ─── RIGHT PANEL: FDI FORMULA & 043/У BINDING ────────────────────────────── */
+
+.hfi-right-panel {
+	width: 400px;
+	min-width: 350px;
+	max-width: 440px;
+	background: var(--paper, #1e293b);
+	border-left: 1px solid var(--line, #334155);
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	overflow-y: auto;
+}
+
+.hfi-right-content {
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	flex: 1;
+}
+
+.hfi-section-title {
+	font-size: 0.8125rem;
+	font-weight: 800;
+	color: var(--ink, #ffffff);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+/* FDI Formula Grid */
+.hfi-fdi-box {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 0.75rem;
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, #334155);
+	border-radius: 0.875rem;
+}
+
+.hfi-fdi-quick-presets {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+}
+
+.hfi-fdi-quick-chip {
+	padding: 0.2rem 0.4rem;
+	border-radius: 0.375rem;
+	font-size: 0.625rem;
+	font-weight: 600;
+	background: var(--paper, #1e293b);
+	border: 1px solid var(--line, #334155);
+	color: var(--muted, #94a3b8);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.hfi-fdi-quick-chip:hover {
+	color: var(--ink, #ffffff);
+	border-color: var(--teal, #14b8a6);
+}
+
+.hfi-fdi-grid-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.hfi-fdi-arch-row {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+}
+
+.hfi-fdi-divider {
+	height: 1px;
+	background: var(--line, #334155);
+	margin: 0.25rem 0;
+	position: relative;
+}
+
+.hfi-fdi-divider::before {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: -6px;
+	bottom: -6px;
+	width: 1px;
+	background: var(--line, #334155);
+}
+
+.hfi-tooth-btn {
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.375rem;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	background: var(--paper, #1e293b);
+	border: 1px solid var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	user-select: none;
+}
+
+.hfi-tooth-btn:hover {
+	background: var(--paper-soft, #334155);
+	border-color: var(--teal, #14b8a6);
+}
+
+.hfi-tooth-btn.selected {
+	background: linear-gradient(135deg, var(--teal, #14b8a6), #0d9488);
+	color: #ffffff;
+	border-color: #14b8a6;
+	box-shadow: 0 0 8px rgba(20, 184, 166, 0.4);
+	font-weight: 800;
+}
+
+.hfi-selected-teeth-summary {
+	font-size: 0.6875rem;
+	color: var(--muted, #94a3b8);
+	line-height: 1.4;
+}
+
+/* Modality & Clinical Purpose */
+.hfi-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.hfi-field-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	color: var(--muted, #94a3b8);
+}
+
+.hfi-select-input {
+	width: 100%;
+	padding: 0.5rem 0.625rem;
+	border-radius: 0.5rem;
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	font-size: 0.75rem;
+	outline: none;
+}
+
+.hfi-select-input:focus {
+	border-color: var(--teal, #14b8a6);
+}
+
+/* Protocol Textarea */
+.hfi-protocol-box {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.hfi-protocol-textarea {
+	width: 100%;
+	min-height: 90px;
+	padding: 0.5rem 0.625rem;
+	border-radius: 0.5rem;
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	font-size: 0.6875rem;
+	line-height: 1.4;
+	resize: vertical;
+	outline: none;
+	font-family: inherit;
+}
+
+.hfi-protocol-textarea:focus {
+	border-color: var(--teal, #14b8a6);
+}
+
+/* ─── FOOTER ACTIONS & 1-CLICK ATTACH BUTTON ──────────────────────────────── */
+
+.hfi-right-footer {
+	padding: 1rem;
+	border-top: 1px solid var(--line, #334155);
+	background: var(--paper-soft, rgba(30, 41, 59, 0.7));
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+	flex-shrink: 0;
+}
+
+.hfi-primary-attach-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	width: 100%;
+	min-height: 48px;
+	padding: 0.75rem 1rem;
+	border-radius: 0.75rem;
+	background: linear-gradient(135deg, #10b981 0%, #0d9488 100%);
+	color: #ffffff;
+	border: none;
+	font-size: 0.8125rem;
+	font-weight: 800;
+	cursor: pointer;
+	box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+	transition: all 0.15s ease;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.hfi-primary-attach-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+	filter: brightness(1.05);
+}
+
+.hfi-primary-attach-btn:active {
+	transform: translateY(0);
+}
+
+.hfi-secondary-actions-row {
+	display: grid;
+	grid-template-cols: 1fr 1fr;
+	gap: 0.5rem;
+}
+
+.hfi-secondary-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	min-height: 38px;
+	padding: 0.375rem 0.625rem;
+	border-radius: 0.5rem;
+	background: var(--paper, #1e293b);
+	border: 1px solid var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.hfi-secondary-btn:hover {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--teal, #14b8a6);
+	color: var(--teal, #14b8a6);
+}
+
+/* ─── RESPONSIVE RULES ────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+	.hfi-modal-shell {
+		height: 98vh;
+		max-height: none;
+		border-radius: 0.75rem;
+	}
+
+	.hfi-modal-body {
+		flex-direction: column;
+		overflow-y: auto;
+	}
+
+	.hfi-left-panel,
+	.hfi-right-panel {
+		width: 100%;
+		max-width: none;
+		border-right: none;
+		border-left: none;
+		border-bottom: 1px solid var(--line, #334155);
+	}
+
+	.hfi-center-panel {
+		min-height: 420px;
+	}
+}
