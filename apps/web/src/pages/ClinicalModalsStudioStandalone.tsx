@@ -42,6 +42,7 @@ import {
 	Sun,
 	Tablet,
 	Syringe,
+	TrendingUp,
 	Truck,
 	UploadCloud,
 	User,
@@ -134,6 +135,9 @@ import { StaffCommissionsPanel } from "../components/settings/StaffCommissionsPa
 import { CmoComplianceHub } from "../components/emr/audit/CmoComplianceHub";
 import { Form043PrintModal } from "../components/emr/Form043PrintModal";
 import { OfflineBackupVaultPanel } from "../components/settings/OfflineBackupVaultPanel";
+import { ClinicalPnlHubModal } from "../components/finance/pnl/ClinicalPnlHubModal";
+import { AuditTrailHubModal } from "../components/security";
+import { CmoQualityAuditModal } from "../components/emr/audit/CmoQualityAuditModal";
 import {
 	STANDARD_12_SLOT_PROTOCOL,
 	type PhotoSlotRecord,
@@ -541,6 +545,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isSterilizationJournalModalOpen, setIsSterilizationJournalModalOpen] = useState(false);
 	const [isAnesthesiaSafetyHubOpen, setIsAnesthesiaSafetyHubOpen] = useState(false);
 	const [isCashShiftClosingOpen, setIsCashShiftClosingOpen] = useState(false);
+	const [isClinicalPnlOpen, setIsClinicalPnlOpen] = useState(false);
+	const [isAuditTrailOpen, setIsAuditTrailOpen] = useState(false);
+	const [isCmoQualityAuditOpen, setIsCmoQualityAuditOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -652,6 +659,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsCashShiftClosingOpen(false);
 					setIsLabHubOpen(false);
 					setIsChairsideConsentOpen(false);
+					setIsClinicalPnlOpen(false);
+					setIsAuditTrailOpen(false);
+					setIsCmoQualityAuditOpen(false);
 
 					if (requestedModal === "before_after" || requestedModal === "before_after_slider" || requestedModal === "photo_comparison" || requestedModal === "photography") {
 						setIsBeforeAfterOpen(true);
@@ -770,6 +780,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					}
 					if (requestedModal === "chairside_consent" || requestedModal === "chairside_tablet_consent" || requestedModal === "chairside_tablet_consent_modal") {
 						setIsChairsideConsentOpen(true);
+					}
+					if (requestedModal === "pnl" || requestedModal === "clinical_pnl" || requestedModal === "clinical_pnl_hub" || requestedModal === "clinical_pnl_hub_modal") {
+						setIsClinicalPnlOpen(true);
+					}
+					if (requestedModal === "audit_trail" || requestedModal === "audit" || requestedModal === "security_audit" || requestedModal === "audit_trail_hub" || requestedModal === "audit_trail_hub_modal") {
+						setIsAuditTrailOpen(true);
+					}
+					if (requestedModal === "cmo_quality" || requestedModal === "quality_audit" || requestedModal === "cmo_quality_audit" || requestedModal === "cmo_quality_audit_modal" || requestedModal === "ekmp") {
+						setIsCmoQualityAuditOpen(true);
 					}
 				}
 		};
@@ -2551,6 +2570,78 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть закрытие смены (Z)</span>
 						</button>
 					</div>
+
+					{/* 59. Wave 9: Domain 1 — Clinical P&L Hub & Unit Economics Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<TrendingUp className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Финансовый P&L и юнит-экономика клиники
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Выручка, прямая себестоимость ТМЦ (804н), наряды ЗТЛ, сдельный ФОТ врачей и расчет EBITDA на кресло-час.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsClinicalPnlOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-clinical-pnl-hub-modal-btn"
+						>
+							<TrendingUp size={15} />
+							<span>Открыть P&L клиники</span>
+						</button>
+					</div>
+
+					{/* 60. Wave 9: Domain 2 — Audit Trail & Security Event Log Hub Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Центр аудита безопасности (152-ФЗ)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Неизменяемый реестр обращений к ПДн, подписи УКЭП, кассовые события 54-ФЗ и валидация SHA-256 HMAC.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsAuditTrailOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-audit-trail-hub-modal-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>Открыть журнал аудита</span>
+						</button>
+					</div>
+
+					{/* 61. Wave 9: Domain 3 — CMO Quality & Clinical Audit Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Award className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Экспертиза качества медпомощи (ЭКМП 203н)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Контроль ведения карт 043/у, клинические дефекты, чек-лист Приказа 203н и протокол врачебной комиссии ВК.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsCmoQualityAuditOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-cmo-quality-audit-modal-btn"
+						>
+							<Award size={15} />
+							<span>Открыть экспертизу ЭКМП</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -3558,6 +3649,27 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<CashShiftClosingModal
 					isOpen={isCashShiftClosingOpen}
 					onClose={() => setIsCashShiftClosingOpen(false)}
+				/>
+			)}
+
+			{isClinicalPnlOpen && (
+				<ClinicalPnlHubModal
+					isOpen={isClinicalPnlOpen}
+					onClose={() => setIsClinicalPnlOpen(false)}
+				/>
+			)}
+
+			{isAuditTrailOpen && (
+				<AuditTrailHubModal
+					isOpen={isAuditTrailOpen}
+					onClose={() => setIsAuditTrailOpen(false)}
+				/>
+			)}
+
+			{isCmoQualityAuditOpen && (
+				<CmoQualityAuditModal
+					isOpen={isCmoQualityAuditOpen}
+					onClose={() => setIsCmoQualityAuditOpen(false)}
 				/>
 			)}
 
