@@ -34,6 +34,7 @@ import {
 	Receipt,
 	Scan,
 	Shield,
+	ShieldAlert,
 	ShieldCheck,
 	Sliders,
 	Sparkles,
@@ -94,6 +95,8 @@ import { PatientPortalTimelineModal } from "../components/portal/timeline/Patien
 import { VoiceDictationAssistantModal } from "../components/voice/VoiceDictationAssistantModal";
 import { InformedConsentModal as InformedConsent323FzModal } from "../components/consents/InformedConsentModal";
 import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProtocolModal";
+import { AnesthesiaSafetyHubModal } from "../components/anesthesia/AnesthesiaSafetyHubModal";
+import { SterilizationJournalModal } from "../components/sanpin/SterilizationJournalModal";
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal";
 import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal";
@@ -102,7 +105,8 @@ import { FnsNdflXmlModal } from "../components/documents/ndflXml/index";
 import { TreatmentPlanPriceValidatorModal } from "../components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal";
 import { PatientPortalModal } from "../components/portal/PatientPortalModal";
-import { EgiszRemdXmlModal } from "../components/egisz/remdXml/EgiszRemdXmlModal";
+import { PatientWebappPortalModal } from "../components/patient-portal/PatientWebappPortalModal";
+import { EgiszRemdHubModal } from "../components/egisz/EgiszRemdHubModal";
 import { LabWorkOrderModal } from "../components/lab/orders/LabWorkOrderModal";
 import { ClinicalWriteoffModal } from "../components/inventory/writeoff/ClinicalWriteoffModal";
 import { DmsInsuranceManagerModal } from "../components/insurance/dmsManager/DmsInsuranceManagerModal";
@@ -493,6 +497,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
 	const [isConsent323Open, setIsConsent323Open] = useState(false);
 	const [isAnesthesiaProtocolOpen, setIsAnesthesiaProtocolOpen] = useState(false);
+	const [isAnesthesiaHubOpen, setIsAnesthesiaHubOpen] = useState(false);
+	const [isSterilizationJournalOpen, setIsSterilizationJournalOpen] = useState(false);
 	const [isMedicalWasteOpen, setIsMedicalWasteOpen] = useState(false);
 	const [isEmergencyRescueOpen, setIsEmergencyRescueOpen] = useState(false);
 	const [isWarrantyPassportOpen, setIsWarrantyPassportOpen] = useState(false);
@@ -501,6 +507,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPlanPriceValidatorOpen, setIsPlanPriceValidatorOpen] = useState(false);
 	const [isSberPosOpen, setIsSberPosOpen] = useState(false);
 	const [isPatientCabinetOpen, setIsPatientCabinetOpen] = useState(false);
+	const [isPatientWebappOpen, setIsPatientWebappOpen] = useState(false);
 	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
 	const [isLabWorkOrderOpen, setIsLabWorkOrderOpen] = useState(false);
 	const [isLabTrackingOpen, setIsLabTrackingOpen] = useState(false);
@@ -523,6 +530,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isForm043PrintOpen, setIsForm043PrintOpen] = useState(false);
 	const [isOfflineVaultOpen, setIsOfflineVaultOpen] = useState(false);
 	const [isStaffPayrollLedgerOpen, setIsStaffPayrollLedgerOpen] = useState(false);
+	const [isSterilizationJournalModalOpen, setIsSterilizationJournalModalOpen] = useState(false);
+	const [isAnesthesiaSafetyHubOpen, setIsAnesthesiaSafetyHubOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -1622,7 +1631,54 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							data-testid="open-anesthesia-mrd-caliper-modal-btn"
 						>
 							<Activity size={15} />
-							<span>Открыть протокол анестезии</span>
+							<span>Открыть калипер дозы (MRD)</span>
+						</button>
+					</div>
+					{/* 25c. Anesthesia Safety Hub & Resuscitation Guide Trigger (Orders 786n / 1144n) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldAlert className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Хаб безопасности анестезии & Реанимация
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Калькулятор карпул, МРД (Артикаин/Мепивакаин), кардиолимит 0.04 мг, скрининг ИМАО/ТЦА и гид реанимации (786н/1144н).
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsAnesthesiaHubOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-anesthesia-safety-hub-modal-btn"
+						>
+							<ShieldAlert size={15} />
+							<span>Открыть Хаб анестезии</span>
+						</button>
+					</div>
+
+					{/* 25d. SanPiN 3.3686-21 Sterilization & PSO Journal Trigger (Forms 257/u & 366/u) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Flame className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Журнал стерилизации & ПСО (257/у, 366/у)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Электронные журналы автоклавов, контроль азопирамовой пробы ПСО, термоиндикаторы и крафт-пакеты.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsSterilizationJournalOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-sterilization-journal-modal-btn"
+						>
+							<Flame size={15} />
+							<span>Открыть Журнал стерилизации</span>
 						</button>
 					</div>
 
@@ -1816,6 +1872,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<User size={15} />
 							<span>Открыть кабинет пациента</span>
+						</button>
+					</div>
+
+					{/* 33b. Patient Webapp Mobile PWA Simulator Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Phone className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Мобильный веб-кабинет PWA (Симулятор смартфона)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Симулятор экрана смартфона (390x844): шторка До/После, динамический СБП QR с диплинками банков и 63-ФЗ ПЭП.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPatientWebappOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-patient-webapp-modal-btn"
+						>
+							<Phone size={15} />
+							<span>Запустить симулятор смартфона</span>
 						</button>
 					</div>
 
@@ -2800,6 +2880,26 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
+			{isAnesthesiaHubOpen && (
+				<AnesthesiaSafetyHubModal
+					isOpen={isAnesthesiaHubOpen}
+					onClose={() => setIsAnesthesiaHubOpen(false)}
+					initialPatientName={SAMPLE_PATIENT.fullName}
+					initialPatientWeightKg={70}
+					initialPatientAgeYears={35}
+					initialToothFdi="16"
+					doctorFullName="Д-р Смирнов Алексей Петрович"
+					clinicName="ООО «ДЕНТЕ»"
+				/>
+			)}
+
+			{isSterilizationJournalOpen && (
+				<SterilizationJournalModal
+					isOpen={isSterilizationJournalOpen}
+					onClose={() => setIsSterilizationJournalOpen(false)}
+				/>
+			)}
+
 			{isMedicalWasteOpen && (
 				<MedicalWasteJournalModal
 					isOpen={isMedicalWasteOpen}
@@ -2875,8 +2975,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
+			{isPatientWebappOpen && (
+				<PatientWebappPortalModal
+					isOpen={isPatientWebappOpen}
+					onClose={() => setIsPatientWebappOpen(false)}
+				/>
+			)}
+
 			{isEgiszRemdOpen && (
-				<EgiszRemdXmlModal
+				<EgiszRemdHubModal
 					isOpen={isEgiszRemdOpen}
 					onClose={() => setIsEgiszRemdOpen(false)}
 				/>
@@ -3300,6 +3407,20 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					isOpen={isStaffPayrollLedgerOpen}
 					onClose={() => setIsStaffPayrollLedgerOpen(false)}
 					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
+
+			{isSterilizationJournalModalOpen && (
+				<SterilizationJournalModal
+					isOpen={isSterilizationJournalModalOpen}
+					onClose={() => setIsSterilizationJournalModalOpen(false)}
+				/>
+			)}
+
+			{isAnesthesiaSafetyHubOpen && (
+				<AnesthesiaSafetyHubModal
+					isOpen={isAnesthesiaSafetyHubOpen}
+					onClose={() => setIsAnesthesiaSafetyHubOpen(false)}
 				/>
 			)}
 

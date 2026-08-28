@@ -179,6 +179,9 @@ for (const vp of VIEWPORTS) {
 		window.localStorage.setItem("dente_offline_readiness_banner_dismissed_v1", "true");
 	});
 
+	// Warm up page
+	await page.goto(`${BASE_URL}/?standalone=clinical-modals-studio`, { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
+
 	for (const theme of THEMES) {
 		console.log(`\n[VIEWPORT] ${vp.name} | [THEME] ${theme}`);
 
@@ -188,10 +191,10 @@ for (const vp of VIEWPORTS) {
 			// Isolated navigation: opening the targeted url directly mounts the requested modal and unmounts previous
 			await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 8000 }).catch(() => {});
 			await applyTheme(page, theme);
-			await page.waitForTimeout(300);
 
 			// Check if modal dialog container is present in the DOM
 			const modalDialog = page.locator('[role="dialog"], [data-testid*="modal"], [data-testid*="drawer"]').first();
+			await modalDialog.waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
 			const isVisible = await modalDialog.isVisible().catch(() => false);
 
 			// Fallback: If not open via query parameter, click the dedicated trigger button
@@ -199,9 +202,11 @@ for (const vp of VIEWPORTS) {
 				const trigger = page.locator(`[data-testid="${modal.id}"]`).or(page.locator(`[data-testid="${modal.altId}"]`)).first();
 				if (await trigger.isVisible().catch(() => false)) {
 					await trigger.click({ timeout: 1000, force: true }).catch(() => {});
-					await page.waitForTimeout(300);
 				}
+				await modalDialog.waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
 			}
+
+			await page.waitForTimeout(300);
 
 			const filename = `audit_modal_${modal.name}_${theme}_${vp.name}.png`;
 			await saveScreenshot(page, filename);

@@ -18,6 +18,8 @@ export * from "./GeneralCleaningRegisterTab";
 export * from "./MedicalWasteRegisterTab";
 export * from "./PsoRegisterTab";
 export * from "./TemperatureHumidityRegisterTab";
+export * from "./SterilizationJournalModal";
+export * from "./sterilizationSanpinEngine";
 export * from "./autoclave/index";
 export * from "./waste/index";
 export { SanpinRegisters as default } from "./SanpinRegisters";

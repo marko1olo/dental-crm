@@ -499,3 +499,740 @@
 	border: 1px solid var(--line, #e2e8f0);
 	cursor: pointer;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Anesthesia Safety Hub & Emergency Resuscitation Timeline Styles            */
+/* -------------------------------------------------------------------------- */
+
+.anesthesia-modal-container.hub-container {
+	max-width: 1040px;
+	max-height: 92vh;
+}
+
+.hub-header {
+	padding: 0.875rem 1.25rem;
+}
+
+.hub-logo-box {
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	background: var(--teal-soft, rgba(16, 185, 129, 0.12));
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.hub-logo-icon {
+	color: var(--brand-primary, var(--teal));
+}
+
+.hub-title-text {
+	font-size: 1.0625rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.hub-subtitle-text {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	margin-top: 0.125rem;
+}
+
+.hub-btn-close {
+	min-height: 36px;
+	min-width: 36px;
+	padding: 0.25rem;
+	border: none;
+	background: transparent;
+}
+
+.hub-tabs-bar {
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.5rem 1.25rem;
+	background: var(--paper-strong, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.hub-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0.875rem;
+	border-radius: 8px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	position: relative;
+}
+
+.hub-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background: var(--surface, #f1f5f9);
+}
+
+.hub-tab-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--brand-primary, var(--teal));
+	border-color: var(--line, #e2e8f0);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.hub-tab-btn.emergency-tab.active {
+	color: var(--bad, #ef4444);
+	border-color: rgba(239, 68, 68, 0.3);
+}
+
+.emergency-pulse-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--bad, #ef4444);
+	box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+	animation: emergencyPulse 1.5s infinite;
+}
+
+@keyframes emergencyPulse {
+	0% { transform: scale(0.9); opacity: 0.7; }
+	50% { transform: scale(1.2); opacity: 1; }
+	100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+.hub-tab-content {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.hub-card {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 0.875rem 1rem;
+}
+
+.card-section-title {
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.75rem;
+}
+
+.patient-inputs-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 0.75rem;
+}
+
+.input-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.input-label-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.input-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.input-val-badge {
+	font-size: 0.75rem;
+	color: var(--ink, #0f172a);
+}
+
+.hub-slider {
+	width: 100%;
+	accent-color: var(--brand-primary, var(--teal));
+	cursor: pointer;
+}
+
+.hub-select, .hub-text-input {
+	width: 100%;
+	min-height: 38px;
+	padding: 0.375rem 0.5rem;
+	border-radius: 6px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.8125rem;
+}
+
+.screening-checklist-container {
+	margin-top: 0.875rem;
+	padding-top: 0.75rem;
+	border-top: 1px dashed var(--line, #e2e8f0);
+}
+
+.screening-header {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	margin-bottom: 0.5rem;
+}
+
+.screening-chips-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.screening-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.3125rem 0.625rem;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 500;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.screening-chip:hover {
+	border-color: var(--brand-primary, var(--teal));
+	color: var(--ink, #0f172a);
+}
+
+.screening-chip.checked.danger {
+	background: rgba(239, 68, 68, 0.12);
+	border-color: rgba(239, 68, 68, 0.4);
+	color: var(--bad-fg, #ef4444);
+	font-weight: 600;
+}
+
+.screening-chip.checked.warning {
+	background: rgba(245, 158, 11, 0.12);
+	border-color: rgba(245, 158, 11, 0.4);
+	color: var(--warn-fg, #d97706);
+	font-weight: 600;
+}
+
+.section-label-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 0.5rem;
+}
+
+.section-label {
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.section-hint {
+	font-size: 0.6875rem;
+	color: var(--muted, #64748b);
+}
+
+.drug-card-footer-info {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.6875rem;
+	color: var(--muted, #64748b);
+	margin-top: 0.25rem;
+}
+
+.carpule-quick-btn {
+	padding: 0.25rem 0.5rem;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.carpule-quick-btn:hover {
+	border-color: var(--brand-primary, var(--teal));
+}
+
+.carpule-quick-btn.active {
+	background: var(--brand-primary, var(--teal));
+	color: #ffffff;
+	border-color: var(--brand-primary, var(--teal));
+}
+
+.aspiration-check-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	cursor: pointer;
+	font-size: 0.8125rem;
+	color: var(--ink, #0f172a);
+}
+
+.hub-footer-actions {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 0.75rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+}
+
+.hub-btn-action-primary {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem 0.75rem;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	background: var(--brand-primary, var(--teal));
+	color: #ffffff;
+	border: none;
+	cursor: pointer;
+}
+
+/* Emergency Timeline Styles */
+.emergency-header-banner {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 1rem;
+	padding: 0.875rem 1rem;
+	border-radius: 10px;
+	background: var(--paper-strong, #f8fafc);
+	border: 2px solid;
+}
+
+.emergency-title-box {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.emergency-title-text {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+}
+
+.emergency-statutory-text {
+	font-size: 0.6875rem;
+	color: var(--muted, #64748b);
+}
+
+.emergency-header-right {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.emergency-stopwatch-box {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.375rem 0.625rem;
+	border-radius: 8px;
+	background: var(--surface, #f1f5f9);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.stopwatch-label {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.stopwatch-display {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--bad, #ef4444);
+	font-variant-numeric: tabular-nums;
+}
+
+.stopwatch-controls {
+	display: flex;
+	gap: 0.25rem;
+}
+
+.timer-ctrl-btn {
+	width: 26px;
+	height: 26px;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+}
+
+.timer-ctrl-btn.play {
+	background: var(--ok-fg);
+	color: #ffffff;
+	border-color: var(--ok-fg);
+}
+
+.timer-ctrl-btn.pause {
+	background: var(--warn, #f59e0b);
+	color: #ffffff;
+	border-color: var(--warn, #f59e0b);
+}
+
+.hub-btn-sos-112 {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.5rem 0.875rem;
+	border-radius: 8px;
+	font-size: 0.8125rem;
+	font-weight: 800;
+	background: var(--bad, #ef4444);
+	color: #ffffff;
+	border: none;
+	cursor: pointer;
+	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+
+.emergency-scenarios-pills-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.emergency-scenario-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.4375rem 0.75rem;
+	border-radius: 20px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.emergency-scenario-pill.active {
+	background: var(--paper, #ffffff);
+	border-color: var(--brand-primary, var(--teal));
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(16, 185, 129, 0.2));
+}
+
+.pill-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+}
+
+.emergency-golden-rule-box {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.625rem;
+	padding: 0.75rem 1rem;
+	border-radius: 8px;
+	background: rgba(239, 68, 68, 0.08);
+	border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.golden-rule-text {
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	line-height: 1.4;
+}
+
+.emergency-doses-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 0.625rem;
+}
+
+.emergency-dose-item {
+	background: var(--surface, #f1f5f9);
+	padding: 0.5rem 0.75rem;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+}
+
+.dose-drug-name {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	color: var(--muted, #64748b);
+}
+
+.dose-val-main {
+	font-size: 0.9375rem;
+	font-weight: 800;
+	color: var(--bad, #ef4444);
+}
+
+.dose-val-sub {
+	font-size: 0.6875rem;
+	color: var(--muted, #64748b);
+}
+
+.emergency-timeline-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.timeline-header-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.timeline-header-title {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.timeline-progress-badge {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.timeline-steps-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+}
+
+.timeline-step-card {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 0.875rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	transition: all 0.2s ease;
+}
+
+.timeline-step-card.completed {
+	background: var(--ok-bg, rgba(16, 185, 129, 0.08));
+	border-color: var(--ok-bg, rgba(16, 185, 129, 0.3));
+}
+
+.timeline-step-card.critical {
+	border-left: 4px solid var(--bad, #ef4444);
+}
+
+.step-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.step-number-badge {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.75rem;
+	font-weight: 800;
+	color: var(--brand-primary, var(--teal));
+}
+
+.step-timeframe {
+	font-weight: 500;
+	color: var(--muted, #64748b);
+}
+
+.step-title-text {
+	flex: 1;
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.step-checkbox-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	cursor: pointer;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.step-checkbox-label input {
+	display: none;
+}
+
+.step-checkbox-custom {
+	width: 20px;
+	height: 20px;
+	border-radius: 4px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--ok-fg);
+}
+
+.timeline-step-card.completed .step-checkbox-custom {
+	background: var(--ok-fg);
+	color: #ffffff;
+	border-color: var(--ok-fg);
+}
+
+.step-body-description {
+	font-size: 0.8125rem;
+	color: var(--ink, #0f172a);
+	line-height: 1.4;
+}
+
+.step-drug-highlight-box {
+	background: var(--surface, #f1f5f9);
+	padding: 0.5rem 0.75rem;
+	border-radius: 6px;
+	border: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.drug-highlight-header {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.75rem;
+	color: var(--brand-primary, var(--teal));
+}
+
+.drug-highlight-doses {
+	display: flex;
+	gap: 1rem;
+	font-size: 0.75rem;
+	color: var(--ink, #0f172a);
+}
+
+.step-critical-warning {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.375rem;
+	font-size: 0.75rem;
+	color: var(--bad, #ef4444);
+	font-weight: 600;
+	background: rgba(239, 68, 68, 0.08);
+	padding: 0.375rem 0.5rem;
+	border-radius: 6px;
+}
+
+.step-checklist-items {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding-left: 0.25rem;
+}
+
+.step-sub-item {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+.kit-items-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 0.375rem;
+}
+
+.kit-item-row {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.75rem;
+	color: var(--ink, #0f172a);
+}
+
+/* 112 Dispatch Submodal */
+.hub-submodal-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(2px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	z-index: 10000;
+}
+
+.hub-submodal-container {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	width: 100%;
+	max-width: 580px;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+}
+
+.hub-submodal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.75rem 1rem;
+	background: var(--paper-strong, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.hub-submodal-body {
+	padding: 1rem;
+}
+
+.dispatcher-script-box {
+	background: var(--surface, #f1f5f9);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	padding: 0.875rem;
+}
+
+.hub-submodal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	padding: 0.75rem 1rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+}
+

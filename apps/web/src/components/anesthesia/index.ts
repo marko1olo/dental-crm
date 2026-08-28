@@ -1,9 +1,17 @@
-/**
- * Dental Anesthesia Protocol & Pharmacology Safety Domain Module
- */
-
 export * from './anesthesiaCatalog';
 export * from './anesthesiaEngine';
+export * from './emergencyProtocols';
 export * from './AnesthesiaProtocolModal';
+export * from './AnesthesiaSafetyHubModal';
 export * from './AnesthesiaQuickBar';
 export * from '../visit/anesthesiaMrdMath';
+export {
+	calculateAnesthesiaSafety as calculateAnesthesiaComprehensiveSafety,
+	ANESTHESIA_DRUG_CATALOG,
+	screenPatientContraindications,
+	isPediatricPatient,
+	isGeriatricPatient,
+	calculateEffectiveMgPerKg,
+} from './anesthesiaSafetyEngine';
+
+
