@@ -153,21 +153,52 @@ body:has([data-testid="doctor-shift-roster-modal"]) .dnt-telephony-floating {
 	}
 }
 
+/* Incoming Call Fullscreen Overlay */
+.dnt-incoming-call-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding: 12px;
+	padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+	box-sizing: border-box;
+	pointer-events: auto;
+}
+
+@media (min-width: 640px) {
+	.dnt-incoming-call-overlay {
+		background: transparent;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		align-items: flex-end;
+		justify-content: flex-end;
+		padding: 24px;
+		pointer-events: none;
+	}
+	.dnt-incoming-call-overlay > * {
+		pointer-events: auto;
+	}
+}
+
 /* Incoming Call Popup Master Styling */
 .dnt-incoming-call-popup {
-	position: fixed;
-	bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-	right: 12px;
-	left: 12px;
-	z-index: 999999;
+	position: relative;
+	width: 100%;
+	max-width: calc(100vw - 24px);
+	max-height: 88vh;
+	overflow-y: auto;
+	overscroll-behavior: contain;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
 	border-radius: 16px;
 	padding: 16px;
-	padding-top: max(16px, env(safe-area-inset-top, 16px));
-	max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-	overflow-y: auto;
+	padding-bottom: 24px;
 	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.35), 0 0 24px 2px rgba(15, 118, 110, 0.2);
 	backdrop-filter: blur(16px);
 	-webkit-backdrop-filter: blur(16px);
@@ -180,14 +211,11 @@ body:has([data-testid="doctor-shift-roster-modal"]) .dnt-telephony-floating {
 
 @media (min-width: 640px) {
 	.dnt-incoming-call-popup {
-		left: auto;
-		right: 24px;
-		bottom: 24px;
 		width: 460px;
-		max-width: calc(100vw - 48px);
+		max-width: 460px;
+		max-height: 88vh;
 		padding: 20px;
-		padding-top: 20px;
-		max-height: calc(100dvh - 48px);
+		padding-bottom: 24px;
 	}
 }
 

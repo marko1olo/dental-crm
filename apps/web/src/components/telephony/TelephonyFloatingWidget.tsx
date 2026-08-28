@@ -637,40 +637,40 @@ export function TelephonyFloatingWidget({
 						<button
 							type="button"
 							onClick={() => setActiveTab("call")}
-							className={`flex-1 min-h-[40px] px-2.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 ${
+							className={`flex-1 min-h-[40px] px-2 py-1.5 rounded-xl text-[12px] font-bold transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 min-w-max ${
 								activeTab === "call"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--teal)] shadow-xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.04))] border border-transparent"
 							}`}
 						>
 							<PhoneIncoming size={14} className="flex-shrink-0" />
-							<span className="truncate">{activeCall ? "Текущий вызов" : "Вызов"}</span>
+							<span className="whitespace-nowrap flex-shrink-0 text-[12px] min-w-max">{activeCall ? "Вызов" : "Вызов"}</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setActiveTab("dialer")}
-							className={`flex-1 min-h-[40px] px-2.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 ${
+							className={`flex-1 min-h-[40px] px-2 py-1.5 rounded-xl text-[12px] font-bold transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 min-w-max ${
 								activeTab === "dialer"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--teal)] shadow-xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.04))] border border-transparent"
 							}`}
 						>
 							<PhoneOutgoing size={14} className="flex-shrink-0" />
-							<span className="truncate">Набор номера</span>
+							<span className="whitespace-nowrap flex-shrink-0 text-[12px] min-w-max">Набор</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setActiveTab("history")}
-							className={`flex-1 min-h-[40px] px-2.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 ${
+							className={`flex-1 min-h-[40px] px-2 py-1.5 rounded-xl text-[12px] font-bold transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 min-w-max ${
 								activeTab === "history"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--teal)] shadow-xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.04))] border border-transparent"
 							}`}
 						>
 							<History size={14} className="flex-shrink-0" />
-							<span className="truncate">Журнал {callHistory.length > 0 ? `(${callHistory.length})` : ""}</span>
+							<span className="whitespace-nowrap flex-shrink-0 text-[12px] min-w-max">Журнал{callHistory.length > 0 ? ` (${callHistory.length})` : ""}</span>
 						</button>
 					</div>
 

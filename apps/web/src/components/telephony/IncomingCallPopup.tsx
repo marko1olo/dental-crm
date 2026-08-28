@@ -822,16 +822,24 @@ export function IncomingCallPopup() {
 
 	return createPortal(
 		<div
-			className="dnt-incoming-call-popup fixed bottom-6 right-6 left-3 sm:left-auto w-auto sm:w-[460px] max-w-[calc(100vw-24px)] z-[999999] flex flex-col gap-3 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in overflow-y-auto max-h-[calc(100dvh-32px-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]"
-			style={{
-				boxShadow:
-					"0 20px 40px -15px rgba(0,0,0,0.3), 0 0 20px 2px rgba(15,118,110,0.18)",
-			}}
-			role="dialog"
-			aria-labelledby="incoming-call-title"
-			aria-modal="false"
-			data-testid="incoming-call-popup"
+			className="dnt-incoming-call-overlay fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-end sm:items-end justify-center sm:justify-end p-3 sm:p-6"
+			style={{ zIndex: 9999 }}
 		>
+			<div
+				className="dnt-incoming-call-popup w-full sm:w-[460px] max-w-[calc(100vw-24px)] max-h-[88vh] flex flex-col gap-3 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in overflow-y-auto overscroll-contain"
+				style={{
+					boxShadow:
+						"0 20px 40px -15px rgba(0,0,0,0.3), 0 0 20px 2px rgba(15,118,110,0.18)",
+					maxHeight: "88vh",
+					overflowY: "auto",
+					overscrollBehavior: "contain",
+					paddingBottom: "24px",
+				}}
+				role="dialog"
+				aria-labelledby="incoming-call-title"
+				aria-modal="true"
+				data-testid="incoming-call-popup"
+			>
 			{/* Top Bar: WebRTC / SIP Status, Live Duration Timer & Controls */}
 			<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#e2e8f0)]">
 				<div className="flex items-center gap-2">
@@ -1052,7 +1060,7 @@ export function IncomingCallPopup() {
 						<Shield size={11} className="text-[var(--info-fg,#0284c7)]" />
 						Страховка / ДМС:
 					</span>
-					<span className="font-semibold text-[var(--ink,#0f172a)] truncate">
+					<span className="font-semibold text-[11px] leading-tight text-[var(--ink,#0f172a)] break-words">
 						{hasDms
 							? financialSummary.insuranceName || "Полис ДМС активен"
 							: "Без полиса ДМС"}
@@ -1289,7 +1297,8 @@ export function IncomingCallPopup() {
 					<span>{isKnownPatient ? "Открыть карту" : "Создать пациента"}</span>
 				</button>
 			</div>
-		</div>,
-		document.body,
-	);
+		</div>
+	</div>,
+	document.body,
+);
 }
