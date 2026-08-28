@@ -28,6 +28,8 @@ export * from "./storage/index.js";
 export * from "./telephony/index.js";
 export * from "./marketing/index.js";
 export * from "./anesthesia/index.js";
+export * from "./insurance/index.js";
+export { calculateEmployeeTimesheetT13, aggregateTimesheetDays, generateTimesheetT13Csv, getDaysInMonth, renderFormT13Html, TIMESHEET_STATUTORY_CODES, timesheetCodeSchema, timesheetDayRecordSchema, employeeTimesheetInputSchema, formT13DocumentPayloadSchema, type TimesheetCode, type TimesheetCodeMetadata, type TimesheetDayRecord, type EmployeeTimesheetInput, type TimesheetPeriodSummary, type EmployeeTimesheetResult, type FormT13DocumentPayload, calculateAdvancedDoctorPayroll, calculateAssistantPayroll, buildOneCZupAccrualsList, exportOneCZup31Xml, exportOneCZup31Csv, ADVANCED_DOCTOR_SPECIALTY_PRESETS, DEFAULT_ASSISTANT_PAYROLL_RULES, DEFAULT_DOCTOR_KPI_TIERS, advancedDoctorServiceItemSchema, advancedDoctorPayrollInputSchema, type DoctorSpecialtyCategory, type DoctorSpecialtyCommissionPreset, type AssistantPayrollRules, type DoctorKpiTier, type AdvancedDoctorServiceItem, type AdvancedDoctorPayrollInput, type SpecialtyBreakdownAggregate, type AdvancedDoctorPayrollResult, type AssistantWorkShiftItem, type AdvancedAssistantPayrollInput, type AdvancedAssistantPayrollResult, type OneCZupAccrualEntry, } from "./payroll/index.js";
 export declare function isHttpUrl(value: string): boolean;
 export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
@@ -4202,7 +4204,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     sourceText: string;
     normalizedTitle: string;
     treatmentKind: string;
-    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
+    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride";
     restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
@@ -4223,7 +4225,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     sourceText: string;
     normalizedTitle: string;
     treatmentKind: string;
-    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
+    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride";
     restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
@@ -4250,7 +4252,7 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     minPriceRub: number | null;
     maxPriceRub: number | null;
     averagePriceRub: number | null;
-    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
+    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride")[];
     brands: string[];
 }, {
     count: number;
@@ -4260,7 +4262,7 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     minPriceRub: number | null;
     maxPriceRub: number | null;
     averagePriceRub: number | null;
-    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
+    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride")[];
     brands: string[];
 }>;
 export type DentalPricelistCategorySummary = z.infer<typeof dentalPricelistCategorySummarySchema>;
@@ -4346,7 +4348,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride";
         restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
@@ -4367,7 +4369,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride";
         restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
@@ -4393,7 +4395,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride")[];
         brands: string[];
     }, {
         count: number;
@@ -4403,7 +4405,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride")[];
         brands: string[];
     }>, "many">;
     warnings: z.ZodArray<z.ZodString, "many">;
@@ -4445,7 +4447,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride";
         restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
@@ -4461,7 +4463,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride")[];
         brands: string[];
     }[];
     generatedAt: string;
@@ -4493,7 +4495,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride";
         restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
@@ -4509,7 +4511,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "lab" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride")[];
         brands: string[];
     }[];
     generatedAt: string;
@@ -9714,6 +9716,8 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
     diagnosis: string;
     objectiveStatus: string;
     recommendations: string;
+    periodStart: string;
+    periodEnd: string;
     issuedAt: string;
     clinicalToothRows: {
         status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -9729,8 +9733,6 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
     }[];
     recipientFullName: string;
     recipientAuthority: string;
-    periodStart: string;
-    periodEnd: string;
     thirdPartyDataChecked: true;
     sourceVisitIds: string[];
     complaintAndAnamnesis: string;
@@ -9741,6 +9743,8 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
     diagnosis: string;
     objectiveStatus: string;
     recommendations: string;
+    periodStart: string;
+    periodEnd: string;
     issuedAt: string;
     clinicalToothRows: {
         status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -9756,8 +9760,6 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
     }[];
     recipientFullName: string;
     recipientAuthority: string;
-    periodStart: string;
-    periodEnd: string;
     thirdPartyDataChecked: true;
     sourceVisitIds: string[];
     complaintAndAnamnesis: string;
@@ -15958,6 +15960,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         diagnosis: string;
         objectiveStatus: string;
         recommendations: string;
+        periodStart: string;
+        periodEnd: string;
         issuedAt: string;
         clinicalToothRows: {
             status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -15973,8 +15977,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         recipientFullName: string;
         recipientAuthority: string;
-        periodStart: string;
-        periodEnd: string;
         thirdPartyDataChecked: true;
         sourceVisitIds: string[];
         complaintAndAnamnesis: string;
@@ -15985,6 +15987,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         diagnosis: string;
         objectiveStatus: string;
         recommendations: string;
+        periodStart: string;
+        periodEnd: string;
         issuedAt: string;
         clinicalToothRows: {
             status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -16000,8 +16004,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         recipientFullName: string;
         recipientAuthority: string;
-        periodStart: string;
-        periodEnd: string;
         thirdPartyDataChecked: true;
         sourceVisitIds: string[];
         complaintAndAnamnesis: string;
@@ -17692,6 +17694,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         diagnosis: string;
         objectiveStatus: string;
         recommendations: string;
+        periodStart: string;
+        periodEnd: string;
         issuedAt: string;
         clinicalToothRows: {
             status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -17707,8 +17711,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         recipientFullName: string;
         recipientAuthority: string;
-        periodStart: string;
-        periodEnd: string;
         thirdPartyDataChecked: true;
         sourceVisitIds: string[];
         complaintAndAnamnesis: string;
@@ -18851,6 +18853,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         diagnosis: string;
         objectiveStatus: string;
         recommendations: string;
+        periodStart: string;
+        periodEnd: string;
         issuedAt: string;
         clinicalToothRows: {
             status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -18866,8 +18870,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         recipientFullName: string;
         recipientAuthority: string;
-        periodStart: string;
-        periodEnd: string;
         thirdPartyDataChecked: true;
         sourceVisitIds: string[];
         complaintAndAnamnesis: string;
@@ -19511,6 +19513,8 @@ export declare const documentReleaseJournalEntrySchema: z.ZodObject<{
     patientId: string;
     organizationId: string;
     createdAt: string;
+    periodStart: string | null;
+    periodEnd: string | null;
     materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
     createdByUserId: string | null;
     sourceRequestDocumentId: string | null;
@@ -19518,8 +19522,6 @@ export declare const documentReleaseJournalEntrySchema: z.ZodObject<{
     recipientIdentityDocument: string | null;
     recipientAuthority: string;
     documentTypes: string[];
-    periodStart: string | null;
-    periodEnd: string | null;
     deliveredAt: string;
     entryKind: "request_registered" | "extract_issued" | "release_completed";
     deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -19532,6 +19534,8 @@ export declare const documentReleaseJournalEntrySchema: z.ZodObject<{
     patientId: string;
     organizationId: string;
     createdAt: string;
+    periodStart: string | null;
+    periodEnd: string | null;
     materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
     createdByUserId: string | null;
     sourceRequestDocumentId: string | null;
@@ -19539,8 +19543,6 @@ export declare const documentReleaseJournalEntrySchema: z.ZodObject<{
     recipientIdentityDocument: string | null;
     recipientAuthority: string;
     documentTypes: string[];
-    periodStart: string | null;
-    periodEnd: string | null;
     deliveredAt: string;
     entryKind: "request_registered" | "extract_issued" | "release_completed";
     deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -24280,6 +24282,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -24295,8 +24299,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -24307,6 +24309,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -24322,8 +24326,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -26014,6 +26016,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -26029,8 +26033,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -27173,6 +27175,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -27188,8 +27192,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -27467,6 +27469,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -27474,8 +27478,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -27488,6 +27490,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -27495,8 +27499,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -29185,6 +29187,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -29200,8 +29204,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -29456,6 +29458,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -29463,8 +29467,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -30574,6 +30576,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -30589,8 +30593,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -30845,6 +30847,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -30852,8 +30856,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -35090,6 +35092,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -35105,8 +35109,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -35117,6 +35119,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -35132,8 +35136,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -36824,6 +36826,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -36839,8 +36843,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -37983,6 +37985,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -37998,8 +38002,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -38277,6 +38279,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -38284,8 +38288,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -38298,6 +38300,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -38305,8 +38309,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -39135,6 +39137,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -39142,8 +39146,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -39215,6 +39217,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -39222,8 +39226,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -39361,6 +39363,8 @@ export declare const documentAuditFactsSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -39368,8 +39372,6 @@ export declare const documentAuditFactsSchema: z.ZodObject<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -39382,6 +39384,8 @@ export declare const documentAuditFactsSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -39389,8 +39393,6 @@ export declare const documentAuditFactsSchema: z.ZodObject<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -39466,6 +39468,8 @@ export declare const documentAuditFactsSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -39473,8 +39477,6 @@ export declare const documentAuditFactsSchema: z.ZodObject<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -39548,6 +39550,8 @@ export declare const documentAuditFactsSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
+        periodStart: string | null;
+        periodEnd: string | null;
         materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
         createdByUserId: string | null;
         sourceRequestDocumentId: string | null;
@@ -39555,8 +39559,6 @@ export declare const documentAuditFactsSchema: z.ZodObject<{
         recipientIdentityDocument: string | null;
         recipientAuthority: string;
         documentTypes: string[];
-        periodStart: string | null;
-        periodEnd: string | null;
         deliveredAt: string;
         entryKind: "request_registered" | "extract_issued" | "release_completed";
         deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -45178,6 +45180,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 diagnosis: string;
                 objectiveStatus: string;
                 recommendations: string;
+                periodStart: string;
+                periodEnd: string;
                 issuedAt: string;
                 clinicalToothRows: {
                     status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -45193,8 +45197,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 recipientFullName: string;
                 recipientAuthority: string;
-                periodStart: string;
-                periodEnd: string;
                 thirdPartyDataChecked: true;
                 sourceVisitIds: string[];
                 complaintAndAnamnesis: string;
@@ -45205,6 +45207,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 diagnosis: string;
                 objectiveStatus: string;
                 recommendations: string;
+                periodStart: string;
+                periodEnd: string;
                 issuedAt: string;
                 clinicalToothRows: {
                     status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -45220,8 +45224,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 recipientFullName: string;
                 recipientAuthority: string;
-                periodStart: string;
-                periodEnd: string;
                 thirdPartyDataChecked: true;
                 sourceVisitIds: string[];
                 complaintAndAnamnesis: string;
@@ -46912,6 +46914,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 diagnosis: string;
                 objectiveStatus: string;
                 recommendations: string;
+                periodStart: string;
+                periodEnd: string;
                 issuedAt: string;
                 clinicalToothRows: {
                     status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -46927,8 +46931,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 recipientFullName: string;
                 recipientAuthority: string;
-                periodStart: string;
-                periodEnd: string;
                 thirdPartyDataChecked: true;
                 sourceVisitIds: string[];
                 complaintAndAnamnesis: string;
@@ -48071,6 +48073,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 diagnosis: string;
                 objectiveStatus: string;
                 recommendations: string;
+                periodStart: string;
+                periodEnd: string;
                 issuedAt: string;
                 clinicalToothRows: {
                     status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -48086,8 +48090,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 recipientFullName: string;
                 recipientAuthority: string;
-                periodStart: string;
-                periodEnd: string;
                 thirdPartyDataChecked: true;
                 sourceVisitIds: string[];
                 complaintAndAnamnesis: string;
@@ -48365,6 +48367,8 @@ export declare const dashboardSchema: z.ZodObject<{
             patientId: string;
             organizationId: string;
             createdAt: string;
+            periodStart: string | null;
+            periodEnd: string | null;
             materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
             createdByUserId: string | null;
             sourceRequestDocumentId: string | null;
@@ -48372,8 +48376,6 @@ export declare const dashboardSchema: z.ZodObject<{
             recipientIdentityDocument: string | null;
             recipientAuthority: string;
             documentTypes: string[];
-            periodStart: string | null;
-            periodEnd: string | null;
             deliveredAt: string;
             entryKind: "request_registered" | "extract_issued" | "release_completed";
             deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -48386,6 +48388,8 @@ export declare const dashboardSchema: z.ZodObject<{
             patientId: string;
             organizationId: string;
             createdAt: string;
+            periodStart: string | null;
+            periodEnd: string | null;
             materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
             createdByUserId: string | null;
             sourceRequestDocumentId: string | null;
@@ -48393,8 +48397,6 @@ export declare const dashboardSchema: z.ZodObject<{
             recipientIdentityDocument: string | null;
             recipientAuthority: string;
             documentTypes: string[];
-            periodStart: string | null;
-            periodEnd: string | null;
             deliveredAt: string;
             entryKind: "request_registered" | "extract_issued" | "release_completed";
             deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -49223,6 +49225,8 @@ export declare const dashboardSchema: z.ZodObject<{
             patientId: string;
             organizationId: string;
             createdAt: string;
+            periodStart: string | null;
+            periodEnd: string | null;
             materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
             createdByUserId: string | null;
             sourceRequestDocumentId: string | null;
@@ -49230,8 +49234,6 @@ export declare const dashboardSchema: z.ZodObject<{
             recipientIdentityDocument: string | null;
             recipientAuthority: string;
             documentTypes: string[];
-            periodStart: string | null;
-            periodEnd: string | null;
             deliveredAt: string;
             entryKind: "request_registered" | "extract_issued" | "release_completed";
             deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -49303,6 +49305,8 @@ export declare const dashboardSchema: z.ZodObject<{
             patientId: string;
             organizationId: string;
             createdAt: string;
+            periodStart: string | null;
+            periodEnd: string | null;
             materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
             createdByUserId: string | null;
             sourceRequestDocumentId: string | null;
@@ -49310,8 +49314,6 @@ export declare const dashboardSchema: z.ZodObject<{
             recipientIdentityDocument: string | null;
             recipientAuthority: string;
             documentTypes: string[];
-            periodStart: string | null;
-            periodEnd: string | null;
             deliveredAt: string;
             entryKind: "request_registered" | "extract_issued" | "release_completed";
             deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -50185,6 +50187,8 @@ export declare const dashboardSchema: z.ZodObject<{
             patientId: string;
             organizationId: string;
             createdAt: string;
+            periodStart: string | null;
+            periodEnd: string | null;
             materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
             createdByUserId: string | null;
             sourceRequestDocumentId: string | null;
@@ -50192,8 +50196,6 @@ export declare const dashboardSchema: z.ZodObject<{
             recipientIdentityDocument: string | null;
             recipientAuthority: string;
             documentTypes: string[];
-            periodStart: string | null;
-            periodEnd: string | null;
             deliveredAt: string;
             entryKind: "request_registered" | "extract_issued" | "release_completed";
             deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -50855,6 +50857,8 @@ export declare const dashboardSchema: z.ZodObject<{
             patientId: string;
             organizationId: string;
             createdAt: string;
+            periodStart: string | null;
+            periodEnd: string | null;
             materialKind: "other" | "dicom_archive" | "original" | "copy" | "extract" | "mixed";
             createdByUserId: string | null;
             sourceRequestDocumentId: string | null;
@@ -50862,8 +50866,6 @@ export declare const dashboardSchema: z.ZodObject<{
             recipientIdentityDocument: string | null;
             recipientAuthority: string;
             documentTypes: string[];
-            periodStart: string | null;
-            periodEnd: string | null;
             deliveredAt: string;
             entryKind: "request_registered" | "extract_issued" | "release_completed";
             deliveryMethod: "other" | "paper" | "pdf" | "secure_link" | "dicom_archive" | "physical_media";
@@ -51742,9 +51744,9 @@ export declare const dmsGuaranteeLetterSchema: z.ZodObject<{
     patientFullName: string;
     issueDate: string;
     validFrom: string;
-    insurerName: string;
-    policyNumber: string;
     letterNumber: string;
+    policyNumber: string;
+    insurerName: string;
     validUntil: string;
     maxCoverageRub: number;
     usedAmountRub: number;
@@ -51769,9 +51771,9 @@ export declare const dmsGuaranteeLetterSchema: z.ZodObject<{
     patientFullName: string;
     issueDate: string;
     validFrom: string;
-    insurerName: string;
-    policyNumber: string;
     letterNumber: string;
+    policyNumber: string;
+    insurerName: string;
     validUntil: string;
     maxCoverageRub: number;
     status?: "expired" | "active" | "cancelled" | "exhausted" | undefined;
@@ -51832,9 +51834,9 @@ export declare const dmsGuaranteeLetterCreateSchema: z.ZodObject<Omit<{
     patientFullName: string;
     issueDate: string;
     validFrom: string;
-    insurerName: string;
-    policyNumber: string;
     letterNumber: string;
+    policyNumber: string;
+    insurerName: string;
     validUntil: string;
     maxCoverageRub: number;
     usedAmountRub: number;
@@ -51857,9 +51859,9 @@ export declare const dmsGuaranteeLetterCreateSchema: z.ZodObject<Omit<{
     patientFullName: string;
     issueDate: string;
     validFrom: string;
-    insurerName: string;
-    policyNumber: string;
     letterNumber: string;
+    policyNumber: string;
+    insurerName: string;
     validUntil: string;
     maxCoverageRub: number;
     status?: "expired" | "active" | "cancelled" | "exhausted" | undefined;
@@ -51923,11 +51925,11 @@ export declare const dmsGuaranteeLetterUpdateSchema: z.ZodObject<{
     patientBirthDate?: string | null | undefined;
     issueDate?: string | undefined;
     validFrom?: string | undefined;
+    letterNumber?: string | undefined;
+    policyNumber?: string | undefined;
     insurerName?: string | undefined;
     contractId?: string | null | undefined;
-    policyNumber?: string | undefined;
     insurerKey?: string | undefined;
-    letterNumber?: string | undefined;
     validUntil?: string | undefined;
     maxCoverageRub?: number | undefined;
     usedAmountRub?: number | undefined;
@@ -51952,11 +51954,11 @@ export declare const dmsGuaranteeLetterUpdateSchema: z.ZodObject<{
     patientBirthDate?: string | null | undefined;
     issueDate?: string | undefined;
     validFrom?: string | undefined;
+    letterNumber?: string | undefined;
+    policyNumber?: string | undefined;
     insurerName?: string | undefined;
     contractId?: string | null | undefined;
-    policyNumber?: string | undefined;
     insurerKey?: string | undefined;
-    letterNumber?: string | undefined;
     validUntil?: string | undefined;
     maxCoverageRub?: number | undefined;
     usedAmountRub?: number | undefined;
@@ -56725,6 +56727,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -56740,8 +56744,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -56752,6 +56754,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -56767,8 +56771,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -58459,6 +58461,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -58474,8 +58478,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -59618,6 +59620,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -59633,8 +59637,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -60785,6 +60787,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -60800,8 +60804,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -61953,6 +61955,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -61968,8 +61972,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -63121,6 +63123,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -63136,8 +63140,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;
@@ -64289,6 +64291,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosis: string;
             objectiveStatus: string;
             recommendations: string;
+            periodStart: string;
+            periodEnd: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
@@ -64304,8 +64308,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             recipientFullName: string;
             recipientAuthority: string;
-            periodStart: string;
-            periodEnd: string;
             thirdPartyDataChecked: true;
             sourceVisitIds: string[];
             complaintAndAnamnesis: string;

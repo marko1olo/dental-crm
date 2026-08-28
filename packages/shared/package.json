@@ -50,6 +50,16 @@
 			"types": "./dist/security/index.d.ts",
 			"import": "./dist/security/index.js",
 			"default": "./dist/security/index.js"
+		},
+		"./insurance": {
+			"types": "./dist/insurance/index.d.ts",
+			"import": "./dist/insurance/index.js",
+			"default": "./dist/insurance/index.js"
+		},
+		"./payroll": {
+			"types": "./dist/payroll/index.d.ts",
+			"import": "./dist/payroll/index.js",
+			"default": "./dist/payroll/index.js"
 		}
 	},
 	"scripts": {
