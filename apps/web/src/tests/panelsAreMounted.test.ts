@@ -91,6 +91,12 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	readonly reason: string;
 }> = [
 	{
+		file: "components/documents/PaidMedicalContractModal.tsx",
+		name: "PaidMedicalContractModal",
+		reason:
+			"Интерактивное модальное окно заключения договора на оказание платных медицинских услуг в строгом соответствии с Постановлением Правительства РФ № 736 от 11.05.2023 с поддержкой touch-подписи стилусом на планшете, SMS OTP авторизации простой ЭП (1-click ПЭП) и экспортом в печатный бланк.",
+	},
+	{
 		file: "components/diagnostics/Icd10ClinicalSelector.tsx",
 		name: "Icd10ClinicalSelector",
 		reason:

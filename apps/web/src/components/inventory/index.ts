@@ -5,4 +5,6 @@ export * from "./inventoryMath.js";
 export * from "./useInventoryLogic.js";
 export { ClinicalWriteoffModal, type ClinicalWriteoffModalProps } from "./writeoff/ClinicalWriteoffModal.js";
 export { WarehouseTransferModal, type WarehouseTransferModalProps } from "./transfers/WarehouseTransferModal.js";
+export { WarehouseInventoryAuditModal, type WarehouseInventoryAuditModalProps } from "./WarehouseInventoryAuditModal.js";
+export * from "./warehouseInventoryEngine.js";
 export * from "./mdlp/index.js";

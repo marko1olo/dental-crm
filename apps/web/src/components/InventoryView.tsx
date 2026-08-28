@@ -20,6 +20,7 @@ import { MaterialBomsSettingsPanel } from "./inventory/MaterialBomsSettingsPanel
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
 import { WarehouseTransferModal } from "./inventory/transfers/WarehouseTransferModal";
 import { ClinicalWriteoffModal } from "./inventory/writeoff/ClinicalWriteoffModal";
+import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal";
 import { MdlpDisposalQueueModal } from "./inventory/mdlp/index.js";
 
 /**
@@ -162,6 +163,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const [isDeductionModalOpen, setIsDeductionModalOpen] = useState(false);
 	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
 	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
+	const [isInventoryAuditOpen, setIsInventoryAuditOpen] = useState(false);
 	const [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
 
 	/*
@@ -533,6 +535,30 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								title="Межфилиальное перемещение ТМЦ по накладным ТОРГ-13"
 							>
 								<Truck size={16} /> Перемещение (ТОРГ-13)
+							</button>
+							<button
+								type="button"
+								className="secondary-button"
+								data-testid="warehouse-inventory-audit-trigger"
+								onClick={() => setIsInventoryAuditOpen(true)}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 6,
+									padding: "8px 12px",
+									minHeight: "40px",
+									borderRadius: 8,
+									border: `1px solid ${borderColor}`,
+									background: paperSoftBg,
+									color: "var(--ink)",
+									fontWeight: 600,
+									fontSize: 13,
+									cursor: "pointer",
+									whiteSpace: "nowrap",
+								}}
+								title="Складская инвентаризация: Опись ИНВ-3, Сличительная ведомость ИНВ-19 и FEFO контроль"
+							>
+								<PackageCheck size={16} className="text-teal-600" /> Инвентаризация (ИНВ-3/19)
 							</button>
 							<button
 								type="button"
@@ -1689,6 +1715,18 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				onClose={() => setIsWarehouseTransferOpen(false)}
 				onDocumentSaved={async () => {
 					setIsWarehouseTransferOpen(false);
+					fetchItems();
+				}}
+			/>
+
+			<WarehouseInventoryAuditModal
+				isOpen={isInventoryAuditOpen}
+				onClose={() => setIsInventoryAuditOpen(false)}
+				onApplyAudit={async () => {
+					setIsInventoryAuditOpen(false);
+					fetchItems();
+				}}
+				onDocumentSaved={() => {
 					fetchItems();
 				}}
 			/>

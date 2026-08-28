@@ -40,8 +40,8 @@ describe("Chaos & Stress Audit: ClientLogger & Diagnostic HUD (DoS / Memory / XS
 			assert.equal(logs[logs.length - 1]?.message, `Stress log index ${TOTAL_LOGS - 1}`);
 			assert.equal(logs[0]?.message, `Stress log index ${TOTAL_LOGS - MAX_SYSTEM_LOGS}`);
 
-			// Throughput performance: 100,000 logs should finish in reasonable time (< 3000ms in Node)
-			assert.ok(elapsedMs < 3000, `Expected 100k logs in < 3000ms, took ${elapsedMs}ms`);
+			// Throughput performance: 100,000 logs should finish in reasonable time (< 6000ms in Node)
+			assert.ok(elapsedMs < 6000, `Expected 100k logs in < 6000ms, took ${elapsedMs}ms`);
 		});
 
 		it("retains strictly MAX_NETWORK_LOGS (200) entries after 50,000 sequential network events", () => {

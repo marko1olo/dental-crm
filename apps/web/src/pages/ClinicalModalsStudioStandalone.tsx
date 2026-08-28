@@ -71,6 +71,7 @@ import { PatientCabinetModal } from "../components/portal/patientCabinet/Patient
 import { SanpinRegisters } from "../components/sanpin/SanpinRegisters";
 import { PediatricMixedDentitionModal } from "../components/odontogram/PediatricMixedDentitionModal";
 import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollModal";
+import { StaffPayrollLedgerModal } from "../components/payroll/StaffPayrollLedgerModal";
 import { FastCheckoutModal } from "../components/payments/checkout/FastCheckoutModal";
 import { MedicalPrescriptionModal } from "../components/prescriptions/generator/MedicalPrescriptionModal";
 import { CashShiftWidget } from "../components/finance/CashShiftWidget";
@@ -521,6 +522,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isCmoHubOpen, setIsCmoHubOpen] = useState(false);
 	const [isForm043PrintOpen, setIsForm043PrintOpen] = useState(false);
 	const [isOfflineVaultOpen, setIsOfflineVaultOpen] = useState(false);
+	const [isStaffPayrollLedgerOpen, setIsStaffPayrollLedgerOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -731,6 +733,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					}
 					if (requestedModal === "offline_vault" || requestedModal === "backup_vault" || requestedModal === "offline_backup" || requestedModal === "offline_backup_vault") {
 						setIsOfflineVaultOpen(true);
+					}
+					if (requestedModal === "staff_payroll" || requestedModal === "payroll_ledger" || requestedModal === "payroll_t51_staff") {
+						setIsStaffPayrollLedgerOpen(true);
 					}
 				}
 		};
@@ -3289,6 +3294,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 					</div>
 				</div>
+			)}
+			{isStaffPayrollLedgerOpen && (
+				<StaffPayrollLedgerModal
+					isOpen={isStaffPayrollLedgerOpen}
+					onClose={() => setIsStaffPayrollLedgerOpen(false)}
+					clinicName="ООО «Денте Стоматология»"
+				/>
 			)}
 
 			</div>

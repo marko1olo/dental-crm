@@ -1,0 +1,648 @@
+/**
+ * paidMedicalContract.css
+ *
+ * Стили для модального окна Договора на оказание платных медицинских услуг (ПП РФ № 736),
+ * блока цифровой подписи (Touch Signature & SMS-OTP), редактора реквизитов и печатного бланка А4.
+ */
+
+.paid-contract-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	background: rgba(15, 23, 42, 0.72);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	animation: paidContractFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes paidContractFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.paid-contract-modal-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 1280px;
+	height: 92vh;
+	max-height: 900px;
+	border-radius: 16px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	color: var(--ink, #0f172a);
+}
+
+/* ── Header ── */
+.paid-contract-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	background: var(--paper-soft, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	flex-shrink: 0;
+	gap: 16px;
+}
+
+.paid-contract-header-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.paid-contract-icon-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: var(--teal-surface, #f0fdfa);
+	border: 1px solid var(--teal-subtle, rgba(20, 184, 166, 0.25));
+	color: var(--teal, #0d9488);
+	flex-shrink: 0;
+}
+
+.paid-contract-title-wrap {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.paid-contract-title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.paid-contract-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+	line-height: 1.25;
+}
+
+.paid-contract-badge-law {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	font-size: 11px;
+	font-weight: 600;
+	background: var(--teal-surface, #f0fdfa);
+	color: var(--teal, #0d9488);
+	border: 1px solid var(--teal-subtle, rgba(20, 184, 166, 0.3));
+	white-space: nowrap;
+}
+
+.paid-contract-subtitle {
+	font-size: 12px;
+	color: var(--muted, #64748b);
+	margin: 2px 0 0 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.paid-contract-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	background: transparent;
+	border: 1px solid transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.paid-contract-close-btn:hover {
+	background: var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+}
+
+/* ── Navigation / Mode Toolbar ── */
+.paid-contract-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 20px;
+	background: var(--paper-soft, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	flex-shrink: 0;
+	gap: 12px;
+	overflow-x: auto;
+}
+
+.paid-contract-tabs {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.paid-contract-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 34px;
+	padding: 0 14px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.paid-contract-tab-btn:hover {
+	border-color: var(--teal, #0d9488);
+	color: var(--ink, #0f172a);
+}
+
+.paid-contract-tab-btn.active {
+	background: var(--teal-fill, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.paid-contract-status-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	font-size: 11px;
+	font-weight: 600;
+	flex-shrink: 0;
+}
+
+.paid-contract-status-pill.valid {
+	background: #ecfdf5;
+	color: #065f46;
+	border: 1px solid #a7f3d0;
+}
+
+.paid-contract-status-pill.invalid {
+	background: #fffbeb;
+	color: #92400e;
+	border: 1px solid #fde68a;
+}
+
+/* ── Split Body ── */
+.paid-contract-body {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.paid-contract-pane-left {
+	width: 50%;
+	border-right: 1px solid var(--line, #e2e8f0);
+	overflow-y: auto;
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.paid-contract-pane-right {
+	width: 50%;
+	background: var(--paper-soft, #f8fafc);
+	overflow-y: auto;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+}
+
+@media (max-width: 1024px) {
+	.paid-contract-body {
+		flex-direction: column;
+	}
+	.paid-contract-pane-left,
+	.paid-contract-pane-right {
+		width: 100%;
+		border-right: none;
+	}
+	.paid-contract-pane-left {
+		border-bottom: 1px solid var(--line, #e2e8f0);
+	}
+}
+
+/* ── Editor Sections ── */
+.paid-contract-section {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px;
+	border-radius: 12px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.paid-contract-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--ink, #0f172a);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	padding-bottom: 6px;
+	margin-bottom: 4px;
+}
+
+.paid-contract-grid-2 {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 10px;
+}
+
+.paid-contract-grid-3 {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+}
+
+@media (max-width: 640px) {
+	.paid-contract-grid-2,
+	.paid-contract-grid-3 {
+		grid-template-columns: 1fr;
+	}
+}
+
+.paid-contract-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.paid-contract-field label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.paid-contract-input,
+.paid-contract-textarea {
+	width: 100%;
+	min-height: 34px;
+	padding: 6px 10px;
+	font-size: 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	box-sizing: border-box;
+}
+
+.paid-contract-input:focus,
+.paid-contract-textarea:focus {
+	outline: none;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+}
+
+.paid-contract-textarea {
+	resize: vertical;
+	min-height: 52px;
+	line-height: 1.4;
+}
+
+/* ── Service Items Table in Editor ── */
+.paid-contract-services-editor {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.paid-contract-service-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px;
+	border-radius: 8px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	font-size: 12px;
+}
+
+.paid-contract-service-name {
+	flex: 1;
+	min-width: 0;
+	font-weight: 500;
+}
+
+.paid-contract-service-details {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 11px;
+	color: var(--muted, #64748b);
+	flex-shrink: 0;
+}
+
+.paid-contract-service-amount {
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	min-width: 80px;
+	text-align: right;
+}
+
+/* ── Checkboxes Checklist ── */
+.paid-contract-checklist {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.paid-contract-check-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	font-size: 12px;
+	color: var(--ink, #0f172a);
+	user-select: none;
+}
+
+.paid-contract-check-item:hover {
+	border-color: var(--teal, #0d9488);
+}
+
+.paid-contract-check-item input[type="checkbox"] {
+	margin-top: 2px;
+	width: 16px;
+	height: 16px;
+	accent-color: var(--teal, #0d9488);
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+/* ── Signature Section (Touch & SMS) ── */
+.paid-contract-sign-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px;
+	border-radius: 12px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.paid-contract-sign-switcher {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	padding-bottom: 10px;
+}
+
+.paid-contract-sign-mode-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 34px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.paid-contract-sign-mode-btn.active {
+	background: var(--teal-surface, #f0fdfa);
+	color: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+}
+
+.paid-contract-touch-canvas-wrap {
+	position: relative;
+	width: 100%;
+	height: 180px;
+	border-radius: 10px;
+	border: 2px dashed var(--line, #cbd5e1);
+	background: #ffffff;
+	overflow: hidden;
+	touch-action: none;
+}
+
+.paid-contract-touch-canvas-wrap:hover {
+	border-color: var(--teal, #0d9488);
+}
+
+.paid-contract-canvas {
+	width: 100%;
+	height: 100%;
+	cursor: crosshair;
+	display: block;
+}
+
+.paid-contract-canvas-placeholder {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+	color: var(--muted, #94a3b8);
+	font-size: 13px;
+	font-weight: 500;
+	user-select: none;
+}
+
+/* SMS OTP Box */
+.paid-contract-sms-box {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px;
+	border-radius: 10px;
+	background: #ffffff;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.paid-contract-sms-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.paid-contract-otp-input {
+	width: 120px;
+	height: 38px;
+	text-align: center;
+	font-size: 18px;
+	font-weight: 700;
+	letter-spacing: 4px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+}
+
+.paid-contract-otp-input:focus {
+	outline: none;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+}
+
+/* ── Right Pane A4 Preview Sheet ── */
+.paid-contract-dark-frame {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding: 12px;
+	border-radius: 12px;
+	background: #090d16;
+}
+
+.paid-contract-a4-sheet {
+	width: 100%;
+	max-width: 680px;
+	min-height: 800px;
+	padding: 24px 28px;
+	background: #ffffff;
+	color: #0f172a;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+	border-radius: 4px;
+	font-family: "PT Astra Sans", "Times New Roman", Times, serif;
+	font-size: 10.5px;
+	line-height: 1.35;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	box-sizing: border-box;
+}
+
+.paid-contract-a4-sheet h1,
+.paid-contract-a4-sheet h2,
+.paid-contract-a4-sheet h3 {
+	margin: 0;
+	color: #0f172a;
+}
+
+/* ── Footer ── */
+.paid-contract-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	background: var(--paper-soft, #f8fafc);
+	border-top: 1px solid var(--line, #e2e8f0);
+	flex-shrink: 0;
+	gap: 12px;
+}
+
+.paid-contract-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.paid-contract-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 36px;
+	padding: 0 16px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.paid-contract-btn.secondary {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #cbd5e1);
+	color: var(--ink, #0f172a);
+}
+
+.paid-contract-btn.secondary:hover {
+	background: var(--line, #e2e8f0);
+}
+
+.paid-contract-btn.primary {
+	background: var(--teal-fill, #0d9488);
+	border: 1px solid var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.paid-contract-btn.primary:hover {
+	opacity: 0.92;
+	transform: translateY(-0.5px);
+}
+
+.paid-contract-btn.primary:active {
+	transform: translateY(0);
+}
+
+.paid-contract-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+/* ── Print Media Styles ── */
+@media print {
+	body * {
+		visibility: hidden;
+	}
+	.paid-contract-a4-sheet,
+	.paid-contract-a4-sheet * {
+		visibility: visible;
+	}
+	.paid-contract-a4-sheet {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		max-width: 100%;
+		box-shadow: none;
+		padding: 0;
+		margin: 0;
+	}
+}

@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
+	BarChart3,
 	Calendar,
 	CalendarClock,
 	DollarSign,
@@ -21,6 +22,7 @@ import { useWebsocket } from "../../hooks/useWebsocket";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import { LeadsFunnelAnalyticsModal } from "./LeadsFunnelAnalyticsModal";
 
 /*
  * Врач и кресло берутся из настроек клиники, а не из отдельного справочника:
@@ -131,6 +133,9 @@ export function LeadsKanbanView() {
 	// Filters
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sourceFilter, setSourceFilter] = useState("");
+
+	// Analytics Funnel Modal State
+	const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 
 	// Convert Modal State
 	const [isConvertOpen, setIsConvertOpen] = useState(false);
@@ -498,7 +503,7 @@ export function LeadsKanbanView() {
 					gap: 16,
 				}}
 			>
-				<div className="flex items-center gap-4">
+				<div className="flex items-center gap-3">
 					<h2 className="m-0 text-2xl font-semibold text-[var(--ink)] flex items-center gap-3">
 						Воронка Пациентов
 						<span className="text-[10px] font-bold px-2 py-0.5 bg-[var(--brand-500,#0f766e)] text-white rounded-full uppercase tracking-wider">
@@ -512,6 +517,20 @@ export function LeadsKanbanView() {
 						aria-label="Создать новый лид"
 					>
 						<Plus size={16} /> Новый лид
+					</button>
+					<button
+						className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+						onClick={() => setIsAnalyticsOpen(true)}
+						type="button"
+						aria-label="Открыть сквозную аналитику воронки"
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: 6,
+							fontWeight: 600,
+						}}
+					>
+						<BarChart3 size={16} color="var(--brand-500, #0f766e)" /> Аналитика воронки
 					</button>
 				</div>
 
@@ -1306,6 +1325,13 @@ export function LeadsKanbanView() {
 					</motion.div>
 				</div>
 			)}
+
+			{/* ANALYTICS FUNNEL MODAL */}
+			<LeadsFunnelAnalyticsModal
+				isOpen={isAnalyticsOpen}
+				onClose={() => setIsAnalyticsOpen(false)}
+				leads={leads}
+			/>
 		</div>
 	);
 }

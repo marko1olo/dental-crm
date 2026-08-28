@@ -1,7 +1,9 @@
 /**
  * @dental/web payroll components re-exports
  */
-export * from "../finance/payroll/DoctorPayrollModal";
-export * from "./TimesheetT13Modal";
-export * from "../finance/payroll/payrollEngine";
-export * from "../finance/payroll/payrollPresets";
+export * from "../finance/payroll/DoctorPayrollModal.js";
+export * from "./TimesheetT13Modal.js";
+export * from "../finance/payroll/payrollEngine.js";
+export * from "../finance/payroll/payrollPresets.js";
+export * from "./staffPayrollEngine.js";
+export * from "./StaffPayrollLedgerModal.js";
