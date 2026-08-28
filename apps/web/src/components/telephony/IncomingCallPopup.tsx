@@ -5,6 +5,7 @@ import {
 	CalendarCheck,
 	CalendarPlus,
 	Check,
+	ChevronDown,
 	Clock,
 	Copy,
 	CreditCard,
@@ -278,7 +279,7 @@ export function CallAudioPlayer({
 	const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
 
 	return (
-		<div className="p-3 rounded-xl bg-slate-950/60 dark:bg-slate-950/80 border border-[var(--teal-soft)] text-xs flex flex-col gap-2.5 shadow-sm">
+		<div className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--glass-border,var(--line,#e2e8f0))] text-[var(--ink,#0f172a)] text-xs flex flex-col gap-2.5 shadow-xs">
 			<audio
 				ref={audioRef}
 				src={recordingUrl}
@@ -306,7 +307,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={() => handleSkip(-10)}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 inline-flex items-center justify-center transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors"
 						title="Назад на 10 сек"
 						aria-label="Назад на 10 секунд"
 					>
@@ -317,21 +318,21 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={() => handleSkip(10)}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 inline-flex items-center justify-center transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors"
 						title="Вперед на 10 сек"
 						aria-label="Вперед на 10 секунд"
 					>
 						<RotateCw size={16} />
 					</button>
 
-					<span className="font-mono text-xs text-slate-300 font-semibold pl-1">
+					<span className="font-mono text-xs text-[var(--ink,#0f172a)] font-semibold pl-1">
 						{formatDurationTimer(currentTime)} / {formatDurationTimer(audioDuration)}
 					</span>
 				</div>
 
 				<div className="flex items-center gap-1.5">
 					{/* Speed Toggle Pills (1x, 1.25x, 1.5x, 2x) with touch-targets >= 44x44px */}
-					<div className="flex items-center bg-slate-900/90 rounded-xl p-1 border border-slate-800 gap-1">
+					<div className="flex items-center bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-xl p-1 border border-[var(--line,#e2e8f0)] gap-1">
 						{speeds.map((s) => (
 							<button
 								key={s}
@@ -340,7 +341,7 @@ export function CallAudioPlayer({
 								className={`min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center ${
 									playbackSpeed === s
 										? "bg-[var(--teal)] text-white shadow-xs"
-										: "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))]"
 								}`}
 								title={`Скорость ${s}x`}
 							>
@@ -353,12 +354,12 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={toggleMute}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 inline-flex items-center justify-center transition-all"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-all"
 						title={isMuted ? "Включить звук" : "Выключить звук"}
 						aria-label={isMuted ? "Включить звук" : "Выключить звук"}
 					>
 						{isMuted ? (
-							<VolumeX size={18} className="text-rose-400" />
+							<VolumeX size={18} className="text-rose-500" />
 						) : (
 							<Volume2 size={18} />
 						)}
@@ -373,7 +374,7 @@ export function CallAudioPlayer({
 					onClick={handleWaveformClick}
 					onMouseMove={handleWaveformMouseMove}
 					onMouseLeave={handleWaveformMouseLeave}
-					className="h-9 w-full flex items-center justify-between gap-[2px] px-1 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-900 border border-slate-800 cursor-pointer relative overflow-hidden transition-colors"
+					className="h-9 w-full flex items-center justify-between gap-[2px] px-1.5 py-1 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] cursor-pointer relative overflow-hidden transition-colors"
 					role="slider"
 					aria-valuemin={0}
 					aria-valuemax={audioDuration}
@@ -394,7 +395,7 @@ export function CallAudioPlayer({
 								className={`flex-1 rounded-full transition-colors ${
 									isPast
 										? "bg-[var(--teal)] shadow-[0_0_4px_rgba(45,212,191,0.5)]"
-										: "bg-slate-700/70 hover:bg-slate-600"
+										: "bg-[var(--line-strong,var(--line,#cbd5e1))] hover:bg-[var(--muted,#94a3b8)]"
 								}`}
 							/>
 						);
@@ -402,7 +403,7 @@ export function CallAudioPlayer({
 
 					{/* Current Playhead Indicator */}
 					<div
-						className="absolute top-0 bottom-0 w-[2px] bg-emerald-400 pointer-events-none transition-all shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+						className="absolute top-0 bottom-0 w-[2px] bg-emerald-500 pointer-events-none transition-all shadow-[0_0_6px_rgba(52,211,153,0.8)]"
 						style={{ left: `${progressPct}%` }}
 					/>
 				</div>
@@ -416,14 +417,14 @@ export function CallAudioPlayer({
 			</div>
 
 			{/* Speech-to-Text Transcript Drawer Toggle */}
-			<div className="pt-1 border-t border-slate-800/80 flex items-center justify-between">
+			<div className="pt-1 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between">
 				<button
 					type="button"
 					onClick={() => setShowTranscript((prev) => !prev)}
 					className="text-xs font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[36px] py-1 transition-colors"
 					aria-expanded={showTranscript}
 				>
-					<Sparkles size={13} className="text-amber-400" />
+					<Sparkles size={13} className="text-amber-500" />
 					<span>{showTranscript ? "Скрыть расшифровку речи" : "Показать расшифровку речи (AI STT)"}</span>
 				</button>
 
@@ -431,10 +432,10 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={handleCopyTranscript}
-						className="text-[11px] font-semibold text-slate-400 hover:text-slate-200 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors"
+						className="text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] transition-colors"
 						title="Скопировать текст диалога"
 					>
-						{copiedTranscript ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+						{copiedTranscript ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
 						<span>{copiedTranscript ? "Скопировано" : "Копировать"}</span>
 					</button>
 				)}
@@ -443,14 +444,14 @@ export function CallAudioPlayer({
 			{/* Expanded Speech Transcript Dialogue Utterances */}
 			{showTranscript && (
 				<div className="space-y-2 max-h-48 overflow-y-auto pr-1 pt-1 animate-fade-in">
-					{transcriptUtterances.map((u, i) => (
+					{transcriptUtterances.map((u) => (
 						<div
 							key={`${u.speaker}-${u.startTimeSeconds}`}
 							onClick={() => handleSeekToUtterance(u.startTimeSeconds)}
 							className={`p-2 rounded-lg cursor-pointer transition-all border ${
 								currentTime >= u.startTimeSeconds && currentTime <= u.endTimeSeconds
 									? "bg-[var(--teal-surface)] border-[var(--teal-soft)] shadow-xs"
-									: "bg-slate-900/60 border-slate-800 hover:bg-slate-900"
+									: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))]"
 							}`}
 							title="Кликните для перехода к реплике"
 						>
@@ -465,15 +466,15 @@ export function CallAudioPlayer({
 									>
 										{u.speaker === "operator" ? "Оператор" : "Пациент"}
 									</span>
-									<span className="font-mono text-slate-400">
+									<span className="font-mono text-[var(--muted,#64748b)]">
 										{formatDurationTimer(u.startTimeSeconds)} - {formatDurationTimer(u.endTimeSeconds)}
 									</span>
 								</div>
-								<span className="text-[9px] text-slate-500">
+								<span className="text-[9px] text-[var(--muted,#64748b)]">
 									{(u.confidence * 100).toFixed(0)}% уверенность
 								</span>
 							</div>
-							<p className="text-slate-200 text-[11px] leading-relaxed">
+							<p className="text-[var(--ink,#0f172a)] text-[11px] leading-relaxed">
 								{u.text}
 							</p>
 						</div>
@@ -821,7 +822,7 @@ export function IncomingCallPopup() {
 
 	return createPortal(
 		<div
-			className="dnt-incoming-call-popup fixed bottom-6 right-6 left-4 sm:left-auto w-auto sm:w-[460px] max-w-[calc(100vw-32px)] z-[999999] flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in"
+			className="dnt-incoming-call-popup fixed bottom-6 right-6 left-3 sm:left-auto w-auto sm:w-[460px] max-w-[calc(100vw-24px)] z-[999999] flex flex-col gap-3 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in overflow-y-auto max-h-[calc(100dvh-32px-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]"
 			style={{
 				boxShadow:
 					"0 20px 40px -15px rgba(0,0,0,0.3), 0 0 20px 2px rgba(15,118,110,0.18)",
@@ -832,7 +833,7 @@ export function IncomingCallPopup() {
 			data-testid="incoming-call-popup"
 		>
 			{/* Top Bar: WebRTC / SIP Status, Live Duration Timer & Controls */}
-			<div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800/80">
+			<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#e2e8f0)]">
 				<div className="flex items-center gap-2">
 					<span className="relative flex h-3 w-3">
 						<span
@@ -863,12 +864,12 @@ export function IncomingCallPopup() {
 					</div>
 
 					{/* Live Duration Timer */}
-					<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+					<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] flex items-center gap-1">
 						<Clock size={10} className="text-[var(--teal)]" />
 						<span>{formatDurationTimer(elapsedSeconds)}</span>
 					</span>
 
-					<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hidden sm:inline">
+					<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] text-[var(--muted,#64748b)] border border-[var(--line,#e2e8f0)] hidden sm:inline">
 						{providerLabel}
 					</span>
 				</div>
@@ -878,12 +879,12 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={toggleMute}
-						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+						className="text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 						title={isMuted ? "Включить звонок" : "Отключить звук"}
 						aria-label={isMuted ? "Включить звонок" : "Отключить звук"}
 					>
 						{isMuted ? (
-							<VolumeX size={17} className="text-rose-400" />
+							<VolumeX size={17} className="text-rose-500" />
 						) : (
 							<Volume2 size={17} />
 						)}
@@ -893,7 +894,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={openSimulator}
-						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+						className="text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 						title="Открыть симулятор телефонии"
 						aria-label="Симулятор SIP телефонии"
 					>
@@ -904,7 +905,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={dismissCall}
-						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+						className="text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 						aria-label="Свернуть уведомление"
 					>
 						<X size={18} />
@@ -933,7 +934,7 @@ export function IncomingCallPopup() {
 				{/* Identity Info */}
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2 flex-wrap">
-						<h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">
+						<h3 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] leading-tight">
 							{callerName}
 						</h3>
 						{isKnownPatient ? (
@@ -952,7 +953,7 @@ export function IncomingCallPopup() {
 							</span>
 						)}
 					</div>
-					<div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
+					<div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--muted,#64748b)] mt-0.5">
 						<Phone size={13} className="text-[var(--teal)]" />
 						<span>{formattedPhone}</span>
 					</div>
@@ -962,10 +963,10 @@ export function IncomingCallPopup() {
 			{/* 1-Click Upcoming Appointment Confirmation Card */}
 			{upcomingAppointment && (
 				<div className="p-3 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex flex-col gap-2 shadow-xs">
-					<div className="flex items-center justify-between text-xs">
-						<div className="flex items-center gap-1.5 font-bold text-[var(--teal)]">
-							<CalendarCheck size={14} className="text-[var(--teal)]" />
-							<span>
+					<div className="flex flex-wrap items-center justify-between text-xs gap-1.5">
+						<div className="flex items-center gap-1.5 font-bold text-[var(--teal)] min-w-0">
+							<CalendarCheck size={14} className="text-[var(--teal)] flex-shrink-0" />
+							<span className="break-words">
 								{upcomingAppointment.isToday
 									? "Запись сегодня"
 									: upcomingAppointment.isTomorrow
@@ -976,7 +977,7 @@ export function IncomingCallPopup() {
 							</span>
 						</div>
 						{upcomingAppointment.doctorName && (
-							<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px]">
+							<span className="text-[11px] text-[var(--ink,#0f172a)] font-medium break-words">
 								{upcomingAppointment.doctorName}
 							</span>
 						)}
@@ -998,7 +999,7 @@ export function IncomingCallPopup() {
 						<button
 							type="button"
 							onClick={handleCopySmsConfirmation}
-							className="min-h-[44px] px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-300 dark:border-slate-700 transition-all inline-flex items-center justify-center gap-1"
+							className="min-h-[44px] px-3 py-2 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-semibold border border-[var(--line,#e2e8f0)] transition-all inline-flex items-center justify-center gap-1"
 							title="Скопировать текст SMS-подтверждения"
 						>
 							{smsCopied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
@@ -1018,10 +1019,10 @@ export function IncomingCallPopup() {
 			)}
 
 			{/* Clinical & Financial Summary Panel */}
-			<div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/70 rounded-xl p-3 border border-slate-200 dark:border-slate-700/60 text-xs">
+			<div className="grid grid-cols-2 gap-2 bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] rounded-xl p-3 border border-[var(--line,#e2e8f0)] text-xs">
 				{/* Financial Balance */}
 				<div className="flex flex-col gap-0.5">
-					<span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+					<span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
 						<CreditCard size={11} className="text-[var(--teal)]" />
 						Баланс / Долг:
 					</span>
@@ -1032,7 +1033,7 @@ export function IncomingCallPopup() {
 									? "text-rose-600 dark:text-rose-400"
 									: financialSummary.balanceRub > 0
 										? "text-emerald-600 dark:text-emerald-400"
-										: "text-slate-900 dark:text-slate-100"
+										: "text-[var(--ink,#0f172a)]"
 							}`}
 						>
 							{financialSummary.formattedBalance}
@@ -1047,11 +1048,11 @@ export function IncomingCallPopup() {
 
 				{/* Insurance Status */}
 				<div className="flex flex-col gap-0.5">
-					<span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+					<span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
 						<Shield size={11} className="text-[var(--info-fg,#0284c7)]" />
 						Страховка / ДМС:
 					</span>
-					<span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+					<span className="font-semibold text-[var(--ink,#0f172a)] truncate">
 						{hasDms
 							? financialSummary.insuranceName || "Полис ДМС активен"
 							: "Без полиса ДМС"}
@@ -1059,27 +1060,27 @@ export function IncomingCallPopup() {
 				</div>
 
 				{/* Last Visit */}
-				<div className="col-span-2 pt-2 mt-1 border-t border-slate-200 dark:border-slate-700/60 flex items-start justify-between gap-2">
-					<div className="flex items-start gap-1.5 text-[11px]">
+				<div className="col-span-2 pt-2 mt-1 border-t border-[var(--line,#e2e8f0)] flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+					<div className="flex items-start gap-1.5 text-[11px] min-w-0">
 						<Calendar
 							size={13}
 							className="text-[var(--teal)] mt-0.5 flex-shrink-0"
 						/>
-						<div>
-							<span className="text-slate-500 dark:text-slate-400">Последний визит: </span>
-							<strong className="text-slate-900 dark:text-slate-100 font-semibold">
+						<div className="min-w-0">
+							<span className="text-[var(--muted,#64748b)]">Последний визит: </span>
+							<strong className="text-[var(--ink,#0f172a)] font-semibold break-words">
 								{lastVisitSummary.formattedLastVisit}
 							</strong>
 						</div>
 					</div>
 
 					{lastVisitSummary.doctorName && (
-						<div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+						<div className="flex items-center gap-1 text-[11px] text-[var(--muted,#64748b)] flex-wrap">
 							<Stethoscope
 								size={12}
 								className="text-[var(--teal)] flex-shrink-0"
 							/>
-							<span className="truncate">{lastVisitSummary.doctorName}</span>
+							<span className="font-medium text-[var(--ink,#0f172a)] break-words">{lastVisitSummary.doctorName}</span>
 						</div>
 					)}
 				</div>
@@ -1114,7 +1115,7 @@ export function IncomingCallPopup() {
 				)}
 
 				{hasNotes && (
-					<div className="flex items-start gap-2 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 italic">
+					<div className="flex items-start gap-2 bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] border border-[var(--line,#e2e8f0)] px-2.5 py-1.5 rounded-lg text-[var(--muted,#64748b)] italic">
 						<FileText
 							size={13}
 							className="mt-0.5 text-[var(--teal)] flex-shrink-0 not-italic"
@@ -1126,7 +1127,7 @@ export function IncomingCallPopup() {
 
 			{/* Touch-First 1-Click Booking Flow Presets (>=44px touch targets) */}
 			<div className="space-y-1.5">
-				<div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+				<div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 					<span className="flex items-center gap-1">
 						<Zap size={11} className="text-amber-500" />
 						Быстрая запись в 1 касание:
@@ -1160,11 +1161,11 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={() => handleQuickBook("tomorrow")}
-						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
 						title="Записать завтра на 11:00 (Плановый визит)"
 					>
 						<span>🗓️ Завтра 11:00</span>
-						<span className="text-[9px] font-normal text-slate-500 dark:text-slate-400">
+						<span className="text-[9px] font-normal text-[var(--muted,#64748b)]">
 							Плановый
 						</span>
 					</button>
@@ -1173,25 +1174,32 @@ export function IncomingCallPopup() {
 
 			{/* WebRTC SIP Call Transfer Panel (when call is answered) */}
 			{isCallAnswered && (
-				<div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 flex flex-col gap-2 text-xs">
-					<div className="flex items-center justify-between">
-						<button
-							type="button"
-							onClick={() => setShowTransferPanel((prev) => !prev)}
-							className="text-[11px] font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[36px]"
-						>
-							<PhoneForwarded size={13} className="text-[var(--teal)]" />
+				<div className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] flex flex-col gap-2.5 text-xs">
+					<button
+						type="button"
+						onClick={() => setShowTransferPanel((prev) => !prev)}
+						className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--teal)] transition-all flex items-center justify-between shadow-xs active:scale-[0.99]"
+					>
+						<div className="flex items-center gap-2">
+							<PhoneForwarded size={16} className="text-[var(--teal)] flex-shrink-0" />
 							<span>{showTransferPanel ? "Скрыть перевод звонка" : "Перевод звонка (SIP Transfer)"}</span>
-						</button>
-						{showTransferPanel && (
-							<div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-900 rounded-lg p-0.5 border border-slate-300 dark:border-slate-800 text-[10px]">
+						</div>
+						<ChevronDown
+							size={16}
+							className={`transition-transform duration-200 ${showTransferPanel ? "rotate-180" : ""}`}
+						/>
+					</button>
+
+					{showTransferPanel && (
+						<div className="space-y-2.5 pt-1 animate-fade-in">
+							<div className="flex items-center gap-1 bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-lg p-1 border border-[var(--line,#e2e8f0)] text-xs">
 								<button
 									type="button"
 									onClick={() => setTransferType("blind")}
-									className={`px-2 py-1 rounded font-bold transition-all ${
+									className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-md font-bold text-xs transition-all flex items-center justify-center ${
 										transferType === "blind"
 											? "bg-[var(--teal)] text-white shadow-xs"
-											: "text-slate-500 hover:text-slate-200"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 									}`}
 								>
 									Слепой (Blind)
@@ -1199,20 +1207,16 @@ export function IncomingCallPopup() {
 								<button
 									type="button"
 									onClick={() => setTransferType("attended")}
-									className={`px-2 py-1 rounded font-bold transition-all ${
+									className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-md font-bold text-xs transition-all flex items-center justify-center ${
 										transferType === "attended"
 											? "bg-[var(--teal)] text-white shadow-xs"
-											: "text-slate-500 hover:text-slate-200"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 									}`}
 								>
 									С консультацией (Attended)
 								</button>
 							</div>
-						)}
-					</div>
 
-					{showTransferPanel && (
-						<div className="space-y-2 pt-1 border-t border-slate-200 dark:border-slate-700/60 animate-fade-in">
 							<div className="grid grid-cols-4 gap-1.5">
 								{[
 									{ ext: "101", label: "101 Терапевт" },
@@ -1230,10 +1234,10 @@ export function IncomingCallPopup() {
 												"info",
 											);
 										}}
-										className="min-h-[44px] px-1.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-[var(--teal-soft)] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-[10px] font-bold text-center flex flex-col items-center justify-center transition-all active:scale-95 shadow-xs"
+										className="min-h-[48px] px-1.5 py-1.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[10px] font-bold text-center flex flex-col items-center justify-center transition-all active:scale-95 shadow-xs"
 									>
 										<span className="font-mono text-[var(--teal)]">{item.ext}</span>
-										<span className="text-[9px] font-normal text-slate-500 dark:text-slate-400 truncate w-full">
+										<span className="text-[9px] font-normal text-[var(--muted,#64748b)] truncate w-full">
 											{item.label.split(" ")[1]}
 										</span>
 									</button>

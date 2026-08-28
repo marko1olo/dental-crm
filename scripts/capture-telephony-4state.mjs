@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const OUT_DIR = "C:/Users/Admin/.gemini/antigravity/brain/0ab1dc3b-dbc4-4822-9eca-6c647fab12e4";
+const OUT_DIR = "C:/Users/Admin/.gemini/antigravity/brain/f7540ef9-0c8f-4137-b8e1-a84293efd674";
 const DOCS_DIR = "C:/Clinic_MVP/dental-crm/docs/screenshots";
 
 for (const d of [OUT_DIR, DOCS_DIR]) {
