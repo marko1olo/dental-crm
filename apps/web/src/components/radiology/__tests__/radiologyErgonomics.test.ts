@@ -190,5 +190,98 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.equal(header.bitsAllocated, 16);
 		assert.ok(header.windowWidth > 0);
 	});
+
+	it("renders RadiologyViewerModal with non-truncated WW/WL presets bar and min-w-max buttons", async () => {
+		const { RadiologyViewerModal } = await import("../RadiologyViewerModal");
+		const { createElement } = await import("react");
+		const { renderToStaticMarkup } = await import("react-dom/server");
+
+		const testStudy: import("../types").RadiologyStudy = {
+			id: "study-101",
+			patientName: "Смирнова Елена Васильевна",
+			doctorName: "Д-р Барабаш С.В.",
+			studyDate: "2026-08-15 14:30",
+			studyType: "intraoral_radiovisiography",
+			status: "completed",
+			effectiveDoseMsv: 0.0035,
+			modality: "intraoral_rvg",
+			modalityLabel: "Радиовизиография",
+			anatomicalArea: "Зуб 16 (Верхний моляр)",
+			teethFdi: ["16"],
+			imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+			effectiveDoseMicrosv: 3.5,
+			measurements: [],
+			landmarks: [],
+			calipers: [],
+			nerves: [],
+			metadata: { pixelSpacingMm: 0.05 },
+		};
+
+		const html = renderToStaticMarkup(
+			createElement(RadiologyViewerModal, {
+				isOpen: true,
+				onClose: () => {},
+				study: testStudy,
+			}),
+		);
+
+		// 1. Presets bar structure & test ID
+		assert.ok(html.includes('data-testid="viewer-presets-bar"'), "Contains presets bar container");
+		assert.ok(
+			html.includes("overflow-x-auto") && html.includes("flex-nowrap"),
+			"Presets bar has overflow-x-auto flex-nowrap to prevent button clipping",
+		);
+
+		// 2. Buttons with min-w-max and full non-truncated Russian labels
+		assert.ok(html.includes("Негатив / Инверсия"), "Contains full 'Негатив / Инверсия' label");
+		assert.ok(html.includes("Кость / Эндодонтия"), "Contains full 'Кость / Эндодонтия' label");
+		assert.ok(html.includes("Эмаль / Дентин"), "Contains full 'Эмаль / Дентин' label");
+		assert.ok(html.includes("Импланты / Металл"), "Contains full 'Импланты / Металл' label");
+		assert.ok(html.includes("min-w-max"), "Preset buttons contain min-w-max class");
+
+		// 3. Tooth 16 complete anatomical label
+		assert.ok(
+			html.includes("Зуб 16 (Верхний моляр)"),
+			"Renders full tooth anatomical description without truncation",
+		);
+	});
+
+	it("synchronizes studyDate from reception / props when omitted in DICOM / study", async () => {
+		const { RadiologyViewerModal } = await import("../RadiologyViewerModal");
+		const { createElement } = await import("react");
+		const { renderToStaticMarkup } = await import("react-dom/server");
+
+		const testStudyWithoutDate: import("../types").RadiologyStudy = {
+			id: "study-102",
+			patientName: "Иванов Иван",
+			doctorName: "Д-р Барабаш С.В.",
+			studyDate: "", // empty / omitted in DICOM
+			studyType: "cbct_full_maxillofacial_15x15",
+			status: "completed",
+			effectiveDoseMsv: 0.025,
+			modality: "cbct_3d",
+			modalityLabel: "3D КЛКТ",
+			anatomicalArea: "Челюстно-лицевая область",
+			teethFdi: ["16", "26"],
+			imageUrl: "/radiology/sample.jpg",
+			effectiveDoseMicrosv: 25.0,
+			measurements: [],
+			landmarks: [],
+			calipers: [],
+			nerves: [],
+		};
+
+		const html = renderToStaticMarkup(
+			createElement(RadiologyViewerModal, {
+				isOpen: true,
+				onClose: () => {},
+				study: testStudyWithoutDate,
+				currentReceptionDate: "2026-08-28 15:30",
+			}),
+		);
+
+		// Synchronized formatted date from reception prop
+		assert.ok(html.includes("28.08.2026 15:30"), "Synchronized reception date into formatted study header");
+	});
 });
 

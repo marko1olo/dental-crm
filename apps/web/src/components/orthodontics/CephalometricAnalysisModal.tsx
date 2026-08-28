@@ -63,6 +63,8 @@ export function CephalometricAnalysisModal({
 }: CephalometricAnalysisModalProps) {
 	// Active Tab inside the sidebar: 'landmarks' | 'metrics' | 'report'
 	const [activeTab, setActiveTab] = useState<"landmarks" | "metrics" | "report">("landmarks");
+	// Mobile Viewport Control (< lg / 390px): 'canvas' | 'landmarks' | 'metrics' | 'report'
+	const [mobileView, setMobileView] = useState<"canvas" | "landmarks" | "metrics" | "report">("canvas");
 
 	// Landmarks State (Initialized empty when no image is loaded to prevent fake 100% status)
 	const [landmarks, setLandmarks] = useState<LandmarkMap>(() =>
@@ -180,17 +182,17 @@ export function CephalometricAnalysisModal({
 		>
 			<div className="relative w-full max-w-7xl max-h-[96vh] bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[var(--ink,#0f172a)] dark:text-slate-100">
 				{/* ── Modal Header ────────────────────────────────────────────── */}
-				<header className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/95 shrink-0">
-					<div className="flex items-center gap-3 min-w-0">
-						<div className="w-11 h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] shadow-sm shrink-0">
-							<Activity size={24} />
+				<header className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/95 shrink-0">
+					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
+						<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] shadow-sm shrink-0">
+							<Activity size={22} className="sm:w-6 sm:h-6" />
 						</div>
-						<div className="min-w-0">
-							<div className="flex items-center gap-2 flex-wrap">
-								<h2 className="text-base sm:text-lg font-black tracking-tight text-[var(--ink,#0f172a)] dark:text-white m-0 truncate">
+						<div className="min-w-0 flex-1">
+							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+								<h2 className="text-sm sm:text-base md:text-lg font-black tracking-tight text-[var(--ink,#0f172a)] dark:text-white m-0 truncate">
 									Цефалометрический анализ ТРГ (Телерентгенография)
 								</h2>
-								<span className="text-xs uppercase tracking-wider font-extrabold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] px-2.5 py-1 rounded-lg">
+								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg shrink-0">
 									Steiner / Tweed / Downs / Ricketts
 								</span>
 							</div>
@@ -206,21 +208,102 @@ export function CephalometricAnalysisModal({
 							onClick={onClose}
 							data-testid="ceph-modal-close-btn"
 							aria-label="Закрыть окно цефалометрического анализа"
-							className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--muted,#64748b)] dark:text-slate-300 hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
+							className="w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--muted,#64748b)] dark:text-slate-300 hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
 						>
 							<X size={20} />
 						</button>
 					</div>
 				</header>
 
+				{/* ── Mobile Viewport Tab Switcher (< lg / 390px) ─────────────── */}
+				<div className="lg:hidden flex items-center gap-1 bg-slate-900 border-b border-slate-800 p-1.5 shrink-0 overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none">
+					<button
+						type="button"
+						onClick={() => setMobileView("canvas")}
+						className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+							mobileView === "canvas"
+								? "bg-teal-600 text-white shadow-md font-extrabold"
+								: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
+						}`}
+						data-testid="ceph-mobile-tab-canvas"
+					>
+						<Layers size={14} />
+						<span>Снимок / Разметка</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							setMobileView("landmarks");
+							setActiveTab("landmarks");
+						}}
+						className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+							mobileView === "landmarks"
+								? "bg-teal-600 text-white shadow-md font-extrabold"
+								: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
+						}`}
+						data-testid="ceph-mobile-tab-landmarks"
+					>
+						<span>16 ориентиров ({isImageLoaded ? analysis.placedCount : 0}/16)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							if (!isImageLoaded) {
+								showToast("Сначала загрузите снимок ТРГ", "warning");
+								return;
+							}
+							setMobileView("metrics");
+							setActiveTab("metrics");
+						}}
+						className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+							mobileView === "metrics"
+								? "bg-teal-600 text-white shadow-md font-extrabold"
+								: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
+						} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
+						data-testid="ceph-mobile-tab-metrics"
+					>
+						<span>Расчет углов</span>
+						{isImageLoaded && analysis.isComplete && (
+							<CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+						)}
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							if (!isImageLoaded) {
+								showToast("Сначала загрузите снимок ТРГ", "warning");
+								return;
+							}
+							setMobileView("report");
+							setActiveTab("report");
+						}}
+						className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+							mobileView === "report"
+								? "bg-teal-600 text-white shadow-md font-extrabold"
+								: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
+						} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
+						data-testid="ceph-mobile-tab-report"
+					>
+						<FileText size={14} />
+						<span>Форма 043/у</span>
+					</button>
+				</div>
+
 				{/* ── Main Content Body ───────────────────────────────────────── */}
-				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto lg:overflow-hidden">
+				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto lg:overflow-hidden min-h-0">
 					{/* ── Left Column: Lateral Cephalogram Viewer & Image Controls (7 Cols) ── */}
-					<div className="lg:col-span-7 flex flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden">
+					<div
+						className={`lg:col-span-7 flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden ${
+							mobileView === "canvas" ? "flex flex-1 min-h-[360px]" : "hidden lg:flex"
+						}`}
+					>
 						{/* Clean 32px Clinical Toolbar with overflow-x-auto Segmented Controls (No Truncation) */}
-						<div className="mb-2 flex items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl p-1.5 shadow-md shrink-0 select-none ceph-toolbar-compact overflow-x-auto whitespace-nowrap scrollbar-none max-w-full">
+						<div className="mb-2 flex items-center gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl p-1.5 shadow-md shrink-0 select-none ceph-toolbar-compact overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none max-w-full">
 							{/* Filter Modes Segmented Pill */}
-							<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0">
+							<div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
 								{(
 									[
 										{ id: "normal", label: "Стандарт" },
@@ -233,7 +316,7 @@ export function CephalometricAnalysisModal({
 										key={flt.id}
 										type="button"
 										onClick={() => setFilterMode(flt.id)}
-										className={`h-8 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
+										className={`h-8 min-w-max px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap shrink-0 ${
 											filterMode === flt.id
 												? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
 												: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
@@ -246,11 +329,11 @@ export function CephalometricAnalysisModal({
 							</div>
 
 							{/* Overlays Toggles */}
-							<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0">
+							<div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
 								<button
 									type="button"
 									onClick={() => setShowPolygon((prev) => !prev)}
-									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+									className={`h-8 min-w-max px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 										showPolygon
 											? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
 											: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
@@ -263,7 +346,7 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={() => setShowPlanes((prev) => !prev)}
-									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+									className={`h-8 min-w-max px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 										showPlanes
 											? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
 											: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
@@ -276,7 +359,7 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={() => setShowLabels((prev) => !prev)}
-									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+									className={`h-8 min-w-max px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 										showLabels
 											? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
 											: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
@@ -291,7 +374,7 @@ export function CephalometricAnalysisModal({
 							{/* Actions (Upload, Preset, Reset) */}
 							<div className="flex items-center gap-1.5 flex-nowrap shrink-0">
 								<label
-									className="h-8 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-600 shadow-sm whitespace-nowrap"
+									className="h-8 min-w-max px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-600 shadow-sm whitespace-nowrap shrink-0"
 									title="Загрузить пользовательский снимок ТРГ"
 								>
 									<UploadCloud size={14} />
@@ -306,7 +389,7 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={handleLoadPreset}
-									className="h-8 px-2.5 rounded-lg bg-teal-900/80 hover:bg-teal-800 text-teal-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-teal-500 cursor-pointer shadow-sm whitespace-nowrap"
+									className="h-8 min-w-max px-2.5 rounded-lg bg-teal-900/80 hover:bg-teal-800 text-teal-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-teal-500 cursor-pointer shadow-sm whitespace-nowrap shrink-0"
 									title="Загрузить эталонную анатомическую разметку со снимком"
 								>
 									<Sparkles size={14} />
@@ -315,7 +398,7 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={handleResetLandmarks}
-									className="h-8 px-2.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-700 cursor-pointer shadow-sm whitespace-nowrap"
+									className="h-8 min-w-max px-2.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-700 cursor-pointer shadow-sm whitespace-nowrap shrink-0"
 									title="Сбросить все точки"
 								>
 									<Trash2 size={13} />
@@ -353,12 +436,19 @@ export function CephalometricAnalysisModal({
 					</div>
 
 					{/* ── Right Column: Interactive Sidebar (Landmarks, Measurements & Form 043/y) (5 Cols) ── */}
-					<div className="lg:col-span-5 flex flex-col bg-[var(--paper)] overflow-hidden">
+					<div
+						className={`lg:col-span-5 flex-col bg-[var(--paper)] overflow-hidden ${
+							mobileView !== "canvas" ? "flex flex-1" : "hidden lg:flex"
+						}`}
+					>
 						{/* Tab Navigation with Symmetric 3-Column Grid (Zero Truncation) */}
 						<div className="grid grid-cols-3 border-b border-[var(--line)] bg-[var(--paper-soft)] px-2 pt-1.5 shrink-0 gap-1 w-full">
 							<button
 								type="button"
-								onClick={() => setActiveTab("landmarks")}
+								onClick={() => {
+									setActiveTab("landmarks");
+									setMobileView("landmarks");
+								}}
 								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "landmarks"
 										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper)] rounded-t-lg shadow-xs"
@@ -373,8 +463,12 @@ export function CephalometricAnalysisModal({
 							<button
 								type="button"
 								onClick={() => {
-									if (isImageLoaded) setActiveTab("metrics");
-									else showToast("Сначала загрузите снимок ТРГ", "warning");
+									if (isImageLoaded) {
+										setActiveTab("metrics");
+										setMobileView("metrics");
+									} else {
+										showToast("Сначала загрузите снимок ТРГ", "warning");
+									}
 								}}
 								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "metrics"
@@ -393,8 +487,12 @@ export function CephalometricAnalysisModal({
 							<button
 								type="button"
 								onClick={() => {
-									if (isImageLoaded) setActiveTab("report");
-									else showToast("Сначала загрузите снимок ТРГ", "warning");
+									if (isImageLoaded) {
+										setActiveTab("report");
+										setMobileView("report");
+									} else {
+										showToast("Сначала загрузите снимок ТРГ", "warning");
+									}
 								}}
 								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "report"
@@ -449,6 +547,8 @@ export function CephalometricAnalysisModal({
 														return;
 													}
 													setActiveTargetKey(lm.key);
+													setMobileView("canvas");
+													showToast(`Укажите точку «${lm.nameRu}» на снимке`, "info");
 												}}
 												className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer min-h-[52px] ${
 													isTarget
@@ -496,7 +596,10 @@ export function CephalometricAnalysisModal({
 									<button
 										type="button"
 										disabled={!isImageLoaded || placedPercent === 0}
-										onClick={() => setActiveTab("metrics")}
+										onClick={() => {
+											setActiveTab("metrics");
+											setMobileView("metrics");
+										}}
 										className={`w-full min-h-[48px] py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
 											!isImageLoaded || placedPercent === 0
 												? "bg-slate-700 text-slate-400 opacity-60 cursor-not-allowed"
@@ -713,7 +816,10 @@ export function CephalometricAnalysisModal({
 								<div className="mt-3 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
 									<button
 										type="button"
-										onClick={() => setActiveTab("report")}
+										onClick={() => {
+											setActiveTab("report");
+											setMobileView("report");
+										}}
 										className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
 									>
 										<span>Сформировать протокол Формы 043/у</span>

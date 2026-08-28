@@ -81,6 +81,8 @@ export interface RadiologyViewerModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	study: RadiologyStudy | null;
+	studyDate?: string | undefined;
+	currentReceptionDate?: string | undefined;
 	onSaveStudy?: (updatedStudy: RadiologyStudy) => void;
 	onOpenReferralModal?: (study: RadiologyStudy) => void;
 	onOpenDoseSheetModal?: (study: RadiologyStudy) => void;
@@ -90,6 +92,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	isOpen,
 	onClose,
 	study,
+	studyDate,
+	currentReceptionDate,
 	onSaveStudy,
 	onOpenReferralModal,
 	onOpenDoseSheetModal,
@@ -163,8 +167,14 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		setLoadedImageUrl(dataUrl);
 		setIsDropzoneOpen(false);
 		if (study && onSaveStudy) {
+			const syncedDate =
+				study.studyDate ||
+				studyDate ||
+				currentReceptionDate ||
+				new Date().toISOString().replace("T", " ").substring(0, 16);
 			onSaveStudy({
 				...study,
+				studyDate: syncedDate,
 				imageUrl: dataUrl,
 				diagnosticNotes: study.diagnosticNotes || (meta ? `Загружен снимок: ${meta.name}` : ""),
 				metadata: {
@@ -566,15 +576,39 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		return formatRadiationDose(study?.effectiveDoseMicrosv ?? 25.0);
 	}, [study?.effectiveDoseMicrosv]);
 
-	if (!isOpen || typeof document === "undefined") return null;
+	if (!isOpen) return null;
 
 	const studyTitle = study?.anatomicalArea || "Рентгенологическое исследование";
-	const studyDateFormatted = study?.studyDate || "15.08.2026";
+	const studyDateFormatted = useMemo(() => {
+		const rawDate = study?.studyDate || studyDate || currentReceptionDate;
+		if (rawDate && rawDate.trim()) {
+			const str = rawDate.trim();
+			// Handle YYYYMMDD DICOM format
+			if (/^\d{8}$/.test(str)) {
+				const y = str.slice(0, 4);
+				const m = str.slice(4, 6);
+				const d = str.slice(6, 8);
+				return `${d}.${m}.${y}`;
+			}
+			// Handle ISO date format YYYY-MM-DD or YYYY-MM-DD HH:mm
+			if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+				const [datePart, timePart] = str.replace("T", " ").split(" ");
+				const [y, m, d] = (datePart ?? "").split("-");
+				return timePart ? `${d}.${m}.${y} ${timePart.substring(0, 5)}` : `${d}.${m}.${y}`;
+			}
+			return str;
+		}
+		const now = new Date();
+		const d = String(now.getDate()).padStart(2, "0");
+		const m = String(now.getMonth() + 1).padStart(2, "0");
+		const y = now.getFullYear();
+		return `${d}.${m}.${y}`;
+	}, [study?.studyDate, studyDate, currentReceptionDate]);
 	const patientName = study?.patientName || "Пациент";
 	const doctorName = study?.doctorName || "Врач-рентгенолог";
 	const modalityLabel = study?.modalityLabel || "3D КЛКТ / ОПТГ";
 
-	return createPortal(
+	const modalContent = (
 		<div
 			id={modalId}
 			className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-[var(--ink,#f8fafc)] select-none overflow-hidden animate-in fade-in duration-200"
@@ -626,10 +660,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				<div className="hidden lg:flex items-center gap-3">
 					{study?.teethFdi && study.teethFdi.length > 0 && (
 						<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] shadow-sm">
-							<Target className="w-4 h-4 text-[var(--teal)]" />
+							<Target className="w-4 h-4 text-[var(--teal)] shrink-0" />
 							<span className="text-xs font-medium text-[var(--muted,#cbd5e1)]">Зубы FDI:</span>
 							<span className="text-sm font-bold text-[var(--teal)]">
-								{study.teethFdi.join(", ")}
+								{study.teethFdi.map((t) => (FDI_TOOTH_NAMES[t] ? `Зуб ${t} (${FDI_TOOTH_NAMES[t]})` : `Зуб ${t}`)).join(", ")}
 							</span>
 						</div>
 					)}
@@ -735,7 +769,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			{/* ═══════════════════════════════════════════════════════════════════
 			    2. MAIN WORKSPACE: VIEWPORT + TOOLBAR + SIDE DRAWER
 			    ═══════════════════════════════════════════════════════════════════ */}
-			<div className="relative flex-1 flex min-h-0 bg-slate-900 border border-slate-700/60 dark:border-slate-800 overflow-hidden">
+			<div className="relative flex-1 flex min-h-0 bg-slate-900 border border-slate-700 overflow-hidden">
 				{/* Mobile Toolbar Toggle Button (< md) */}
 				{activeImageUrl && !isDropzoneOpen && (
 					<button
@@ -1062,7 +1096,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				{/* ── LANDMARK PIN PLACEMENT DIALOG ── */}
 				{pendingLandmarkPos && (
 					<div
-						className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-96 p-5 rounded-2xl bg-[var(--paper-soft,#0f172a)] border-2 border-[var(--teal)] shadow-2xl flex flex-col gap-4 text-[var(--ink,#f8fafc)] animate-in zoom-in-95 duration-150"
+						className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-[calc(100vw-24px)] sm:max-w-md p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft,#0f172a)] border-2 border-[var(--teal)] shadow-2xl flex flex-col gap-3 sm:gap-4 text-[var(--ink,#f8fafc)] animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto"
 						data-testid="landmark-picker-modal"
 					>
 						<div className="flex items-center justify-between border-b border-[var(--line,#334155)] pb-2">
@@ -1170,8 +1204,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									))}
 								</div>
 							</div>
-							<p className="text-[11px] text-[var(--teal)] mt-1 font-semibold">
-								Выбран: {selectedFdiTooth} — {FDI_TOOTH_NAMES[selectedFdiTooth] || "Зуб"}
+							<p className="text-xs text-[var(--teal)] mt-1.5 font-bold min-w-0 break-words leading-relaxed">
+								{selectedFdiTooth ? `Зуб ${selectedFdiTooth} (${FDI_TOOTH_NAMES[selectedFdiTooth] || "Зуб"})` : "Зуб не выбран"}
 							</p>
 						</div>
 
@@ -1630,7 +1664,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 													e.stopPropagation();
 													handleDeleteLandmark(pin.id);
 												}}
-												className="text-rose-400 hover:text-rose-200 ml-0.5 text-xs font-bold leading-none cursor-pointer"
+												className="text-rose-300 hover:text-white bg-rose-950/60 px-1.5 py-0.5 rounded text-xs font-bold ml-1 cursor-pointer transition-colors leading-none"
 												title="Удалить метку"
 											>
 												×
@@ -1733,7 +1767,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 					{/* ── WW/WL PRESETS QUICK BAR (Centered directly inside canvas viewport) ── */}
 					<div
-						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-32px)] overflow-x-auto scrollbar-none transition-all ${
+						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-16px)] sm:max-w-[calc(100%-32px)] overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none transition-all ${
 							!isImageLoaded ? "opacity-40 pointer-events-none" : ""
 						}`}
 						data-testid="viewer-presets-bar"
@@ -1749,7 +1783,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									type="button"
 									disabled={!isImageLoaded}
 									onClick={() => handleSelectPreset(preset)}
-									className={`h-8 min-h-[32px] min-w-fit shrink-0 whitespace-nowrap px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
+									className={`h-8 min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
 										isSelected
 											? "bg-teal-600 border border-teal-300 text-white shadow-md font-bold"
 											: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-600 font-bold"
@@ -1865,9 +1899,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 												{study.teethFdi.map((t) => (
 													<span
 														key={t}
-														className="px-2 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold"
+														className="px-2 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold whitespace-normal break-words"
 													>
-														Зуб {t}
+														Зуб {t} {FDI_TOOTH_NAMES[t] ? `(${FDI_TOOTH_NAMES[t]})` : ""}
 													</span>
 												))}
 											</div>
@@ -2174,7 +2208,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					onClose={() => setIsMprViewerOpen(false)}
 				/>
 			)}
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };

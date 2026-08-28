@@ -39,8 +39,11 @@ import {
 	calculateLineCostKopecks,
 	createDeductionLinesFromTechMaps,
 	createSupplierPurchaseOrderFromLines,
+	declineUnitRu,
 	evaluateStockStatus,
+	formatQuantityWithUnitRu,
 	formatSupplierPurchaseOrderTextRu,
+	formatUnitPriceUnitRu,
 } from "./inventoryMath";
 import type { InventoryItem } from "./useInventoryLogic";
 import "./inventoryDeduction.css";
@@ -336,7 +339,7 @@ export function ProcedureMaterialDeductionModal({
 					<div className="inventory-tech-maps-label">
 						Технологические карты процедур:
 					</div>
-					<div className="inventory-tech-maps-chips">
+					<div className="inventory-tech-maps-chips" style={{ display: "flex", flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", gap: "8px", paddingBottom: "4px" }}>
 						{ALL_PROCEDURE_TECH_MAPS.map((tm) => {
 							const isActive = selectedMapCodes.includes(tm.code);
 							return (
@@ -344,6 +347,7 @@ export function ProcedureMaterialDeductionModal({
 									key={tm.id}
 									type="button"
 									className={`inventory-tech-map-chip ${isActive ? "active" : ""}`}
+									style={{ flexShrink: 0, whiteSpace: "nowrap", minWidth: "max-content" }}
 									onClick={() => handleToggleTechMap(tm.code)}
 								>
 									{isActive && <CheckCircle2 size={16} />}
@@ -357,22 +361,7 @@ export function ProcedureMaterialDeductionModal({
 				{/* CRITICAL THRESHOLD & DEFICIT ALERT BAR (1-CLICK PURCHASE ORDER) */}
 				{(summary.hasDeficit || summary.warningCount > 0) && (
 					<div
-						style={{
-							margin: "12px 24px 0",
-							padding: "10px 16px",
-							borderRadius: 12,
-							background: summary.hasDeficit
-								? "var(--rust-soft)"
-								: "rgba(245, 158, 11, 0.12)",
-							border: `1px solid ${
-								summary.hasDeficit ? "var(--rust)" : "rgba(245, 158, 11, 0.5)"
-							}`,
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							gap: 12,
-							flexWrap: "wrap",
-						}}
+						className={`inventory-alert-summary-bar ${summary.hasDeficit ? "has-deficit" : "has-warning"}`}
 					>
 						<div style={{ display: "flex", alignItems: "center", gap: 10 }}>
 							{summary.hasDeficit ? (
@@ -424,7 +413,7 @@ export function ProcedureMaterialDeductionModal({
 						<input
 							type="text"
 							className="inventory-search-input"
-							placeholder="Поиск материала в списке списания..."
+							placeholder="Поиск материала..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 						/>
@@ -519,7 +508,7 @@ export function ProcedureMaterialDeductionModal({
 											</div>
 
 											<div className="inventory-material-meta">
-												<span>Норма: {line.standardQuantity} {line.unit}</span>
+												<span>Норма: {formatQuantityWithUnitRu(line.standardQuantity, line.unit)}</span>
 												<span
 													className={`inventory-stock-pill ${
 														stockStatus.severity === "critical"
@@ -532,7 +521,7 @@ export function ProcedureMaterialDeductionModal({
 													{stockStatus.severity === "critical" && (
 														<AlertTriangle size={14} />
 													)}
-													Остаток на складе: {line.stockQuantity} {line.unit}
+													Остаток на складе: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
 												</span>
 												{line.lotNumber && (
 													<span>Партия: {line.lotNumber}</span>
@@ -642,7 +631,7 @@ export function ProcedureMaterialDeductionModal({
 														minimumFractionDigits: 2,
 														maximumFractionDigits: 2,
 													})}{" "}
-													₽ / {line.unit}
+													₽ / {formatUnitPriceUnitRu(line.unit)}
 												</div>
 											</div>
 

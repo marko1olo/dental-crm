@@ -147,6 +147,8 @@ const CLINICAL_GOALS_CATALOG: readonly {
 	},
 ];
 
+const EMPTY_TEETH_LIST: readonly string[] = [];
+
 export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	isOpen,
 	onClose,
@@ -155,7 +157,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	doctorSpecialty,
 	clinicName,
 	initialDiagnosisIcd10 = "K04.0",
-	initialTeeth = [],
+	initialTeeth = EMPTY_TEETH_LIST as string[],
 	onSuccessReferralCreated,
 }) => {
 	const modalId = useId();
@@ -173,6 +175,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	const [clinicalNotes, setClinicalNotes] = useState<string>("");
 	const [customReferralNumber, setCustomReferralNumber] = useState<string>("");
 	const [activeTab, setActiveTab] = useState<"form" | "preview">("form");
+
+	const initialTeethKey = initialTeeth.join(",");
 
 	// Synchronize on open
 	useEffect(() => {
@@ -192,7 +196,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, initialTeeth, onClose]);
+	}, [isOpen, initialTeethKey, onClose]);
 
 	if (!isOpen || typeof document === "undefined") return null;
 

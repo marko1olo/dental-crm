@@ -83,24 +83,26 @@ export interface ClinicalWriteoffModalProps {
 	readonly isDeducting?: boolean | undefined;
 }
 
+const DEFAULT_CLINICAL_SERVICES: readonly CompletedClinicalService[] = [
+	{
+		serviceCode: "A16.07.002.001",
+		toothNumber: 26,
+		serviceTitle: "Пломбирование зуба светоотверждаемым композитом",
+		quantityMultiplier: 1,
+	},
+	{
+		serviceCode: "A16.07.004",
+		toothNumber: 26,
+		serviceTitle: "Местная анестезия инфильтрационная",
+		quantityMultiplier: 1,
+	},
+];
+
 export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	isOpen,
 	onClose,
 	onConfirmWriteoff,
-	initialServices = [
-		{
-			serviceCode: "A16.07.002.001",
-			toothNumber: 26,
-			serviceTitle: "Пломбирование зуба светоотверждаемым композитом",
-			quantityMultiplier: 1,
-		},
-		{
-			serviceCode: "A16.07.004",
-			toothNumber: 26,
-			serviceTitle: "Местная анестезия инфильтрационная",
-			quantityMultiplier: 1,
-		},
-	],
+	initialServices = DEFAULT_CLINICAL_SERVICES,
 	patientName = "Смирнов Алексей Викторович",
 	patientId = "PAT-2026-0881",
 	patientBirthDate = "1988-04-12",

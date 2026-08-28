@@ -210,9 +210,11 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 			"Renders cephalometric planes layer (Steiner/Tweed/Downs)",
 		);
 
-		// HUD Controls
-		assert.ok(html.includes("Установите точку:"));
-		assert.ok(html.includes("Sella (Седло)"));
+		// HUD Controls: When all 16 landmarks are present in preset
+		assert.ok(
+			html.includes("Все 16 точек заданы. Расчет углов готов"),
+			"Displays complete 16 points calculation ready status",
+		);
 		assert.ok(html.includes("100%"));
 		assert.ok(html.includes("Линейка"));
 		assert.ok(html.includes('aria-label="Приблизить масштаб"'));
@@ -227,6 +229,105 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 		assert.ok(
 			!html.includes("Векторная анатомическая модель ТРГ"),
 			"No fake vector skull backdrop on real image",
+		);
+	});
+
+	it("synchronizes landmark HUD status between placed and pending points", () => {
+		const testImageUrl = "https://clinic.dente.ru/radiology/ceph-lateral-042.jpg";
+
+		// 1. Point already set: should show 'Точка задана:'
+		const htmlPlaced = renderToStaticMarkup(
+			createElement(CephalometricCanvas, {
+				landmarks: { S: { x: 280, y: 190 } },
+				onLandmarkChange: () => {},
+				activeTargetKey: "S",
+				onSelectTargetKey: () => {},
+				imageUrl: testImageUrl,
+				filterMode: "normal",
+				brightness: 100,
+				contrast: 100,
+				showPolygon: true,
+				showPlanes: true,
+				showLabels: true,
+				scaleMmPerPixel: 0.15,
+			}),
+		);
+		assert.ok(htmlPlaced.includes("Точка задана:"), "Displays 'Точка задана:' when point is already placed");
+		assert.ok(htmlPlaced.includes("Sella (Седло)"), "Displays landmark name in Russian");
+
+		// 2. Point pending: should show 'Установите точку:'
+		const htmlPending = renderToStaticMarkup(
+			createElement(CephalometricCanvas, {
+				landmarks: { S: { x: 280, y: 190 } },
+				onLandmarkChange: () => {},
+				activeTargetKey: "N",
+				onSelectTargetKey: () => {},
+				imageUrl: testImageUrl,
+				filterMode: "normal",
+				brightness: 100,
+				contrast: 100,
+				showPolygon: true,
+				showPlanes: true,
+				showLabels: true,
+				scaleMmPerPixel: 0.15,
+			}),
+		);
+		assert.ok(htmlPending.includes("Установите точку:"), "Displays 'Установите точку:' when point is not placed yet");
+		assert.ok(htmlPending.includes("Nasion (Назион)"), "Displays target pending landmark name");
+	});
+
+	it("renders mobile tab switcher with [Снимок / Разметка], [16 ориентиров], [Расчет углов], and [Форма 043/у]", () => {
+		const html = renderToStaticMarkup(
+			createElement(CephalometricAnalysisModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientId: "pat-123",
+				patientName: "Смирнов Алексей Викторович",
+				initialImageUrl: "https://clinic.dente.ru/radiology/ceph-sample.jpg",
+			}),
+		);
+
+		assert.ok(
+			html.includes('data-testid="ceph-mobile-tab-canvas"'),
+			"Contains mobile tab for canvas [Снимок / Разметка]",
+		);
+		assert.ok(
+			html.includes("Снимок / Разметка"),
+			"Displays 'Снимок / Разметка' tab label",
+		);
+		assert.ok(
+			html.includes('data-testid="ceph-mobile-tab-landmarks"'),
+			"Contains mobile tab for 16 landmarks",
+		);
+		assert.ok(
+			html.includes("16 ориентиров"),
+			"Displays '16 ориентиров' tab label",
+		);
+		assert.ok(
+			html.includes('data-testid="ceph-mobile-tab-metrics"'),
+			"Contains mobile tab for angle calculations [Расчет углов]",
+		);
+		assert.ok(
+			html.includes("Расчет углов"),
+			"Displays 'Расчет углов' tab label",
+		);
+		assert.ok(
+			html.includes('data-testid="ceph-mobile-tab-report"'),
+			"Contains mobile tab for Form 043/y [Форма 043/у]",
+		);
+		assert.ok(
+			html.includes("Форма 043/у"),
+			"Displays 'Форма 043/у' tab label",
+		);
+
+		// Non-truncated filter toolbar with flex-nowrap and overflow-x-auto
+		assert.ok(
+			html.includes("flex-nowrap") && html.includes("overflow-x-auto"),
+			"Toolbar is wrapped in flex-nowrap overflow-x-auto to prevent button truncation",
+		);
+		assert.ok(
+			html.includes("min-w-max"),
+			"Toolbar buttons have min-w-max to guarantee complete text display without clipping",
 		);
 	});
 });

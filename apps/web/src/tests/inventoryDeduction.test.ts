@@ -25,10 +25,15 @@ import {
 	canSafelyDeductLinesWithoutDeficit,
 	createDeductionLinesFromTechMaps,
 	createSupplierPurchaseOrderFromLines,
+	declineUnitRu,
 	evaluateStockStatus,
+	formatQuantityWithUnitRu,
 	formatSupplierPurchaseOrderTextRu,
+	formatUnitPriceUnitRu,
 	matchMaterialToWarehouse,
+	pluralizeRussian,
 } from "../components/inventory";
+import { Billing1CExportModal } from "../components/finance/Billing1CExportModal";
 import type { InventoryItem } from "../components/inventory/useInventoryLogic";
 
 describe("Dental Inventory BOM & Procedure Tech Maps", () => {
@@ -391,6 +396,10 @@ describe("SSR-Safety & Component Rendering", () => {
 		assert.ok(html.includes("Зуб №26"));
 		assert.ok(html.includes("Алексей Смирнов"));
 		assert.ok(html.includes("Списать со склада"));
+		// Проверка сокращенного плейсхолдера поиска
+		assert.ok(html.includes("placeholder=\"Поиск материала...\""));
+		// Проверка корректного вывода цены за единицу (пара, а не пары)
+		assert.ok(html.includes("35,00 ₽ / пара") || html.includes("35,00 ₽ / пара"));
 	});
 
 	it("ProcedureMaterialDeductionModal отображает предупреждение о дефиците и кнопку заказа поставщику", () => {
@@ -428,3 +437,134 @@ describe("SSR-Safety & Component Rendering", () => {
 		assert.equal(html, "");
 	});
 });
+
+describe("Russian Unit Declension & Pluralization Engine", () => {
+	it("pluralizeRussian корректно склоняет слова по числовым правилам русского языка", () => {
+		assert.equal(pluralizeRussian(1, "пара", "пары", "пар"), "пара");
+		assert.equal(pluralizeRussian(21, "пара", "пары", "пар"), "пара");
+		assert.equal(pluralizeRussian(101, "пара", "пары", "пар"), "пара");
+
+		assert.equal(pluralizeRussian(2, "пара", "пары", "пар"), "пары");
+		assert.equal(pluralizeRussian(3, "пара", "пары", "пар"), "пары");
+		assert.equal(pluralizeRussian(4, "пара", "пары", "пар"), "пары");
+		assert.equal(pluralizeRussian(22, "пара", "пары", "пар"), "пары");
+		assert.equal(pluralizeRussian(1.5, "пара", "пары", "пар"), "пары");
+
+		assert.equal(pluralizeRussian(0, "пара", "пары", "пар"), "пар");
+		assert.equal(pluralizeRussian(5, "пара", "пары", "пар"), "пар");
+		assert.equal(pluralizeRussian(11, "пара", "пары", "пар"), "пар");
+		assert.equal(pluralizeRussian(12, "пара", "пары", "пар"), "пар");
+		assert.equal(pluralizeRussian(14, "пара", "пары", "пар"), "пар");
+		assert.equal(pluralizeRussian(20, "пара", "пары", "пар"), "пар");
+		assert.equal(pluralizeRussian(100, "пара", "пары", "пар"), "пар");
+	});
+
+	it("declineUnitRu и formatQuantityWithUnitRu корректно склоняют все медицинские единицы измерения", () => {
+		// Пары перчаток
+		assert.equal(formatQuantityWithUnitRu(0, "пары"), "0 пар");
+		assert.equal(formatQuantityWithUnitRu(1, "пары"), "1 пара");
+		assert.equal(formatQuantityWithUnitRu(2, "пары"), "2 пары");
+		assert.equal(formatQuantityWithUnitRu(5, "пары"), "5 пар");
+		assert.equal(formatQuantityWithUnitRu(21, "пары"), "21 пара");
+
+		// Штуки
+		assert.equal(formatQuantityWithUnitRu(0, "шт."), "0 шт.");
+		assert.equal(formatQuantityWithUnitRu(1, "шт."), "1 шт.");
+		assert.equal(formatQuantityWithUnitRu(2, "шт."), "2 шт.");
+		assert.equal(formatQuantityWithUnitRu(5, "шт."), "5 шт.");
+
+		// Миллилитры и граммы (дробные и целые)
+		assert.equal(formatQuantityWithUnitRu(0.1, "мл"), "0.1 мл");
+		assert.equal(formatQuantityWithUnitRu(1, "мл"), "1 мл");
+		assert.equal(formatQuantityWithUnitRu(15, "мл"), "15 мл");
+
+		assert.equal(formatQuantityWithUnitRu(0.4, "г"), "0.4 г");
+		assert.equal(formatQuantityWithUnitRu(1, "г"), "1 г");
+		assert.equal(formatQuantityWithUnitRu(25, "г"), "25 г");
+
+		// Карпулы
+		assert.equal(formatQuantityWithUnitRu(1, "карп."), "1 карп.");
+		assert.equal(formatQuantityWithUnitRu(2, "карп."), "2 карп.");
+		assert.equal(formatQuantityWithUnitRu(1, "карпула"), "1 карпула");
+		assert.equal(formatQuantityWithUnitRu(2, "карпула"), "2 карпулы");
+		assert.equal(formatQuantityWithUnitRu(5, "карпула"), "5 карпул");
+	});
+
+	it("formatUnitPriceUnitRu возвращает единичную форму для вывода стоимости за единицу", () => {
+		assert.equal(formatUnitPriceUnitRu("пары"), "пара");
+		assert.equal(formatUnitPriceUnitRu("пар"), "пара");
+		assert.equal(formatUnitPriceUnitRu("пара"), "пара");
+
+		assert.equal(formatUnitPriceUnitRu("шт."), "шт.");
+		assert.equal(formatUnitPriceUnitRu("штуки"), "шт.");
+
+		assert.equal(formatUnitPriceUnitRu("мл"), "мл");
+		assert.equal(formatUnitPriceUnitRu("г"), "г");
+		assert.equal(formatUnitPriceUnitRu("карп."), "карп.");
+		assert.equal(formatUnitPriceUnitRu("упак."), "упак.");
+		assert.equal(formatUnitPriceUnitRu("компл."), "компл.");
+		assert.equal(formatUnitPriceUnitRu("доза"), "доза");
+	});
+});
+
+describe("Billing1CExportModal & Kopeck-Exact Formatting", () => {
+	it("Billing1CExportModal форматирует все суммы строго с копейками (,00 ₽)", () => {
+		const html = renderToStaticMarkup(
+			createElement(Billing1CExportModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientName: "Смирнова Елена Александровна",
+				contractNumber: "Д-2026/08",
+				items: [
+					{
+						id: "item-1",
+						code804n: "A16.07.002.001",
+						name: "Восстановление зуба пломбой (светоотверждаемый композит)",
+						priceRub: 5900,
+						discountRub: 500,
+						quantity: 1,
+						toothNumber: 16,
+					},
+					{
+						id: "item-2",
+						code804n: "A16.07.051",
+						name: "Профессиональная гигиена полости рта",
+						priceRub: 50500,
+						discountRub: 0,
+						quantity: 1,
+					},
+				],
+				totalRub: 55900,
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"billing-1c-export-modal\""));
+		assert.ok(html.includes("1С:Предприятие 8.3 / Экспорт в CommerceML 2.09"));
+		assert.ok(html.includes("Смирнова Елена Александровна"));
+
+		// Проверка строгой точности копеек: 55 900,00 ₽
+		const normalizedHtml = html.replace(/[\u00A0\u202F]/g, " ");
+		assert.ok(
+			normalizedHtml.includes("55 900,00 ₽"),
+			"Итоговая сумма должна форматироваться строго с копейками (55 900,00 ₽)",
+		);
+
+		// Проверка позиций в таблице с копейками: 5 900,00 ₽, 500,00 ₽, 5 400,00 ₽, 50 500,00 ₽
+		assert.ok(normalizedHtml.includes("5 900,00 ₽"));
+		assert.ok(normalizedHtml.includes("500,00 ₽"));
+		assert.ok(normalizedHtml.includes("5 400,00 ₽"));
+		assert.ok(normalizedHtml.includes("50 500,00 ₽"));
+	});
+
+	it("Billing1CExportModal возвращает пустую строку при isOpen = false", () => {
+		const html = renderToStaticMarkup(
+			createElement(Billing1CExportModal, {
+				isOpen: false,
+				onClose: () => {},
+				items: [],
+			}),
+		);
+		assert.equal(html, "");
+	});
+});
+

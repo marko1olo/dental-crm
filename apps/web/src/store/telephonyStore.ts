@@ -440,8 +440,15 @@ export function resolvePatientLastVisit(
 
 	const patientAppointments = appointments
 		.filter((a) => a.patientId === patientId)
-		.filter((a) => a.status === "completed" || a.startsAt <= nowIso)
-		.sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime());
+		.filter((a) => {
+			const dateStr = a.startsAt || (a as any).startIso || (a as any).date;
+			return a.status === "completed" || (dateStr && dateStr <= nowIso);
+		})
+		.sort((a, b) => {
+			const timeA = new Date(a.startsAt || (a as any).startIso || 0).getTime() || 0;
+			const timeB = new Date(b.startsAt || (b as any).startIso || 0).getTime() || 0;
+			return timeB - timeA;
+		});
 
 	const latest = patientAppointments[0];
 	if (!latest) {
@@ -458,8 +465,9 @@ export function resolvePatientLastVisit(
 	let doctorName: string | null = null;
 	let doctorSpecialty: string | null = null;
 
-	if (latest.doctorUserId && staff) {
-		const doctor = staff.find((s) => s.id === latest.doctorUserId);
+	const doctorId = latest.doctorUserId || (latest as any).doctorId;
+	if (doctorId && staff) {
+		const doctor = staff.find((s) => s.id === doctorId);
 		if (doctor) {
 			doctorName = doctor.fullName;
 			if (doctor.specialties && doctor.specialties.length > 0) {
@@ -468,17 +476,22 @@ export function resolvePatientLastVisit(
 		}
 	}
 
-	const dateObj = new Date(latest.startsAt);
-	const formattedLastVisit = new Intl.DateTimeFormat("ru-RU", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	}).format(dateObj);
+	const rawDateStr = latest.startsAt || (latest as any).startIso;
+	const dateObj = rawDateStr ? new Date(rawDateStr) : null;
+	const isValidDate = dateObj && !isNaN(dateObj.getTime());
+
+	const formattedLastVisit = isValidDate
+		? new Intl.DateTimeFormat("ru-RU", {
+				day: "numeric",
+				month: "short",
+				year: "numeric",
+				hour: "2-digit",
+				minute: "2-digit",
+			}).format(dateObj)
+		: "Первичный приём (визитов нет)";
 
 	return {
-		lastVisitDate: latest.startsAt,
+		lastVisitDate: rawDateStr || null,
 		formattedLastVisit,
 		doctorName,
 		doctorSpecialty,
@@ -515,22 +528,34 @@ export function resolvePatientUpcomingAppointment(
 	const upcoming = appointments
 		.filter((a) => a.patientId === patientId)
 		.filter((a) => a.status === "planned" || a.status === "confirmed")
-		.filter((a) => a.startsAt >= nowIso)
-		.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+		.filter((a) => {
+			const dateStr = a.startsAt || (a as any).startIso || (a as any).date;
+			return Boolean(dateStr && dateStr >= nowIso);
+		})
+		.sort((a, b) => {
+			const timeA = new Date(a.startsAt || (a as any).startIso || 0).getTime() || 0;
+			const timeB = new Date(b.startsAt || (b as any).startIso || 0).getTime() || 0;
+			return timeA - timeB;
+		});
 
 	const nextAppt = upcoming[0];
 	if (!nextAppt) return null;
 
 	let doctorName: string | null = null;
-	if (nextAppt.doctorUserId && staff) {
-		const doctor = staff.find((s) => s.id === nextAppt.doctorUserId);
+	const doctorId = nextAppt.doctorUserId || (nextAppt as any).doctorId;
+	if (doctorId && staff) {
+		const doctor = staff.find((s) => s.id === doctorId);
 		if (doctor) doctorName = doctor.fullName;
 	}
 
-	const dateObj = new Date(nextAppt.startsAt);
+	const rawStartsAt = nextAppt.startsAt || (nextAppt as any).startIso || nowIso;
+	const rawEndsAt = nextAppt.endsAt || (nextAppt as any).endIso || rawStartsAt;
+	const dateObj = new Date(rawStartsAt);
 	const nowDate = new Date(nowIso);
 
+	const isValidDate = !isNaN(dateObj.getTime());
 	const isToday =
+		isValidDate &&
 		dateObj.getFullYear() === nowDate.getFullYear() &&
 		dateObj.getMonth() === nowDate.getMonth() &&
 		dateObj.getDate() === nowDate.getDate();
@@ -538,25 +563,30 @@ export function resolvePatientUpcomingAppointment(
 	const tomorrowDate = new Date(nowDate);
 	tomorrowDate.setDate(tomorrowDate.getDate() + 1);
 	const isTomorrow =
+		isValidDate &&
 		dateObj.getFullYear() === tomorrowDate.getFullYear() &&
 		dateObj.getMonth() === tomorrowDate.getMonth() &&
 		dateObj.getDate() === tomorrowDate.getDate();
 
-	const formattedDate = new Intl.DateTimeFormat("ru-RU", {
-		day: "numeric",
-		month: "long",
-		weekday: "short",
-	}).format(dateObj);
+	const formattedDate = isValidDate
+		? new Intl.DateTimeFormat("ru-RU", {
+				day: "numeric",
+				month: "long",
+				weekday: "short",
+			}).format(dateObj)
+		: "";
 
-	const formattedTime = new Intl.DateTimeFormat("ru-RU", {
-		hour: "2-digit",
-		minute: "2-digit",
-	}).format(dateObj);
+	const formattedTime = isValidDate
+		? new Intl.DateTimeFormat("ru-RU", {
+				hour: "2-digit",
+				minute: "2-digit",
+			}).format(dateObj)
+		: "";
 
 	return {
 		appointmentId: nextAppt.id,
-		startsAt: nextAppt.startsAt,
-		endsAt: nextAppt.endsAt,
+		startsAt: rawStartsAt,
+		endsAt: rawEndsAt,
 		formattedDate,
 		formattedTime,
 		doctorName,

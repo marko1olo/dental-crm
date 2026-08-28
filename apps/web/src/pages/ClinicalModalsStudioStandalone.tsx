@@ -46,6 +46,9 @@ import {
 	X,
 } from "lucide-react";
 import type { Kopecks } from "@dental/shared";
+import { AppLogicProvider, type AppLogicContextType } from "../contexts/AppLogicContext";
+import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../lib/safeLocalStorage";
+import { useThemeStore } from "../store/themeStore";
 import { showToast } from "../components/GlobalToast";
 import { ToothAnesthesiaCalculator } from "../components/diagnostic/ToothAnesthesiaCalculator";
 import { PrescriptionModal } from "../components/visit/PrescriptionModal";
@@ -351,6 +354,109 @@ const SAMPLE_PHOTO_SLOTS: Record<string, PhotoSlotRecord> = {
 	},
 };
 
+const mockStudioAppLogicValue: AppLogicContextType = {
+	dashboard: {
+		todayIso: "2026-08-28",
+		clinicSettings: {
+			name: "Стоматологическая клиника «ДЕНТЕ СТОМАТОЛОГИЯ»",
+			profile: {
+				mode: "solo_practice",
+			},
+			staff: [
+				{ id: "doc-1", fullName: "Д-р Смирнов Алексей Петрович", role: "doctor", specialty: "Терапевт-ортопед", active: true },
+				{ id: "doc-2", fullName: "Д-р Барабаш Сергей Владимирович", role: "doctor", specialty: "Хирург-имплантолог", active: true },
+				{ id: "asst-1", fullName: "Петрова Елена Сергеевна", role: "assistant", active: true },
+				{ id: "admin-1", fullName: "Иванова Мария Сергеевна", role: "administrator", active: true },
+			],
+			chairs: [
+				{ id: "chair-1", name: "Кресло 1 (Терапия)" },
+				{ id: "chair-2", name: "Кресло 2 (Хирургия)" },
+			],
+			workspaceProfiles: [
+				{ id: "wp-1", title: "Терапевтический прием", mode: "solo_practice", scope: "clinical", defaultSection: "visit", primaryRoles: ["doctor"], visibleSections: ["visit", "imaging", "documents"], automations: ["Автопротокол 804н", "Печать ИДС"] },
+			],
+			roleAccessPolicies: [
+				{ role: "doctor", title: "Врач-стоматолог", scope: "clinical", defaultSection: "visit", canWrite: ["visit", "imaging", "documents"], restricted: ["finance_reports", "settings"], requiresApprovalFor: ["Списание дорогостоящих ТМЦ"], auditEvents: ["auth.login", "emr.sign"] },
+			],
+		},
+		patients: [
+			{
+				id: "PAT-001",
+				fullName: "Смирнова Екатерина Васильевна",
+				birthDate: "1988-06-14",
+				phone: "+7 (926) 555-12-34",
+				cardNumber: "043/у-2026/891",
+				medicalCardNumber: "043/у-2026/891",
+			},
+			{
+				id: "PAT-002",
+				fullName: "Барабаш Сергей Владимирович",
+				birthDate: "1985-03-22",
+				phone: "+7 (916) 123-45-67",
+				cardNumber: "043/у-2026/042",
+				medicalCardNumber: "043/у-2026/042",
+			},
+		],
+		appointments: [
+			{
+				id: "apt-1",
+				patientId: "PAT-001",
+				patientName: "Смирнова Екатерина Васильевна",
+				doctorId: "doc-1",
+				doctorUserId: "doc-1",
+				doctorName: "Д-р Смирнов Алексей Петрович",
+				startsAt: "2026-08-28T10:00:00.000Z",
+				endsAt: "2026-08-28T11:00:00.000Z",
+				startIso: "2026-08-28T10:00:00.000Z",
+				endIso: "2026-08-28T11:00:00.000Z",
+				status: "completed",
+				chairId: "chair-1",
+			},
+			{
+				id: "apt-2",
+				patientId: "PAT-001",
+				patientName: "Смирнова Екатерина Васильевна",
+				doctorId: "doc-1",
+				doctorUserId: "doc-1",
+				doctorName: "Д-р Смирнов Алексей Петрович",
+				startsAt: "2026-08-30T14:00:00.000Z",
+				endsAt: "2026-08-30T15:00:00.000Z",
+				startIso: "2026-08-30T14:00:00.000Z",
+				endIso: "2026-08-30T15:00:00.000Z",
+				status: "confirmed",
+				chairId: "chair-1",
+			},
+		],
+		insuranceContracts: [],
+	} as unknown as AppLogicContextType["dashboard"],
+	auth: {
+		denteClinicalReadHeaders: () => ({}),
+		denteClinicalMutationHeaders: () => ({}),
+		denteAdminMutationHeaders: () => ({}),
+		settingsAccessHeaders: () => ({}),
+	} as unknown as AppLogicContextType["auth"],
+	patientId: "PAT-001",
+	selectedPatient: {
+		id: "PAT-001",
+		fullName: "Смирнова Екатерина Васильевна",
+		phone: "+7 (926) 555-12-34",
+	} as unknown as AppLogicContextType["selectedPatient"],
+	activePatient: {
+		id: "PAT-001",
+		fullName: "Смирнова Екатерина Васильевна",
+		birthDate: "1988-06-14",
+		phone: "+7 (926) 555-12-34",
+		cardNumber: "043/у-2026/891",
+	} as unknown as AppLogicContextType["activePatient"],
+	activeDoctor: {
+		id: "doc-1",
+		fullName: "Д-р Смирнов Алексей Петрович",
+		role: "doctor",
+	} as unknown as AppLogicContextType["activeDoctor"],
+	denteClinicalReadHeaders: () => ({}),
+	denteClinicalMutationHeaders: () => ({}),
+} as AppLogicContextType;
+
 export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [activeTheme, setActiveTheme] = useState<string>("dark");
 	const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
@@ -418,6 +524,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
+		safeLocalStorageSetItem("dente_theme_mode", themeId);
+		useThemeStore.getState().setThemeMode(themeId as any);
 		document.documentElement.setAttribute("data-theme", themeId);
 		const isDark =
 			themeId === "dark" ||
@@ -427,9 +535,55 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			themeId === "cyber_xray";
 		document.documentElement.classList.toggle("dark", isDark);
 		document.documentElement.classList.toggle("light", !isDark);
-		document.body.className = isDark ? "dark" : "light";
+		if (document.body) {
+			document.body.className = isDark ? "dark" : "light";
+		}
 		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
 	};
+
+	// Ensure reliable default localStorage and session state on mount
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			if (!safeLocalStorageGetItem("dente_organization_id")) {
+				safeLocalStorageSetItem("dente_organization_id", "c-1");
+			}
+			if (!safeLocalStorageGetItem("dente_clinic_token")) {
+				safeLocalStorageSetItem("dente_clinic_token", "dev_token_sample_clinic");
+			}
+			if (!safeLocalStorageGetItem("dente_staff_token")) {
+				safeLocalStorageSetItem("dente_staff_token", "dev_token_sample_staff");
+			}
+			if (!safeLocalStorageGetItem("dente_active_session_token")) {
+				safeLocalStorageSetItem("dente_active_session_token", "mock-session-token");
+			}
+			if (!safeLocalStorageGetItem("dente_user_role")) {
+				safeLocalStorageSetItem("dente_user_role", "doctor");
+			}
+			if (!safeLocalStorageGetItem("dente_user_name")) {
+				safeLocalStorageSetItem("dente_user_name", "Д-р Смирнов Алексей Петрович");
+			}
+			if (!safeLocalStorageGetItem("dente_offline_mode")) {
+				safeLocalStorageSetItem("dente_offline_mode", "true");
+			}
+			if (!safeLocalStorageGetItem("dente_onboarding_completed")) {
+				safeLocalStorageSetItem("dente_onboarding_completed", "true");
+			}
+			if (!safeLocalStorageGetItem("dental-crm:onboarding:v1")) {
+				safeLocalStorageSetItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
+			}
+			if (!safeLocalStorageGetItem("dente_active_user")) {
+				safeLocalStorageSetItem("dente_active_user", JSON.stringify({
+					id: "usr-doc-1",
+					name: "Д-р Смирнов Алексей Петрович",
+					role: "doctor",
+					organizationId: "c-1",
+				}));
+			}
+			if (!safeLocalStorageGetItem("dente_offline_readiness_banner_dismissed_v1")) {
+				safeLocalStorageSetItem("dente_offline_readiness_banner_dismissed_v1", "true");
+			}
+		}
+	}, []);
 
 	useEffect(() => {
 		const handleHashOrSearch = () => {
@@ -586,10 +740,11 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	}, []);
 
 	return (
-		<div
-			className="min-h-screen bg-[var(--paper-soft,var(--paper,#0f172a))] text-[var(--ink,#f8fafc)] flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200"
-			data-testid="clinical-modals-studio-container"
-		>
+		<AppLogicProvider value={mockStudioAppLogicValue}>
+			<div
+				className="min-h-screen bg-[var(--paper-soft,var(--paper,#0f172a))] text-[var(--ink,#f8fafc)] flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200"
+				data-testid="clinical-modals-studio-container"
+			>
 			{/* Top Bar */}
 			<header className="sticky top-0 z-40 bg-[var(--paper,#1e293b)] border-b border-[var(--line,rgba(204,251,241,0.15))] px-4 sm:px-6 py-3.5 shadow-sm backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
 				<div className="flex items-center gap-3">
@@ -2305,7 +2460,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					patientName="Смирнова Екатерина Васильевна"
 					patientPhone="+7 (999) 123-45-67"
 					doctorName="Д-р Ковалев С. П."
-					totalRub={5000}
 				/>
 			)}
 
@@ -3137,6 +3291,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				</div>
 			)}
 
-		</div>
+			</div>
+		</AppLogicProvider>
 	);
 };

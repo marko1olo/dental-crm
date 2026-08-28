@@ -842,6 +842,113 @@ export function calculateTotalDeductionCostKopecks(
 }
 
 /**
+ * Склонение русского слова по числовому количеству (1, 2, 5).
+ */
+export function pluralizeRussian(
+	quantity: number,
+	one: string,
+	few: string,
+	many: string,
+): string {
+	const abs = Math.abs(quantity);
+	if (!Number.isInteger(abs)) {
+		return few;
+	}
+	const mod100 = abs % 100;
+	const mod10 = abs % 10;
+	if (mod100 >= 11 && mod100 <= 19) {
+		return many;
+	}
+	if (mod10 === 1) {
+		return one;
+	}
+	if (mod10 >= 2 && mod10 <= 4) {
+		return few;
+	}
+	return many;
+}
+
+/**
+ * Правильное русское склонение единицы измерения в зависимости от количества:
+ * - 0 пар, 1 пара, 2 пары, 5 пар, 21 пара
+ * - 0 шт., 1 шт., 2 шт., 5 шт.
+ * - 0.2 мл, 1 мл, 15 мл
+ * - 0.4 г, 1 г, 25 г
+ * - 1 карп., 2 карп.
+ */
+export function declineUnitRu(quantity: number, unit: string): string {
+	if (!unit) return "";
+	const clean = unit.trim().toLowerCase();
+
+	if (clean === "пары" || clean === "пара" || clean === "пар") {
+		return pluralizeRussian(quantity, "пара", "пары", "пар");
+	}
+	if (clean === "штука" || clean === "штуки" || clean === "штук") {
+		return pluralizeRussian(quantity, "штука", "штуки", "штук");
+	}
+	if (clean === "доза" || clean === "дозы" || clean === "доз") {
+		return pluralizeRussian(quantity, "доза", "дозы", "доз");
+	}
+	if (clean === "карпула" || clean === "карпулы" || clean === "карпул") {
+		return pluralizeRussian(quantity, "карпула", "карпулы", "карпул");
+	}
+	if (clean === "упаковка" || clean === "упаковки" || clean === "упаковок") {
+		return pluralizeRussian(quantity, "упаковка", "упаковки", "упаковок");
+	}
+	if (clean === "комплект" || clean === "комплекта" || clean === "комплектов") {
+		return pluralizeRussian(quantity, "комплект", "комплекта", "комплектов");
+	}
+	if (clean === "тюбик" || clean === "тюбика" || clean === "тюбиков") {
+		return pluralizeRussian(quantity, "тюбик", "тюбика", "тюбиков");
+	}
+
+	// Стандартные медицинские сокращения (не изменяются): шт., мл, г, карп., упак., компл., флак.
+	return unit.trim();
+}
+
+/**
+ * Форматирование числа и единицы с правильным русским склонением:
+ * "2 пары", "1 пара", "0 пар", "5 пар", "0.4 г", "1 карп.", "6 шт."
+ */
+export function formatQuantityWithUnitRu(quantity: number, unit: string): string {
+	const declined = declineUnitRu(quantity, unit);
+	return `${quantity} ${declined}`.trim();
+}
+
+/**
+ * Единичная форма единицы измерения для корректного вывода цен (цена за единицу):
+ * "35,00 ₽ / пара" (вместо "35,00 ₽ / пары")
+ * "1300,00 ₽ / г"
+ * "220,00 ₽ / карп."
+ * "15,00 ₽ / шт."
+ */
+export function formatUnitPriceUnitRu(unit: string): string {
+	if (!unit) return "";
+	const clean = unit.trim().toLowerCase();
+
+	if (clean === "пары" || clean === "пар" || clean === "пара") {
+		return "пара";
+	}
+	if (clean === "штуки" || clean === "штук" || clean === "штука") {
+		return "шт.";
+	}
+	if (clean === "карпулы" || clean === "карпул" || clean === "карпула") {
+		return "карп.";
+	}
+	if (clean === "упаковки" || clean === "упаковок" || clean === "упаковка") {
+		return "упак.";
+	}
+	if (clean === "комплекты" || clean === "комплектов" || clean === "комплект") {
+		return "компл.";
+	}
+	if (clean === "дозы" || clean === "доз" || clean === "доза") {
+		return "доза";
+	}
+
+	return unit.trim();
+}
+
+/**
  * Оценка статуса складского остатка при планируемом списании:
  * - "critical": отрицательный остаток (дефицит материала на складе)
  * - "warning": остаток после списания упадет ниже критического порога
@@ -865,7 +972,7 @@ export function evaluateStockStatus(
 			severity: "critical",
 			remainingStock,
 			deficit,
-			message: `Дефицит на складе! В наличии: ${current} ${unit}, требуется: ${deduct} ${unit}, нехватка: ${deficit} ${unit}`,
+			message: `Дефицит на складе! В наличии: ${formatQuantityWithUnitRu(current, unit)}, требуется: ${formatQuantityWithUnitRu(deduct, unit)}, нехватка: ${formatQuantityWithUnitRu(deficit, unit)}`,
 		};
 	}
 
@@ -874,7 +981,7 @@ export function evaluateStockStatus(
 			severity: "warning",
 			remainingStock,
 			deficit: 0,
-			message: `Низкий остаток! После списания останется ${remainingStock} ${unit} (порог: ${threshold} ${unit})`,
+			message: `Низкий остаток! После списания останется ${formatQuantityWithUnitRu(remainingStock, unit)} (порог: ${formatQuantityWithUnitRu(threshold, unit)})`,
 		};
 	}
 
@@ -882,7 +989,7 @@ export function evaluateStockStatus(
 		severity: "ok",
 		remainingStock,
 		deficit: 0,
-		message: `В наличии: ${current} ${unit} (после списания: ${remainingStock} ${unit})`,
+		message: `В наличии: ${formatQuantityWithUnitRu(current, unit)} (после списания: ${formatQuantityWithUnitRu(remainingStock, unit)})`,
 	};
 }
 

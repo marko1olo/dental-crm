@@ -42,7 +42,10 @@ export interface Billing1CExportModalProps {
 }
 
 function formatMoney(amount: number): string {
-	return `${Math.round(amount).toLocaleString("ru-RU")} ₽`;
+	return `${amount.toLocaleString("ru-RU", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	})} ₽`;
 }
 
 export function Billing1CExportModal({
@@ -80,15 +83,19 @@ export function Billing1CExportModal({
 	const [isXmlCopied, setIsXmlCopied] = useState(false);
 
 	const calculatedTotalRub = useMemo(() => {
-		if (typeof initialTotalRub === "number" && initialTotalRub > 0) {
-			return initialTotalRub;
+		if (items && items.length > 0) {
+			const totalKopecks = items.reduce((sum, it) => {
+				const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
+				const unitPriceKop = Math.round(it.priceRub * 100);
+				const discKop = Math.round((it.discountRub || 0) * 100);
+				return sum + Math.max(0, unitPriceKop * qty - discKop);
+			}, 0);
+			return totalKopecks / 100;
 		}
-		return items.reduce((sum, it) => {
-			const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
-			const gross = it.priceRub * qty;
-			const discount = it.discountRub || 0;
-			return sum + Math.max(0, gross - discount);
-		}, 0);
+		if (typeof initialTotalRub === "number" && initialTotalRub > 0) {
+			return Math.round(initialTotalRub * 100) / 100;
+		}
+		return 0;
 	}, [items, initialTotalRub]);
 
 	const generatedXml = useMemo(() => {
@@ -207,7 +214,7 @@ export function Billing1CExportModal({
 			aria-label="1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 & 54-ФЗ"
 			data-testid="billing-1c-export-modal"
 		>
-			<div className="relative flex flex-col w-full max-w-5xl h-full max-h-[92vh] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[var(--border,#cbd5e1)]">
+			<div className="relative flex flex-col w-full max-w-5xl h-full max-h-[calc(100dvh-24px)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[var(--border,#cbd5e1)]">
 				{/* Header: Zero truncation & full legal title */}
 				<div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] shrink-0">
 					<div className="flex items-center gap-3 min-w-0 flex-1">
@@ -302,7 +309,7 @@ export function Billing1CExportModal({
 				</div>
 
 				{/* Modal Content */}
-				<div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+				<div className="flex-[1_1_auto] min-h-0 overflow-y-auto [overscroll-behavior:contain] p-3 sm:p-6 pb-6 space-y-3 sm:space-y-4">
 					{/* Requisites Quick Strip */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs">
 						<div>
@@ -566,32 +573,34 @@ export function Billing1CExportModal({
 					)}
 				</div>
 
-				{/* Modal Footer: Mobile-safe non-truncated buttons */}
-				<div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 bg-[var(--paper-soft,#f8fafc)] border-t border-[var(--border,#cbd5e1)] shrink-0">
-					<div className="flex items-center gap-2 flex-wrap">
+				{/* Modal Footer: Compact on mobile, elegant on desktop */}
+				<div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-between gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-[var(--paper-soft,#f8fafc)] border-t border-[var(--border,#cbd5e1)] shrink-0">
+					<div className="contents sm:flex sm:items-center sm:gap-2">
 						<button
 							type="button"
 							onClick={handleCopyAccountantSummary}
-							className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
+							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center"
+							title="Сводка для бухгалтерии"
 						>
-							<FileText size={14} />
+							<FileText size={13} className="shrink-0" />
 							<span>Сводка для бухгалтерии</span>
 						</button>
 						<button
 							type="button"
 							onClick={handleCopyXml}
-							className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
+							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center"
+							title="Скопировать XML CommerceML"
 						>
-							<Copy size={14} />
+							<Copy size={13} className="shrink-0" />
 							<span>Скопировать XML</span>
 						</button>
 					</div>
 
-					<div className="flex items-center gap-2.5 flex-wrap">
+					<div className="contents sm:flex sm:items-center sm:gap-2">
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors whitespace-nowrap"
+							className="min-h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors flex items-center justify-center text-center"
 						>
 							Закрыть
 						</button>
@@ -613,7 +622,7 @@ export function Billing1CExportModal({
 							contractDate={selectedContractDate}
 							variant="primary"
 							label="Экспорт в 1С (XML)"
-							className="h-9 px-4 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white shrink-0 whitespace-nowrap"
+							className="w-full sm:w-auto min-h-8 sm:h-9 px-2 sm:px-4 text-[11px] sm:text-xs font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white shrink-0 flex items-center justify-center text-center"
 						/>
 					</div>
 				</div>

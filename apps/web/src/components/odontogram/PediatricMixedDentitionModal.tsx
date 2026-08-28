@@ -5,10 +5,7 @@ import {
 	AlertCircle,
 	Check,
 	Clock,
-	Heart,
 	Info,
-	Layers,
-	PieChart as PieChartIcon,
 	Printer,
 	ShieldCheck,
 	Sparkles,
@@ -285,29 +282,29 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
+			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto overscroll-contain"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="pediatric-modal-title"
 		>
 			<div
-				className="relative flex flex-col w-full max-w-5xl max-h-[92vh] bg-[var(--odontogram-paper,var(--paper,#ffffff))] text-[var(--odontogram-ink,var(--ink,#0f172a))] rounded-3xl border border-[var(--odontogram-border,var(--line,#cbd5e1))] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-auto"
+				className="relative flex flex-col w-full max-w-5xl max-h-[calc(100dvh-32px)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] text-[var(--odontogram-ink,var(--ink,#0f172a))] rounded-2xl sm:rounded-3xl border border-[var(--odontogram-border,var(--line,#cbd5e1))] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-auto"
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* Modal Header */}
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 sm:px-8 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))]">
-					<div className="flex items-center gap-3">
-						<div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-[var(--teal-surface,rgba(20,184,166,0.12))] text-[var(--teal,#0d9488)] border border-[var(--teal-glow,rgba(20,184,166,0.25))] shrink-0 shadow-inner">
-							<Sparkles className="w-6 h-6" />
+				<div className="flex items-start justify-between gap-3 p-4 sm:p-6 sm:px-8 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] shrink-0">
+					<div className="flex items-center gap-3 min-w-0">
+						<div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[var(--teal-surface,rgba(20,184,166,0.12))] text-[var(--teal,#0d9488)] border border-[var(--teal-glow,rgba(20,184,166,0.25))] shrink-0 shadow-inner">
+							<Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
 						</div>
-						<div>
+						<div className="min-w-0">
 							<h2
 								id="pediatric-modal-title"
-								className="text-lg sm:text-xl font-black tracking-tight text-[var(--odontogram-ink,var(--ink,#0f172a))]"
+								className="text-sm sm:text-lg lg:text-xl font-black tracking-tight text-[var(--odontogram-ink,var(--ink,#0f172a))] whitespace-normal break-words"
 							>
 								Детский и сменный прикус: Сроки смены &amp; Cariogram
 							</h2>
-							<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-medium">
+							<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-medium mt-0.5 whitespace-normal break-words">
 								Физиологическая резорбция корней (0–100%), эксфолиация и оценка кариесогенного риска по Douglas Bratthall (ВОЗ)
 							</p>
 						</div>
@@ -317,7 +314,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={onClose}
-						className="self-end sm:self-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] border border-transparent hover:border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] transition-all cursor-pointer flex items-center justify-center"
+						className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] border border-transparent hover:border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] transition-all cursor-pointer flex items-center justify-center shrink-0"
 						aria-label="Закрыть модальное окно"
 					>
 						<X className="w-5 h-5" />
@@ -326,74 +323,63 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 
 				{/* Navigation Tabs */}
 				<div
-					className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 pt-2 sm:pt-3 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap shrink-0"
-					style={{ display: "flex", overflowX: "auto", flexWrap: "nowrap", gap: "6px" }}
+					className="flex items-center gap-1.5 px-3 sm:px-4 pt-2 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap scrollbar-none shrink-0 touch-pan-x whitespace-nowrap w-full"
 				>
 					<button
 						type="button"
 						onClick={() => setActiveTab("timeline")}
-						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-						className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
+						className={`min-w-max shrink-0 whitespace-nowrap px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold rounded-t-lg transition-colors border-b-2 cursor-pointer select-none ${
 							activeTab === "timeline"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
-						<Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-						<span className="hidden sm:inline">Сроки смены (6–12 лет)</span>
-						<span className="sm:hidden">Сроки смены</span>
+						<span className="hidden sm:inline">📅 Сроки смены (6–12 лет)</span>
+						<span className="sm:hidden">📅 Сроки смены</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveTab("cariogram")}
-						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-						className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
+						className={`min-w-max shrink-0 whitespace-nowrap px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold rounded-t-lg transition-colors border-b-2 cursor-pointer select-none ${
 							activeTab === "cariogram"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
-						<PieChartIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-						<span className="hidden sm:inline">Cariogram (Риск кариеса)</span>
-						<span className="sm:hidden">Cariogram</span>
+						<span className="hidden sm:inline">📊 Cariogram (Риск кариеса)</span>
+						<span className="sm:hidden">📊 Cariogram</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveTab("resorption")}
-						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-						className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
+						className={`min-w-max shrink-0 whitespace-nowrap px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold rounded-t-lg transition-colors border-b-2 cursor-pointer select-none ${
 							activeTab === "resorption"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
-						<Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-						<span className="hidden sm:inline">Шкала резорбции корней (0–100%)</span>
-						<span className="sm:hidden">Резорбция</span>
+						<span className="hidden sm:inline">🦷 Резорбция корней (0–100%)</span>
+						<span className="sm:hidden">🦷 Резорбция</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveTab("frankl")}
-						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-						className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
+						className={`min-w-max shrink-0 whitespace-nowrap px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold rounded-t-lg transition-colors border-b-2 cursor-pointer select-none ${
 							activeTab === "frankl"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
-						<Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-rose-500" />
-						<span className="hidden sm:inline">Поведение (Франкл) &amp; Памятка</span>
-						<span className="sm:hidden">Франкл &amp; Памятка</span>
+						♡ Шкала Frankl
 					</button>
 				</div>
 
 				{/* Modal Body Container */}
 				<div
-					className="flex-1 overflow-y-auto p-4 sm:p-8 pb-28 sm:pb-8 space-y-6"
-					style={{ paddingBottom: "112px" }}
+					className="flex-[1_1_auto] min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-6 md:p-8 pb-28 sm:pb-8 space-y-6 touch-pan-y"
 				>
 					{/* ------------------------------------------------------------------------- */}
 					{/* TAB 1: ERUPTION & MIXED DENTITION TIMELINE */}
@@ -401,7 +387,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					{activeTab === "timeline" && (
 						<div className="space-y-6 animate-in fade-in duration-200">
 							{/* Age Slider & Preset Bar */}
-							<div className="p-5 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-4">
+							<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-4">
 								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 									<div>
 										<span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--teal,#0d9488)]">
@@ -409,7 +395,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 										</span>
 										<h3 className="text-base sm:text-lg font-black text-[var(--odontogram-ink,var(--ink,#0f172a))]">
 											Возраст ребенка:{" "}
-											<span className="text-[var(--teal,#0d9488)] font-mono font-black">
+											<span className="text-[var(--teal,#0d9488)] font-bold">
 												{selectedAge.toFixed(1)} лет ({Math.round(selectedAge * 12)} мес.)
 											</span>
 										</h3>
@@ -434,7 +420,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 										className="w-full h-3 bg-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] rounded-lg appearance-none cursor-pointer accent-[var(--teal,#0d9488)]"
 										aria-label="Возраст ребенка для расчета смены прикуса"
 									/>
-									<div className="flex justify-between text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-mono font-bold">
+									<div className="flex justify-between text-[11px] sm:text-xs md:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-mono font-bold select-none">
 										<span>5.0<span className="hidden sm:inline font-normal"> лет</span></span>
 										<span>6.0<span className="hidden sm:inline font-normal"> (1-е мол.)</span></span>
 										<span>7.5<span className="hidden sm:inline font-normal"> (Резцы)</span></span>
@@ -445,27 +431,29 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								</div>
 
 								{/* Quick Presets */}
-								<div className="flex flex-wrap items-center gap-2 pt-1">
-									<span className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] mr-1">
-										Пресеты:
-									</span>
-									{[5.5, 6.0, 7.0, 7.5, 8.5, 10.5, 12.0].map((age) => {
-										const isSelected = Math.abs(selectedAge - age) < 0.1;
-										return (
-											<button
-												key={age}
-												type="button"
-												onClick={() => setSelectedAge(age)}
-												className={`min-h-[44px] min-w-[68px] px-3.5 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer select-none active:scale-95 ${
-													isSelected
-														? "bg-emerald-600 dark:bg-emerald-600 text-white font-bold border-emerald-600 shadow-md shadow-emerald-600/20"
-														: "bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80"
-												}`}
-											>
-												{age.toFixed(1)} лет
-											</button>
-										);
-									})}
+								<div className="space-y-1.5 pt-1">
+									<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
+										Пресеты возраста:
+									</div>
+									<div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1 touch-pan-x flex-nowrap sm:flex-wrap">
+										{[5.5, 6.0, 7.0, 7.5, 8.5, 10.5, 12.0].map((age) => {
+											const isSelected = Math.abs(selectedAge - age) < 0.1;
+											return (
+												<button
+													key={age}
+													type="button"
+													onClick={() => setSelectedAge(age)}
+													className={`min-h-[44px] px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-xs sm:text-sm font-bold whitespace-nowrap min-w-max rounded-xl border transition-all cursor-pointer select-none shrink-0 active:scale-95 ${
+														isSelected
+															? "bg-emerald-600 dark:bg-emerald-600 text-white font-bold border-emerald-600 dark:border-emerald-600 shadow-md shadow-emerald-600/20"
+															: "bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80"
+													}`}
+												>
+													{age.toFixed(1)} лет
+												</button>
+											);
+										})}
+									</div>
 								</div>
 
 								<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] italic leading-relaxed">
@@ -474,15 +462,15 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							</div>
 
 							{/* Dental Arch Visual Preview */}
-							<div className="p-5 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-4">
+							<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-4">
 								<div className="flex items-center justify-between">
 									<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
 										Ожидаемая зубная формула в {selectedAge.toFixed(1)} лет
 									</h4>
 								</div>
 
-								<div className="overflow-x-auto pb-1">
-									<div className="min-w-[600px] space-y-4">
+								<div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-2 touch-pan-x">
+									<div className="min-w-[540px] sm:min-w-[580px] space-y-4">
 										{/* Upper Arch 12-column grid */}
 										<div className="space-y-1.5">
 											<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
@@ -495,7 +483,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													return (
 														<span
 															key={num}
-															className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[46px] px-1 py-1 rounded-xl text-sm font-mono font-black border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all ${
+															className={`min-h-[44px] min-w-[34px] sm:min-h-[48px] sm:min-w-[42px] px-1 py-1 rounded-xl text-xs sm:text-sm font-mono font-black border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all ${
 																isErupting
 																	? "bg-amber-500/25 dark:bg-amber-900/60 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-black"
 																	: isPrim
@@ -526,7 +514,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													return (
 														<span
 															key={num}
-															className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[46px] px-1 py-1 rounded-xl text-sm font-mono font-black border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all ${
+															className={`min-h-[44px] min-w-[34px] sm:min-h-[48px] sm:min-w-[42px] px-1 py-1 rounded-xl text-xs sm:text-sm font-mono font-black border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all ${
 																isErupting
 																	? "bg-amber-500/25 dark:bg-amber-900/60 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-black"
 																	: isPrim
@@ -767,20 +755,20 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 										<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
 											Индивидуальный план профилактики
 										</h4>
-										<div className="space-y-2 text-xs sm:text-sm text-[var(--odontogram-ink,var(--ink,#0f172a))] font-medium">
-											<div className="p-3 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] flex items-start gap-2.5 shadow-xs">
+										<div className="space-y-2 text-xs sm:text-sm text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-medium">
+											<div className="p-3 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800/90 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 flex items-start gap-2.5 shadow-xs">
 												<ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
 												<span>{cariogramResult.preventiveProgram.professionalHygieneRu}</span>
 											</div>
-											<div className="p-3 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] flex items-start gap-2.5 shadow-xs">
+											<div className="p-3 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800/90 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 flex items-start gap-2.5 shadow-xs">
 												<Sparkles className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
 												<span>{cariogramResult.preventiveProgram.fluorideVarnishProtocolRu}</span>
 											</div>
-											<div className="p-3 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] flex items-start gap-2.5 shadow-xs">
+											<div className="p-3 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800/90 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 flex items-start gap-2.5 shadow-xs">
 												<Activity className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
 												<span>{cariogramResult.preventiveProgram.homeCareProtocolRu}</span>
 											</div>
-											<div className="p-3 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] flex items-start gap-2.5 shadow-xs">
+											<div className="p-3 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800/90 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 flex items-start gap-2.5 shadow-xs">
 												<Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
 												<span>{cariogramResult.preventiveProgram.dietaryGuidanceRu}</span>
 											</div>
@@ -807,8 +795,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								</h4>
 								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 									{/* 1. Diet Content */}
-									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-2">
-										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] block">
+									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-800/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 space-y-2">
+										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 block">
 											Диета: Содержание сахаров
 										</label>
 										<select
@@ -819,7 +807,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													dietContents: Number(e.target.value),
 												})
 											}
-											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										>
 											<option value={0}>0 — Очень низкое (без сахара)</option>
 											<option value={1}>1 — Умеренное (стандартное)</option>
@@ -829,8 +817,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 
 									{/* 2. Diet Frequency */}
-									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-2">
-										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] block">
+									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-800/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 space-y-2">
+										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 block">
 											Диета: Частота приёмов пищи
 										</label>
 										<select
@@ -841,7 +829,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													dietFrequency: Number(e.target.value),
 												})
 											}
-											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										>
 											<option value={0}>0 — ≤3 раз в день (без перекусов)</option>
 											<option value={1}>1 — 4–5 раз в день (норма)</option>
@@ -851,8 +839,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 
 									{/* 3. Plaque Amount */}
-									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-2">
-										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] block">
+									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-800/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 space-y-2">
+										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 block">
 											Бактерии: Зубной налёт (Silness-Löe)
 										</label>
 										<select
@@ -863,7 +851,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													plaqueAmount: Number(e.target.value),
 												})
 											}
-											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										>
 											<option value={0}>0 — Отличная гигиена (налета нет)</option>
 											<option value={1}>1 — Удовлетворительная (пришеечный налет)</option>
@@ -873,8 +861,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 
 									{/* 4. S. Mutans */}
-									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-2">
-										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] block">
+									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-800/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 space-y-2">
+										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 block">
 											Бактерии: Уровень Streptococcus mutans
 										</label>
 										<select
@@ -885,7 +873,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													streptococcusMutans: Number(e.target.value),
 												})
 											}
-											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										>
 											<option value={0}>0 — Класс 0 (&lt;10⁴ КОЕ/мл)</option>
 											<option value={1}>1 — Класс 1 (10⁴–10⁵ КОЕ/мл)</option>
@@ -895,8 +883,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 
 									{/* 5. Fluoride Program */}
-									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-2">
-										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] block">
+									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-800/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 space-y-2">
+										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 block">
 											Восприимчивость: Программа фторирования
 										</label>
 										<select
@@ -907,7 +895,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													fluorideProgram: Number(e.target.value),
 												})
 											}
-											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										>
 											<option value={0}>0 — Оптимальное (паста 1450ppm + лак)</option>
 											<option value={1}>1 — Стандартная фтор-паста 1000ppm</option>
@@ -917,8 +905,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 
 									{/* 6. Saliva Secretion Rate */}
-									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-2">
-										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] block">
+									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-800/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 space-y-2">
+										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 block">
 											Восприимчивость: Скорость слюноотделения
 										</label>
 										<select
@@ -929,7 +917,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													salivaSecretionRate: Number(e.target.value),
 												})
 											}
-											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										>
 											<option value={0}>0 — Норма (&gt;1.2 мл/мин)</option>
 											<option value={1}>1 — Сниженная (0.9–1.2 мл/мин)</option>
@@ -939,8 +927,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 
 									{/* 7. Past Caries Experience */}
-									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-2">
-										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] block">
+									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-800/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 space-y-2">
+										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 block">
 											Анамнез: Опыт кариеса (КПУ/кпу)
 										</label>
 										<select
@@ -951,7 +939,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													pastCariesExperience: Number(e.target.value),
 												})
 											}
-											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										>
 											<option value={0}>0 — Нет новых полостей за последний год</option>
 											<option value={1}>1 — 1–2 новые кариозные полости</option>
@@ -961,8 +949,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 
 									{/* 8. Systemic Diseases */}
-									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-2">
-										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] block">
+									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-800/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 space-y-2">
+										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 block">
 											Анамнез: Соматические факторы
 										</label>
 										<select
@@ -973,7 +961,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													systemicDiseases: Number(e.target.value),
 												})
 											}
-											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										>
 											<option value={0}>0 — Здоров (нет отягощающих факторов)</option>
 											<option value={1}>1 — Компенсированные соматические патологии</option>
@@ -982,8 +970,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 
 									{/* 9. Clinical Judgment */}
-									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-2">
-										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] block">
+									<div className="p-4 sm:p-5 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-800/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 space-y-2">
+										<label className="text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 block">
 											Клиническое суждение врача
 										</label>
 										<select
@@ -994,7 +982,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													clinicalJudgment: Number(e.target.value),
 												})
 											}
-											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 font-bold cursor-pointer focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										>
 											<option value={0}>0 — Благоприятное (лучше тестов)</option>
 											<option value={1}>1 — Стандартное (соответствует тестам)</option>
@@ -1117,7 +1105,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													className={`min-w-[52px] min-h-[48px] px-3.5 py-2 rounded-xl text-sm font-mono font-black border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center select-none ${
 														isSelected
 															? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20 scale-105"
-															: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] text-[var(--odontogram-ink,var(--ink,#0f172a))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))]"
+															: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800/90 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-700/80"
 													}`}
 												>
 													<span>{num}</span>
@@ -1146,7 +1134,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													className={`min-w-[52px] min-h-[48px] px-3.5 py-2 rounded-xl text-sm font-mono font-black border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center select-none ${
 														isSelected
 															? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20 scale-105"
-															: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] text-[var(--odontogram-ink,var(--ink,#0f172a))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))]"
+															: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800/90 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-700/80"
 													}`}
 												>
 													<span>{num}</span>

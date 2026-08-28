@@ -40,7 +40,7 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
@@ -500,7 +500,7 @@ export function IncomingCallPopup() {
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
 	const openSimulator = useTelephonyStore((s) => s.openSimulator);
 
-	const ctx = useAppLogicContext();
+	const ctx = useOptionalAppLogicContext();
 	const dashboard = ctx?.dashboard;
 
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);

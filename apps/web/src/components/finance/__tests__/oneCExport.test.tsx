@@ -193,6 +193,44 @@ describe('1C:Enterprise XML Export Button & Engine', () => {
     assert.ok(html.includes('Смирнова Екатерина Васильевна'));
     assert.ok(html.includes('Экспорт в 1С (XML)'));
     assert.ok(html.includes('Сводка для бухгалтерии'));
+    assert.ok(html.includes('Скопировать XML'));
+    assert.ok(html.includes('Закрыть'));
+  });
+
+  it('Billing1CExportModal dynamically computes kopeck-exact totals from line items (price * qty - discount)', () => {
+    const customItems = [
+      {
+        id: 'it-1',
+        name: 'Пломбирование 1',
+        priceRub: 2500.50,
+        quantity: 2,
+        discountRub: 500,
+      },
+      {
+        id: 'it-2',
+        name: 'Анестезия',
+        priceRub: 450,
+        quantity: 1,
+        discountRub: 0,
+      },
+    ];
+    // Line 1: 2500.50 * 2 = 5001.00 - 500 = 4501.00
+    // Line 2: 450 * 1 = 450.00
+    // Total: 4951.00
+
+    const html = renderToString(
+      <Billing1CExportModal
+        isOpen={true}
+        onClose={() => {}}
+        items={customItems}
+        patientName="Петров П.П."
+      />
+    );
+
+    assert.ok(html.includes('4 951,00 ₽') || html.includes('4 951,00 ₽') || html.includes('4 951 ₽') || html.includes('4 951 ₽'));
+    assert.ok(html.includes('Петров П.П.'));
+    // Ensure footer has 2-column adaptive grid layout
+    assert.ok(html.includes('grid grid-cols-2'));
   });
 });
 

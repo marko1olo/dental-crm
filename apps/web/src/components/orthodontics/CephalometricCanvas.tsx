@@ -293,12 +293,14 @@ export function CephalometricCanvas({
 	// Wits projections
 	const projA = A && opPost && opAnt ? projectPointOntoLine(A, opPost, opAnt) : null;
 	const projB = B && opPost && opAnt ? projectPointOntoLine(B, opPost, opAnt) : null;
+	const placedLandmarksCount = CEPHALOMETRIC_LANDMARKS.filter((l) => landmarks[l.key] !== undefined).length;
+	const isAllLandmarksPlaced = placedLandmarksCount >= CEPHALOMETRIC_LANDMARKS.length;
 
 	return (
 		<div
 			ref={containerRef}
 			data-testid="cephalometric-canvas-container"
-			className="relative w-full h-full min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center select-none"
+			className="relative w-full h-full min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 flex items-center justify-center select-none"
 			onWheel={imageUrl ? handleWheel : undefined}
 			onMouseDown={imageUrl ? handleMouseDown : undefined}
 			onMouseMove={imageUrl ? handleMouseMove : undefined}
@@ -373,14 +375,20 @@ export function CephalometricCanvas({
 			) : (
 				<>
 					{/* Canvas Top Floating Toolbar with High-Contrast Dark HUD (Theme-Agnostic) */}
-					<div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 flex-wrap pointer-events-none">
+					<div className="absolute top-2 sm:top-3 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center justify-between gap-1.5 sm:gap-2 flex-wrap pointer-events-none">
 						{/* Active Target Indicator Badge (Left) */}
-						<div className="pointer-events-auto flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/80 shadow-xl h-8 text-slate-100">
+						<div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-slate-700/80 shadow-xl h-8 text-slate-100 min-w-0 max-w-[calc(100%-8px)] sm:max-w-none">
 							<Crosshair size={15} className="text-teal-400 animate-pulse shrink-0" />
-							<div className="text-xs font-bold text-slate-100 min-w-0">
-								{activeTargetKey ? (
+							<div className="text-xs font-bold text-slate-100 min-w-0 truncate">
+								{isAllLandmarksPlaced ? (
+									<span className="text-emerald-300 font-bold">
+										✔ Все 16 точек заданы. Расчет углов готов
+									</span>
+								) : activeTargetKey ? (
 									<span>
-										<span className="text-slate-400 font-normal mr-1">Установите точку:</span>
+										<span className="text-slate-400 font-normal mr-1">
+											{landmarks[activeTargetKey] ? "Точка задана:" : "Установите точку:"}
+										</span>
 										<span className="text-teal-300 font-extrabold uppercase">
 											{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
 										</span>
@@ -457,7 +465,7 @@ export function CephalometricCanvas({
 					>
 						{/* Real Clinical Cephalogram Image with Filters */}
 						<div
-							className="absolute inset-0 w-full h-full rounded-xl overflow-hidden bg-black"
+							className="absolute inset-0 w-full h-full rounded-xl overflow-hidden bg-slate-900"
 							style={getFilterStyle()}
 						>
 							<img

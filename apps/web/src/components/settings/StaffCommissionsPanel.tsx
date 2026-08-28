@@ -22,7 +22,7 @@ import {
 import { Calculator, Check, ChevronDown, ChevronUp, Coins, Percent, RefreshCw, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
@@ -91,7 +91,7 @@ function isDoctorLikeRole(role: string): boolean {
 }
 
 export const StaffCommissionsPanel: React.FC = () => {
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const authRef = useRef(appLogic?.auth);
 	authRef.current = appLogic?.auth;
 
