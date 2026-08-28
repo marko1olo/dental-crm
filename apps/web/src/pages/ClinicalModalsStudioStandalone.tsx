@@ -790,6 +790,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "cmo_quality" || requestedModal === "quality_audit" || requestedModal === "cmo_quality_audit" || requestedModal === "cmo_quality_audit_modal" || requestedModal === "ekmp") {
 						setIsCmoQualityAuditOpen(true);
 					}
+					if (requestedModal === "egisz" || requestedModal === "egisz_remd" || requestedModal === "semd" || requestedModal === "cda" || requestedModal === "egisz_hub" || requestedModal === "egisz_remd_hub") {
+						setIsEgiszRemdOpen(true);
+					}
 				}
 		};
 		handleHashOrSearch();

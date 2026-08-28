@@ -186,7 +186,7 @@ export interface GostSignatureInfo {
 }
 
 export interface EgiszDentalCdaPayload {
-	docTypeCode: EgiszDentalSemdCode | "105" | "302" | "303" | "108" | "101" | "104" | "130";
+	docTypeCode: EgiszDentalSemdCode | "105" | "106" | "302" | "303" | "108" | "101" | "104" | "130";
 	documentUuid?: string | undefined;
 	documentVersion?: number | undefined;
 	encounterDate?: string | Date | undefined;

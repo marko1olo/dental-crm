@@ -174,6 +174,48 @@ describe("3. HL7 CDA R2 Dental SEMD XML Generation (Вид 105 / 302 / 303 / 043
 		assert.ok(xml.includes("&gt; 40"));
 		assert.ok(xml.includes("&quot;стреляющие&quot;"));
 	});
+
+	it("3.3 Generates complete CDA R2 XML for SEMD 106 Epicrisis and SEMD 303 Procedure Protocol", () => {
+		// SEMD 106 Epicrisis
+		const epicrisisPayload = {
+			...SAMPLE_DENTAL_SEMD_105_PRESET,
+			docTypeCode: "106" as const,
+		};
+		const xml106 = generateEgiszDentalCdaXml(epicrisisPayload);
+		assert.ok(xml106.includes('code code="106"'));
+		assert.ok(xml106.includes("Выписной эпикриз"));
+
+		// SEMD 303 Dental Procedure Protocol
+		const procPayload = {
+			...SAMPLE_DENTAL_SEMD_105_PRESET,
+			docTypeCode: "303" as const,
+			treatmentProtocolDescription: "Проведено препарирование кариозной полости зуба 46, медикаментозная обработка 2% хлоргексидином, световая пломба Filtek Ultimate.",
+		};
+		const xml303 = generateEgiszDentalCdaXml(procPayload);
+		assert.ok(xml303.includes('code code="76"'));
+		assert.ok(xml303.includes("Протокол стоматологического лечения и вмешательства"));
+		assert.ok(xml303.includes("Filtek Ultimate"));
+	});
+
+	it("3.4 Deterministic W3C C14N Canonicalization strips BOM and normalizes line breaks", () => {
+		const uncanonicalXml = "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<ClinicalDocument>\r\n\t<realmCode code=\"RU\"/>\r\n</ClinicalDocument>\r\n";
+		const canon = canonicalizeCdaXml(uncanonicalXml);
+		assert.equal(canon.startsWith("\uFEFF"), false);
+		assert.equal(canon.includes("\r"), false);
+		assert.ok(canon.includes("\n"));
+		assert.equal(canon, '<?xml version="1.0" encoding="UTF-8"?>\n<ClinicalDocument>\n\t<realmCode code="RU"/>\n</ClinicalDocument>');
+	});
+
+	it("3.5 Validates NSI dictionaries: FDI adult/child teeth, FRMR positions and tooth statuses", () => {
+		assert.equal(FDI_ADULT_TEETH.length, 32);
+		assert.equal(FDI_CHILD_TEETH.length, 20);
+		assert.equal(ALL_FDI_TEETH.length, 52);
+		assert.ok(FRMR_DOCTOR_POSITIONS.some((p) => p.code === "71" && p.name.includes("терапевт")));
+		assert.ok(FRMR_DOCTOR_POSITIONS.some((p) => p.code === "15" && p.name.includes("Главный врач")));
+		assert.equal(DENTAL_SURFACES.length, 6);
+		assert.ok(DENTAL_TOOTH_STATUS_DICTIONARY.Caries?.egiszCode === "1");
+		assert.ok(DENTAL_TOOTH_STATUS_DICTIONARY.Pulpitis?.egiszCode === "2");
+	});
 });
 
 describe("4. FNS Tax Deduction Certificate XML Generation (КНД 1151156 / ЕД-7-11/755@)", () => {

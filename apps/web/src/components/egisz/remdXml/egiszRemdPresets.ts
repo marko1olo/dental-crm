@@ -96,8 +96,18 @@ export const EGISZ_DENTAL_SEMD_TYPES = {
 	"105": {
 		code: "105",
 		nsiCode: "105",
+		title: "Протокол консультации врача-специалиста (стоматолога)",
+		shortTitle: "Протокол консультации (СЭМД 105)",
+		description: "Первичный или повторный консультативный прием врача-стоматолога с формированием заключения",
+		loincCode: "74208-1",
+		loincDisplayName: "Протокол стоматологического осмотра",
+		templateRoot: "1.2.643.5.1.13.13.11.1527",
+	},
+	"106": {
+		code: "106",
+		nsiCode: "106",
 		title: "Выписной эпикриз в амбулаторной стоматологической практике",
-		shortTitle: "Эпикриз ф. 043/у",
+		shortTitle: "Эпикриз (СЭМД 106)",
 		description: "Итоговый этапный или заключительный эпикриз по курсу комплексного стоматологического лечения",
 		loincCode: "42344-2",
 		loincDisplayName: "Стоматологический эпикриз",
@@ -145,7 +155,20 @@ export const ALL_FDI_TEETH = [...FDI_ADULT_TEETH, ...FDI_CHILD_TEETH] as const;
 export const DENTAL_TOOTH_STATUS_DICTIONARY: Record<
 	string,
 	{ code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string }
-> = {
+> & {
+	Healthy: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Caries: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Pulpitis: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Periodontitis: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Filling: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Crown: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Artificial: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Implant: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Extracted: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Root: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Retained: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+	Dystopic: { code: string; labelRu: string; shortSymbol: string; color: string; egiszCode: string };
+} = {
 	Healthy: { code: "Healthy", labelRu: "Здоров / Интактен", shortSymbol: "З", color: "#10b981", egiszCode: "0" },
 	Caries: { code: "Caries", labelRu: "Кариес", shortSymbol: "C", color: "#ef4444", egiszCode: "1" },
 	Pulpitis: { code: "Pulpitis", labelRu: "Пульпит", shortSymbol: "P", color: "#dc2626", egiszCode: "2" },
