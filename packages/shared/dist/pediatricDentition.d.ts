@@ -85,40 +85,10 @@ export declare const cariogramRiskLevelSchema: z.ZodEnum<["low", "moderate", "hi
 export type CariogramRiskLevel = z.infer<typeof cariogramRiskLevelSchema>;
 export declare const cariogramInputSchema: z.ZodObject<{
     cariesRiskLevel: z.ZodDefault<z.ZodOptional<z.ZodEnum<["low", "moderate", "high"]>>>;
-    dietContents: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    dietFrequency: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    plaqueAmount: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    streptococcusMutans: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    fluorideProgram: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    salivaSecretionRate: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    salivaBufferCapacity: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    pastCariesExperience: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    systemicDiseases: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    clinicalJudgment: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
 }, "strip", z.ZodTypeAny, {
     cariesRiskLevel: "low" | "high" | "moderate";
-    dietContents: number;
-    dietFrequency: number;
-    plaqueAmount: number;
-    streptococcusMutans: number;
-    fluorideProgram: number;
-    salivaSecretionRate: number;
-    salivaBufferCapacity: number;
-    pastCariesExperience: number;
-    systemicDiseases: number;
-    clinicalJudgment: number;
 }, {
     cariesRiskLevel?: "low" | "high" | "moderate" | undefined;
-    dietContents?: number | undefined;
-    dietFrequency?: number | undefined;
-    plaqueAmount?: number | undefined;
-    streptococcusMutans?: number | undefined;
-    fluorideProgram?: number | undefined;
-    salivaSecretionRate?: number | undefined;
-    salivaBufferCapacity?: number | undefined;
-    pastCariesExperience?: number | undefined;
-    systemicDiseases?: number | undefined;
-    clinicalJudgment?: number | undefined;
 }>;
 export type CariogramInput = z.infer<typeof cariogramInputSchema>;
 export type CariogramRiskCategory = "very_low" | "low" | "moderate" | "high" | "very_high";

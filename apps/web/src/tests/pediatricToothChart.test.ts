@@ -200,16 +200,7 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 	describe("5. Pediatric Cariogram Risk Engine (Bratthall Model)", () => {
 		it("calculates high chance of avoiding caries (low risk) for optimal parameters", () => {
 			const result = calculateCariogramRisk({
-				pastCariesExperience: 0,
-				dietContents: 0,
-				dietFrequency: 0,
-				plaqueAmount: 0,
-				streptococcusMutans: 0,
-				fluorideProgram: 0,
-				salivaSecretionRate: 0,
-				salivaBufferCapacity: 0,
-				clinicalJudgment: 0,
-				systemicDiseases: 0,
+				cariesRiskLevel: "low",
 			});
 
 			assert.ok(result.chanceOfAvoidingCariesPercent >= 80, `Expected chance >= 80, got ${result.chanceOfAvoidingCariesPercent}`);
@@ -220,16 +211,7 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 
 		it("calculates high caries risk for compromised oral conditions", () => {
 			const result = calculateCariogramRisk({
-				pastCariesExperience: 3,
-				dietContents: 3,
-				dietFrequency: 3,
-				plaqueAmount: 3,
-				streptococcusMutans: 3,
-				fluorideProgram: 3,
-				salivaSecretionRate: 3,
-				salivaBufferCapacity: 2,
-				clinicalJudgment: 3,
-				systemicDiseases: 2,
+				cariesRiskLevel: "high",
 			});
 
 			assert.ok(result.chanceOfAvoidingCariesPercent <= 20, `Expected chance <= 20, got ${result.chanceOfAvoidingCariesPercent}`);

@@ -4,10 +4,7 @@ import {
 	FileText,
 	Printer,
 	Sparkles,
-	Volume2,
-	VolumeX,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ToothUpdate {
 	code: string;
@@ -28,77 +25,6 @@ export function ShadowAnalystReport({
 	onPrint,
 	studyTitle,
 }: ShadowAnalystReportProps) {
-	const [isSpeaking, setIsSpeaking] = useState(false);
-	const [voicesReady, setVoicesReady] = useState(false);
-	const synthRef = useRef<SpeechSynthesis | null>(null);
-	const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-	// Voices load async in Chrome/Edge — wait for them
-	useEffect(() => {
-		if (typeof window === "undefined") return;
-		const synth = window.speechSynthesis;
-		synthRef.current = synth;
-
-		const setReady = () => setVoicesReady(true);
-		if (synth.getVoices().length > 0) {
-			setReady();
-		} else {
-			synth.addEventListener("voiceschanged", setReady, { once: true });
-		}
-		return () => {
-			synth.cancel();
-		};
-	}, []);
-
-	const handleSpeak = useCallback(() => {
-		const synth = synthRef.current;
-		if (!synth) return;
-
-		if (isSpeaking) {
-			synth.cancel();
-			setIsSpeaking(false);
-			return;
-		}
-
-		let fullText = summary ?? "";
-		if (toothUpdates && toothUpdates.length > 0) {
-			fullText += ". Детализация по зубам: ";
-			toothUpdates.forEach((t) => {
-				fullText += `Зуб ${t?.code ?? ""}: ${t?.diagnosisOrFinding ?? ""}. `;
-			});
-		}
-
-		// Strip markdown characters
-		const cleanText = fullText
-			.replace(/[*#_`~]/g, "")
-			.replace(/\[.*?\]\(.*?\)/g, "");
-
-		const utterance = new SpeechSynthesisUtterance(cleanText);
-		utterance.lang = "ru-RU";
-		utterance.rate = 0.95;
-		utterance.pitch = 1.0;
-
-		const voices = synth.getVoices();
-		const ruVoice =
-			voices.find(
-				(v) =>
-					v.lang === "ru-RU" &&
-					!(v.name ?? "").toLowerCase().includes("google"),
-			) ||
-			voices.find((v) => (v.lang ?? "").startsWith("ru")) ||
-			null;
-		if (ruVoice) utterance.voice = ruVoice;
-
-		utterance.onstart = () => setIsSpeaking(true);
-		utterance.onend = () => setIsSpeaking(false);
-		utterance.onerror = () => setIsSpeaking(false);
-
-		utteranceRef.current = utterance;
-		synth.cancel(); // cancel any previous
-		synth.speak(utterance);
-		setIsSpeaking(true);
-	}, [summary, toothUpdates, isSpeaking]);
-
 	const criticalCount = (toothUpdates ?? []).filter(
 		(u) =>
 			(u?.state ?? "").toLowerCase().includes("caries") ||
@@ -128,21 +54,6 @@ export function ShadowAnalystReport({
 							<Printer size={14} />
 						</button>
 					)}
-					<button
-						className={`sa-icon-btn ${isSpeaking ? "sa-icon-btn--active" : ""}`}
-						onClick={handleSpeak}
-						title={
-							isSpeaking
-								? "Остановить озвучку"
-								: voicesReady
-									? "Озвучить отчёт"
-									: "Загрузка голоса..."
-						}
-						disabled={!voicesReady && !isSpeaking}
-						type="button"
-					>
-						{isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
-					</button>
 				</div>
 			</div>
 

@@ -2,7 +2,6 @@ import React from "react";
 import { Activity, Check, Info, ShieldCheck, Sparkles } from "lucide-react";
 import {
 	type CariogramInput,
-	type CariogramPieSlice,
 	type CariogramResult,
 	type CariogramRiskLevel,
 } from "./pediatricDentitionEngine";
@@ -13,7 +12,6 @@ export interface PediatricCariogramTabProps {
 	cariogramInput: CariogramInput;
 	onCariogramInputChange: (input: CariogramInput) => void;
 	cariogramResult: CariogramResult;
-	pieSlices?: readonly CariogramPieSlice[];
 }
 
 export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({

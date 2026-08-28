@@ -1612,8 +1612,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									}}
 								>
 									Будет:{" "}
-									<strong style={{ color: "var(--ink)" }}>
-										{adjustExceedsStock ? 0 : adjustResultQuantity} шт.
+									<strong style={{ color: adjustExceedsStock ? "var(--tomato)" : "var(--ink)" }}>
+										{adjustResultQuantity} шт.{adjustExceedsStock ? " (дефицит)" : ""}
 									</strong>
 								</p>
 							)}
@@ -1621,54 +1621,40 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								<p
 									style={{
 										margin: 0,
-										padding: "12px 14px",
+										padding: "10px 14px",
 										borderRadius: 8,
-										background: "rgba(239,68,68,0.12)",
+										background: "var(--bad-bg, rgba(239,68,68,0.12))",
 										border: "1px solid var(--tomato)",
 										color: "var(--ink)",
-										fontSize: 14,
+										fontSize: 13,
 										lineHeight: 1.45,
 									}}
 								>
-									Списываете больше, чем есть на складе: в наличии{" "}
-									{adjustingItem.stockQuantity} шт., списываете{" "}
-									{adjustAmountNumber} шт. Исправьте количество или сначала
-									оприходуйте поступление.
+									Списание превышает текущий остаток ({adjustingItem.stockQuantity} шт.). Будет зафиксирован мягкий дефицит ({Math.abs(adjustResultQuantity)} шт.) для отдела снабжения.
 								</p>
 							)}
-							{/*
-							  Кнопка запирается на время запроса.
-
-							  БЫЛО: кнопка оставалась нажимаемой, пока сервер отвечал.
-							  Приход и списание прибавляются к остатку, а не задают его,
-							  поэтому второе нажатие по медленной сети двигало остаток
-							  второй раз — материал списывался дважды за одно окно.
-							  Погасшая кнопка с честной надписью показывает, что работа
-							  идёт, и не даёт нажать повторно.
-							*/}
 							<button
 								type="submit"
-								disabled={isAdjustingStock || adjustExceedsStock}
+								disabled={isAdjustingStock}
 								style={{
 									padding: "12px",
 									borderRadius: 8,
 									border: "none",
 									fontWeight: 600,
 									color: "var(--on-teal, #ffffff)",
-									cursor:
-										isAdjustingStock || adjustExceedsStock
-											? "not-allowed"
-											: "pointer",
+									cursor: isAdjustingStock ? "not-allowed" : "pointer",
 									background: adjustType === "in" ? "var(--teal)" : "var(--tomato)",
 									fontSize: 15,
-									opacity: isAdjustingStock || adjustExceedsStock ? 0.6 : 1,
+									opacity: isAdjustingStock ? 0.6 : 1,
 								}}
 							>
 								{isAdjustingStock
 									? "Сохраняем..."
 									: adjustType === "in"
 										? "Оприходовать"
-										: "Списать"}
+										: adjustExceedsStock
+											? "Списать в дефицит"
+											: "Списать"}
 							</button>
 						</form>
 					</div>

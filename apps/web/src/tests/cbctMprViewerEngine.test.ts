@@ -25,7 +25,7 @@ import {
 	type Point3D,
 	calculateMprSliceIndex,
 	clampCoordinateToVolume,
-	createSyntheticDentalCbctVolume,
+	createEmptyCbctVolume,
 	disposeCbctVolume,
 	extractMprSlice,
 	huToGrayscale,
@@ -195,41 +195,28 @@ describe("CBCT 3D MPR & Panoramic Dental Arch Spline Engine", () => {
 	});
 
 	// =========================================================================
-	// 2. SYNTHETIC ANATOMICAL CBCT VOLUME GENERATOR
+	// 2. EMPTY CBCT VOXEL VOLUME GENERATOR & DISPOSAL
 	// =========================================================================
-	describe("2. Synthetic Anatomical CBCT Volume Generator", () => {
-		test("createSyntheticDentalCbctVolume generates volume with realistic mandibular and enamel structures", () => {
-			const synth = createSyntheticDentalCbctVolume(140, 140, 60, 0.4);
+	describe("2. CBCT Voxel Volume Utilities", () => {
+		test("createEmptyCbctVolume generates volume with valid dimensions, buffers, and clean disposal", () => {
+			const vol = createEmptyCbctVolume(140, 140, 60, 0.4, -1000);
 
-			assert.strictEqual(synth.dimensions.width, 140);
-			assert.strictEqual(synth.dimensions.height, 140);
-			assert.strictEqual(synth.dimensions.depth, 60);
-			assert.ok(synth.data);
-			assert.strictEqual(synth.isDisposed, false);
-			assert.strictEqual(synth.defaultWindowWidth, 4400);
-			assert.strictEqual(synth.defaultWindowLevel, 1300);
+			assert.strictEqual(vol.dimensions.width, 140);
+			assert.strictEqual(vol.dimensions.height, 140);
+			assert.strictEqual(vol.dimensions.depth, 60);
+			assert.ok(vol.data);
+			assert.strictEqual(vol.isDisposed, false);
+			assert.strictEqual(vol.defaultWindowWidth, 2000);
+			assert.strictEqual(vol.defaultWindowLevel, 400);
 
-			// Test bone density sampling inside mandible region
-			const vox = worldMmToVoxel({ x: 0, y: -18.0, z: -10.0 }, synth);
-			const hu = sampleVoxelHU(vox.x, vox.y, vox.z, synth);
-			assert.ok(hu > 200); // Must have bone HU
+			// Test air density sampling (-1000 HU)
+			const vox = worldMmToVoxel({ x: 0, y: 0, z: 0 }, vol);
+			const hu = sampleVoxelHU(vox.x, vox.y, vox.z, vol);
+			assert.strictEqual(hu, -1000);
 
-			// Test tooth #46 crown cross-section: pulp lumen, dentin core, and enamel outer cap
-			const voxPulp = worldMmToVoxel({ x: -23.0, y: 5.5, z: 2.0 }, synth);
-			const huPulp = sampleVoxelHU(voxPulp.x, voxPulp.y, voxPulp.z, synth);
-			assert.ok(huPulp <= 100, `Pulp chamber at crown center must be hypodense (<=100 HU), got ${huPulp}`);
-
-			const voxDentin = worldMmToVoxel({ x: -23.0 + 2.0, y: 5.5, z: 2.0 }, synth);
-			const huDentin = sampleVoxelHU(voxDentin.x, voxDentin.y, voxDentin.z, synth);
-			assert.ok(huDentin >= 1800 && huDentin <= 2500, `Dentin core must be [1800..2500 HU], got ${huDentin}`);
-
-			const voxEnamel = worldMmToVoxel({ x: -23.0 + 3.8, y: 5.5, z: 2.0 }, synth);
-			const huEnamel = sampleVoxelHU(voxEnamel.x, voxEnamel.y, voxEnamel.z, synth);
-			assert.ok(huEnamel >= 3000, `Enamel shell must be >=3000 HU, got ${huEnamel}`);
-
-			disposeCbctVolume(synth);
-			assert.strictEqual(synth.isDisposed, true);
-			assert.strictEqual(synth.data, null);
+			disposeCbctVolume(vol);
+			assert.strictEqual(vol.isDisposed, true);
+			assert.strictEqual(vol.data, null);
 		});
 	});
 
@@ -276,7 +263,7 @@ describe("CBCT 3D MPR & Panoramic Dental Arch Spline Engine", () => {
 		});
 
 		test("reconstructPanoramicView generates OPG radiograph with tooth landmark markers", () => {
-			const synth = createSyntheticDentalCbctVolume(50, 50, 30, 0.6);
+			const synth = createEmptyCbctVolume(50, 50, 30, 0.6, 400);
 			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 10.0);
 
 			const pano = reconstructPanoramicView(synth, curve, {
@@ -293,7 +280,7 @@ describe("CBCT 3D MPR & Panoramic Dental Arch Spline Engine", () => {
 		});
 
 		test("generateCrossSectionSlices generates perpendicular cross-sections along the dental arch", () => {
-			const synth = createSyntheticDentalCbctVolume(50, 50, 30, 0.6);
+			const synth = createEmptyCbctVolume(50, 50, 30, 0.6, 400);
 			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 10.0);
 
 			const slices = generateCrossSectionSlices(synth, curve, 5.0, -5.0, {

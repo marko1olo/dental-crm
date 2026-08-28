@@ -28,6 +28,7 @@ export * from "./patients/index.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";
 export * from "./marketing/index.js";
+export * from "./anesthesia/index.js";
 
 
 

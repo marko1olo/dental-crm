@@ -27,6 +27,7 @@ export * from "./patients/index.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";
 export * from "./marketing/index.js";
+export * from "./anesthesia/index.js";
 export declare function isHttpUrl(value: string): boolean;
 export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
@@ -8328,7 +8329,7 @@ export declare const patientIntakeQuestionnairePayloadSchema: z.ZodObject<{
     chiefComplaint: string;
     allergyStatus: string;
     chronicConditions: string;
-    pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+    pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
     anticoagulants: string;
     infectiousRiskNotes: string;
     cardioEndocrineNotes: string;
@@ -8340,7 +8341,7 @@ export declare const patientIntakeQuestionnairePayloadSchema: z.ZodObject<{
     chiefComplaint: string;
     allergyStatus: string;
     chronicConditions: string;
-    pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+    pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
     anticoagulants: string;
     infectiousRiskNotes: string;
     cardioEndocrineNotes: string;
@@ -12175,7 +12176,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         chiefComplaint: string;
         allergyStatus: string;
         chronicConditions: string;
-        pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+        pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
         anticoagulants: string;
         infectiousRiskNotes: string;
         cardioEndocrineNotes: string;
@@ -12187,7 +12188,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         chiefComplaint: string;
         allergyStatus: string;
         chronicConditions: string;
-        pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+        pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
         anticoagulants: string;
         infectiousRiskNotes: string;
         cardioEndocrineNotes: string;
@@ -16770,7 +16771,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         chiefComplaint: string;
         allergyStatus: string;
         chronicConditions: string;
-        pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+        pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
         anticoagulants: string;
         infectiousRiskNotes: string;
         cardioEndocrineNotes: string;
@@ -17929,7 +17930,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         chiefComplaint: string;
         allergyStatus: string;
         chronicConditions: string;
-        pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+        pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
         anticoagulants: string;
         infectiousRiskNotes: string;
         cardioEndocrineNotes: string;
@@ -20497,7 +20498,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -20509,7 +20510,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -25092,7 +25093,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -26251,7 +26252,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -28263,7 +28264,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -29652,7 +29653,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -31307,7 +31308,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -31319,7 +31320,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -35902,7 +35903,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -37061,7 +37062,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -41395,7 +41396,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 chiefComplaint: string;
                 allergyStatus: string;
                 chronicConditions: string;
-                pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+                pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
                 anticoagulants: string;
                 infectiousRiskNotes: string;
                 cardioEndocrineNotes: string;
@@ -41407,7 +41408,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 chiefComplaint: string;
                 allergyStatus: string;
                 chronicConditions: string;
-                pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+                pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
                 anticoagulants: string;
                 infectiousRiskNotes: string;
                 cardioEndocrineNotes: string;
@@ -45990,7 +45991,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 chiefComplaint: string;
                 allergyStatus: string;
                 chronicConditions: string;
-                pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+                pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
                 anticoagulants: string;
                 infectiousRiskNotes: string;
                 cardioEndocrineNotes: string;
@@ -47149,7 +47150,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 chiefComplaint: string;
                 allergyStatus: string;
                 chronicConditions: string;
-                pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+                pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
                 anticoagulants: string;
                 infectiousRiskNotes: string;
                 cardioEndocrineNotes: string;
@@ -52942,7 +52943,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -52954,7 +52955,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -57537,7 +57538,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -58696,7 +58697,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -59863,7 +59864,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -61031,7 +61032,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -62199,7 +62200,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -63367,7 +63368,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             chiefComplaint: string;
             allergyStatus: string;
             chronicConditions: string;
-            pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible" | "lactation";
+            pregnancyStatus: "unknown" | "confirmed" | "lactation" | "not_applicable" | "denied" | "possible";
             anticoagulants: string;
             infectiousRiskNotes: string;
             cardioEndocrineNotes: string;
@@ -113328,6 +113329,7 @@ export declare const anesthesiaLogRecordSchema: z.ZodObject<{
     patientId: string;
     organizationId: string;
     drug: "articaine" | "mepivacaine" | "lidocaine" | "bupivacaine";
+    maxEpinephrineMg: number;
     vasoconstrictor: "none" | "1:100000" | "1:200000" | "1:50000";
     technique: "infiltration" | "intraligamentary" | "intraosseous" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraseptal" | "sedation_nitrous" | "sedation_iv";
     drugBrandName: string;
@@ -113337,7 +113339,6 @@ export declare const anesthesiaLogRecordSchema: z.ZodObject<{
     totalDoseMg: number;
     maxAllowedDoseMg: number;
     epinephrineMg: number;
-    maxEpinephrineMg: number;
     aspirationTestPositive: boolean;
     toothNumbers: number[];
     id?: string | undefined;
@@ -113388,13 +113389,13 @@ export declare const anesthesiaLogRecordSchema: z.ZodObject<{
     complications?: string | null | undefined;
     expirationDate?: string | null | undefined;
     lotNumber?: string | null | undefined;
+    maxEpinephrineMg?: number | undefined;
     vasoconstrictor?: "none" | "1:100000" | "1:200000" | "1:50000" | undefined;
     drugBrandName?: string | undefined;
     concentrationPct?: number | undefined;
     carpuleVolumeMl?: number | undefined;
     carpulesAdministered?: number | undefined;
     epinephrineMg?: number | undefined;
-    maxEpinephrineMg?: number | undefined;
     aspirationTestPositive?: boolean | undefined;
     toothNumbers?: number[] | undefined;
     injectionSite?: string | null | undefined;

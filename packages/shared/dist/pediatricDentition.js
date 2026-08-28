@@ -397,36 +397,13 @@ export function calculateEruptionTimelineByAge(ageYears) {
 export const cariogramRiskLevelSchema = z.enum(["low", "moderate", "high"]);
 export const cariogramInputSchema = z.object({
     cariesRiskLevel: cariogramRiskLevelSchema.optional().default("low"),
-    // Backwards-compatible legacy fields
-    dietContents: z.number().int().min(0).max(3).optional().default(1),
-    dietFrequency: z.number().int().min(0).max(3).optional().default(1),
-    plaqueAmount: z.number().int().min(0).max(3).optional().default(1),
-    streptococcusMutans: z.number().int().min(0).max(3).optional().default(1),
-    fluorideProgram: z.number().int().min(0).max(3).optional().default(1),
-    salivaSecretionRate: z.number().int().min(0).max(3).optional().default(0),
-    salivaBufferCapacity: z.number().int().min(0).max(2).optional().default(0),
-    pastCariesExperience: z.number().int().min(0).max(3).optional().default(1),
-    systemicDiseases: z.number().int().min(0).max(2).optional().default(0),
-    clinicalJudgment: z.number().int().min(0).max(3).optional().default(1),
 });
 /**
  * Calculates the Cariogram caries risk and chance of avoiding caries per 3-state clinical model.
  */
 export function calculateCariogramRisk(rawInput = {}) {
     const input = cariogramInputSchema.parse(rawInput);
-    let riskLevel = input.cariesRiskLevel ?? "low";
-    if (rawInput.cariesRiskLevel === undefined) {
-        const highRiskSignals = (input.pastCariesExperience >= 2 ? 1 : 0) +
-            (input.plaqueAmount >= 2 ? 1 : 0) +
-            (input.dietFrequency >= 2 ? 1 : 0) +
-            (input.fluorideProgram >= 2 ? 1 : 0);
-        if (highRiskSignals >= 3 || input.pastCariesExperience >= 3) {
-            riskLevel = "high";
-        }
-        else if (highRiskSignals >= 1) {
-            riskLevel = "moderate";
-        }
-    }
+    const riskLevel = input.cariesRiskLevel ?? "low";
     if (riskLevel === "low") {
         return {
             chanceOfAvoidingCariesPercent: 85,

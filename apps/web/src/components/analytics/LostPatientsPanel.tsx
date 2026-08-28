@@ -68,117 +68,22 @@ export interface LostPatientRow {
 
 type TabMode = "risk_list" | "recall_cohorts" | "chair_calc";
 
-/** Базовые демонстрационные когорты возвращаемости на основе реальной структуры данных */
-const DEFAULT_RECALL_COHORTS: RecallCohortData[] = [
-	{
-		cohortKey: "2025-02",
-		cohortLabel: "Фев 2025",
-		category: "sanitation",
-		categoryLabel: "Санация полости рта",
-		totalPatients: 42,
-		returned6m: 31,
-		rate6m: 73.8,
-		returned12m: 29,
-		rate12m: 69.0,
-		recallRevenueKopecks: 38500000,
-		healthTone: "ok",
-	},
-	{
-		cohortKey: "2025-03",
-		cohortLabel: "Мар 2025",
-		category: "implantation",
-		categoryLabel: "Имплантация и протезирование",
-		totalPatients: 28,
-		returned6m: 23,
-		rate6m: 82.1,
-		returned12m: 22,
-		rate12m: 78.6,
-		recallRevenueKopecks: 61200000,
-		healthTone: "ok",
-	},
-	{
-		cohortKey: "2025-04",
-		cohortLabel: "Апр 2025",
-		category: "sanitation",
-		categoryLabel: "Санация полости рта",
-		totalPatients: 36,
-		returned6m: 24,
-		rate6m: 66.7,
-		returned12m: 21,
-		rate12m: 58.3,
-		recallRevenueKopecks: 29400000,
-		healthTone: "ok",
-	},
-	{
-		cohortKey: "2025-05",
-		cohortLabel: "Май 2025",
-		category: "general_therapy",
-		categoryLabel: "Терапевтический приём",
-		totalPatients: 50,
-		returned6m: 27,
-		rate6m: 54.0,
-		returned12m: 22,
-		rate12m: 44.0,
-		recallRevenueKopecks: 24500000,
-		healthTone: "warn",
-	},
-	{
-		cohortKey: "2025-06",
-		cohortLabel: "Июн 2025",
-		category: "implantation",
-		categoryLabel: "Имплантация и протезирование",
-		totalPatients: 32,
-		returned6m: 26,
-		rate6m: 81.3,
-		returned12m: 24,
-		rate12m: 75.0,
-		recallRevenueKopecks: 54800000,
-		healthTone: "ok",
-	},
-	{
-		cohortKey: "2025-07",
-		cohortLabel: "Июл 2025",
-		category: "sanitation",
-		categoryLabel: "Санация полости рта",
-		totalPatients: 45,
-		returned6m: 32,
-		rate6m: 71.1,
-		returned12m: 28,
-		rate12m: 62.2,
-		recallRevenueKopecks: 41000000,
-		healthTone: "ok",
-	},
-];
+export interface ChairConfig {
+	chairId: string;
+	chairName: string;
+	occupiedMinutes: number;
+	revenueKopecks: number;
+}
 
-/** Базовые кресла клиники для калькулятора утилизации */
-const DEFAULT_CHAIR_CONFIGS = [
-	{
-		chairId: "chair-1",
-		chairName: "Кресло 1 (Терапия и профгигиена)",
-		occupiedMinutes: 11400,
-		revenueKopecks: 142000000,
-	},
-	{
-		chairId: "chair-2",
-		chairName: "Кресло 2 (Хирургия и имплантация)",
-		occupiedMinutes: 9900,
-		revenueKopecks: 185000000,
-	},
-	{
-		chairId: "chair-3",
-		chairName: "Кресло 3 (Ортопедия и реставрация)",
-		occupiedMinutes: 8700,
-		revenueKopecks: 121000000,
-	},
-	{
-		chairId: "chair-4",
-		chairName: "Кресло 4 (Ортодонтия и детский приём)",
-		occupiedMinutes: 6600,
-		revenueKopecks: 78000000,
-	},
-];
+export interface LostPatientsPanelProps {
+	recallCohorts?: RecallCohortData[];
+	chairConfigs?: ChairConfig[];
+}
 
-export const LostPatientsPanel: React.FC = () => {
+export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
+	recallCohorts = [],
+	chairConfigs = [],
+}) => {
 	const { auth, setSelectedPatientId, clinicName } = useAppLogicContext();
 	const [activeTab, setActiveTab] = useState<TabMode>("risk_list");
 	const [patients, setPatients] = useState<LostPatientRow[]>([]);
@@ -316,7 +221,7 @@ export const LostPatientsPanel: React.FC = () => {
 			(p) => p.daysSinceLastVisit >= 730,
 		).length;
 
-		const totalSanitation = DEFAULT_RECALL_COHORTS.filter(
+		const totalSanitation = (recallCohorts ?? []).filter(
 			(c) => c.category === "sanitation",
 		);
 		const totalSanPatients = totalSanitation.reduce(
@@ -332,7 +237,7 @@ export const LostPatientsPanel: React.FC = () => {
 				? Math.round((totalSanReturned6m / totalSanPatients) * 1000) / 10
 				: 0;
 
-		const totalImpl = DEFAULT_RECALL_COHORTS.filter(
+		const totalImpl = (recallCohorts ?? []).filter(
 			(c) => c.category === "implantation",
 		);
 		const totalImplPatients = totalImpl.reduce(
@@ -350,24 +255,30 @@ export const LostPatientsPanel: React.FC = () => {
 
 		const availableMinutesPerChair = workingDays * shiftHours * 60;
 		const totalAvailableMinutes =
-			availableMinutesPerChair * DEFAULT_CHAIR_CONFIGS.length;
-		const totalOccupiedMinutes = DEFAULT_CHAIR_CONFIGS.reduce(
+			availableMinutesPerChair * (chairConfigs ?? []).length;
+		const totalOccupiedMinutes = (chairConfigs ?? []).reduce(
 			(s, c) => s + c.occupiedMinutes,
 			0,
 		);
-		const totalRevenueKopecks = DEFAULT_CHAIR_CONFIGS.reduce(
+		const totalRevenueKopecks = (chairConfigs ?? []).reduce(
 			(s, c) => s + c.revenueKopecks,
 			0,
 		);
 
-		const overallUtilization = calculateChairUtilizationPercent(
-			totalOccupiedMinutes,
-			totalAvailableMinutes,
-		);
-		const avgHourlyRevenueKopecks = calculateHourlyRevenueKopecks(
-			totalRevenueKopecks,
-			totalOccupiedMinutes,
-		);
+		const overallUtilization =
+			totalAvailableMinutes > 0
+				? calculateChairUtilizationPercent(
+						totalOccupiedMinutes,
+						totalAvailableMinutes,
+					)
+				: 0;
+		const avgHourlyRevenueKopecks =
+			totalOccupiedMinutes > 0
+				? calculateHourlyRevenueKopecks(
+						totalRevenueKopecks,
+						totalOccupiedMinutes,
+					)
+				: 0;
 
 		return {
 			totalRiskPatients,
@@ -380,12 +291,12 @@ export const LostPatientsPanel: React.FC = () => {
 			avgHourlyRevenueKopecks,
 			totalRevenueKopecks,
 		};
-	}, [patients, shiftHours, workingDays]);
+	}, [patients, recallCohorts, chairConfigs, shiftHours, workingDays]);
 
 	// Таблица утилизации по каждому креслу
 	const chairMetricsList: ChairHourMetrics[] = useMemo(() => {
 		const availablePerChair = workingDays * shiftHours * 60;
-		return DEFAULT_CHAIR_CONFIGS.map((chair) => {
+		return (chairConfigs ?? []).map((chair) => {
 			const utilRate = calculateChairUtilizationPercent(
 				chair.occupiedMinutes,
 				availablePerChair,
@@ -409,7 +320,7 @@ export const LostPatientsPanel: React.FC = () => {
 				capacityYieldPerHourKopecks: capacityKop,
 			};
 		});
-	}, [shiftHours, workingDays]);
+	}, [chairConfigs, shiftHours, workingDays]);
 
 	return (
 		<div
@@ -524,8 +435,20 @@ export const LostPatientsPanel: React.FC = () => {
 							<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg)]" />
 							Recall 6м (Санация)
 						</span>
-						<span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/10 text-[var(--ok-fg)]">
-							Норма
+						<span
+							className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+								kpis.sanRecall6m >= 65
+									? "bg-emerald-500/10 text-[var(--ok-fg)]"
+									: kpis.sanRecall6m > 0
+										? "bg-amber-500/10 text-[var(--warn-fg)]"
+										: "bg-[var(--line)] text-[var(--muted)]"
+							}`}
+						>
+							{kpis.sanRecall6m >= 65
+								? "Норма"
+								: kpis.sanRecall6m > 0
+									? "Внимание"
+									: "Нет данных"}
 						</span>
 					</div>
 					<div className="text-base font-bold text-[var(--ink)]">
@@ -542,8 +465,20 @@ export const LostPatientsPanel: React.FC = () => {
 							<TrendingUp className="w-3.5 h-3.5 text-[var(--ok-fg)]" />
 							Recall 12м (Импланты)
 						</span>
-						<span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/10 text-[var(--ok-fg)]">
-							Норма
+						<span
+							className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+								kpis.implRecall12m >= 60
+									? "bg-emerald-500/10 text-[var(--ok-fg)]"
+									: kpis.implRecall12m > 0
+										? "bg-amber-500/10 text-[var(--warn-fg)]"
+										: "bg-[var(--line)] text-[var(--muted)]"
+							}`}
+						>
+							{kpis.implRecall12m >= 60
+								? "Норма"
+								: kpis.implRecall12m > 0
+									? "Внимание"
+									: "Нет данных"}
 						</span>
 					</div>
 					<div className="text-base font-bold text-[var(--ink)]">
@@ -746,101 +681,107 @@ export const LostPatientsPanel: React.FC = () => {
 						</div>
 					</div>
 
-					<div className="overflow-x-auto border border-[var(--line)] rounded-lg">
-						<table className="w-full text-xs text-left border-collapse">
-							<thead>
-								<tr className="bg-[var(--paper-soft)] border-b border-[var(--line)] text-[var(--muted)] font-semibold">
-									<th className="p-2.5">Когорта</th>
-									<th className="p-2.5">Профиль лечения</th>
-									<th className="p-2.5 text-right">Пациентов</th>
-									<th className="p-2.5 text-right">Recall 6 мес (гигиена)</th>
-									<th className="p-2.5 text-right">Recall 12 мес (осмотр)</th>
-									<th className="p-2.5 text-right">Recall Выручка</th>
-									<th className="p-2.5 text-center">Статус удержания</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-[var(--line)]">
-								{DEFAULT_RECALL_COHORTS.map((cohort) => {
-									const rates = calculateRecallRates(
-										cohort.totalPatients,
-										cohort.returned6m,
-										cohort.returned12m,
-									);
-									return (
-										<tr
-											key={`${cohort.cohortKey}-${cohort.category}`}
-											className="hover:bg-[var(--paper-soft)] transition-colors"
-										>
-											<td className="p-2.5 font-semibold text-[var(--ink)]">
-												{cohort.cohortLabel}
-											</td>
-											<td className="p-2.5 text-[var(--muted)]">
-												{cohort.categoryLabel}
-											</td>
-											<td className="p-2.5 text-right font-medium text-[var(--ink)]">
-												{cohort.totalPatients}
-											</td>
-											<td className="p-2.5 text-right">
-												<span className="font-bold text-[var(--ink)]">
-													{cohort.returned6m} чел.
-												</span>{" "}
-												<span
-													className={`ml-1 text-[11px] font-semibold ${
-														rates.rate6m >= 65
-															? "text-emerald-600 dark:text-emerald-400"
-															: rates.rate6m >= 45
-																? "text-amber-600 dark:text-amber-400"
-																: "text-rose-600 dark:text-rose-400"
-													}`}
-												>
-													({rates.rate6m}%)
-												</span>
-											</td>
-											<td className="p-2.5 text-right">
-												<span className="font-bold text-[var(--ink)]">
-													{cohort.returned12m} чел.
-												</span>{" "}
-												<span
-													className={`ml-1 text-[11px] font-semibold ${
-														rates.rate12m >= 65
-															? "text-emerald-600 dark:text-emerald-400"
-															: rates.rate12m >= 45
-																? "text-amber-600 dark:text-amber-400"
-																: "text-rose-600 dark:text-rose-400"
-													}`}
-												>
-													({rates.rate12m}%)
-												</span>
-											</td>
-											<td className="p-2.5 text-right font-semibold text-[var(--ok-fg)]">
-												{formatKopecksToRub(
-													cohort.recallRevenueKopecks,
-													false,
-												)}
-											</td>
-											<td className="p-2.5 text-center">
-												<span
-													className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-														rates.healthTone === "ok"
-															? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+					{(recallCohorts ?? []).length === 0 ? (
+						<div className="py-8 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-lg border border-dashed border-[var(--line)]">
+							Когортные данные возвращаемости пациентов отсутствуют. Они будут сформированы автоматически по мере накопления повторных визитов.
+						</div>
+					) : (
+						<div className="overflow-x-auto border border-[var(--line)] rounded-lg">
+							<table className="w-full text-xs text-left border-collapse">
+								<thead>
+									<tr className="bg-[var(--paper-soft)] border-b border-[var(--line)] text-[var(--muted)] font-semibold">
+										<th className="p-2.5">Когорта</th>
+										<th className="p-2.5">Профиль лечения</th>
+										<th className="p-2.5 text-right">Пациентов</th>
+										<th className="p-2.5 text-right">Recall 6 мес (гигиена)</th>
+										<th className="p-2.5 text-right">Recall 12 мес (осмотр)</th>
+										<th className="p-2.5 text-right">Recall Выручка</th>
+										<th className="p-2.5 text-center">Статус удержания</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y divide-[var(--line)]">
+									{(recallCohorts ?? []).map((cohort) => {
+										const rates = calculateRecallRates(
+											cohort.totalPatients,
+											cohort.returned6m,
+											cohort.returned12m,
+										);
+										return (
+											<tr
+												key={`${cohort.cohortKey}-${cohort.category}`}
+												className="hover:bg-[var(--paper-soft)] transition-colors"
+											>
+												<td className="p-2.5 font-semibold text-[var(--ink)]">
+													{cohort.cohortLabel}
+												</td>
+												<td className="p-2.5 text-[var(--muted)]">
+													{cohort.categoryLabel}
+												</td>
+												<td className="p-2.5 text-right font-medium text-[var(--ink)]">
+													{cohort.totalPatients}
+												</td>
+												<td className="p-2.5 text-right">
+													<span className="font-bold text-[var(--ink)]">
+														{cohort.returned6m} чел.
+													</span>{" "}
+													<span
+														className={`ml-1 text-[11px] font-semibold ${
+															rates.rate6m >= 65
+																? "text-emerald-600 dark:text-emerald-400"
+																: rates.rate6m >= 45
+																	? "text-amber-600 dark:text-amber-400"
+																	: "text-rose-600 dark:text-rose-400"
+														}`}
+													>
+														({rates.rate6m}%)
+													</span>
+												</td>
+												<td className="p-2.5 text-right">
+													<span className="font-bold text-[var(--ink)]">
+														{cohort.returned12m} чел.
+													</span>{" "}
+													<span
+														className={`ml-1 text-[11px] font-semibold ${
+															rates.rate12m >= 65
+																? "text-emerald-600 dark:text-emerald-400"
+																: rates.rate12m >= 45
+																	? "text-amber-600 dark:text-amber-400"
+																	: "text-rose-600 dark:text-rose-400"
+														}`}
+													>
+														({rates.rate12m}%)
+													</span>
+												</td>
+												<td className="p-2.5 text-right font-semibold text-[var(--ok-fg)]">
+													{formatKopecksToRub(
+														cohort.recallRevenueKopecks,
+														false,
+													)}
+												</td>
+												<td className="p-2.5 text-center">
+													<span
+														className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+															rates.healthTone === "ok"
+																? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+																: rates.healthTone === "warn"
+																	? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+																	: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+														}`}
+													>
+														{rates.healthTone === "ok"
+															? "В норме"
 															: rates.healthTone === "warn"
-																? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-																: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-													}`}
-												>
-													{rates.healthTone === "ok"
-														? "В норме"
-														: rates.healthTone === "warn"
-															? "Внимание"
-															: "Отток"}
-												</span>
-											</td>
-										</tr>
-									);
-								})}
-							</tbody>
-						</table>
-					</div>
+																? "Внимание"
+																: "Отток"}
+													</span>
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
+					)}
 				</div>
 			)}
 
@@ -912,63 +853,69 @@ export const LostPatientsPanel: React.FC = () => {
 					</div>
 
 					{/* Детализация по каждому креслу клиники */}
-					<div className="overflow-x-auto border border-[var(--line)] rounded-lg">
-						<table className="w-full text-xs text-left border-collapse">
-							<thead>
-								<tr className="bg-[var(--paper-soft)] border-b border-[var(--line)] text-[var(--muted)] font-semibold">
-									<th className="p-2.5">Кресло / Специализация</th>
-									<th className="p-2.5 text-right">Доступно часов</th>
-									<th className="p-2.5 text-right">Занято часов</th>
-									<th className="p-2.5 text-right">Загрузка %</th>
-									<th className="p-2.5 text-right">Выручка кресла</th>
-									<th className="p-2.5 text-right">Выручка / кресло-час</th>
-									<th className="p-2.5 text-right">Yield (на мощность)</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-[var(--line)]">
-								{chairMetricsList.map((chair) => (
-									<tr
-										key={chair.chairId}
-										className="hover:bg-[var(--paper-soft)] transition-colors"
-									>
-										<td className="p-2.5 font-semibold text-[var(--ink)]">
-											{chair.chairName}
-										</td>
-										<td className="p-2.5 text-right text-[var(--muted)]">
-											{Math.round(chair.availableMinutes / 60)}ч
-										</td>
-										<td className="p-2.5 text-right font-medium text-[var(--ink)]">
-											{Math.round((chair.occupiedMinutes / 60) * 10) / 10}ч
-										</td>
-										<td className="p-2.5 text-right">
-											<div className="inline-flex items-center gap-1.5">
-												<span className="font-bold text-[var(--ink)]">
-													{chair.utilizationRatePercent}%
-												</span>
-												<div className="w-12 h-1.5 rounded-full bg-[var(--line)] overflow-hidden">
-													<div
-														className="h-full bg-[var(--teal)]"
-														style={{
-															width: `${chair.utilizationRatePercent}%`,
-														}}
-													/>
-												</div>
-											</div>
-										</td>
-										<td className="p-2.5 text-right font-bold text-[var(--ok-fg)]">
-											{formatKopecksToRub(chair.revenueKopecks, false)}
-										</td>
-										<td className="p-2.5 text-right font-bold text-[var(--teal)]">
-											{formatKopecksPerHour(chair.revenuePerHourKopecks)}
-										</td>
-										<td className="p-2.5 text-right font-medium text-[var(--muted)]">
-											{formatKopecksPerHour(chair.capacityYieldPerHourKopecks)}
-										</td>
+					{(chairConfigs ?? []).length === 0 ? (
+						<div className="py-8 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-lg border border-dashed border-[var(--line)]">
+							Данные по загрузке кресел отсутствуют. Настройте рабочие места и расписание приёмов в модуле клиники.
+						</div>
+					) : (
+						<div className="overflow-x-auto border border-[var(--line)] rounded-lg">
+							<table className="w-full text-xs text-left border-collapse">
+								<thead>
+									<tr className="bg-[var(--paper-soft)] border-b border-[var(--line)] text-[var(--muted)] font-semibold">
+										<th className="p-2.5">Кресло / Специализация</th>
+										<th className="p-2.5 text-right">Доступно часов</th>
+										<th className="p-2.5 text-right">Занято часов</th>
+										<th className="p-2.5 text-right">Загрузка %</th>
+										<th className="p-2.5 text-right">Выручка кресла</th>
+										<th className="p-2.5 text-right">Выручка / кресло-час</th>
+										<th className="p-2.5 text-right">Yield (на мощность)</th>
 									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
+								</thead>
+								<tbody className="divide-y divide-[var(--line)]">
+									{chairMetricsList.map((chair) => (
+										<tr
+											key={chair.chairId}
+											className="hover:bg-[var(--paper-soft)] transition-colors"
+										>
+											<td className="p-2.5 font-semibold text-[var(--ink)]">
+												{chair.chairName}
+											</td>
+											<td className="p-2.5 text-right text-[var(--muted)]">
+												{Math.round(chair.availableMinutes / 60)}ч
+											</td>
+											<td className="p-2.5 text-right font-medium text-[var(--ink)]">
+												{Math.round((chair.occupiedMinutes / 60) * 10) / 10}ч
+											</td>
+											<td className="p-2.5 text-right">
+												<div className="inline-flex items-center gap-1.5">
+													<span className="font-bold text-[var(--ink)]">
+														{chair.utilizationRatePercent}%
+													</span>
+													<div className="w-12 h-1.5 rounded-full bg-[var(--line)] overflow-hidden">
+														<div
+															className="h-full bg-[var(--teal)]"
+															style={{
+																width: `${chair.utilizationRatePercent}%`,
+															}}
+														/>
+													</div>
+												</div>
+											</td>
+											<td className="p-2.5 text-right font-bold text-[var(--ok-fg)]">
+												{formatKopecksToRub(chair.revenueKopecks, false)}
+											</td>
+											<td className="p-2.5 text-right font-bold text-[var(--teal)]">
+												{formatKopecksPerHour(chair.revenuePerHourKopecks)}
+											</td>
+											<td className="p-2.5 text-right font-medium text-[var(--muted)]">
+												{formatKopecksPerHour(chair.capacityYieldPerHourKopecks)}
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					)}
 				</div>
 			)}
 

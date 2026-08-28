@@ -103,12 +103,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Автономный клинический классификатор и селектор диагнозов МКБ-10 (K00–K14) с нечетким многословным поиском, 1-click пресетами и валидацией номеров зубов FDI. Предоставляется как изолированный клинический микровиджет для интеграции в дневник 043/у, ЕГИСЗ СЭМД и радиальное меню зубной формулы.",
 	},
 	{
-		file: "components/dicom/PanoramicRendererWindow.tsx",
-		name: "PanoramicRendererWindow",
-		reason:
-			"Плавающее окно 3D MPR (Multi-Planar Reconstruction) и криволинейной панорамной реконструкции (ОПТГ) по Catmull-Rom сплайну зубной дуги с интерактивным HU-метром плотности кости по Misch (D1–D5), срезами с шагом 1.0–2.0 мм и экспортом в амбулаторную карту 043/у.",
-	},
-	{
 		file: "components/finance/SberbankTerminalPaymentModal.tsx",
 		name: "SberbankTerminalPaymentModal",
 		reason:

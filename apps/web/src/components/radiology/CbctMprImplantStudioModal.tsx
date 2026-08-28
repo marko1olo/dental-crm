@@ -64,7 +64,7 @@ import {
 	applyCursorZoom,
 	applyWindowLevelDrag,
 	ROMEXIS_COLORS,
-	createSyntheticDentalCbctVolume,
+	createEmptyCbctVolume,
 	disposeCbctVolume,
 	drawCalibratedMillimeterRulers,
 	drawRomexisSlabCorridor,
@@ -457,7 +457,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		// Default initial volume if no real DICOM loaded yet
 		if (!volume) {
-			const vol = createSyntheticDentalCbctVolume(120, 120, 120, 0.5);
+			const vol = createEmptyCbctVolume(120, 120, 120, 0.5);
 			setVolume(vol);
 			setLoadedSliceCount(120);
 			setCrosshairMm({ x: 0, y: 0, z: 0 });

@@ -28,9 +28,9 @@ describe("Clinical Procedure BOM & Material Deduction Engine (procedureBomEngine
 		assert.ok(cariesSkus.includes("MAT-ANES-01")); // Anesthetic
 		assert.ok(cariesSkus.includes("MAT-COMP-01")); // Composite
 		assert.ok(cariesSkus.includes("MAT-MATR-01")); // Sectional Matrix
-		assert.ok(cariesSkus.includes("MAT-BRUSH-01")); // Microbrush
-		assert.ok(cariesSkus.includes("MAT-ROLL-01")); // Cotton roll
-		assert.ok(cariesSkus.includes("MAT-SUCT-01")); // Suction tip
+		assert.equal(cariesSkus.includes("MAT-BRUSH-01"), false); // Microbrush removed (overhead)
+		assert.equal(cariesSkus.includes("MAT-ROLL-01"), false); // Cotton roll removed (overhead)
+		assert.equal(cariesSkus.includes("MAT-SUCT-01"), false); // Suction tip removed (overhead)
 
 		// A16.07.030 — Эндодонтия 1-канальная
 		const bomEndo = getStandardBOMForProcedure("A16.07.030");
@@ -245,7 +245,7 @@ describe("Clinical Procedure BOM & Material Deduction Engine (procedureBomEngine
 		assert.equal(criticalAlert.remainingQuantity, 0);
 	});
 
-	it("6. deductMaterialsFromCabinetStock handles inventory shortfall accurately", () => {
+	it("6. deductMaterialsFromCabinetStock handles inventory shortfall accurately with soft deficit", () => {
 		const lowStock: CabinetStockItem[] = [
 			{
 				id: "STK-1",
@@ -277,18 +277,18 @@ describe("Clinical Procedure BOM & Material Deduction Engine (procedureBomEngine
 		];
 
 		const result = deductMaterialsFromCabinetStock(lowStock, requirements);
-		assert.equal(result.success, false);
+		assert.equal(result.success, true);
 		assert.equal(result.hasShortfall, true);
 		const impStock = result.updatedStock.find((s) => s.sku === "MAT-IMPL-01");
 		assert.ok(impStock);
-		assert.equal(impStock.currentQuantity, 0);
+		assert.equal(impStock.currentQuantity, -1);
 	});
 
 	it("7. calculateProcedureMaterialsCost accurately computes exact integer kopecks", () => {
 		// Single Caries procedure
 		const costSingle = calculateProcedureMaterialsCost("A16.07.002", 1);
 		assert.ok(costSingle.totalCostKopecks > 0);
-		assert.equal(costSingle.materials.length, 6);
+		assert.equal(costSingle.materials.length, 3);
 
 		// Double Caries procedure
 		const costDouble = calculateProcedureMaterialsCost("A16.07.002", 2);
@@ -328,7 +328,7 @@ describe("Clinical Procedure BOM & Material Deduction Engine (procedureBomEngine
 		assert.equal(bomAnes.code804n, "A11.07.012");
 	});
 
-	it("9. deductMaterialsFromCabinetStock strictly prevents negative stock when preventNegativeStock = true", () => {
+	it("9. deductMaterialsFromCabinetStock allows deduction into deficit and generates supplier purchase order", () => {
 		const stock: CabinetStockItem[] = [
 			{
 				id: "STK-10",
@@ -359,17 +359,16 @@ describe("Clinical Procedure BOM & Material Deduction Engine (procedureBomEngine
 		];
 
 		const result = deductMaterialsFromCabinetStock(stock, requirements, {
-			preventNegativeStock: true,
 			autoGeneratePurchaseOrder: true,
 			clinicNameRu: "DENTE VIP",
 		});
 
-		assert.equal(result.success, false);
-		assert.equal(result.preventedNegativeStock, true);
+		assert.equal(result.success, true);
 		assert.equal(result.hasShortfall, true);
-		// Stock must NOT be modified
-		assert.equal(result.updatedStock[0]?.currentQuantity, 1);
-		assert.equal(result.deductedItems.length, 0);
+		// Stock goes into soft deficit
+		assert.equal(result.updatedStock[0]?.currentQuantity, -1);
+		assert.equal(result.deductedItems.length, 1);
+		assert.equal(result.deductedItems[0]?.deductedQuantity, 2);
 		assert.ok(result.shortfallItems);
 		assert.equal(result.shortfallItems.length, 1);
 		assert.equal(result.shortfallItems[0]?.deficitQuantity, 1);

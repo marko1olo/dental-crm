@@ -45,6 +45,8 @@ import registerEgiszRoutes from "./routes/egisz.js";
 // Модули ниже были написаны, но ни разу не зарегистрированы: их маршруты
 // отвечали 404, то есть функциональность существовала только в исходниках.
 import { registerFilesRoutes } from "./routes/files.js";
+import { registerExpensesRoutes } from "./routes/expenses.js";
+import { registerPatientRelationshipsRoutes } from "./routes/patientRelationships.js";
 import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
@@ -732,7 +734,10 @@ export async function createDenteApiApp(
 		prefix: "/api/treatment-consumables",
 	});
 	await app.register(copilotRoutes);
+	await app.register(portalRoutes, { prefix: "/api/portal" });
 	await app.register(patientPortalRoutes, { prefix: "/api/portal" });
+	await app.register(registerExpensesRoutes);
+	await registerPatientRelationshipsRoutes(app);
 	await app.register(registerPublicEstimatesRoutes);
 	await app.register(registerPublicBookingRoutes, {
 

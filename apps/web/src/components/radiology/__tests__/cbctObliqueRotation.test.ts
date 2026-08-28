@@ -16,7 +16,7 @@ import {
 	getObliqueRotationLabel,
 	computeObliquePlaneBasis,
 	computeObliqueRotationMatrix,
-	createSyntheticDentalCbctVolume,
+	createEmptyCbctVolume,
 	degToRad,
 	dotProduct3D,
 	drawObliqueCrosshairWithRotationHandles,
@@ -33,7 +33,7 @@ import {
 } from "../cbctMprMath";
 
 describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigation Suite", () => {
-	const testVolume = createSyntheticDentalCbctVolume(80, 80, 60, 0.5);
+	const testVolume = createEmptyCbctVolume(80, 80, 60, 0.5, 400);
 
 	describe("1. 3D Vector & Angle Conversion Utilities", () => {
 		it("converts degrees to radians and back with high precision", () => {

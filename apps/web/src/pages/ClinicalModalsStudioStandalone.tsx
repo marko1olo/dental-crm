@@ -17,6 +17,7 @@ import {
 	Eye,
 	FileBadge,
 	FileCheck2,
+	FileSpreadsheet,
 	FileText,
 	Flame,
 	FlaskConical,

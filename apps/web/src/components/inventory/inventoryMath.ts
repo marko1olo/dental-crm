@@ -1044,7 +1044,7 @@ export function matchMaterialToWarehouse(
 export function createDeductionLinesFromTechMaps(
 	selectedMapCodes: readonly string[],
 	warehouseItems: readonly InventoryItem[] = [],
-	includeCommonPpe: boolean = true,
+	includeCommonPpe: boolean = false,
 ): DeductionLineItem[] {
 	const codesToInclude = new Set<string>(selectedMapCodes);
 	if (includeCommonPpe) {

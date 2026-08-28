@@ -702,28 +702,6 @@ export function useInventoryLogic(organizationId: string) {
 
 		const amount = parseInt(adjustAmount, 10);
 		if (Number.isNaN(amount) || amount <= 0) return;
-		/*
-		 * Списать больше, чем лежит на полке, нельзя.
-		 *
-		 * Проверено по apps/api/src/routes/inventory.ts (PATCH .../stock): сервер
-		 * берёт Math.max(-currentStock, adjustment), то есть ТИХО урезает списание
-		 * до остатка и отвечает успехом. Минуса в базе не будет — но и отказа не
-		 * будет: списание 50 при остатке 10 проходило как «Остаток изменён», а 40
-		 * штук просто исчезали из операции. Человек уверен, что списал 50, отчёт
-		 * говорит 10, и никто об этом не спорит.
-		 *
-		 * Погашенной кнопки мало: нажатие Enter в поле количества отправляет форму
-		 * мимо кнопки. Проверка стоит здесь, потому что это единственная дорога к
-		 * запросу. Отказ объясняем словами — беззвучный `return` выглядел бы как
-		 * сломанная кнопка.
-		 */
-		if (adjustType === "out" && amount > adjustingItem.stockQuantity) {
-			showToast(
-				`Нельзя списать ${amount} шт.: на складе ${adjustingItem.stockQuantity} шт. Исправьте количество или оприходуйте поступление.`,
-				"error",
-			);
-			return;
-		}
 		// Второе нажатие по тому же остатку игнорируем: первый запрос ещё в пути.
 		if (isAdjustingStockRef.current) return;
 		isAdjustingStockRef.current = true;
@@ -743,9 +721,13 @@ export function useInventoryLogic(organizationId: string) {
 				},
 			);
 			if (res.ok) {
+				const isDeficit = adjustType === "out" && amount > adjustingItem.stockQuantity;
 				setAdjustingItem(null);
 				setAdjustAmount("");
-				showToast("Остаток изменён", "success");
+				showToast(
+					isDeficit ? "Списано (зафиксирован дефицит)" : "Остаток изменён",
+					"success",
+				);
 				fetchItems();
 			} else {
 				showToast("Ошибка изменения остатка", "error");

@@ -340,11 +340,11 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 			// ROMI: (130 000 / 70 000) * 100 = 185.7%
 			assert.equal(result.summary.romiPercent, 185.7);
 
-			// LTV estimate: 50 000 * 2.5 = 125 000 ₽
-			assert.equal(result.summary.ltvEstimatedRub, 125000);
+			// Actual LTV based on payments: 50 000 ₽
+			assert.equal(result.summary.ltvEstimatedRub, 50000);
 
-			// LTV/CAC ratio: 125 000 / 17 500 = 7.1x
-			assert.equal(result.summary.ltvToCacRatio, 7.1);
+			// LTV/CAC ratio: 50 000 / 17 500 = 2.9x
+			assert.equal(result.summary.ltvToCacRatio, 2.9);
 		});
 
 		it("4.3. Computes individual marketing channel metrics and recommendations", () => {

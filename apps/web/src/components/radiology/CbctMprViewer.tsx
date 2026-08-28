@@ -53,7 +53,7 @@ import {
 	ROMEXIS_COLORS,
 	calculateMprSliceIndex,
 	clampCoordinateToVolume,
-	createSyntheticDentalCbctVolume,
+	createEmptyCbctVolume,
 	disposeCbctVolume,
 	drawCalibratedMillimeterRulers,
 	drawRomexisSlabCorridor,
@@ -177,8 +177,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			if (propVolume.defaultWindowWidth) setWindowWidth(propVolume.defaultWindowWidth);
 			if (propVolume.defaultWindowLevel) setWindowLevel(propVolume.defaultWindowLevel);
 		} else {
-			const synth = createSyntheticDentalCbctVolume(160, 160, 100, 0.4);
-			setVolume(synth);
+			const emptyVol = createEmptyCbctVolume(160, 160, 100, 0.4);
+			setVolume(emptyVol);
 		}
 
 		return () => {

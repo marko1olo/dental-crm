@@ -59,7 +59,7 @@ import {
 import {
 	PanoramicRendererWindow,
 	type PanoramicVolumeInput,
-} from "./PanoramicRendererWindow";
+} from "../dicom/PanoramicRendererWindow";
 import {
 	captureHighDpiCanvas,
 	createSnapshotThumbnail,

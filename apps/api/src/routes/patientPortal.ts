@@ -27,7 +27,6 @@ import {
 	visitDiaries,
 } from "../db/schema.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
-import { portalRoutes } from "./portal.js";
 import {
 	generateTaxCertificateQrSvg,
 	kopecksToRub,
@@ -92,9 +91,6 @@ export function validateTelegramWebAppData(
 }
 
 export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
-	// Re-register core portal routes under /api/portal/
-	await server.register(portalRoutes);
-
 	// ─────────────────────────────────────────────────────────────────────────
 	// Telegram Mini-App Direct Auth
 	// ─────────────────────────────────────────────────────────────────────────

@@ -21,11 +21,10 @@ import {
 	calculateWeightAdjustedDose,
 	calculateAllEmergencyDosages,
 	calculateLipidRescueDoses,
-	calculateNextCprBeat,
 	formatTimerSeconds,
 	generateEmergencyIncidentAct,
 	generateSmpDispatchCheatSheet,
-	CprMetronomeState,
+	STATUTORY_EMERGENCY_KIT_MEMO,
 	EmergencyIncidentInput
 } from '../components/emergency/emergencyRescueEngine';
 
@@ -187,56 +186,25 @@ describe('Russian Dental Emergency Protocols & Resuscitation Suite', () => {
 		});
 	});
 
-	describe('4. CPR Metronome & 30:2 Resuscitation Arithmetic', () => {
-		it('advances compression beats from 1 to 30 correctly', () => {
-			let state: CprMetronomeState = {
-				bpm: 110,
-				currentBeat: 1,
-				currentCycle: 1,
-				phase: 'compressions',
-				totalCompressions: 0,
-				totalVentilations: 0,
-				elapsedSeconds: 0,
-				isRunning: true
-			};
+	describe('4. Statutory Emergency Kit Memo (Приказ МЗ РФ № 786н / 1144н)', () => {
+		it('contains standard statutory emergency medications (Adrenaline, Prednisolone, Suprastin)', () => {
+			assert.ok(STATUTORY_EMERGENCY_KIT_MEMO.length >= 3);
 
-			// Step 1 to 2
-			state = calculateNextCprBeat(state);
-			assert.equal(state.currentBeat, 2);
-			assert.equal(state.phase, 'compressions');
-			assert.equal(state.totalCompressions, 1);
+			const adrenaline = STATUTORY_EMERGENCY_KIT_MEMO.find((k) => k.drugId === 'adrenaline_epi_01');
+			assert.ok(adrenaline);
+			assert.ok(adrenaline.tradeNameRu.includes('Адреналин'));
+			assert.ok(adrenaline.dosageStandardRu.includes('0.5 мл'));
+			assert.ok(adrenaline.routeRu.includes('бедра'));
 
-			// Fast-forward to beat 30
-			state.currentBeat = 30;
-			state = calculateNextCprBeat(state);
-			assert.equal(state.phase, 'ventilations');
-			assert.equal(state.currentBeat, 1);
-		});
+			const prednisolone = STATUTORY_EMERGENCY_KIT_MEMO.find((k) => k.drugId === 'prednisolone_30mg');
+			assert.ok(prednisolone);
+			assert.ok(prednisolone.tradeNameRu.includes('Преднизолон'));
+			assert.ok(prednisolone.dosageStandardRu.includes('90–120 мг'));
 
-		it('advances ventilations and transitions to next compression cycle', () => {
-			let state: CprMetronomeState = {
-				bpm: 110,
-				currentBeat: 1,
-				currentCycle: 1,
-				phase: 'ventilations',
-				totalCompressions: 30,
-				totalVentilations: 0,
-				elapsedSeconds: 16.5,
-				isRunning: true
-			};
-
-			// Ventilation breath 1 -> 2
-			state = calculateNextCprBeat(state);
-			assert.equal(state.phase, 'ventilations');
-			assert.equal(state.currentBeat, 2);
-			assert.equal(state.totalVentilations, 1);
-
-			// Ventilation breath 2 -> back to compressions cycle 2
-			state = calculateNextCprBeat(state);
-			assert.equal(state.phase, 'compressions');
-			assert.equal(state.currentBeat, 1);
-			assert.equal(state.currentCycle, 2);
-			assert.equal(state.totalVentilations, 2);
+			const suprastin = STATUTORY_EMERGENCY_KIT_MEMO.find((k) => k.drugId === 'suprastin_2_percent');
+			assert.ok(suprastin);
+			assert.ok(suprastin.tradeNameRu.includes('Супрастин'));
+			assert.ok(suprastin.dosageStandardRu.includes('20 мг'));
 		});
 
 		it('formats timer seconds cleanly', () => {

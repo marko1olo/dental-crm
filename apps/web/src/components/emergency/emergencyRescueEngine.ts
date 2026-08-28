@@ -49,16 +49,41 @@ export interface LipidRescueDoseCalculation {
 	protocolInstructionsRu: string;
 }
 
-export interface CprMetronomeState {
-	bpm: number;
-	currentBeat: number; // 1 to 30 (compressions) or 1 to 2 (ventilations)
-	currentCycle: number;
-	phase: 'compressions' | 'ventilations';
-	totalCompressions: number;
-	totalVentilations: number;
-	elapsedSeconds: number;
-	isRunning: boolean;
+export interface StatutoryEmergencyKitItem {
+	readonly drugId: EmergencyDrugId;
+	readonly tradeNameRu: string;
+	readonly dosageStandardRu: string;
+	readonly routeRu: string;
+	readonly indicationsRu: string;
+	readonly statutoryOrderRu: string;
 }
+
+export const STATUTORY_EMERGENCY_KIT_MEMO: readonly StatutoryEmergencyKitItem[] = [
+	{
+		drugId: 'adrenaline_epi_01',
+		tradeNameRu: 'Адреналин (Эпинефрин) 0.1% (1 мг/мл)',
+		dosageStandardRu: 'Взрослые: 0.5 мл (0.5 мг) в/м; Дети: 0.01 мг/кг (макс 0.3 мг)',
+		routeRu: 'В/м в среднюю треть переднебоковой поверхности бедра',
+		indicationsRu: 'Анафилактический шок, ангионевротический отек гортани, асистолия при СЛР',
+		statutoryOrderRu: 'Приказ МЗ РФ № 786н (Прил. 11), КР345',
+	},
+	{
+		drugId: 'prednisolone_30mg',
+		tradeNameRu: 'Преднизолон 30 мг/мл (ампулы 1 мл)',
+		dosageStandardRu: 'Взрослые: 90–120 мг (3–4 амп.) в/в или в/м; Дети: 2–3 мг/кг',
+		routeRu: 'В/в струйно медленно на 10 мл 0.9% NaCl или в/м',
+		indicationsRu: 'Анафилаксия (2-я линия), тяжелый бронхоспазм, токсико-аллергические реакции',
+		statutoryOrderRu: 'Приказ МЗ РФ № 786н, 1144н',
+	},
+	{
+		drugId: 'suprastin_2_percent',
+		tradeNameRu: 'Супрастин (Хлоропирамин) 2% (20 мг/мл)',
+		dosageStandardRu: 'Взрослые: 20 мг (1 мл) в/в или в/м; Дети: 0.25–0.5 мл',
+		routeRu: 'В/в медленно или в/м глубоко',
+		indicationsRu: 'Генерализованная крапивница, отек Квинке, зудящий дерматоз',
+		statutoryOrderRu: 'Приказ МЗ РФ № 786н (Прил. 11)',
+	},
+];
 
 export interface EmergencyVitals {
 	bpSystolic: number;
@@ -502,55 +527,8 @@ export function calculateLipidRescueDoses(weightKg: number): LipidRescueDoseCalc
 }
 
 // ---------------------------------------------------------------------------
-// 2. CPR Metronome & Action Step Timing Engine
+// 2. Action Step Timing & Format Utilities
 // ---------------------------------------------------------------------------
-
-export function calculateNextCprBeat(currentState: CprMetronomeState): CprMetronomeState {
-	if (!currentState.isRunning) return currentState;
-
-	const { phase, currentBeat, currentCycle, totalCompressions, totalVentilations, elapsedSeconds, bpm } = currentState;
-
-	if (phase === 'compressions') {
-		if (currentBeat >= 30) {
-			// Transition to 2 ventilation breaths
-			return {
-				...currentState,
-				phase: 'ventilations',
-				currentBeat: 1,
-				totalCompressions: totalCompressions + 1,
-				totalVentilations: totalVentilations,
-				elapsedSeconds: elapsedSeconds + +(60 / bpm).toFixed(2)
-			};
-		} else {
-			return {
-				...currentState,
-				currentBeat: currentBeat + 1,
-				totalCompressions: totalCompressions + 1,
-				elapsedSeconds: elapsedSeconds + +(60 / bpm).toFixed(2)
-			};
-		}
-	} else {
-		// Ventilations phase (1 -> 2 -> back to compressions)
-		if (currentBeat >= 2) {
-			// Finished cycle, switch back to compressions next cycle
-			return {
-				...currentState,
-				phase: 'compressions',
-				currentBeat: 1,
-				currentCycle: currentCycle + 1,
-				totalVentilations: totalVentilations + 1,
-				elapsedSeconds: elapsedSeconds + 1.5 // ventilation pause
-			};
-		} else {
-			return {
-				...currentState,
-				currentBeat: currentBeat + 1,
-				totalVentilations: totalVentilations + 1,
-				elapsedSeconds: elapsedSeconds + 1.5
-			};
-		}
-	}
-}
 
 export function formatTimerSeconds(seconds: number): string {
 	const safeSec = Math.max(0, Math.floor(seconds));

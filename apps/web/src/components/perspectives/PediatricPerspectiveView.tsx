@@ -45,7 +45,6 @@ import { PediatricResorptionTab } from "../odontogram/PediatricResorptionTab";
 import { PediatricTimelineTab } from "../odontogram/PediatricTimelineTab";
 import {
 	calculateCariogramRisk,
-	generateCariogramPieChartSlices,
 	calculateEruptionTimelineByAge,
 	DEFAULT_CARIOGRAM_INPUT,
 	type CariogramInput,
@@ -208,7 +207,6 @@ export function PediatricPerspectiveView() {
 	const [selectedAge, setSelectedAge] = useState<number>(7.0);
 
 	const cariogramResult = useMemo(() => calculateCariogramRisk(cariogramInput), [cariogramInput]);
-	const cariogramSlices = useMemo(() => generateCariogramPieChartSlices(cariogramResult.sectors), [cariogramResult]);
 	const timelineAnalysis = useMemo(() => calculateEruptionTimelineByAge(selectedAge), [selectedAge]);
 
 	const [selectedTooth, setSelectedTooth] = useState<number>(54);
@@ -537,7 +535,6 @@ export function PediatricPerspectiveView() {
 								cariogramInput={cariogramInput}
 								onCariogramInputChange={setCariogramInput}
 								cariogramResult={cariogramResult}
-								pieSlices={cariogramSlices}
 							/>
 						)}
 

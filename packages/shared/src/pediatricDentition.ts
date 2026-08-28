@@ -491,17 +491,6 @@ export type CariogramRiskLevel = z.infer<typeof cariogramRiskLevelSchema>;
 
 export const cariogramInputSchema = z.object({
 	cariesRiskLevel: cariogramRiskLevelSchema.optional().default("low"),
-	// Backwards-compatible legacy fields
-	dietContents: z.number().int().min(0).max(3).optional().default(1),
-	dietFrequency: z.number().int().min(0).max(3).optional().default(1),
-	plaqueAmount: z.number().int().min(0).max(3).optional().default(1),
-	streptococcusMutans: z.number().int().min(0).max(3).optional().default(1),
-	fluorideProgram: z.number().int().min(0).max(3).optional().default(1),
-	salivaSecretionRate: z.number().int().min(0).max(3).optional().default(0),
-	salivaBufferCapacity: z.number().int().min(0).max(2).optional().default(0),
-	pastCariesExperience: z.number().int().min(0).max(3).optional().default(1),
-	systemicDiseases: z.number().int().min(0).max(2).optional().default(0),
-	clinicalJudgment: z.number().int().min(0).max(3).optional().default(1),
 });
 
 export type CariogramInput = z.infer<typeof cariogramInputSchema>;
@@ -545,21 +534,7 @@ export interface CariogramResult {
  */
 export function calculateCariogramRisk(rawInput: Partial<CariogramInput> = {}): CariogramResult {
 	const input = cariogramInputSchema.parse(rawInput);
-
-	let riskLevel: "low" | "moderate" | "high" = input.cariesRiskLevel ?? "low";
-
-	if (rawInput.cariesRiskLevel === undefined) {
-		const highRiskSignals =
-			(input.pastCariesExperience >= 2 ? 1 : 0) +
-			(input.plaqueAmount >= 2 ? 1 : 0) +
-			(input.dietFrequency >= 2 ? 1 : 0) +
-			(input.fluorideProgram >= 2 ? 1 : 0);
-		if (highRiskSignals >= 3 || input.pastCariesExperience >= 3) {
-			riskLevel = "high";
-		} else if (highRiskSignals >= 1) {
-			riskLevel = "moderate";
-		}
-	}
+	const riskLevel: "low" | "moderate" | "high" = input.cariesRiskLevel ?? "low";
 
 	if (riskLevel === "low") {
 		return {

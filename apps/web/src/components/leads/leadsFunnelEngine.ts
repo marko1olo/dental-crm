@@ -451,7 +451,7 @@ export interface MarketingMetricsSummary {
 	readonly cpsRub: number; // Cost Per Show-up
 	readonly cacRub: number; // Customer Acquisition Cost
 	readonly romiPercent: number; // Return on Marketing Investment %
-	readonly ltvEstimatedRub: number; // Прогнозируемый LTV (3 года)
+	readonly ltvEstimatedRub: number; // Фактический LTV на основе реальных оплат пациентов
 	readonly ltvToCacRatio: number; // Отношение LTV / CAC
 }
 
@@ -742,8 +742,8 @@ export function calculateFunnelAnalysis(
 			? safePercent(netMarketingProfitRub, totalMarketingSpendRub)
 			: 0;
 
-	// Стоматологический множитель LTV (в среднем пациент оставляет 2.5x от первичного чека за 3 года)
-	const ltvEstimatedRub = Math.round(avgBillRub * 2.5);
+	// Фактический LTV на основе реальных оплат пациентов (без синтетических 2.5x множителей)
+	const ltvEstimatedRub = avgBillRub;
 	const ltvToCacRatio = cacRub > 0 ? safeDivide(ltvEstimatedRub, cacRub, 1) : 0;
 
 	const summary: MarketingMetricsSummary = {
@@ -875,7 +875,7 @@ export function exportFunnelReportCsv(result: FunnelAnalysisResult): string {
 	lines.push(`Стоимость дошедшего (CPS);${result.summary.cpsRub};руб.`);
 	lines.push(`Стоимость привлечения клиента (CAC);${result.summary.cacRub};руб.`);
 	lines.push(`Возврат инвестиций (ROMI);${result.summary.romiPercent}%;%`);
-	lines.push(`Прогнозируемый LTV (3 года);${result.summary.ltvEstimatedRub};руб.`);
+	lines.push(`Фактический LTV;${result.summary.ltvEstimatedRub};руб.`);
 	lines.push(`Отношение LTV / CAC;${result.summary.ltvToCacRatio};x`);
 	lines.push("");
 
@@ -921,7 +921,7 @@ export function exportFunnelReportSummaryText(
 		`💵 Выручка: ${s.totalRevenueRub.toLocaleString("ru-RU")} ₽`,
 		`📈 ROMI: ${s.romiPercent}% | Чистая выгода: ${s.netMarketingProfitRub.toLocaleString("ru-RU")} ₽`,
 		`🏷️ Ср. чек: ${s.avgBillRub.toLocaleString("ru-RU")} ₽ | CAC: ${s.cacRub.toLocaleString("ru-RU")} ₽ | CPL: ${s.cplRub.toLocaleString("ru-RU")} ₽`,
-		`⭐ LTV (3 года): ${s.ltvEstimatedRub.toLocaleString("ru-RU")} ₽ (LTV/CAC: ${s.ltvToCacRatio}x)`,
+		`⭐ Фактический LTV: ${s.ltvEstimatedRub.toLocaleString("ru-RU")} ₽ (LTV/CAC: ${s.ltvToCacRatio}x)`,
 		"--------------------------------------------------",
 	].join("\n");
 }

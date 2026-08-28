@@ -94,21 +94,9 @@ const tabsUnderTest: readonly TabUnderTest[] = [
 	{
 		file: "SettingsAuditTab.tsx",
 		bagName: "props",
-		minimumDestructuredNames: 400,
-		/*
-		 * ОБЪЯВЛЕННЫЙ ДОЛГ, А НЕ ПОСЛАБЛЕНИЕ ПОД ЗЕЛЁНЫЙ ЦВЕТ.
-		 *
-		 * Замерено на этой правке (обход блока деструктуризации, комментарии
-		 * сняты): SettingsAuditTab вынимает 478 имён и не читает 338 из них,
-		 * SettingsImportsTab — 481 и 251. Прайсовых среди них больше нет ни
-		 * одного, и это то, что проверка держит. Остальные 338 и 251 — след того
-		 * же разбора монолита настроек на вкладки: мешок скопировали целиком.
-		 * Снимать их одним заходом здесь нельзя, это отдельный предмет размером
-		 * с обе вкладки; поставить сюда true, не сняв их, — способ сделать
-		 * проверку красной и перестать её читать.
-		 */
-		everyNameMustBeRead: false,
-		measuredDeadNames: 338,
+		minimumDestructuredNames: 15,
+		everyNameMustBeRead: true,
+		measuredDeadNames: 0,
 	},
 	{
 		file: "SettingsImportsTab.tsx",

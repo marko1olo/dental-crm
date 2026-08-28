@@ -525,7 +525,7 @@ describe("разметка планирования имплантации ух�
 
 	test("адреса разметки собираются ровно в одном месте", () => {
 		const viewer = readWeb(
-			path.join("components", "dicom", "Cornerstone3DViewer.tsx"),
+			path.join("components", "visiograph", "Cornerstone3DViewer.tsx"),
 		);
 		// Обход собственных адресов мимо модуля вернул бы запрос без заголовков —
 		// ровно тот дефект, который здесь закрывается.

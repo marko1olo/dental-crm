@@ -8,7 +8,6 @@ import {
 	calculateEruptionTimelineByAge,
 	calculateCariogramRisk,
 	getPrimaryToothResorptionVisual,
-	generateCariogramPieChartSlices,
 	getToothDentitionType,
 	DEFAULT_CARIOGRAM_INPUT,
 } from "../pediatricDentitionEngine";
@@ -79,54 +78,24 @@ describe("Pediatric Dentition & Cariogram Engine", () => {
 		assert.equal(perm.clipHeightPercent, 100);
 	});
 
-	it("computes Cariogram caries risk and sector breakdown per Douglas Bratthall model", () => {
-		// Default balanced input
+	it("computes Cariogram caries risk and sector breakdown per 3-state clinical model", () => {
+		// Default low risk
 		const result = calculateCariogramRisk(DEFAULT_CARIOGRAM_INPUT);
-		assert.ok(result.chanceOfAvoidingCariesPercent >= 1 && result.chanceOfAvoidingCariesPercent <= 99);
-		assert.ok(["very_low", "low", "moderate", "high", "very_high"].includes(result.riskCategory));
-		assert.ok(result.preventiveProgram.hygieneRecallIntervalMonths > 0);
+		assert.equal(result.chanceOfAvoidingCariesPercent, 85);
+		assert.equal(result.riskCategory, "low");
+		assert.equal(result.preventiveProgram.hygieneRecallIntervalMonths, 6);
 
-		// Low-risk profile
-		const lowRisk = calculateCariogramRisk({
-			dietContents: 0,
-			dietFrequency: 0,
-			plaqueAmount: 0,
-			streptococcusMutans: 0,
-			fluorideProgram: 0,
-			salivaSecretionRate: 0,
-			salivaBufferCapacity: 0,
-			pastCariesExperience: 0,
-			systemicDiseases: 0,
-			clinicalJudgment: 0,
-		});
-		assert.ok(lowRisk.chanceOfAvoidingCariesPercent >= 80, `Expected >= 80%, got ${lowRisk.chanceOfAvoidingCariesPercent}%`);
-		assert.equal(lowRisk.riskCategory, "low");
+		// Moderate-risk profile
+		const modRisk = calculateCariogramRisk({ cariesRiskLevel: "moderate" });
+		assert.equal(modRisk.chanceOfAvoidingCariesPercent, 55);
+		assert.equal(modRisk.riskCategory, "moderate");
+		assert.equal(modRisk.preventiveProgram.hygieneRecallIntervalMonths, 4);
 
 		// High-risk profile
-		const highRisk = calculateCariogramRisk({
-			dietContents: 3,
-			dietFrequency: 3,
-			plaqueAmount: 3,
-			streptococcusMutans: 3,
-			fluorideProgram: 3,
-			salivaSecretionRate: 3,
-			salivaBufferCapacity: 2,
-			pastCariesExperience: 3,
-			systemicDiseases: 2,
-			clinicalJudgment: 3,
-		});
-		assert.ok(highRisk.chanceOfAvoidingCariesPercent <= 30, `Expected <= 30%, got ${highRisk.chanceOfAvoidingCariesPercent}%`);
-		assert.ok(highRisk.riskCategory === "high" || highRisk.riskCategory === "very_high");
-	});
-
-	it("generates SVG arc path slices for Cariogram pie visualization", () => {
-		const risk = calculateCariogramRisk(DEFAULT_CARIOGRAM_INPUT);
-		const slices = generateCariogramPieChartSlices(risk.sectors, 100, 0, { x: 100, y: 100 });
-		assert.ok(slices.length >= 2, "Should generate multiple non-zero sector slices");
-		for (const slice of slices) {
-			assert.ok(slice.pathData.startsWith("M"), `Slice ${slice.nameRu} path must start with M`);
-			assert.ok(slice.fillColor.length > 0);
-		}
+		const highRisk = calculateCariogramRisk({ cariesRiskLevel: "high" });
+		assert.equal(highRisk.chanceOfAvoidingCariesPercent, 20);
+		assert.equal(highRisk.riskCategory, "high");
+		assert.equal(highRisk.preventiveProgram.hygieneRecallIntervalMonths, 2);
 	});
 
 	it("classifies tooth dentition category properly", () => {

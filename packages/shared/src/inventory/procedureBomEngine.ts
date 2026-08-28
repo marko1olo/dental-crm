@@ -106,33 +106,6 @@ export const STANDARD_PROCEDURE_BOM_MAPS: Record<string, ProcedureBomMap> = {
 				estimatedUnitCostKopecks: 4500, // 45.00 ₽
 				isOptional: false,
 			},
-			{
-				sku: "MAT-BRUSH-01",
-				nameRu: "Аппликатор микробраш стоматологический (Microbrush)",
-				category: "Расходные материалы",
-				standardQuantity: 1,
-				unitOfMeasure: "pcs",
-				estimatedUnitCostKopecks: 1200, // 12.00 ₽
-				isOptional: false,
-			},
-			{
-				sku: "MAT-ROLL-01",
-				nameRu: "Ватные стоматологические валики гигроскопичные (комплект 4 шт)",
-				category: "Изоляция",
-				standardQuantity: 1,
-				unitOfMeasure: "pack",
-				estimatedUnitCostKopecks: 800, // 8.00 ₽
-				isOptional: false,
-			},
-			{
-				sku: "MAT-SUCT-01",
-				nameRu: "Одноразовый слюноотсос с фильтром",
-				category: "Аспирация",
-				standardQuantity: 1,
-				unitOfMeasure: "pcs",
-				estimatedUnitCostKopecks: 1500, // 15.00 ₽
-				isOptional: false,
-			},
 		],
 	},
 
@@ -438,15 +411,6 @@ export const STANDARD_PROCEDURE_BOM_MAPS: Record<string, ProcedureBomMap> = {
 				isOptional: false,
 			},
 			{
-				sku: "MAT-VITE-01",
-				nameRu: "Масляный раствор Витамина Е для нейтрализации и защиты губ",
-				category: "Расходные материалы",
-				standardQuantity: 2,
-				unitOfMeasure: "dose",
-				estimatedUnitCostKopecks: 3000, // 30.00 ₽
-				isOptional: false,
-			},
-			{
 				sku: "MAT-OPTR-01",
 				nameRu: "Роторасширитель эластичный OptraGate (Ivoclar Vivadent)",
 				category: "Изоляция",
@@ -694,7 +658,7 @@ export const cabinetStockItemSchema = z.object({
 	cabinetId: z.string().min(1),
 	sku: z.string().min(1),
 	nameRu: z.string().min(1),
-	currentQuantity: z.number().nonnegative(),
+	currentQuantity: z.number(),
 	minThresholdQuantity: z.number().nonnegative().default(5),
 	unitOfMeasure: consumableUnitSchema,
 	costKopecks: z.number().int().nonnegative().default(0),
@@ -1031,50 +995,7 @@ export function deductMaterialsFromCabinetStock(
 		}
 	}
 
-	// 2. Strict Negative Stock Guard: if enabled and shortfall detected, DO NOT alter stock
-	if (options?.preventNegativeStock && hasShortfall) {
-		for (const sf of shortfallItems) {
-			const stockItem = stockMap.get(sf.sku.trim().toUpperCase());
-			const threshold = stockItem ? stockItem.minThresholdQuantity : 1;
-			const cabId = stockItem ? stockItem.cabinetId : "CAB-DEFAULT";
-			lowStockAlerts.push({
-				sku: sf.sku,
-				nameRu: sf.nameRu,
-				cabinetId: cabId,
-				previousQuantity: sf.availableQuantity,
-				remainingQuantity: sf.availableQuantity,
-				minThresholdQuantity: threshold,
-				alertLevel: sf.availableQuantity === 0 ? "critical_out_of_stock" : "warning_low_stock",
-				messageRu: `Дефицит материала: «${sf.nameRu}» требуется ${sf.requiredQuantity} ${sf.unitOfMeasure}, на складе ${sf.availableQuantity} ${sf.unitOfMeasure}. Списание заблокировано для предотвращения отрицательного остатка.`,
-			});
-		}
-
-		let purchaseOrder: SupplierPurchaseOrder | null = null;
-		if (options.autoGeneratePurchaseOrder) {
-			purchaseOrder = generateSupplierPurchaseOrder({
-				alerts: lowStockAlerts,
-				requirements,
-				stock,
-				...(options.visitId ? { visitId: options.visitId } : {}),
-				...(options.clinicNameRu ? { clinicNameRu: options.clinicNameRu } : {}),
-				...(options.reorderBufferMultiplier !== undefined ? { reorderBufferMultiplier: options.reorderBufferMultiplier } : {}),
-			});
-		}
-
-		return {
-			success: false,
-			totalDeductionCostKopecks: 0,
-			updatedStock: stock, // Stock remains untouched
-			deductedItems: [],
-			lowStockAlerts,
-			hasShortfall: true,
-			shortfallItems,
-			preventedNegativeStock: true,
-			purchaseOrder,
-		};
-	}
-
-	// 3. Execution pass: deduct from available stock
+	// 2. Deduction pass: deduct from available stock (allowing soft deficit if stock is insufficient)
 	for (const req of requirements) {
 		const skuKey = req.sku.trim().toUpperCase();
 		const stockItem = stockMap.get(skuKey);
@@ -1086,9 +1007,9 @@ export function deductMaterialsFromCabinetStock(
 
 		const prevQty = stockItem.currentQuantity;
 		const deductQty = req.totalQuantityRequired;
-		const newQty = Math.max(0, Number((prevQty - deductQty).toFixed(4)));
+		const newQty = Number((prevQty - deductQty).toFixed(4));
 
-		if (prevQty < deductQty) {
+		if (newQty < 0 || prevQty < deductQty) {
 			hasShortfall = true;
 		}
 
@@ -1104,8 +1025,19 @@ export function deductMaterialsFromCabinetStock(
 			unitOfMeasure: req.unitOfMeasure,
 		});
 
-		// Check if threshold breached
-		if (newQty === 0) {
+		// Check if threshold breached or deficit occurred
+		if (newQty < 0) {
+			lowStockAlerts.push({
+				sku: req.sku,
+				nameRu: req.nameRu,
+				cabinetId: stockItem.cabinetId,
+				previousQuantity: prevQty,
+				remainingQuantity: newQty,
+				minThresholdQuantity: stockItem.minThresholdQuantity,
+				alertLevel: "critical_out_of_stock",
+				messageRu: `Дефицит материала: «${req.nameRu}» списан в минус (остаток: ${newQty} ${req.unitOfMeasure}, нехватка: ${Math.abs(newQty)} ${req.unitOfMeasure}). Зафиксирован мягкий дефицит для отдела снабжения.`,
+			});
+		} else if (newQty === 0) {
 			lowStockAlerts.push({
 				sku: req.sku,
 				nameRu: req.nameRu,
@@ -1143,7 +1075,7 @@ export function deductMaterialsFromCabinetStock(
 	}
 
 	return {
-		success: !hasShortfall,
+		success: true,
 		totalDeductionCostKopecks,
 		updatedStock: stockCopy,
 		deductedItems,
@@ -1201,7 +1133,7 @@ export const supplierPurchaseOrderItemSchema = z.object({
 	nameRu: z.string().min(1),
 	category: z.string().min(1),
 	unitOfMeasure: consumableUnitSchema,
-	currentStock: z.number().nonnegative(),
+	currentStock: z.number(),
 	minThreshold: z.number().nonnegative(),
 	shortfallQuantity: z.number().nonnegative(),
 	suggestedOrderQuantity: z.number().positive(),
@@ -1560,7 +1492,7 @@ export function executeVisitAutoBomDeduction(
 		params.currentStock,
 		requirementsSummary.materials,
 		{
-			preventNegativeStock: params.options?.preventNegativeStock ?? true,
+			preventNegativeStock: false,
 			autoGeneratePurchaseOrder: params.options?.autoGeneratePurchaseOrder ?? true,
 			...(params.options?.clinicNameRu ? { clinicNameRu: params.options.clinicNameRu } : {}),
 			visitId: params.visitId,
@@ -1575,11 +1507,8 @@ export function executeVisitAutoBomDeduction(
 	})} ₽`;
 
 	let statusMessageRu = "Списание материалов по техкартам 804н выполнено успешно.";
-	if (deductionResult.preventedNegativeStock) {
-		const shortfallCount = deductionResult.shortfallItems?.length ?? 0;
-		statusMessageRu = `Списание отменено: обнаружен дефицит по ${shortfallCount} позициям. Отрицательный остаток предотвращен. Сформирован проект заказа поставщику.`;
-	} else if (deductionResult.hasShortfall) {
-		statusMessageRu = "Списание выполнено с предупреждением: обнаружен неполный складской остаток.";
+	if (deductionResult.hasShortfall) {
+		statusMessageRu = "Списание материалов выполнено с фиксацией дефицита для отдела снабжения.";
 	} else if (deductionResult.lowStockAlerts.length > 0) {
 		statusMessageRu = `Списание выполнено. Зафиксировано ${deductionResult.lowStockAlerts.length} предупреждений о критическом неснижаемом остатке.`;
 	}

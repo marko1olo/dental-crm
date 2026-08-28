@@ -38,6 +38,7 @@ import {
 	EmergencyVitals,
 	ExecutedEmergencyStep,
 	EmergencyIncidentInput,
+	STATUTORY_EMERGENCY_KIT_MEMO,
 	calculateWeightAdjustedDose,
 	calculateAllEmergencyDosages,
 	calculateLipidRescueDoses,
@@ -803,6 +804,28 @@ export function EmergencyRescueModal({
 									<RotateCcw size={14} />
 									<span>Сброс</span>
 								</button>
+							</div>
+						</div>
+
+						{/* Statutory Emergency Kit Quick Reference (1-Click Static Memo) */}
+						<div className="emergency-cpr-box">
+							<div className="emergency-cpr-header">
+								<div className="emergency-cpr-title">
+									<Syringe size={18} style={{ color: 'var(--primary, #0ea5e9)' }} />
+									<span>УКЛАДКА ЭКСТРЕННОЙ ПОМОЩИ (ПРИКАЗ МЗ РФ № 786н / 1144н)</span>
+								</div>
+							</div>
+
+							<div className="emergency-cpr-guidelines-list">
+								{STATUTORY_EMERGENCY_KIT_MEMO.map((kit) => (
+									<div key={kit.drugId} className="emergency-cpr-guideline-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: '6px 0', borderBottom: '1px solid var(--border-subtle, rgba(255,255,255,0.08))' }}>
+										<div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+											<span style={{ fontWeight: 800, fontSize: '0.8125rem', color: 'var(--ink)' }}>{kit.tradeNameRu}</span>
+											<span className="emergency-cpr-val highlight-ok" style={{ fontSize: '0.75rem' }}>{kit.dosageStandardRu.split(';')[0]}</span>
+										</div>
+										<span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>📍 {kit.routeRu}</span>
+									</div>
+								))}
 							</div>
 						</div>
 
