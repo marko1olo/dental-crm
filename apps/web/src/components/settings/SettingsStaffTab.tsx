@@ -316,7 +316,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 				<StaffCommissionsPanel />
 				<StaffAuthorityPanel />
 				{/* Список сотрудников */}
-				<article className="settings-card col-span-full">
+				<article className="settings-card col-span-full form-span-2 w-full">
 					<div className="settings-card-header">
 						<h4>Активный персонал</h4>
 					</div>
@@ -348,13 +348,13 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 							>
 								<div className="flex items-center gap-3 mb-3">
 									<div
-										className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white"
+										className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white shrink-0"
 										style={{ backgroundColor: member.color || "#3b82f6" }}
 									>
 										{member.fullName ? member.fullName.charAt(0) : "S"}
 									</div>
 									<div className="min-w-0 flex-1">
-										<h5 className="m-0 text-sm font-semibold text-slate-900 dark:text-white truncate">
+										<h5 className="m-0 text-sm font-semibold text-slate-900 dark:text-white break-words leading-snug">
 											{member.fullName}
 										</h5>
 										{/*

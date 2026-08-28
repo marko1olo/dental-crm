@@ -414,10 +414,10 @@ export const StaffAuthorityPanel: React.FC = () => {
 											</div>
 											<div className="min-w-0">
 												<div className="flex items-center gap-2 flex-wrap">
-													<span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+													<span className="text-sm font-semibold text-slate-900 dark:text-white break-words leading-snug">
 														{row.name}
 													</span>
-													<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+													<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium whitespace-nowrap">
 														{staffRoleTitle(row.role)}
 													</span>
 												</div>

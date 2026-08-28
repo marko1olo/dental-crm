@@ -1807,7 +1807,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 			<button
 				aria-controls={settingsTabPanelId(tab.id)}
 				aria-selected={tabSelected}
-				className={tabSelected ? "active" : ""}
+				className={`${tabSelected ? "active" : ""} flex-shrink-0 whitespace-nowrap`}
 				id={settingsTabButtonId(tab.id)}
 				key={tab.id}
 				onClick={() => selectSettingsTab(tab.id)}

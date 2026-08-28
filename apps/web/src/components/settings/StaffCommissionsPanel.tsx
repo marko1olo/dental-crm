@@ -416,12 +416,12 @@ export const StaffCommissionsPanel: React.FC = () => {
 					className="p-4 rounded-xl border border-teal-200 dark:border-teal-900 bg-teal-50/40 dark:bg-teal-950/20 flex flex-col gap-3 transition-all"
 					data-testid="piece-rate-simulator-panel"
 				>
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between flex-wrap gap-2">
 						<h5 className="m-0 text-xs font-bold text-teal-900 dark:text-teal-200 flex items-center gap-2">
-							<Coins size={15} />
-							Симулятор сдельной оплаты врача (Расчёт в целых копейках)
+							<Coins size={15} className="shrink-0 text-teal-600 dark:text-teal-400" />
+							<span>Симулятор сдельной оплаты врача (Расчёт в целых копейках)</span>
 						</h5>
-						<span className="text-[11px] text-teal-700 dark:text-teal-300 font-mono">
+						<span className="text-[11px] px-2 py-0.5 rounded-md bg-teal-100/80 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 font-mono font-bold whitespace-nowrap shrink-0 border border-teal-300/60 dark:border-teal-700/60">
 							Zero Float · Penny-Exact
 						</span>
 					</div>

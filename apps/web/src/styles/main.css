@@ -15578,6 +15578,8 @@ textarea:focus {
 		flex-direction: row;
 		flex-wrap: nowrap;
 		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scroll-padding: 0 12px;
 		gap: 12px;
 		padding: 6px 12px 10px;
 		margin-bottom: 12px;
@@ -15617,14 +15619,15 @@ textarea:focus {
 	}
 
 	.settings-tabs button {
-		padding: 6px 12px;
+		padding: 8px 14px;
 		font-size: 12px;
-		white-space: nowrap;
+		white-space: nowrap !important;
 		border: 1px solid var(--line);
 		border-radius: 8px;
 		background: var(--paper);
-		min-height: 36px;
-		flex-shrink: 0;
+		min-height: 44px;
+		min-width: max-content;
+		flex-shrink: 0 !important;
 		text-align: center;
 		justify-content: center;
 	}
@@ -16060,9 +16063,13 @@ textarea:focus {
 }
 
 /* Wide elements */
-.form-span-2 {
-	flex: 1 1 100%;
-	min-width: 100%;
+.form-span-2,
+.settings-grid > .form-span-2,
+.settings-grid > .col-span-full,
+.settings-grid > [class*="col-span-full"] {
+	flex: 1 1 100% !important;
+	min-width: 100% !important;
+	width: 100% !important;
 }
 
 /* Card aesthetics for forms to reduce clutter */

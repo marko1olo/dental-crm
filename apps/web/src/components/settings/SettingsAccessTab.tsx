@@ -172,8 +172,8 @@ export function SettingsAccessTab({
 				<UserCheck aria-hidden="true" />
 				<div>
 					<p className="eyebrow">Безопасность и RBAC</p>
-					<h2 style={{ wordBreak: "normal", fontSize: "clamp(1.1rem, 4vw, 1.35rem)" }}>
-						Матрица прав доступа, 152-ФЗ защита и финансовая изоляция
+					<h2 style={{ wordBreak: "normal", overflowWrap: "break-word", fontSize: "clamp(1.05rem, 3.5vw, 1.35rem)", lineHeight: 1.3 }}>
+						Матрица прав доступа к модулям DENTE, 152-ФЗ защита и финансовая изоляция
 					</h2>
 					<p>
 						Гранулярная ролевая модель для 8 клинических и административных ролей.
@@ -258,10 +258,10 @@ export function SettingsAccessTab({
 					</div>
 				</div>
 
-				{/* 8 кнопок переключения ролей с горизонтальным скроллом и полными названиями */}
-				<div className="overflow-x-auto pb-1 scrollbar-thin">
+				{/* 8 кнопок переключения ролей: гибкий адаптивный ряд с полными названиями */}
+				<div className="w-full overflow-x-auto pb-1 scrollbar-thin">
 					<div
-						className="flex items-center gap-2 min-w-max"
+						className="flex flex-wrap items-center gap-2 min-w-full"
 						role="tablist"
 						aria-label="Выбор роли для проверки матрицы прав"
 					>
@@ -275,10 +275,10 @@ export function SettingsAccessTab({
 									role="tab"
 									aria-selected={isSelected}
 									onClick={() => setSelectedMatrixRole(roleKey)}
-									className={`min-w-fit px-4 py-2 rounded-xl text-xs font-medium transition-all text-center whitespace-nowrap border cursor-pointer ${
+									className={`flex-shrink-0 px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all text-center whitespace-nowrap border cursor-pointer ${
 										isSelected
-											? "bg-[var(--teal-surface,#f0fdfa)] text-[var(--teal,#0d9488)] border-[var(--teal)] shadow-sm font-bold"
-											: "bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+											? "bg-[var(--teal-surface,#f0fdfa)] dark:bg-teal-500/15 text-[var(--teal,#0d9488)] dark:text-teal-300 border-[var(--teal,#0d9488)] dark:border-teal-500 shadow-sm font-bold ring-1 ring-[var(--teal,#0d9488)] dark:ring-teal-500/40"
+											: "bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
 									}`}
 									data-testid={`role-matrix-tab-${roleKey}`}
 								>
