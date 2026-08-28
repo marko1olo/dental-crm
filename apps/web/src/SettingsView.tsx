@@ -1866,6 +1866,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				color: "var(--ink)",
 				borderRadius: "14px",
 				padding: "20px",
+				position: "relative",
+				overflowY: "auto",
 			}}
 			initial={{ opacity: 0, y: 15 }}
 			animate={{ opacity: 1, y: 0 }}
@@ -1917,6 +1919,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 					overflowX: "auto",
 					whiteSpace: "nowrap",
 					WebkitOverflowScrolling: "touch",
+					paddingLeft: "0.75rem",
+					paddingRight: "0.75rem",
 				}}
 			>
 				{/*
@@ -1950,6 +1954,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				id={activeSettingsTabPanelId}
 				role="tabpanel"
 				aria-labelledby={settingsTabButtonId(settingsTab)}
+				style={{ paddingBottom: "96px" }}
 			>
 				{settingsTab !== "telegram" ? (
 					<details className="settings-advanced-block settings-admin-secret-block">

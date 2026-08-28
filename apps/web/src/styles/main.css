@@ -5939,6 +5939,8 @@ section.imaging-panel {
 }
 
 .settings-zone {
+	position: relative;
+	overflow-y: auto;
 	background: #f7fbf9;
 	border: 1px solid var(--line);
 	border-radius: 8px;
@@ -7052,9 +7054,11 @@ section.imaging-panel {
 }
 
 .settings-tab-panel {
+	position: relative;
 	display: grid;
 	gap: 14px;
 	min-width: 0;
+	padding-bottom: 96px;
 }
 
 .clinic-config {
@@ -8245,9 +8249,11 @@ section.imaging-panel {
 }
 
 .import-copy h2 {
-	font-size: 18px;
+	font-size: clamp(1.1rem, 4vw, 1.35rem);
 	line-height: 1.25;
 	margin: 0;
+	word-break: normal;
+	overflow-wrap: break-word;
 }
 
 .import-copy p {
@@ -15091,6 +15097,8 @@ textarea:focus {
 }
 /* SETTINGS VIEW PREMIUM REDESIGN */
 .settings-zone {
+	position: relative;
+	overflow-y: auto;
 	grid-template-columns: 260px minmax(0, 1fr);
 	align-items: start;
 	gap: 24px;
@@ -15137,9 +15145,10 @@ textarea:focus {
 	font-weight: 600;
 }
 .settings-tab-panel {
+	position: relative;
 	background: var(--paper);
 	border-radius: 16px;
-	padding: 32px;
+	padding: 32px 32px 96px;
 	box-shadow: 0 2px 24px rgba(0, 0, 0, 0.03);
 	border: 1px solid var(--line);
 }
@@ -15542,6 +15551,8 @@ textarea:focus {
    ================================================================ */
 @media (max-width: 860px) {
 	.settings-zone {
+		position: relative;
+		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
 		grid-template-columns: minmax(0, 1fr);
@@ -15568,7 +15579,7 @@ textarea:focus {
 		flex-wrap: nowrap;
 		overflow-x: auto;
 		gap: 12px;
-		padding: 6px 0 10px;
+		padding: 6px 12px 10px;
 		margin-bottom: 12px;
 		scrollbar-width: none;
 		width: 100%;
@@ -15633,7 +15644,7 @@ textarea:focus {
 	.settings-tab-panel {
 		position: relative;
 		z-index: 1;
-		padding: 16px 12px;
+		padding: 16px 12px 96px;
 		margin-top: 0;
 		border-radius: 8px;
 		width: 100%;

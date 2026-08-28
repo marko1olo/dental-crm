@@ -41,6 +41,17 @@ type WorkspaceProfile = any;
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 type RoleAccessPolicy = any;
 
+const ROLE_DISPLAY_NAMES: Record<GranularStaffRole, string> = {
+	owner: "Владелец",
+	head_doctor: "Главный врач",
+	doctor: "Врач",
+	assistant: "Ассистент",
+	senior_nurse: "Старшая медсестра",
+	senior_admin: "Старший администратор",
+	registrar: "Регистратор",
+	accountant: "Бухгалтер",
+};
+
 export interface SettingsAccessTabProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	props?: any;
@@ -155,12 +166,15 @@ export function SettingsAccessTab({
 		<section
 			className="access-settings flex flex-col gap-6"
 			aria-label="Доступы, рабочие профили и роли"
+			style={{ paddingBottom: "96px" }}
 		>
 			<div className="import-copy">
 				<UserCheck aria-hidden="true" />
 				<div>
 					<p className="eyebrow">Безопасность и RBAC</p>
-					<h2>Матрица прав доступа, 152-ФЗ защита и финансовая изоляция</h2>
+					<h2 style={{ wordBreak: "normal", fontSize: "clamp(1.1rem, 4vw, 1.35rem)" }}>
+						Матрица прав доступа, 152-ФЗ защита и финансовая изоляция
+					</h2>
 					<p>
 						Гранулярная ролевая модель для 8 клинических и административных ролей.
 						Строгая изоляция финансовой отчётности клиники, маскирование персональных данных
@@ -244,33 +258,35 @@ export function SettingsAccessTab({
 					</div>
 				</div>
 
-				{/* 8 кнопок переключения ролей */}
-				<div
-					className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2"
-					role="tablist"
-					aria-label="Выбор роли для проверки матрицы прав"
-				>
-					{GRANULAR_STAFF_ROLES.map((roleKey) => {
-						const meta = ROLE_METADATA_REGISTRY[roleKey];
-						const isSelected = selectedMatrixRole === roleKey;
-						return (
-							<button
-								key={roleKey}
-								type="button"
-								role="tab"
-								aria-selected={isSelected}
-								onClick={() => setSelectedMatrixRole(roleKey)}
-								className={`px-3 py-2 rounded-xl text-xs font-medium transition-all text-center flex flex-col items-center justify-center gap-1 border cursor-pointer ${
-									isSelected
-										? "bg-[var(--teal-surface,#f0fdfa)] text-[var(--teal,#0d9488)] border-[var(--teal)] shadow-sm font-bold"
-										: "bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-								}`}
-								data-testid={`role-matrix-tab-${roleKey}`}
-							>
-								<span className="truncate w-full">{meta.shortTitle}</span>
-							</button>
-						);
-					})}
+				{/* 8 кнопок переключения ролей с горизонтальным скроллом и полными названиями */}
+				<div className="overflow-x-auto pb-1 scrollbar-thin">
+					<div
+						className="flex items-center gap-2 min-w-max"
+						role="tablist"
+						aria-label="Выбор роли для проверки матрицы прав"
+					>
+						{GRANULAR_STAFF_ROLES.map((roleKey) => {
+							const roleTitle = ROLE_DISPLAY_NAMES[roleKey] || ROLE_METADATA_REGISTRY[roleKey]?.title;
+							const isSelected = selectedMatrixRole === roleKey;
+							return (
+								<button
+									key={roleKey}
+									type="button"
+									role="tab"
+									aria-selected={isSelected}
+									onClick={() => setSelectedMatrixRole(roleKey)}
+									className={`min-w-fit px-4 py-2 rounded-xl text-xs font-medium transition-all text-center whitespace-nowrap border cursor-pointer ${
+										isSelected
+											? "bg-[var(--teal-surface,#f0fdfa)] text-[var(--teal,#0d9488)] border-[var(--teal)] shadow-sm font-bold"
+											: "bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+									}`}
+									data-testid={`role-matrix-tab-${roleKey}`}
+								>
+									<span>{roleTitle}</span>
+								</button>
+							);
+						})}
+					</div>
 				</div>
 
 				{/* Карточка выбранной роли */}

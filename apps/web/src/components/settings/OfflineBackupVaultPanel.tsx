@@ -325,8 +325,12 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			style={{
 				display: "flex",
 				flexDirection: "column",
+				maxHeight: "calc(100dvh - 32px)",
+				overflowY: "auto",
+				overscrollBehavior: "contain",
 				gap: "20px",
-				padding: "12px 0",
+				padding: "12px 0 32px 0",
+				boxSizing: "border-box",
 			}}
 		>
 			{/* SURVIVABILITY STATUS BANNER (TIER 1 TELEMETRY) */}
@@ -409,18 +413,22 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 						onClick={() => runIntegrityCheck(false)}
 						disabled={isCheckingIntegrity}
 						style={{
-							minHeight: "36px",
+							height: "38px",
+							minHeight: "38px",
 							padding: "0 14px",
 							borderRadius: "8px",
 							background: "var(--paper, #f1f5f9)",
 							color: "var(--ink, #334155)",
-							border: "1px solid var(--glass-border, #cbd5e1)",
-							fontWeight: "500",
+							border: "1px solid var(--glass-border-strong, #cbd5e1)",
+							fontWeight: "600",
 							fontSize: "13px",
 							cursor: isCheckingIntegrity ? "not-allowed" : "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
+							boxSizing: "border-box",
+							transition: "all 0.15s ease",
 						}}
 					>
 						<RefreshCw size={14} className={isCheckingIntegrity ? "spin-animation" : ""} />
@@ -432,18 +440,23 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 						onClick={handleCreateSnapshot}
 						disabled={isCreatingSnapshot}
 						style={{
-							minHeight: "36px",
+							height: "38px",
+							minHeight: "38px",
 							padding: "0 14px",
 							borderRadius: "8px",
 							background: "#0284c7",
 							color: "#ffffff",
-							border: "none",
+							border: "1px solid transparent",
 							fontWeight: "600",
 							fontSize: "13px",
 							cursor: isCreatingSnapshot ? "not-allowed" : "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
+							boxSizing: "border-box",
+							boxShadow: "0 1px 3px rgba(2,132,199,0.25)",
+							transition: "all 0.15s ease",
 						}}
 					>
 						<Database size={14} />
@@ -455,11 +468,13 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			{/* NAVIGATION TABS */}
 			<div
 				style={{
-					display: "flex",
+					display: "grid",
+					gridTemplateColumns: "repeat(5, minmax(130px, 1fr))",
 					gap: "6px",
-					flexWrap: "wrap",
 					borderBottom: "1px solid var(--glass-border, #e2e8f0)",
 					paddingBottom: "8px",
+					overflowX: "auto",
+					WebkitOverflowScrolling: "touch",
 				}}
 			>
 				{[
@@ -474,8 +489,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 						type="button"
 						onClick={() => setActiveSection(tab.id as any)}
 						style={{
-							minHeight: "36px",
-							padding: "0 16px",
+							minHeight: "38px",
+							padding: "0 12px",
 							borderRadius: "6px",
 							border: "none",
 							background: activeSection === tab.id ? "var(--paper-strong, #ffffff)" : "transparent",
@@ -483,9 +498,11 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							fontWeight: activeSection === tab.id ? "600" : "500",
 							fontSize: "13px",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
+							whiteSpace: "nowrap",
 							boxShadow: activeSection === tab.id ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
 						}}
 					>
@@ -582,8 +599,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										minHeight: "44px",
 										padding: "8px 44px 8px 12px",
 										borderRadius: "8px",
-										border: "1px solid var(--glass-border, #cbd5e1)",
-										background: "var(--paper, #f8fafc)",
+										border: "1px solid var(--glass-border-strong, #cbd5e1)",
+										background: "var(--paper-strong, #ffffff)",
 										color: "var(--ink, #1e293b)",
 										fontSize: "14px",
 										boxSizing: "border-box",
@@ -635,8 +652,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									minHeight: "44px",
 									padding: "8px 12px",
 									borderRadius: "8px",
-									border: "1px solid var(--glass-border, #cbd5e1)",
-									background: "var(--paper, #f8fafc)",
+									border: "1px solid var(--glass-border-strong, #cbd5e1)",
+									background: "var(--paper-strong, #ffffff)",
 									color: "var(--ink, #1e293b)",
 									fontSize: "14px",
 									boxSizing: "border-box",
@@ -827,12 +844,12 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 					<div
 						onClick={() => fileInputRef.current?.click()}
 						style={{
-							border: "2px dashed var(--glass-border, #cbd5e1)",
+							border: "2px dashed var(--glass-border-strong, #cbd5e1)",
 							borderRadius: "10px",
 							padding: "24px",
 							textAlign: "center",
 							cursor: "pointer",
-							background: "var(--paper, #f8fafc)",
+							background: "var(--paper-strong, #ffffff)",
 							marginBottom: "16px",
 						}}
 					>
@@ -990,8 +1007,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 											minHeight: "44px",
 											padding: "8px 44px 8px 12px",
 											borderRadius: "8px",
-											border: "1px solid var(--glass-border, #cbd5e1)",
-											background: "var(--paper, #f8fafc)",
+											border: "1px solid var(--glass-border-strong, #cbd5e1)",
+											background: "var(--paper-strong, #ffffff)",
 											color: "var(--ink, #1e293b)",
 											fontSize: "14px",
 											boxSizing: "border-box",
@@ -1371,8 +1388,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									minHeight: "44px",
 									padding: "0 12px",
 									borderRadius: "8px",
-									border: "1px solid var(--glass-border, #cbd5e1)",
-									background: "var(--paper, #f8fafc)",
+									border: "1px solid var(--glass-border-strong, #cbd5e1)",
+									background: "var(--paper-strong, #ffffff)",
 									color: "var(--ink, #1e293b)",
 									fontSize: "14px",
 								}}

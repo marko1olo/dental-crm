@@ -45,7 +45,11 @@
  * стороне сервера, отсюда её сделать нельзя; список ролей от неё не зависит.
  */
 
-import type { StaffRole } from "@dental/shared";
+import {
+	type GranularStaffRole,
+	ROLE_METADATA_REGISTRY,
+	type StaffRole,
+} from "@dental/shared";
 
 import { staffRoleLabels } from "../../workspaceUiLabels";
 
@@ -101,6 +105,10 @@ export const CREATABLE_STAFF_ROLES: readonly StaffRole[] =
 export function staffRoleTitle(role: string): string {
 	const known = (staffRoleLabels as Record<string, string | undefined>)[role];
 	if (known) return known;
+	const granularMeta = (
+		ROLE_METADATA_REGISTRY as Record<string, { title: string } | undefined>
+	)[role];
+	if (granularMeta?.title) return granularMeta.title;
 	const code = role.trim();
 	if (code.length === 0) return "Должность не указана";
 	return `Должность не распознана — сообщите администратору код «${code}»`;

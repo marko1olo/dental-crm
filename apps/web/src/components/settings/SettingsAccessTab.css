@@ -3,6 +3,12 @@
 	flex-direction: column;
 	gap: 24px;
 	width: 100%;
+	padding-bottom: 96px;
+}
+
+.access-settings {
+	position: relative;
+	padding-bottom: 96px;
 }
 
 .access-section-card {
