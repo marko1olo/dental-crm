@@ -1180,43 +1180,46 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						</div>
 
 						{/* Printable Physical Sheet Mockup */}
-						<div className="p-5 sm:p-6 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl font-serif leading-relaxed flex flex-col gap-3 selection:bg-teal-100">
+						<div
+							className="p-5 sm:p-6 rounded-xl border border-slate-300 shadow-xl font-serif leading-relaxed flex flex-col gap-3 selection:bg-teal-100"
+							style={{ backgroundColor: "#ffffff", color: "#0f172a" }}
+						>
 							{/* Form Official Header */}
-							<div className="border-b-2 border-slate-900 pb-2 text-[10px] text-slate-700 flex justify-between gap-2">
-								<div className="w-7/12 border border-dashed border-slate-400 p-1.5 rounded leading-tight">
-									<div className="font-bold text-slate-950 uppercase text-[10px]">
+							<div className="border-b-2 border-slate-900 pb-2 text-[10px] flex justify-between gap-2" style={{ color: "#0f172a" }}>
+								<div className="w-7/12 border border-dashed border-slate-400 p-1.5 rounded leading-tight" style={{ color: "#0f172a" }}>
+									<div className="font-bold uppercase text-[10px]" style={{ color: "#000000" }}>
 										{clinic}
 									</div>
-									<div className="text-[9px]">Адрес: {address}</div>
-									<div className="text-[9px]">Тел: {phone}</div>
-									<div className="text-[9px]">ОГРН: {ogrn} · ИНН: {inn}</div>
-									<div className="text-[8.5px] text-slate-600 font-sans">Лицензия: № {licNum}</div>
-									<div className="text-[8px] text-slate-500 italic mt-0.5">
+									<div className="text-[9px]" style={{ color: "#1e293b" }}>Адрес: {address}</div>
+									<div className="text-[9px]" style={{ color: "#1e293b" }}>Тел: {phone}</div>
+									<div className="text-[9px]" style={{ color: "#1e293b" }}>ОГРН: {ogrn} · ИНН: {inn}</div>
+									<div className="text-[8.5px] font-sans" style={{ color: "#475569" }}>Лицензия: № {licNum}</div>
+									<div className="text-[8px] italic mt-0.5" style={{ color: "#64748b" }}>
 										(Штамп медицинской организации)
 									</div>
 								</div>
-								<div className="w-5/12 text-right leading-tight text-[9px] text-slate-600">
+								<div className="w-5/12 text-right leading-tight text-[9px]" style={{ color: "#1e293b" }}>
 									<div>Министерство здравоохранения РФ</div>
 									<div>Медицинская документация</div>
-									<div className="font-bold text-[10px] text-slate-950 mt-0.5">
+									<div className="font-bold text-[10px] mt-0.5" style={{ color: "#000000" }}>
 										{activeForm === "107-1u"
 											? "Форма бланка № 107-1/у"
 											: activeForm === "148-1u-88"
 												? "Форма бланка № 148-1/у-88"
 												: "Форма бланка № 148-1/у-04(л)"}
 									</div>
-									<div>Приказ МЗ РФ № 1094н</div>
+									<div style={{ color: "#475569" }}>Приказ МЗ РФ № 1094н</div>
 								</div>
 							</div>
 
 							{/* Title */}
-							<div className="text-center my-0.5">
-								<div className={`font-extrabold text-base tracking-widest uppercase ${activeForm === "148-1u-88" ? "text-rose-700" : activeForm === "148-1u-04l" ? "text-emerald-700" : "text-slate-950"}`}>
+							<div className="text-center my-0.5" style={{ color: "#0f172a" }}>
+								<div className={`font-extrabold text-base tracking-widest uppercase ${activeForm === "148-1u-88" ? "text-rose-700" : activeForm === "148-1u-04l" ? "text-emerald-700" : "text-slate-950"}`} style={{ color: activeForm === "148-1u-88" ? "#be123c" : activeForm === "148-1u-04l" ? "#047857" : "#000000" }}>
 									РЕЦЕПТ {activeForm === "148-1u-88" ? "(ПКУ)" : activeForm === "148-1u-04l" ? "(ЛЬГОТНЫЙ)" : ""}
 								</div>
-								<div className="text-[10px] text-slate-600 font-sans">
-									Серия: <strong>{customSeriesNumber}</strong> от{" "}
-									<strong>{new Date(prescriptionDate || Date.now()).toLocaleDateString("ru-RU")}</strong>
+								<div className="text-[10px] font-sans" style={{ color: "#334155" }}>
+									Серия: <strong style={{ color: "#000000" }}>{customSeriesNumber}</strong> от{" "}
+									<strong style={{ color: "#000000" }}>{new Date(prescriptionDate || Date.now()).toLocaleDateString("ru-RU")}</strong>
 								</div>
 							</div>
 
@@ -1261,32 +1264,32 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							</div>
 
 							{/* Prescribed Items (Rp.) */}
-							<div className="flex flex-col gap-3 min-h-[110px] py-1.5">
+							<div className="flex flex-col gap-3 min-h-[110px] py-1.5" style={{ color: "#0f172a" }}>
 								{activeItems.map((item, idx) => (
-									<div key={item.id} className="font-serif">
-										<div className="font-bold text-[11.5px] italic text-slate-950">
+									<div key={item.id} className="font-serif" style={{ color: "#0f172a" }}>
+										<div className="font-bold text-[11.5px] italic" style={{ color: "#000000" }}>
 											{idx + 1}. {item.latinName}
 										</div>
-										<div className="ml-5 italic text-[11px] text-slate-800">
+										<div className="ml-5 italic text-[11px]" style={{ color: "#1e293b" }}>
 											{item.dispenseLatin}
 										</div>
-										<div className="ml-5 text-[11px] font-sans text-slate-800 font-medium">
+										<div className="ml-5 text-[11px] font-sans font-medium" style={{ color: "#0f172a" }}>
 											{item.signaRussian}
 										</div>
-										<div className="ml-5 text-[9px] font-sans text-slate-500">
-											[Торговое наименование: <strong>{item.tradeName}</strong>]
+										<div className="ml-5 text-[9.5px] font-sans" style={{ color: "#475569" }}>
+											[Торговое наименование: <strong style={{ color: "#0f172a" }}>{item.tradeName}</strong>]
 										</div>
 									</div>
 								))}
 							</div>
 
 							{/* Footer Signatures and Stamp Circles */}
-							<div className="border-t-2 border-slate-900 pt-2 text-[10px] flex justify-between items-end text-slate-700">
-								<div className="flex flex-col gap-1">
+							<div className="border-t-2 border-slate-900 pt-2 text-[10px] flex justify-between items-end" style={{ color: "#0f172a" }}>
+								<div className="flex flex-col gap-1" style={{ color: "#0f172a" }}>
 									<div>
 										Срок действия рецепта:{" "}
 										<u>
-											<strong>
+											<strong style={{ color: "#000000" }}>
 												{activeForm === "148-1u-88"
 													? "15 дней (ПКУ)"
 													: validityDays === "365"
@@ -1296,15 +1299,15 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										</u>
 									</div>
 									{isChronicSpecialCare && (
-										<div className="text-[9px] font-bold text-teal-800">
+										<div className="text-[9px] font-bold text-teal-800" style={{ color: "#115e59" }}>
 											По специальному назначению ({chronicPeriodicity})
 										</div>
 									)}
-									<div className="mt-1">
+									<div className="mt-1" style={{ color: "#0f172a" }}>
 										Подпись врача: ____________________ / {docName}
 									</div>
 									{activeForm === "148-1u-88" && (
-										<div>Подпись зав. отделением: ____________________</div>
+										<div style={{ color: "#0f172a" }}>Подпись зав. отделением: ____________________</div>
 									)}
 								</div>
 

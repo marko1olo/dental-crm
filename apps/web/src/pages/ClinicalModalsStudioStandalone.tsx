@@ -444,15 +444,50 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			}
 			const requestedModal = getParam("modal");
 				if (requestedModal) {
-					setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
-					if (requestedModal === "fiscal" || requestedModal === "54fz") setIsFiscalOpen(true);
-					if (requestedModal === "billing_1c" || requestedModal === "1c" || requestedModal === "1c_export" || requestedModal === "commerceml") {
+					// Reset all modals first
+					setIsBeforeAfterOpen(false);
+					setIsFiscalOpen(false);
+					setIsBilling1cExportOpen(false);
+					setIsPatientBillingOpen(false);
+					setIsCephOpen(false);
+					setIsViewerOpen(false);
+					setIsCbct3DStudioOpen(false);
+					setIsCbctMpr3DStudioOpen(false);
+					setIsPediatricOpen(false);
+					setIsActPrintOpen(false);
+					setIsConsentOpen(false);
+					setIsPrescriptionOpen(false);
+					setIsRadiologyOpen(false);
+					setIsDoctorShiftRosterOpen(false);
+					setIsLabWorkOrderOpen(false);
+					setIsLabOrderOpen(false);
+					setIsLabTrackingOpen(false);
+					setIsClinicalWriteoffOpen(false);
+					setIsProcedureDeductionOpen(false);
+					setIsPatientCabinetOpen(false);
+					setIsPatientMemoOpen(false);
+					setIsRecallOpen(false);
+					setIsIncomingCallOpen(false);
+					setIsTelephonyWidgetOpen(false);
+					setIsSettingsAccessOpen(false);
+					setIsStaffCommissionsOpen(false);
+					setIsCmoHubOpen(false);
+					setIsForm043PrintOpen(false);
+					setIsOfflineVaultOpen(false);
+
+					if (requestedModal === "before_after" || requestedModal === "before_after_slider" || requestedModal === "photo_comparison" || requestedModal === "photography") {
+						setIsBeforeAfterOpen(true);
+					}
+					if (requestedModal === "fiscal" || requestedModal === "54fz" || requestedModal === "fiscal_receipt") {
+						setIsFiscalOpen(true);
+					}
+					if (requestedModal === "billing_1c" || requestedModal === "1c" || requestedModal === "1c_export" || requestedModal === "commerceml" || requestedModal === "billing_1c_export" || requestedModal === "billing_1c_export_modal") {
 						setIsBilling1cExportOpen(true);
 					}
-					if (requestedModal === "patient_billing" || requestedModal === "billing" || requestedModal === "friendly_billing" || requestedModal === "warranty_act") {
+					if (requestedModal === "patient_billing" || requestedModal === "billing" || requestedModal === "friendly_billing" || requestedModal === "warranty_act" || requestedModal === "patient_billing_modal") {
 						setIsPatientBillingOpen(true);
 					}
-					if (requestedModal === "cephalometry" || requestedModal === "ceph" || requestedModal === "trg") {
+					if (requestedModal === "cephalometry" || requestedModal === "ceph" || requestedModal === "trg" || requestedModal === "cephalometric_analysis_modal") {
 						const isLoaded = getParam("loaded") !== "false" && getParam("state") !== "empty";
 						setCephInitialImageUrl(isLoaded ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined);
 						setIsCephOpen(true);
@@ -465,7 +500,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						});
 						setIsViewerOpen(true);
 					}
-					if (requestedModal === "radiology_viewer" || requestedModal === "viewer" || requestedModal === "radiology" || requestedModal === "xray") {
+					if (requestedModal === "radiology_viewer" || requestedModal === "viewer" || requestedModal === "radiology" || requestedModal === "xray" || requestedModal === "radiology_viewer_modal") {
 						setActiveStudy(SAMPLE_STUDY);
 						setIsViewerOpen(true);
 					}
@@ -478,13 +513,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "act" || requestedModal === "act_completed_804n" || requestedModal === "act_print") {
 						setIsActPrintOpen(true);
 					}
-					if (requestedModal === "consent" || requestedModal === "informed_consent" || requestedModal === "consent_1051n") {
+					if (requestedModal === "consent" || requestedModal === "informed_consent" || requestedModal === "consent_1051n" || requestedModal === "informed_consent_1051n") {
 						setIsConsentOpen(true);
 					}
 					if (requestedModal === "prescription" || requestedModal === "prescription_107_1y") {
 						setIsPrescriptionOpen(true);
 					}
-					if (requestedModal === "radiology_referral" || requestedModal === "referral") {
+					if (requestedModal === "radiology_referral" || requestedModal === "referral" || requestedModal === "radiology_referral_modal") {
 						setIsRadiologyOpen(true);
 					}
 					if (requestedModal === "schedule_roster" || requestedModal === "roster") {
@@ -502,16 +537,16 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "clinical_writeoff" || requestedModal === "writeoff") {
 						setIsClinicalWriteoffOpen(true);
 					}
-					if (requestedModal === "procedure_deduction" || requestedModal === "material_deduction" || requestedModal === "bom" || requestedModal === "bom_deduction") {
+					if (requestedModal === "procedure_deduction" || requestedModal === "material_deduction" || requestedModal === "bom" || requestedModal === "bom_deduction" || requestedModal === "procedure_material_deduction") {
 						setIsProcedureDeductionOpen(true);
 					}
 					if (requestedModal === "patient_cabinet" || requestedModal === "cabinet" || requestedModal === "patient_portal") {
 						setIsPatientCabinetOpen(true);
 					}
-					if (requestedModal === "patient_memo" || requestedModal === "post_op" || requestedModal === "care_memo" || requestedModal === "memo") {
+					if (requestedModal === "patient_memo" || requestedModal === "post_op" || requestedModal === "care_memo" || requestedModal === "memo" || requestedModal === "post_op_patient_memo") {
 						setIsPatientMemoOpen(true);
 					}
-					if (requestedModal === "retention" || requestedModal === "recall" || requestedModal === "recalls") {
+					if (requestedModal === "retention" || requestedModal === "recall" || requestedModal === "recalls" || requestedModal === "patient_retention_recalls") {
 						setIsRecallOpen(true);
 					}
 					if (requestedModal === "incoming_call" || requestedModal === "incoming_call_popup" || requestedModal === "telephony_popup") {

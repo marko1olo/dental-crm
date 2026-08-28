@@ -53,14 +53,18 @@ async function saveScreenshot(page, filename) {
 }
 
 async function applyTheme(page, theme) {
-	await page.evaluate((th) => {
-		document.documentElement.setAttribute("data-theme", th);
-		const isDark = th === "dark" || th === "night";
-		document.documentElement.classList.toggle("dark", isDark);
-		document.documentElement.classList.toggle("light", !isDark);
-		document.body.className = isDark ? "dark" : "light";
-		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-	}, theme);
+	try {
+		await page.evaluate((th) => {
+			document.documentElement.setAttribute("data-theme", th);
+			const isDark = th === "dark" || th === "night";
+			document.documentElement.classList.toggle("dark", isDark);
+			document.documentElement.classList.toggle("light", !isDark);
+			document.body.className = isDark ? "dark" : "light";
+			document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+		}, theme);
+	} catch {
+		/* ignore navigation context changes */
+	}
 	await page.waitForTimeout(300);
 }
 

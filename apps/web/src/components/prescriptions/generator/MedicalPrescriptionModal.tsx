@@ -169,37 +169,40 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 						</div>
 					</div>
 
-					{/* Right Column: Live Form 107-1/u Sheet Preview */}
-					<div className="w-full md:w-80 p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col gap-3 font-serif text-xs">
-						<div className="border border-dashed border-[var(--line,#cbd5e1)] p-2 rounded text-[10px] text-center text-[var(--muted,#64748b)]">
+					{/* Right Column: Live Form 107-1/u Sheet Preview (Strictly White Paper in all themes) */}
+					<div
+						className="w-full md:w-80 p-4 rounded-xl border border-slate-300 shadow-lg flex flex-col gap-3 font-serif text-xs text-slate-950"
+						style={{ backgroundColor: "#ffffff", color: "#0f172a" }}
+					>
+						<div className="border border-dashed border-slate-400 p-2 rounded text-[10px] text-center text-slate-700">
 							{prescriptionDoc.header.clinicName}<br />
 							ОГРН: {prescriptionDoc.header.clinicOgrn}<br />
 							{prescriptionDoc.header.clinicAddress}
 						</div>
-						<div className="text-center font-bold text-sm tracking-wider uppercase">
+						<div className="text-center font-bold text-sm tracking-wider uppercase text-slate-950">
 							Рецепт (Форма 107-1/у)
 						</div>
-						<div className="text-[11px] flex flex-col gap-1 border-b border-[var(--line,#e2e8f0)] pb-2">
-							<div>Пациент: <span className="font-bold">{prescriptionDoc.patient.fullName}</span></div>
+						<div className="text-[11px] flex flex-col gap-1 border-b border-slate-300 pb-2 text-slate-900">
+							<div>Пациент: <span className="font-bold text-slate-950">{prescriptionDoc.patient.fullName}</span></div>
 							<div>Д/Р: {prescriptionDoc.patient.birthDate} • Медкарта: {prescriptionDoc.patient.cardNum}</div>
 							<div>Врач: {prescriptionDoc.doctor.fullName}</div>
 						</div>
 						<div className="flex flex-col gap-2 flex-1">
 							{prescriptionDoc.items.map((item) => (
 								<div key={item.itemNumber} className="flex flex-col gap-0.5">
-									<div className="font-bold italic text-teal-700 dark:text-teal-300">
+									<div className="font-bold italic text-teal-800">
 										{item.itemNumber}. {item.latinRp}
 									</div>
-									<div className="italic text-[10px] text-[var(--muted,#64748b)] pl-2">
+									<div className="italic text-[10px] text-slate-700 pl-2">
 										{item.dispenseLatin}
 									</div>
-									<div className="text-[10px] pl-2 font-sans">
+									<div className="text-[10px] pl-2 font-sans text-slate-900">
 										{item.signaRu}
 									</div>
 								</div>
 							))}
 						</div>
-						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] text-[10px] text-[var(--muted,#64748b)]">
+						<div className="pt-2 border-t border-slate-300 text-[10px] text-slate-700 font-sans">
 							Срок действия: {prescriptionDoc.header.validityPeriodLabelRu}
 						</div>
 					</div>

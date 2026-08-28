@@ -1613,9 +1613,17 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								>
 									<div className="flex flex-col items-center cursor-pointer relative">
 										{/* Dark compact badge */}
-										<div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-900/90 hover:bg-slate-900 text-teal-300 border border-teal-500/50 text-[11px] font-mono shadow-lg backdrop-blur-xs whitespace-nowrap group-hover:scale-105 transition-all">
+										<div
+											className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono shadow-lg whitespace-nowrap group-hover:scale-105 transition-all"
+											style={{
+												backgroundColor: "rgba(15, 23, 42, 0.95)",
+												color: "#5eead4",
+												border: "1px solid rgba(20, 184, 166, 0.6)",
+												boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
+											}}
+										>
 											<span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-											<span>FDI {pin.toothFdi}</span>
+											<span className="font-bold">FDI {pin.toothFdi}</span>
 											<button
 												type="button"
 												onClick={(e) => {
@@ -1629,9 +1637,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 											</button>
 										</div>
 										{/* Fine leader line connecting badge to exact anatomical target point */}
-										<div className="w-[1px] h-8 bg-teal-400/90 shadow-xs" />
+										<div className="w-[1px] h-8 bg-teal-400 shadow-xs" style={{ backgroundColor: "#2dd4bf" }} />
 										{/* Non-occluding delicate anatomical target needle */}
-										<div className="w-2 h-2 rounded-full border border-teal-300 bg-teal-400/60 shadow-sm flex items-center justify-center">
+										<div className="w-2 h-2 rounded-full border border-teal-300 bg-teal-400/60 shadow-sm flex items-center justify-center" style={{ borderColor: "#5eead4", backgroundColor: "rgba(45, 212, 191, 0.6)" }}>
 											<div className="w-1 h-1 rounded-full bg-white shadow-xs" />
 										</div>
 									</div>
