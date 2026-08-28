@@ -481,7 +481,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 					{ id: "export", label: "1-Клик Экспорт (.dente)", icon: <HardDrive size={14} /> },
 					{ id: "restore", label: "Восстановление и Dry-Run", icon: <UploadCloud size={14} /> },
 					{ id: "snapshots", label: "Снапшоты и SHA-256", icon: <Database size={14} /> },
-					{ id: "scheduler", label: "Автобэкап (Шедулер)", icon: <Clock size={14} /> },
+					{ id: "scheduler", label: "Автобэкап (Расписание)", icon: <Clock size={14} /> },
 					{ id: "integrity", label: "Целостность и Здоровье", icon: <ShieldCheck size={14} /> },
 				].map((tab) => (
 					<button
@@ -1376,7 +1376,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										color: "var(--ink, #1e293b)",
 									}}
 								>
-									Автоматическое периодическое резервирование (Vault Scheduler)
+									Автоматическое периодическое резервирование (Планировщик бэкапов)
 								</h3>
 								<p
 									style={{
@@ -1432,7 +1432,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							>
 								{schedulerStatus.isRunning ? (
 									<>
-										<Square size={16} /> Остановить шедулер
+										<Square size={16} /> Остановить автобэкап
 									</>
 								) : (
 									<>
@@ -1458,7 +1458,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							}}
 						>
 							<RefreshCw size={16} className="spin-animation" />
-							Шедулер активен (интервал: {schedulerStatus.intervalMinutes} мин). Следующий снимок: {schedulerStatus.nextScheduledRunAt ? new Date(schedulerStatus.nextScheduledRunAt).toLocaleTimeString("ru-RU") : "скоро"}
+							Автобэкап по расписанию активен (интервал: {schedulerStatus.intervalMinutes} мин). Следующий снимок: {schedulerStatus.nextScheduledRunAt ? new Date(schedulerStatus.nextScheduledRunAt).toLocaleTimeString("ru-RU") : "скоро"}
 						</div>
 					)}
 

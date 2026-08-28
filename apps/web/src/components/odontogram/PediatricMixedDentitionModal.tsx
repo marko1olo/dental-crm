@@ -430,32 +430,6 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 								</div>
 
-								{/* Quick Presets */}
-								<div className="space-y-1.5 pt-1">
-									<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-										Пресеты возраста:
-									</div>
-									<div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1 touch-pan-x flex-nowrap sm:flex-wrap">
-										{[5.5, 6.0, 7.0, 7.5, 8.5, 10.5, 12.0].map((age) => {
-											const isSelected = Math.abs(selectedAge - age) < 0.1;
-											return (
-												<button
-													key={age}
-													type="button"
-													onClick={() => setSelectedAge(age)}
-													className={`min-h-[44px] px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-xs sm:text-sm font-bold whitespace-nowrap min-w-max rounded-xl border transition-all cursor-pointer select-none shrink-0 active:scale-95 ${
-														isSelected
-															? "bg-emerald-600 dark:bg-emerald-600 text-white font-bold border-emerald-600 dark:border-emerald-600 shadow-md shadow-emerald-600/20"
-															: "bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80"
-													}`}
-												>
-													{age.toFixed(1)} лет
-												</button>
-											);
-										})}
-									</div>
-								</div>
-
 								<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] italic leading-relaxed">
 									{timelineAnalysis.stageDescriptionRu}
 								</p>

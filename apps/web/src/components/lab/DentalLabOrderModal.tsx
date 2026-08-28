@@ -524,6 +524,22 @@ export function DentalLabOrderModal({
 							setDueDate={setDueDate}
 							clinicalNotes={clinicalNotes}
 							setClinicalNotes={setClinicalNotes}
+							shadeClassical={shadeClassical}
+							setShadeClassical={(s) => {
+								setShadeClassical(s);
+								setShadeBody(s);
+							}}
+							shadeBody={shadeBody}
+							setShadeBody={setShadeBody}
+							onOpenAdvancedShades={() => setActiveTab("shades")}
+							occlusalScheme={occlusalScheme}
+							setOcclusalScheme={setOcclusalScheme}
+							contactTightness={contactTightness}
+							setContactTightness={setContactTightness}
+							surfaceTexture={surfaceTexture}
+							setSurfaceTexture={setSurfaceTexture}
+							cementGapMicrons={cementGapMicrons}
+							setCementGapMicrons={setCementGapMicrons}
 						/>
 					)}
 

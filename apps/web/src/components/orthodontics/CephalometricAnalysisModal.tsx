@@ -294,120 +294,13 @@ export function CephalometricAnalysisModal({
 
 				{/* ── Main Content Body ───────────────────────────────────────── */}
 				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto lg:overflow-hidden min-h-0">
-					{/* ── Left Column: Lateral Cephalogram Viewer & Image Controls (7 Cols) ── */}
+					{/* ── Left Column: Lateral Cephalogram Viewer & Unified 36px HUD Strip (7 Cols) ── */}
 					<div
 						className={`lg:col-span-7 flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden ${
 							mobileView === "canvas" ? "flex flex-1 min-h-[360px]" : "hidden lg:flex"
 						}`}
 					>
-						{/* Clean 32px Clinical Toolbar with overflow-x-auto Segmented Controls (No Truncation) */}
-						<div className="mb-2 flex items-center gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl p-1.5 shadow-md shrink-0 select-none ceph-toolbar-compact overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none max-w-full">
-							{/* Filter Modes Segmented Pill */}
-							<div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
-								{(
-									[
-										{ id: "normal", label: "Стандарт" },
-										{ id: "invert", label: "Инверсия" },
-										{ id: "bone", label: "Костный (Bone+)" },
-										{ id: "edge", label: "Контуры" },
-									] as const
-								).map((flt) => (
-									<button
-										key={flt.id}
-										type="button"
-										onClick={() => setFilterMode(flt.id)}
-										className={`h-8 min-w-max px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap shrink-0 ${
-											filterMode === flt.id
-												? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
-												: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
-										}`}
-										title={`Фильтр рентгенограммы: ${flt.label}`}
-									>
-										{flt.label}
-									</button>
-								))}
-							</div>
-
-							{/* Overlays Toggles */}
-							<div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
-								<button
-									type="button"
-									onClick={() => setShowPolygon((prev) => !prev)}
-									className={`h-8 min-w-max px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-										showPolygon
-											? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
-											: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
-									}`}
-									title="Включить / отключить цефалометрический полигон"
-								>
-									<Layers size={14} />
-									<span>Полигон</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => setShowPlanes((prev) => !prev)}
-									className={`h-8 min-w-max px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-										showPlanes
-											? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
-											: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
-									}`}
-									title="Включить / отключить плоскости (SN, FH, MP, OP)"
-								>
-									<Sliders size={14} />
-									<span>Плоскости</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => setShowLabels((prev) => !prev)}
-									className={`h-8 min-w-max px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-										showLabels
-											? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
-											: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
-									}`}
-									title="Включить / отключить подписи анатомических точек"
-								>
-									<Eye size={14} />
-									<span>Подписи</span>
-								</button>
-							</div>
-
-							{/* Actions (Upload, Preset, Reset) */}
-							<div className="flex items-center gap-1.5 flex-nowrap shrink-0">
-								<label
-									className="h-8 min-w-max px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-600 shadow-sm whitespace-nowrap shrink-0"
-									title="Загрузить пользовательский снимок ТРГ"
-								>
-									<UploadCloud size={14} />
-									<span>Загрузить снимок ТРГ</span>
-									<input
-										type="file"
-										accept="image/*,.dcm"
-										onChange={handleFileUpload}
-										className="hidden"
-									/>
-								</label>
-								<button
-									type="button"
-									onClick={handleLoadPreset}
-									className="h-8 min-w-max px-2.5 rounded-lg bg-teal-900/80 hover:bg-teal-800 text-teal-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-teal-500 cursor-pointer shadow-sm whitespace-nowrap shrink-0"
-									title="Загрузить эталонную анатомическую разметку со снимком"
-								>
-									<Sparkles size={14} />
-									<span>Эталонная разметка</span>
-								</button>
-								<button
-									type="button"
-									onClick={handleResetLandmarks}
-									className="h-8 min-w-max px-2.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-700 cursor-pointer shadow-sm whitespace-nowrap shrink-0"
-									title="Сбросить все точки"
-								>
-									<Trash2 size={13} />
-									<span>Сбросить</span>
-								</button>
-							</div>
-						</div>
-
-						{/* X-ray Canvas Component with Maximum Vertical Screen Utilization */}
+						{/* X-ray Canvas Component with Unified 36px HUD Strip & Maximum Vertical Screen Utilization */}
 						<div className="flex-1 min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] flex items-center justify-center relative overflow-hidden">
 							<CephalometricCanvas
 								landmarks={landmarks}
@@ -424,13 +317,19 @@ export function CephalometricAnalysisModal({
 									showToast("Снимок ТРГ успешно загружен", "success");
 								}}
 								filterMode={filterMode}
+								onFilterModeChange={setFilterMode}
 								brightness={brightness}
 								contrast={contrast}
 								showPolygon={showPolygon}
+								onTogglePolygon={() => setShowPolygon((prev) => !prev)}
 								showPlanes={showPlanes}
+								onTogglePlanes={() => setShowPlanes((prev) => !prev)}
 								showLabels={showLabels}
+								onToggleLabels={() => setShowLabels((prev) => !prev)}
 								scaleMmPerPixel={scaleMmPerPixel}
 								onScaleChange={setScaleMmPerPixel}
+								onLoadPreset={handleLoadPreset}
+								onResetLandmarks={handleResetLandmarks}
 							/>
 						</div>
 					</div>

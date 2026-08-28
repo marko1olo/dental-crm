@@ -1,4 +1,5 @@
 import {
+	CheckCircle2,
 	Crosshair,
 	Eye,
 	Layers,
@@ -8,6 +9,7 @@ import {
 	Ruler,
 	Sliders,
 	Sparkles,
+	Trash2,
 	UploadCloud,
 	ZoomIn,
 	ZoomOut,
@@ -39,13 +41,19 @@ export interface CephalometricCanvasProps {
 	imageUrl: string | null;
 	onImageUpload?: (imageUrl: string) => void;
 	filterMode: XrayFilterMode;
+	onFilterModeChange?: (mode: XrayFilterMode) => void;
 	brightness: number;
 	contrast: number;
 	showPolygon: boolean;
+	onTogglePolygon?: () => void;
 	showLabels: boolean;
+	onToggleLabels?: () => void;
 	showPlanes: boolean;
+	onTogglePlanes?: () => void;
 	scaleMmPerPixel: number;
 	onScaleChange?: (scale: number) => void;
+	onLoadPreset?: () => void;
+	onResetLandmarks?: () => void;
 }
 
 export function CephalometricCanvas({
@@ -57,13 +65,19 @@ export function CephalometricCanvas({
 	imageUrl,
 	onImageUpload,
 	filterMode,
+	onFilterModeChange,
 	brightness,
 	contrast,
 	showPolygon,
+	onTogglePolygon,
 	showLabels,
+	onToggleLabels,
 	showPlanes,
+	onTogglePlanes,
 	scaleMmPerPixel,
 	onScaleChange,
+	onLoadPreset,
+	onResetLandmarks,
 }: CephalometricCanvasProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
@@ -312,11 +326,222 @@ export function CephalometricCanvas({
 			onDrop={handleDrop}
 			style={{ cursor: isPanning ? "grabbing" : (activeTargetKey && imageUrl) ? "crosshair" : "default" }}
 		>
+			{/* ── UNIFIED 36PX CEPH HUD STRIP: [Пресеты WW/WL] | [Зум/Сброс] | [Скрыть плоскости/полигон] | [Статус] | [Действия] ── */}
+			<div
+				data-testid="ceph-unified-hud-strip"
+				className="absolute top-2 sm:top-2.5 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-700/80 rounded-xl p-1 shadow-2xl backdrop-blur-md min-h-[36px] h-9 select-none overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none pointer-events-auto max-w-full"
+			>
+				{/* 1. [Пресеты WW/WL] */}
+				<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
+					{(
+						[
+							{ id: "normal", label: "Стандарт" },
+							{ id: "invert", label: "Инверсия" },
+							{ id: "bone", label: "Костный (Bone+)" },
+							{ id: "edge", label: "Контуры" },
+						] as const
+					).map((flt) => (
+						<button
+							key={flt.id}
+							type="button"
+							onClick={() => onFilterModeChange?.(flt.id)}
+							className={`h-7 min-w-max px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap shrink-0 ${
+								filterMode === flt.id
+									? "bg-teal-950/80 border border-teal-400 text-teal-200 shadow-xs"
+									: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
+							}`}
+							title={`Фильтр рентгенограммы: ${flt.label}`}
+						>
+							{flt.label}
+						</button>
+					))}
+				</div>
+
+				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
+
+				{/* 2. [Зум/Сброс] */}
+				<div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
+					<button
+						type="button"
+						disabled={!imageUrl}
+						onClick={() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1))))}
+						className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+						title="Отдалить (Масштаб -)"
+						aria-label="Отдалить масштаб"
+					>
+						<ZoomOut size={13} />
+					</button>
+					<span className="text-xs font-mono font-bold text-teal-300 px-1 min-w-[38px] text-center">
+						{Math.round(zoom * 100)}%
+					</span>
+					<button
+						type="button"
+						disabled={!imageUrl}
+						onClick={() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1))))}
+						className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+						title="Приблизить (Масштаб +)"
+						aria-label="Приблизить масштаб"
+					>
+						<ZoomIn size={13} />
+					</button>
+					<button
+						type="button"
+						disabled={!imageUrl}
+						onClick={handleResetView}
+						className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+						title="Сбросить масштаб и положение (0)"
+						aria-label="Сбросить масштаб"
+					>
+						<RotateCcw size={12} />
+					</button>
+					<button
+						type="button"
+						disabled={!imageUrl}
+						onClick={() => {
+							setIsCalibrating((prev) => !prev);
+							setCalibrationPoints([]);
+						}}
+						className={`h-7 px-2 rounded-md flex items-center gap-1 text-xs font-bold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							isCalibrating
+								? "bg-amber-500 text-slate-950 font-black border border-amber-300 shadow-sm"
+								: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 shadow-sm"
+						}`}
+						title="Калибровка масштаба по линейке (мм/px)"
+						aria-label="Калибровка масштаба"
+					>
+						<Ruler size={13} className="shrink-0 text-teal-400" />
+						<span>Линейка</span>
+					</button>
+				</div>
+
+				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
+
+				{/* 3. [Скрыть плоскости/полигон] */}
+				<div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
+					<button
+						type="button"
+						onClick={onTogglePolygon}
+						className={`h-7 min-w-max px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+							showPolygon
+								? "bg-teal-950/80 border border-teal-400 text-teal-200 shadow-xs"
+								: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700"
+						}`}
+						title="Включить / отключить цефалометрический полигон"
+					>
+						<Layers size={13} />
+						<span>Полигон</span>
+					</button>
+					<button
+						type="button"
+						onClick={onTogglePlanes}
+						className={`h-7 min-w-max px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+							showPlanes
+								? "bg-teal-950/80 border border-teal-400 text-teal-200 shadow-xs"
+								: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700"
+						}`}
+						title="Включить / отключить плоскости (SN, FH, MP, OP)"
+					>
+						<Sliders size={13} />
+						<span>Плоскости</span>
+					</button>
+					<button
+						type="button"
+						onClick={onToggleLabels}
+						className={`h-7 min-w-max px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+							showLabels
+								? "bg-teal-950/80 border border-teal-400 text-teal-200 shadow-xs"
+								: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700"
+						}`}
+						title="Включить / отключить подписи анатомических точек"
+					>
+						<Eye size={13} />
+						<span>Подписи</span>
+					</button>
+				</div>
+
+				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
+
+				{/* 4. [Статус] */}
+				<div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs font-bold text-slate-100 shrink-0 min-w-0 max-w-[280px]">
+					<Crosshair size={14} className="text-teal-400 animate-pulse shrink-0" />
+					<div className="text-xs font-bold text-slate-100 min-w-0 truncate">
+						{!imageUrl ? (
+							<span className="text-slate-300 font-medium">
+								Ожидание загрузки ТРГ
+							</span>
+						) : isAllLandmarksPlaced ? (
+							<span className="text-emerald-300 font-bold">
+								Все 16 точек заданы. Расчет углов готов
+							</span>
+						) : activeTargetKey ? (
+							<span>
+								<span className="text-slate-400 font-normal mr-1">
+									{landmarks[activeTargetKey] ? "Точка задана:" : "Установите точку:"}
+								</span>
+								<span className="text-teal-300 font-extrabold uppercase">
+									{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
+								</span>
+							</span>
+						) : (
+							<span className="text-slate-300 font-medium">
+								16 ориентиров ТРГ
+							</span>
+						)}
+					</div>
+				</div>
+
+				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
+
+				{/* 5. [Действия (Загрузить, Эталон, Сбросить)] */}
+				<div className="flex items-center gap-1 shrink-0 flex-nowrap">
+					<label
+						className="h-7 min-w-max px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors border border-slate-600 shadow-sm whitespace-nowrap shrink-0"
+						title="Загрузить пользовательский снимок ТРГ"
+					>
+						<UploadCloud size={13} />
+						<span>Загрузить снимок ТРГ</span>
+						<input
+							type="file"
+							accept="image/*,.dcm"
+							className="hidden"
+							onChange={(e) => {
+								const file = e.target.files?.[0];
+								if (file) {
+									handleFileProcess(file);
+								}
+							}}
+						/>
+					</label>
+					{onLoadPreset && (
+						<button
+							type="button"
+							onClick={onLoadPreset}
+							className="h-7 min-w-max px-2 rounded-md bg-teal-900/80 hover:bg-teal-800 text-teal-200 text-xs font-bold flex items-center gap-1 transition-colors border border-teal-500 cursor-pointer shadow-sm whitespace-nowrap shrink-0"
+							title="Загрузить эталонную анатомическую разметку со снимком"
+						>
+							<Sparkles size={13} />
+							<span>Эталонная разметка</span>
+						</button>
+					)}
+					{onResetLandmarks && (
+						<button
+							type="button"
+							onClick={onResetLandmarks}
+							className="h-7 min-w-max px-2 rounded-md bg-rose-950/80 hover:bg-rose-900 text-rose-200 text-xs font-bold flex items-center gap-1 transition-colors border border-rose-700 cursor-pointer shadow-sm whitespace-nowrap shrink-0"
+							title="Сбросить все точки"
+						>
+							<Trash2 size={12} />
+							<span>Сбросить</span>
+						</button>
+					)}
+				</div>
+			</div>
+
 			{!imageUrl ? (
 				/* Strict Medical Radiology Dropzone (Drag & Drop ТРГ / DICOM / JPG / PNG) */
 				<div
 					data-testid="ceph-dropzone"
-					className={`w-full max-w-xl mx-3 sm:mx-4 p-5 sm:p-8 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center select-none ${
+					className={`w-full max-w-xl mx-3 sm:mx-4 mt-10 sm:mt-12 p-5 sm:p-8 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center select-none ${
 						isDragOver
 							? "border-teal-400 bg-teal-950/60 shadow-2xl scale-[1.01]"
 							: "border-slate-700/80 hover:border-teal-500 bg-slate-900/95 shadow-xl"
@@ -374,86 +599,6 @@ export function CephalometricCanvas({
 				</div>
 			) : (
 				<>
-					{/* Canvas Top Floating Toolbar with High-Contrast Dark HUD (Theme-Agnostic) */}
-					<div className="absolute top-2 sm:top-3 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center justify-between gap-1.5 sm:gap-2 flex-wrap pointer-events-none">
-						{/* Active Target Indicator Badge (Left) */}
-						<div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-slate-700/80 shadow-xl h-8 text-slate-100 min-w-0 max-w-[calc(100%-8px)] sm:max-w-none">
-							<Crosshair size={15} className="text-teal-400 animate-pulse shrink-0" />
-							<div className="text-xs font-bold text-slate-100 min-w-0 truncate">
-								{isAllLandmarksPlaced ? (
-									<span className="text-emerald-300 font-bold">
-										✔ Все 16 точек заданы. Расчет углов готов
-									</span>
-								) : activeTargetKey ? (
-									<span>
-										<span className="text-slate-400 font-normal mr-1">
-											{landmarks[activeTargetKey] ? "Точка задана:" : "Установите точку:"}
-										</span>
-										<span className="text-teal-300 font-extrabold uppercase">
-											{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
-										</span>
-									</span>
-								) : (
-									<span className="text-slate-300 font-medium">
-										Выберите ориентир в списке или перетаскивайте точки на снимке
-									</span>
-								)}
-							</div>
-						</div>
-
-						{/* Systematic Zoom, View & Calibration Controls HUD (Top-Right) */}
-						<div className="pointer-events-auto flex items-center gap-1.5 bg-slate-900/95 backdrop-blur-md p-1 rounded-lg border border-slate-700/80 shadow-xl h-8 text-slate-100">
-							<button
-								type="button"
-								onClick={() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1))))}
-								className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
-								title="Приблизить (Масштаб +)"
-								aria-label="Приблизить масштаб"
-							>
-								<ZoomIn size={14} />
-							</button>
-							<span className="text-xs font-mono font-bold text-teal-300 px-1 min-w-[40px] text-center">
-								{Math.round(zoom * 100)}%
-							</span>
-							<button
-								type="button"
-								onClick={() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1))))}
-								className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
-								title="Отдалить (Масштаб -)"
-								aria-label="Отдалить масштаб"
-							>
-								<ZoomOut size={14} />
-							</button>
-							<div className="w-[1px] h-4 bg-slate-700 mx-0.5" />
-							<button
-								type="button"
-								onClick={handleResetView}
-								className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
-								title="Сбросить масштаб и положение"
-								aria-label="Сбросить масштаб"
-							>
-								<RotateCcw size={13} />
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setIsCalibrating((prev) => !prev);
-									setCalibrationPoints([]);
-								}}
-								className={`h-7 px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
-									isCalibrating
-										? "bg-amber-500 text-slate-950 font-black border border-amber-300 shadow-sm"
-										: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 shadow-sm"
-								}`}
-								title="Калибровка масштаба по линейке (мм/px)"
-								aria-label="Калибровка масштаба"
-							>
-								<Ruler size={13} className="shrink-0 text-teal-400" />
-								<span>Линейка</span>
-							</button>
-						</div>
-					</div>
-
 					{/* SVG Coordinate Space & Lateral Ceph View */}
 					<div
 						className="relative transition-transform duration-75 origin-center"

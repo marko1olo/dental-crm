@@ -286,13 +286,15 @@
 }
 
 .inventory-material-card.has-deficit {
-	border-color: var(--rust);
-	background: var(--rust-soft);
+	border-color: var(--line);
+	border-left: 4px solid #d97706;
+	background: var(--paper-strong);
 }
 
 .inventory-material-card.has-warning {
-	border-color: var(--amber);
-	background: var(--amber-soft);
+	border-color: var(--line);
+	border-left: 4px solid var(--amber);
+	background: var(--paper-strong);
 }
 
 .inventory-material-main-row {
@@ -366,6 +368,19 @@
 	background: var(--rust-soft);
 	color: var(--rust);
 	font-weight: 700;
+}
+
+.inventory-deficit-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	background: rgba(217, 119, 6, 0.12);
+	color: #d97706;
+	font-size: 12px;
+	font-weight: 700;
+	border: 1px solid rgba(217, 119, 6, 0.25);
 }
 
 /* Stepper Controls */
@@ -687,6 +702,17 @@
 	opacity: 0.5;
 	cursor: not-allowed;
 	box-shadow: none;
+}
+
+.inventory-confirm-deduct-btn.has-deficit-warning {
+	background: linear-gradient(135deg, #d97706 0%, #0d9488 100%);
+	color: #ffffff;
+	box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);
+}
+
+.inventory-confirm-deduct-btn.has-deficit-warning:hover:not(:disabled) {
+	background: linear-gradient(135deg, #b45309 0%, #0f766e 100%);
+	transform: translateY(-1px);
 }
 
 /* 1-Click Purchase Order Button & Guard Toggle */

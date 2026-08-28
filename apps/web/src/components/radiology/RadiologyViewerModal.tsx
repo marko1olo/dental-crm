@@ -6,6 +6,7 @@ import {
 	Box,
 	Camera,
 	Check,
+	ChevronDown,
 	ChevronRight,
 	Columns,
 	Compass,
@@ -14,6 +15,7 @@ import {
 	Eye,
 	EyeOff,
 	FileText,
+	Filter,
 	FlipHorizontal,
 	Info,
 	Layers,
@@ -152,6 +154,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	const [isMobileToolbarExpanded, setIsMobileToolbarExpanded] = useState<boolean>(false);
 	const [isCalipersAccordionOpen, setIsCalipersAccordionOpen] = useState<boolean>(false);
 	const [isNervesAccordionOpen, setIsNervesAccordionOpen] = useState<boolean>(false);
+	const [isFiltersMenuOpen, setIsFiltersMenuOpen] = useState<boolean>(false);
 
 	const activeImageUrl = loadedImageUrl !== null ? loadedImageUrl : (study?.imageUrl || "");
 	const isImageLoaded = Boolean(activeImageUrl) && !isDropzoneOpen;
@@ -238,7 +241,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
-				if (pendingLandmarkPos) {
+				if (isFiltersMenuOpen) {
+					setIsFiltersMenuOpen(false);
+				} else if (isControlsExpanded) {
+					setIsControlsExpanded(false);
+				} else if (pendingLandmarkPos) {
 					setPendingLandmarkPos(null);
 				} else if (activeRulerStart) {
 					setActiveRulerStart(null);
@@ -275,7 +282,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, pendingLandmarkPos, activeRulerStart, activeCaliperStart, activeNervePoints, onClose]);
+	}, [isOpen, isFiltersMenuOpen, isControlsExpanded, pendingLandmarkPos, activeRulerStart, activeCaliperStart, activeNervePoints, onClose]);
 
 	// Apply Preset
 	const handleSelectPreset = (preset: WindowLevelPreset) => {
@@ -297,6 +304,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		setInvert(false);
 		setActiveRulerStart(null);
 		setPendingLandmarkPos(null);
+		setIsControlsExpanded(false);
+		setIsFiltersMenuOpen(false);
 	};
 
 	// Get click coordinates in % of image
@@ -783,7 +792,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					</button>
 				)}
 
-				{/* ── TOOLBAR (Floating Cyber Dock: Compact 44px width, 34x34px buttons, 18px icons) ── */}
+				{/* ── TOOLBAR (Floating Cyber Dock: 5 Key Essential Tools + Filters Menu) ── */}
 				<nav
 					aria-label="Инструменты управления просмотрщиком"
 					className={`absolute left-2 sm:left-3 top-14 sm:top-4 z-40 w-11 flex flex-col gap-1 p-1 rounded-xl bg-slate-900/95 border border-slate-700/70 shadow-2xl backdrop-blur-md ${
@@ -794,8 +803,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								: "hidden md:flex"
 					}`}
 				>
-					{/* Primary Interactive Tools */}
-					<div className={`flex flex-col gap-1 pb-1.5 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
+					{/* 1. [Зум/Панорама] (P) */}
+					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
@@ -803,61 +812,45 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveTool("pan");
 								setActiveRulerStart(null);
 								setActiveCaliperStart(null);
+								setIsFiltersMenuOpen(false);
 							}}
 							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "pan"
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
-							title="Панорамирование / Перемещение (P)"
+							title="[Зум/Панорама] — Перемещение и масштабирование снимка (P, Колесо мыши)"
+							aria-label="Зум и панорама"
 							data-testid="tool-pan-btn"
 						>
 							<Move className="w-[18px] h-[18px]" />
 						</button>
+					</div>
 
+					{/* 2. [Яркость/Контраст (WW/WL)] */}
+					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={() => {
-								setActiveTool("caliper");
-								setActiveRulerStart(null);
-								setPendingLandmarkPos(null);
+								setIsControlsExpanded((prev) => !prev);
+								setIsFiltersMenuOpen(false);
 							}}
 							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-								activeTool === "caliper"
+								isControlsExpanded
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
-							title="Электронный штангенциркуль альвеолярного гребня (C)"
-							data-testid="tool-caliper-btn"
+							title="[Яркость/Контраст (WW/WL)] — Калибровка динамического диапазона и экспозиции"
+							aria-label="Яркость и контраст (WW/WL)"
+							data-testid="tool-brightness-contrast-btn"
 						>
-							<Compass className="w-[18px] h-[18px]" />
+							<Sliders className="w-[18px] h-[18px]" />
 						</button>
+					</div>
 
-						<button
-							type="button"
-							disabled={!isImageLoaded}
-							onClick={() => {
-								setActiveTool("nerve_tracer");
-								setActiveRulerStart(null);
-								setActiveCaliperStart(null);
-								setPendingLandmarkPos(null);
-							}}
-							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-								activeTool === "nerve_tracer"
-									? "bg-amber-950/70 border-2 border-amber-400 text-amber-300 shadow-sm"
-									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-amber-300 hover:bg-slate-700"
-							}`}
-							title={
-								isUpperJaw
-									? "Трассировщик дна гайморовой пазухи (Sinus maxillaris) (N)"
-									: "Трассировщик нижнечелюстного канала (Safety Margin 2.0 мм) (N)"
-							}
-							data-testid="tool-nerve-tracer-btn"
-						>
-							<Spline className="w-[18px] h-[18px]" />
-						</button>
-
+					{/* 3. [Линейка/Калибровка] (M) */}
+					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
@@ -865,159 +858,239 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveTool("ruler");
 								setActiveCaliperStart(null);
 								setPendingLandmarkPos(null);
+								setIsFiltersMenuOpen(false);
 							}}
 							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "ruler"
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
-							title="Измерительная 2-точечная линейка в мм (M)"
+							title="[Линейка/Калибровка] — 2-точечное измерение расстояний в мм (M)"
+							aria-label="Линейка и калибровка"
 							data-testid="tool-ruler-btn"
 						>
 							<Ruler className="w-[18px] h-[18px]" />
 						</button>
+					</div>
 
+					{/* 4. [Инверсия] (I) */}
+					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
-							onClick={() => {
-								setActiveTool("landmark");
-								setActiveRulerStart(null);
-								setActiveCaliperStart(null);
-							}}
+							onClick={() => setInvert((prev) => !prev)}
 							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-								activeTool === "landmark"
-									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
+								invert
+									? "bg-amber-950/70 border-2 border-amber-400 text-amber-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
-							title="Установка анатомической метки зуба / апекса (L)"
-							data-testid="tool-landmark-btn"
+							title="[Инверсия] — Переключение негатив / позитив (I)"
+							aria-label="Инверсия негатив / позитив"
+							data-testid="tool-invert-btn"
 						>
-							<Pin className="w-[18px] h-[18px]" />
+							<Sun className="w-[18px] h-[18px]" />
 						</button>
 					</div>
 
-					{/* Zoom Controls */}
-					<div className={`flex flex-col gap-1 pb-1.5 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
-						<button
-							type="button"
-							disabled={!isImageLoaded}
-							onClick={() => setZoom((prev) => Math.min(prev + 0.25, 6.0))}
-							className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-							title="Увеличить (+)"
-						>
-							<ZoomIn className="w-[18px] h-[18px]" />
-						</button>
-
-						<button
-							type="button"
-							disabled={!isImageLoaded}
-							onClick={() => setZoom((prev) => Math.max(prev - 0.25, 0.2))}
-							className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-							title="Уменьшить (-)"
-						>
-							<Minus className="w-[18px] h-[18px]" />
-						</button>
-
-						<button
-							type="button"
-							disabled={!isImageLoaded}
-							onClick={() => {
-								setZoom(1.0);
-								setPan({ x: 0, y: 0 });
-							}}
-							className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1 rounded-lg flex items-center justify-center bg-slate-800/90 border border-slate-700/80 text-[10px] font-mono font-bold text-teal-400 hover:text-white hover:bg-slate-700 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-							title="Сброс масштаба 100% (0)"
-						>
-							100%
-						</button>
-					</div>
-
-					{/* Image Transformations (Rotation & Flip) */}
-					<div className="flex flex-col gap-1 pb-1.5 border-b border-slate-700/70">
-						<div className={`flex flex-col gap-1 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
-							<button
-								type="button"
-								disabled={!isImageLoaded}
-								onClick={() => setRotation((prev) => (prev + 90) % 360)}
-								className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-								title={`Поворот по часовой стрелке 90° (R) — текущий: ${rotation}°`}
-								data-testid="tool-rotate-btn"
-							>
-								<RotateCw className="w-[18px] h-[18px]" />
-							</button>
-
-							<button
-								type="button"
-								disabled={!isImageLoaded}
-								onClick={() => setFlipH((prev) => !prev)}
-								className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-									flipH
-										? "bg-teal-950/70 border-2 border-teal-400 text-teal-300"
-										: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
-								}`}
-								title="Зеркальное отражение по горизонтали"
-							>
-								<FlipHorizontal className="w-[18px] h-[18px]" />
-							</button>
-
-							<button
-								type="button"
-								disabled={!isImageLoaded}
-								onClick={() => setInvert((prev) => !prev)}
-								className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-									invert
-										? "bg-amber-950/70 border-2 border-amber-400 text-amber-300"
-										: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
-								}`}
-								title="Инверсия негатив / позитив (I)"
-							>
-								<Sun className="w-[18px] h-[18px]" />
-							</button>
-						</div>
-
-						<button
-							type="button"
-							onClick={() => setIsDropzoneOpen((prev) => !prev)}
-							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer ${
-								isDropzoneOpen
-									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
-									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
-							}`}
-							title="Загрузить снимок (DICOM / RVG Дропзона)"
-							data-testid="viewer-toggle-dropzone-btn"
-						>
-							<UploadCloud className="w-[18px] h-[18px]" />
-						</button>
-					</div>
-
-					{/* Sliders and Reset */}
-					<div className={`flex flex-col gap-1 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
-						<button
-							type="button"
-							disabled={!isImageLoaded}
-							onClick={() => setIsControlsExpanded((prev) => !prev)}
-							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-								isControlsExpanded
-									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300"
-									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
-							}`}
-							title="Настройка яркости и контраста (WW/WL)"
-						>
-							<Sliders className="w-[18px] h-[18px]" />
-						</button>
-
+					{/* 5. [Сброс] (0) */}
+					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={handleResetAll}
 							className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center bg-rose-950/40 border border-rose-800/50 text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-							title="Сбросить все настройки снимка"
+							title="[Сброс] — Сбросить все настройки снимка и положение (0)"
+							aria-label="Сброс всех настроек снимка"
+							data-testid="tool-reset-all-btn"
 						>
 							<RefreshCcw className="w-[18px] h-[18px]" />
 						</button>
 					</div>
+
+					{/* 6. «Фильтры ▾» — Второстепенные фильтры и инструменты */}
+					<div className="flex flex-col gap-1">
+						<button
+							type="button"
+							disabled={!isImageLoaded}
+							onClick={() => {
+								setIsFiltersMenuOpen((prev) => !prev);
+								setIsControlsExpanded(false);
+							}}
+							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1 rounded-lg flex flex-col items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+								isFiltersMenuOpen ||
+								activeTool === "caliper" ||
+								activeTool === "nerve_tracer" ||
+								activeTool === "landmark" ||
+								flipH ||
+								rotation !== 0
+									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
+									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
+							}`}
+							title="Фильтры ▾ — Дополнительные инструменты: циркуль, нерв, метки, поворот, зеркало, дропзона"
+							aria-label="Фильтры и дополнительные инструменты"
+							data-testid="tool-filters-dropdown-btn"
+						>
+							<Filter className="w-3.5 h-3.5" />
+							<ChevronDown className="w-2.5 h-2.5 -mt-0.5" />
+						</button>
+					</div>
 				</nav>
+
+				{/* ── SECONDARY FILTERS & TOOLS DROPDOWN MENU («Фильтры ▾») ── */}
+				{isFiltersMenuOpen && isImageLoaded && (
+					<div
+						className="absolute left-16 top-14 sm:top-4 z-40 w-64 p-2 rounded-2xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md flex flex-col gap-1 text-xs text-slate-100 animate-in fade-in zoom-in-95 duration-100"
+						data-testid="filters-dropdown-menu"
+					>
+						<div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-700/70 text-[11px] font-bold text-teal-300 uppercase tracking-wider">
+							<span>Фильтры и инструменты</span>
+							<button
+								type="button"
+								onClick={() => setIsFiltersMenuOpen(false)}
+								className="p-0.5 rounded text-slate-400 hover:text-white cursor-pointer"
+								aria-label="Закрыть меню фильтров"
+							>
+								<X className="w-3.5 h-3.5" />
+							</button>
+						</div>
+
+						{/* 1. Alveolar Ridge Caliper (C) */}
+						<button
+							type="button"
+							onClick={() => {
+								setActiveTool("caliper");
+								setActiveRulerStart(null);
+								setPendingLandmarkPos(null);
+								setIsFiltersMenuOpen(false);
+							}}
+							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+								activeTool === "caliper"
+									? "bg-teal-950/80 border border-teal-400 text-teal-300 font-bold"
+									: "hover:bg-slate-800 text-slate-200"
+							}`}
+							title="Электронный штангенциркуль альвеолярного гребня (C)"
+							data-testid="tool-caliper-btn"
+						>
+							<div className="flex items-center gap-2">
+								<Compass className="w-4 h-4 text-teal-400" />
+								<span>Штангенциркуль гребня</span>
+							</div>
+							<kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-400">
+								C
+							</kbd>
+						</button>
+
+						{/* 2. Mandibular Nerve / Sinus Tracer (N) */}
+						<button
+							type="button"
+							onClick={() => {
+								setActiveTool("nerve_tracer");
+								setActiveRulerStart(null);
+								setActiveCaliperStart(null);
+								setPendingLandmarkPos(null);
+								setIsFiltersMenuOpen(false);
+							}}
+							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+								activeTool === "nerve_tracer"
+									? "bg-amber-950/80 border border-amber-400 text-amber-300 font-bold"
+									: "hover:bg-slate-800 text-slate-200"
+							}`}
+							title={
+								isUpperJaw
+									? "Трассировщик дна гайморовой пазухи (N)"
+									: "Трассировщик нижнечелюстного канала (N)"
+							}
+							data-testid="tool-nerve-tracer-btn"
+						>
+							<div className="flex items-center gap-2">
+								<Spline className="w-4 h-4 text-amber-400" />
+								<span>{isUpperJaw ? "Контур гайморовой пазухи" : "Нижнечелюстной канал"}</span>
+							</div>
+							<kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-400">
+								N
+							</kbd>
+						</button>
+
+						{/* 3. Anatomical Landmark Pin (L) */}
+						<button
+							type="button"
+							onClick={() => {
+								setActiveTool("landmark");
+								setActiveRulerStart(null);
+								setActiveCaliperStart(null);
+								setIsFiltersMenuOpen(false);
+							}}
+							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+								activeTool === "landmark"
+									? "bg-teal-950/80 border border-teal-400 text-teal-300 font-bold"
+									: "hover:bg-slate-800 text-slate-200"
+							}`}
+							title="Установка анатомической метки зуба / апекса (L)"
+							data-testid="tool-landmark-btn"
+						>
+							<div className="flex items-center gap-2">
+								<Pin className="w-4 h-4 text-teal-400" />
+								<span>Анатомическая метка</span>
+							</div>
+							<kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-400">
+								L
+							</kbd>
+						</button>
+
+						<div className="my-1 border-t border-slate-700/70" />
+
+						{/* 4. Rotate 90° Clockwise (R) */}
+						<button
+							type="button"
+							onClick={() => setRotation((prev) => (prev + 90) % 360)}
+							className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl hover:bg-slate-800 text-slate-200 transition-all cursor-pointer"
+							title={`Поворот по часовой стрелке 90° (R) — текущий: ${rotation}°`}
+							data-testid="tool-rotate-btn"
+						>
+							<div className="flex items-center gap-2">
+								<RotateCw className="w-4 h-4 text-slate-300" />
+								<span>Поворот на 90°</span>
+							</div>
+							<span className="text-[11px] font-mono text-teal-400 font-bold">{rotation}°</span>
+						</button>
+
+						{/* 5. Flip Horizontal */}
+						<button
+							type="button"
+							onClick={() => setFlipH((prev) => !prev)}
+							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+								flipH
+									? "bg-teal-950/80 border border-teal-400 text-teal-300 font-bold"
+									: "hover:bg-slate-800 text-slate-200"
+							}`}
+							title="Зеркальное отражение по горизонтали"
+							data-testid="tool-flip-btn"
+						>
+							<div className="flex items-center gap-2">
+								<FlipHorizontal className="w-4 h-4 text-slate-300" />
+								<span>Отразить по горизонтали</span>
+							</div>
+							{flipH && <Check className="w-3.5 h-3.5 text-teal-400" />}
+						</button>
+
+						{/* 6. Upload / Dropzone */}
+						<button
+							type="button"
+							onClick={() => {
+								setIsDropzoneOpen(true);
+								setIsFiltersMenuOpen(false);
+							}}
+							className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl hover:bg-slate-800 text-slate-200 transition-all cursor-pointer border-t border-slate-700/70 mt-0.5 pt-1.5"
+							title="Загрузить другой снимок (DICOM / RVG)"
+							data-testid="viewer-toggle-dropzone-btn"
+						>
+							<div className="flex items-center gap-2 text-teal-400 font-bold">
+								<UploadCloud className="w-4 h-4" />
+								<span>Загрузить снимок (DICOM)</span>
+							</div>
+						</button>
+					</div>
+				)}
 
 
 				{/* ── EXPANDED CONTROLS POPUP (Sliders for Brightness/Contrast) ── */}

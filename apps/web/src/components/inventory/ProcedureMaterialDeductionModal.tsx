@@ -4,9 +4,9 @@
  *
  * ФУНКЦИОНАЛ:
  * 1. Автоматический выбор и комбинирование технологических карт (СИЗ, Анестезия, Кариес, Эндодонтия, Гигиена, Хирургия).
- * 2. Сенсорные регуляторы (steppers >= 48px) и быстрые чипы количества (+0.1, +0.5, +1, +2).
+ * 2. Сенсорные регуляторы со степпером [-] / [+] и кнопкой сброса в [Норма].
  * 3. Расчет себестоимости с точностью до копейки без погрешностей double.
- * 4. Предупреждения о дефиците и падении остатка ниже критического порога.
+ * 4. Предупреждения о дефиците и падении остатка ниже критического порога (Soft Warning без блокировки списания).
  * 5. Поиск и добавление любых дополнительных материалов из номенклатуры склада.
  */
 
@@ -169,17 +169,12 @@ export function ProcedureMaterialDeductionModal({
 		);
 	};
 
-	// Быстрое прибавление чипом (+0.1, +0.5, +1, +2, reset)
-	const handleQuickIncrement = (lineId: string, amount: number | "reset") => {
+	// Сброс количества в нормативное значение по технологической карте
+	const handleResetToStandard = (lineId: string) => {
 		setLines((prev) =>
 			prev.map((line) => {
 				if (line.id !== lineId) return line;
-				if (amount === "reset") {
-					return { ...line, quantity: line.standardQuantity };
-				}
-				const current = Number.isFinite(line.quantity) ? line.quantity : 0;
-				const newQty = Number((current + amount).toFixed(3));
-				return { ...line, quantity: newQty };
+				return { ...line, quantity: line.standardQuantity };
 			}),
 		);
 	};
@@ -388,8 +383,8 @@ export function ProcedureMaterialDeductionModal({
 										: `Внимание: ${summary.warningCount} поз. достигли критического неснижаемого остатка.`}
 								</div>
 								<div style={{ fontSize: 12, color: "var(--muted)" }}>
-									{preventNegativeStock && summary.hasDeficit
-										? "Отрицательное списание заблокировано для защиты от пересортицы. Сформируйте заказ поставщику."
+									{summary.hasDeficit
+										? "Дефицитные позиции будут автоматически включены в заказ поставщику при списании без остановки приема."
 										: "Рекомендуется сформировать дозаказ поставщику для обеспечения бесперебойного приема."}
 								</div>
 							</div>
@@ -509,20 +504,21 @@ export function ProcedureMaterialDeductionModal({
 
 											<div className="inventory-material-meta">
 												<span>Норма: {formatQuantityWithUnitRu(line.standardQuantity, line.unit)}</span>
-												<span
-													className={`inventory-stock-pill ${
-														stockStatus.severity === "critical"
-															? "stock-critical"
-															: stockStatus.severity === "warning"
-																? "stock-warning"
-																: "stock-ok"
-													}`}
-												>
-													{stockStatus.severity === "critical" && (
-														<AlertTriangle size={14} />
-													)}
-													Остаток на складе: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
-												</span>
+												{stockStatus.severity === "critical" ? (
+													<span className="inventory-deficit-badge">
+														<AlertTriangle size={13} />
+														Дефицит: {formatQuantityWithUnitRu(stockStatus.deficit, line.unit)} (на складе: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)})
+													</span>
+												) : stockStatus.severity === "warning" ? (
+													<span className="inventory-stock-pill stock-warning">
+														<AlertTriangle size={13} />
+														Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
+													</span>
+												) : (
+													<span className="inventory-stock-pill stock-ok">
+														Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
+													</span>
+												)}
 												{line.lotNumber && (
 													<span>Партия: {line.lotNumber}</span>
 												)}
@@ -562,52 +558,13 @@ export function ProcedureMaterialDeductionModal({
 												</button>
 											</div>
 
-											{/* Quick Chips */}
+											{/* Quick Chip: Reset to standard norm */}
 											<div className="inventory-quick-chips">
-												{line.unit === "г" || line.unit === "мл" ? (
-													<>
-														<button
-															type="button"
-															className="inventory-quick-chip"
-															onClick={() =>
-																handleQuickIncrement(line.id, 0.1)
-															}
-														>
-															+0.1
-														</button>
-														<button
-															type="button"
-															className="inventory-quick-chip"
-															onClick={() =>
-																handleQuickIncrement(line.id, 0.5)
-															}
-														>
-															+0.5
-														</button>
-													</>
-												) : (
-													<>
-														<button
-															type="button"
-															className="inventory-quick-chip"
-															onClick={() => handleQuickIncrement(line.id, 1)}
-														>
-															+1
-														</button>
-														<button
-															type="button"
-															className="inventory-quick-chip"
-															onClick={() => handleQuickIncrement(line.id, 2)}
-														>
-															+2
-														</button>
-													</>
-												)}
 												<button
 													type="button"
 													className="inventory-quick-chip"
 													onClick={() =>
-														handleQuickIncrement(line.id, "reset")
+														handleResetToStandard(line.id)
 													}
 													title="Вернуть стандартную норму"
 												>
@@ -645,20 +602,6 @@ export function ProcedureMaterialDeductionModal({
 											</button>
 										</div>
 									</div>
-
-									{/* ALERT BANNER IF DEFICIT OR LOW STOCK */}
-									{stockStatus.severity !== "ok" && (
-										<div
-											className={`inventory-alert-banner ${
-												stockStatus.severity === "critical"
-													? "alert-critical"
-													: "alert-warning"
-											}`}
-										>
-											<AlertTriangle size={16} />
-											<span>{stockStatus.message}</span>
-										</div>
-									)}
 								</div>
 							);
 						})
@@ -726,8 +669,8 @@ export function ProcedureMaterialDeductionModal({
 									gap: 6,
 									padding: "6px 12px",
 									borderRadius: 8,
-									background: "var(--rust-soft)",
-									color: "var(--rust)",
+									background: "rgba(217, 119, 6, 0.12)",
+									color: "#b45309",
 									fontWeight: 700,
 									fontSize: 13,
 								}}
@@ -741,14 +684,14 @@ export function ProcedureMaterialDeductionModal({
 					<div className="inventory-footer-actions">
 						<label
 							className="inventory-guard-toggle"
-							title="Блокирует проведение списания при нехватке материалов на складе для предотвращения отрицательных остатков"
+							title="Автоматически формирует заявку поставщику при выявлении дефицита материалов"
 						>
 							<input
 								type="checkbox"
 								checked={preventNegativeStock}
 								onChange={(e) => setPreventNegativeStock(e.target.checked)}
 							/>
-							<span>Защита от отрицательных остатков</span>
+							<span>Автозаказ поставщику при дефиците</span>
 						</label>
 
 						<button
@@ -761,28 +704,25 @@ export function ProcedureMaterialDeductionModal({
 						</button>
 						<button
 							type="button"
-							className="inventory-confirm-deduct-btn"
+							className={`inventory-confirm-deduct-btn ${summary.hasDeficit ? "has-deficit-warning" : ""}`}
 							onClick={() => {
-								if (preventNegativeStock && summary.hasDeficit) {
-									return;
-								}
 								if (onConfirmDeduction) {
 									onConfirmDeduction(lines, summary);
 								}
 							}}
-							disabled={
-								isDeducting ||
-								lines.length === 0 ||
-								(preventNegativeStock && summary.hasDeficit)
-							}
+							disabled={isDeducting || lines.length === 0}
 							title={
-								preventNegativeStock && summary.hasDeficit
-									? "Списание заблокировано: обнаружен дефицит материалов на складе. Сформируйте заказ поставщику."
+								summary.hasDeficit
+									? `Списание с фиксацией дефицита (${summary.criticalCount} поз.). Автоматически формируется заявка поставщику.`
 									: "Провести списание выбранных материалов"
 							}
 						>
-							<ShieldCheck size={18} />
-							{isDeducting ? "Списание..." : "Списать со склада"}
+							{summary.hasDeficit ? <AlertTriangle size={18} /> : <ShieldCheck size={18} />}
+							{isDeducting
+								? "Списание..."
+								: summary.hasDeficit
+									? `Списать с фиксацией дефицита (${summary.criticalCount} поз.)`
+									: "Списать со склада"}
 						</button>
 					</div>
 				</footer>

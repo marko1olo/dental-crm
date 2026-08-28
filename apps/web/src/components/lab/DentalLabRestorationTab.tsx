@@ -1,6 +1,14 @@
 import React from "react";
-import { CheckCircle2 } from "lucide-react";
-import { CONSTRUCTION_TYPES, LAB_MATERIALS } from "./labMath";
+import { CheckCircle2, ChevronDown, Layers, Palette } from "lucide-react";
+import {
+	CONSTRUCTION_TYPES,
+	LAB_MATERIALS,
+	VITA_CLASSICAL_SHADES,
+	SHADE_SWATCH_MAP,
+	OCCLUSAL_SCHEMES,
+	CONTACT_TIGHTNESS_OPTIONS,
+	SURFACE_TEXTURE_OPTIONS,
+} from "./labMath";
 
 export interface DentalLabRestorationTabProps {
 	selectedTeeth: number[];
@@ -15,6 +23,21 @@ export interface DentalLabRestorationTabProps {
 	setDueDate: (date: string) => void;
 	clinicalNotes: string;
 	setClinicalNotes: (notes: string) => void;
+	// Tier 1 Hot Path Shade Props
+	shadeClassical?: string;
+	setShadeClassical?: (shade: string) => void;
+	shadeBody?: string;
+	setShadeBody?: (shade: string) => void;
+	onOpenAdvancedShades?: () => void;
+	// Tier 2 Secondary Occlusion & Fit Props (Accordion)
+	occlusalScheme?: string;
+	setOcclusalScheme?: (scheme: string) => void;
+	contactTightness?: string;
+	setContactTightness?: (tightness: string) => void;
+	surfaceTexture?: string;
+	setSurfaceTexture?: (texture: string) => void;
+	cementGapMicrons?: number;
+	setCementGapMicrons?: (gap: number) => void;
 }
 
 export function DentalLabRestorationTab({
@@ -30,10 +53,23 @@ export function DentalLabRestorationTab({
 	setDueDate,
 	clinicalNotes,
 	setClinicalNotes,
+	shadeClassical = "A2",
+	setShadeClassical,
+	shadeBody,
+	setShadeBody,
+	onOpenAdvancedShades,
+	occlusalScheme = "mutually_protected",
+	setOcclusalScheme,
+	contactTightness = "normal",
+	setContactTightness,
+	surfaceTexture = "natural_anatomy",
+	setSurfaceTexture,
+	cementGapMicrons = 30,
+	setCementGapMicrons,
 }: DentalLabRestorationTabProps) {
 	return (
 		<div className="space-y-6">
-			{/* FDI Odontogram Mini-Picker */}
+			{/* FDI Odontogram Mini-Picker with Compact Upper / Lower / Reset Controls */}
 			<div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 sm:p-5 space-y-4">
 				<div className="flex items-center justify-between flex-wrap gap-2.5">
 					<div className="flex items-center gap-2">
@@ -51,60 +87,31 @@ export function DentalLabRestorationTab({
 							type="button"
 							onClick={() => selectQuadrant([18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28])}
 							className="lab-quadrant-btn"
+							title="Выбрать верхний зубной ряд (18–28)"
 						>
-							Верхняя челюсть
+							Верхняя
 						</button>
 						<button
 							type="button"
 							onClick={() => selectQuadrant([48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38])}
 							className="lab-quadrant-btn"
+							title="Выбрать нижний зубной ряд (48–38)"
 						>
-							Нижняя челюсть
+							Нижняя
 						</button>
 						<button
 							type="button"
 							onClick={() => setSelectedTeeth([])}
 							className="lab-quadrant-clear-btn"
+							title="Сбросить выбор зубов"
 						>
-							Очистить
+							Сброс
 						</button>
 					</div>
 				</div>
 
-				{/* 4 Quadrants Quick Selectors (Clockwise anatomical order: Q1 -> Q2 -> Q3 -> Q4) */}
-				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-					<button
-						type="button"
-						onClick={() => selectQuadrant([18, 17, 16, 15, 14, 13, 12, 11])}
-						className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer text-center"
-					>
-						Q1 (18–11) Верх правый
-					</button>
-					<button
-						type="button"
-						onClick={() => selectQuadrant([21, 22, 23, 24, 25, 26, 27, 28])}
-						className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer text-center"
-					>
-						Q2 (21–28) Верх левый
-					</button>
-					<button
-						type="button"
-						onClick={() => selectQuadrant([31, 32, 33, 34, 35, 36, 37, 38])}
-						className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer text-center"
-					>
-						Q3 (31–38) Низ левый
-					</button>
-					<button
-						type="button"
-						onClick={() => selectQuadrant([48, 47, 46, 45, 44, 43, 42, 41])}
-						className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer text-center"
-					>
-						Q4 (48–41) Низ правый
-					</button>
-				</div>
-
-				{/* Quadrant Visual Grid with >= 34x34px tooth buttons */}
-				<div className="space-y-4 select-none pt-2">
+				{/* Quadrant Visual Grid with >= 34x34px tooth buttons (1-touch interactive FDI formula) */}
+				<div className="space-y-4 select-none pt-1">
 					{/* Desktop & Tablet View (16-teeth horizontal arch per jaw with distinct 4-quadrant separation) */}
 					<div className="hidden md:block space-y-3.5">
 						{/* Upper Maxilla: Q1 (18-11) and Q2 (21-28) */}
@@ -198,19 +205,12 @@ export function DentalLabRestorationTab({
 						</div>
 					</div>
 
-					{/* Mobile & Small Screen View (Clean 4 Quadrants: Q1, Q2, Q4, Q3 with min 32-34px buttons and pr-2 padding) */}
+					{/* Mobile & Small Screen View (Clean 4 Quadrants: Q1, Q2, Q4, Q3 with min 32-34px tactile buttons) */}
 					<div className="block md:hidden space-y-3">
 						{/* Upper Maxilla: Q1 (18-11) */}
 						<div className="p-2.5 sm:p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
-							<div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
-								<span>1-й квадрант Q1 (18–11) • Верхний правый</span>
-								<button
-									type="button"
-									onClick={() => selectQuadrant([18, 17, 16, 15, 14, 13, 12, 11])}
-									className="text-[11px] text-[var(--teal)] font-bold hover:underline cursor-pointer"
-								>
-									Выбрать Q1
-								</button>
+							<div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+								1-й квадрант Q1 (18–11) • Верхний правый
 							</div>
 							<div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1 touch-pan-x">
 								<div className="grid grid-cols-8 gap-1 sm:gap-1.5 min-w-[260px] pr-2 sm:pr-0">
@@ -231,15 +231,8 @@ export function DentalLabRestorationTab({
 
 						{/* Upper Maxilla: Q2 (21-28) */}
 						<div className="p-2.5 sm:p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
-							<div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
-								<span>2-й квадрант Q2 (21–28) • Верхний левый</span>
-								<button
-									type="button"
-									onClick={() => selectQuadrant([21, 22, 23, 24, 25, 26, 27, 28])}
-									className="text-[11px] text-[var(--teal)] font-bold hover:underline cursor-pointer"
-								>
-									Выбрать Q2
-								</button>
+							<div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+								2-й квадрант Q2 (21–28) • Верхний левый
 							</div>
 							<div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1 touch-pan-x">
 								<div className="grid grid-cols-8 gap-1 sm:gap-1.5 min-w-[260px] pr-2 sm:pr-0">
@@ -260,15 +253,8 @@ export function DentalLabRestorationTab({
 
 						{/* Lower Mandible: Q4 (48-41) */}
 						<div className="p-2.5 sm:p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
-							<div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
-								<span>4-й квадрант Q4 (48–41) • Нижний правый</span>
-								<button
-									type="button"
-									onClick={() => selectQuadrant([48, 47, 46, 45, 44, 43, 42, 41])}
-									className="text-[11px] text-[var(--teal)] font-bold hover:underline cursor-pointer"
-								>
-									Выбрать Q4
-								</button>
+							<div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+								4-й квадрант Q4 (48–41) • Нижний правый
 							</div>
 							<div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1 touch-pan-x">
 								<div className="grid grid-cols-8 gap-1 sm:gap-1.5 min-w-[260px] pr-2 sm:pr-0">
@@ -289,15 +275,8 @@ export function DentalLabRestorationTab({
 
 						{/* Lower Mandible: Q3 (31-38) */}
 						<div className="p-2.5 sm:p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
-							<div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
-								<span>3-й квадрант Q3 (31–38) • Нижний левый</span>
-								<button
-									type="button"
-									onClick={() => selectQuadrant([31, 32, 33, 34, 35, 36, 37, 38])}
-									className="text-[11px] text-[var(--teal)] font-bold hover:underline cursor-pointer"
-								>
-									Выбрать Q3
-								</button>
+							<div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+								3-й квадрант Q3 (31–38) • Нижний левый
 							</div>
 							<div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1 touch-pan-x">
 								<div className="grid grid-cols-8 gap-1 sm:gap-1.5 min-w-[260px] pr-2 sm:pr-0">
@@ -396,6 +375,55 @@ export function DentalLabRestorationTab({
 				</div>
 			</div>
 
+			{/* VITA Classical (A1–D4) Quick Shade Selector — Tier 1 Hot Path */}
+			<div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 sm:p-5 space-y-3">
+				<div className="flex items-center justify-between flex-wrap gap-2">
+					<div className="flex items-center gap-2">
+						<Palette className="w-4 h-4 text-[var(--teal)]" />
+						<label className="text-sm font-bold text-slate-900 dark:text-slate-100">
+							Расцветка VITA Classical (A1–D4)
+						</label>
+						<span className="text-xs px-2.5 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] font-bold">
+							Выбран: {shadeClassical}
+						</span>
+					</div>
+					{onOpenAdvancedShades && (
+						<button
+							type="button"
+							onClick={onOpenAdvancedShades}
+							className="text-xs font-bold text-[var(--teal)] hover:underline cursor-pointer flex items-center gap-1"
+						>
+							<span>Расширенная расцветка (3D-Master / Bleach / Культя) →</span>
+						</button>
+					)}
+				</div>
+
+				<div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+					{VITA_CLASSICAL_SHADES.map((shade) => {
+						const isSelected = shadeClassical === shade;
+						const swatch = SHADE_SWATCH_MAP[shade];
+						return (
+							<button
+								key={shade}
+								type="button"
+								onClick={() => {
+									setShadeClassical?.(shade);
+									setShadeBody?.(shade);
+								}}
+								className={`vita-shade-chip ${isSelected ? "is-selected" : ""}`}
+								title={`Оттенок VITA ${shade}`}
+							>
+								<div
+									className="vita-swatch-dot"
+									style={{ backgroundColor: swatch?.bg || "#f0eae0", borderColor: swatch?.border || "#ccc" }}
+								/>
+								<span>{shade}</span>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
 			{/* Due Date & General Clinical Notes */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<div className="space-y-1.5">
@@ -422,6 +450,136 @@ export function DentalLabRestorationTab({
 					/>
 				</div>
 			</div>
+
+			{/* Accordion: Secondary Technical & Occlusal Parameters (Tier 2 Context) */}
+			<details className="group border border-slate-200 dark:border-slate-700/60 rounded-2xl bg-slate-50 dark:bg-slate-800/40 transition-all overflow-hidden">
+				<summary className="flex items-center justify-between p-4 cursor-pointer font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 select-none hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
+					<div className="flex items-center gap-2">
+						<Layers className="w-4 h-4 text-[var(--teal)]" />
+						<span>⚙️ Вторичные параметры: Окклюзия, контакты, текстура и цементный зазор</span>
+					</div>
+					<span className="text-xs text-slate-400 font-normal group-open:rotate-180 transition-transform">
+						▼
+					</span>
+				</summary>
+				<div className="p-4 pt-2 border-t border-slate-200 dark:border-slate-700/60 space-y-5 bg-white/60 dark:bg-slate-900/40">
+					{/* Occlusal Scheme */}
+					<div className="space-y-2">
+						<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+							Окклюзионная концепция & Биомеханика
+						</label>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+							{OCCLUSAL_SCHEMES.map((scheme) => {
+								const isSelected = occlusalScheme === scheme.id;
+								return (
+									<button
+										key={scheme.id}
+										type="button"
+										onClick={() => setOcclusalScheme?.(scheme.id)}
+										className={`min-h-[48px] p-3 text-left rounded-xl border text-xs transition-all ${
+											isSelected
+												? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal-soft)] font-bold text-[var(--teal)]"
+												: "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+										}`}
+									>
+										<div className="font-bold flex items-center justify-between">
+											<span>{scheme.name}</span>
+											{isSelected && <CheckCircle2 className="w-4 h-4 text-[var(--teal)]" />}
+										</div>
+										<div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+											{scheme.desc}
+										</div>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
+					{/* Contact Tightness */}
+					<div className="space-y-2">
+						<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+							Плотность апроксимальных контактов
+						</label>
+						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+							{CONTACT_TIGHTNESS_OPTIONS.map((c) => {
+								const isSelected = contactTightness === c.id;
+								return (
+									<button
+										key={c.id}
+										type="button"
+										onClick={() => setContactTightness?.(c.id)}
+										className={`min-h-[44px] p-2.5 text-left rounded-xl border text-xs transition-all ${
+											isSelected
+												? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal-soft)] font-bold text-[var(--teal)]"
+												: "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+										}`}
+									>
+										<div className="font-bold">{c.name}</div>
+										<div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal truncate">
+											{c.desc}
+										</div>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
+					{/* Surface Texture */}
+					<div className="space-y-2">
+						<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+							Текстура поверхности & Финишная обработка
+						</label>
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+							{SURFACE_TEXTURE_OPTIONS.map((t) => {
+								const isSelected = surfaceTexture === t.id;
+								return (
+									<button
+										key={t.id}
+										type="button"
+										onClick={() => setSurfaceTexture?.(t.id)}
+										className={`min-h-[44px] p-2.5 text-left rounded-xl border text-xs transition-all ${
+											isSelected
+												? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal-soft)] font-bold text-[var(--teal)]"
+												: "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+										}`}
+									>
+										<div className="font-bold">{t.name}</div>
+										<div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal truncate">
+											{t.desc}
+										</div>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
+					{/* Cement Gap */}
+					<div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-2">
+						<div className="flex items-center justify-between">
+							<label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+								Цементный зазор CAD/CAM (Cement Space Gap)
+							</label>
+							<span className="text-sm font-black text-[var(--teal)] font-mono">
+								{cementGapMicrons} мкм
+							</span>
+						</div>
+						<input
+							type="range"
+							min="10"
+							max="100"
+							step="5"
+							value={cementGapMicrons}
+							onChange={(e) => setCementGapMicrons?.(Number(e.target.value))}
+							className="w-full h-2.5 accent-[var(--teal)] cursor-pointer"
+						/>
+						<div className="flex justify-between text-[11px] text-slate-500 font-medium">
+							<span>10 мкм (Прецизионный)</span>
+							<span>30–40 мкм (Стандарт ISO)</span>
+							<span>100 мкм (Широкий)</span>
+						</div>
+					</div>
+				</div>
+			</details>
 		</div>
 	);
 }

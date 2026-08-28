@@ -27,6 +27,7 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 				onClose: () => {},
 				patientId: "pat-123",
 				patientName: "Иванова Мария Сергеевна",
+				initialImageUrl: "https://clinic.dente.ru/radiology/ceph-sample.jpg",
 			}),
 		);
 

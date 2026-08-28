@@ -387,6 +387,120 @@ describe("SSR-Safety & Component Rendering", () => {
 				serviceName: "Лечение глубокого кариеса",
 				patientName: "Алексей Смирнов",
 				toothNumber: 26,
+				warehouseItems: [
+					{
+						id: "wh-1",
+						name: "Перчатки нитриловые неопудренные (врач + ассистент)",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "35.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-2",
+						name: "Маска медицинская защитная трехслойная с фиксатором",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-3",
+						name: "Слюноотсос одноразовый стоматологический с гибким наконечником",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-4",
+						name: "Ватные валики стоматологические стерильные №2",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-5",
+						name: "Салфетка нагрудная двухслойная водонепроницаемая",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-6",
+						name: "Микроаппликатор стоматологический (браш) Regular",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-7",
+						name: "Наконечник для пылесоса хирургический/эвакуатор",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-8",
+						name: "Наногибридный композит светоотверждаемый (Filtek Z250 / Estelite Asteria / GC Gradia)",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-9",
+						name: "Самопротравливающий адгезив 7-го поколения (Single Bond Universal / Tokuyama EE)",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-10",
+						name: "Гель травильный 37% ортофосфорная кислота",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-11",
+						name: "Секционная матричная система контурная 3D + деревянный клин Tor VM",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-12",
+						name: "Полировочные диски и силиконовые головки Enhance / Sof-Lex",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-13",
+						name: "Платок коффердама латексный Sanctuary Dental Dam",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+					{
+						id: "wh-14",
+						name: "Паста алмазная полировочная для композитов Diamond Polish",
+						stockQuantity: 100,
+						criticalThreshold: 10,
+						unitCostRub: "500.00",
+						updatedAt: "2026-08-20",
+					},
+				],
 			}),
 		);
 
@@ -399,10 +513,10 @@ describe("SSR-Safety & Component Rendering", () => {
 		// Проверка сокращенного плейсхолдера поиска
 		assert.ok(html.includes("placeholder=\"Поиск материала...\""));
 		// Проверка корректного вывода цены за единицу (пара, а не пары)
-		assert.ok(html.includes("35,00 ₽ / пара") || html.includes("35,00 ₽ / пара"));
+		assert.ok(html.replace(/[\u00A0\u202F]/g, " ").includes("35,00 ₽ / пара"));
 	});
 
-	it("ProcedureMaterialDeductionModal отображает предупреждение о дефиците и кнопку заказа поставщику", () => {
+	it("ProcedureMaterialDeductionModal отображает предупреждение о дефиците, единый бейдж и активную кнопку списания с фиксацией дефицита (Soft Warning)", () => {
 		const html = renderToStaticMarkup(
 			createElement(ProcedureMaterialDeductionModal, {
 				isOpen: true,
@@ -422,9 +536,14 @@ describe("SSR-Safety & Component Rendering", () => {
 			}),
 		);
 
-		assert.ok(html.includes("Защита от отрицательных остатков"));
+		assert.ok(html.includes("Автозаказ поставщику при дефиците"));
 		assert.ok(html.includes("Сформировать заказ поставщику"));
-		assert.ok(html.includes("disabled"));
+		assert.ok(html.includes("Списать с фиксацией дефицита"));
+		assert.ok(html.includes("inventory-deficit-badge"));
+		// Проверка ликвидации паразитных кнопок +1 и +2
+		assert.ok(!html.includes(">+1<"));
+		assert.ok(!html.includes(">+2<"));
+		assert.ok(html.includes("Норма"));
 	});
 
 	it("ProcedureMaterialDeductionModal возвращает пустую строку при isOpen = false", () => {

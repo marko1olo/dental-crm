@@ -7,7 +7,7 @@
  * - Шифрование по стандарту ГОСТ / AES-GCM-256 с PBKDF2 (100,000 итераций) и криптографическая подпись SHA-256
  * - Автоматический экспорт на внешний носитель (USB-флешка, сетевой диск) через File System Access API
  *   или Desktop Native API с fallback на браузерный Blob
- * - Фоновый Vault Auto-Backup шедулер с ротацией архивов для непрерывной защиты
+ * - Автобэкап по расписанию (Планировщик) с ротацией архивов для непрерывной защиты
  * - Безопасное восстановление данных с валидацией контрольных сумм и отчетом о целостности
  */
 
@@ -661,7 +661,7 @@ export function deleteLocalVaultSnapshot(snapshotId: string): boolean {
 }
 
 /**
- * Запуск фонового шедулера периодического автобэкапа
+ * Запуск фонового автобэкапа по расписанию (Планировщик)
  */
 export function startAutoBackupSchedule(options?: AutoBackupScheduleOptions): AutoBackupScheduleStatus {
 	stopAutoBackupSchedule();
@@ -719,7 +719,7 @@ export function startAutoBackupSchedule(options?: AutoBackupScheduleOptions): Au
 }
 
 /**
- * Остановка фонового шедулера автобэкапа
+ * Остановка фонового автобэкапа по расписанию
  */
 export function stopAutoBackupSchedule(): void {
 	if (autoBackupIntervalTimer) {
@@ -731,7 +731,7 @@ export function stopAutoBackupSchedule(): void {
 }
 
 /**
- * Получение текущего статуса шедулера автобэкапов
+ * Получение текущего статуса автобэкапа по расписанию
  */
 export function getAutoBackupScheduleStatus(): AutoBackupScheduleStatus {
 	autoBackupStatus.totalSnapshotsInVault = listLocalVaultSnapshots().length;
