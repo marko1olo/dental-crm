@@ -2677,8 +2677,8 @@ export declare const clinicProfileSchema: z.ZodObject<{
     organizationId: string;
     updatedAt: string;
     clinicName: string;
-    phone: string | null;
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+    phone: string | null;
     legalName: string | null;
     timezone: string;
     defaultVisitMinutes: number;
@@ -2717,8 +2717,8 @@ export declare const clinicProfileSchema: z.ZodObject<{
     organizationId: string;
     updatedAt: string;
     clinicName: string;
-    phone: string | null;
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+    phone: string | null;
     legalName: string | null;
     timezone: string;
     defaultVisitMinutes: number;
@@ -2932,8 +2932,8 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
     id: string;
     title: string;
     description: string;
-    scope: "clinic" | "personal" | "branch" | "network";
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+    scope: "clinic" | "personal" | "branch" | "network";
     primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
     defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -2945,8 +2945,8 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
     id: string;
     title: string;
     description: string;
-    scope: "clinic" | "personal" | "branch" | "network";
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+    scope: "clinic" | "personal" | "branch" | "network";
     primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
     defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3055,8 +3055,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         clinicName: string;
-        phone: string | null;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        phone: string | null;
         legalName: string | null;
         timezone: string;
         defaultVisitMinutes: number;
@@ -3095,8 +3095,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         clinicName: string;
-        phone: string | null;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        phone: string | null;
         legalName: string | null;
         timezone: string;
         defaultVisitMinutes: number;
@@ -3334,8 +3334,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         id: string;
         title: string;
         description: string;
-        scope: "clinic" | "personal" | "branch" | "network";
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        scope: "clinic" | "personal" | "branch" | "network";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3347,8 +3347,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         id: string;
         title: string;
         description: string;
-        scope: "clinic" | "personal" | "branch" | "network";
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        scope: "clinic" | "personal" | "branch" | "network";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3397,8 +3397,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         clinicName: string;
-        phone: string | null;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        phone: string | null;
         legalName: string | null;
         timezone: string;
         defaultVisitMinutes: number;
@@ -3487,8 +3487,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         id: string;
         title: string;
         description: string;
-        scope: "clinic" | "personal" | "branch" | "network";
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        scope: "clinic" | "personal" | "branch" | "network";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3517,8 +3517,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         clinicName: string;
-        phone: string | null;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        phone: string | null;
         legalName: string | null;
         timezone: string;
         defaultVisitMinutes: number;
@@ -3607,8 +3607,8 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         id: string;
         title: string;
         description: string;
-        scope: "clinic" | "personal" | "branch" | "network";
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        scope: "clinic" | "personal" | "branch" | "network";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -4201,7 +4201,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     normalizedTitle: string;
     treatmentKind: string;
     materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
-    restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+    restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
     toothScope: string | null;
@@ -4222,7 +4222,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     normalizedTitle: string;
     treatmentKind: string;
     materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
-    restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+    restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
     toothScope: string | null;
@@ -4345,7 +4345,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         normalizedTitle: string;
         treatmentKind: string;
         materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
-        restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+        restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4366,7 +4366,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         normalizedTitle: string;
         treatmentKind: string;
         materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
-        restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+        restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4444,7 +4444,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         normalizedTitle: string;
         treatmentKind: string;
         materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
-        restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+        restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4492,7 +4492,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         normalizedTitle: string;
         treatmentKind: string;
         materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
-        restorationType: "implant" | "none" | "unknown" | "veneer" | "whitening" | "crown" | "bridge" | "denture" | "sealant" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
+        restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -6510,9 +6510,9 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
         previewText: string;
     }[];
     limit: number;
+    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     generatedAt: string;
     warnings: string[];
-    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     totalCount: number;
     filteredCount: number;
     cursor: string | null;
@@ -6544,9 +6544,9 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
         photoUrl?: string | null | undefined;
     }[];
     limit: number;
+    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     generatedAt: string;
     warnings: string[];
-    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     totalCount: number;
     filteredCount: number;
     cursor: string | null;
@@ -6958,6 +6958,7 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
             error: string;
         };
     }[];
+    failedCount: number;
     dryRun: boolean;
     ok: boolean;
     dueCount: number;
@@ -6967,7 +6968,6 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
     attemptedCount: number;
     sentCount: number;
     dryRunCount: number;
-    failedCount: number;
 }, {
     results: {
         statusCode: number;
@@ -7006,6 +7006,7 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
             error: string;
         };
     }[];
+    failedCount: number;
     dryRun: boolean;
     ok: boolean;
     dueCount: number;
@@ -7015,7 +7016,6 @@ export declare const denteTelegramOutboxSendDueResponseSchema: z.ZodObject<{
     attemptedCount: number;
     sentCount: number;
     dryRunCount: number;
-    failedCount: number;
 }>;
 export type DenteTelegramOutboxSendDueResponse = z.infer<typeof denteTelegramOutboxSendDueResponseSchema>;
 export type DenteTelegramOutboxDeliveryReceipt = Pick<DenteTelegramOutboxSendResponse, "status" | "outboxItem" | "taskId" | "eventId" | "telegramMessageId" | "clientMutationId" | "warnings" | "blockedReason"> & {
@@ -7293,6 +7293,7 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     organizationId: string;
     clinicId: string;
+    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     warnings: string[];
     settings: {
         organizationId: string;
@@ -7337,7 +7338,6 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
         allowVoiceIntake: boolean;
         staffEscalationChannel: string | null;
     };
-    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     botUsername: string | null;
     botConfigId: string;
     tokenConfigured: boolean;
@@ -7364,6 +7364,7 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
 }, {
     organizationId: string;
     clinicId: string;
+    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     warnings: string[];
     settings: {
         organizationId: string;
@@ -7408,7 +7409,6 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
             filling_restoration?: number | undefined;
         } | undefined;
     };
-    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     botUsername: string | null;
     botConfigId: string;
     tokenConfigured: boolean;
@@ -7925,9 +7925,9 @@ export declare const appointmentSchema: z.ZodObject<{
     reason: string | null;
     organizationId: string;
     chairId: string | null;
+    startsAt: string;
     comment: string | null;
     doctorUserId: string | null;
-    startsAt: string;
     endsAt: string;
     assistantUserId?: string | null | undefined;
 }, {
@@ -7937,9 +7937,9 @@ export declare const appointmentSchema: z.ZodObject<{
     reason: string | null;
     organizationId: string;
     chairId: string | null;
+    startsAt: string;
     comment: string | null;
     doctorUserId: string | null;
-    startsAt: string;
     endsAt: string;
     assistantUserId?: string | null | undefined;
 }>;
@@ -7958,8 +7958,8 @@ export declare const createAppointmentSchema: z.ZodEffects<z.ZodObject<{
     status: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show";
     patientId: string;
     chairId: string;
-    doctorUserId: string;
     startsAt: string;
+    doctorUserId: string;
     endsAt: string;
     reason?: string | null | undefined;
     comment?: string | null | undefined;
@@ -7967,8 +7967,8 @@ export declare const createAppointmentSchema: z.ZodEffects<z.ZodObject<{
 }, {
     patientId: string;
     chairId: string;
-    doctorUserId: string;
     startsAt: string;
+    doctorUserId: string;
     endsAt: string;
     status?: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show" | undefined;
     reason?: string | null | undefined;
@@ -7978,8 +7978,8 @@ export declare const createAppointmentSchema: z.ZodEffects<z.ZodObject<{
     status: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show";
     patientId: string;
     chairId: string;
-    doctorUserId: string;
     startsAt: string;
+    doctorUserId: string;
     endsAt: string;
     reason?: string | null | undefined;
     comment?: string | null | undefined;
@@ -7987,8 +7987,8 @@ export declare const createAppointmentSchema: z.ZodEffects<z.ZodObject<{
 }, {
     patientId: string;
     chairId: string;
-    doctorUserId: string;
     startsAt: string;
+    doctorUserId: string;
     endsAt: string;
     status?: "completed" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show" | undefined;
     reason?: string | null | undefined;
@@ -8011,9 +8011,9 @@ export declare const updateAppointmentSchema: z.ZodEffects<z.ZodObject<{
     patientId?: string | null | undefined;
     reason?: string | null | undefined;
     chairId?: string | null | undefined;
+    startsAt?: string | undefined;
     comment?: string | null | undefined;
     doctorUserId?: string | null | undefined;
-    startsAt?: string | undefined;
     endsAt?: string | undefined;
     assistantUserId?: string | null | undefined;
 }, {
@@ -8021,9 +8021,9 @@ export declare const updateAppointmentSchema: z.ZodEffects<z.ZodObject<{
     patientId?: string | null | undefined;
     reason?: string | null | undefined;
     chairId?: string | null | undefined;
+    startsAt?: string | undefined;
     comment?: string | null | undefined;
     doctorUserId?: string | null | undefined;
-    startsAt?: string | undefined;
     endsAt?: string | undefined;
     assistantUserId?: string | null | undefined;
 }>, {
@@ -8031,9 +8031,9 @@ export declare const updateAppointmentSchema: z.ZodEffects<z.ZodObject<{
     patientId?: string | null | undefined;
     reason?: string | null | undefined;
     chairId?: string | null | undefined;
+    startsAt?: string | undefined;
     comment?: string | null | undefined;
     doctorUserId?: string | null | undefined;
-    startsAt?: string | undefined;
     endsAt?: string | undefined;
     assistantUserId?: string | null | undefined;
 }, {
@@ -8041,9 +8041,9 @@ export declare const updateAppointmentSchema: z.ZodEffects<z.ZodObject<{
     patientId?: string | null | undefined;
     reason?: string | null | undefined;
     chairId?: string | null | undefined;
+    startsAt?: string | undefined;
     comment?: string | null | undefined;
     doctorUserId?: string | null | undefined;
-    startsAt?: string | undefined;
     endsAt?: string | undefined;
     assistantUserId?: string | null | undefined;
 }>;
@@ -9108,8 +9108,8 @@ export declare const clinicalToothRowSchema: z.ZodObject<{
     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
     toothOrArea: string;
     diagnosisOrFinding: string;
     indication: string;
@@ -9119,8 +9119,8 @@ export declare const clinicalToothRowSchema: z.ZodObject<{
     implantOrProstheticNotes?: string | null | undefined;
     orthodonticNotes?: string | null | undefined;
 }, {
-    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
     toothOrArea: string;
     diagnosisOrFinding: string;
     indication: string;
@@ -9143,8 +9143,8 @@ export declare const clinicalToothRowsSchema: z.ZodArray<z.ZodObject<{
     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
     toothOrArea: string;
     diagnosisOrFinding: string;
     indication: string;
@@ -9154,8 +9154,8 @@ export declare const clinicalToothRowsSchema: z.ZodArray<z.ZodObject<{
     implantOrProstheticNotes?: string | null | undefined;
     orthodonticNotes?: string | null | undefined;
 }, {
-    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
     toothOrArea: string;
     diagnosisOrFinding: string;
     indication: string;
@@ -9222,8 +9222,8 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9233,8 +9233,8 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes?: string | null | undefined;
         orthodonticNotes?: string | null | undefined;
     }, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9264,8 +9264,8 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
     urgentContactReason: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9285,8 +9285,8 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
     urgentContactReason: string;
 }, {
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9319,8 +9319,8 @@ export declare const labWorkOrderPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9330,8 +9330,8 @@ export declare const labWorkOrderPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes?: string | null | undefined;
         orthodonticNotes?: string | null | undefined;
     }, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9354,8 +9354,8 @@ export declare const labWorkOrderPayloadSchema: z.ZodObject<{
     source: string;
     teethOrArea: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9374,8 +9374,8 @@ export declare const labWorkOrderPayloadSchema: z.ZodObject<{
     source: string;
     teethOrArea: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9532,8 +9532,8 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9543,8 +9543,8 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes?: string | null | undefined;
         orthodonticNotes?: string | null | undefined;
     }, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9571,8 +9571,8 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
     pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
     indication: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9596,8 +9596,8 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
     pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
     indication: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9677,8 +9677,8 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9688,8 +9688,8 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes?: string | null | undefined;
         orthodonticNotes?: string | null | undefined;
     }, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9714,8 +9714,8 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
     recommendations: string;
     issuedAt: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9741,8 +9741,8 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
     recommendations: string;
     issuedAt: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9936,8 +9936,8 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9947,8 +9947,8 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
         implantOrProstheticNotes?: string | null | undefined;
         orthodonticNotes?: string | null | undefined;
     }, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9964,8 +9964,8 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
     anamnesis: string;
     visitDate: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -10000,8 +10000,8 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
     anamnesis: string;
     visitDate: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -10158,8 +10158,8 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10169,8 +10169,8 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10186,8 +10186,8 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         anamnesis: string;
         visitDate: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10222,8 +10222,8 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         anamnesis: string;
         visitDate: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10645,8 +10645,8 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         anamnesis: string;
         visitDate: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10843,8 +10843,8 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         anamnesis: string;
         visitDate: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -11250,8 +11250,8 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11261,8 +11261,8 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes?: string | null | undefined;
         orthodonticNotes?: string | null | undefined;
     }, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11319,8 +11319,8 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
     complaint?: string | null | undefined;
     treatmentPlan?: string | null | undefined;
     clinicalToothRows?: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11390,8 +11390,8 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
     complaint?: string | null | undefined;
     treatmentPlan?: string | null | undefined;
     clinicalToothRows?: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11544,8 +11544,8 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11555,8 +11555,8 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes?: string | null | undefined;
         orthodonticNotes?: string | null | undefined;
     }, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11604,8 +11604,8 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
     estimatedTotalRub: number;
     teethOrArea: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11641,8 +11641,8 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
     estimatedTotalRub: number;
     teethOrArea: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11694,8 +11694,8 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11705,8 +11705,8 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
         implantOrProstheticNotes?: string | null | undefined;
         orthodonticNotes?: string | null | undefined;
     }, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11751,8 +11751,8 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
     estimateValidUntil: string;
     teethOrArea: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11786,8 +11786,8 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
     estimateValidUntil: string;
     teethOrArea: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11977,8 +11977,8 @@ export declare const procedureSpecificConsentPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11988,8 +11988,8 @@ export declare const procedureSpecificConsentPayloadSchema: z.ZodObject<{
         implantOrProstheticNotes?: string | null | undefined;
         orthodonticNotes?: string | null | undefined;
     }, {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -12017,8 +12017,8 @@ export declare const procedureSpecificConsentPayloadSchema: z.ZodObject<{
     alternatives: string[];
     toothOrArea: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -12046,8 +12046,8 @@ export declare const procedureSpecificConsentPayloadSchema: z.ZodObject<{
     alternatives: string[];
     toothOrArea: string;
     clinicalToothRows: {
-        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -12912,8 +12912,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -12923,8 +12923,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -12954,8 +12954,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         urgentContactReason: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -12975,8 +12975,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         urgentContactReason: string;
     }, {
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13008,8 +13008,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13019,8 +13019,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13043,8 +13043,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         source: string;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13063,8 +13063,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         source: string;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13126,8 +13126,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13137,8 +13137,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13165,8 +13165,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13190,8 +13190,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13376,8 +13376,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -13387,8 +13387,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -13404,8 +13404,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             anamnesis: string;
             visitDate: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -13440,8 +13440,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             anamnesis: string;
             visitDate: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -13863,8 +13863,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             anamnesis: string;
             visitDate: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -14061,8 +14061,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             anamnesis: string;
             visitDate: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -14355,8 +14355,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -14366,8 +14366,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -14424,8 +14424,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         complaint?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -14495,8 +14495,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         complaint?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -15921,8 +15921,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -15932,8 +15932,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -15958,8 +15958,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         recommendations: string;
         issuedAt: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -15985,8 +15985,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         recommendations: string;
         issuedAt: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16123,8 +16123,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16134,8 +16134,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16183,8 +16183,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16220,8 +16220,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16270,8 +16270,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16281,8 +16281,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16327,8 +16327,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         estimateValidUntil: string;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16362,8 +16362,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         estimateValidUntil: string;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16549,8 +16549,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16560,8 +16560,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16589,8 +16589,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         alternatives: string[];
         toothOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16618,8 +16618,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         alternatives: string[];
         toothOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16731,8 +16731,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16984,8 +16984,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
     } | undefined;
     prescriptionMedicationOrder?: {
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17010,8 +17010,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         source: string;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17043,8 +17043,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17116,8 +17116,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             anamnesis: string;
             visitDate: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -17318,8 +17318,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         complaint?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17692,8 +17692,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         recommendations: string;
         issuedAt: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17755,8 +17755,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         estimateValidUntil: string;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17831,8 +17831,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         alternatives: string[];
         toothOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17890,8 +17890,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18143,8 +18143,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
     } | undefined;
     prescriptionMedicationOrder?: {
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18169,8 +18169,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         source: string;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18202,8 +18202,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18275,8 +18275,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
             anamnesis: string;
             visitDate: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -18477,8 +18477,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         complaint?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18851,8 +18851,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         recommendations: string;
         issuedAt: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18914,8 +18914,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         estimateValidUntil: string;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18990,8 +18990,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         alternatives: string[];
         toothOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -19793,8 +19793,8 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         clinicName: string;
-        phone: string | null;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        phone: string | null;
         legalName: string | null;
         timezone: string;
         defaultVisitMinutes: number;
@@ -19833,8 +19833,8 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         clinicName: string;
-        phone: string | null;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        phone: string | null;
         legalName: string | null;
         timezone: string;
         defaultVisitMinutes: number;
@@ -20075,8 +20075,8 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         clinicName: string;
-        phone: string | null;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        phone: string | null;
         legalName: string | null;
         timezone: string;
         defaultVisitMinutes: number;
@@ -20188,8 +20188,8 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         clinicName: string;
-        phone: string | null;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+        phone: string | null;
         legalName: string | null;
         timezone: string;
         defaultVisitMinutes: number;
@@ -21234,8 +21234,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21245,8 +21245,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21276,8 +21276,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             urgentContactReason: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21297,8 +21297,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             urgentContactReason: string;
         }, {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21330,8 +21330,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21341,8 +21341,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21365,8 +21365,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21385,8 +21385,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21448,8 +21448,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21459,8 +21459,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21487,8 +21487,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21512,8 +21512,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21698,8 +21698,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -21709,8 +21709,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -21726,8 +21726,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -21762,8 +21762,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -22185,8 +22185,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -22383,8 +22383,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -22677,8 +22677,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -22688,8 +22688,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -22746,8 +22746,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -22817,8 +22817,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24243,8 +24243,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24254,8 +24254,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24280,8 +24280,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24307,8 +24307,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24445,8 +24445,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24456,8 +24456,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24505,8 +24505,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24542,8 +24542,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24592,8 +24592,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24603,8 +24603,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24649,8 +24649,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24684,8 +24684,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24871,8 +24871,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24882,8 +24882,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24911,8 +24911,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24940,8 +24940,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25053,8 +25053,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25306,8 +25306,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25332,8 +25332,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25365,8 +25365,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25438,8 +25438,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -25640,8 +25640,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26014,8 +26014,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26077,8 +26077,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26153,8 +26153,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26212,8 +26212,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26465,8 +26465,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26491,8 +26491,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26524,8 +26524,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26597,8 +26597,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -26799,8 +26799,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -27173,8 +27173,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -27236,8 +27236,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -27312,8 +27312,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -27748,8 +27748,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -27788,8 +27788,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -28030,8 +28030,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -28143,8 +28143,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -28224,8 +28224,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -28477,8 +28477,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -28503,8 +28503,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -28536,8 +28536,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -28609,8 +28609,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -28811,8 +28811,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29185,8 +29185,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29248,8 +29248,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29324,8 +29324,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29547,8 +29547,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -29613,8 +29613,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29866,8 +29866,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29892,8 +29892,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29925,8 +29925,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29998,8 +29998,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -30200,8 +30200,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -30574,8 +30574,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -30637,8 +30637,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -30713,8 +30713,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -30936,8 +30936,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -32044,8 +32044,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32055,8 +32055,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32086,8 +32086,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             urgentContactReason: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32107,8 +32107,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             urgentContactReason: string;
         }, {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32140,8 +32140,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32151,8 +32151,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32175,8 +32175,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32195,8 +32195,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32258,8 +32258,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32269,8 +32269,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32297,8 +32297,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32322,8 +32322,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32508,8 +32508,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -32519,8 +32519,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -32536,8 +32536,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -32572,8 +32572,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -32995,8 +32995,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -33193,8 +33193,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -33487,8 +33487,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -33498,8 +33498,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -33556,8 +33556,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -33627,8 +33627,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35053,8 +35053,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35064,8 +35064,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35090,8 +35090,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35117,8 +35117,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35255,8 +35255,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35266,8 +35266,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35315,8 +35315,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35352,8 +35352,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35402,8 +35402,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35413,8 +35413,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35459,8 +35459,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35494,8 +35494,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35681,8 +35681,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35692,8 +35692,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35721,8 +35721,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35750,8 +35750,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35863,8 +35863,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36116,8 +36116,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36142,8 +36142,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36175,8 +36175,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36248,8 +36248,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -36450,8 +36450,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36824,8 +36824,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36887,8 +36887,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36963,8 +36963,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37022,8 +37022,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37275,8 +37275,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37301,8 +37301,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37334,8 +37334,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37407,8 +37407,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -37609,8 +37609,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37983,8 +37983,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -38046,8 +38046,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -38122,8 +38122,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -38558,8 +38558,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -38598,8 +38598,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -38840,8 +38840,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -38953,8 +38953,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -39776,8 +39776,8 @@ export declare const dashboardSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -39816,8 +39816,8 @@ export declare const dashboardSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -40055,8 +40055,8 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             title: string;
             description: string;
-            scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            scope: "clinic" | "personal" | "branch" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40068,8 +40068,8 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             title: string;
             description: string;
-            scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            scope: "clinic" | "personal" | "branch" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40118,8 +40118,8 @@ export declare const dashboardSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -40208,8 +40208,8 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             title: string;
             description: string;
-            scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            scope: "clinic" | "personal" | "branch" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40238,8 +40238,8 @@ export declare const dashboardSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -40328,8 +40328,8 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             title: string;
             description: string;
-            scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            scope: "clinic" | "personal" | "branch" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40923,9 +40923,9 @@ export declare const dashboardSchema: z.ZodObject<{
         reason: string | null;
         organizationId: string;
         chairId: string | null;
+        startsAt: string;
         comment: string | null;
         doctorUserId: string | null;
-        startsAt: string;
         endsAt: string;
         assistantUserId?: string | null | undefined;
     }, {
@@ -40935,9 +40935,9 @@ export declare const dashboardSchema: z.ZodObject<{
         reason: string | null;
         organizationId: string;
         chairId: string | null;
+        startsAt: string;
         comment: string | null;
         doctorUserId: string | null;
-        startsAt: string;
         endsAt: string;
         assistantUserId?: string | null | undefined;
     }>, "many">;
@@ -42132,8 +42132,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42143,8 +42143,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42174,8 +42174,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 urgentContactReason: z.ZodString;
             }, "strip", z.ZodTypeAny, {
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42195,8 +42195,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 urgentContactReason: string;
             }, {
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42228,8 +42228,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42239,8 +42239,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42263,8 +42263,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 source: string;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42283,8 +42283,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 source: string;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42346,8 +42346,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42357,8 +42357,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42385,8 +42385,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42410,8 +42410,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42596,8 +42596,8 @@ export declare const dashboardSchema: z.ZodObject<{
                         implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     }, "strip", z.ZodTypeAny, {
-                        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -42607,8 +42607,8 @@ export declare const dashboardSchema: z.ZodObject<{
                         implantOrProstheticNotes?: string | null | undefined;
                         orthodonticNotes?: string | null | undefined;
                     }, {
-                        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -42624,8 +42624,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     anamnesis: string;
                     visitDate: string;
                     clinicalToothRows: {
-                        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -42660,8 +42660,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     anamnesis: string;
                     visitDate: string;
                     clinicalToothRows: {
-                        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -43083,8 +43083,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     anamnesis: string;
                     visitDate: string;
                     clinicalToothRows: {
-                        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -43281,8 +43281,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     anamnesis: string;
                     visitDate: string;
                     clinicalToothRows: {
-                        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -43575,8 +43575,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -43586,8 +43586,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -43644,8 +43644,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 complaint?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -43715,8 +43715,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 complaint?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45141,8 +45141,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45152,8 +45152,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45178,8 +45178,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 recommendations: string;
                 issuedAt: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45205,8 +45205,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 recommendations: string;
                 issuedAt: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45343,8 +45343,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45354,8 +45354,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45403,8 +45403,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 estimatedTotalRub: number;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45440,8 +45440,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 estimatedTotalRub: number;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45490,8 +45490,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45501,8 +45501,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45547,8 +45547,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 estimateValidUntil: string;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45582,8 +45582,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 estimateValidUntil: string;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45769,8 +45769,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45780,8 +45780,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45809,8 +45809,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 alternatives: string[];
                 toothOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45838,8 +45838,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 alternatives: string[];
                 toothOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45951,8 +45951,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 estimatedTotalRub: number;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46204,8 +46204,8 @@ export declare const dashboardSchema: z.ZodObject<{
             } | undefined;
             prescriptionMedicationOrder?: {
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46230,8 +46230,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 source: string;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46263,8 +46263,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46336,8 +46336,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     anamnesis: string;
                     visitDate: string;
                     clinicalToothRows: {
-                        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -46538,8 +46538,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 complaint?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46912,8 +46912,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 recommendations: string;
                 issuedAt: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46975,8 +46975,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 estimateValidUntil: string;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47051,8 +47051,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 alternatives: string[];
                 toothOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47110,8 +47110,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 estimatedTotalRub: number;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47363,8 +47363,8 @@ export declare const dashboardSchema: z.ZodObject<{
             } | undefined;
             prescriptionMedicationOrder?: {
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47389,8 +47389,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 source: string;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47422,8 +47422,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47495,8 +47495,8 @@ export declare const dashboardSchema: z.ZodObject<{
                     anamnesis: string;
                     visitDate: string;
                     clinicalToothRows: {
-                        status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                        status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                        surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -47697,8 +47697,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 complaint?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -48071,8 +48071,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 recommendations: string;
                 issuedAt: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -48134,8 +48134,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 estimateValidUntil: string;
                 teethOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -48210,8 +48210,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 alternatives: string[];
                 toothOrArea: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -48646,8 +48646,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 organizationId: string;
                 updatedAt: string;
                 clinicName: string;
-                phone: string | null;
                 mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+                phone: string | null;
                 legalName: string | null;
                 timezone: string;
                 defaultVisitMinutes: number;
@@ -48686,8 +48686,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 organizationId: string;
                 updatedAt: string;
                 clinicName: string;
-                phone: string | null;
                 mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+                phone: string | null;
                 legalName: string | null;
                 timezone: string;
                 defaultVisitMinutes: number;
@@ -48928,8 +48928,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 organizationId: string;
                 updatedAt: string;
                 clinicName: string;
-                phone: string | null;
                 mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+                phone: string | null;
                 legalName: string | null;
                 timezone: string;
                 defaultVisitMinutes: number;
@@ -49041,8 +49041,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 organizationId: string;
                 updatedAt: string;
                 clinicName: string;
-                phone: string | null;
                 mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+                phone: string | null;
                 legalName: string | null;
                 timezone: string;
                 defaultVisitMinutes: number;
@@ -50296,9 +50296,9 @@ export declare const dashboardSchema: z.ZodObject<{
         reason: string | null;
         organizationId: string;
         chairId: string | null;
+        startsAt: string;
         comment: string | null;
         doctorUserId: string | null;
-        startsAt: string;
         endsAt: string;
         assistantUserId?: string | null | undefined;
     }[];
@@ -50320,8 +50320,8 @@ export declare const dashboardSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -50410,8 +50410,8 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             title: string;
             description: string;
-            scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            scope: "clinic" | "personal" | "branch" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -50966,9 +50966,9 @@ export declare const dashboardSchema: z.ZodObject<{
         reason: string | null;
         organizationId: string;
         chairId: string | null;
+        startsAt: string;
         comment: string | null;
         doctorUserId: string | null;
-        startsAt: string;
         endsAt: string;
         assistantUserId?: string | null | undefined;
     }[];
@@ -50990,8 +50990,8 @@ export declare const dashboardSchema: z.ZodObject<{
             organizationId: string;
             updatedAt: string;
             clinicName: string;
-            phone: string | null;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            phone: string | null;
             legalName: string | null;
             timezone: string;
             defaultVisitMinutes: number;
@@ -51080,8 +51080,8 @@ export declare const dashboardSchema: z.ZodObject<{
             id: string;
             title: string;
             description: string;
-            scope: "clinic" | "personal" | "branch" | "network";
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+            scope: "clinic" | "personal" | "branch" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -53679,8 +53679,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53690,8 +53690,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53721,8 +53721,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             urgentContactReason: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53742,8 +53742,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             urgentContactReason: string;
         }, {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53775,8 +53775,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53786,8 +53786,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53810,8 +53810,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53830,8 +53830,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53893,8 +53893,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53904,8 +53904,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53932,8 +53932,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53957,8 +53957,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -54143,8 +54143,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -54154,8 +54154,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     implantOrProstheticNotes?: string | null | undefined;
                     orthodonticNotes?: string | null | undefined;
                 }, {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -54171,8 +54171,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -54207,8 +54207,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -54630,8 +54630,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -54828,8 +54828,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -55122,8 +55122,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -55133,8 +55133,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -55191,8 +55191,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -55262,8 +55262,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56688,8 +56688,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56699,8 +56699,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56725,8 +56725,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56752,8 +56752,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56890,8 +56890,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56901,8 +56901,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56950,8 +56950,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56987,8 +56987,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57037,8 +57037,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57048,8 +57048,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57094,8 +57094,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57129,8 +57129,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57316,8 +57316,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57327,8 +57327,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57356,8 +57356,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57385,8 +57385,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57498,8 +57498,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57751,8 +57751,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57777,8 +57777,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57810,8 +57810,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57883,8 +57883,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -58085,8 +58085,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58459,8 +58459,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58522,8 +58522,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58598,8 +58598,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58657,8 +58657,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58910,8 +58910,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58936,8 +58936,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58969,8 +58969,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59042,8 +59042,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -59244,8 +59244,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59618,8 +59618,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59681,8 +59681,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59757,8 +59757,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59824,8 +59824,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60077,8 +60077,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60103,8 +60103,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60136,8 +60136,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60209,8 +60209,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -60411,8 +60411,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60785,8 +60785,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60848,8 +60848,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60924,8 +60924,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60992,8 +60992,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61245,8 +61245,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61271,8 +61271,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61304,8 +61304,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61377,8 +61377,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -61579,8 +61579,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61953,8 +61953,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62016,8 +62016,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62092,8 +62092,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62160,8 +62160,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62413,8 +62413,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62439,8 +62439,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62472,8 +62472,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62545,8 +62545,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -62747,8 +62747,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63121,8 +63121,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63184,8 +63184,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63260,8 +63260,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63328,8 +63328,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63581,8 +63581,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63607,8 +63607,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             source: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63640,8 +63640,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63713,8 +63713,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 anamnesis: string;
                 visitDate: string;
                 clinicalToothRows: {
-                    status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                    status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                    surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -63915,8 +63915,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -64289,8 +64289,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             recommendations: string;
             issuedAt: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -64352,8 +64352,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             estimateValidUntil: string;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -64428,8 +64428,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             alternatives: string[];
             toothOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -68989,14 +68989,14 @@ export declare const imagingViewerSessionStateSchema: z.ZodObject<{
         selectedAt?: string | null | undefined;
     }>>>;
 }, "strip", z.ZodTypeAny, {
-    zoom: number;
     mode: "stack" | "photo" | "two_d" | "mpr";
+    zoom: number;
     crosshair: boolean;
     windowCenter: number | null;
     windowWidth: number | null;
     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
     activeQuickActionId: string | null;
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
     brightness: number;
     contrast: number;
     inverted: boolean;
@@ -69020,13 +69020,13 @@ export declare const imagingViewerSessionStateSchema: z.ZodObject<{
         selectedAt: string | null;
     } | null;
 }, {
-    zoom: number;
     mode: "stack" | "photo" | "two_d" | "mpr";
+    zoom: number;
     crosshair: boolean;
     windowCenter: number | null;
     windowWidth: number | null;
     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
     brightness: number;
     contrast: number;
     inverted: boolean;
@@ -69171,14 +69171,14 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
             selectedAt?: string | null | undefined;
         }>>>;
     }, "strip", z.ZodTypeAny, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69202,13 +69202,13 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
             selectedAt: string | null;
         } | null;
     }, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69302,14 +69302,14 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     patientId: string;
     state: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69357,13 +69357,13 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
 }, {
     patientId: string;
     state: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69467,14 +69467,14 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
             selectedAt?: string | null | undefined;
         }>>>;
     }, "strip", z.ZodTypeAny, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69498,13 +69498,13 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
             selectedAt: string | null;
         } | null;
     }, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69607,14 +69607,14 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
     createdAt: string;
     updatedAt: string;
     state: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69669,13 +69669,13 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
     createdAt: string;
     updatedAt: string;
     state: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -69782,14 +69782,14 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
                 selectedAt?: string | null | undefined;
             }>>>;
         }, "strip", z.ZodTypeAny, {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -69813,13 +69813,13 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
                 selectedAt: string | null;
             } | null;
         }, {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -69922,14 +69922,14 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         state: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -69984,13 +69984,13 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         state: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -70050,14 +70050,14 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         state: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -70115,13 +70115,13 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         state: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -70433,14 +70433,14 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
             selectedAt?: string | null | undefined;
         }>>>;
     }, "strip", z.ZodTypeAny, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70464,13 +70464,13 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
             selectedAt: string | null;
         } | null;
     }, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70634,14 +70634,14 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
     viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
     allowExternalHandoff: boolean;
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70737,13 +70737,13 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
     }[] | undefined;
     viewerKind?: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url" | undefined;
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70949,14 +70949,14 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
             selectedAt?: string | null | undefined;
         }>>>;
     }, "strip", z.ZodTypeAny, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -70980,13 +70980,13 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
             selectedAt: string | null;
         } | null;
     }, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71116,14 +71116,14 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
     }[];
     viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
     viewerState: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71203,13 +71203,13 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
     }[];
     viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
     viewerState: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71290,14 +71290,14 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
     }[];
     viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
     viewerState: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71377,13 +71377,13 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
     }[];
     viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
     viewerState: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -71477,7 +71477,7 @@ export declare const dicomViewerViewportStateSchema: z.ZodObject<{
     crosshair: boolean;
     windowCenter: number | null;
     windowWidth: number | null;
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
     rotationDeg: number;
     sliceIndex: number | null;
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -71493,7 +71493,7 @@ export declare const dicomViewerViewportStateSchema: z.ZodObject<{
     crosshair: boolean;
     windowCenter: number | null;
     windowWidth: number | null;
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
     rotationDeg: number;
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
     axisDeg: number;
@@ -71667,7 +71667,7 @@ export declare const dicomViewerPlanningTaskSchema: z.ZodObject<{
     title: string;
     warnings: string[];
     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
     axisDeg: number;
     slabMm: number;
@@ -71691,7 +71691,7 @@ export declare const dicomViewerPlanningTaskSchema: z.ZodObject<{
     title: string;
     warnings: string[];
     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
     axisDeg: number;
     slabMm: number;
@@ -72366,14 +72366,14 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
             selectedAt?: string | null | undefined;
         }>>>;
     }, "strip", z.ZodTypeAny, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -72397,13 +72397,13 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
             selectedAt: string | null;
         } | null;
     }, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -72497,14 +72497,14 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         firstPaintStrategy: string;
     };
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -72597,13 +72597,13 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         diagnosticPixelPolicy?: "metadata_only_no_pixels" | "browser_preview_not_diagnostic" | "desktop_app_or_external_review" | undefined;
     };
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73180,14 +73180,14 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
             selectedAt?: string | null | undefined;
         }>>>;
     }, "strip", z.ZodTypeAny, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73211,13 +73211,13 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
             selectedAt: string | null;
         } | null;
     }, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73435,14 +73435,14 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
     viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
     target: "ohif" | "cornerstone3d" | "external_viewer" | "generic_json";
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73555,13 +73555,13 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
     }[] | undefined;
     viewerKind?: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url" | undefined;
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -73712,7 +73712,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         rotationDeg: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -73728,7 +73728,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         rotationDeg: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -73900,7 +73900,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -73924,7 +73924,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -74171,7 +74171,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         rotationDeg: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -74190,7 +74190,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -74306,7 +74306,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         rotationDeg: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -74325,7 +74325,7 @@ export declare const dicomViewerToolStateBundleResponseSchema: z.ZodObject<{
         title: string;
         warnings: string[];
         kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -75434,14 +75434,14 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
             selectedAt?: string | null | undefined;
         }>>>;
     }, "strip", z.ZodTypeAny, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -75465,13 +75465,13 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
             selectedAt: string | null;
         } | null;
     }, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -75674,14 +75674,14 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         qidoHttpStatus: number | null;
     } | null | undefined;
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -75815,13 +75815,13 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
     }[] | undefined;
     viewerKind?: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url" | undefined;
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -76503,14 +76503,14 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
                 selectedAt?: string | null | undefined;
             }>>>;
         }, "strip", z.ZodTypeAny, {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76534,13 +76534,13 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
                 selectedAt: string | null;
             } | null;
         }, {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76670,14 +76670,14 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
         }[];
         viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
         viewerState: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76757,13 +76757,13 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
         }[];
         viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
         viewerState: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76844,14 +76844,14 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
         }[];
         viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
         viewerState: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -76931,13 +76931,13 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
         }[];
         viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
         viewerState: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -77084,7 +77084,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             rotationDeg: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -77100,7 +77100,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             rotationDeg: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -77272,7 +77272,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -77296,7 +77296,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -77543,7 +77543,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             rotationDeg: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -77562,7 +77562,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -77678,7 +77678,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             rotationDeg: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -77697,7 +77697,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -77895,14 +77895,14 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
         }[];
         viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
         viewerState: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -78053,7 +78053,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             rotationDeg: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -78072,7 +78072,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -78257,13 +78257,13 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
         }[];
         viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
         viewerState: {
-            zoom: number;
             mode: "stack" | "photo" | "two_d" | "mpr";
+            zoom: number;
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             brightness: number;
             contrast: number;
             inverted: boolean;
@@ -78404,7 +78404,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             crosshair: boolean;
             windowCenter: number | null;
             windowWidth: number | null;
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             rotationDeg: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -78423,7 +78423,7 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             title: string;
             warnings: string[];
             kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-            windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+            windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -79119,14 +79119,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                     selectedAt?: string | null | undefined;
                 }>>>;
             }, "strip", z.ZodTypeAny, {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79150,13 +79150,13 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                     selectedAt: string | null;
                 } | null;
             }, {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79286,14 +79286,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79373,13 +79373,13 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79460,14 +79460,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79547,13 +79547,13 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -79700,7 +79700,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -79716,7 +79716,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -79888,7 +79888,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -79912,7 +79912,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -80159,7 +80159,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -80178,7 +80178,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -80294,7 +80294,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -80313,7 +80313,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -80511,14 +80511,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -80669,7 +80669,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -80688,7 +80688,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -80873,13 +80873,13 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -81020,7 +81020,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -81039,7 +81039,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -81256,14 +81256,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -81414,7 +81414,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -81433,7 +81433,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -81634,13 +81634,13 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -81781,7 +81781,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -81800,7 +81800,7 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -82486,14 +82486,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                     selectedAt?: string | null | undefined;
                 }>>>;
             }, "strip", z.ZodTypeAny, {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82517,13 +82517,13 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                     selectedAt: string | null;
                 } | null;
             }, {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82653,14 +82653,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82740,13 +82740,13 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82827,14 +82827,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -82914,13 +82914,13 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -83067,7 +83067,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -83083,7 +83083,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -83255,7 +83255,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -83279,7 +83279,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -83526,7 +83526,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -83545,7 +83545,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -83661,7 +83661,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -83680,7 +83680,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -83878,14 +83878,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -84036,7 +84036,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -84055,7 +84055,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -84240,13 +84240,13 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -84387,7 +84387,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -84406,7 +84406,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -84606,14 +84606,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -84764,7 +84764,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -84783,7 +84783,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -84972,13 +84972,13 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
             }[];
             viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
             viewerState: {
-                zoom: number;
                 mode: "stack" | "photo" | "two_d" | "mpr";
+                zoom: number;
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 brightness: number;
                 contrast: number;
                 inverted: boolean;
@@ -85119,7 +85119,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 crosshair: boolean;
                 windowCenter: number | null;
                 windowWidth: number | null;
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 rotationDeg: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -85138,7 +85138,7 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 title: string;
                 warnings: string[];
                 kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -85836,14 +85836,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                         selectedAt?: string | null | undefined;
                     }>>>;
                 }, "strip", z.ZodTypeAny, {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -85867,13 +85867,13 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                         selectedAt: string | null;
                     } | null;
                 }, {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86003,14 +86003,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86090,13 +86090,13 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86177,14 +86177,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86264,13 +86264,13 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -86417,7 +86417,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -86433,7 +86433,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -86605,7 +86605,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -86629,7 +86629,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -86876,7 +86876,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -86895,7 +86895,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87011,7 +87011,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -87030,7 +87030,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87228,14 +87228,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -87386,7 +87386,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -87405,7 +87405,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87590,13 +87590,13 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -87737,7 +87737,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -87756,7 +87756,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87973,14 +87973,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -88131,7 +88131,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -88150,7 +88150,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -88351,13 +88351,13 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -88498,7 +88498,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -88517,7 +88517,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -88733,14 +88733,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -88891,7 +88891,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -88910,7 +88910,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -89114,13 +89114,13 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -89261,7 +89261,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -89280,7 +89280,7 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -89977,14 +89977,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                         selectedAt?: string | null | undefined;
                     }>>>;
                 }, "strip", z.ZodTypeAny, {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90008,13 +90008,13 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                         selectedAt: string | null;
                     } | null;
                 }, {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90144,14 +90144,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90231,13 +90231,13 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90318,14 +90318,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90405,13 +90405,13 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -90558,7 +90558,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -90574,7 +90574,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -90746,7 +90746,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -90770,7 +90770,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -91017,7 +91017,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -91036,7 +91036,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -91152,7 +91152,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -91171,7 +91171,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -91369,14 +91369,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -91527,7 +91527,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -91546,7 +91546,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -91731,13 +91731,13 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -91878,7 +91878,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -91897,7 +91897,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -92114,14 +92114,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -92272,7 +92272,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -92291,7 +92291,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -92492,13 +92492,13 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -92639,7 +92639,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -92658,7 +92658,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -92879,14 +92879,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -93037,7 +93037,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
@@ -93056,7 +93056,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -93263,13 +93263,13 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                 }[];
                 viewerKind: "ohif" | "cornerstone3d" | "weasis" | "radiant" | "external_url";
                 viewerState: {
-                    zoom: number;
                     mode: "stack" | "photo" | "two_d" | "mpr";
+                    zoom: number;
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     brightness: number;
                     contrast: number;
                     inverted: boolean;
@@ -93410,7 +93410,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     crosshair: boolean;
                     windowCenter: number | null;
                     windowWidth: number | null;
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     rotationDeg: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -93429,7 +93429,7 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     title: string;
                     warnings: string[];
                     kind: "surgical_guide" | "panoramic_reconstruction" | "area_roi" | "volume_roi" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "cross_section_curve" | "distance_measurement" | "angle_measurement";
-                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+                    windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -93593,14 +93593,14 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
             selectedAt?: string | null | undefined;
         }>>>;
     }, "strip", z.ZodTypeAny, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -93624,13 +93624,13 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
             selectedAt: string | null;
         } | null;
     }, {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -93687,14 +93687,14 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
     maxEntriesPerFolder: number;
     maxHeaderBytes: number;
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -93750,13 +93750,13 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
     maxEntriesPerFolder?: number | undefined;
     maxHeaderBytes?: number | undefined;
     viewerState?: {
-        zoom: number;
         mode: "stack" | "photo" | "two_d" | "mpr";
+        zoom: number;
         crosshair: boolean;
         windowCenter: number | null;
         windowWidth: number | null;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "invert" | "measure_area" | "measure_volume";
-        windowPreset: "implant" | "custom" | "endo" | "teeth" | "bone" | "soft_tissue" | "perio" | "photo" | "caries";
+        windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         brightness: number;
         contrast: number;
         inverted: boolean;
@@ -100344,13 +100344,13 @@ export declare const smartImportRequestSchema: z.ZodObject<{
     rawText: z.ZodString;
     mode: z.ZodDefault<z.ZodEnum<["auto", "patients", "imaging", "mixed"]>>;
 }, "strip", z.ZodTypeAny, {
+    mode: "auto" | "patients" | "imaging" | "mixed";
     sourceName: string;
     rawText: string;
-    mode: "auto" | "patients" | "imaging" | "mixed";
 }, {
     rawText: string;
-    sourceName?: string | undefined;
     mode?: "auto" | "patients" | "imaging" | "mixed" | undefined;
+    sourceName?: string | undefined;
 }>;
 export type SmartImportRequest = z.infer<typeof smartImportRequestSchema>;
 export declare const smartImportLineKindSchema: z.ZodEnum<["patient", "imaging", "clinic", "legacy_source", "ignored"]>;
@@ -105185,13 +105185,13 @@ export declare const migrationAutopilotRequestSchema: z.ZodObject<{
         rawText: z.ZodString;
         mode: z.ZodDefault<z.ZodEnum<["auto", "patients", "imaging", "mixed"]>>;
     }, "strip", z.ZodTypeAny, {
+        mode: "auto" | "patients" | "imaging" | "mixed";
         sourceName: string;
         rawText: string;
-        mode: "auto" | "patients" | "imaging" | "mixed";
     }, {
         rawText: string;
-        sourceName?: string | undefined;
         mode?: "auto" | "patients" | "imaging" | "mixed" | undefined;
+        sourceName?: string | undefined;
     }>>;
     clinic: z.ZodOptional<z.ZodEffects<z.ZodObject<{
         inn: z.ZodOptional<z.ZodString>;
@@ -105275,9 +105275,9 @@ export declare const migrationAutopilotRequestSchema: z.ZodObject<{
     }[] | undefined;
     knownScannedFolders?: number | undefined;
     smartImport?: {
+        mode: "auto" | "patients" | "imaging" | "mixed";
         sourceName: string;
         rawText: string;
-        mode: "auto" | "patients" | "imaging" | "mixed";
     } | undefined;
 }, {
     clinic?: {
@@ -105321,8 +105321,8 @@ export declare const migrationAutopilotRequestSchema: z.ZodObject<{
     knownScannedFolders?: number | undefined;
     smartImport?: {
         rawText: string;
-        sourceName?: string | undefined;
         mode?: "auto" | "patients" | "imaging" | "mixed" | undefined;
+        sourceName?: string | undefined;
     } | undefined;
 }>;
 export type MigrationAutopilotRequest = z.infer<typeof migrationAutopilotRequestSchema>;
@@ -110688,8 +110688,8 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110699,8 +110699,8 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110748,8 +110748,8 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110785,8 +110785,8 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110826,8 +110826,8 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110868,8 +110868,8 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111272,8 +111272,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111283,8 +111283,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111332,8 +111332,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111369,8 +111369,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111410,8 +111410,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111452,8 +111452,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111673,8 +111673,8 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
             implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111684,8 +111684,8 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
             implantOrProstheticNotes?: string | null | undefined;
             orthodonticNotes?: string | null | undefined;
         }, {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111733,8 +111733,8 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111770,8 +111770,8 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111882,8 +111882,8 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111958,8 +111958,8 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         estimatedTotalRub: number;
         teethOrArea: string;
         clinicalToothRows: {
-            status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+            status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+            surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -112227,8 +112227,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
                 implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -112238,8 +112238,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
                 implantOrProstheticNotes?: string | null | undefined;
                 orthodonticNotes?: string | null | undefined;
             }, {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -112287,8 +112287,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -112324,8 +112324,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -112365,8 +112365,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -112407,8 +112407,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -112651,8 +112651,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -112762,8 +112762,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             estimatedTotalRub: number;
             teethOrArea: string;
             clinicalToothRows: {
-                status: "other" | "implant" | "completed" | "missing" | "planned" | "orthodontic" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "implant_site" | "incisal" | "root" | "not_applicable")[];
+                status: "other" | "implant" | "completed" | "missing" | "planned" | "caries" | "orthodontic" | "watch" | "sound" | "pulpitis_periodontitis" | "periodontal" | "prosthetic";
+                surfaces: ("occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "root" | "implant_site" | "incisal" | "not_applicable")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
