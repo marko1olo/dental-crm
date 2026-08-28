@@ -61,8 +61,12 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 					</div>
 				</div>
 
-				{/* Center: Interactive Hotkey Badges */}
-				<div className="flex items-center gap-1.5 overflow-x-auto shrink-0 py-0.5">
+				{/* Center: Interactive Hotkey Badges (Desktop) and Touch Guide (Mobile) */}
+				<div className="md:hidden flex items-center text-[10px] text-slate-400 font-medium truncate px-1">
+					<span>1 палец: срезы · 2 пальца: зум</span>
+				</div>
+
+				<div className="hidden md:flex items-center gap-1.5 overflow-x-auto shrink-0 py-0.5">
 					<span
 						className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
 						title="Прокрутка срезов активного окна (шаг 0.2 мм). Быстро: PgUp/PgDn"
@@ -96,7 +100,7 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 					</span>
 
 					<span
-						className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
+						className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
 						title="Вращение осей КЛКТ с зажатым Shift или перетаскиванием маркеров"
 					>
 						<strong className="text-cyan-400">Shift+ЛКМ</strong>

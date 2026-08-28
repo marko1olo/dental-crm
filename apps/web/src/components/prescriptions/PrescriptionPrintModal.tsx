@@ -595,8 +595,8 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									</span>
 								)}
 							</div>
-							<p className="text-xs text-[var(--muted)] line-clamp-1">
-								{patientName} · Карта: {patientCard} · Диагноз: {diary?.diagnosisIcd10 || "K02.1"}
+							<p className="text-xs text-[var(--muted)] whitespace-normal break-words mt-0.5">
+								<span>{patientName}</span> · <span>Карта: {patientCard}</span> · <span>Диагноз: {diary?.diagnosisIcd10 || "K02.1"}</span>
 							</p>
 						</div>
 					</div>
@@ -773,18 +773,18 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						{/* Search & Category Filter */}
 						<div className="flex flex-col gap-2">
 							<div className="relative">
-								<Search className="w-4 h-4 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+								<Search className="w-4 h-4 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
 								<input
 									type="text"
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
 									placeholder="Поиск по торговому названию, МНН или латинскому названию..."
-									className="w-full min-h-[44px] pl-9 pr-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-colors"
+									className="w-full min-h-[44px] pl-10 pr-3 py-2 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-colors"
 								/>
 							</div>
 
 							{activeForm === "107-1u" && (
-								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 [scrollbar-width:none]">
 									{[
 										{ id: "all", label: "Все" },
 										{ id: "nsaid", label: "НПВС" },
