@@ -275,7 +275,7 @@ describe("Statutory Acts Generation (0504230, M-11, TORG-16, CSV)", () => {
 				unitCostKopecks: 135000,
 				totalCostKopecks: 40500,
 				isMandatory: true,
-				requiresLotTracking: true,
+				requiresLotTracking: false,
 				requiresSerialNumber: false,
 			},
 		],

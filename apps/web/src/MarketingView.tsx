@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { buildReviewReplyDraft } from "./components/marketing/reviewReplyDraft";
+import { MarketingRomiTable } from "./components/marketing/MarketingRomiTable";
 import { RecallListPanel } from "./components/patients/RecallListPanel";
 import {
 	safeLocalStorageGetItem,
@@ -308,6 +309,9 @@ export function MarketingView({
 				</h2>
 				<span className="status-pill status-confirmed">активен</span>
 			</div>
+
+			{/* OWNER ROMI MARKETING TABLE */}
+			<MarketingRomiTable />
 
 			{/* STATS STRIP */}
 			<section className="marketing-stats-strip" aria-label="Рейтинги клиники">

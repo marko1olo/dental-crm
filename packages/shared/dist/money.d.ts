@@ -6,3 +6,4 @@ export declare const nonNegativeMoneyRubSchema: z.ZodEffects<z.ZodEffects<z.ZodN
  * Форматирует целые копейки в строку рублей с двумя знаками ("150.00").
  */
 export declare function formatKopecksToRubles(kopecks: number): string;
+export * from "./utils/money.js";

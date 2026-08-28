@@ -259,3 +259,157 @@ export function categorizeInventoryExpiry(expirationDate, referenceDate = new Da
     }
     return { status: "valid", daysRemaining: diffDays };
 }
+/**
+ * Determines whether strict lot/batch tracking is required by clinical regulations.
+ *
+ * MANDATE (Wave 11):
+ * General consumables (composites, adhesives, etching gels, cotton rolls, gloves, masks,
+ * saliva ejectors, polishing discs, paper points, gutta percha, etc.) are deducted via
+ * direct transparent FIFO WITHOUT requiring manual syringe scanning or blocking prompts.
+ *
+ * Strict lot/batch tracking remains MANDATORY ONLY for:
+ * 1. Anesthesia (carpules: Articaine / Ultracain / Septanest / Scandonest / Ubistesin)
+ * 2. Implants (titanium dental implants, healing abutments, cover screws)
+ * 3. Bone graft & barrier membrane materials (Geistlich Bio-Oss, Bio-Gide, osteoplasty)
+ */
+export function isStrictLotTrackingRequired(item) {
+    const cat = (item.category ?? "").trim().toLowerCase();
+    const name = (item.nameRu ?? "").trim().toLowerCase();
+    const sku = (item.sku ?? "").trim().toLowerCase();
+    const id = (item.id ?? "").trim().toLowerCase();
+    // 1. Anesthesia (Articaine carpules)
+    if (cat === "anesthesia" ||
+        cat === "анестезия" ||
+        cat === "carpule" ||
+        cat === "карпула" ||
+        id.includes("articaine") ||
+        id.includes("ultracain") ||
+        id.includes("septanest") ||
+        id.includes("scandonest") ||
+        id.includes("ubistesin") ||
+        name.includes("ультракаин") ||
+        name.includes("артикаин") ||
+        name.includes("септанест") ||
+        name.includes("скандонест") ||
+        name.includes("убистезин") ||
+        name.includes("карпул")) {
+        // Ignore needles and topical gels (general consumables)
+        if (id.includes("needle") ||
+            id.includes("gel") ||
+            name.includes("игла") ||
+            name.includes("аппликацион") ||
+            name.includes("топикал")) {
+            return false;
+        }
+        return true;
+    }
+    // 2. Implants & surgical components
+    if (cat === "implant" ||
+        cat === "имплантат" ||
+        cat === "имплантация" ||
+        id.includes("implant") ||
+        id.includes("abutment") ||
+        name.includes("имплантат") ||
+        name.includes("формирователь десны") ||
+        name.includes("заглушка винта")) {
+        return true;
+    }
+    // 3. Bone graft & barrier membranes (Osteoplasty)
+    if (id.includes("bio_oss") ||
+        id.includes("bio_gide") ||
+        name.includes("bio-oss") ||
+        name.includes("bio-gide") ||
+        name.includes("костнозамещающ") ||
+        name.includes("костный графт") ||
+        name.includes("барьерная мембрана") ||
+        name.includes("остеопластик")) {
+        return true;
+    }
+    // All other consumables (composites, gels, rolls, gloves, etc.) -> Direct FIFO
+    return false;
+}
+/**
+ * Determines whether Честный ЗНАК / MDLP serialized tracking (GS1 DataMatrix / UDI)
+ * is required for this material.
+ *
+ * Applicable strictly to Anesthesia carpules, Titanium Implants, and Bone/Membrane Grafts.
+ */
+export function isChestnyZnakMdlpRequired(item) {
+    const cat = (item.category ?? "").trim().toLowerCase();
+    const name = (item.nameRu ?? "").trim().toLowerCase();
+    const id = (item.id ?? "").trim().toLowerCase();
+    // 1. Titanium Implants (UDI Serial Number)
+    if (cat === "implant" ||
+        id.includes("implant") ||
+        name.includes("имплантат")) {
+        return true;
+    }
+    // 2. Bone graft & collagen membranes (Bio-Oss / Bio-Gide)
+    if (id.includes("bio_oss") ||
+        id.includes("bio_gide") ||
+        name.includes("bio-oss") ||
+        name.includes("bio-gide") ||
+        name.includes("костнозамещающ")) {
+        return true;
+    }
+    // 3. Anesthesia carpules with MDLP DataMatrix tracking
+    if ((cat === "anesthesia" ||
+        name.includes("ультракаин") ||
+        name.includes("артикаин")) &&
+        !id.includes("needle") &&
+        !id.includes("gel") &&
+        !name.includes("игла") &&
+        !name.includes("топикал")) {
+        return true;
+    }
+    return false;
+}
+/**
+ * Deterministic FIFO (First-In, First-Out) stock deduction engine.
+ *
+ * Sorts available batches by receipt date, manufacture date, or expiration date
+ * and deducts required quantities without requiring manual serial scanning.
+ */
+export function deductBatchStockFifo(batches, requiredQuantity) {
+    if (!Number.isFinite(requiredQuantity) || requiredQuantity <= 0) {
+        return {
+            deductions: [],
+            totalDeductedQuantity: 0,
+            remainingQuantityNeeded: 0,
+            fullyCovered: true,
+            totalCostKopecks: 0,
+        };
+    }
+    // Sort batches chronologically (earliest receipt / manufacture / expiration first)
+    const sortedBatches = [...batches].filter((b) => b.quantityAvailable > 0).sort((a, b) => {
+        const dateA = a.receiptDate || a.manufactureDate || a.expirationDate || "9999-99-99";
+        const dateB = b.receiptDate || b.manufactureDate || b.expirationDate || "9999-99-99";
+        return dateA.localeCompare(dateB);
+    });
+    const deductions = [];
+    let remaining = requiredQuantity;
+    let totalCostKopecks = 0;
+    for (const batch of sortedBatches) {
+        if (remaining <= 0)
+            break;
+        const toDeduct = Math.min(batch.quantityAvailable, remaining);
+        const unitCost = batch.unitCostKopecks ?? 0;
+        const lineCost = Math.round(unitCost * toDeduct);
+        deductions.push({
+            batch,
+            deductedQuantity: Number(toDeduct.toFixed(4)),
+            costKopecks: lineCost,
+        });
+        totalCostKopecks += lineCost;
+        remaining -= toDeduct;
+    }
+    const totalDeducted = Number((requiredQuantity - Math.max(0, remaining)).toFixed(4));
+    const remainingNeeded = Number(Math.max(0, remaining).toFixed(4));
+    return {
+        deductions,
+        totalDeductedQuantity: totalDeducted,
+        remainingQuantityNeeded: remainingNeeded,
+        fullyCovered: remainingNeeded === 0,
+        totalCostKopecks,
+    };
+}

@@ -28,6 +28,7 @@ import {
 	MemoryCrdtStorageDriver,
 	type OdontogramToothState,
 	type SoapMedicalDiaryRecord,
+	type SyncMutationEnvelope,
 	type SyncPushBatchRequest,
 	type SyncPushBatchResponse,
 } from "../crdtSyncEngine.js";
@@ -529,7 +530,7 @@ describe("CRDT Sync Engine: Outbox Queue & Push Batch Idempotency", () => {
 				duplicateCount: 0,
 				mergedCount: 0,
 				rejectedCount: 0,
-				results: request.mutations.map((m) => ({
+				results: request.mutations.map((m: SyncMutationEnvelope) => ({
 					mutationId: m.mutationId,
 					idempotencyKey: m.idempotencyKey,
 					status: "applied",

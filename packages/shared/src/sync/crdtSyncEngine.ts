@@ -50,7 +50,18 @@ import type {
 	VectorClock,
 } from "./types.js";
 
-export type { OdontogramToothState };
+export type {
+	FieldConflictDetail,
+	MutationVector,
+	OdontogramToothState,
+	SyncMutationAction,
+	SyncMutationEntityKind,
+	SyncMutationEnvelope,
+	SyncPushBatchRequest,
+	SyncPushBatchResponse,
+	SyncTierMode,
+	VectorClock,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Pure Mathematical Lamport Clock Engine
@@ -1363,7 +1374,7 @@ export class CrdtSyncEngine {
 	 * Saves or updates a SOAP Medical Diary record (Form 043/u) with CRDT 3-way merge.
 	 */
 	public async saveSoapDiaryOffline(
-		diary: SoapMedicalDiaryRecord & { [key: string]: unknown },
+		diary: SoapMedicalDiaryRecord,
 		authorId?: string | undefined,
 	): Promise<CrdtOutboxQueueItem> {
 		const nowMs = getAdjustedNowMs();
@@ -1374,7 +1385,7 @@ export class CrdtSyncEngine {
 		const existing = await this.storage.loadEntity<Record<string, unknown>>("visit_diary", diary.id);
 		const resolved = resolveForm043DiaryCrdt({
 			existingDiary: existing ? existing.data : null,
-			incomingDiary: diary as Record<string, unknown>,
+			incomingDiary: diary as unknown as Record<string, unknown>,
 			existingClock: this.vectorClock,
 			incomingClock: this.vectorClock,
 			existingUpdatedAt: existing?.data?.updatedAt as string | undefined,

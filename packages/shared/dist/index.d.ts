@@ -26,6 +26,7 @@ export * from "./tasks/index.js";
 export * from "./patients/index.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";
+export * from "./marketing/index.js";
 export declare function isHttpUrl(value: string): boolean;
 export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
@@ -4200,7 +4201,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     sourceText: string;
     normalizedTitle: string;
     treatmentKind: string;
-    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
     restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
@@ -4221,7 +4222,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     sourceText: string;
     normalizedTitle: string;
     treatmentKind: string;
-    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+    materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
     restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
@@ -4248,7 +4249,7 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     minPriceRub: number | null;
     maxPriceRub: number | null;
     averagePriceRub: number | null;
-    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
+    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
     brands: string[];
 }, {
     count: number;
@@ -4258,7 +4259,7 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     minPriceRub: number | null;
     maxPriceRub: number | null;
     averagePriceRub: number | null;
-    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
+    materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
     brands: string[];
 }>;
 export type DentalPricelistCategorySummary = z.infer<typeof dentalPricelistCategorySummarySchema>;
@@ -4344,7 +4345,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
         restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
@@ -4365,7 +4366,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
         restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
@@ -4391,7 +4392,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
         brands: string[];
     }, {
         count: number;
@@ -4401,7 +4402,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
         brands: string[];
     }>, "many">;
     warnings: z.ZodArray<z.ZodString, "many">;
@@ -4443,7 +4444,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
         restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
@@ -4459,7 +4460,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
         brands: string[];
     }[];
     generatedAt: string;
@@ -4491,7 +4492,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         sourceText: string;
         normalizedTitle: string;
         treatmentKind: string;
-        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab";
+        materialKind: "composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab";
         restorationType: "implant" | "none" | "unknown" | "veneer" | "filling" | "crown" | "inlay" | "whitening" | "bridge" | "denture" | "sealant" | "direct_restoration" | "onlay" | "overlay" | "implant_crown" | "temporary_crown" | "post_core" | "ortho_appliance" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
@@ -4507,7 +4508,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         minPriceRub: number | null;
         maxPriceRub: number | null;
         averagePriceRub: number | null;
-        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "aligner" | "bracket" | "fluoride" | "lab")[];
+        materialKinds: ("composite" | "other" | "anesthetic" | "bone_graft" | "membrane" | "unknown" | "glass_ionomer" | "abutment" | "whitening" | "imaging" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "aligner" | "bracket" | "fluoride" | "lab")[];
         brands: string[];
     }[];
     generatedAt: string;

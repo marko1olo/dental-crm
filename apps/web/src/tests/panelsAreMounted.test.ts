@@ -169,6 +169,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Страница рабочего стола главного врача для проведения экспертизы качества медицинской помощи (ЭКМП), пакетного подписания УКЭП и централизованной передачи СЭМД в ЕГИСЗ (РЭМД).",
 	},
 	/*
+	 * OneCCommerceMlModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
+	 * через точку входа #clinical-modals-studio.
+	 */
+	/*
 	 * CashShiftClosingModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
 	 * через точку входа #clinical-modals-studio?modal=cash_shift_closing.
 	 */

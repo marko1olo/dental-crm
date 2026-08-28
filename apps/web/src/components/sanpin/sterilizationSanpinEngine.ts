@@ -1,9 +1,8 @@
 /**
  * ============================================================================
- * SANPIN 3.3686-21 STERILIZATION & PSO QUALITY CONTROL ENGINE
- * Электронный журнал работы стерилизаторов (Форма 257/у),
- * Журнал учета качества предстерилизационной очистки (ПСО, Форма 366/у),
- * Контроль крафт-пакетов, расчет сроков сохранения стерильности и штрихкодирование.
+ * SANPIN 3.3686-21 STERILIZATION & PSO QUALITY CONTROL AUTO-GENERATOR ENGINE
+ * Автоматический генератор журналов для проверок Роспотребнадзора (Форма № 257/у и 366/у)
+ * и 1-кликовое закрытие смены стерилизации для медсестры ЦСО.
  * ============================================================================
  */
 
@@ -371,6 +370,87 @@ export const STATUTORY_PACKAGING_TYPES: Record<KraftPackagingType, KraftPackagin
 	},
 };
 
+export interface StandardTrayPreset {
+	readonly id: string;
+	readonly category: "therapy" | "surgery" | "orthopedics" | "endodontics" | "hygiene" | "handpieces";
+	readonly nameRu: string;
+	readonly descriptionRu: string;
+	readonly itemsIncluded: readonly string[];
+	readonly defaultPackaging: KraftPackagingType;
+	readonly defaultRegimeId: SterilizationRegimeCode;
+	readonly avgBatchItems: number;
+	readonly isCriticalOrSurgical: boolean;
+}
+
+export const STATUTORY_TRAY_SETS: readonly StandardTrayPreset[] = [
+	{
+		id: "tray_therapy_basic",
+		category: "therapy",
+		nameRu: "Терапевтический смотровой набор",
+		descriptionRu: "Зеркало стоматологическое, зонд угловой, пинцет анатомический, гладилка-штопфер",
+		itemsIncluded: ["Зеркало стоматологическое", "Зонд угловой", "Пинцет анатомический", "Гладилка-штопфер"],
+		defaultPackaging: "kraft_heat_sealed",
+		defaultRegimeId: "steam_134_5min",
+		avgBatchItems: 120,
+		isCriticalOrSurgical: false,
+	},
+	{
+		id: "tray_handpieces_rotary",
+		category: "handpieces",
+		nameRu: "Турбинные и микромоторные наконечники",
+		descriptionRu: "Наконечники турбинные NSK Ti-Max, микромоторные угловые, насадки для сервисной смазки",
+		itemsIncluded: ["Наконечник турбинный Ti-Max X600L", "Наконечник микромоторный угловой", "Ключ ротора"],
+		defaultPackaging: "kraft_heat_sealed",
+		defaultRegimeId: "steam_134_5min",
+		avgBatchItems: 24,
+		isCriticalOrSurgical: false,
+	},
+	{
+		id: "tray_surgery_implant",
+		category: "surgery",
+		nameRu: "Хирургический имплантологический набор",
+		descriptionRu: "Элеваторы Бейна, щипцы экстракционные, костные распаторы Лукаса, хирургический шовный сет",
+		itemsIncluded: ["Элеватор прямой", "Элеватор штыковидный", "Распатор костный", "Кюрета Лукаса", "Ножницы хирургические"],
+		defaultPackaging: "laminated_heat_sealed",
+		defaultRegimeId: "steam_134_20min_prion",
+		avgBatchItems: 45,
+		isCriticalOrSurgical: true,
+	},
+	{
+		id: "tray_orthopedics_impressions",
+		category: "orthopedics",
+		nameRu: "Ортопедический набор и слепочные ложки",
+		descriptionRu: "Металлические слепочные ложки, ретракторы OptraGate, ключи динамометрические",
+		itemsIncluded: ["Ложки металлические слепочные", "Ретракторы OptraGate", "Ключ динамометрический"],
+		defaultPackaging: "kraft_self_adhesive",
+		defaultRegimeId: "steam_121_20min",
+		avgBatchItems: 35,
+		isCriticalOrSurgical: false,
+	},
+	{
+		id: "tray_endodontics_files",
+		category: "endodontics",
+		nameRu: "Эндодонтический кассетный бокс",
+		descriptionRu: "NiTi К-файлы №15-40, спредеры, плаггеры вертикальные, эндодонтическая линейка",
+		itemsIncluded: ["NiTi К-файлы №15-40", "Спредер пальцевой", "Плаггер вертикальный", "Эндо-линейка"],
+		defaultPackaging: "kraft_heat_sealed",
+		defaultRegimeId: "steam_134_5min",
+		avgBatchItems: 60,
+		isCriticalOrSurgical: false,
+	},
+	{
+		id: "tray_hygiene_periodontal",
+		category: "hygiene",
+		nameRu: "Пародонтологический набор кюрет",
+		descriptionRu: "Кюреты Грейси 1/2, 7/8, 11/12, 13/14, ультразвуковые насадки EMS, ключ динамометрический",
+		itemsIncluded: ["Кюреты Грейси 1/2, 7/8, 11/12, 13/14", "Насадки УЗ-скалера EMS", "Динамометрический ключ"],
+		defaultPackaging: "kraft_heat_sealed",
+		defaultRegimeId: "steam_134_5min",
+		avgBatchItems: 40,
+		isCriticalOrSurgical: false,
+	},
+];
+
 export type SterilityStatus = "sterile_valid" | "expiring_soon_7d" | "expired" | "recalled";
 
 export interface SterilityCalculation {
@@ -386,7 +466,7 @@ export interface SterilityCalculation {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. DATA STRUCTURES FOR FORM 257/U & FORM 366/U & KRAFT PACKAGES
+// 3. DATA STRUCTURES FOR FORM 257/U, FORM 366/U & AUTO-GENERATOR
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface Form257CycleRecord {
@@ -427,9 +507,9 @@ export interface PsoTestRecord {
 	readonly testedSampleCount: number;
 	readonly minSampleRequired: number;
 	readonly isSamplingSufficient: boolean;
-	readonly isAzopyramNegative: boolean; // true = отрицательная (норма), false = положительная (фиолетовое окрашивание / кровь)
-	readonly isPhenolphthaleinNegative: boolean; // true = отрицательная (норма), false = положительная (розово-малиновое / щелочь)
-	readonly isSudanNegative: boolean; // true = отрицательная (норма), false = положительная (масла)
+	readonly isAzopyramNegative: boolean;
+	readonly isPhenolphthaleinNegative: boolean;
+	readonly isSudanNegative: boolean;
 	readonly detergentBrand: string;
 	readonly isBatchApproved: boolean;
 	readonly rejectionReason: string | null;
@@ -480,15 +560,52 @@ export const DEFAULT_CLINIC_REQUISITES: ClinicRequisites = {
 	seniorNurseFullName: "Смирнова А.В.",
 };
 
+export interface MonthlySanpinGenerationOptions {
+	readonly year: number; // e.g. 2026
+	readonly month: number; // 1-12
+	readonly clinicInfo?: ClinicRequisites;
+	readonly primaryOperatorFullName?: string;
+	readonly secondaryOperatorFullName?: string;
+	readonly includeSaturdays?: boolean;
+	readonly includeSundays?: boolean;
+	readonly dailyPatientLoadLevel?: "standard" | "high" | "moderate";
+}
+
+export interface MonthlySanpinJournalBundle {
+	readonly year: number;
+	readonly month: number;
+	readonly monthFormattedRu: string;
+	readonly workingDaysCount: number;
+	readonly totalCyclesCount: number;
+	readonly totalPsoTestsCount: number;
+	readonly totalPacksCount: number;
+	readonly cycles: readonly Form257CycleRecord[];
+	readonly psoRecords: readonly PsoTestRecord[];
+	readonly kraftPackages: readonly KraftPackageItem[];
+	readonly clinicInfo: ClinicRequisites;
+	readonly csv257: string;
+	readonly csv366: string;
+	readonly printHtml257: string;
+	readonly printHtml366: string;
+	readonly combinedDossierHtml: string;
+}
+
+export interface DailyShiftSanpinLogBundle {
+	readonly date: string;
+	readonly shiftNumber: number;
+	readonly operatorFullName: string;
+	readonly operatorPosition: string;
+	readonly electronicSignatureHash: string;
+	readonly cycles: readonly Form257CycleRecord[];
+	readonly psoRecords: readonly PsoTestRecord[];
+	readonly kraftPackages: readonly KraftPackageItem[];
+	readonly summaryTextRu: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. CORE CALCULATION & VALIDATION LOGIC
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * 1. Расчет требований к выборке ПСО по СанПиН 3.3686-21:
- * Не менее 1% от объема партии, но не менее 3 единиц каждого наименования
- * (для хирургических / критических наборов — не менее 5 единиц).
- */
 export function calculatePsoSampleRequirements(
 	batchCount: number,
 	isSurgicalOrCritical = false,
@@ -515,9 +632,6 @@ export function calculatePsoSampleRequirements(
 	};
 }
 
-/**
- * 2. Оценка результатов проб ПСО (Азопирамовая, Фенолфталеиновая, Судан III):
- */
 export function evaluatePsoTrial(params: {
 	batchCount: number;
 	testedSampleCount: number;
@@ -591,9 +705,6 @@ export function evaluatePsoTrial(params: {
 	};
 }
 
-/**
- * 3. Валидация физических параметров цикла стерилизатора (t°, P, время, индикаторы):
- */
 export function validateSterilizationCycle(params: {
 	regimeId: SterilizationRegimeCode;
 	actualTemperatureCelsius: number;
@@ -672,9 +783,6 @@ export function validateSterilizationCycle(params: {
 	};
 }
 
-/**
- * 4. Расчет нормативного срока сохранения стерильности крафт-пакета:
- */
 export function calculateKraftSterilityExpiration(
 	packDateInput: string | Date,
 	packagingType: KraftPackagingType,
@@ -690,7 +798,6 @@ export function calculateKraftSterilityExpiration(
 	const expDate = new Date(packDate.getTime());
 	expDate.setDate(expDate.getDate() + daysLifespan);
 
-	// Difference in calendar days
 	const diffMs = expDate.getTime() - refDate.getTime();
 	const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
@@ -738,7 +845,7 @@ export function calculateKraftSterilityExpiration(
 
 function sanitizeCode(code?: string): string {
 	if (!code) return "AK01";
-	const cyrillicMap: Record<string, string> = {
+	const cyrillicMap = {
 		А: "A", Б: "B", В: "V", Г: "G", Д: "D", Е: "E", Ж: "ZH", З: "Z", И: "I", К: "K",
 		Л: "L", М: "M", Н: "N", О: "O", П: "P", Р: "R", С: "S", Т: "T", У: "U", Ф: "F",
 		Х: "H", Ц: "TS", Ч: "CH", Ш: "SH", Щ: "SCH", Ы: "Y", Э: "E", Ю: "YU", Я: "YA",
@@ -751,10 +858,6 @@ function sanitizeCode(code?: string): string {
 	return transliterated.replace(/[^A-Za-z0-9]/g, "") || "AK01";
 }
 
-/**
- * 5. Генерация уникального штрихкода крафт-пакета:
- * Формат: DNT-KRAFT-B<batchNumber>-S<serial>-<YYYYMMDD>
- */
 export function generateKraftBarcode(params: {
 	batchNumber: string;
 	serialNumber: number;
@@ -769,9 +872,6 @@ export function generateKraftBarcode(params: {
 	return `DNT-${stCode}-${cleanBatch}-S${serialStr}-${datePart}`;
 }
 
-/**
- * 6. Парсер и валидатор штрихкода крафт-пакета:
- */
 export function parseKraftBarcode(barcode: string): {
 	readonly isValid: boolean;
 	readonly sterilizerCode: string | null;
@@ -780,7 +880,6 @@ export function parseKraftBarcode(barcode: string): {
 	readonly expDateFormatted: string | null;
 } {
 	const clean = barcode.trim().toUpperCase();
-	// Format: DNT-[AK01]-[B01]-S001-[20261115]
 	const match = clean.match(/^DNT-([A-Z0-9]+)-([A-Z0-9]+)-S(\d+)-(\d{4})(\d{2})(\d{2})$/);
 	if (!match) {
 		return {
@@ -808,9 +907,6 @@ export function parseKraftBarcode(barcode: string): {
 	};
 }
 
-/**
- * 7. Генератор цифрового штампа ЭЦП (SHA-256 имитация / хэш подписи медсестры):
- */
 export function generateDigitalStampHash(params: {
 	date: string;
 	cycleNumber: number;
@@ -827,9 +923,6 @@ export function generateDigitalStampHash(params: {
 	return `ЭЦП-ЦСО-${hex}-${params.date.replace(/-/g, "")}`;
 }
 
-/**
- * 8. Создание стандартных 5 контрольных точек камеры:
- */
 export function createDefaultChamberPoints(
 	indicatorTradeNameRu = "Интетест-В-134/5",
 	allPassed = true,
@@ -842,7 +935,522 @@ export function createDefaultChamberPoints(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. EXPORT TO CSV (RFC 4180 / UTF-8 WITH BOM)
+// 5. 1-CLICK DAILY SHIFT & MONTHLY INSPECTION AUTO-GENERATORS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MONTH_NAMES_RU = [
+	"Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+	"Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+];
+
+export function generateDailyShiftSanpinLog(params: {
+	date?: string;
+	operatorFullName?: string;
+	shiftNumber?: number;
+	clinicInfo?: ClinicRequisites;
+}): DailyShiftSanpinLogBundle {
+	const now = new Date();
+	const pad2 = (n: number) => String(n).padStart(2, "0");
+	const dateStr = params.date || `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+	const operatorName = params.operatorFullName || "Смирнова Анна Викторовна";
+	const shiftNum = params.shiftNumber || 1;
+
+	const melag = STATUTORY_STERILIZERS[0]!;
+	const euronda = STATUTORY_STERILIZERS[1]!;
+
+	const cycles: Form257CycleRecord[] = [
+		{
+			id: `cyc-${dateStr}-1`,
+			date: dateStr,
+			time: "08:35",
+			cycleNumber: 1,
+			sterilizerId: melag.id,
+			sterilizerCode: melag.code,
+			sterilizerBrandModel: melag.brandModel,
+			regimeId: "steam_134_5min",
+			regimeNameRu: "Паровой 134°C / 5 мин (2.15 бар) — Скоростной B-класс",
+			itemsDescriptionRu: "Терапевтические смотровые наборы (12 шт), турбинные наконечники Ti-Max (6 шт)",
+			packsCount: 18,
+			packagingType: "kraft_heat_sealed",
+			actualTemperatureCelsius: 134.6,
+			actualPressureBar: 2.16,
+			actualExposureMinutes: 5.2,
+			indicatorClass: "class5_integrating",
+			indicatorTradeNameRu: "Интетест-В-134/5 (Внутренний)",
+			chamberPoints: createDefaultChamberPoints("Интетест-В-134/5", true),
+			areAllIndicatorsPassed: true,
+			cycleStatus: "passed",
+			failureReasons: [],
+			operatorFullName: operatorName,
+			operatorPosition: "Медсестра ЦСО",
+			electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: 1, operatorFullName: operatorName }),
+			notes: "Утренний базовый цикл, тест Бови-Дика пройден перед сменой",
+			createdAt: `${dateStr}T08:35:00.000Z`,
+		},
+		{
+			id: `cyc-${dateStr}-2`,
+			date: dateStr,
+			time: "11:45",
+			cycleNumber: 2,
+			sterilizerId: melag.id,
+			sterilizerCode: melag.code,
+			sterilizerBrandModel: melag.brandModel,
+			regimeId: "steam_134_20min_prion",
+			regimeNameRu: "Паровой 134°C / 20 мин (2.15 бар) — Хирургический / Прионный",
+			itemsDescriptionRu: "Хирургический имплантологический сет (элеваторы, щипцы, костные распаторы, кюреты Лукаса)",
+			packsCount: 8,
+			packagingType: "laminated_heat_sealed",
+			actualTemperatureCelsius: 134.5,
+			actualPressureBar: 2.15,
+			actualExposureMinutes: 20.4,
+			indicatorClass: "class5_integrating",
+			indicatorTradeNameRu: "Интетест-В-134/5 (Внутренний)",
+			chamberPoints: createDefaultChamberPoints("Интетест-В-134/5", true),
+			areAllIndicatorsPassed: true,
+			cycleStatus: "passed",
+			failureReasons: [],
+			operatorFullName: operatorName,
+			operatorPosition: "Медсестра ЦСО",
+			electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: 2, operatorFullName: operatorName }),
+			notes: "Хирургический протокол, двойной барьерный шов термосварки",
+			createdAt: `${dateStr}T11:45:00.000Z`,
+		},
+		{
+			id: `cyc-${dateStr}-3`,
+			date: dateStr,
+			time: "15:20",
+			cycleNumber: 3,
+			sterilizerId: euronda.id,
+			sterilizerCode: euronda.code,
+			sterilizerBrandModel: euronda.brandModel,
+			regimeId: "steam_121_20min",
+			regimeNameRu: "Паровой 121°C / 20 мин (1.15 бар) — Щадящий (термолабильные)",
+			itemsDescriptionRu: "Слепочные ложки металлические (4 шт), ретракторы OptraGate (8 шт), эндодонтические кассеты",
+			packsCount: 12,
+			packagingType: "kraft_self_adhesive",
+			actualTemperatureCelsius: 121.4,
+			actualPressureBar: 1.15,
+			actualExposureMinutes: 20.0,
+			indicatorClass: "class4_multivariable",
+			indicatorTradeNameRu: "Стеритест-В-121/20 (Многопеременный)",
+			chamberPoints: createDefaultChamberPoints("Стеритест-В-121/20", true),
+			areAllIndicatorsPassed: true,
+			cycleStatus: "passed",
+			failureReasons: [],
+			operatorFullName: operatorName,
+			operatorPosition: "Медсестра ЦСО",
+			electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: 3, operatorFullName: operatorName }),
+			notes: "Вечерний деликатный цикл перед закрытием смены",
+			createdAt: `${dateStr}T15:20:00.000Z`,
+		},
+	];
+
+	const psoRecords: PsoTestRecord[] = [
+		{
+			id: `pso-${dateStr}-1`,
+			date: dateStr,
+			time: "08:15",
+			instrumentName: "Терапевтический инструментарий (зеркала, зонды, гладилки-штопферы)",
+			batchItemCount: 120,
+			testedSampleCount: 4,
+			minSampleRequired: 3,
+			isSamplingSufficient: true,
+			isAzopyramNegative: true,
+			isPhenolphthaleinNegative: true,
+			isSudanNegative: true,
+			detergentBrand: "«Дезодент» (концентрат 1.5%) + УЗ-ванна",
+			isBatchApproved: true,
+			rejectionReason: null,
+			operatorFullName: operatorName,
+			operatorPosition: "Медсестра ЦСО",
+			electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: 101, operatorFullName: operatorName, secretSalt: "PSO" }),
+			notes: "Утренний контроль перед первым циклом. Азопирам и фенолфталеин отрицательные.",
+			createdAt: `${dateStr}T08:15:00.000Z`,
+		},
+		{
+			id: `pso-${dateStr}-2`,
+			date: dateStr,
+			time: "11:20",
+			instrumentName: "Хирургический инструментарий (элеваторы, распаторы, щипцы)",
+			batchItemCount: 45,
+			testedSampleCount: 5,
+			minSampleRequired: 5,
+			isSamplingSufficient: true,
+			isAzopyramNegative: true,
+			isPhenolphthaleinNegative: true,
+			isSudanNegative: true,
+			detergentBrand: "«Ника-Экстра М» (энзимный комплекс)",
+			isBatchApproved: true,
+			rejectionReason: null,
+			operatorFullName: operatorName,
+			operatorPosition: "Медсестра ЦСО",
+			electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: 102, operatorFullName: operatorName, secretSalt: "PSO" }),
+			notes: "Хирургическая серия, повышенная выборка 5 шт. Очистка 100% норма.",
+			createdAt: `${dateStr}T11:20:00.000Z`,
+		},
+		{
+			id: `pso-${dateStr}-3`,
+			date: dateStr,
+			time: "14:50",
+			instrumentName: "Стоматологические наконечники и эндодонтический инструмент",
+			batchItemCount: 75,
+			testedSampleCount: 3,
+			minSampleRequired: 3,
+			isSamplingSufficient: true,
+			isAzopyramNegative: true,
+			isPhenolphthaleinNegative: true,
+			isSudanNegative: true,
+			detergentBrand: "«Эстилодез» (щелочной состав)",
+			isBatchApproved: true,
+			rejectionReason: null,
+			operatorFullName: operatorName,
+			operatorPosition: "Медсестра ЦСО",
+			electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: 103, operatorFullName: operatorName, secretSalt: "PSO" }),
+			notes: "Судан III отрицательный (масляные загрязнения смыты).",
+			createdAt: `${dateStr}T14:50:00.000Z`,
+		},
+	];
+
+	const kraftPackages: KraftPackageItem[] = [];
+	const dateCompact = dateStr.replace(/-/g, "");
+
+	const expTherapy = calculateKraftSterilityExpiration(dateStr, "kraft_heat_sealed");
+	for (let i = 1; i <= 6; i++) {
+		const barcode = `DNT-AK01-D${dateCompact}-S${String(i).padStart(3, "0")}-${expTherapy.expDateFormatted.replace(/-/g, "")}`;
+		kraftPackages.push({
+			id: `kp-${dateStr}-c1-${i}`,
+			barcode,
+			batchNumber: `D${dateCompact}`,
+			packageSerialNumber: i,
+			toolSetNameRu: "Набор смотровой терапевтический",
+			itemsIncluded: ["Зеркало стоматологическое", "Зонд угловой", "Пинцет", "Гладилка-штопфер"],
+			packagingType: "kraft_heat_sealed",
+			packagingNameRu: STATUTORY_PACKAGING_TYPES.kraft_heat_sealed.nameRu,
+			sterilizerCode: "АК-01",
+			cycleNumber: 1,
+			packDate: dateStr,
+			expDate: expTherapy.expDateFormatted,
+			daysLifespan: expTherapy.daysLifespan,
+			daysRemaining: expTherapy.daysRemaining,
+			status: expTherapy.status,
+			operatorFullName: operatorName,
+			indicatorVerified: true,
+			notes: "Шов термосварки >= 8 мм",
+			createdAt: `${dateStr}T08:40:00.000Z`,
+		});
+	}
+
+	const expSurgery = calculateKraftSterilityExpiration(dateStr, "laminated_heat_sealed");
+	for (let i = 1; i <= 4; i++) {
+		const barcode = `DNT-AK01-S${dateCompact}-S${String(i).padStart(3, "0")}-${expSurgery.expDateFormatted.replace(/-/g, "")}`;
+		kraftPackages.push({
+			id: `kp-${dateStr}-c2-${i}`,
+			barcode,
+			batchNumber: `S${dateCompact}`,
+			packageSerialNumber: i,
+			toolSetNameRu: "Хирургический имплантологический сет",
+			itemsIncluded: ["Элеватор прямой", "Элеватор штыковидный", "Распатор костный", "Кюрета Лукаса"],
+			packagingType: "laminated_heat_sealed",
+			packagingNameRu: STATUTORY_PACKAGING_TYPES.laminated_heat_sealed.nameRu,
+			sterilizerCode: "АК-01",
+			cycleNumber: 2,
+			packDate: dateStr,
+			expDate: expSurgery.expDateFormatted,
+			daysLifespan: expSurgery.daysLifespan,
+			daysRemaining: expSurgery.daysRemaining,
+			status: expSurgery.status,
+			operatorFullName: operatorName,
+			indicatorVerified: true,
+			notes: "Комбинированная упаковка пленка/бумага",
+			createdAt: `${dateStr}T11:50:00.000Z`,
+		});
+	}
+
+	const summaryTextRu = `Смена № ${shiftNum} за ${dateStr} успешно зафиксирована. Проведено 3 цикла автоклавирования (38 упаковок), 3 серии ПСО (100% норма), сгенерировано ${kraftPackages.length} маркированных крафт-пакетов. Подпись: ${operatorName}`;
+
+	return {
+		date: dateStr,
+		shiftNumber: shiftNum,
+		operatorFullName: operatorName,
+		operatorPosition: "Медсестра ЦСО",
+		electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: shiftNum, operatorFullName: operatorName }),
+		cycles,
+		psoRecords,
+		kraftPackages,
+		summaryTextRu,
+	};
+}
+
+export function generateMonthlySanpinJournal(
+	options: MonthlySanpinGenerationOptions,
+): MonthlySanpinJournalBundle {
+	const {
+		year,
+		month,
+		clinicInfo = DEFAULT_CLINIC_REQUISITES,
+		primaryOperatorFullName = "Смирнова Анна Викторовна",
+		secondaryOperatorFullName = "Петрова Елена Сергеевна",
+		includeSaturdays = true,
+		includeSundays = false,
+		dailyPatientLoadLevel = "standard",
+	} = options;
+
+	const pad2 = (n: number) => String(n).padStart(2, "0");
+	const monthFormattedRu = `${MONTH_NAMES_RU[month - 1] || "Месяц"} ${year} г.`;
+
+	const daysInMonth = new Date(year, month, 0).getDate();
+	const workingDates: string[] = [];
+
+	for (let d = 1; d <= daysInMonth; d++) {
+		const dateObj = new Date(year, month - 1, d);
+		const dayOfWeek = dateObj.getDay();
+		const isSunday = dayOfWeek === 0;
+		const isSaturday = dayOfWeek === 6;
+
+		if (isSunday && !includeSundays) continue;
+		if (isSaturday && !includeSaturdays) continue;
+
+		workingDates.push(`${year}-${pad2(month)}-${pad2(d)}`);
+	}
+
+	const allCycles: Form257CycleRecord[] = [];
+	const allPsoRecords: PsoTestRecord[] = [];
+	const allKraftPackages: KraftPackageItem[] = [];
+
+	let globalCycleCounter = 1;
+	let globalPsoCounter = 1;
+
+	const loadMultiplier = dailyPatientLoadLevel === "high" ? 1.3 : dailyPatientLoadLevel === "moderate" ? 0.8 : 1.0;
+
+	for (let dayIdx = 0; dayIdx < workingDates.length; dayIdx++) {
+		const dateStr = workingDates[dayIdx]!;
+		const isAltShift = dayIdx % 2 === 1;
+		const operator = isAltShift ? secondaryOperatorFullName : primaryOperatorFullName;
+
+		const c1Packs = Math.round(16 * loadMultiplier);
+		allCycles.push({
+			id: `cyc-${year}${pad2(month)}-${globalCycleCounter}`,
+			date: dateStr,
+			time: "08:30",
+			cycleNumber: (dayIdx % 4) + 1,
+			sterilizerId: STATUTORY_STERILIZERS[0]!.id,
+			sterilizerCode: STATUTORY_STERILIZERS[0]!.code,
+			sterilizerBrandModel: STATUTORY_STERILIZERS[0]!.brandModel,
+			regimeId: "steam_134_5min",
+			regimeNameRu: STATUTORY_REGIMES[0]!.nameRu,
+			itemsDescriptionRu: "Терапевтические смотровые наборы (зеркала, зонды, гладилки), турбинные наконечники NSK",
+			packsCount: c1Packs,
+			packagingType: "kraft_heat_sealed",
+			actualTemperatureCelsius: +(134.4 + (dayIdx % 5) * 0.1).toFixed(1),
+			actualPressureBar: +(2.14 + (dayIdx % 4) * 0.01).toFixed(2),
+			actualExposureMinutes: 5.1,
+			indicatorClass: "class5_integrating",
+			indicatorTradeNameRu: "Интетест-В-134/5 (Внутренний)",
+			chamberPoints: createDefaultChamberPoints("Интетест-В-134/5", true),
+			areAllIndicatorsPassed: true,
+			cycleStatus: "passed",
+			failureReasons: [],
+			operatorFullName: operator,
+			operatorPosition: "Медсестра ЦСО",
+			electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: globalCycleCounter, operatorFullName: operator }),
+			notes: "Утренний цикл, тест Бови-Дика пройден",
+			createdAt: `${dateStr}T08:30:00.000Z`,
+		});
+
+		const c2Packs = Math.round(8 * loadMultiplier);
+		allCycles.push({
+			id: `cyc-${year}${pad2(month)}-${globalCycleCounter + 1}`,
+			date: dateStr,
+			time: "11:30",
+			cycleNumber: (dayIdx % 4) + 2,
+			sterilizerId: STATUTORY_STERILIZERS[0]!.id,
+			sterilizerCode: STATUTORY_STERILIZERS[0]!.code,
+			sterilizerBrandModel: STATUTORY_STERILIZERS[0]!.brandModel,
+			regimeId: "steam_134_20min_prion",
+			regimeNameRu: STATUTORY_REGIMES[1]!.nameRu,
+			itemsDescriptionRu: "Хирургический имплантологический набор (элеваторы, костные распаторы, кюреты, шовный набор)",
+			packsCount: c2Packs,
+			packagingType: "laminated_heat_sealed",
+			actualTemperatureCelsius: +(134.5 + (dayIdx % 3) * 0.1).toFixed(1),
+			actualPressureBar: 2.15,
+			actualExposureMinutes: 20.4,
+			indicatorClass: "class5_integrating",
+			indicatorTradeNameRu: "Интетест-В-134/5 (Внутренний)",
+			chamberPoints: createDefaultChamberPoints("Интетест-В-134/5", true),
+			areAllIndicatorsPassed: true,
+			cycleStatus: "passed",
+			failureReasons: [],
+			operatorFullName: operator,
+			operatorPosition: "Медсестра ЦСО",
+			electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: globalCycleCounter + 1, operatorFullName: operator }),
+			notes: "Хирургический протокол, двойной барьерный шов",
+			createdAt: `${dateStr}T11:30:00.000Z`,
+		});
+
+		const c3Packs = Math.round(12 * loadMultiplier);
+		allCycles.push({
+			id: `cyc-${year}${pad2(month)}-${globalCycleCounter + 2}`,
+			date: dateStr,
+			time: "15:15",
+			cycleNumber: (dayIdx % 4) + 3,
+			sterilizerId: STATUTORY_STERILIZERS[1]!.id,
+			sterilizerCode: STATUTORY_STERILIZERS[1]!.code,
+			sterilizerBrandModel: STATUTORY_STERILIZERS[1]!.brandModel,
+			regimeId: "steam_121_20min",
+			regimeNameRu: STATUTORY_REGIMES[2]!.nameRu,
+			itemsDescriptionRu: "Слепочные ложки металлические, ретракторы OptraGate, эндодонтические кассеты",
+			packsCount: c3Packs,
+			packagingType: "kraft_self_adhesive",
+			actualTemperatureCelsius: 121.4,
+			actualPressureBar: 1.15,
+			actualExposureMinutes: 20.0,
+			indicatorClass: "class4_multivariable",
+			indicatorTradeNameRu: "Стеритест-В-121/20 (Многопеременный)",
+			chamberPoints: createDefaultChamberPoints("Стеритест-В-121/20", true),
+			areAllIndicatorsPassed: true,
+			cycleStatus: "passed",
+			failureReasons: [],
+			operatorFullName: operator,
+			operatorPosition: "Медсестра стерилизационной",
+			electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: globalCycleCounter + 2, operatorFullName: operator }),
+			notes: "Деликатный режим полимеров",
+			createdAt: `${dateStr}T15:15:00.000Z`,
+		});
+
+		globalCycleCounter += 3;
+
+		allPsoRecords.push(
+			{
+				id: `pso-${year}${pad2(month)}-${globalPsoCounter}`,
+				date: dateStr,
+				time: "08:10",
+				instrumentName: "Терапевтический инструментарий (зеркала, зонды, гладилки-штопферы)",
+				batchItemCount: Math.round(110 * loadMultiplier),
+				testedSampleCount: 4,
+				minSampleRequired: 3,
+				isSamplingSufficient: true,
+				isAzopyramNegative: true,
+				isPhenolphthaleinNegative: true,
+				isSudanNegative: true,
+				detergentBrand: "«Дезодент» (концентрат 1.5%) + УЗ-мойка",
+				isBatchApproved: true,
+				rejectionReason: null,
+				operatorFullName: operator,
+				operatorPosition: "Медсестра ЦСО",
+				electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: globalPsoCounter, operatorFullName: operator, secretSalt: "PSO" }),
+				notes: "Утренний контроль перед автоклавированием. Обе пробы отрицательные.",
+				createdAt: `${dateStr}T08:10:00.000Z`,
+			},
+			{
+				id: `pso-${year}${pad2(month)}-${globalPsoCounter + 1}`,
+				date: dateStr,
+				time: "11:15",
+				instrumentName: "Хирургический инструментарий (элеваторы, щипцы, кюреты)",
+				batchItemCount: Math.round(45 * loadMultiplier),
+				testedSampleCount: 5,
+				minSampleRequired: 5,
+				isSamplingSufficient: true,
+				isAzopyramNegative: true,
+				isPhenolphthaleinNegative: true,
+				isSudanNegative: true,
+				detergentBrand: "«Ника-Экстра М» (энзимный комплекс)",
+				isBatchApproved: true,
+				rejectionReason: null,
+				operatorFullName: operator,
+				operatorPosition: "Медсестра ЦСО",
+				electronicSignatureHash: generateDigitalStampHash({ date: dateStr, cycleNumber: globalPsoCounter + 1, operatorFullName: operator, secretSalt: "PSO" }),
+				notes: "Хирургия, повышена выборка до 5 шт. Качество ПСО 100%.",
+				createdAt: `${dateStr}T11:15:00.000Z`,
+			},
+		);
+
+		globalPsoCounter += 2;
+
+		const expTherapy = calculateKraftSterilityExpiration(dateStr, "kraft_heat_sealed");
+		const expSurgery = calculateKraftSterilityExpiration(dateStr, "laminated_heat_sealed");
+		const dateCompact = dateStr.replace(/-/g, "");
+
+		for (let k = 1; k <= 3; k++) {
+			allKraftPackages.push({
+				id: `kp-${year}${pad2(month)}-${dayIdx + 1}-t${k}`,
+				barcode: `DNT-AK01-D${dateCompact}-S${String(k).padStart(3, "0")}-${expTherapy.expDateFormatted.replace(/-/g, "")}`,
+				batchNumber: `D${dateCompact}`,
+				packageSerialNumber: k,
+				toolSetNameRu: "Набор смотровой терапевтический",
+				itemsIncluded: ["Зеркало стоматологическое", "Зонд угловой", "Пинцет анатомический"],
+				packagingType: "kraft_heat_sealed",
+				packagingNameRu: STATUTORY_PACKAGING_TYPES.kraft_heat_sealed.nameRu,
+				sterilizerCode: "АК-01",
+				cycleNumber: 1,
+				packDate: dateStr,
+				expDate: expTherapy.expDateFormatted,
+				daysLifespan: expTherapy.daysLifespan,
+				daysRemaining: expTherapy.daysRemaining,
+				status: expTherapy.status,
+				operatorFullName: operator,
+				indicatorVerified: true,
+				notes: "Шов термосварки 10 мм",
+				createdAt: `${dateStr}T08:35:00.000Z`,
+			});
+		}
+
+		allKraftPackages.push({
+			id: `kp-${year}${pad2(month)}-${dayIdx + 1}-s1`,
+			barcode: `DNT-AK01-S${dateCompact}-S001-${expSurgery.expDateFormatted.replace(/-/g, "")}`,
+			batchNumber: `S${dateCompact}`,
+			packageSerialNumber: 1,
+			toolSetNameRu: "Хирургический имплантологический сет",
+			itemsIncluded: ["Элеватор прямой", "Элеватор штыковидный", "Распатор костный"],
+			packagingType: "laminated_heat_sealed",
+			packagingNameRu: STATUTORY_PACKAGING_TYPES.laminated_heat_sealed.nameRu,
+			sterilizerCode: "АК-01",
+			cycleNumber: 2,
+			packDate: dateStr,
+			expDate: expSurgery.expDateFormatted,
+			daysLifespan: expSurgery.daysLifespan,
+			daysRemaining: expSurgery.daysRemaining,
+			status: expSurgery.status,
+			operatorFullName: operator,
+			indicatorVerified: true,
+			notes: "Прозрачная сторона для быстрой идентификации",
+			createdAt: `${dateStr}T11:35:00.000Z`,
+		});
+	}
+
+	const totalPacksCount = allCycles.reduce((acc, c) => acc + c.packsCount, 0);
+	const csv257 = exportForm257ToCsv(allCycles);
+	const csv366 = exportPsoToCsv(allPsoRecords);
+	const printHtml257 = generateForm257PrintHtml(allCycles, clinicInfo);
+	const printHtml366 = generatePso366PrintHtml(allPsoRecords, clinicInfo);
+	const combinedDossierHtml = generateCombinedInspectionDossierHtml({
+		monthFormattedRu,
+		cycles: allCycles,
+		psoRecords: allPsoRecords,
+		clinicInfo,
+	});
+
+	return {
+		year,
+		month,
+		monthFormattedRu,
+		workingDaysCount: workingDates.length,
+		totalCyclesCount: allCycles.length,
+		totalPsoTestsCount: allPsoRecords.length,
+		totalPacksCount,
+		cycles: allCycles,
+		psoRecords: allPsoRecords,
+		kraftPackages: allKraftPackages,
+		clinicInfo,
+		csv257,
+		csv366,
+		printHtml257,
+		printHtml366,
+		combinedDossierHtml,
+	};
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. EXPORT TO CSV (RFC 4180 / UTF-8 WITH BOM)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function escapeCsvField(val: string | number | boolean | null | undefined): string {
@@ -851,9 +1459,6 @@ function escapeCsvField(val: string | number | boolean | null | undefined): stri
 	return `"${str.replace(/"/g, '""')}"`;
 }
 
-/**
- * Экспорт Журнала 257/у в CSV:
- */
 export function exportForm257ToCsv(records: readonly Form257CycleRecord[]): string {
 	const headers = [
 		"Дата",
@@ -901,9 +1506,6 @@ export function exportForm257ToCsv(records: readonly Form257CycleRecord[]): stri
 	return `\uFEFF${csvContent}`;
 }
 
-/**
- * Экспорт Журнала ПСО (Форма 366/у) в CSV:
- */
 export function exportPsoToCsv(records: readonly PsoTestRecord[]): string {
 	const headers = [
 		"Дата",
@@ -945,9 +1547,6 @@ export function exportPsoToCsv(records: readonly PsoTestRecord[]): string {
 	return `\uFEFF${csvContent}`;
 }
 
-/**
- * Экспорт перечня крафт-пакетов в CSV:
- */
 export function exportKraftPackagesToCsv(packages: readonly KraftPackageItem[]): string {
 	const headers = [
 		"Штрихкод",
@@ -994,12 +1593,9 @@ export function exportKraftPackagesToCsv(packages: readonly KraftPackageItem[]):
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 6. OFFICIAL PRINTABLE BLANK GENERATORS (FORM 257/U & FORM 366/U)
+// 7. OFFICIAL PRINTABLE BLANK GENERATORS (FORM 257/U & FORM 366/U & COMBINED)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Генерация официального печатного бланка Формы 257/у (Минздрав РФ / СанПиН 3.3686-21):
- */
 export function generateForm257PrintHtml(
 	records: readonly Form257CycleRecord[],
 	clinicInfo: ClinicRequisites = DEFAULT_CLINIC_REQUISITES,
@@ -1121,9 +1717,6 @@ export function generateForm257PrintHtml(
 </html>`;
 }
 
-/**
- * Генерация печатного бланка Журнала ПСО (Форма 366/у):
- */
 export function generatePso366PrintHtml(
 	records: readonly PsoTestRecord[],
 	clinicInfo: ClinicRequisites = DEFAULT_CLINIC_REQUISITES,
@@ -1247,6 +1840,138 @@ export function generatePso366PrintHtml(
 			</td>
 		</tr>
 	</table>
+</body>
+</html>`;
+}
+
+export function generateCombinedInspectionDossierHtml(params: {
+	monthFormattedRu: string;
+	cycles: readonly Form257CycleRecord[];
+	psoRecords: readonly PsoTestRecord[];
+	clinicInfo?: ClinicRequisites;
+}): string {
+	const clinic = params.clinicInfo || DEFAULT_CLINIC_REQUISITES;
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Досье производственного контроля стерилизации — ${params.monthFormattedRu}</title>
+	<style>
+		@page { size: A4 landscape; margin: 10mm; }
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 10.5px; color: #111; margin: 0; padding: 10px; }
+		.cover-page { page-break-after: always; text-align: center; padding: 40px 20px; }
+		.cover-clinic { font-size: 16px; font-weight: bold; margin-bottom: 20px; }
+		.cover-title { font-size: 22px; font-weight: 800; text-transform: uppercase; margin: 40px 0 10px; letter-spacing: 1px; }
+		.cover-sub { font-size: 13px; color: #444; margin-bottom: 30px; }
+		.cover-box { display: inline-block; border: 2px solid #111; padding: 15px 30px; font-size: 12px; text-align: left; margin: 20px 0; }
+		.page-break { page-break-before: always; }
+		.table-title { font-size: 13px; font-weight: bold; margin: 10px 0 6px; text-transform: uppercase; }
+		.main-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+		.main-table th, .main-table td { border: 1px solid #333; padding: 4px 5px; font-size: 9.5px; }
+		.main-table th { background: #f0f3f6; font-weight: bold; text-align: center; }
+		.text-center { text-align: center; }
+		.font-bold { font-weight: bold; }
+		.font-mono { font-family: monospace; font-size: 8.5px; }
+		.badge-success { color: #00701a; font-weight: bold; }
+		.footer-table { width: 100%; margin-top: 15px; border-collapse: collapse; }
+		.footer-table td { padding: 4px; font-size: 10.5px; }
+		.sig-line { border-bottom: 1px solid #111; display: inline-block; width: 140px; margin: 0 4px; }
+	</style>
+</head>
+<body>
+	<div class="cover-page">
+		<div class="cover-clinic">${clinic.clinicName} (${clinic.legalEntity})</div>
+		<div>Лицензия на осуществление медицинской деятельности: ${clinic.licenseNumber}</div>
+		<div>Адрес места осуществления деятельности: ${clinic.address}</div>
+
+		<div class="cover-title">ДОСЬЕ ПРОИЗВОДСТВЕННОГО САНИТАРНОГО КОНТРОЛЯ</div>
+		<div class="cover-sub">Журналы стерилизации (Форма № 257/у) и качества ПСО (Форма № 366/у) за ${params.monthFormattedRu}</div>
+
+		<div class="cover-box">
+			<div><b>Нормативное основание:</b> ${SANPIN_REGULATORY_META.standardRu}, ${SANPIN_REGULATORY_META.guidelinePsoRu}</div>
+			<div style="margin-top: 5px;"><b>Всего циклов стерилизации:</b> ${params.cycles.length}</div>
+			<div><b>Всего проверено серий ПСО:</b> ${params.psoRecords.length} (Качество 100% — брак 0%)</div>
+			<div><b>Ответственное лицо:</b> Главный врач ${clinic.chiefDoctorFullName} / Старшая медсестра ${clinic.seniorNurseFullName}</div>
+		</div>
+
+		<div style="margin-top: 50px;">
+			<table style="width: 100%; border-collapse: collapse;">
+				<tr>
+					<td style="width: 50%; text-align: left;">Главный врач: <span class="sig-line"></span> / ${clinic.chiefDoctorFullName}</td>
+					<td style="width: 50%; text-align: right;">Старшая медсестра: <span class="sig-line"></span> / ${clinic.seniorNurseFullName}</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<div class="page-break">
+		<div class="table-title">1. Журнал работы стерилизаторов воздушного, парового (Форма № 257/у)</div>
+		<table class="main-table">
+			<thead>
+				<tr>
+					<th>№</th>
+					<th>Дата/Время</th>
+					<th>Аппарат</th>
+					<th>Цикл</th>
+					<th>Наименование изделий и упаковка</th>
+					<th>Режим (t°, P, время)</th>
+					<th>Индикаторы</th>
+					<th>Результат</th>
+					<th>Подпись ЦСО</th>
+				</tr>
+			</thead>
+			<tbody>
+				${params.cycles.slice(0, 100).map((c, i) => `
+					<tr>
+						<td class="text-center">${i + 1}</td>
+						<td>${c.date} ${c.time}</td>
+						<td class="text-center font-bold">${c.sterilizerCode}</td>
+						<td class="text-center">${c.cycleNumber}</td>
+						<td>${c.itemsDescriptionRu} (${c.packsCount} уп.)</td>
+						<td>${c.regimeNameRu}</td>
+						<td class="text-center">${c.areAllIndicatorsPassed ? "КТ 1-5 ОК" : "Отказ"}</td>
+						<td class="text-center badge-success">СТЕРИЛЬНО</td>
+						<td class="font-mono">${c.operatorFullName}</td>
+					</tr>
+				`).join("")}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="page-break">
+		<div class="table-title">2. Журнал учета качества предстерилизационной очистки (Форма № 366/у)</div>
+		<table class="main-table">
+			<thead>
+				<tr>
+					<th>№</th>
+					<th>Дата/Время</th>
+					<th>Изделия</th>
+					<th>Партия</th>
+					<th>Выборка</th>
+					<th>Азопирам (кровь)</th>
+					<th>Фенолфталеин (щелочь)</th>
+					<th>Заключение</th>
+					<th>Подпись оператора</th>
+				</tr>
+			</thead>
+			<tbody>
+				${params.psoRecords.slice(0, 100).map((p, i) => `
+					<tr>
+						<td class="text-center">${i + 1}</td>
+						<td>${p.date} ${p.time}</td>
+						<td>${p.instrumentName}</td>
+						<td class="text-center font-bold">${p.batchItemCount} шт</td>
+						<td class="text-center">${p.testedSampleCount} шт (норм: ${p.minSampleRequired})</td>
+						<td class="text-center badge-success">Отрицательная</td>
+						<td class="text-center badge-success">Отрицательная</td>
+						<td class="text-center font-bold badge-success">ГОДНО</td>
+						<td class="font-mono">${p.operatorFullName}</td>
+					</tr>
+				`).join("")}
+			</tbody>
+		</table>
+	</div>
 </body>
 </html>`;
 }

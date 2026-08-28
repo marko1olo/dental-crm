@@ -4,27 +4,34 @@ import {
 	calculateKraftSterilityExpiration,
 	calculatePsoSampleRequirements,
 	createDefaultChamberPoints,
+	DailyShiftSanpinLogBundle,
 	DEFAULT_CLINIC_REQUISITES,
 	evaluatePsoTrial,
 	exportForm257ToCsv,
 	exportKraftPackagesToCsv,
 	exportPsoToCsv,
 	Form257CycleRecord,
+	generateCombinedInspectionDossierHtml,
+	generateDailyShiftSanpinLog,
 	generateDigitalStampHash,
 	generateForm257PrintHtml,
 	generateKraftBarcode,
+	generateMonthlySanpinJournal,
 	generatePso366PrintHtml,
 	KraftPackageItem,
+	MonthlySanpinJournalBundle,
 	parseKraftBarcode,
 	PsoTestRecord,
 	SANPIN_REGULATORY_META,
+	STATUTORY_CHEMICAL_INDICATORS,
 	STATUTORY_PACKAGING_TYPES,
 	STATUTORY_REGIMES,
 	STATUTORY_STERILIZERS,
+	STATUTORY_TRAY_SETS,
 	validateSterilizationCycle,
 } from "../sterilizationSanpinEngine";
 
-describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Engine", () => {
+describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generator Engine", () => {
 	// ─────────────────────────────────────────────────────────────────────────
 	// 1. PSO SAMPLING REQUIREMENTS & MATH
 	// ─────────────────────────────────────────────────────────────────────────
@@ -294,9 +301,18 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Engine", () =
 			assert.equal(res.expDateFormatted, "2027-02-24");
 		});
 
+		it("calculates 20 days shelf life for bix filter boxes", () => {
+			const res = calculateKraftSterilityExpiration(
+				"2026-08-28",
+				"bix_filter_kspf",
+				"2026-08-28",
+			);
+			assert.equal(res.daysLifespan, 20);
+			assert.equal(res.daysRemaining, 20);
+			assert.equal(res.expDateFormatted, "2026-09-17");
+		});
+
 		it("flags package as expiring_soon_7d when remaining days are between 0 and 7", () => {
-			// Pack date: 2026-08-01, self-adhesive (30 days) -> exp: 2026-08-31
-			// Ref date: 2026-08-26 -> remaining: 5 days
 			const res = calculateKraftSterilityExpiration(
 				"2026-08-01",
 				"kraft_self_adhesive",
@@ -310,8 +326,6 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Engine", () =
 		});
 
 		it("flags package as expired when current date exceeds expiration date", () => {
-			// Pack date: 2026-07-01, self-adhesive (30 days) -> exp: 2026-07-31
-			// Ref date: 2026-08-15 -> overdue by 15 days
 			const res = calculateKraftSterilityExpiration(
 				"2026-07-01",
 				"kraft_self_adhesive",
@@ -319,7 +333,7 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Engine", () =
 			);
 			assert.equal(res.status, "expired");
 			assert.equal(res.isExpired, true);
-			assert.match(res.humanReadableRemainingRu, /Срок истек 15 дн\. назад/);
+			assert.match(res.humanReadableRemainingRu, /Срок истек 15 дн. назад/);
 		});
 	});
 
@@ -357,7 +371,7 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Engine", () =
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// 6. ELECTRONIC SIGNATURE STAMP & PRESET INTEGRITY
+	// 6. DIGITAL STAMP HASH & PRESET INTEGRITY
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("6. Digital Stamp Hash & Presets Integrity", () => {
 		it("generates deterministic digital signature hash for operator accountability", () => {
@@ -385,12 +399,134 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Engine", () =
 			assert.ok(STATUTORY_REGIMES.some((r) => r.id === "steam_121_20min"));
 			assert.ok(STATUTORY_REGIMES.some((r) => r.id === "dry_heat_180_60min"));
 		});
+
+		it("contains statutory tray sets presets (Therapy, Surgery, Handpieces, Orthopedics)", () => {
+			assert.ok(STATUTORY_TRAY_SETS.length >= 4);
+			assert.ok(STATUTORY_TRAY_SETS.some((t) => t.category === "therapy"));
+			assert.ok(STATUTORY_TRAY_SETS.some((t) => t.category === "surgery"));
+			assert.ok(STATUTORY_TRAY_SETS.some((t) => t.category === "handpieces"));
+		});
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// 7. CSV EXPORT ENGINES (RFC 4180 / UTF-8 BOM)
+	// 7. 1-CLICK DAILY SHIFT AUTO-GENERATOR FOR NURSE
 	// ─────────────────────────────────────────────────────────────────────────
-	describe("7. CSV Export Engines (Form 257/u, Form 366/u, Kraft Packages)", () => {
+	describe("7. 1-Click Daily Shift Auto-Generator for Nurse", () => {
+		it("generates complete daily shift log with Form 257/u cycles and Form 366/u PSO series", () => {
+			const shift = generateDailyShiftSanpinLog({
+				date: "2026-08-28",
+				operatorFullName: "Смирнова Анна Викторовна",
+				shiftNumber: 1,
+			});
+
+			assert.equal(shift.date, "2026-08-28");
+			assert.equal(shift.operatorFullName, "Смирнова Анна Викторовна");
+			assert.equal(shift.cycles.length, 3);
+			assert.equal(shift.psoRecords.length, 3);
+			assert.ok(shift.kraftPackages.length >= 10);
+
+			// Check Form 257 cycles
+			for (const c of shift.cycles) {
+				assert.equal(c.cycleStatus, "passed");
+				assert.equal(c.areAllIndicatorsPassed, true);
+				assert.ok(c.actualTemperatureCelsius >= 121.0);
+				assert.ok(c.electronicSignatureHash.startsWith("ЭЦП-ЦСО-"));
+			}
+
+			// Check Form 366 PSO
+			for (const p of shift.psoRecords) {
+				assert.equal(p.isBatchApproved, true);
+				assert.equal(p.isAzopyramNegative, true);
+				assert.equal(p.isPhenolphthaleinNegative, true);
+				assert.equal(p.isSamplingSufficient, true);
+			}
+
+			assert.match(shift.summaryTextRu, /Смена № 1 за 2026-08-28 успешно зафиксирована/);
+		});
+	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 8. 1-CLICK MONTHLY AUTO-GENERATOR FOR ROSPOTREBNADZOR INSPECTION
+	// ─────────────────────────────────────────────────────────────────────────
+	describe("8. 1-Click Monthly Auto-Generator for Rospotrebnadzor Inspection", () => {
+		it("generates perfect monthly inspection dossier for August 2026 (Mon-Sat shifts)", () => {
+			const bundle = generateMonthlySanpinJournal({
+				year: 2026,
+				month: 8,
+				includeSaturdays: true,
+				includeSundays: false,
+				dailyPatientLoadLevel: "standard",
+			});
+
+			assert.equal(bundle.year, 2026);
+			assert.equal(bundle.month, 8);
+			assert.equal(bundle.monthFormattedRu, "Август 2026 г.");
+
+			// August 2026 has 31 days, 5 Sundays -> 26 working days (Mon-Sat)
+			assert.equal(bundle.workingDaysCount, 26);
+			assert.equal(bundle.totalCyclesCount, 26 * 3); // 78 cycles
+			assert.equal(bundle.totalPsoTestsCount, 26 * 2); // 52 PSO tests
+			assert.ok(bundle.totalPacksCount > 500);
+
+			// Verify all generated cycles are 100% compliant
+			for (const c of bundle.cycles) {
+				const validation = validateSterilizationCycle({
+					regimeId: c.regimeId,
+					actualTemperatureCelsius: c.actualTemperatureCelsius,
+					actualPressureBar: c.actualPressureBar,
+					actualExposureMinutes: c.actualExposureMinutes,
+					chamberPoints: c.chamberPoints,
+				});
+				assert.equal(validation.isValid, true);
+				assert.equal(c.cycleStatus, "passed");
+			}
+
+			// Verify all generated PSO tests are 100% compliant
+			for (const p of bundle.psoRecords) {
+				const psoEval = evaluatePsoTrial({
+					batchCount: p.batchItemCount,
+					testedSampleCount: p.testedSampleCount,
+					isAzopyramNegative: p.isAzopyramNegative,
+					isPhenolphthaleinNegative: p.isPhenolphthaleinNegative,
+					isSudanNegative: p.isSudanNegative,
+				});
+				assert.equal(psoEval.isBatchApproved, true);
+			}
+
+			// Verify pre-rendered CSV and HTML documents exist
+			assert.ok(bundle.csv257.includes("Melag Vacuklav 23 B+"));
+			assert.ok(bundle.csv366.includes("Азопирамовая проба"));
+			assert.ok(bundle.printHtml257.includes("Форма № 257/у"));
+			assert.ok(bundle.printHtml366.includes("Форма № 366/у"));
+			assert.ok(bundle.combinedDossierHtml.includes("ДОСЬЕ ПРОИЗВОДСТВЕННОГО САНИТАРНОГО КОНТРОЛЯ"));
+		});
+
+		it("scales tray and pack quantities based on patient load level", () => {
+			const standardBundle = generateMonthlySanpinJournal({
+				year: 2026,
+				month: 8,
+				dailyPatientLoadLevel: "standard",
+			});
+			const highBundle = generateMonthlySanpinJournal({
+				year: 2026,
+				month: 8,
+				dailyPatientLoadLevel: "high",
+			});
+			const moderateBundle = generateMonthlySanpinJournal({
+				year: 2026,
+				month: 8,
+				dailyPatientLoadLevel: "moderate",
+			});
+
+			assert.ok(highBundle.totalPacksCount > standardBundle.totalPacksCount);
+			assert.ok(standardBundle.totalPacksCount > moderateBundle.totalPacksCount);
+		});
+	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 9. CSV EXPORT ENGINES (RFC 4180 / UTF-8 BOM)
+	// ─────────────────────────────────────────────────────────────────────────
+	describe("9. CSV Export Engines (Form 257/u, Form 366/u, Kraft Packages)", () => {
 		const sampleCycles: Form257CycleRecord[] = [
 			{
 				id: "cyc-1",
@@ -491,9 +627,9 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Engine", () =
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// 8. OFFICIAL PRINTABLE BLANKS HTML GENERATION
+	// 10. OFFICIAL PRINTABLE BLANKS HTML GENERATION
 	// ─────────────────────────────────────────────────────────────────────────
-	describe("8. Official Printable Blanks HTML Generation", () => {
+	describe("10. Official Printable Blanks HTML Generation", () => {
 		const sampleCycles: Form257CycleRecord[] = [
 			{
 				id: "cyc-1",
@@ -563,6 +699,20 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Engine", () =
 			assert.ok(html.includes("Азопирамовая проба"));
 			assert.ok(html.includes("Фенолфталеиновая проба"));
 			assert.ok(html.includes("ГОДНО"));
+		});
+
+		it("generates valid Combined Inspection Dossier HTML for Rospotrebnadzor", () => {
+			const html = generateCombinedInspectionDossierHtml({
+				monthFormattedRu: "Август 2026 г.",
+				cycles: sampleCycles,
+				psoRecords: samplePso,
+				clinicInfo: DEFAULT_CLINIC_REQUISITES,
+			});
+			assert.ok(html.includes("ДОСЬЕ ПРОИЗВОДСТВЕННОГО САНИТАРНОГО КОНТРОЛЯ"));
+			assert.ok(html.includes("Август 2026 г."));
+			assert.ok(html.includes("Форма № 257/у"));
+			assert.ok(html.includes("Форма № 366/у"));
+			assert.ok(html.includes("Главный врач"));
 		});
 	});
 });

@@ -41,3 +41,6 @@ export function formatKopecksToRubles(kopecks: number): string {
 	if (!Number.isFinite(kopecks)) return "0.00";
 	return (Math.round(kopecks) / 100).toFixed(2);
 }
+
+export * from "./utils/money.js";
+

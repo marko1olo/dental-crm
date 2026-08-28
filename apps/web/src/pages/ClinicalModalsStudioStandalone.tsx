@@ -71,6 +71,7 @@ import {
 import { TreatmentPlanCompletedActPrint } from "../components/treatment-plans/TreatmentPlanCompletedActPrint";
 import { FiscalReceipt54FzModal } from "../components/finance/FiscalReceipt54FzModal";
 import { Billing1CExportModal } from "../components/finance/Billing1CExportModal";
+import { OneCCommerceMlModal } from "../components/finance/one-c/OneCCommerceMlModal";
 import { PatientBillingModal } from "../components/finance/PatientBillingModal";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { SanpinRegisters } from "../components/sanpin/SanpinRegisters";
@@ -552,6 +553,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isCmoQualityAuditOpen, setIsCmoQualityAuditOpen] = useState(false);
 	const [isFnsTaxDeductionOpen, setIsFnsTaxDeductionOpen] = useState(false);
 	const [isOfflineSyncGuardOpen, setIsOfflineSyncGuardOpen] = useState(false);
+	const [isOneCCommerceMlOpen, setIsOneCCommerceMlOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -933,6 +935,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Coins size={15} />
 							<span>Открыть 1С:Экспорт XML</span>
+						</button>
+					</div>
+
+					{/* 2b-2. 1C CommerceML 2.09 & EnterpriseData 1.13 Package Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FileSpreadsheet className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									1С:CommerceML 2.09 & Пакет выгрузки
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Полный пакет выгрузки: смены, ОРП, списания материалов и ведомости зарплаты в целых копейках.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsOneCCommerceMlOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-onec-commerceml-modal-btn"
+						>
+							<FileSpreadsheet size={15} />
+							<span>Открыть CommerceML 2.09</span>
 						</button>
 					</div>
 
@@ -2806,6 +2832,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					patientName="Смирнова Екатерина Васильевна"
 					patientPhone="+7 (999) 123-45-67"
 					doctorName="Д-р Ковалев С. П."
+				/>
+			)}
+
+			{isOneCCommerceMlOpen && (
+				<OneCCommerceMlModal
+					isOpen={isOneCCommerceMlOpen}
+					onClose={() => setIsOneCCommerceMlOpen(false)}
 				/>
 			)}
 

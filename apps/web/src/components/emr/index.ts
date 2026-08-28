@@ -3,6 +3,7 @@ export * from "./emr043Math";
 export * from "./clinicalEmrEngine";
 export * from "./Form043PrintModal";
 export * from "./audit";
+export * from "./templates";
 export {
 	synthesizeClinicalDiary,
 	synthesizeDiariesFromOdontogram,

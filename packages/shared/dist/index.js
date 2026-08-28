@@ -26,6 +26,7 @@ export * from "./tasks/index.js";
 export * from "./patients/index.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";
+export * from "./marketing/index.js";
 import { procedureSpecificConsentProcedureSchema } from "./legal/legalContractsAndConsents.js";
 import { dailyDentistDiary037uPayloadSchema, fullForm043uPayloadSchema, medicalCardExtract003vuPayloadSchema, orthodonticCard043_1uPayloadSchema, radiationDoseSheetPayloadSchema, summaryDentistStatement039uPayloadSchema, } from "./documents/index.js";
 import { moneyRubSchema, nonNegativeMoneyRubSchema, positiveMoneyRubSchema, } from "./money.js";

@@ -38,24 +38,37 @@ import {
 } from "../components/inventory/writeoff/index.js";
 
 describe("Order 804n Dental Service BOM Presets & Materials Catalog", () => {
-	it("Каталог содержит все ключевые стоматологические материалы", () => {
+	it("Каталог содержит все ключевые стоматологические материалы с разграничением FIFO и строгого учета", () => {
 		assert.ok(CLINICAL_MATERIALS_CATALOG.length >= 15);
 
+		// Расходные материалы списываются по прозрачному прямому FIFO без обязательного сканирования шприца
 		const matFiltek = getClinicalMaterialById("mat_filtek_ultimate");
 		assert.ok(matFiltek);
 		assert.equal(matFiltek.unit, "г");
 		assert.equal(matFiltek.okeiCode, "166");
-		assert.equal(matFiltek.requiresLotTracking, true);
+		assert.equal(matFiltek.requiresLotTracking, false);
+		assert.equal(matFiltek.requiresSerialNumber, false);
 
 		const matSbu = getClinicalMaterialById("mat_single_bond_universal");
 		assert.ok(matSbu);
 		assert.equal(matSbu.unit, "мл");
 		assert.equal(matSbu.okeiCode, "111");
+		assert.equal(matSbu.requiresLotTracking, false);
 
+		// Жесткий партионный учет и Честный ЗНАК/МДЛП остаются ТОЛЬКО для анестезии, имплантатов и костных материалов
 		const matOsstem = getClinicalMaterialById("mat_implant_osstem_ts3");
 		assert.ok(matOsstem);
 		assert.equal(matOsstem.requiresSerialNumber, true);
 		assert.equal(matOsstem.requiresLotTracking, true);
+
+		const matAnes = getClinicalMaterialById("mat_articaine_ultracain");
+		assert.ok(matAnes);
+		assert.equal(matAnes.requiresLotTracking, true);
+
+		const matBioOss = getClinicalMaterialById("mat_bio_oss_graft");
+		assert.ok(matBioOss);
+		assert.equal(matBioOss.requiresLotTracking, true);
+		assert.equal(matBioOss.requiresSerialNumber, true);
 	});
 
 	it("Норма A16.07.002.001 (Пломбирование композитом) содержит все регламентные материалы", () => {
@@ -367,7 +380,7 @@ describe("Discrepancy Calculations & Kopeck-Exact Financials", () => {
 				isExpiringSoon: false,
 				isExpired: false,
 				isMandatory: true,
-				requiresLotTracking: true,
+				requiresLotTracking: false,
 				requiresSerialNumber: false,
 			},
 			{
@@ -585,7 +598,7 @@ describe("Statutory Write-off Act HTML Generators (0504230, M-11, TORG-16)", () 
 				isExpiringSoon: false,
 				isExpired: false,
 				isMandatory: true,
-				requiresLotTracking: true,
+				requiresLotTracking: false,
 				requiresSerialNumber: false,
 			},
 		],

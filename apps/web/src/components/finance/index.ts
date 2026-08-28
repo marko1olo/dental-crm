@@ -12,3 +12,5 @@ export * from "./OneCExportButton";
 export * from "./payroll/DoctorPayrollModal";
 export * from "./payroll/payrollEngine";
 export * from "./pnl";
+export * from "./one-c";
+

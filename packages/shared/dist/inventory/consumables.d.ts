@@ -976,3 +976,66 @@ export declare function categorizeInventoryExpiry(expirationDate: string | null 
     status: "valid" | "expiring_soon" | "expired" | "no_date";
     daysRemaining: number | null;
 };
+/**
+ * Material item classification descriptor for lot/batch and serial number tracking.
+ */
+export interface InventoryTrackingClassificationItem {
+    id?: string | undefined;
+    sku?: string | undefined;
+    nameRu?: string | undefined;
+    category?: string | undefined;
+}
+/**
+ * Determines whether strict lot/batch tracking is required by clinical regulations.
+ *
+ * MANDATE (Wave 11):
+ * General consumables (composites, adhesives, etching gels, cotton rolls, gloves, masks,
+ * saliva ejectors, polishing discs, paper points, gutta percha, etc.) are deducted via
+ * direct transparent FIFO WITHOUT requiring manual syringe scanning or blocking prompts.
+ *
+ * Strict lot/batch tracking remains MANDATORY ONLY for:
+ * 1. Anesthesia (carpules: Articaine / Ultracain / Septanest / Scandonest / Ubistesin)
+ * 2. Implants (titanium dental implants, healing abutments, cover screws)
+ * 3. Bone graft & barrier membrane materials (Geistlich Bio-Oss, Bio-Gide, osteoplasty)
+ */
+export declare function isStrictLotTrackingRequired(item: InventoryTrackingClassificationItem): boolean;
+/**
+ * Determines whether Честный ЗНАК / MDLP serialized tracking (GS1 DataMatrix / UDI)
+ * is required for this material.
+ *
+ * Applicable strictly to Anesthesia carpules, Titanium Implants, and Bone/Membrane Grafts.
+ */
+export declare function isChestnyZnakMdlpRequired(item: InventoryTrackingClassificationItem): boolean;
+/**
+ * Generic stock batch representation for FIFO deductions.
+ */
+export interface GenericStockBatch {
+    batchId: string;
+    quantityAvailable: number;
+    expirationDate?: string | undefined;
+    manufactureDate?: string | undefined;
+    receiptDate?: string | undefined;
+    unitCostKopecks?: number | undefined;
+    lotNumber?: string | undefined;
+}
+/**
+ * Result of a deterministic FIFO batch deduction.
+ */
+export interface FifoBatchDeductionResult<T extends GenericStockBatch> {
+    deductions: Array<{
+        batch: T;
+        deductedQuantity: number;
+        costKopecks: number;
+    }>;
+    totalDeductedQuantity: number;
+    remainingQuantityNeeded: number;
+    fullyCovered: boolean;
+    totalCostKopecks: number;
+}
+/**
+ * Deterministic FIFO (First-In, First-Out) stock deduction engine.
+ *
+ * Sorts available batches by receipt date, manufacture date, or expiration date
+ * and deducts required quantities without requiring manual serial scanning.
+ */
+export declare function deductBatchStockFifo<T extends GenericStockBatch>(batches: readonly T[], requiredQuantity: number): FifoBatchDeductionResult<T>;

@@ -56,6 +56,7 @@ import {
 	type RadiologySnapshotItem,
 	VisitSummaryModal,
 } from "./VisitSummaryModal";
+import { ClinicalDiaryTemplatesModal } from "../emr/templates";
 import "../../styles/visit-diary-043.css";
 
 export interface VisitDiarySectionProps {
@@ -150,6 +151,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		useState(false);
 	const [showEgiszModal, setShowEgiszModal] = useState(false);
 	const [showBrandingCustomizer, setShowBrandingCustomizer] = useState(false);
+	const [showTemplatesModal, setShowTemplatesModal] = useState(false);
 	const [activeTeeth, setActiveTeeth] = useState<
 		readonly {
 			toothNumber: number;
@@ -620,6 +622,16 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</div>
 
 				<div className="vde-043__actions">
+					<button
+						type="button"
+						data-testid="open-1click-templates-btn"
+						onClick={() => setShowTemplatesModal(true)}
+						className="vde-043__btn"
+						title="Открыть 1-Click клинические протоколы и шаблоны SOAP (Приказ 834н / 804н)"
+					>
+						<Sparkles className="w-4 h-4 text-[var(--teal)]" />
+						Протоколы 1-Click
+					</button>
 					<button
 						type="button"
 						data-testid="diary-summary-btn"
@@ -1610,6 +1622,48 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				instrumentTrayBarcode={trayBarcode || undefined}
 				toothStates={activeTeeth.reduce((acc, t) => ({ ...acc, [t.toothNumber]: t.state }), {})}
 				documentVersion={revisionCount + 1}
+			/>
+
+			{/* ── 1-Click Clinical Protocols & Templates Modal ── */}
+			<ClinicalDiaryTemplatesModal
+				isOpen={showTemplatesModal}
+				onClose={() => setShowTemplatesModal(false)}
+				initialToothNumber={diary.diagnosisTooth}
+				doctorFullName={doctorName}
+				doctorSpecialty={doctorSpecialty}
+				patientFullName={patientFullName}
+				onApplyDiary={(res) => {
+					setDiary((prev) =>
+						mergeSoapDiaryState(
+							prev,
+							{
+								anamnesis: res.anamnesisMorbi,
+								statusLocalis: res.objectiveStatusLocalis,
+								treatmentDescription: res.procedureProtocol,
+								diagnosisIcd10: res.assessmentIcd10Code,
+								diagnosisTooth: res.toothNumber ? String(res.toothNumber) : prev.diagnosisTooth,
+							},
+							{ strategy: "smart_append" },
+						),
+					);
+					if (res.assessmentIcd10Code) {
+						setIcdSearch(res.assessmentIcd10Code);
+					}
+					scheduleDebouncedSave();
+				}}
+				onApplySoapText={(text, icd) => {
+					setDiary((prev) => ({
+						...prev,
+						treatmentDescription: prev.treatmentDescription
+							? `${prev.treatmentDescription}\n\n${text}`
+							: text,
+						diagnosisIcd10: prev.diagnosisIcd10 || icd,
+					}));
+					if (icd && !diary.diagnosisIcd10) {
+						setIcdSearch(icd);
+					}
+					scheduleDebouncedSave();
+				}}
 			/>
 
 			{/* ── Print Preview Modal ── */}
