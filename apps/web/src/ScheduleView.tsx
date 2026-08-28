@@ -1090,7 +1090,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	return (
 		<div
-			className="panel schedule-panel min-w-0 max-w-full overflow-hidden pb-32 sm:pb-6"
+			className="panel schedule-panel min-w-0 max-w-full overflow-hidden pb-32"
 			id="schedule"
 			data-testid="schedule-view"
 		>
@@ -1627,6 +1627,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 ненужной, но файл правит другой автор, поэтому не тронут.
               */}
 			</div>
+			{/* FAB clearance bottom spacer */}
+			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 
 			{/*
         Ящик листа ожидания. Он существовал и умел всё нужное — добавить, снять,

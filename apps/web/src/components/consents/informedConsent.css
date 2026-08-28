@@ -239,15 +239,32 @@
 
 /* Document Sheet Preview */
 .consent-document-sheet {
-	background: var(--paper);
-	border: 1px solid var(--line);
+	background: #ffffff !important;
+	color: #0f172a !important;
+	border: 1px solid #cbd5e1 !important;
 	border-radius: var(--radius-lg, 12px);
-	padding: 1.5rem;
+	padding: 1.5rem 1.75rem;
 	display: flex;
 	flex-direction: column;
 	gap: 1.25rem;
-	line-height: 1.55;
-	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+	line-height: 1.6;
+	max-width: 72ch;
+	width: 100%;
+	margin: 0 auto;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	box-sizing: border-box;
+}
+
+.consent-document-sheet .consent-document-title,
+.consent-document-sheet .consent-section-title,
+.consent-document-sheet .consent-section-text,
+.consent-document-sheet .consent-bullet-list,
+.consent-document-sheet .consent-bullet-list li {
+	color: #0f172a !important;
+}
+
+.consent-document-sheet .consent-document-subtitle {
+	color: #475569 !important;
 }
 
 .consent-document-title {
@@ -255,7 +272,7 @@
 	font-weight: 800;
 	text-align: center;
 	text-transform: uppercase;
-	color: var(--ink);
+	color: #0f172a;
 	margin-bottom: 0.25rem;
 }
 

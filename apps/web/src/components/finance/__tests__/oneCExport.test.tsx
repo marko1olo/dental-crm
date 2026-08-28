@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
 import { OneCExportButton } from '../OneCExportButton';
 import { FiscalReceipt54FzModal } from '../FiscalReceipt54FzModal';
+import { Billing1CExportModal } from '../Billing1CExportModal';
 import { generateOneCEnterpriseXml } from '@dental/shared';
 import type { TreatmentPlanItem } from '../../treatment-plans/types';
 
@@ -172,5 +173,27 @@ describe('1C:Enterprise XML Export Button & Engine', () => {
     assert.ok(btnHtml.includes('Экспорт в 1С (XML)'));
     assert.ok(btnHtml.includes('data-testid="1c-export-xml-button"'));
   });
+
+  it('renders Billing1CExportModal with non-truncated CommerceML 2.09 & 54-FZ header and mobile-safe export button', () => {
+    const html = renderToString(
+      <Billing1CExportModal
+        isOpen={true}
+        onClose={() => {}}
+        items={SAMPLE_ITEMS}
+        patientId="PAT-2026-0891"
+        patientName="Смирнова Екатерина Васильевна"
+        totalRub={11200}
+      />
+    );
+
+    assert.ok(html.includes('data-testid="billing-1c-export-modal"'));
+    assert.ok(html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 &amp; 54-ФЗ') || html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 & 54-ФЗ'));
+    assert.ok(html.includes('CommerceML 2.09'));
+    assert.ok(html.includes('ФФД 1.2'));
+    assert.ok(html.includes('Смирнова Екатерина Васильевна'));
+    assert.ok(html.includes('Экспорт в 1С (XML)'));
+    assert.ok(html.includes('Сводка для бухгалтерии'));
+  });
 });
+
 

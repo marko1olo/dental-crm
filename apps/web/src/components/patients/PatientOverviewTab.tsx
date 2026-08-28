@@ -287,6 +287,9 @@ export function PatientOverviewTab() {
 					)}
 				</div>
 			</div>
+
+			{/* FAB clearance bottom spacer */}
+			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 		</div>
 	);
 }

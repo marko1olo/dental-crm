@@ -939,22 +939,22 @@ export function IncomingCallPopup() {
 					)}
 				</div>
 
-				{/* Identity Info */}
+				{/* Identity Info - Clean 2-Line Name Wrap */}
 				<div className="flex-1 min-w-0">
-					<div className="flex items-center gap-2 flex-wrap">
-						<h3 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] leading-tight">
+					<div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
+						<h3 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] leading-snug break-words line-clamp-2 max-w-full">
 							{callerName}
 						</h3>
 						{isKnownPatient ? (
 							<span
-								className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800/50 px-1.5 py-0.5 rounded-md"
+								className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800/50 px-1.5 py-0.5 rounded-md self-start"
 								title="Пациент зарегистрирован в клинике"
 							>
 								<UserCheck size={11} /> Пациент
 							</span>
 						) : (
 							<span
-								className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800/50 px-1.5 py-0.5 rounded-md"
+								className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800/50 px-1.5 py-0.5 rounded-md self-start"
 								title="Номер не найден в базе пациентов"
 							>
 								<AlertCircle size={11} /> Новый лид
@@ -962,8 +962,8 @@ export function IncomingCallPopup() {
 						)}
 					</div>
 					<div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--muted,#64748b)] mt-0.5">
-						<Phone size={13} className="text-[var(--teal)]" />
-						<span>{formattedPhone}</span>
+						<Phone size={13} className="text-[var(--teal)] shrink-0" />
+						<span className="font-mono">{formattedPhone}</span>
 					</div>
 				</div>
 			</div>
@@ -991,26 +991,26 @@ export function IncomingCallPopup() {
 						)}
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 mt-1 shrink-0">
 						{/* 1-Click WhatsApp Trigger >= 44px */}
 						<button
 							type="button"
 							onClick={handleSendWhatsAppConfirmation}
-							className="flex-1 min-h-[44px] px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm"
+							className="flex-1 min-h-[44px] h-11 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm shrink-0 truncate cursor-pointer"
 							title="Отправить сообщение с подтверждением записи в WhatsApp"
 						>
-							<MessageSquare size={14} />
-							<span>{whatsappSent ? "Отправлено ✓" : "1-Click WhatsApp"}</span>
+							<MessageSquare size={14} className="shrink-0" />
+							<span className="truncate">{whatsappSent ? "Отправлено ✓" : "1-Click WhatsApp"}</span>
 						</button>
 
 						{/* 1-Click SMS Copy/Trigger >= 44px */}
 						<button
 							type="button"
 							onClick={handleCopySmsConfirmation}
-							className="min-h-[44px] px-3 py-2 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-semibold border border-[var(--line,#e2e8f0)] transition-all inline-flex items-center justify-center gap-1"
+							className="min-h-[44px] h-11 px-3 py-2 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-semibold border border-[var(--line,#e2e8f0)] transition-all inline-flex items-center justify-center gap-1 shrink-0 whitespace-nowrap cursor-pointer"
 							title="Скопировать текст SMS-подтверждения"
 						>
-							{smsCopied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+							{smsCopied ? <Check size={14} className="text-emerald-500 shrink-0" /> : <Copy size={14} className="shrink-0" />}
 							<span>{smsCopied ? "Скопировано" : "SMS"}</span>
 						</button>
 					</div>

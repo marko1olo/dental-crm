@@ -323,12 +323,12 @@ export const StaffAuthorityPanel: React.FC = () => {
 
 	return (
 		<article
-			className="settings-card col-span-full"
+			className="settings-card col-span-full pb-32 sm:pb-8"
 			aria-label="Полномочия сотрудников"
 			data-testid="staff-authority-panel"
 		>
 			<div
-				className="settings-card-header"
+				className="settings-card-header p-4 sm:p-6"
 				style={{
 					display: "flex",
 					justifyContent: "space-between",
@@ -421,30 +421,25 @@ export const StaffAuthorityPanel: React.FC = () => {
 														{staffRoleTitle(row.role)}
 													</span>
 												</div>
-												<div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
-													<span>
-														{isPiiFull ? (
-															<span className="text-teal-600 dark:text-teal-400 font-medium">
-																152-ФЗ: Полный
-															</span>
-														) : (
-															<span className="text-amber-600 dark:text-amber-400 font-medium">
-																152-ФЗ: Маскирован
-															</span>
-														)}
-													</span>
-													<span>·</span>
-													<span>
-														{isPnlVisible ? (
-															<span className="text-purple-600 dark:text-purple-400 font-medium">
-																P&L: Доступен
-															</span>
-														) : (
-															<span className="text-slate-400">
-																P&L: Скрыт (Изоляция)
-															</span>
-														)}
-													</span>
+												<div className="flex items-center gap-2 mt-1 text-[11px] flex-nowrap overflow-x-auto">
+													{isPiiFull ? (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800 whitespace-nowrap">
+															🛡️ 152-ФЗ: Полный
+														</span>
+													) : (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
+															🛡️ 152-ФЗ: Маскирован
+														</span>
+													)}
+													{isPnlVisible ? (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 whitespace-nowrap">
+															🔒 P&L: Доступен
+														</span>
+													) : (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+															🔒 P&L: Скрыт (Изоляция)
+														</span>
+													)}
 												</div>
 											</div>
 										</div>
@@ -545,6 +540,9 @@ export const StaffAuthorityPanel: React.FC = () => {
 					</p>
 				) : null}
 			</div>
+
+			{/* FAB clearance bottom spacer */}
+			<div className="h-16 w-full shrink-0" aria-hidden="true" />
 		</article>
 	);
 };

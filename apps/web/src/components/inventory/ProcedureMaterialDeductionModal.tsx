@@ -627,31 +627,34 @@ export function ProcedureMaterialDeductionModal({
 											</div>
 										</div>
 
-										{/* COST & REMOVE */}
-										<div className="inventory-material-cost-wrap">
-											<div className="inventory-material-cost-val">
-												{(lineCostKopecks / 100).toLocaleString("ru-RU", {
-													minimumFractionDigits: 2,
-													maximumFractionDigits: 2,
-												})}{" "}
-												₽
+										{/* COST & REMOVE BOTTOM BAR */}
+										<div className="inventory-material-bottom-bar">
+											<div className="inventory-material-cost-wrap">
+												<div className="inventory-material-cost-val">
+													{(lineCostKopecks / 100).toLocaleString("ru-RU", {
+														minimumFractionDigits: 2,
+														maximumFractionDigits: 2,
+													})}{" "}
+													₽
+												</div>
+												<div className="inventory-material-unit-price">
+													{(line.unitCostKopecks / 100).toLocaleString("ru-RU", {
+														minimumFractionDigits: 2,
+														maximumFractionDigits: 2,
+													})}{" "}
+													₽ / {line.unit}
+												</div>
 											</div>
-											<div className="inventory-material-unit-price">
-												{(line.unitCostKopecks / 100).toLocaleString("ru-RU", {
-													minimumFractionDigits: 2,
-												})}{" "}
-												₽ / {line.unit}
-											</div>
-										</div>
 
-										<button
-											type="button"
-											className="inventory-remove-line-btn"
-											onClick={() => handleRemoveLine(line.id)}
-											aria-label="Удалить позицию"
-										>
-											<Trash2 size={18} />
-										</button>
+											<button
+												type="button"
+												className="inventory-remove-line-btn"
+												onClick={() => handleRemoveLine(line.id)}
+												aria-label="Удалить позицию"
+											>
+												<Trash2 size={18} />
+											</button>
+										</div>
 									</div>
 
 									{/* ALERT BANNER IF DEFICIT OR LOW STOCK */}

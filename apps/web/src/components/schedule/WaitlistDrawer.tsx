@@ -342,9 +342,9 @@ export function WaitlistDrawer(props: Props) {
 	if (!isOpen) return null;
 
 	const priorityColors = {
-		high: "bg-[var(--bad-bg)] text-[var(--bad-fg)]",
-		medium: "bg-[var(--warn-bg)] text-[var(--warn-fg)]",
-		low: "bg-[var(--paper-soft)] text-[var(--muted)]",
+		high: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
+		medium: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
+		low: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/25",
 	};
 
 	const priorityLabels = {
@@ -531,10 +531,10 @@ export function WaitlistDrawer(props: Props) {
 										className={`flex-1 min-h-[44px] py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
 											priorityLevel === p
 												? p === "high"
-													? "bg-[var(--bad-bg)] text-[var(--bad-fg)] ring-1 ring-[var(--bad-fg)]"
+													? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 ring-1 ring-rose-500/50 font-bold"
 													: p === "medium"
-														? "bg-[var(--warn-bg)] text-[var(--warn-fg)] ring-1 ring-[var(--warn-fg)]"
-														: "bg-[var(--paper-strong)] text-[var(--ink)] ring-1 ring-[var(--line-strong)]"
+														? "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/40 ring-1 ring-sky-500/50 font-bold"
+														: "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line-strong)] ring-1 ring-[var(--line-strong)]"
 												: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 										}`}
 									>

@@ -235,8 +235,8 @@ export function CephalometricAnalysisModal({
 										onClick={() => setFilterMode(flt.id)}
 										className={`h-8 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
 											filterMode === flt.id
-												? "bg-teal-950/40 border border-teal-500/50 text-teal-300 shadow-xs hover:bg-teal-900/50"
-												: "bg-slate-800/90 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700/60"
+												? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
+												: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
 										}`}
 										title={`Фильтр рентгенограммы: ${flt.label}`}
 									>
@@ -252,8 +252,8 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowPolygon((prev) => !prev)}
 									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showPolygon
-											? "bg-teal-950/40 border border-teal-500/50 text-teal-300 shadow-xs hover:bg-teal-900/50"
-											: "bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60"
+											? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
+											: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
 									}`}
 									title="Включить / отключить цефалометрический полигон"
 								>
@@ -265,8 +265,8 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowPlanes((prev) => !prev)}
 									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showPlanes
-											? "bg-teal-950/40 border border-teal-500/50 text-teal-300 shadow-xs hover:bg-teal-900/50"
-											: "bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60"
+											? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
+											: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
 									}`}
 									title="Включить / отключить плоскости (SN, FH, MP, OP)"
 								>
@@ -278,8 +278,8 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowLabels((prev) => !prev)}
 									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showLabels
-											? "bg-teal-950/40 border border-teal-500/50 text-teal-300 shadow-xs hover:bg-teal-900/50"
-											: "bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700/60"
+											? "bg-teal-950/70 border border-teal-400 text-teal-200 shadow-xs hover:bg-teal-900"
+											: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600"
 									}`}
 									title="Включить / отключить подписи анатомических точек"
 								>
@@ -291,7 +291,7 @@ export function CephalometricAnalysisModal({
 							{/* Actions (Upload, Preset, Reset) */}
 							<div className="flex items-center gap-1.5 flex-nowrap shrink-0">
 								<label
-									className="h-8 px-2.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-700/70 shadow-sm whitespace-nowrap"
+									className="h-8 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-600 shadow-sm whitespace-nowrap"
 									title="Загрузить пользовательский снимок ТРГ"
 								>
 									<UploadCloud size={14} />
@@ -306,7 +306,7 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={handleLoadPreset}
-									className="h-8 px-2.5 rounded-lg bg-teal-950/70 hover:bg-teal-900/90 text-teal-300 text-xs font-bold flex items-center gap-1.5 transition-colors border border-teal-700/60 cursor-pointer shadow-sm whitespace-nowrap"
+									className="h-8 px-2.5 rounded-lg bg-teal-900/80 hover:bg-teal-800 text-teal-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-teal-500 cursor-pointer shadow-sm whitespace-nowrap"
 									title="Загрузить эталонную анатомическую разметку со снимком"
 								>
 									<Sparkles size={14} />
@@ -315,7 +315,7 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={handleResetLandmarks}
-									className="h-8 px-2.5 rounded-lg bg-rose-950/70 hover:bg-rose-900/90 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-800/60 cursor-pointer shadow-sm whitespace-nowrap"
+									className="h-8 px-2.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-700 cursor-pointer shadow-sm whitespace-nowrap"
 									title="Сбросить все точки"
 								>
 									<Trash2 size={13} />

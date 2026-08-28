@@ -616,8 +616,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 							<Receipt size={18} />
 						</div>
 						<div className="min-w-0 max-w-full flex-1">
-							<div className="flex items-center gap-2.5 flex-nowrap">
-								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] whitespace-normal break-normal whitespace-nowrap truncate tracking-tight">
+							<div className="flex items-center gap-2.5 flex-wrap">
+								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] whitespace-normal break-normal tracking-tight">
 									{activeTab === "refund"
 										? "Возврат прихода / Отказ от услуг"
 										: activeTab === "correction"
@@ -627,7 +627,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: activeTab === "act"
 													? "Акт сдачи-приемки выполненных работ (804н)"
 													: activeTab === "oneC"
-														? "1С:Предприятие / Экспорт XML (CommerceML 2.09)"
+														? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 & 54-ФЗ"
 														: "Фискализация 54-ФЗ & Прием платежей"}
 								</h3>
 								<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">

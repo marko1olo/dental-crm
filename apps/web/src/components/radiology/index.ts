@@ -19,3 +19,8 @@ export * from "./CbctMpr3DStudioModal";
 export * from "./CbctViewportHud";
 export * from "./CbctLeftToolDock";
 export * from "./MedicalRadiologyDropzone";
+
+// Convenient aliases for UI modules
+export { RadiologyViewerModal as RadiologyDicomViewerModal } from "./RadiologyViewerModal";
+export { MedicalRadiologyDropzone as RadiologyDropzone } from "./MedicalRadiologyDropzone";
+export { CephalometricAnalysisModal as TrgCephalometricsModal } from "../orthodontics/CephalometricAnalysisModal";

@@ -382,8 +382,8 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
         })}
       </div>
 
-      {/* Sticky Fixed Estimate Footer: Grand Totals & Actions */}
-      <div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] p-3 sm:p-4 rounded-2xl shadow-lg z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 backdrop-blur-md mt-2">
+      {/* Sticky Fixed Estimate Footer: Grand Totals & Actions (Limited to max-h-[30vh] on mobile) */}
+      <div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] p-3 sm:p-4 rounded-2xl shadow-lg z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 backdrop-blur-md mt-2 max-h-[30vh] overflow-y-auto">
         <div className="flex items-center gap-3">
           <div>
             <div className="text-xs text-[var(--muted,#64748b)]">

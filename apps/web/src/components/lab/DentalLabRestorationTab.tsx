@@ -34,19 +34,19 @@ export function DentalLabRestorationTab({
 	return (
 		<div className="space-y-6">
 			{/* FDI Odontogram Mini-Picker */}
-			<div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-4 space-y-3">
-				<div className="flex items-center justify-between flex-wrap gap-2">
+			<div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 sm:p-5 space-y-4">
+				<div className="flex items-center justify-between flex-wrap gap-2.5">
 					<div className="flex items-center gap-2">
-						<span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+						<span className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">
 							Зубная формула (FDI ISO 3950)
 						</span>
-						<span className="text-xs px-2.5 py-1 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] font-bold">
+						<span className="text-xs px-3 py-1 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] font-bold">
 							{selectedTeeth.length > 0
 								? `Выбрано: ${selectedTeeth.join(", ")} (${selectedTeeth.length} ед.)`
 								: "Выберите зубы для наряда"}
 						</span>
 					</div>
-					<div className="flex items-center gap-2 text-xs flex-wrap">
+					<div className="flex items-center gap-1.5 sm:gap-2 text-xs flex-wrap">
 						<button
 							type="button"
 							onClick={() => selectQuadrant([18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28])}
@@ -71,83 +71,155 @@ export function DentalLabRestorationTab({
 					</div>
 				</div>
 
-				{/* Quadrant Visual Grid with >= 44x44px touch targets */}
-				<div className="space-y-3 select-none pt-2">
-					{/* Desktop & Tablet View (16-teeth horizontal arch per jaw) */}
-					<div className="hidden sm:block space-y-3">
-						{/* Upper Maxilla */}
-						<div className="overflow-x-auto pb-1.5 scrollbar-none">
-							<div className="flex items-center gap-1 sm:gap-1.5 min-w-fit justify-center">
-								<span className="text-xs uppercase font-bold text-slate-400 w-16 text-right pr-2 shrink-0">
-									Верх (Q1-Q2)
-								</span>
-								{[18, 17, 16, 15, 14, 13, 12, 11].map((t) => (
-									<button
-										key={t}
-										type="button"
-										onClick={() => toggleTooth(t)}
-										className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
-									>
-										{t}
-									</button>
-								))}
-								<div className="w-px h-10 bg-slate-300 dark:bg-slate-700 mx-1.5 shrink-0" />
-								{[21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
-									<button
-										key={t}
-										type="button"
-										onClick={() => toggleTooth(t)}
-										className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
-									>
-										{t}
-									</button>
-								))}
+				{/* 4 Quadrants Quick Selectors */}
+				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+					<button
+						type="button"
+						onClick={() => selectQuadrant([18, 17, 16, 15, 14, 13, 12, 11])}
+						className="min-h-[38px] px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer text-center"
+					>
+						Q1 (18–11) Верх правый
+					</button>
+					<button
+						type="button"
+						onClick={() => selectQuadrant([21, 22, 23, 24, 25, 26, 27, 28])}
+						className="min-h-[38px] px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer text-center"
+					>
+						Q2 (21–28) Верх левый
+					</button>
+					<button
+						type="button"
+						onClick={() => selectQuadrant([48, 47, 46, 45, 44, 43, 42, 41])}
+						className="min-h-[38px] px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer text-center"
+					>
+						Q4 (48–41) Низ правый
+					</button>
+					<button
+						type="button"
+						onClick={() => selectQuadrant([31, 32, 33, 34, 35, 36, 37, 38])}
+						className="min-h-[38px] px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer text-center"
+					>
+						Q3 (31–38) Низ левый
+					</button>
+				</div>
+
+				{/* Quadrant Visual Grid with >= 34x34px tooth buttons */}
+				<div className="space-y-4 select-none pt-2">
+					{/* Desktop & Tablet View (16-teeth horizontal arch per jaw with distinct 4-quadrant separation) */}
+					<div className="hidden md:block space-y-3.5">
+						{/* Upper Maxilla: Q1 (18-11) and Q2 (21-28) */}
+						<div className="p-3 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 shadow-xs">
+							<div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-2 px-2">
+								<span>1-й квадрант (18–11) • Верхний правый</span>
+								<span>2-й квадрант (21–28) • Верхний левый</span>
+							</div>
+							<div className="flex items-center gap-1.5 justify-center">
+								{/* Q1: 18 to 11 */}
+								<div className="flex items-center gap-1.5">
+									{[18, 17, 16, 15, 14, 13, 12, 11].map((t) => (
+										<button
+											key={t}
+											type="button"
+											onClick={() => toggleTooth(t)}
+											className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+											title={`Зуб ${t} (Q1)`}
+										>
+											{t}
+										</button>
+									))}
+								</div>
+
+								{/* Vertical Midline Divider */}
+								<div className="flex flex-col items-center justify-center px-2 shrink-0">
+									<div className="w-0.5 h-10 bg-teal-500/60 dark:bg-teal-400/60 rounded-full" />
+									<span className="text-[10px] font-mono font-black text-teal-600 dark:text-teal-400 mt-0.5">FDI</span>
+								</div>
+
+								{/* Q2: 21 to 28 */}
+								<div className="flex items-center gap-1.5">
+									{[21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
+										<button
+											key={t}
+											type="button"
+											onClick={() => toggleTooth(t)}
+											className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+											title={`Зуб ${t} (Q2)`}
+										>
+											{t}
+										</button>
+									))}
+								</div>
 							</div>
 						</div>
 
-						{/* Lower Mandible */}
-						<div className="overflow-x-auto pb-1.5 scrollbar-none">
-							<div className="flex items-center gap-1 sm:gap-1.5 min-w-fit justify-center">
-								<span className="text-xs uppercase font-bold text-slate-400 w-16 text-right pr-2 shrink-0">
-									Низ (Q4-Q3)
-								</span>
-								{[48, 47, 46, 45, 44, 43, 42, 41].map((t) => (
-									<button
-										key={t}
-										type="button"
-										onClick={() => toggleTooth(t)}
-										className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
-									>
-										{t}
-									</button>
-								))}
-								<div className="w-px h-10 bg-slate-300 dark:bg-slate-700 mx-1.5 shrink-0" />
-								{[31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
-									<button
-										key={t}
-										type="button"
-										onClick={() => toggleTooth(t)}
-										className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
-									>
-										{t}
-									</button>
-								))}
+						{/* Lower Mandible: Q4 (48-41) and Q3 (31-38) */}
+						<div className="p-3 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 shadow-xs">
+							<div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-2 px-2">
+								<span>4-й квадрант (48–41) • Нижний правый</span>
+								<span>3-й квадрант (31–38) • Нижний левый</span>
+							</div>
+							<div className="flex items-center gap-1.5 justify-center">
+								{/* Q4: 48 to 41 */}
+								<div className="flex items-center gap-1.5">
+									{[48, 47, 46, 45, 44, 43, 42, 41].map((t) => (
+										<button
+											key={t}
+											type="button"
+											onClick={() => toggleTooth(t)}
+											className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+											title={`Зуб ${t} (Q4)`}
+										>
+											{t}
+										</button>
+									))}
+								</div>
+
+								{/* Vertical Midline Divider */}
+								<div className="flex flex-col items-center justify-center px-2 shrink-0">
+									<div className="w-0.5 h-10 bg-teal-500/60 dark:bg-teal-400/60 rounded-full" />
+									<span className="text-[10px] font-mono font-black text-teal-600 dark:text-teal-400 mt-0.5">FDI</span>
+								</div>
+
+								{/* Q3: 31 to 38 */}
+								<div className="flex items-center gap-1.5">
+									{[31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+										<button
+											key={t}
+											type="button"
+											onClick={() => toggleTooth(t)}
+											className={`lab-tooth-btn shrink-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+											title={`Зуб ${t} (Q3)`}
+										>
+											{t}
+										</button>
+									))}
+								</div>
 							</div>
 						</div>
 					</div>
 
-					{/* Mobile View (Clean Quadrant-by-Quadrant Breakdown Q1, Q2, Q4, Q3) */}
-					<div className="block sm:hidden space-y-2.5">
+					{/* Mobile & Small Screen View (Clean 4 Quadrants: Q1, Q2, Q4, Q3 with min 34x34px buttons) */}
+					<div className="block md:hidden space-y-3">
 						{/* Upper Maxilla: Q1 (18-11) */}
-						<div className="flex items-center gap-1.5">
-							<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 w-7 shrink-0 text-center">Q1</span>
-							<div className="grid grid-cols-8 gap-1 flex-1">
+						<div className="p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+							<div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+								<span>1-й квадрант Q1 (18–11) • Верхний правый</span>
+								<button
+									type="button"
+									onClick={() => selectQuadrant([18, 17, 16, 15, 14, 13, 12, 11])}
+									className="text-[11px] text-[var(--teal)] font-bold hover:underline"
+								>
+									Выбрать Q1
+								</button>
+							</div>
+							<div className="grid grid-cols-8 gap-1.5">
 								{[18, 17, 16, 15, 14, 13, 12, 11].map((t) => (
 									<button
 										key={t}
 										type="button"
 										onClick={() => toggleTooth(t)}
-										className={`lab-tooth-btn min-w-0 !w-full !px-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+										className={`lab-tooth-btn !min-w-[34px] !min-h-[38px] !w-full !px-0 text-xs font-bold ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+										title={`Зуб ${t}`}
 									>
 										{t}
 									</button>
@@ -156,15 +228,25 @@ export function DentalLabRestorationTab({
 						</div>
 
 						{/* Upper Maxilla: Q2 (21-28) */}
-						<div className="flex items-center gap-1.5">
-							<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 w-7 shrink-0 text-center">Q2</span>
-							<div className="grid grid-cols-8 gap-1 flex-1">
+						<div className="p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+							<div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+								<span>2-й квадрант Q2 (21–28) • Верхний левый</span>
+								<button
+									type="button"
+									onClick={() => selectQuadrant([21, 22, 23, 24, 25, 26, 27, 28])}
+									className="text-[11px] text-[var(--teal)] font-bold hover:underline"
+								>
+									Выбрать Q2
+								</button>
+							</div>
+							<div className="grid grid-cols-8 gap-1.5">
 								{[21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
 									<button
 										key={t}
 										type="button"
 										onClick={() => toggleTooth(t)}
-										className={`lab-tooth-btn min-w-0 !w-full !px-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+										className={`lab-tooth-btn !min-w-[34px] !min-h-[38px] !w-full !px-0 text-xs font-bold ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+										title={`Зуб ${t}`}
 									>
 										{t}
 									</button>
@@ -173,15 +255,25 @@ export function DentalLabRestorationTab({
 						</div>
 
 						{/* Lower Mandible: Q4 (48-41) */}
-						<div className="flex items-center gap-1.5 pt-1 border-t border-slate-200 dark:border-slate-800">
-							<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 w-7 shrink-0 text-center">Q4</span>
-							<div className="grid grid-cols-8 gap-1 flex-1">
+						<div className="p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+							<div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+								<span>4-й квадрант Q4 (48–41) • Нижний правый</span>
+								<button
+									type="button"
+									onClick={() => selectQuadrant([48, 47, 46, 45, 44, 43, 42, 41])}
+									className="text-[11px] text-[var(--teal)] font-bold hover:underline"
+								>
+									Выбрать Q4
+								</button>
+							</div>
+							<div className="grid grid-cols-8 gap-1.5">
 								{[48, 47, 46, 45, 44, 43, 42, 41].map((t) => (
 									<button
 										key={t}
 										type="button"
 										onClick={() => toggleTooth(t)}
-										className={`lab-tooth-btn min-w-0 !w-full !px-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+										className={`lab-tooth-btn !min-w-[34px] !min-h-[38px] !w-full !px-0 text-xs font-bold ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+										title={`Зуб ${t}`}
 									>
 										{t}
 									</button>
@@ -190,15 +282,25 @@ export function DentalLabRestorationTab({
 						</div>
 
 						{/* Lower Mandible: Q3 (31-38) */}
-						<div className="flex items-center gap-1.5">
-							<span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 w-7 shrink-0 text-center">Q3</span>
-							<div className="grid grid-cols-8 gap-1 flex-1">
+						<div className="p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+							<div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+								<span>3-й квадрант Q3 (31–38) • Нижний левый</span>
+								<button
+									type="button"
+									onClick={() => selectQuadrant([31, 32, 33, 34, 35, 36, 37, 38])}
+									className="text-[11px] text-[var(--teal)] font-bold hover:underline"
+								>
+									Выбрать Q3
+								</button>
+							</div>
+							<div className="grid grid-cols-8 gap-1.5">
 								{[31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
 									<button
 										key={t}
 										type="button"
 										onClick={() => toggleTooth(t)}
-										className={`lab-tooth-btn min-w-0 !w-full !px-0 ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+										className={`lab-tooth-btn !min-w-[34px] !min-h-[38px] !w-full !px-0 text-xs font-bold ${selectedTeeth.includes(t) ? "is-selected" : ""}`}
+										title={`Зуб ${t}`}
 									>
 										{t}
 									</button>

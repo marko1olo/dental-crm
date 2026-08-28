@@ -631,6 +631,27 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							</span>
 						</div>
 						<div className="flex items-center gap-1.5 flex-wrap min-w-0">
+							{/* Status indicator badge */}
+							<span
+								className={`px-2 py-0.5 rounded-lg text-xs font-bold shrink-0 flex items-center gap-1 ${
+									displayStatus === "in_treatment"
+										? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/40"
+										: displayStatus === "confirmed"
+											? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500"
+											: displayStatus === "arrived"
+												? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500"
+												: displayStatus === "completed"
+													? "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-400/40"
+													: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+								}`}
+								data-testid={`appointment-status-badge-${appointment.id}`}
+							>
+								{displayStatus === "in_treatment" && (
+									<span className="w-2 h-2 rounded-full bg-teal-500 animate-ping shrink-0" />
+								)}
+								<span>{appointmentLabels?.[displayStatus] || displayStatus}</span>
+							</span>
+
 							{patientBalance !== null ? (
 								patientBalance < 0 ? (
 									<span
@@ -665,33 +686,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									<span>CITO Острая боль</span>
 								</span>
 							)}
-							<span
-								className={`appointment-card-status status-pill status-${displayStatus ?? ""} px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 shrink-0 ${
-									displayStatus === "confirmed"
-										? "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
-										: displayStatus === "in_treatment"
-											? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))]/50 text-[var(--teal-dark,var(--teal))]"
-											: displayStatus === "arrived"
-												? "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200"
-												: displayStatus === "completed"
-													? "bg-slate-500/10 border-slate-400/30 text-slate-600 dark:text-slate-400"
-													: displayStatus === "cancelled" || displayStatus === "no_show"
-														? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300"
-														: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
-								} max-w-full truncate`}
-								title={appointmentLabels?.[displayStatus] ?? String(displayStatus ?? "")}
-							>
-								{displayStatus === "in_treatment" && (
-									<span className="w-2 h-2 rounded-full bg-[var(--teal,var(--brand-primary))] animate-ping shrink-0" />
-								)}
-								{displayStatus === "arrived" && (
-									<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-								)}
-								{displayStatus === "completed" && (
-									<Check size={12} className="shrink-0 text-slate-500" />
-								)}
-								<span>{appointmentLabels?.[displayStatus] ?? String(displayStatus ?? "")}</span>
-							</span>
 							{activeScheduleCollision ? (
 								<span
 									className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/50 shadow-xs flex items-center gap-1 animate-pulse shrink-0"
@@ -851,33 +845,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</div>
 					) : null}
 
-					{/* Кнопки быстрого сдвига времени при опозданиях (+15 мин, +30 мин, +45 мин) */}
-					<div className="appointment-delay-shift-bar flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs flex-wrap">
-						<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1 shrink-0 select-none text-[11px]">
-							<Clock size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
-							Пациент опаздывает:
-						</span>
-						<div className="flex items-center gap-1 flex-wrap">
-							{[15, 30, 45].map((m) => (
-								<button
-									key={m}
-									type="button"
-									disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
-									onClick={(e) => {
-										e.stopPropagation();
-										void handleShiftAppointmentTime(m);
-									}}
-									className="h-6.5 px-2 py-0.5 rounded-md border border-amber-500/30 bg-[var(--paper,#ffffff)] dark:bg-amber-950/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-40 shadow-2xs select-none active:scale-95 flex items-center justify-center"
-									title={`Сдвинуть время визита на +${m} минут позже`}
-									aria-label={`Сдвинуть запись на +${m} минут`}
-								>
-									+{m} мин
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* Быстрые действия по статусу приёма */}
+					{/* Ряд 1: Быстрые действия по статусу визита */}
 					<AppointmentQuickActions
 						appointmentId={appointment.id}
 						currentStatus={appointment.status}
@@ -899,67 +867,95 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						disabled={isQuickStatusUpdating}
 					/>
 
-					<div className="appointment-card-footer flex flex-wrap justify-end gap-1 mt-1 pt-1 border-t border-[var(--line)]">
-						<button
-							className="secondary-button h-7.5 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-							type="button"
-							onClick={(e) => {
-								e.stopPropagation();
-								const text = generateAppointmentWhatsAppMessage({
-									patientName: appointmentPatientName,
-									doctorName: appointmentDoctor?.fullName,
-									doctorSpecialty: appointmentDoctor?.role,
-									appointmentStartsAt: appointment.startsAt,
-									clinicName: dashboard?.clinicSettings?.profile?.clinicName,
-									clinicAddress: dashboard?.clinicSettings?.profile?.address,
-									clinicPhone: dashboard?.clinicSettings?.profile?.phone,
-									treatmentReason: appointment.reason,
-								});
-								if (appointmentPatient?.phone) {
-									openWhatsAppChat(appointmentPatient.phone, text);
-								} else if (typeof navigator !== "undefined" && navigator.clipboard) {
-									void navigator.clipboard.writeText(text);
-									showToast(`Текст напоминания для ${appointmentPatientName} скопирован в буфер`, "success");
-								}
-							}}
-							aria-label={`Напомнить в WhatsApp / СМС: ${appointmentPatientName}`}
-							title="1-Клик: Отправить или скопировать напоминание с реквизитами клиники и временем приема"
-						>
-							<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
-							<span>Напомнить</span>
-						</button>
+					{/* Ряд 2: Сдвиг времени при опоздании, связь и операции */}
+					<div className="appointment-card-footer flex flex-wrap items-center justify-between gap-1.5 mt-1 pt-1.5 border-t border-[var(--line)]">
+						<div className="appointment-delay-shift-bar flex items-center gap-1 text-xs flex-wrap">
+							<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1 shrink-0 select-none text-[11px]">
+								<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+								<span>Опоздание:</span>
+							</span>
+							<div className="flex items-center gap-1 flex-wrap">
+								{[15, 30, 45].map((m) => (
+									<button
+										key={m}
+										type="button"
+										disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+										onClick={(e) => {
+											e.stopPropagation();
+											void handleShiftAppointmentTime(m);
+										}}
+										className="h-6.5 px-2 py-0.5 rounded-md border border-amber-500/30 bg-[var(--paper,#ffffff)] dark:bg-amber-950/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-40 shadow-2xs select-none active:scale-95 flex items-center justify-center whitespace-nowrap"
+										title={`Сдвинуть время визита на +${m} минут позже`}
+										aria-label={`Сдвинуть запись на +${m} минут`}
+									>
+										+{m} мин
+									</button>
+								))}
+							</div>
+						</div>
 
-						<button
-							className="secondary-button appointment-repeat-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
-							type="button"
-							onClick={() => repeatAppointment(appointment)}
-							aria-label={`Повторить запись: ${appointmentPatientName}. Форма новой записи откроется заполненной, останется выбрать время`}
-							title={`Повторить запись: те же пациент, врач и кресло — останется выбрать время (Клавиша R)`}
-						>
-							Повторить
-						</button>
-						{copyAppointmentToBuffer ? (
+						<div className="flex items-center gap-1 flex-wrap shrink-0">
 							<button
-								className="secondary-button appointment-buffer-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
+								className="secondary-button h-7.5 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none whitespace-nowrap"
 								type="button"
-								onClick={() => copyAppointmentToBuffer(appointment)}
-								aria-label={`В буфер: ${appointmentPatientName}`}
-								title="Скопировать в буфер расписания для вставки на другое время (Клавиша B)"
+								onClick={(e) => {
+									e.stopPropagation();
+									const text = generateAppointmentWhatsAppMessage({
+										patientName: appointmentPatientName,
+										doctorName: appointmentDoctor?.fullName,
+										doctorSpecialty: appointmentDoctor?.role,
+										appointmentStartsAt: appointment.startsAt,
+										clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+										clinicAddress: dashboard?.clinicSettings?.profile?.address,
+										clinicPhone: dashboard?.clinicSettings?.profile?.phone,
+										treatmentReason: appointment.reason,
+									});
+									if (appointmentPatient?.phone) {
+										openWhatsAppChat(appointmentPatient.phone, text);
+									} else if (typeof navigator !== "undefined" && navigator.clipboard) {
+										void navigator.clipboard.writeText(text);
+										showToast(`Текст напоминания для ${appointmentPatientName} скопирован в буфер`, "success");
+									}
+								}}
+								aria-label={`Напомнить в WhatsApp / СМС: ${appointmentPatientName}`}
+								title="1-Клик: Отправить или скопировать напоминание с реквизитами клиники и временем приема"
 							>
-								В буфер
+								<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<span>Напомнить</span>
 							</button>
-						) : null}
-						<button
-							className="secondary-button appointment-edit-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer"
-							type="button"
-							onClick={() => openAppointmentEditor(appointment)}
-							aria-expanded={appointmentEditing}
-							aria-controls={appointmentEditorId}
-							aria-label={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
-							title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)} (Клавиша Enter)`}
-						>
-							Настроить
-						</button>
+
+							<button
+								className="secondary-button appointment-repeat-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer whitespace-nowrap"
+								type="button"
+								onClick={() => repeatAppointment(appointment)}
+								aria-label={`Повторить запись: ${appointmentPatientName}. Форма новой записи откроется заполненной, останется выбрать время`}
+								title={`Повторить запись: те же пациент, врач и кресло — останется выбрать время (Клавиша R)`}
+							>
+								Повторить
+							</button>
+							{copyAppointmentToBuffer ? (
+								<button
+									className="secondary-button appointment-buffer-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer whitespace-nowrap"
+									type="button"
+									onClick={() => copyAppointmentToBuffer(appointment)}
+									aria-label={`В буфер: ${appointmentPatientName}`}
+									title="Скопировать в буфер расписания для вставки на другое время (Клавиша B)"
+								>
+									В буфер
+								</button>
+							) : null}
+							<button
+								className="secondary-button appointment-edit-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer whitespace-nowrap"
+								type="button"
+								onClick={() => openAppointmentEditor(appointment)}
+								aria-expanded={appointmentEditing}
+								aria-controls={appointmentEditorId}
+								aria-label={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
+								title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)} (Клавиша Enter)`}
+							>
+								Настроить
+							</button>
+						</div>
 					</div>
 
 					{appointmentEditing ? (

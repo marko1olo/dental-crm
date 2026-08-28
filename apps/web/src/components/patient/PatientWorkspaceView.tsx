@@ -252,7 +252,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			return (
 				<div
 					data-testid="patient-workspace-view"
-					className="patient-workspace-view flex flex-col gap-3 rounded-xl bg-[var(--paper)] p-3 md:p-4 text-[var(--ink)] border border-[var(--line)] shadow-xs"
+					className="patient-workspace-view flex flex-col gap-3 rounded-xl bg-[var(--paper)] p-3 md:p-4 text-[var(--ink)] border border-[var(--line)] shadow-xs pb-32"
 				>
 					{/* Clinical Safety & Allergy Red-Flag Emergency Banner */}
 					<PatientAllergySafetyBanner
@@ -433,6 +433,9 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						patientName={patientName || undefined}
 						medicalCardNumber={`043/у-${patientId.slice(0, 8)}`}
 					/>
+
+					{/* FAB clearance bottom spacer */}
+					<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 				</div>
 			);
 		},

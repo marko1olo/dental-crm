@@ -431,23 +431,52 @@
 }
 
 .recall-badge--upcoming {
-	background: var(--rm-info-light);
-	color: var(--rm-info);
+	background: rgba(37, 99, 235, 0.15);
+	color: #2563eb;
+	border: 1px solid rgba(37, 99, 235, 0.35);
 }
 
 .recall-badge--due_now {
-	background: var(--rm-warning-light);
-	color: var(--rm-warning);
+	background: rgba(225, 29, 72, 0.15);
+	color: #e11d48;
+	border: 1px solid rgba(225, 29, 72, 0.35);
 }
 
 .recall-badge--overdue_30 {
 	background: rgba(234, 88, 12, 0.15);
 	color: #ea580c;
+	border: 1px solid rgba(234, 88, 12, 0.35);
 }
 
 .recall-badge--overdue_90 {
-	background: var(--rm-danger-light);
-	color: var(--rm-danger);
+	background: rgba(225, 29, 72, 0.22);
+	color: #be123c;
+	border: 1px solid rgba(225, 29, 72, 0.45);
+	font-weight: 800;
+}
+
+[data-theme="dark"] .recall-badge--upcoming {
+	background: rgba(59, 130, 246, 0.2);
+	color: #93c5fd;
+	border-color: rgba(59, 130, 246, 0.45);
+}
+
+[data-theme="dark"] .recall-badge--due_now {
+	background: rgba(244, 63, 94, 0.2);
+	color: #fda4af;
+	border-color: rgba(244, 63, 94, 0.45);
+}
+
+[data-theme="dark"] .recall-badge--overdue_30 {
+	background: rgba(249, 115, 22, 0.2);
+	color: #fdba74;
+	border-color: rgba(249, 115, 22, 0.45);
+}
+
+[data-theme="dark"] .recall-badge--overdue_90 {
+	background: rgba(244, 63, 94, 0.25);
+	color: #fecdd3;
+	border-color: rgba(244, 63, 94, 0.6);
 }
 
 .recall-badge--completed {

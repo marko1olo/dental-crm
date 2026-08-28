@@ -735,13 +735,13 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			{/* ═══════════════════════════════════════════════════════════════════
 			    2. MAIN WORKSPACE: VIEWPORT + TOOLBAR + SIDE DRAWER
 			    ═══════════════════════════════════════════════════════════════════ */}
-			<div className="relative flex-1 flex min-h-0 bg-black overflow-hidden">
+			<div className="relative flex-1 flex min-h-0 bg-slate-900 border border-slate-700/60 dark:border-slate-800 overflow-hidden">
 				{/* Mobile Toolbar Toggle Button (< md) */}
 				{activeImageUrl && !isDropzoneOpen && (
 					<button
 						type="button"
 						onClick={() => setIsMobileToolbarExpanded((prev) => !prev)}
-						className="md:hidden absolute left-3 top-3 z-40 flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--teal-soft,#38bdf8)]/50 text-[var(--teal)] shadow-xl cursor-pointer"
+						className="md:hidden absolute left-3 top-3 z-40 flex items-center justify-center w-10 h-10 rounded-xl bg-slate-900/95 border border-teal-500/50 text-teal-300 shadow-xl cursor-pointer"
 						title="Панель инструментов"
 						data-testid="toggle-mobile-toolbar-btn"
 					>
@@ -749,10 +749,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					</button>
 				)}
 
-				{/* ── TOOLBAR (Floating Cyber Dock with >= 44x44px targets) ── */}
+				{/* ── TOOLBAR (Floating Cyber Dock: Compact 44px width, 34x34px buttons, 18px icons) ── */}
 				<nav
 					aria-label="Инструменты управления просмотрщиком"
-					className={`absolute left-2 sm:left-4 top-14 sm:top-4 z-40 flex flex-col gap-1.5 p-1.5 sm:p-2 rounded-2xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--teal-soft)]/30 shadow-2xl backdrop-blur-md ${
+					className={`absolute left-2 sm:left-3 top-14 sm:top-4 z-40 w-11 flex flex-col gap-1 p-1 rounded-xl bg-slate-900/95 border border-slate-700/70 shadow-2xl backdrop-blur-md ${
 						!activeImageUrl || isDropzoneOpen
 							? "hidden md:flex"
 							: isMobileToolbarExpanded
@@ -761,7 +761,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					}`}
 				>
 					{/* Primary Interactive Tools */}
-					<div className={`flex flex-col gap-1 pb-2 border-b border-[var(--line,#334155)] ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
+					<div className={`flex flex-col gap-1 pb-1.5 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
@@ -770,15 +770,15 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveRulerStart(null);
 								setActiveCaliperStart(null);
 							}}
-							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "pan"
-									? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)] shadow-sm"
-									: "bg-[var(--paper,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
+									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
 							title="Панорамирование / Перемещение (P)"
 							data-testid="tool-pan-btn"
 						>
-							<Move className="w-5 h-5" />
+							<Move className="w-[18px] h-[18px]" />
 						</button>
 
 						<button
@@ -789,15 +789,15 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveRulerStart(null);
 								setPendingLandmarkPos(null);
 							}}
-							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "caliper"
-									? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)] shadow-sm"
-									: "bg-[var(--paper,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
+									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
 							title="Электронный штангенциркуль альвеолярного гребня (C)"
 							data-testid="tool-caliper-btn"
 						>
-							<Compass className="w-5 h-5" />
+							<Compass className="w-[18px] h-[18px]" />
 						</button>
 
 						<button
@@ -809,10 +809,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveCaliperStart(null);
 								setPendingLandmarkPos(null);
 							}}
-							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "nerve_tracer"
-									? "bg-[var(--warn-bg)] border-2 border-[var(--warn-fg)] text-[var(--warn-fg)] shadow-sm"
-									: "bg-[var(--paper,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--warn-fg)] hover:bg-[var(--paper-soft,#0f172a)]"
+									? "bg-amber-950/70 border-2 border-amber-400 text-amber-300 shadow-sm"
+									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-amber-300 hover:bg-slate-700"
 							}`}
 							title={
 								isUpperJaw
@@ -821,7 +821,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							}
 							data-testid="tool-nerve-tracer-btn"
 						>
-							<Spline className="w-5 h-5" />
+							<Spline className="w-[18px] h-[18px]" />
 						</button>
 
 						<button
@@ -832,15 +832,15 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveCaliperStart(null);
 								setPendingLandmarkPos(null);
 							}}
-							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "ruler"
-									? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)] shadow-sm"
-									: "bg-[var(--paper,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
+									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
 							title="Измерительная 2-точечная линейка в мм (M)"
 							data-testid="tool-ruler-btn"
 						>
-							<Ruler className="w-5 h-5" />
+							<Ruler className="w-[18px] h-[18px]" />
 						</button>
 
 						<button
@@ -851,38 +851,38 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveRulerStart(null);
 								setActiveCaliperStart(null);
 							}}
-							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "landmark"
-									? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)] shadow-sm"
-									: "bg-[var(--paper,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
+									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
 							title="Установка анатомической метки зуба / апекса (L)"
 							data-testid="tool-landmark-btn"
 						>
-							<Pin className="w-5 h-5" />
+							<Pin className="w-[18px] h-[18px]" />
 						</button>
 					</div>
 
 					{/* Zoom Controls */}
-					<div className={`flex flex-col gap-1 pb-2 border-b border-[var(--line,#334155)] ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
+					<div className={`flex flex-col gap-1 pb-1.5 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={() => setZoom((prev) => Math.min(prev + 0.25, 6.0))}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+							className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
 							title="Увеличить (+)"
 						>
-							<ZoomIn className="w-5 h-5" />
+							<ZoomIn className="w-[18px] h-[18px]" />
 						</button>
 
 						<button
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={() => setZoom((prev) => Math.max(prev - 0.25, 0.2))}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+							className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
 							title="Уменьшить (-)"
 						>
-							<Minus className="w-5 h-5" />
+							<Minus className="w-[18px] h-[18px]" />
 						</button>
 
 						<button
@@ -892,7 +892,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setZoom(1.0);
 								setPan({ x: 0, y: 0 });
 							}}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-xs font-bold text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+							className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1 rounded-lg flex items-center justify-center bg-slate-800/90 border border-slate-700/80 text-[10px] font-mono font-bold text-teal-400 hover:text-white hover:bg-slate-700 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
 							title="Сброс масштаба 100% (0)"
 						>
 							100%
@@ -900,60 +900,60 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					</div>
 
 					{/* Image Transformations (Rotation & Flip) */}
-					<div className="flex flex-col gap-1 pb-2 border-b border-[var(--line,#334155)]">
+					<div className="flex flex-col gap-1 pb-1.5 border-b border-slate-700/70">
 						<div className={`flex flex-col gap-1 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 							<button
 								type="button"
 								disabled={!isImageLoaded}
 								onClick={() => setRotation((prev) => (prev + 90) % 360)}
-								className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+								className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
 								title={`Поворот по часовой стрелке 90° (R) — текущий: ${rotation}°`}
 								data-testid="tool-rotate-btn"
 							>
-								<RotateCw className="w-5 h-5" />
+								<RotateCw className="w-[18px] h-[18px]" />
 							</button>
 
 							<button
 								type="button"
 								disabled={!isImageLoaded}
 								onClick={() => setFlipH((prev) => !prev)}
-								className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+								className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 									flipH
-										? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)]"
-										: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+										? "bg-teal-950/70 border-2 border-teal-400 text-teal-300"
+										: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 								}`}
 								title="Зеркальное отражение по горизонтали"
 							>
-								<FlipHorizontal className="w-5 h-5" />
+								<FlipHorizontal className="w-[18px] h-[18px]" />
 							</button>
 
 							<button
 								type="button"
 								disabled={!isImageLoaded}
 								onClick={() => setInvert((prev) => !prev)}
-								className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+								className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 									invert
-										? "bg-[var(--warn-bg)] border-2 border-[var(--warn-fg)] text-[var(--warn-fg)]"
-										: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--warn-fg)] hover:bg-[var(--paper-soft,#0f172a)]"
+										? "bg-amber-950/70 border-2 border-amber-400 text-amber-300"
+										: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 								}`}
 								title="Инверсия негатив / позитив (I)"
 							>
-								<Sun className="w-5 h-5" />
+								<Sun className="w-[18px] h-[18px]" />
 							</button>
 						</div>
 
 						<button
 							type="button"
 							onClick={() => setIsDropzoneOpen((prev) => !prev)}
-							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
+							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer ${
 								isDropzoneOpen
-									? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)] shadow-sm"
-									: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
+									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
 							title="Загрузить снимок (DICOM / RVG Дропзона)"
 							data-testid="viewer-toggle-dropzone-btn"
 						>
-							<UploadCloud className="w-5 h-5" />
+							<UploadCloud className="w-[18px] h-[18px]" />
 						</button>
 					</div>
 
@@ -963,24 +963,24 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={() => setIsControlsExpanded((prev) => !prev)}
-							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								isControlsExpanded
-									? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)]"
-									: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#0f172a)]"
+									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300"
+									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
 							}`}
 							title="Настройка яркости и контраста (WW/WL)"
 						>
-							<Sliders className="w-5 h-5" />
+							<Sliders className="w-[18px] h-[18px]" />
 						</button>
 
 						<button
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={handleResetAll}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-rose-950/40 border border-rose-800/50 text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+							className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center bg-rose-950/40 border border-rose-800/50 text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
 							title="Сбросить все настройки снимка"
 						>
-							<RefreshCcw className="w-5 h-5" />
+							<RefreshCcw className="w-[18px] h-[18px]" />
 						</button>
 					</div>
 				</nav>
@@ -1599,12 +1599,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							</svg>
 						)}
 
-						{/* ── LANDMARK PINS OVERLAY (Delicate non-occluding badge shifted 40px above crown with leader line) ── */}
+						{/* ── LANDMARK PINS OVERLAY (Style radiological marker: dark compact badge with fine contrast leader line) ── */}
 						{isHudVisible && isImageLoaded &&
 							visibleLandmarks.map((pin) => (
 								<div
 									key={pin.id}
-									className="absolute z-30 group pointer-events-auto"
+									className="absolute z-30 group pointer-events-auto select-none"
 									style={{
 										left: `${pin.x}%`,
 										top: `${pin.y}%`,
@@ -1612,26 +1612,26 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									}}
 								>
 									<div className="flex flex-col items-center cursor-pointer relative">
-										{/* Delicate semi-transparent badge shifted 40px above anatomical point */}
-										<div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900/85 hover:bg-slate-900 border border-teal-400/60 text-teal-300 text-[10px] font-bold shadow-xl backdrop-blur-md whitespace-nowrap group-hover:scale-105 transition-all">
+										{/* Dark compact badge */}
+										<div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-900/90 hover:bg-slate-900 text-teal-300 border border-teal-500/50 text-[11px] font-mono shadow-lg backdrop-blur-xs whitespace-nowrap group-hover:scale-105 transition-all">
 											<span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-											<span>FDI: {pin.toothFdi}</span>
+											<span>FDI {pin.toothFdi}</span>
 											<button
 												type="button"
 												onClick={(e) => {
 													e.stopPropagation();
 													handleDeleteLandmark(pin.id);
 												}}
-												className="text-rose-400 hover:text-rose-200 ml-1 text-xs font-bold leading-none cursor-pointer"
+												className="text-rose-400 hover:text-rose-200 ml-0.5 text-xs font-bold leading-none cursor-pointer"
 												title="Удалить метку"
 											>
 												×
 											</button>
 										</div>
-										{/* Fine leader line connecting badge to exact anatomical target point (40px high) */}
-										<div className="w-[1px] h-10 bg-teal-400/80 shadow-xs" />
-										{/* Non-occluding delicate anatomical target needle at the exact tooth coordinates */}
-										<div className="w-2.5 h-2.5 rounded-full border border-teal-300 bg-teal-400/40 flex items-center justify-center shadow-sm">
+										{/* Fine leader line connecting badge to exact anatomical target point */}
+										<div className="w-[1px] h-8 bg-teal-400/90 shadow-xs" />
+										{/* Non-occluding delicate anatomical target needle */}
+										<div className="w-2 h-2 rounded-full border border-teal-300 bg-teal-400/60 shadow-sm flex items-center justify-center">
 											<div className="w-1 h-1 rounded-full bg-white shadow-xs" />
 										</div>
 									</div>
@@ -1725,12 +1725,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 					{/* ── WW/WL PRESETS QUICK BAR (Centered directly inside canvas viewport) ── */}
 					<div
-						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-900/95 border border-slate-700/60 shadow-2xl backdrop-blur-md max-w-[calc(100%-32px)] overflow-x-auto scrollbar-none transition-all ${
+						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-32px)] overflow-x-auto scrollbar-none transition-all ${
 							!isImageLoaded ? "opacity-40 pointer-events-none" : ""
 						}`}
 						data-testid="viewer-presets-bar"
 					>
-						<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">
+						<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-slate-300 whitespace-nowrap shrink-0">
 							Пресеты WW/WL:
 						</span>
 						{DEFAULT_WW_WL_PRESETS.map((preset) => {
@@ -1743,8 +1743,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									onClick={() => handleSelectPreset(preset)}
 									className={`h-8 min-h-[32px] min-w-fit shrink-0 whitespace-nowrap px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
 										isSelected
-											? "bg-[var(--teal,#0d9488)] border border-teal-400 text-white shadow-sm"
-											: "bg-slate-800/90 border border-slate-700 text-slate-200 hover:text-white hover:bg-slate-700"
+											? "bg-teal-600 border border-teal-300 text-white shadow-md font-bold"
+											: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-600 font-bold"
 									}`}
 									title={preset.description}
 									data-testid={`preset-btn-${preset.id}`}
@@ -1755,26 +1755,24 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						})}
 					</div>
 
-					{/* ── BOTTOM-LEFT VIEWPORT HUD STATUS (Safely above bottom dock, clear of left toolbar) ── */}
+					{/* ── BOTTOM-LEFT VIEWPORT HUD STATUS (Semi-transparent dark HUD badge in both themes) ── */}
 					<div
-						className="absolute left-[92px] bottom-16 z-30 hidden sm:flex flex-col gap-1 p-2.5 rounded-xl bg-[var(--paper-soft,#0f172a)]/95 border border-[var(--line,#334155)] text-[11px] font-mono text-[var(--muted,#94a3b8)] backdrop-blur-md pointer-events-none whitespace-nowrap shadow-xl"
+						className="absolute left-14 bottom-4 z-30 hidden sm:flex items-center gap-2 px-2 py-1 rounded bg-slate-900/80 text-slate-300 text-xs font-mono border border-slate-700/60 backdrop-blur-xs pointer-events-none whitespace-nowrap shadow-lg"
 						data-testid="viewport-hud-status"
 					>
-						<div className="flex items-center gap-2 whitespace-nowrap">
-							<span className="text-[var(--ink,#f8fafc)] font-bold whitespace-nowrap">Масштаб:</span>
-							<span className="text-[var(--teal)] font-bold whitespace-nowrap">{Math.round(zoom * 100)}%</span>
-							<span className="text-[var(--line,#475569)]">•</span>
-							<span className="text-[var(--ink,#f8fafc)] font-bold whitespace-nowrap">Поворот:</span>
-							<span className="text-[var(--teal)] font-bold whitespace-nowrap">{rotation}°</span>
+						<div className="flex items-center gap-1 whitespace-nowrap">
+							<span className="font-bold text-slate-200">Масштаб:</span>
+							<span className="text-teal-300 font-bold">{Math.round(zoom * 100)}%</span>
 						</div>
-						<div className="flex items-center gap-2 whitespace-nowrap">
-							<span className="text-[var(--ink,#f8fafc)] font-bold whitespace-nowrap">Калибровка:</span>
-							<span className="whitespace-nowrap">{study?.metadata?.pixelSpacingMm || 0.05} мм/пикс</span>
-							<span className="text-[var(--line,#475569)]">•</span>
-							<span className="whitespace-nowrap">
-								Линеек: {visibleMeasurements.length}, Меток: {visibleLandmarks.length}
-							</span>
+						<span className="text-slate-600">•</span>
+						<div className="flex items-center gap-1 whitespace-nowrap">
+							<span className="font-bold text-slate-200">Поворот:</span>
+							<span className="text-teal-300 font-bold">{rotation}°</span>
 						</div>
+						<span className="text-slate-600 hidden md:inline">•</span>
+						<span className="hidden md:inline text-[11px] text-slate-400 whitespace-nowrap">
+							{study?.metadata?.pixelSpacingMm || 0.05} мм/пикс · Линеек: {visibleMeasurements.length}, Меток: {visibleLandmarks.length}
+						</span>
 					</div>
 				</div>
 

@@ -189,7 +189,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 		>
 			{/* 1. TOP-LEFT CLINICAL HEADER BADGE */}
 			<div
-				className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-auto flex-wrap max-w-[calc(100%-56px)]"
+				className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-auto flex-wrap max-w-[calc(100%-140px)]"
 				onDoubleClick={(e) => {
 					e.stopPropagation();
 					onToggleMaximize?.();
@@ -210,22 +210,6 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 						</span>
 					)}
 				</div>
-
-				{obliqueAngleDeg !== undefined && Math.abs(obliqueAngleDeg) > 0.05 && (
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							onResetAngle?.();
-						}}
-						className="px-1.5 py-0.5 rounded bg-[#14171e]/90 hover:bg-[#1e2430] backdrop-blur-sm text-[10px] font-mono font-semibold border border-cyan-500/40 hover:border-cyan-500 text-cyan-400 hover:text-cyan-300 shadow-xs flex items-center gap-1 cursor-pointer transition-all"
-						title={`Угол наклона: ${obliqueAngleDeg > 0 ? "+" : ""}${obliqueAngleDeg.toFixed(1)}° (Нажмите для сброса в 0.0°)`}
-						data-testid={`cbct-reset-angle-badge-${viewportType}`}
-					>
-						<span>∡ {obliqueAngleDeg > 0 ? "+" : ""}{obliqueAngleDeg.toFixed(1)}°</span>
-						<span className="text-[9px] text-[#94a3b8] hover:text-white font-bold ml-0.5">↺ 0°</span>
-					</button>
-				)}
 
 				{zoomFactor !== undefined && Math.abs(zoomFactor - 1.0) > 0.01 && (
 					<span
@@ -252,24 +236,40 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				)}
 			</div>
 
-			{/* 2. TOP-RIGHT VIEWPORT MAXIMIZE / RESTORE BUTTON (24x24px compact) */}
-			{onToggleMaximize && (
-				<div className="absolute top-1.5 right-1.5 pointer-events-auto flex items-center">
+			{/* 2. TOP-RIGHT CORNER: OBLIQUE ANGLE BADGE & VIEWPORT MAXIMIZE BUTTON (Fixed top-2 right-2 placement) */}
+			<div className="absolute top-1.5 right-1.5 pointer-events-auto flex items-center gap-1 z-30">
+				{obliqueAngleDeg !== undefined && Math.abs(obliqueAngleDeg) > 0.05 && (
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onResetAngle?.();
+						}}
+						className="px-2 py-0.5 rounded bg-[#14171e]/95 hover:bg-[#1e2430] backdrop-blur-sm text-[10px] font-mono font-bold border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-200 shadow-md flex items-center gap-1 cursor-pointer transition-all"
+						title={`Угол наклона: ${obliqueAngleDeg > 0 ? "+" : ""}${obliqueAngleDeg.toFixed(1)}° (Нажмите для сброса в 0.0°)`}
+						data-testid={`cbct-reset-angle-badge-${viewportType}`}
+					>
+						<span>∡ {obliqueAngleDeg > 0 ? "+" : ""}{obliqueAngleDeg.toFixed(1)}°</span>
+						<span className="text-[9px] text-[#94a3b8] hover:text-white font-bold ml-0.5">↺ 0°</span>
+					</button>
+				)}
+
+				{onToggleMaximize && (
 					<button
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							onToggleMaximize();
 						}}
-						className="w-6 h-6 rounded bg-[#14171e]/90 backdrop-blur-sm hover:bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] border border-[#242a35] shadow-xs transition-colors flex items-center justify-center"
+						className="w-6 h-6 rounded bg-[#14171e]/90 backdrop-blur-sm hover:bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] border border-[#242a35] shadow-xs transition-colors flex items-center justify-center cursor-pointer"
 						title={isMaximized ? "Свернуть в сетку (двойной клик)" : "Развернуть на 100% (двойной клик)"}
 						data-testid={`cbct-maximize-${viewportType}-btn`}
 						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
 					>
 						{isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
 					</button>
-				</div>
-			)}
+				)}
+			</div>
 
 			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (Calm, semi-transparent) */}
 			<div

@@ -316,8 +316,8 @@ export function CephalometricCanvas({
 					data-testid="ceph-dropzone"
 					className={`w-full max-w-xl mx-3 sm:mx-4 p-5 sm:p-8 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center select-none ${
 						isDragOver
-							? "!border-teal-400 !bg-teal-950/60 shadow-2xl scale-[1.01]"
-							: "!border-[#334155] hover:!border-teal-500 !bg-[#0b1329] shadow-xl"
+							? "border-teal-400 bg-teal-950/60 shadow-2xl scale-[1.01]"
+							: "border-slate-700/80 hover:border-teal-500 bg-slate-900/95 shadow-xl"
 					}`}
 				>
 					<input
@@ -332,16 +332,16 @@ export function CephalometricCanvas({
 							}
 						}}
 					/>
-					<div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl !bg-[#1e293b] border !border-[#334155] flex items-center justify-center text-teal-400 mb-3 sm:mb-4 shadow-lg shrink-0">
+					<div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-teal-400 mb-3 sm:mb-4 shadow-lg shrink-0">
 						<UploadCloud size={30} />
 					</div>
-					<h3 className="text-sm sm:text-lg font-bold !text-[#f8fafc] mb-1 sm:mb-1.5">
+					<h3 className="text-sm sm:text-lg font-bold text-slate-100 mb-1 sm:mb-1.5">
 						Боковая телерентгенограмма черепа (ТРГ)
 					</h3>
-					<p className="text-xs sm:text-sm !text-[#cbd5e1] max-w-md mb-2 leading-relaxed">
+					<p className="text-xs sm:text-sm text-slate-300 max-w-md mb-2 leading-relaxed">
 						Для проведения цефалометрического анализа требуется реальный рентгеновский снимок пациента.
 					</p>
-					<p className="text-[11px] sm:text-xs !text-[#94a3b8] mb-4 sm:mb-5 font-mono">
+					<p className="text-[11px] sm:text-xs text-slate-400 mb-4 sm:mb-5 font-mono">
 						Drag & Drop боковой ТРГ / DICOM / JPG / PNG
 					</p>
 
@@ -349,7 +349,7 @@ export function CephalometricCanvas({
 						<button
 							type="button"
 							onClick={() => fileInputRef.current?.click()}
-							className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl !bg-[var(--teal,#0d9488)] hover:opacity-90 !text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+							className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
 						>
 							<UploadCloud size={16} />
 							<span>Выбрать снимок ТРГ</span>
@@ -357,70 +357,70 @@ export function CephalometricCanvas({
 						<button
 							type="button"
 							onClick={() => onImageUpload?.(SAMPLE_TRG_CEPHALOGRAM_URL)}
-							className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl !bg-[#1e293b] hover:!bg-[#334155] !text-[#f8fafc] border !border-[#334155] text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
+							className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
 						>
 							<span>Загрузить клинический снимок ТРГ пациента</span>
 						</button>
 					</div>
 
-					<div className="flex items-center gap-2 mt-4 sm:mt-5 text-[11px] !text-[#94a3b8] font-medium flex-wrap justify-center">
-						<span className="px-2 py-0.5 rounded !bg-[#1e293b] border !border-[#334155]">DICOM</span>
-						<span className="px-2 py-0.5 rounded !bg-[#1e293b] border !border-[#334155]">JPG</span>
-						<span className="px-2 py-0.5 rounded !bg-[#1e293b] border !border-[#334155]">PNG</span>
-						<span className="px-2 py-0.5 rounded !bg-[#1e293b] border !border-[#334155]">WebP</span>
+					<div className="flex items-center gap-2 mt-4 sm:mt-5 text-[11px] text-slate-400 font-medium flex-wrap justify-center">
+						<span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">DICOM</span>
+						<span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">JPG</span>
+						<span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">PNG</span>
+						<span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">WebP</span>
 					</div>
 				</div>
 			) : (
 				<>
 					{/* Canvas Top Floating Toolbar with High-Contrast Dark HUD (Theme-Agnostic) */}
 					<div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 flex-wrap pointer-events-none">
-						{/* Active Target Indicator Badge */}
-						<div className="pointer-events-auto flex items-center gap-2 !bg-[#0f172a] backdrop-blur-md px-3 py-1.5 rounded-lg border !border-[#334155] shadow-xl h-8">
+						{/* Active Target Indicator Badge (Left) */}
+						<div className="pointer-events-auto flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/80 shadow-xl h-8 text-slate-100">
 							<Crosshair size={15} className="text-teal-400 animate-pulse shrink-0" />
-							<div className="text-xs font-bold !text-[#f8fafc] min-w-0">
+							<div className="text-xs font-bold text-slate-100 min-w-0">
 								{activeTargetKey ? (
 									<span>
-										<span className="!text-[#94a3b8] font-normal mr-1">Установите точку:</span>
+										<span className="text-slate-400 font-normal mr-1">Установите точку:</span>
 										<span className="text-teal-300 font-extrabold uppercase">
 											{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
 										</span>
 									</span>
 								) : (
-									<span className="!text-[#cbd5e1] font-medium">
+									<span className="text-slate-300 font-medium">
 										Выберите ориентир в списке или перетаскивайте точки на снимке
 									</span>
 								)}
 							</div>
 						</div>
 
-						{/* Zoom, View & Calibration Controls */}
-						<div className="pointer-events-auto flex items-center gap-1.5 !bg-[#0f172a] backdrop-blur-md p-1 rounded-lg border !border-[#334155] shadow-xl h-8">
+						{/* Systematic Zoom, View & Calibration Controls HUD (Top-Right) */}
+						<div className="pointer-events-auto flex items-center gap-1.5 bg-slate-900/95 backdrop-blur-md p-1 rounded-lg border border-slate-700/80 shadow-xl h-8 text-slate-100">
 							<button
 								type="button"
 								onClick={() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1))))}
-								className="w-7 h-7 rounded-md flex items-center justify-center !bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] transition-colors cursor-pointer"
+								className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
 								title="Приблизить (Масштаб +)"
 								aria-label="Приблизить масштаб"
 							>
 								<ZoomIn size={14} />
 							</button>
-							<span className="text-xs font-mono font-bold !text-[#f8fafc] px-1 min-w-[40px] text-center">
+							<span className="text-xs font-mono font-bold text-teal-300 px-1 min-w-[40px] text-center">
 								{Math.round(zoom * 100)}%
 							</span>
 							<button
 								type="button"
 								onClick={() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1))))}
-								className="w-7 h-7 rounded-md flex items-center justify-center !bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] transition-colors cursor-pointer"
+								className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
 								title="Отдалить (Масштаб -)"
 								aria-label="Отдалить масштаб"
 							>
 								<ZoomOut size={14} />
 							</button>
-							<div className="w-[1px] h-4 bg-[#334155] mx-0.5" />
+							<div className="w-[1px] h-4 bg-slate-700 mx-0.5" />
 							<button
 								type="button"
 								onClick={handleResetView}
-								className="w-7 h-7 rounded-md flex items-center justify-center !bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] transition-colors cursor-pointer"
+								className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
 								title="Сбросить масштаб и положение"
 								aria-label="Сбросить масштаб"
 							>
@@ -434,8 +434,8 @@ export function CephalometricCanvas({
 								}}
 								className={`h-7 px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
 									isCalibrating
-										? "!bg-amber-500 !text-slate-950 font-black border !border-amber-400 shadow-sm"
-										: "!bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] shadow-sm"
+										? "bg-amber-500 text-slate-950 font-black border border-amber-300 shadow-sm"
+										: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 shadow-sm"
 								}`}
 								title="Калибровка масштаба по линейке (мм/px)"
 								aria-label="Калибровка масштаба"

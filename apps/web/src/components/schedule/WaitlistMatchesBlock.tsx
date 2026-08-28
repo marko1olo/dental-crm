@@ -335,10 +335,26 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 											fontSize: 11,
 											fontWeight: 700,
 											textTransform: "uppercase",
+											padding: "2px 8px",
+											borderRadius: 6,
+											background:
+												match.priorityLevel === "high"
+													? "rgba(225, 29, 72, 0.15)"
+													: match.priorityLevel === "medium"
+														? "rgba(37, 99, 235, 0.15)"
+														: "var(--paper-soft)",
 											color:
 												match.priorityLevel === "high"
-													? "var(--danger, #b91c1c)"
-													: "var(--muted)",
+													? "#e11d48"
+													: match.priorityLevel === "medium"
+														? "#2563eb"
+														: "var(--muted)",
+											border:
+												match.priorityLevel === "high"
+													? "1px solid rgba(225, 29, 72, 0.35)"
+													: match.priorityLevel === "medium"
+														? "1px solid rgba(37, 99, 235, 0.35)"
+														: "1px solid var(--line)",
 										}}
 									>
 										{priorityLabel}

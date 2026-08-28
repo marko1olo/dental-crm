@@ -209,49 +209,68 @@ export function PatientMemoPrintModal({
 					})}
 				</div>
 
-				{/* Live Memo Preview Box */}
-				<div className="flex-1 overflow-y-auto space-y-3 min-h-[260px] max-h-[380px] p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] pr-2">
-					<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2 flex-wrap">
-						<div className="flex items-center gap-2">
+				{/* Live Memo Preview Box (White Sheet with authentic printed preview in all themes) */}
+				<div className="flex-1 overflow-y-auto min-h-[260px] max-h-[380px] p-2 bg-slate-900/10 dark:bg-slate-950/40 rounded-xl border border-[var(--line)]">
+					<div
+						className="p-5 sm:p-6 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl leading-relaxed flex flex-col gap-3.5"
+						style={{ background: "#ffffff", color: "#0f172a" }}
+					>
+						{/* Form Official Header */}
+						<div className="border-b-2 border-slate-900 pb-2 text-[10px] text-slate-700 flex justify-between items-start gap-4">
+							<div>
+								<div
+									className="font-extrabold text-[12px] uppercase text-slate-950 tracking-normal leading-tight"
+									style={{ wordBreak: "normal", overflowWrap: "break-word", hyphens: "none" }}
+								>
+									СТОМАТОЛОГИЧЕСКАЯ КЛИНИКА ДЕНТЕ
+								</div>
+								<div className="text-[10px] text-slate-600 font-medium mt-0.5">
+									{clinicPhone} · Режим работы: Пн-Вс 09:00 - 21:00
+								</div>
+							</div>
+							<div className="text-right text-[10px] text-slate-600 shrink-0 font-medium">
+								{toothNumber ? `Зуб ${toothNumber}` : "Область вмешательства"} · {new Date().toLocaleDateString("ru-RU")}
+							</div>
+						</div>
+
+						{/* Memo Title */}
+						<div className="flex items-center gap-2 border-b border-slate-200 pb-2">
 							<span className="text-xl">{activeMemo.icon}</span>
-							<strong className="text-sm font-extrabold text-[var(--ink)]">
+							<strong className="text-sm font-extrabold text-slate-950">
 								{activeMemo.title}
 							</strong>
 						</div>
-						<span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]">
-							{toothNumber ? `Зуб ${toothNumber}` : "Область вмешательства"} • {new Date().toLocaleDateString("ru-RU")}
-						</span>
-					</div>
 
-					<div className="space-y-2">
-						<div className="text-xs font-extrabold uppercase text-[var(--muted)] tracking-wider">
-							Обязательные правила и рекомендации:
+						<div className="space-y-2">
+							<div className="text-[11px] font-extrabold uppercase text-slate-700 tracking-wider">
+								Обязательные правила и рекомендации:
+							</div>
+							<div className="space-y-1.5">
+								{activeMemo.keyRules.map((rule, idx) => (
+									<div
+										key={idx}
+										className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-900 leading-relaxed flex items-start gap-2"
+									>
+										<span className="font-mono font-bold text-teal-700 shrink-0">
+											{idx + 1}.
+										</span>
+										<span>{rule}</span>
+									</div>
+								))}
+							</div>
 						</div>
-						<div className="space-y-1.5">
-							{activeMemo.keyRules.map((rule, idx) => (
-								<div
-									key={idx}
-									className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] leading-relaxed flex items-start gap-2"
-								>
-									<span className="font-mono font-bold text-[var(--teal,var(--brand-primary))] shrink-0">
-										{idx + 1}.
-									</span>
-									<span>{rule}</span>
-								</div>
-							))}
-						</div>
-					</div>
 
-					<div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 space-y-1.5">
-						<div className="text-xs font-extrabold text-rose-900 dark:text-rose-200 flex items-center gap-1.5">
-							<AlertTriangle size={15} className="text-rose-600 dark:text-rose-400" />
-							<span>Срочно связаться с клиникой ({clinicPhone}) при:</span>
+						<div className="p-3 rounded-xl bg-rose-50 border border-rose-200 space-y-1.5 text-slate-900">
+							<div className="text-xs font-extrabold text-rose-900 flex items-center gap-1.5">
+								<AlertTriangle size={15} className="text-rose-600" />
+								<span>Срочно связаться с клиникой ({clinicPhone}) при:</span>
+							</div>
+							<ul className="m-0 pl-4 text-xs text-rose-900 space-y-1 font-medium">
+								{activeMemo.urgentTriggers.map((t, idx) => (
+									<li key={idx}>• {t}</li>
+								))}
+							</ul>
 						</div>
-						<ul className="m-0 pl-4 text-xs text-rose-800 dark:text-rose-300 space-y-1 font-medium">
-							{activeMemo.urgentTriggers.map((t, idx) => (
-								<li key={idx}>• {t}</li>
-							))}
-						</ul>
 					</div>
 				</div>
 

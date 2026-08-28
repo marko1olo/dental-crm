@@ -297,7 +297,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 
 				{/* Tabs Navigation (Compact 32px SegmentedControl) */}
 				<div className="flex items-center justify-between gap-2 px-3 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs shrink-0 max-w-full">
+					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs shrink-0 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 						<button
 							type="button"
 							onClick={() => setActiveTab("friendly")}
@@ -373,21 +373,32 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					</div>
 
 					<div className="flex items-center gap-1.5 flex-wrap">
-						{LOYALTY_DISCOUNT_PRESETS.map((preset) => (
-							<button
-								key={preset.id}
-								type="button"
-								onClick={() => setDiscountPreset(preset.id)}
-								className={`min-h-[44px] px-3.5 py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center ${
-									discountPreset === preset.id
-										? "bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-										: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:border-[var(--brand-primary,#0d9488)]"
-								}`}
-								title={preset.description}
-							>
-								{preset.label}
-							</button>
-						))}
+						{LOYALTY_DISCOUNT_PRESETS.map((preset) => {
+							const isNone = preset.id === "none";
+							const isSelected = discountPreset === preset.id;
+							let buttonClass = "";
+							if (isNone) {
+								buttonClass = isSelected
+									? "bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 shadow-2xs font-bold"
+									: "bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-300 hover:border-slate-400 font-semibold";
+							} else {
+								buttonClass = isSelected
+									? "bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs border border-transparent font-bold"
+									: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink)] dark:bg-slate-800/80 dark:border-slate-700 dark:text-slate-200 dark:hover:border-teal-500 hover:border-[var(--brand-primary,#0d9488)] font-semibold";
+							}
+
+							return (
+								<button
+									key={preset.id}
+									type="button"
+									onClick={() => setDiscountPreset(preset.id)}
+									className={`min-h-[44px] px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center whitespace-nowrap ${buttonClass}`}
+									title={preset.description}
+								>
+									{preset.label}
+								</button>
+							);
+						})}
 					</div>
 
 					{discountPreset === "manual_percent" && (

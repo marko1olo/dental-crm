@@ -756,10 +756,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						</div>
 
 						{/* Printable Physical Sheet Mockup with Dark Mode Dampening Frame */}
-						<div className="w-full dark:bg-slate-950 dark:p-4 dark:border dark:border-slate-800 dark:rounded-xl">
+						<div className="w-full dark:bg-slate-950 dark:p-4 dark:border dark:border-slate-800 dark:rounded-xl flex justify-center">
 							<div
-								className="print-paper-sheet p-6 md:p-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl font-serif leading-relaxed flex flex-col gap-3.5 selection:bg-[var(--teal-soft,#ccfbf1)]"
+								className="print-paper-sheet p-6 md:p-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl font-serif leading-relaxed flex flex-col gap-3.5 selection:bg-[var(--teal-soft,#ccfbf1)] max-w-prose w-full mx-auto"
 								data-paper-sheet="true"
+								style={{ background: "#ffffff", color: "#0f172a" }}
 							>
 								{/* Header */}
 								<div className="border-b-2 border-slate-900 pb-2 text-[10px] text-slate-700 flex justify-between gap-3">

@@ -442,6 +442,13 @@
 }
 
 /* Cost and Remove */
+.inventory-material-bottom-bar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-shrink: 0;
+}
+
 .inventory-material-cost-wrap {
 	display: flex;
 	flex-direction: column;
@@ -780,4 +787,83 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
+}
+
+/* ─── MOBILE CARD VIEW ADAPTATION (<= 640px) ─────────────────────────────────── */
+@media (max-width: 640px) {
+	.inventory-material-card {
+		padding: 14px;
+		gap: 12px;
+	}
+
+	.inventory-material-main-row {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+	}
+
+	.inventory-material-info {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.inventory-stepper-container {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.inventory-stepper-group {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.inventory-stepper-btn {
+		flex: 0 0 52px;
+		width: 52px;
+	}
+
+	.inventory-stepper-input {
+		flex: 1;
+		width: 100%;
+	}
+
+	.inventory-quick-chips {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+		gap: 6px;
+		width: 100%;
+	}
+
+	.inventory-quick-chip {
+		min-width: 0;
+		width: 100%;
+		padding: 0 4px;
+		text-align: center;
+	}
+
+	.inventory-material-bottom-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-top: 10px;
+		border-top: 1px solid var(--line);
+		width: 100%;
+	}
+
+	.inventory-material-cost-wrap {
+		align-items: flex-start;
+		min-width: 0;
+	}
+
+	.inventory-po-table {
+		display: block;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
 }

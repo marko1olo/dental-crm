@@ -259,7 +259,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<div
 							key={tier.tierId}
 							onClick={() => handleCardClick(tier)}
-							className={`relative flex flex-col justify-between rounded-3xl p-4 sm:p-5 border transition-all duration-200 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] h-full overflow-hidden ${
+							className={`relative flex flex-col justify-between rounded-3xl p-4 sm:p-5 border transition-all duration-200 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] h-full flex-1 overflow-hidden ${
 								isSelected
 									? `${tier.borderClass} shadow-xl ring-2 ring-[var(--teal,var(--brand-primary))]/20 z-10`
 									: "border-[var(--border,#cbd5e1)] opacity-95 hover:opacity-100 hover:border-slate-400 shadow-md"
@@ -504,7 +504,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							</div>
 
 							{/* Actions Bottom: Sticky Fixed Footer at Card Bottom */}
-							<div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] p-3 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 rounded-b-3xl mt-auto z-10 space-y-1.5 shadow-xs">
+							<div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] p-3 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 rounded-b-3xl mt-auto z-10 space-y-1.5 shadow-xs shrink-0 max-h-[30vh] overflow-y-auto">
 								<button
 									type="button"
 									onClick={(e) => handleSignClick(e, tier)}

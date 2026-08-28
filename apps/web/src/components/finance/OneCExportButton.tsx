@@ -6,6 +6,7 @@ import {
   type OneCExportParams,
 } from '@dental/shared';
 import { showToast } from '../GlobalToast';
+import { Billing1CExportModal } from './Billing1CExportModal';
 
 export interface OneCExportItem {
   id?: string | undefined;
@@ -72,9 +73,14 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isExported, setIsExported] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleExport = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (e.shiftKey) {
+      setIsModalOpen(true);
+      return;
+    }
     if (items.length === 0) {
       showToast('Нет позиций для выгрузки в 1С', 'warning');
       return;
@@ -165,21 +171,43 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleExport}
-      disabled={isExporting}
-      title="Сформировать и скачать официальный файл выгрузки в 1С:Бухгалтерия 8.3 / УТ (CommerceML 2.09)"
-      data-testid="1c-export-xml-button"
-      className={`h-9 px-3.5 rounded-xl text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 select-none whitespace-nowrap ${variantStyles[variant]} ${className}`.trim()}
-      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-    >
-      {isExported ? (
-        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-      ) : (
-        <FileCode2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+    <>
+      <button
+        type="button"
+        onClick={handleExport}
+        disabled={isExporting}
+        title="Сформировать и скачать официальный файл выгрузки в 1С:Бухгалтерия 8.3 / УТ (CommerceML 2.09) (Shift+Click: расширенная студия 1С)"
+        data-testid="1c-export-xml-button"
+        className={`h-9 px-3.5 rounded-xl text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 select-none whitespace-nowrap ${variantStyles[variant]} ${className}`.trim()}
+        style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+      >
+        {isExported ? (
+          <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        ) : (
+          <FileCode2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        )}
+        <span className="whitespace-nowrap">{isExported ? '1C XML Скачан' : label}</span>
+      </button>
+
+      {isModalOpen && (
+        <Billing1CExportModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          actNumber={actNumber}
+          contractNumber={contractNumber}
+          contractDate={contractDate}
+          doctorName={doctorName}
+          patientName={patientName}
+          patientId={patientId}
+          patientPhone={patientPhone}
+          patientAddress={patientAddress}
+          clinicName={clinicName}
+          clinicInn={clinicInn}
+          clinicKpp={clinicKpp}
+          items={items}
+          totalRub={totalRub}
+        />
       )}
-      <span className="whitespace-nowrap">{isExported ? '1C XML Скачан' : label}</span>
-    </button>
+    </>
   );
 };

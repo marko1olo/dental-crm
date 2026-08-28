@@ -164,11 +164,10 @@ export function SettingsAccessTab({
 
 	return (
 		<section
-			className="access-settings flex flex-col gap-6"
+			className="access-settings flex flex-col gap-6 pb-32 sm:pb-24"
 			aria-label="Доступы, рабочие профили и роли"
-			style={{ paddingBottom: "96px" }}
 		>
-			<div className="import-copy">
+			<div className="import-copy p-4 sm:p-6 rounded-2xl">
 				<UserCheck aria-hidden="true" />
 				<div>
 					<p className="eyebrow">Безопасность и RBAC</p>
@@ -221,7 +220,7 @@ export function SettingsAccessTab({
 
 			{/* Гранулярная ролевая матрица (8 канонических ролей) */}
 			<article
-				className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4"
+				className="p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4"
 				data-testid="granular-role-matrix-panel"
 			>
 				<div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -290,7 +289,7 @@ export function SettingsAccessTab({
 				</div>
 
 				{/* Карточка выбранной роли */}
-				<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-start justify-between flex-wrap gap-3">
+				<div className="p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-start justify-between flex-wrap gap-3">
 					<div>
 						<div className="flex items-center gap-2">
 							<h4 className="m-0 text-sm font-bold text-slate-900 dark:text-white">
@@ -305,15 +304,15 @@ export function SettingsAccessTab({
 						</p>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
 						{activeRoleMeta.role === "doctor" && (
-							<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-								🔒 P&L Клиники Скрыт
+							<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 whitespace-nowrap">
+								🔒 P&L: Скрыт (Изоляция)
 							</span>
 						)}
 						{activeRoleMeta.role === "assistant" && (
-							<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
-								🛡️ 152-ФЗ Маскирование
+							<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
+								🛡️ 152-ФЗ: Маскирован
 							</span>
 						)}
 					</div>
@@ -369,7 +368,7 @@ export function SettingsAccessTab({
 			</article>
 
 			{/* Пригласить сотрудника */}
-			<article className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
+			<article className="p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
 				<div className="mb-4">
 					<h3 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2 m-0">
 						<Mail size={18} className="text-[var(--teal)]" /> Пригласить сотрудника
@@ -547,6 +546,9 @@ export function SettingsAccessTab({
 					</article>
 				))}
 			</div>
+
+			{/* FAB clearance bottom spacer */}
+			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 		</section>
 	);
 }

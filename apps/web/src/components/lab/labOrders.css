@@ -85,8 +85,8 @@
 /* ─── FDI TOOTH BUTTONS ─────────────────────────────────────────────────────── */
 
 .lab-tooth-btn {
-	min-width: 44px;
-	min-height: 44px;
+	min-width: 34px;
+	min-height: 34px;
 	font-size: 13px;
 	font-weight: 700;
 	border-radius: 10px;
@@ -101,17 +101,45 @@
 	user-select: none;
 }
 
+@media (min-width: 640px) {
+	.lab-tooth-btn {
+		min-width: 40px;
+		min-height: 40px;
+	}
+}
+
 .lab-tooth-btn:hover {
 	border-color: #0d9488;
 	background: rgba(13, 148, 136, 0.06);
 }
 
 .lab-tooth-btn.is-selected {
-	background: #0d9488;
-	color: #ffffff;
-	border-color: #0f766e;
+	background: #0d9488 !important;
+	color: #ffffff !important;
+	border-color: #0f766e !important;
 	box-shadow: 0 3px 8px -1px rgba(13, 148, 136, 0.35);
 	transform: scale(1.05);
+}
+
+[data-theme="dark"] .lab-tooth-btn,
+.dark .lab-tooth-btn {
+	background: #1e293b;
+	color: #f8fafc;
+	border-color: #334155;
+}
+
+[data-theme="dark"] .lab-tooth-btn:hover,
+.dark .lab-tooth-btn:hover {
+	border-color: #2dd4bf;
+	background: rgba(45, 212, 191, 0.12);
+}
+
+[data-theme="dark"] .lab-tooth-btn.is-selected,
+.dark .lab-tooth-btn.is-selected {
+	background: #0d9488 !important;
+	color: #ffffff !important;
+	border-color: #14b8a6 !important;
+	box-shadow: 0 3px 10px -1px rgba(13, 148, 136, 0.5);
 }
 
 /* ─── QUADRANT QUICK SELECT BUTTONS ─────────────────────────────────────────── */

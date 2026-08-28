@@ -1747,7 +1747,7 @@ export function renderPatientMemoPrintHtml(
 	return `<div class="patient-memo-sheet" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #ffffff; padding: 24px; max-width: 210mm; margin: 0 auto; line-height: 1.45; font-size: 12px;">
 	<div style="border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
 		<div>
-			<div style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: -0.01em;">${clinic}</div>
+			<div style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: normal; word-break: normal; overflow-wrap: break-word; hyphens: none;">${clinic}</div>
 			<div style="font-size: 11px; font-weight: 600; color: #475569; margin-top: 2px;">${address} • Тел: ${phone}</div>
 		</div>
 		<div style="text-align: right; font-size: 11px; shrink: 0;">
@@ -2154,10 +2154,10 @@ export function generateInformedConsent1051nHtml(
 	const diagnosis = options.diagnosisIcd ? ` по диагнозу: ${options.diagnosisIcd}` : "";
 	const teeth = options.toothNumbers ? ` в области зубов: ${options.toothNumbers}` : "";
 
-	return `<div class="informed-consent-a4-sheet" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #ffffff; padding: 24px; max-width: 210mm; margin: 0 auto; line-height: 1.45; font-size: 12px;">
+	return `<div class="informed-consent-a4-sheet" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #ffffff; padding: 24px; max-width: 72ch; margin: 0 auto; line-height: 1.5; font-size: 12px;">
 	<div style="border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
 		<div>
-			<div style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a;">${clinic}</div>
+			<div style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: normal; word-break: normal; overflow-wrap: break-word; hyphens: none;">${clinic}</div>
 			<div style="font-size: 11px; font-weight: 600; color: #475569; margin-top: 2px;">Лицензия: ${license}</div>
 			<div style="font-size: 10px; color: #64748b;">119048, г. Москва, ул. Стоматологическая, д. 24, корп. 1 • Тел: +7 (495) 777-88-99</div>
 		</div>
@@ -2198,7 +2198,7 @@ export function generateInformedConsent1051nHtml(
 		</tbody>
 	</table>
 
-	<div style="space-y: 8px; text-align: justify; font-size: 11px; color: #1e293b; page-break-inside: avoid; break-inside: avoid;">
+	<div style="text-align: justify; font-size: 11px; color: #1e293b; max-width: 68ch; margin: 0 auto; page-break-inside: avoid; break-inside: avoid;">
 		<p style="margin: 0 0 8px 0;">
 			<strong>1.</strong> Я, вышеуказанный(ая) пациент(ка) (или законный представитель), даю информированное добровольное согласие на проведение стоматологического медицинского вмешательства${teeth}${diagnosis} врачу ${doctor} в клинике «${clinic}».
 		</p>

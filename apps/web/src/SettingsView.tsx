@@ -1954,7 +1954,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				id={activeSettingsTabPanelId}
 				role="tabpanel"
 				aria-labelledby={settingsTabButtonId(settingsTab)}
-				style={{ paddingBottom: "96px" }}
+				style={{ paddingBottom: "120px" }}
 			>
 				{settingsTab !== "telegram" ? (
 					<details className="settings-advanced-block settings-admin-secret-block">
@@ -2406,6 +2406,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 					<EgiszBlankPermissionsWidget />
 					<YandexCalendarSyncsWidget />
 				</div>
+				<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 			</div>
 		</motion.section>
 	);

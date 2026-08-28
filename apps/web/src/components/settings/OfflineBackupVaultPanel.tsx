@@ -573,18 +573,18 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 					<div
 						style={{
 							display: "grid",
-							gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-							gap: "14px",
-							marginBottom: "20px",
+							gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+							gap: "12px",
+							marginBottom: "16px",
 						}}
 					>
 						<div>
 							<label
 								style={{
 									display: "block",
-									fontSize: "13px",
-									fontWeight: "500",
-									marginBottom: "6px",
+									fontSize: "12px",
+									fontWeight: "600",
+									marginBottom: "4px",
 									color: "var(--ink, #1e293b)",
 								}}
 							>
@@ -598,13 +598,14 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									placeholder="По умолчанию — защищенный ключ клиники"
 									style={{
 										width: "100%",
-										minHeight: "44px",
-										padding: "8px 44px 8px 12px",
+										height: "40px",
+										minHeight: "40px",
+										padding: "6px 40px 6px 12px",
 										borderRadius: "8px",
 										border: "1px solid var(--glass-border-strong, #cbd5e1)",
 										background: "var(--paper-strong, #ffffff)",
 										color: "var(--ink, #1e293b)",
-										fontSize: "14px",
+										fontSize: "13px",
 										boxSizing: "border-box",
 									}}
 								/>
@@ -613,11 +614,11 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									onClick={() => setShowExportPassphrase(!showExportPassphrase)}
 									style={{
 										position: "absolute",
-										right: "6px",
+										right: "4px",
 										top: "50%",
 										transform: "translateY(-50%)",
-										minWidth: "36px",
-										minHeight: "36px",
+										width: "32px",
+										height: "32px",
 										background: "transparent",
 										border: "none",
 										cursor: "pointer",
@@ -627,7 +628,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										justifyContent: "center",
 									}}
 								>
-									{showExportPassphrase ? <EyeOff size={18} /> : <Eye size={18} />}
+									{showExportPassphrase ? <EyeOff size={16} /> : <Eye size={16} />}
 								</button>
 							</div>
 						</div>
@@ -636,9 +637,9 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							<label
 								style={{
 									display: "block",
-									fontSize: "13px",
-									fontWeight: "500",
-									marginBottom: "6px",
+									fontSize: "12px",
+									fontWeight: "600",
+									marginBottom: "4px",
 									color: "var(--ink, #1e293b)",
 								}}
 							>
@@ -651,45 +652,46 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								placeholder="Например: Плановый бэкап перед закрытием смены"
 								style={{
 									width: "100%",
-									minHeight: "44px",
-									padding: "8px 12px",
+									height: "40px",
+									minHeight: "40px",
+									padding: "6px 12px",
 									borderRadius: "8px",
 									border: "1px solid var(--glass-border-strong, #cbd5e1)",
 									background: "var(--paper-strong, #ffffff)",
 									color: "var(--ink, #1e293b)",
-									fontSize: "14px",
+									fontSize: "13px",
 									boxSizing: "border-box",
 								}}
 							/>
 						</div>
 					</div>
 
-					<div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
+					<div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
 						<button
 							type="button"
 							onClick={() => handleExport(true)}
 							disabled={isExporting}
 							style={{
-								minHeight: "44px",
-								padding: "0 20px",
+								height: "40px",
+								minHeight: "40px",
+								padding: "0 16px",
 								borderRadius: "8px",
 								background: "#059669",
 								color: "#ffffff",
 								border: "none",
 								fontWeight: "600",
-								fontSize: "14px",
+								fontSize: "13px",
 								cursor: isExporting ? "not-allowed" : "pointer",
 								display: "inline-flex",
 								alignItems: "center",
 								justifyContent: "center",
-								gap: "8px",
-								boxShadow: "0 2px 4px rgba(5,150,105,0.2)",
-								flex: "1 1 auto",
+								gap: "6px",
+								boxShadow: "0 1px 3px rgba(5,150,105,0.2)",
 								boxSizing: "border-box",
 							}}
 						>
-							<Download size={18} />
-							{isExporting ? "Создание архива..." : "Выбрать диск / USB и сохранить (.dente)"}
+							<Download size={16} />
+							{isExporting ? "Создание архива..." : "Выбрать диск / USB (.dente)"}
 						</button>
 
 						<button
@@ -697,24 +699,24 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							onClick={() => handleExport(false)}
 							disabled={isExporting}
 							style={{
-								minHeight: "44px",
-								padding: "0 16px",
+								height: "40px",
+								minHeight: "40px",
+								padding: "0 14px",
 								borderRadius: "8px",
 								background: "var(--paper, #f1f5f9)",
 								color: "var(--ink, #334155)",
 								border: "1px solid var(--glass-border, #cbd5e1)",
 								fontWeight: "500",
-								fontSize: "14px",
+								fontSize: "13px",
 								cursor: isExporting ? "not-allowed" : "pointer",
 								display: "inline-flex",
 								alignItems: "center",
 								justifyContent: "center",
 								gap: "6px",
-								flex: "1 1 auto",
 								boxSizing: "border-box",
 							}}
 						>
-							<Download size={16} />
+							<Download size={15} />
 							Скачать через браузер
 						</button>
 					</div>
@@ -1012,13 +1014,14 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										placeholder="По умолчанию — ключ клиники"
 										style={{
 											width: "100%",
-											minHeight: "44px",
-											padding: "8px 44px 8px 12px",
+											height: "40px",
+											minHeight: "40px",
+											padding: "6px 40px 6px 12px",
 											borderRadius: "8px",
 											border: "1px solid var(--glass-border-strong, #cbd5e1)",
 											background: "var(--paper-strong, #ffffff)",
 											color: "var(--ink, #1e293b)",
-											fontSize: "14px",
+											fontSize: "13px",
 											boxSizing: "border-box",
 										}}
 									/>
@@ -1027,11 +1030,11 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										onClick={() => setShowImportPassphrase(!showImportPassphrase)}
 										style={{
 											position: "absolute",
-											right: "6px",
+											right: "4px",
 											top: "50%",
 											transform: "translateY(-50%)",
-											minWidth: "36px",
-											minHeight: "36px",
+											width: "32px",
+											height: "32px",
 											background: "transparent",
 											border: "none",
 											cursor: "pointer",
@@ -1041,7 +1044,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 											justifyContent: "center",
 										}}
 									>
-										{showImportPassphrase ? <EyeOff size={18} /> : <Eye size={18} />}
+										{showImportPassphrase ? <EyeOff size={16} /> : <Eye size={16} />}
 									</button>
 								</div>
 							</div>

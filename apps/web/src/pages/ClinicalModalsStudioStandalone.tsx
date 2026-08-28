@@ -62,6 +62,7 @@ import {
 } from "../components/radiology";
 import { TreatmentPlanCompletedActPrint } from "../components/treatment-plans/TreatmentPlanCompletedActPrint";
 import { FiscalReceipt54FzModal } from "../components/finance/FiscalReceipt54FzModal";
+import { Billing1CExportModal } from "../components/finance/Billing1CExportModal";
 import { PatientBillingModal } from "../components/finance/PatientBillingModal";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { SanpinRegisters } from "../components/sanpin/SanpinRegisters";
@@ -2253,14 +2254,23 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			)}
 
 			{isBilling1cExportOpen && (
-				<FiscalReceipt54FzModal
+				<Billing1CExportModal
 					isOpen={isBilling1cExportOpen}
 					onClose={() => setIsBilling1cExportOpen(false)}
-					items={SAMPLE_TREATMENT_ITEMS}
+					items={SAMPLE_TREATMENT_ITEMS.map((item) => ({
+						id: item.id,
+						code804n: item.code804n,
+						name: item.name,
+						toothNumber: item.toothNumber,
+						quantity: item.quantity,
+						priceRub: item.priceRub,
+						discountRub: item.discountRub,
+					}))}
 					patientId="PAT-2026-0891"
 					patientName="Смирнова Екатерина Васильевна"
-					patientDepositRub={5000}
-					initialTab="oneC"
+					patientPhone="+7 (999) 123-45-67"
+					doctorName="Д-р Ковалев С. П."
+					totalRub={5000}
 				/>
 			)}
 

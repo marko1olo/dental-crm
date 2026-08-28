@@ -16757,3 +16757,36 @@ body.dark-mode .document-manual-override {
 	border-color: var(--line);
 	color: var(--ink);
 }
+
+/* ============================================================
+   Floating Softphone (FAB) Clearance for Main Scroll Containers
+   ============================================================ */
+.settings-tab-panel,
+.access-settings,
+.clinic-config,
+.telegram-settings,
+.schedule-panel,
+.patient-card-column,
+.patient-card-body,
+.patient-workspace,
+.treatment-plan-module,
+.treatment-3tier-comparison,
+.treatment-plan-phased-view {
+	padding-bottom: 120px !important;
+}
+
+@media (max-width: 640px) {
+	.settings-tab-panel,
+	.access-settings,
+	.clinic-config,
+	.telegram-settings,
+	.schedule-panel,
+	.patient-card-column,
+	.patient-card-body,
+	.patient-workspace,
+	.treatment-plan-module,
+	.treatment-3tier-comparison,
+	.treatment-plan-phased-view {
+		padding-bottom: calc(var(--bottom-nav-height, 64px) + 80px + env(safe-area-inset-bottom, 0px)) !important;
+	}
+}

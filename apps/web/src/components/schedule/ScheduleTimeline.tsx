@@ -10,8 +10,7 @@ import {
 	Clock,
 	Plus,
 } from "lucide-react";
-import type React from "react";
-import { Fragment, useCallback, useEffect, useRef } from "react";
+import React, { Fragment, useCallback, useEffect, useRef } from "react";
 import { EmptyState } from "../EmptyState";
 import { AppointmentCard } from "./AppointmentCard";
 import {

@@ -66,38 +66,41 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 						className="w-full h-3 bg-[var(--odontogram-border-subtle,#e2e8f0)] rounded-lg appearance-none cursor-pointer accent-[var(--teal)]"
 						aria-label="Возраст ребенка для расчета смены прикуса"
 					/>
-					<div className="flex justify-between text-[12px] sm:text-[13px] text-[var(--odontogram-ink-muted,#64748b)] font-mono font-semibold">
-						<span>5.0<span className="hidden sm:inline"> лет</span></span>
-						<span>6.0<span className="hidden sm:inline"> (1-е моляры)</span></span>
-						<span>8.0<span className="hidden sm:inline"> (Резцы)</span></span>
-						<span>10.0<span className="hidden sm:inline"> (Премоляры)</span></span>
-						<span>12.0<span className="hidden sm:inline"> (2-е моляры)</span></span>
-						<span>13.5<span className="hidden sm:inline"> лет</span></span>
+					<div className="flex justify-between text-xs sm:text-sm text-[var(--odontogram-ink-muted,#64748b)] font-mono font-bold">
+						<span>5.0<span className="hidden sm:inline font-normal"> лет</span></span>
+						<span>6.0<span className="hidden sm:inline font-normal"> (1-е мол.)</span></span>
+						<span>7.5<span className="hidden sm:inline font-normal"> (Резцы)</span></span>
+						<span>9.0<span className="hidden sm:inline font-normal"> (Премол.)</span></span>
+						<span>12.0<span className="hidden sm:inline font-normal"> (2-е мол.)</span></span>
+						<span>13.5<span className="hidden sm:inline font-normal"> лет</span></span>
 					</div>
 				</div>
 
 				{/* Quick Presets */}
 				<div className="flex flex-wrap items-center gap-2 pt-1">
-					<span className="text-[13px] font-bold text-[var(--odontogram-ink-muted,#64748b)] mr-1">
+					<span className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,#64748b)] mr-1">
 						Пресеты:
 					</span>
-					{PRESET_AGES.map((age) => (
-						<button
-							key={age}
-							type="button"
-							onClick={() => onAgeChange(age)}
-							className={`min-h-[44px] min-w-[64px] px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold border transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
-								Math.abs(selectedAge - age) < 0.1
-									? "bg-teal-600 dark:bg-teal-500 text-white border-teal-600 dark:border-teal-500 shadow-sm"
-									: "bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)] dark:hover:bg-slate-800"
-							}`}
-						>
-							{age.toFixed(1)} лет
-						</button>
-					))}
+					{PRESET_AGES.map((age) => {
+						const isSelected = Math.abs(selectedAge - age) < 0.1;
+						return (
+							<button
+								key={age}
+								type="button"
+								onClick={() => onAgeChange(age)}
+								className={`min-h-[44px] min-w-[68px] px-3.5 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
+									isSelected
+										? "bg-emerald-600 dark:bg-emerald-600 text-white font-bold border-emerald-600 shadow-md shadow-emerald-600/20"
+										: "bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80"
+								}`}
+							>
+								{age.toFixed(1)} лет
+							</button>
+						);
+					})}
 				</div>
 
-				<p className="text-[13px] text-[var(--odontogram-ink-muted,#64748b)] italic">
+				<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,#64748b)] italic">
 					{timelineAnalysis.stageDescriptionRu}
 				</p>
 			</div>
@@ -105,14 +108,14 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 			{/* Dental Arch Visual Preview */}
 			<div className="p-5 rounded-2xl bg-[var(--odontogram-surface,#f8fafc)] border border-[var(--odontogram-border-subtle,#e2e8f0)] space-y-4">
 				<div className="flex items-center justify-between">
-					<h4 className="text-[13px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)]">
+					<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)]">
 						Ожидаемая зубная формула в {selectedAge.toFixed(1)} лет
 					</h4>
 				</div>
 
 				{/* Upper Arch Pills */}
 				<div className="space-y-2">
-					<div className="text-[13px] font-bold text-[var(--odontogram-ink-muted,#64748b)]">
+					<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,#64748b)]">
 						Верхняя челюсть ({timelineAnalysis.expectedUpperArchTeeth.length} зубов):
 					</div>
 					<div className="flex flex-wrap gap-2">
@@ -122,17 +125,17 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 							return (
 								<span
 									key={num}
-									className={`min-w-[54px] min-h-[44px] px-3.5 py-2 rounded-xl text-sm font-mono font-black border flex items-center justify-center gap-1.5 shadow-xs transition-all ${
+									className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-black border flex items-center justify-center gap-1 shadow-xs transition-all ${
 										isErupting
-											? "bg-amber-500/20 text-amber-900 dark:text-amber-100 border-amber-500/40 animate-pulse font-extrabold"
+											? "bg-amber-500/25 dark:bg-amber-900/60 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-black"
 											: isPrim
-												? "bg-teal-500/15 text-teal-900 dark:text-teal-100 border-teal-500/30"
-												: "bg-blue-500/15 text-blue-900 dark:text-blue-100 border-blue-500/30"
+												? "bg-amber-500/15 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-500/40 hover:border-amber-500"
+												: "bg-emerald-500/15 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-500/40 hover:border-emerald-500"
 									}`}
 									title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 								>
-									<span className="text-sm font-black">{num}</span>
-									<span className="text-[12px] font-semibold opacity-90">{isPrim ? "Мол." : "Пост."}</span>
+									<span className="text-sm sm:text-base font-black font-mono">{num}</span>
+									<span className="text-[10px] sm:text-xs font-bold opacity-90">{isPrim ? "Мол." : "Пост."}</span>
 								</span>
 							);
 						})}
@@ -141,7 +144,7 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 
 				{/* Lower Arch Pills */}
 				<div className="space-y-2">
-					<div className="text-[13px] font-bold text-[var(--odontogram-ink-muted,#64748b)]">
+					<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,#64748b))]">
 						Нижняя челюсть ({timelineAnalysis.expectedLowerArchTeeth.length} зубов):
 					</div>
 					<div className="flex flex-wrap gap-2">
@@ -151,17 +154,17 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 							return (
 								<span
 									key={num}
-									className={`min-w-[54px] min-h-[44px] px-3.5 py-2 rounded-xl text-sm font-mono font-black border flex items-center justify-center gap-1.5 shadow-xs transition-all ${
+									className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-black border flex items-center justify-center gap-1 shadow-xs transition-all ${
 										isErupting
-											? "bg-amber-500/20 text-amber-900 dark:text-amber-100 border-amber-500/40 animate-pulse font-extrabold"
+											? "bg-amber-500/25 dark:bg-amber-900/60 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-black"
 											: isPrim
-												? "bg-teal-500/15 text-teal-900 dark:text-teal-100 border-teal-500/30"
-												: "bg-blue-500/15 text-blue-900 dark:text-blue-100 border-blue-500/30"
+												? "bg-amber-500/15 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-500/40 hover:border-amber-500"
+												: "bg-emerald-500/15 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-500/40 hover:border-emerald-500"
 									}`}
 									title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 								>
-									<span className="text-sm font-black">{num}</span>
-									<span className="text-[12px] font-semibold opacity-90">{isPrim ? "Мол." : "Пост."}</span>
+									<span className="text-sm sm:text-base font-black font-mono">{num}</span>
+									<span className="text-[10px] sm:text-xs font-bold opacity-90">{isPrim ? "Мол." : "Пост."}</span>
 								</span>
 							);
 						})}
