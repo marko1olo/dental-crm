@@ -119,6 +119,10 @@ import { EgiszRemdHubModal } from "../components/egisz/EgiszRemdHubModal";
 import { LabWorkOrderModal } from "../components/lab/orders/LabWorkOrderModal";
 import { ClinicalWriteoffModal } from "../components/inventory/writeoff/ClinicalWriteoffModal";
 import { DmsInsuranceManagerModal } from "../components/insurance/dmsManager/DmsInsuranceManagerModal";
+import { DmsGuaranteeLettersModal } from "../components/insurance/DmsGuaranteeLettersModal";
+import { DmsInsurersHubModal } from "../components/insurance/DmsInsurersHubModal";
+import { AdvancedDoctorPayrollModal } from "../components/payroll/AdvancedDoctorPayrollModal";
+import { FormT13TimesheetModal } from "../components/payroll/FormT13TimesheetModal";
 import { KraftPackageBarcodeModal } from "../components/sanpin/kraft/KraftPackageBarcodeModal";
 import { ServicePricelistManagerModal } from "../components/catalog/pricelist/ServicePricelistManagerModal";
 import { LoyaltyProgramModal } from "../components/loyalty/program/LoyaltyProgramModal";
@@ -555,6 +559,10 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isFnsTaxDeductionOpen, setIsFnsTaxDeductionOpen] = useState(false);
 	const [isOfflineSyncGuardOpen, setIsOfflineSyncGuardOpen] = useState(false);
 	const [isOneCCommerceMlOpen, setIsOneCCommerceMlOpen] = useState(false);
+	const [isDmsGuaranteeOpen, setIsDmsGuaranteeOpen] = useState(false);
+	const [isDmsInsurersOpen, setIsDmsInsurersOpen] = useState(false);
+	const [isAdvancedDoctorPayrollOpen, setIsAdvancedDoctorPayrollOpen] = useState(false);
+	const [isFormT13TimesheetOpen, setIsFormT13TimesheetOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -671,6 +679,10 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsCmoQualityAuditOpen(false);
 					setIsFnsTaxDeductionOpen(false);
 					setIsOfflineSyncGuardOpen(false);
+					setIsDmsGuaranteeOpen(false);
+					setIsDmsInsurersOpen(false);
+					setIsAdvancedDoctorPayrollOpen(false);
+					setIsFormT13TimesheetOpen(false);
 
 					if (requestedModal === "before_after" || requestedModal === "before_after_slider" || requestedModal === "photo_comparison" || requestedModal === "photography") {
 						setIsBeforeAfterOpen(true);
@@ -807,6 +819,18 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					}
 					if (requestedModal === "offline_sync" || requestedModal === "sync_guard" || requestedModal === "crdt_sync" || requestedModal === "offline_sync_guard") {
 						setIsOfflineSyncGuardOpen(true);
+					}
+					if (requestedModal === "dms_guarantee" || requestedModal === "dms_guarantee_letters" || requestedModal === "guarantee_letters" || requestedModal === "dms_letters" || requestedModal === "dms_guarantee_modal" || requestedModal === "guarantee_letter") {
+						setIsDmsGuaranteeOpen(true);
+					}
+					if (requestedModal === "dms_insurers" || requestedModal === "dms_insurers_hub" || requestedModal === "dms_hub" || requestedModal === "insurers_hub" || requestedModal === "dms_insurance_hub" || requestedModal === "dms_registry") {
+						setIsDmsInsurersOpen(true);
+					}
+					if (requestedModal === "doctor_payroll" || requestedModal === "advanced_doctor_payroll" || requestedModal === "advanced_payroll" || requestedModal === "doctor_payroll_modal" || requestedModal === "doctor_payroll_advanced") {
+						setIsAdvancedDoctorPayrollOpen(true);
+					}
+					if (requestedModal === "timesheet_t13" || requestedModal === "t13" || requestedModal === "form_t13" || requestedModal === "form_t13_timesheet" || requestedModal === "timesheet_modal" || requestedModal === "timesheet_t13_modal") {
+						setIsFormT13TimesheetOpen(true);
 					}
 				}
 		};
@@ -2732,6 +2756,102 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть монитор синхронизации</span>
 						</button>
 					</div>
+
+					{/* 64. Wave 13: Domain 1 — DMS Guarantee Letters & Co-pay Split Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Shield className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Гарантийные письма ДМС & Сплит-расчет
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Контроль лимитов страхового покрытия (зеленый/желтый/красный), согласованные зубы FDI (11–48), номенклатура 804н и сплит-калькулятор сооплаты.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsDmsGuaranteeOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-dms-guarantee-modal-btn"
+						>
+							<Shield size={15} />
+							<span>Открыть гарантийные письма ДМС</span>
+						</button>
+					</div>
+
+					{/* 65. Wave 13: Domain 2 — DMS Insurers Hub & Registry Export Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Единый хаб ДМС & Реестры счетов (804н)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Справочник страховых компаний РФ (СОГАЗ, Ингосстрах, Альфа, РЕСО), реестры счетов за период, экспорт XML (ЕГИСЗ) / CSV и печать счета-реестра А4.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsDmsInsurersOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-dms-insurers-modal-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>Открыть хаб страховщиков ДМС</span>
+						</button>
+					</div>
+
+					{/* 66. Wave 14: Domain 1 — Advanced Doctor Payroll & 1C:ZUP 3.1 Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Calculator className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Сдельная зарплата врачей & Выгрузка 1С:ЗУП 3.1
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Расчет по клиническим направлениям (терапия, ортопедия, хирургия, гигиена), вычет ЗТЛ и материалов, ставки ассистентов, экспорт XML EnterpriseData / CSV и печать Т-51.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsAdvancedDoctorPayrollOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-doctor-payroll-modal-btn"
+						>
+							<Calculator size={15} />
+							<span>Открыть расчет зарплат врачей</span>
+						</button>
+					</div>
+
+					{/* 67. Wave 14: Domain 2 — Form T-13 Statutory Timesheet Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Clock className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Табель учета рабочего времени (Форма Т-13)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Унифицированная форма № Т-13 (Госкомстат № 1), учет кодов явок/неявок (Я, В, Б, ОТ), быстрые пресеты графиков, печать бланка А4 Альбом и экспорт CSV UTF-8 BOM.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsFormT13TimesheetOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-timesheet-t13-modal-btn"
+						>
+							<Clock size={15} />
+							<span>Открыть табель Т-13</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -3784,6 +3904,60 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<OfflineSyncGuardModal
 					isOpen={isOfflineSyncGuardOpen}
 					onClose={() => setIsOfflineSyncGuardOpen(false)}
+				/>
+			)}
+
+			{isDmsGuaranteeOpen && (
+				<DmsGuaranteeLettersModal
+					isOpen={isDmsGuaranteeOpen}
+					onClose={() => setIsDmsGuaranteeOpen(false)}
+					patient={{
+						id: "PAT-001",
+						fullName: SAMPLE_PATIENT.fullName,
+						birthDate: SAMPLE_PATIENT.birthDate,
+						policyNumber: "СГЗ-77-991283",
+						insuranceCompany: "АО «СОГАЗ»",
+						phone: SAMPLE_PATIENT.phone,
+					}}
+				/>
+			)}
+
+			{isDmsInsurersOpen && (
+				<DmsInsurersHubModal
+					isOpen={isDmsInsurersOpen}
+					onClose={() => setIsDmsInsurersOpen(false)}
+					clinicInfo={{
+						legalName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+						brandName: "Стоматология ДЕНТЕ ПРЕМИУМ",
+						inn: "7701234567",
+						ogrn: "1027739820921",
+						kpp: "770101001",
+						address: "г. Москва, ул. Клиническая, д. 10, стр. 2",
+						phone: "+7 (495) 777-88-99",
+						licenseNumber: "ЛО-77-01-019842",
+						licenseDate: "2020-04-15",
+						chiefDoctorFullName: "Д-р Смирнов Алексей Петрович",
+					}}
+				/>
+			)}
+
+			{isAdvancedDoctorPayrollOpen && (
+				<AdvancedDoctorPayrollModal
+					isOpen={isAdvancedDoctorPayrollOpen}
+					onClose={() => setIsAdvancedDoctorPayrollOpen(false)}
+					clinicName="ООО «Денте Стоматология»"
+					organizationInn="7701234567"
+					organizationKpp="770101001"
+				/>
+			)}
+
+			{isFormT13TimesheetOpen && (
+				<FormT13TimesheetModal
+					isOpen={isFormT13TimesheetOpen}
+					onClose={() => setIsFormT13TimesheetOpen(false)}
+					clinicName="ООО «Денте Стоматология»"
+					organizationInn="7701234567"
+					organizationKpp="770101001"
 				/>
 			)}
 

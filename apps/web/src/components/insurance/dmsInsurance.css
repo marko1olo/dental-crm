@@ -1,0 +1,696 @@
+/**
+ * dmsInsurance.css — Стили модуля ДМС и страховых реестров DENTE Dental CRM.
+ * 
+ * Инварианты:
+ * 1. Vanilla CSS с поддержкой дизайн-токенов DENTE (var(--paper), var(--teal), var(--ink), etc.).
+ * 2. Полная поддержка Light и Dark тем.
+ * 3. Touch-targets >= 44x44px на мобильных и компактная медицинская плотность (32-38px) в десктопных тулбарах.
+ * 4. Цветовые индикаторы лимитов: Зеленый (<80%), Желтый (80-99%), Красный (>=100%).
+ * 5. Адаптивная зубная формула FDI (11..48) для быстрого выбора зубов в гарантийных письмах.
+ * 6. Изолированные стили печати (@media print) для официальных счетов-реестров А4 и актов сдачи-приемки.
+ */
+
+/* ==========================================================================
+   1. МОДАЛЬНЫЙ КОНТЕЙНЕР И ПОДЛОЖКА
+   ========================================================================== */
+
+.dms-hub-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(15, 23, 42, 0.72);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	padding: 16px;
+	overflow-y: auto;
+	box-sizing: border-box;
+}
+
+.dms-hub-window {
+	width: 100%;
+	max-width: 1180px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 20px;
+	box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+	box-sizing: border-box;
+	animation: dmsModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dmsModalFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.97) translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+.dms-hub-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--surface, #f8fafc);
+	gap: 16px;
+	flex-shrink: 0;
+}
+
+.dms-hub-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.dms-hub-icon-badge {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
+	color: var(--teal, #0d9488);
+	flex-shrink: 0;
+}
+
+.dms-hub-title {
+	font-size: 1.1875rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink, #0f172a);
+	line-height: 1.3;
+}
+
+.dms-hub-subtitle {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin-top: 2px;
+}
+
+.dms-hub-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	box-sizing: border-box;
+	background: var(--paper, #ffffff);
+}
+
+.dms-hub-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 24px;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--surface, #f8fafc);
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   2. ВКЛАДКИ (TABS) И НАВИГАЦИЯ
+   ========================================================================== */
+
+.dms-tabs-nav {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--surface, #f1f5f9);
+	padding: 4px;
+	border-radius: 14px;
+	border: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+	flex-shrink: 0;
+}
+
+.dms-tab-button {
+	min-height: 38px;
+	padding: 8px 16px;
+	border-radius: 10px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.dms-tab-button:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(255, 255, 255, 0.5);
+}
+
+.dms-tab-button.active {
+	color: var(--teal, #0d9488);
+	background: var(--paper, #ffffff);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================================================
+   3. КНОПКИ И ИНТЕРАКТИВНЫЕ ЭЛЕМЕНТЫ (TOUCH TARGETS >= 44PX)
+   ========================================================================== */
+
+.dms-action-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 9px 16px;
+	border-radius: 12px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	border: 1px solid transparent;
+	box-sizing: border-box;
+	user-select: none;
+	text-decoration: none;
+}
+
+.dms-action-btn:active {
+	transform: scale(0.98);
+}
+
+.dms-action-btn-primary {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.dms-action-btn-primary:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.dms-action-btn-secondary {
+	background: var(--surface, #f1f5f9);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #cbd5e1);
+}
+
+.dms-action-btn-secondary:hover {
+	background: var(--paper-soft, #e2e8f0);
+}
+
+.dms-action-btn-success {
+	background: var(--ok-fg, #15803d);
+	color: #ffffff;
+	box-shadow: 0 4px 12px rgba(21, 128, 61, 0.22);
+}
+
+.dms-action-btn-success:hover {
+	opacity: 0.92;
+}
+
+.dms-action-btn-outline {
+	background: transparent;
+	color: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+}
+
+.dms-action-btn-outline:hover {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+}
+
+.dms-action-btn-icon-only {
+	padding: 10px;
+	border-radius: 10px;
+}
+
+/* Десктопная плотность для тулбаров */
+.dms-btn-dense {
+	min-height: 36px;
+	padding: 6px 12px;
+	font-size: 0.8125rem;
+	border-radius: 8px;
+}
+
+/* ==========================================================================
+   4. КАРТОЧКИ, ПАНЕЛИ И СВОДНЫЕ СТАТИСТИЧЕСКИЕ ПЛАШКИ
+   ========================================================================== */
+
+.dms-panel {
+	background: var(--surface, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.dms-panel-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dms-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 12px;
+}
+
+@media (max-width: 960px) {
+	.dms-kpi-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 540px) {
+	.dms-kpi-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.dms-kpi-card {
+	padding: 14px 16px;
+	border-radius: 14px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.dms-kpi-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.dms-kpi-val {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.dms-kpi-sub {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+/* ==========================================================================
+   5. ПРОГРЕСС-БАРЫ РАСХОДОВАНИЯ ЛИМИТА (ЗЕЛЕНЫЙ -> ЖЕЛТЫЙ -> КРАСНЫЙ)
+   ========================================================================== */
+
+.dms-progress-container {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	width: 100%;
+}
+
+.dms-progress-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.8125rem;
+}
+
+.dms-progress-track {
+	height: 10px;
+	width: 100%;
+	background: var(--surface, #e2e8f0);
+	border-radius: 6px;
+	overflow: hidden;
+	position: relative;
+}
+
+.dms-progress-fill {
+	height: 100%;
+	border-radius: 6px;
+	transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dms-progress-fill.green {
+	background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.dms-progress-fill.yellow {
+	background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.dms-progress-fill.red {
+	background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+/* ==========================================================================
+   6. ЗУБНАЯ ФОРМУЛА FDI (ВЫБОР ЗУБОВ 11..48 ДЛЯ ГАРАНТИЙНОГО ПИСЬМА)
+   ========================================================================== */
+
+.dms-fdi-chart {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 12px;
+	background: var(--surface, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+}
+
+.dms-fdi-jaw-row {
+	display: flex;
+	justify-content: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.dms-tooth-chip {
+	min-width: 36px;
+	min-height: 38px;
+	padding: 6px 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+	user-select: none;
+}
+
+.dms-tooth-chip:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+}
+
+.dms-tooth-chip.selected {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+}
+
+/* ==========================================================================
+   7. ПОЛЯ ВВОДА, ФИЛЬТРЫ И ФОРМЫ
+   ========================================================================== */
+
+.dms-form-grid-2 {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+
+.dms-form-grid-3 {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 14px;
+}
+
+@media (max-width: 768px) {
+	.dms-form-grid-2,
+	.dms-form-grid-3 {
+		grid-template-columns: 1fr;
+	}
+}
+
+.dms-input-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.dms-input-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.dms-control-input,
+.dms-control-select,
+.dms-control-textarea {
+	min-height: 44px;
+	padding: 10px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.dms-control-input:focus,
+.dms-control-select:focus,
+.dms-control-textarea:focus {
+	outline: none;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+/* ==========================================================================
+   8. СПИСКИ И КАРТОЧКИ ГАРАНТИЙНЫХ ПИСЕМ
+   ========================================================================== */
+
+.dms-letter-card {
+	padding: 16px;
+	border-radius: 16px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.dms-letter-card:hover {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.08);
+}
+
+.dms-letter-card.selected-for-split {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.04));
+	box-shadow: 0 0 0 2px var(--teal, #0d9488);
+}
+
+.dms-letter-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.dms-letter-number {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Бейджи статусов гарантийных писем */
+.dms-status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.dms-status-active {
+	background: var(--ok-bg, #ecfdf5);
+	color: var(--ok-fg, #059669);
+	border: 1px solid rgba(5, 150, 105, 0.3);
+}
+
+.dms-status-exhausted {
+	background: var(--warn-bg, #fffbeb);
+	color: var(--warn-fg, #d97706);
+	border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+.dms-status-expired {
+	background: var(--bad-bg, #fef2f2);
+	color: var(--bad-fg, #dc2626);
+	border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.dms-status-cancelled {
+	background: var(--surface, #f1f5f9);
+	color: var(--muted, #64748b);
+	border: 1px solid var(--line, #cbd5e1);
+}
+
+/* ==========================================================================
+   9. ТАБЛИЦА РЕЕСТРА И СПЛИТ-РАСЧЕТА
+   ========================================================================== */
+
+.dms-registry-table-wrap {
+	border-radius: 14px;
+	border: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+	background: var(--paper, #ffffff);
+}
+
+.dms-registry-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.dms-registry-table th {
+	padding: 12px 14px;
+	background: var(--surface, #f8fafc);
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+}
+
+.dms-registry-table td {
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	vertical-align: middle;
+}
+
+.dms-registry-table tr:last-child td {
+	border-bottom: none;
+}
+
+.dms-registry-table tr:hover td {
+	background: var(--surface, #f8fafc);
+}
+
+.dms-registry-table-totals {
+	background: var(--surface, #f8fafc);
+	font-weight: 700;
+}
+
+/* ==========================================================================
+   10. СТИЛИ ТЕМНОЙ ТЕМЫ (DARK MODE OVERRIDES)
+   ========================================================================== */
+
+[data-theme="dark"] .dms-hub-backdrop {
+	background-color: rgba(0, 0, 0, 0.82);
+}
+
+[data-theme="dark"] .dms-hub-window {
+	background: var(--paper, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-hub-header,
+[data-theme="dark"] .dms-hub-footer {
+	background: var(--surface, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-panel {
+	background: var(--surface, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-kpi-card,
+[data-theme="dark"] .dms-letter-card {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-control-input,
+[data-theme="dark"] .dms-control-select,
+[data-theme="dark"] .dms-control-textarea {
+	background: var(--paper, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #475569);
+}
+
+[data-theme="dark"] .dms-registry-table-wrap {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-registry-table th,
+[data-theme="dark"] .dms-registry-table-totals {
+	background: var(--surface, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-registry-table td {
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-registry-table tr:hover td {
+	background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .dms-tabs-nav {
+	background: var(--surface, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-tab-button.active {
+	background: var(--paper, #1e293b);
+	color: var(--teal, #2dd4bf);
+}
+
+[data-theme="dark"] .dms-tooth-chip {
+	background: var(--paper, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #475569);
+}
+
+/* ==========================================================================
+   11. СТИЛИ ПЕЧАТИ ДЛЯ ДОКУМЕНТОВ А4 (@media print)
+   ========================================================================== */
+
+@media print {
+	.dms-hub-backdrop,
+	.dms-hub-header,
+	.dms-hub-footer,
+	.dms-no-print {
+		display: none !important;
+	}
+
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+		font-family: "Segoe UI", Arial, sans-serif !important;
+	}
+}

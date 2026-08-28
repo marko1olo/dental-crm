@@ -1,0 +1,479 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DENTE Dental CRM — Advanced Doctor Payroll & Form T-13 Timesheet Styles
+ * Strict Multi-Theme CSS Token Compliance, WCAG Contrast & Medical Density
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+/* =========================================================================
+   1. Advanced Doctor Payroll Modal Styles
+   ========================================================================= */
+
+.adv-payroll-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	background-color: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(6px);
+}
+
+.adv-payroll-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 1420px;
+	height: 94vh;
+	max-height: 980px;
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 1.25rem;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+}
+
+.adv-payroll-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.5rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-soft, #f8fafc);
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.adv-payroll-header-title {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.adv-payroll-icon-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 0.75rem;
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.18), rgba(2, 132, 199, 0.18));
+	color: var(--teal, #0d9488);
+	border: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+.adv-payroll-tabs {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.5rem 1.5rem;
+	background-color: var(--paper-soft, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+}
+
+.adv-payroll-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.5rem 0.875rem;
+	border-radius: 0.625rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease-in-out;
+}
+
+.adv-payroll-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background-color: var(--paper, #ffffff);
+	border-color: var(--line, #e2e8f0);
+}
+
+.adv-payroll-tab-btn.active {
+	color: var(--teal, #0d9488);
+	background-color: var(--paper, #ffffff);
+	border-color: rgba(13, 148, 136, 0.4);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.adv-payroll-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 0.75rem;
+	padding: 1rem 1.5rem;
+	background-color: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.adv-payroll-kpi-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.75rem 1rem;
+	background-color: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 0.875rem;
+	transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.adv-payroll-kpi-card:hover {
+	border-color: rgba(13, 148, 136, 0.4);
+}
+
+.adv-payroll-kpi-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted, #64748b);
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+.adv-payroll-kpi-val {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	font-variant-numeric: tabular-nums;
+}
+
+.adv-payroll-kpi-sub {
+	font-size: 0.6875rem;
+	color: var(--muted, #64748b);
+}
+
+/* Direction Cards Grid */
+.adv-direction-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 1rem;
+}
+
+.adv-direction-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1rem;
+	border-radius: 1rem;
+	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper, #ffffff);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s ease;
+}
+
+.adv-direction-card:hover {
+	border-color: rgba(13, 148, 136, 0.35);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.adv-direction-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.adv-direction-badge {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	padding: 0.2rem 0.5rem;
+	border-radius: 0.375rem;
+	background-color: rgba(13, 148, 136, 0.1);
+	color: var(--teal, #0d9488);
+}
+
+.adv-direction-metric-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.75rem;
+}
+
+.adv-progress-bar {
+	width: 100%;
+	height: 6px;
+	border-radius: 3px;
+	background-color: var(--line, #e2e8f0);
+	overflow: hidden;
+}
+
+.adv-progress-fill {
+	height: 100%;
+	border-radius: 3px;
+	background: linear-gradient(90deg, #0d9488, #0284c7);
+	transition: width 0.3s ease;
+}
+
+/* Assistant Payout Cards */
+.adv-assistant-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+	padding: 1rem;
+	border-radius: 0.875rem;
+	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-soft, #f8fafc);
+}
+
+.adv-assistant-stat-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.375rem;
+	background-color: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+}
+
+/* Code / XML Box */
+.adv-xml-box {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.6875rem;
+	line-height: 1.4;
+	padding: 1rem;
+	background-color: #0f172a;
+	color: #38bdf8;
+	border-radius: 0.75rem;
+	overflow-x: auto;
+	max-height: 380px;
+	border: 1px solid #1e293b;
+}
+
+/* General Buttons */
+.adv-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	height: 2.25rem;
+	padding: 0 0.875rem;
+	border-radius: 0.625rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	border: 1px solid var(--line, #cbd5e1);
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+}
+
+.adv-btn:hover {
+	background-color: var(--paper-soft, #f1f5f9);
+	border-color: var(--teal, #0d9488);
+}
+
+.adv-btn-primary {
+	background: linear-gradient(135deg, #0d9488, #0284c7);
+	color: #ffffff;
+	border: 1px solid transparent;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+}
+
+.adv-btn-primary:hover {
+	opacity: 0.92;
+	background: linear-gradient(135deg, #0f766e, #0369a1);
+}
+
+.adv-btn-sm {
+	height: 1.875rem;
+	padding: 0 0.625rem;
+	font-size: 0.75rem;
+}
+
+/* =========================================================================
+   2. Statutory Form T-13 Timesheet Modal Styles
+   ========================================================================= */
+
+.t13-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	background-color: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(6px);
+}
+
+.t13-modal-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 1440px;
+	height: 94vh;
+	max-height: 980px;
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 1.25rem;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+}
+
+.t13-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1.5rem;
+	background-color: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.t13-quick-fill-bar {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	flex-wrap: wrap;
+}
+
+.t13-day-col {
+	min-width: 36px;
+	max-width: 44px;
+	text-align: center;
+	border-left: 1px solid var(--line, #e2e8f0);
+}
+
+.t13-day-col.weekend {
+	background-color: rgba(244, 63, 94, 0.05);
+	color: #e11d48;
+}
+
+.t13-code-select {
+	width: 100%;
+	height: 24px;
+	text-align: center;
+	font-weight: 800;
+	font-size: 0.75rem;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	outline: none;
+}
+
+.t13-hours-input {
+	width: 100%;
+	height: 24px;
+	text-align: center;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	background: transparent;
+	border: none;
+	outline: none;
+	color: var(--ink, #0f172a);
+}
+
+.t13-hours-input:focus {
+	background-color: var(--paper-soft, #f8fafc);
+	border-radius: 0.25rem;
+}
+
+/* =========================================================================
+   3. Official Goskomstat Form T-13 Statutory Print Form (A4 Landscape)
+   ========================================================================= */
+
+.t13-print-sheet {
+	background-color: #ffffff;
+	color: #000000;
+	font-family: "Times New Roman", Times, serif;
+	font-size: 8pt;
+	line-height: 1.15;
+	padding: 8mm;
+	width: 100%;
+}
+
+.t13-print-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 7.5pt;
+}
+
+.t13-print-table th,
+.t13-print-table td {
+	border: 1px solid #000000;
+	padding: 2px 3px;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.t13-print-table th {
+	background-color: #f2f2f2;
+	font-weight: bold;
+}
+
+.t13-signature-block {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1.5rem;
+	margin-top: 1.5rem;
+	font-size: 8pt;
+}
+
+.t13-signature-line {
+	border-bottom: 1px solid #000000;
+	height: 1.5rem;
+	margin-bottom: 0.25rem;
+}
+
+/* =========================================================================
+   4. Print Media Rules
+   ========================================================================= */
+
+@media print {
+	@page {
+		size: A4 landscape;
+		margin: 6mm 8mm;
+	}
+
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+
+	.adv-payroll-overlay,
+	.t13-modal-overlay {
+		position: static !important;
+		padding: 0 !important;
+		background: none !important;
+		backdrop-filter: none !important;
+		z-index: auto !important;
+	}
+
+	.adv-payroll-container,
+	.t13-modal-container {
+		max-width: 100% !important;
+		height: auto !important;
+		max-height: none !important;
+		border: none !important;
+		border-radius: 0 !important;
+		box-shadow: none !important;
+		overflow: visible !important;
+	}
+
+	.no-print,
+	.adv-payroll-tabs,
+	.adv-payroll-header button,
+	.t13-toolbar,
+	.adv-payroll-kpi-grid,
+	.adv-btn {
+		display: none !important;
+	}
+
+	.t13-print-sheet {
+		padding: 0 !important;
+		display: block !important;
+	}
+}

@@ -19,6 +19,8 @@ export {
 export * from "./InsurancePreAuthModal.js";
 export * from "./DmsGuaranteeLetterModal.js";
 export * from "./DmsRegistryExportModal.js";
+export * from "./DmsInsurersHubModal.js";
+export * from "./DmsGuaranteeLettersModal.js";
 export {
 	DmsInsuranceManagerModal,
 	type DmsInsuranceManagerModalProps,
