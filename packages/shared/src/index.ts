@@ -16,6 +16,7 @@ export * from "./sync/index.js";
 export * from "./finance/index.js";
 export * from "./imaging/index.js";
 export * from "./cda/index.js";
+export * from "./egisz/index.js";
 export * from "./logging/index.js";
 export * from "./hardware/index.js";
 export * from "./inventory/index.js";
@@ -30,6 +31,7 @@ export * from "./telephony/index.js";
 export * from "./marketing/index.js";
 export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
+export * from "./messaging/index.js";
 export {
 	calculateEmployeeTimesheetT13,
 	aggregateTimesheetDays,
@@ -13448,129 +13450,7 @@ export class SanPiNSterilizationEngine {
 	}
 }
 
-// ─── Russian Fintech, Fast Payment System (СБП B2C QR) & 54-FZ Fiscal Cloud ───
-
-export const sbpQrTypeSchema = z.enum(["01", "02"]); // 01 = Static, 02 = Dynamic
-export type SbpQrType = z.infer<typeof sbpQrTypeSchema>;
-
-export const generateSbpDynamicQrSchema = z.object({
-	operationId: z.string().trim().min(1).max(64),
-	bankMemberId: z
-		.string()
-		.trim()
-		.min(1)
-		.max(32)
-		.default("100000000111"), // Sberbank NSPK ID
-	amountKopecks: z
-		.number()
-		.int()
-		.positive("Сумма должна быть положительной в копейках"),
-	currency: z.literal("RUB").default("RUB"),
-	description: z.string().trim().max(140).optional().nullable(),
-	ttlSeconds: z.number().int().min(60).max(86400).default(1800), // 30 min default
-});
-export type GenerateSbpDynamicQrInput = z.infer<
-	typeof generateSbpDynamicQrSchema
->;
-
-// Note: 54-FZ FFD 1.2 fiscal schemas, tags, types and calculators are canonically exported from ./fiscal/index.js above.
-
-export class SbpQrEngine {
-	/**
-	 * Вычисляет контрольную сумму CRC16-CCITT (ГОСТ Р 56042-2014, полином 0x1021, init 0xFFFF)
-	 */
-	static computeCrc16Ccitt(str: string): string {
-		let crc = 0xffff;
-		for (let i = 0; i < str.length; i++) {
-			crc ^= (str.charCodeAt(i) << 8) & 0xffff;
-			for (let j = 0; j < 8; j++) {
-				if ((crc & 0x8000) !== 0) {
-					crc = ((crc << 1) ^ 0x1021) & 0xffff;
-				} else {
-					crc = (crc << 1) & 0xffff;
-				}
-			}
-		}
-		return crc.toString(16).toUpperCase().padStart(4, "0");
-	}
-
-	/**
-	 * Формирует стандартную платежную ссылку НСПК СБП (B2C Dynamic QR)
-	 * Пример: https://qr.nspk.ru/AD100004ABC12345?type=02&bank=100000000111&sum=150000&cur=RUB&crc=A4F2
-	 */
-	static buildNspkDynamicPayload(params: {
-		operationId: string;
-		bankMemberId: string;
-		amountKopecks: number;
-		currency?: string;
-	}): {
-		payloadUrl: string;
-		cleanOperationId: string;
-		crc16: string;
-	} {
-		const cleanOperationId = params.operationId
-			.replace(/[^A-Za-z0-9]/g, "")
-			.toUpperCase();
-		const cur = params.currency || "RUB";
-		const baseQuery = `https://qr.nspk.ru/${cleanOperationId}?type=02&bank=${params.bankMemberId}&sum=${params.amountKopecks}&cur=${cur}`;
-		const crc16 = this.computeCrc16Ccitt(baseQuery);
-		const payloadUrl = `${baseQuery}&crc=${crc16}`;
-		return { payloadUrl, cleanOperationId, crc16 };
-	}
-
-	/**
-	 * Проверяет подлинность и контрольную сумму URL СБП
-	 */
-	static verifyNspkPayload(payloadUrl: string): {
-		isValid: boolean;
-		operationId: string | null;
-		amountKopecks: number | null;
-		bankMemberId: string | null;
-	} {
-		try {
-			const url = new URL(payloadUrl);
-			if (!url.hostname.includes("nspk.ru")) {
-				return {
-					isValid: false,
-					operationId: null,
-					amountKopecks: null,
-					bankMemberId: null,
-				};
-			}
-			const pathParts = url.pathname.split("/").filter(Boolean);
-			const operationId = pathParts[0] || null;
-			const bank = url.searchParams.get("bank");
-			const sumStr = url.searchParams.get("sum");
-			const crc = url.searchParams.get("crc");
-			if (!operationId || !bank || !sumStr || !crc) {
-				return {
-					isValid: false,
-					operationId,
-					amountKopecks: null,
-					bankMemberId: bank,
-				};
-			}
-			const sum = parseInt(sumStr, 10);
-			const cur = url.searchParams.get("cur") || "RUB";
-			const baseQuery = `https://qr.nspk.ru/${operationId}?type=02&bank=${bank}&sum=${sum}&cur=${cur}`;
-			const expectedCrc = this.computeCrc16Ccitt(baseQuery);
-			const isValid = expectedCrc.toUpperCase() === crc.toUpperCase();
-			return {
-				isValid,
-				operationId,
-				amountKopecks: sum,
-				bankMemberId: bank,
-			};
-		} catch {
-			return {
-				isValid: false,
-				operationId: null,
-				amountKopecks: null,
-				bankMemberId: null,
-			};
-		}
-	}
-}
+// Note: Russian Fintech, Fast Payment System (СБП B2C QR), EMVCo TLV & SbpQrEngine are exported from ./messaging/index.js above.
 
 
 

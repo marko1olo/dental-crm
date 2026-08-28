@@ -4,7 +4,7 @@
  * Statutory electronic document types for SEMD 101, 104, 130 and UKEP CAdES-BES.
  * ═══════════════════════════════════════════════════════════════════════════
  */
-export type SemdDocKind = "101" | "104" | "130" | "302" | "303" | "043u" | "108" | "043-1u" | "0431u" | "109";
+export type SemdDocKind = "101" | "104" | "105" | "106" | "130" | "302" | "303" | "043u" | "108" | "043-1u" | "0431u" | "109";
 export interface PersonName {
     first: string;
     last: string;

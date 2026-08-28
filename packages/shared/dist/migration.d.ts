@@ -1197,11 +1197,11 @@ export declare const migrationRollbackRequestSchema: z.ZodObject<{
      */
     confirm: z.ZodLiteral<true>;
 }, "strip", z.ZodTypeAny, {
-    runId: string;
     confirm: true;
+    runId: string;
 }, {
-    runId: string;
     confirm: true;
+    runId: string;
 }>;
 export type MigrationRollbackRequest = z.infer<typeof migrationRollbackRequestSchema>;
 export declare const migrationRollbackResponseSchema: z.ZodObject<{

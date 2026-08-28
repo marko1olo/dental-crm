@@ -60,6 +60,16 @@
 			"types": "./dist/payroll/index.d.ts",
 			"import": "./dist/payroll/index.js",
 			"default": "./dist/payroll/index.js"
+		},
+		"./egisz": {
+			"types": "./dist/egisz/index.d.ts",
+			"import": "./dist/egisz/index.js",
+			"default": "./dist/egisz/index.js"
+		},
+		"./messaging": {
+			"types": "./dist/messaging/index.d.ts",
+			"import": "./dist/messaging/index.js",
+			"default": "./dist/messaging/index.js"
 		}
 	},
 	"scripts": {

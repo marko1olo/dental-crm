@@ -1,0 +1,1130 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * EGISZ REMD SIGNING STUDIO & DOCUMENTS JOURNAL STYLES — DENTE DENTAL CRM
+ * Compliant with Order 947n, HL7 CDA R2, GOST R 7.0.97-2016 and 63-FZ
+ * Theme-aware (Light / Dark), Touch-first (>=44px), Medical Density
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+/* Modal Overlay & Container */
+.egisz-signing-backdrop,
+.egisz-journal-backdrop,
+.egisz-remd-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(15, 23, 42, 0.7);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	animation: egiszModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes egiszModalFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.egisz-signing-modal,
+.egisz-journal-modal,
+.egisz-modal-shell {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	width: 100%;
+	max-width: 1240px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	position: relative;
+}
+
+[data-theme="dark"] .egisz-signing-modal,
+[data-theme="dark"] .egisz-journal-modal,
+[data-theme="dark"] .egisz-modal-shell,
+.dark .egisz-signing-modal,
+.dark .egisz-journal-modal,
+.dark .egisz-modal-shell {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #1e293b);
+	color: var(--ink, #f8fafc);
+}
+
+/* Modal Header */
+.egisz-modal-header {
+	padding: 1rem 1.25rem;
+	background: var(--paper-strong, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .egisz-modal-header,
+.dark .egisz-modal-header {
+	background: var(--paper-strong, #131d31);
+	border-bottom-color: var(--line, #1e293b);
+}
+
+.egisz-header-left {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+	min-width: 0;
+}
+
+.egisz-header-icon-badge {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--primary-muted, rgba(14, 165, 233, 0.12));
+	color: var(--primary, #0ea5e9);
+	flex-shrink: 0;
+}
+
+.egisz-header-icon-badge.teal {
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal, #0d9488);
+}
+
+.egisz-header-icon-badge.amber {
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+}
+
+.egisz-header-title-group {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.egisz-modal-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	line-height: 1.25;
+	margin: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .egisz-modal-title,
+.dark .egisz-modal-title {
+	color: #f8fafc;
+}
+
+.egisz-modal-subtitle {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin-top: 0.2rem;
+	line-height: 1.3;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.egisz-close-icon-btn {
+	width: 44px;
+	height: 44px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.egisz-close-icon-btn:hover {
+	background: var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .egisz-close-icon-btn:hover,
+.dark .egisz-close-icon-btn:hover {
+	background: rgba(255, 255, 255, 0.1);
+	color: #f8fafc;
+}
+
+/* CryptoPro Plugin Detection Status Strip */
+.egisz-plugin-status-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.65rem 1.25rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	font-size: 0.8125rem;
+	gap: 1rem;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}
+
+.egisz-plugin-status-bar.connected {
+	background: rgba(16, 185, 129, 0.08);
+	border-bottom-color: rgba(16, 185, 129, 0.25);
+	color: #065f46;
+}
+
+[data-theme="dark"] .egisz-plugin-status-bar.connected,
+.dark .egisz-plugin-status-bar.connected {
+	background: rgba(16, 185, 129, 0.12);
+	color: #34d399;
+}
+
+.egisz-plugin-status-bar.warning {
+	background: rgba(245, 158, 11, 0.08);
+	border-bottom-color: rgba(245, 158, 11, 0.25);
+	color: #92400e;
+}
+
+[data-theme="dark"] .egisz-plugin-status-bar.warning,
+.dark .egisz-plugin-status-bar.warning {
+	background: rgba(245, 158, 11, 0.12);
+	color: #fbbf24;
+}
+
+.egisz-plugin-status-left {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	font-weight: 500;
+}
+
+.egisz-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	display: inline-block;
+}
+
+.egisz-status-dot.green {
+	background: #10b981;
+	box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.egisz-status-dot.amber {
+	background: #f59e0b;
+	box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+.egisz-plugin-status-right {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+/* Modal Body Layout (Two-Pane Grid for Signing Modal) */
+.egisz-signing-body {
+	flex: 1;
+	display: grid;
+	grid-template-columns: 380px 1fr;
+	overflow: hidden;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .egisz-signing-body,
+.dark .egisz-signing-body {
+	background: var(--paper, #0f172a);
+}
+
+.egisz-signing-sidebar {
+	border-right: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	padding: 1.1rem;
+	gap: 1rem;
+}
+
+[data-theme="dark"] .egisz-signing-sidebar,
+.dark .egisz-signing-sidebar {
+	border-right-color: var(--line, #1e293b);
+	background: var(--paper-strong, #131d31);
+}
+
+.egisz-signing-main {
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	padding: 1.25rem;
+	gap: 1rem;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .egisz-signing-main,
+.dark .egisz-signing-main {
+	background: var(--paper, #0f172a);
+}
+
+/* Certificate Selection Cards */
+.egisz-section-label {
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--muted, #64748b);
+	margin-bottom: 0.4rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.egisz-cert-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+}
+
+.egisz-cert-card {
+	border: 1.5px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 0.85rem;
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	text-align: left;
+}
+
+[data-theme="dark"] .egisz-cert-card,
+.dark .egisz-cert-card {
+	background: rgba(30, 41, 59, 0.6);
+	border-color: var(--line, #1e293b);
+}
+
+.egisz-cert-card:hover {
+	border-color: var(--primary, #0ea5e9);
+	transform: translateY(-1px);
+}
+
+.egisz-cert-card.selected {
+	border-color: var(--primary, #0ea5e9);
+	background: var(--primary-muted, rgba(14, 165, 233, 0.08));
+	box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.25);
+}
+
+[data-theme="dark"] .egisz-cert-card.selected,
+.dark .egisz-cert-card.selected {
+	background: rgba(14, 165, 233, 0.15);
+	border-color: #38bdf8;
+}
+
+.egisz-cert-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.egisz-cert-owner {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	line-height: 1.25;
+}
+
+[data-theme="dark"] .egisz-cert-owner,
+.dark .egisz-cert-owner {
+	color: #f8fafc;
+}
+
+.egisz-cert-badge {
+	font-size: 0.7rem;
+	font-weight: 700;
+	padding: 0.15rem 0.45rem;
+	border-radius: 4px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.egisz-cert-badge.active {
+	background: rgba(16, 185, 129, 0.15);
+	color: #059669;
+}
+
+.egisz-cert-badge.expired {
+	background: rgba(239, 68, 68, 0.15);
+	color: #dc2626;
+}
+
+.egisz-cert-snils,
+.egisz-cert-issuer,
+.egisz-cert-validity {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	line-height: 1.3;
+}
+
+.egisz-cert-thumbprint {
+	font-size: 0.7rem;
+	font-family: ui-monospace, monospace;
+	color: var(--muted, #94a3b8);
+	word-break: break-all;
+}
+
+/* Document Preview Paper & Blue Signature Stamp per Order 947n */
+.egisz-doc-view-tabs {
+	display: flex;
+	gap: 0.35rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	padding-bottom: 0.5rem;
+	flex-shrink: 0;
+}
+
+.egisz-doc-tab-btn {
+	padding: 0.5rem 1rem;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-height: 38px;
+	transition: all 0.15s ease;
+}
+
+.egisz-doc-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background: var(--paper-strong, #f1f5f9);
+}
+
+.egisz-doc-tab-btn.active {
+	background: var(--paper-strong, #f1f5f9);
+	color: var(--primary, #0ea5e9);
+	border-color: var(--line, #cbd5e1);
+}
+
+[data-theme="dark"] .egisz-doc-tab-btn.active,
+.dark .egisz-doc-tab-btn.active {
+	background: rgba(30, 41, 59, 0.8);
+	border-color: var(--line, #334155);
+	color: #38bdf8;
+}
+
+.egisz-paper-sheet {
+	background: #ffffff;
+	color: #000000;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	padding: 1.5rem;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+	font-family: 'Times New Roman', Times, serif;
+	font-size: 13px;
+	line-height: 1.4;
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+}
+
+.egisz-paper-header {
+	text-align: center;
+	border-bottom: 2px solid #000000;
+	padding-bottom: 0.75rem;
+	margin-bottom: 0.5rem;
+}
+
+.egisz-paper-mo-title {
+	font-size: 14px;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+.egisz-paper-mo-sub {
+	font-size: 11px;
+	color: #333333;
+}
+
+.egisz-paper-doc-title {
+	font-size: 15px;
+	font-weight: bold;
+	margin-top: 6px;
+}
+
+.egisz-paper-semd-code {
+	font-size: 11px;
+	font-family: monospace;
+	color: #555555;
+}
+
+.egisz-paper-section-title {
+	font-size: 13px;
+	font-weight: bold;
+	border-bottom: 1px solid #777777;
+	padding-bottom: 2px;
+	margin-top: 6px;
+}
+
+/* BLUE ELECTRONIC SIGNATURE STAMP (ШТАМП ЭП МИНЗДРАВ № 947н / ГОСТ Р 7.0.97-2016) */
+.gost-stamps-wrapper {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	margin-top: 1rem;
+	padding-top: 1rem;
+	border-top: 1px dashed #94a3b8;
+}
+
+.gost-stamp-blue {
+	border: 2px solid #0056b3;
+	border-radius: 8px;
+	padding: 10px 14px;
+	background: #f0f7ff;
+	color: #0056b3;
+	font-family: 'Times New Roman', serif;
+	font-size: 11px;
+	line-height: 1.3;
+	max-width: 340px;
+	box-sizing: border-box;
+	box-shadow: 0 2px 4px rgba(0, 86, 179, 0.08);
+	position: relative;
+	overflow: hidden;
+}
+
+.gost-stamp-blue::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(circle at center, rgba(0, 86, 179, 0.04) 0%, transparent 70%);
+	pointer-events: none;
+}
+
+.gost-stamp-header {
+	font-weight: bold;
+	text-align: center;
+	text-transform: uppercase;
+	font-size: 10.5px;
+	letter-spacing: 0.5px;
+	border-bottom: 1px solid #0056b3;
+	padding-bottom: 5px;
+	margin-bottom: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+
+.gost-stamp-row {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 3px;
+}
+
+.gost-stamp-row:last-child {
+	margin-bottom: 0;
+}
+
+.gost-stamp-lbl {
+	font-weight: bold;
+	min-width: 78px;
+	flex-shrink: 0;
+}
+
+.gost-stamp-val {
+	word-break: break-word;
+}
+
+.gost-stamp-mono {
+	font-family: monospace;
+	font-size: 10px;
+}
+
+.gost-stamp-pending-box {
+	border: 2px dashed #94a3b8;
+	border-radius: 8px;
+	padding: 14px;
+	background: rgba(148, 163, 184, 0.06);
+	color: #64748b;
+	font-family: sans-serif;
+	font-size: 12px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	gap: 6px;
+	min-width: 260px;
+	min-height: 110px;
+}
+
+/* XML Preview Code Block */
+.egisz-code-box {
+	background: #0f172a;
+	color: #e2e8f0;
+	border-radius: 8px;
+	padding: 1rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.75rem;
+	line-height: 1.45;
+	max-height: 480px;
+	overflow: auto;
+	white-space: pre;
+	border: 1px solid #334155;
+	user-select: text;
+}
+
+/* Modal Footer & Action Buttons */
+.egisz-modal-footer {
+	padding: 1rem 1.25rem;
+	background: var(--paper-strong, #f8fafc);
+	border-top: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .egisz-modal-footer,
+.dark .egisz-modal-footer {
+	background: var(--paper-strong, #131d31);
+	border-top-color: var(--line, #1e293b);
+}
+
+.egisz-btn-group {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.egisz-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.45rem;
+	padding: 0.55rem 1.1rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 44px;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .egisz-btn,
+.dark .egisz-btn {
+	background: rgba(30, 41, 59, 0.7);
+	border-color: var(--line, #334155);
+	color: #f8fafc;
+}
+
+.egisz-btn:hover:not(:disabled) {
+	background: var(--paper-strong, #f1f5f9);
+	border-color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .egisz-btn:hover:not(:disabled),
+.dark .egisz-btn:hover:not(:disabled) {
+	background: rgba(51, 65, 85, 0.8);
+}
+
+.egisz-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.egisz-btn.primary {
+	background: var(--primary, #0ea5e9);
+	color: #ffffff;
+	border-color: var(--primary, #0ea5e9);
+}
+
+.egisz-btn.primary:hover:not(:disabled) {
+	background: #0284c7;
+	border-color: #0284c7;
+}
+
+.egisz-btn.teal {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+}
+
+.egisz-btn.teal:hover:not(:disabled) {
+	background: #0f766e;
+	border-color: #0f766e;
+}
+
+.egisz-btn.emerald {
+	background: #10b981;
+	color: #ffffff;
+	border-color: #10b981;
+}
+
+.egisz-btn.emerald:hover:not(:disabled) {
+	background: #059669;
+	border-color: #059669;
+}
+
+.egisz-btn.sm {
+	min-height: 36px;
+	padding: 0.35rem 0.75rem;
+	font-size: 0.8125rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * JOURNAL MODAL STYLES (Таблица РЭМД ЕГИСЗ, Фильтры, Статусы, Ошибки)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+.egisz-journal-body {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	padding: 1.25rem;
+	gap: 1rem;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .egisz-journal-body,
+.dark .egisz-journal-body {
+	background: var(--paper, #0f172a);
+}
+
+/* Stats Ribbon */
+.egisz-stats-ribbon {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.egisz-stat-tile {
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 0.75rem 1rem;
+	background: var(--paper-strong, #f8fafc);
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+[data-theme="dark"] .egisz-stat-tile,
+.dark .egisz-stat-tile {
+	background: var(--paper-strong, #131d31);
+	border-color: var(--line, #1e293b);
+}
+
+.egisz-stat-label {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	font-weight: 600;
+}
+
+.egisz-stat-val {
+	font-size: 1.35rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	line-height: 1.1;
+}
+
+[data-theme="dark"] .egisz-stat-val,
+.dark .egisz-stat-val {
+	color: #f8fafc;
+}
+
+.egisz-stat-val.green {
+	color: #10b981;
+}
+
+.egisz-stat-val.amber {
+	color: #f59e0b;
+}
+
+.egisz-stat-val.red {
+	color: #ef4444;
+}
+
+.egisz-stat-val.blue {
+	color: var(--primary, #0ea5e9);
+}
+
+/* Journal Filter Toolbar */
+.egisz-journal-filters {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+	background: var(--paper-strong, #f8fafc);
+	padding: 0.75rem 1rem;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .egisz-journal-filters,
+.dark .egisz-journal-filters {
+	background: var(--paper-strong, #131d31);
+	border-color: var(--line, #1e293b);
+}
+
+.egisz-search-input-wrap {
+	position: relative;
+	flex: 1;
+	min-width: 240px;
+}
+
+.egisz-search-input {
+	width: 100%;
+	height: 40px;
+	padding: 0.4rem 0.75rem 0.4rem 2.2rem;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+[data-theme="dark"] .egisz-search-input,
+.dark .egisz-search-input {
+	background: rgba(15, 23, 42, 0.7);
+	border-color: var(--line, #334155);
+	color: #f8fafc;
+}
+
+.egisz-search-input:focus {
+	border-color: var(--primary, #0ea5e9);
+	box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+}
+
+.egisz-search-icon {
+	position: absolute;
+	left: 0.65rem;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--muted, #64748b);
+	pointer-events: none;
+}
+
+.egisz-filter-select {
+	height: 40px;
+	padding: 0.4rem 0.85rem;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	outline: none;
+	cursor: pointer;
+}
+
+[data-theme="dark"] .egisz-filter-select,
+.dark .egisz-filter-select {
+	background: rgba(15, 23, 42, 0.7);
+	border-color: var(--line, #334155);
+	color: #f8fafc;
+}
+
+/* Journal Status Tabs */
+.egisz-status-tabs {
+	display: flex;
+	gap: 0.35rem;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.egisz-status-tab-chip {
+	padding: 0.35rem 0.75rem;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	min-height: 36px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	transition: all 0.15s ease;
+}
+
+.egisz-status-tab-chip:hover {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+}
+
+.egisz-status-tab-chip.active {
+	background: var(--paper, #ffffff);
+	color: var(--primary, #0ea5e9);
+	border-color: var(--line, #cbd5e1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .egisz-status-tab-chip.active,
+.dark .egisz-status-tab-chip.active {
+	background: rgba(30, 41, 59, 0.8);
+	border-color: var(--line, #334155);
+	color: #38bdf8;
+}
+
+/* Journal Main Table */
+.egisz-table-container {
+	flex: 1;
+	overflow-y: auto;
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .egisz-table-container,
+.dark .egisz-table-container {
+	border-color: var(--line, #1e293b);
+	background: var(--paper, #0f172a);
+}
+
+.egisz-journal-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.egisz-journal-table th {
+	position: sticky;
+	top: 0;
+	background: var(--paper-strong, #f8fafc);
+	color: var(--muted, #64748b);
+	font-weight: 700;
+	padding: 0.75rem 0.85rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+	z-index: 10;
+}
+
+[data-theme="dark"] .egisz-journal-table th,
+.dark .egisz-journal-table th {
+	background: var(--paper-strong, #131d31);
+	border-bottom-color: var(--line, #1e293b);
+	color: #94a3b8;
+}
+
+.egisz-journal-table td {
+	padding: 0.75rem 0.85rem;
+	border-bottom: 1px solid var(--line, #f1f5f9);
+	color: var(--ink, #0f172a);
+	vertical-align: middle;
+}
+
+[data-theme="dark"] .egisz-journal-table td,
+.dark .egisz-journal-table td {
+	border-bottom-color: rgba(30, 41, 59, 0.5);
+	color: #e2e8f0;
+}
+
+.egisz-journal-table tr:hover td {
+	background: var(--paper-strong, #f8fafc);
+}
+
+[data-theme="dark"] .egisz-journal-table tr:hover td,
+.dark .egisz-journal-table tr:hover td {
+	background: rgba(30, 41, 59, 0.4);
+}
+
+.egisz-journal-table tr.selected td {
+	background: var(--primary-muted, rgba(14, 165, 233, 0.08));
+}
+
+[data-theme="dark"] .egisz-journal-table tr.selected td,
+.dark .egisz-journal-table tr.selected td {
+	background: rgba(14, 165, 233, 0.15);
+}
+
+/* Status Badges */
+.egisz-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.2rem 0.55rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.egisz-badge.registered {
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .egisz-badge.registered,
+.dark .egisz-badge.registered {
+	background: rgba(16, 185, 129, 0.18);
+	color: #34d399;
+}
+
+.egisz-badge.sent {
+	background: rgba(245, 158, 11, 0.12);
+	color: #d97706;
+	border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+[data-theme="dark"] .egisz-badge.sent,
+.dark .egisz-badge.sent {
+	background: rgba(245, 158, 11, 0.18);
+	color: #fbbf24;
+}
+
+.egisz-badge.signed {
+	background: rgba(14, 165, 233, 0.12);
+	color: #0284c7;
+	border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+[data-theme="dark"] .egisz-badge.signed,
+.dark .egisz-badge.signed {
+	background: rgba(14, 165, 233, 0.18);
+	color: #38bdf8;
+}
+
+.egisz-badge.error {
+	background: rgba(239, 68, 68, 0.12);
+	color: #dc2626;
+	border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+[data-theme="dark"] .egisz-badge.error,
+.dark .egisz-badge.error {
+	background: rgba(239, 68, 68, 0.18);
+	color: #f87171;
+}
+
+.egisz-badge.draft {
+	background: rgba(100, 116, 139, 0.12);
+	color: #64748b;
+	border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+[data-theme="dark"] .egisz-badge.draft,
+.dark .egisz-badge.draft {
+	background: rgba(148, 163, 184, 0.15);
+	color: #94a3b8;
+}
+
+/* Inspection Drawer / Details Pane in Journal */
+.egisz-detail-panel {
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	padding: 1rem 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+	max-height: 280px;
+	overflow-y: auto;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .egisz-detail-panel,
+.dark .egisz-detail-panel {
+	background: var(--paper-strong, #131d31);
+	border-top-color: var(--line, #1e293b);
+}
+
+/* Error Remediation Card */
+.egisz-error-card {
+	border: 1px solid rgba(239, 68, 68, 0.35);
+	border-left: 4px solid #ef4444;
+	border-radius: 8px;
+	padding: 0.85rem 1rem;
+	background: rgba(239, 68, 68, 0.06);
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+[data-theme="dark"] .egisz-error-card,
+.dark .egisz-error-card {
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.egisz-error-title {
+	font-weight: 700;
+	color: #b91c1c;
+	font-size: 0.875rem;
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+[data-theme="dark"] .egisz-error-title,
+.dark .egisz-error-title {
+	color: #f87171;
+}
+
+.egisz-hint-box {
+	background: var(--paper, #ffffff);
+	border: 1px solid rgba(239, 68, 68, 0.2);
+	border-radius: 6px;
+	padding: 0.65rem 0.85rem;
+	font-size: 0.8125rem;
+	color: var(--ink, #0f172a);
+	line-height: 1.4;
+}
+
+[data-theme="dark"] .egisz-hint-box,
+.dark .egisz-hint-box {
+	background: rgba(15, 23, 42, 0.6);
+	color: #e2e8f0;
+	border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Responsive Rules */
+@media (max-width: 900px) {
+	.egisz-signing-body {
+		grid-template-columns: 1fr;
+	}
+	.egisz-signing-sidebar {
+		border-right: none;
+		border-bottom: 1px solid var(--line, #e2e8f0);
+		max-height: 280px;
+	}
+	.egisz-modal-footer {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.egisz-btn-group {
+		width: 100%;
+		flex-direction: column;
+	}
+	.egisz-btn-group .egisz-btn {
+		width: 100%;
+	}
+}

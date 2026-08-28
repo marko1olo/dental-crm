@@ -1,0 +1,1818 @@
+/* ============================================================
+   omnichannelHub.css — Стили омниканального центра сообщений,
+   дашборда NPS/лояльности и динамического QR-эквайринга СБП.
+   
+   Построен исключительно на дизайн-токенах DENTE:
+   --paper, --paper-soft, --paper-strong, --ink, --ink-2, --muted,
+   --line, --line-strong, --teal, --teal-2, --teal-dark,
+   --ok-fg, --ok-bg, --bad-fg, --bad-bg, --warn-fg, --warn-bg.
+   ============================================================ */
+
+/* --- Модальный оверлей и базовый контейнер --- */
+.omnichannel-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1050;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(15, 23, 42, 0.72);
+	backdrop-filter: blur(6px);
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.omnichannel-modal-container {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-height: calc(100vh - 32px);
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line-strong);
+	border-radius: 12px;
+	box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.hub-main-container {
+	max-width: 1280px;
+	height: 860px;
+}
+
+.sbp-modal-container {
+	max-width: 840px;
+	height: auto;
+}
+
+/* --- Шапка модального окна --- */
+.omnichannel-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
+	gap: 16px;
+	box-sizing: border-box;
+}
+
+.hub-header-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.hub-header-icon-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	background: var(--teal);
+	color: #ffffff;
+	border-radius: 10px;
+	flex-shrink: 0;
+}
+
+.omnichannel-modal-title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.25;
+}
+
+.hub-header-sub {
+	margin: 2px 0 0 0;
+	font-size: 0.8rem;
+	color: var(--muted);
+}
+
+.hub-channel-status-bar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.hub-status-pill {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	font-size: 0.75rem;
+	color: var(--ink-2);
+}
+
+.hub-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+}
+
+.hub-status-dot.green {
+	background: var(--ok-fg);
+	box-shadow: 0 0 6px var(--ok-fg);
+}
+
+.hub-status-dot.blue {
+	background: #0284c7;
+	box-shadow: 0 0 6px #0284c7;
+}
+
+.hub-status-pill.nps-badge {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+	font-weight: 600;
+}
+
+.hub-status-name {
+	color: var(--muted);
+}
+
+.hub-status-val {
+	color: var(--ink);
+	font-weight: 600;
+}
+
+.omnichannel-modal-close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	color: var(--muted);
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.omnichannel-modal-close:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+/* --- Навигационные табы --- */
+.hub-tabs-navigation {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 0 20px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+}
+
+.hub-nav-tab {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	background: transparent;
+	border: none;
+	border-bottom: 2px solid transparent;
+	color: var(--muted);
+	font-size: 0.88rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.hub-nav-tab:hover {
+	color: var(--ink);
+}
+
+.hub-nav-tab.active {
+	color: var(--teal);
+	border-bottom-color: var(--teal);
+	font-weight: 600;
+}
+
+.hub-tab-badge {
+	padding: 2px 7px;
+	background: var(--teal);
+	color: #ffffff;
+	border-radius: 12px;
+	font-size: 0.72rem;
+	font-weight: 700;
+}
+
+.hub-tab-badge.badge-critical {
+	background: var(--bad-fg);
+	color: #ffffff;
+}
+
+/* --- Контейнер содержимого табов --- */
+.hub-tab-content-area {
+	flex: 1;
+	display: flex;
+	overflow: hidden;
+	background: var(--paper);
+}
+
+/* --- ТАБ 1: ЧАТ И ЛЕНТА ПЕРЕПИСКИ --- */
+.hub-chat-workspace {
+	flex: 1;
+	display: flex;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+/* Левый сайдбар контактов */
+.hub-contacts-sidebar {
+	width: 320px;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper-soft);
+	border-right: 1px solid var(--line);
+	flex-shrink: 0;
+}
+
+.hub-contacts-search {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--line);
+}
+
+.hub-search-input {
+	flex: 1;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 7px 10px;
+	font-size: 0.82rem;
+	color: var(--ink);
+	outline: none;
+	box-sizing: border-box;
+}
+
+.hub-search-input:focus {
+	border-color: var(--teal);
+}
+
+.hub-contacts-list {
+	flex: 1;
+	overflow-y: auto;
+	padding: 8px 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.hub-contact-card {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 12px;
+	background: var(--paper);
+	border: 1px solid transparent;
+	border-radius: 8px;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.15s ease, border-color 0.15s ease;
+	position: relative;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.hub-contact-card:hover {
+	background: var(--paper-strong);
+}
+
+.hub-contact-card.selected {
+	background: var(--paper-strong);
+	border-color: var(--teal);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.hub-contact-avatar {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #ffffff;
+	font-weight: 700;
+	font-size: 0.9rem;
+	flex-shrink: 0;
+}
+
+.hub-contact-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.hub-contact-row-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+}
+
+.hub-contact-name {
+	font-size: 0.84rem;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hub-channel-icon-pill {
+	font-size: 0.65rem;
+	font-weight: 700;
+	padding: 2px 5px;
+	border-radius: 4px;
+	text-transform: uppercase;
+}
+
+.hub-channel-icon-pill.whatsapp {
+	background: rgba(34, 197, 94, 0.15);
+	color: var(--ok-fg);
+}
+
+.hub-channel-icon-pill.telegram {
+	background: rgba(2, 132, 199, 0.15);
+	color: #0284c7;
+}
+
+.hub-channel-icon-pill.sms {
+	background: rgba(148, 163, 184, 0.2);
+	color: var(--muted);
+}
+
+.hub-contact-snippet {
+	margin: 2px 0 0 0;
+	font-size: 0.74rem;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hub-unread-pill {
+	background: var(--bad-fg);
+	color: #ffffff;
+	border-radius: 10px;
+	padding: 1px 6px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+/* Центральная зона активного чата */
+.hub-active-chat-pane {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper);
+	overflow: hidden;
+}
+
+/* Шапка активного диалога */
+.hub-chat-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
+	gap: 16px;
+	flex-shrink: 0;
+}
+
+.hub-chat-patient-meta {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.hub-chat-avatar-large {
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #ffffff;
+	font-weight: 700;
+	font-size: 1.1rem;
+	flex-shrink: 0;
+}
+
+.hub-chat-patient-title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.hub-chat-patient-name {
+	margin: 0;
+	font-size: 0.96rem;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hub-phone-chip {
+	font-size: 0.76rem;
+	color: var(--muted);
+	background: var(--paper);
+	padding: 2px 6px;
+	border-radius: 4px;
+	border: 1px solid var(--line);
+}
+
+.hub-chat-quick-details {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.hub-detail-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.72rem;
+	color: var(--ink-2);
+	background: var(--paper-soft);
+	padding: 2px 6px;
+	border-radius: 4px;
+	border: 1px solid var(--line);
+}
+
+.hub-detail-chip.highlight {
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal);
+	border-color: var(--teal);
+	font-weight: 600;
+}
+
+.hub-chat-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.hub-filter-channels-group {
+	display: flex;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 2px;
+}
+
+.hub-filter-btn {
+	padding: 5px 10px;
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--muted);
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hub-filter-btn:hover {
+	color: var(--ink);
+}
+
+.hub-filter-btn.active {
+	background: var(--teal);
+	color: #ffffff;
+	font-weight: 600;
+}
+
+.hub-btn-sbp-invoice {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 12px;
+	background: var(--teal);
+	color: #ffffff;
+	border: none;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: opacity 0.15s ease;
+}
+
+.hub-btn-sbp-invoice:hover {
+	opacity: 0.9;
+}
+
+/* Лента сообщений */
+.hub-messages-feed {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: var(--paper-soft);
+}
+
+.hub-empty-feed {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	color: var(--muted);
+	gap: 8px;
+	font-size: 0.9rem;
+}
+
+.hub-message-bubble-wrapper {
+	display: flex;
+	width: 100%;
+}
+
+.hub-message-bubble-wrapper.outbound {
+	justify-content: flex-end;
+}
+
+.hub-message-bubble-wrapper.inbound {
+	justify-content: flex-start;
+}
+
+.hub-message-bubble {
+	max-width: 65%;
+	padding: 10px 14px;
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	position: relative;
+	box-sizing: border-box;
+}
+
+.hub-message-bubble-wrapper.outbound .hub-message-bubble {
+	background: var(--paper-strong);
+	border: 1px solid var(--line-strong);
+	border-bottom-right-radius: 2px;
+}
+
+.hub-message-bubble-wrapper.inbound .hub-message-bubble {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-bottom-left-radius: 2px;
+}
+
+.hub-message-bubble.whatsapp {
+	border-left: 3px solid var(--ok-fg);
+}
+
+.hub-message-bubble.telegram {
+	border-left: 3px solid #0284c7;
+}
+
+.hub-message-bubble.sms {
+	border-left: 3px solid var(--muted);
+}
+
+.hub-msg-meta-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.hub-msg-sender {
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: var(--teal);
+}
+
+.hub-msg-channel-tag {
+	font-size: 0.62rem;
+	font-weight: 700;
+	padding: 1px 4px;
+	border-radius: 3px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+}
+
+.hub-msg-body-text {
+	font-size: 0.84rem;
+	line-height: 1.45;
+	color: var(--ink);
+	word-break: break-word;
+}
+
+.hub-msg-interactive-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.hub-msg-interactive-btn {
+	padding: 5px 10px;
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	font-size: 0.76rem;
+	font-weight: 600;
+	color: var(--ink);
+	cursor: pointer;
+}
+
+.hub-msg-interactive-btn.primary {
+	background: var(--teal);
+	color: #ffffff;
+	border-color: var(--teal);
+}
+
+.hub-msg-attachments {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.hub-msg-attachment-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	font-size: 0.75rem;
+	color: var(--ink);
+}
+
+.hub-msg-attachment-item .att-name {
+	font-weight: 600;
+	flex: 1;
+}
+
+.hub-msg-attachment-item .att-size {
+	color: var(--muted);
+}
+
+.hub-msg-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 4px;
+	margin-top: 2px;
+}
+
+.hub-msg-time {
+	font-size: 0.68rem;
+	color: var(--muted);
+}
+
+.hub-msg-status {
+	display: flex;
+	align-items: center;
+}
+
+/* Панель ввода сообщения */
+.hub-chat-input-area {
+	padding: 12px 20px;
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.hub-input-top-bar {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.hub-channel-select-wrap,
+.hub-template-quick-select-wrap {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.hub-input-bar-label {
+	font-size: 0.74rem;
+	color: var(--muted);
+	font-weight: 600;
+}
+
+.hub-channel-select,
+.hub-template-select {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 5px 8px;
+	font-size: 0.78rem;
+	color: var(--ink);
+	outline: none;
+}
+
+.hub-channel-select:focus,
+.hub-template-select:focus {
+	border-color: var(--teal);
+}
+
+.hub-textarea-container {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+}
+
+.hub-message-textarea {
+	width: 100%;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 10px 12px;
+	padding-bottom: 38px;
+	font-size: 0.86rem;
+	font-family: inherit;
+	color: var(--ink);
+	resize: none;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.hub-message-textarea:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+}
+
+.hub-textarea-actions {
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	left: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.hub-icon-action-btn {
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.hub-icon-action-btn:hover {
+	color: var(--ink);
+	background: var(--paper-soft);
+}
+
+.hub-btn-send {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	background: var(--teal);
+	color: #ffffff;
+	border: none;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: opacity 0.15s ease;
+}
+
+.hub-btn-send:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+/* --- ТАБ 2: КЛИНИЧЕСКИЕ ШАБЛОНЫ --- */
+.hub-templates-workspace {
+	flex: 1;
+	padding: 20px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.hub-templates-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.hub-templates-title {
+	margin: 0;
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hub-templates-sub {
+	margin: 2px 0 0 0;
+	font-size: 0.8rem;
+	color: var(--muted);
+}
+
+.hub-templates-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+	gap: 14px;
+}
+
+.hub-template-card {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.hub-tpl-card-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.hub-tpl-badge-category {
+	font-size: 0.74rem;
+	font-weight: 700;
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.1);
+	padding: 3px 8px;
+	border-radius: 6px;
+}
+
+.hub-tpl-channel-tag {
+	font-size: 0.65rem;
+	font-weight: 700;
+	color: var(--muted);
+	border: 1px solid var(--line);
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.hub-tpl-name {
+	margin: 0;
+	font-size: 0.92rem;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hub-tpl-desc {
+	margin: 0;
+	font-size: 0.78rem;
+	color: var(--muted);
+	line-height: 1.35;
+}
+
+.hub-tpl-preview-box {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 10px;
+	font-size: 0.78rem;
+	color: var(--ink-2);
+	white-space: pre-wrap;
+	line-height: 1.4;
+	max-height: 120px;
+	overflow-y: auto;
+}
+
+.hub-tpl-variables-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.hub-tpl-vars-label {
+	font-size: 0.7rem;
+	color: var(--muted);
+	font-weight: 600;
+}
+
+.hub-tpl-var-chip {
+	font-size: 0.68rem;
+	font-family: monospace;
+	background: var(--paper-soft);
+	color: var(--teal);
+	padding: 1px 5px;
+	border-radius: 4px;
+	border: 1px solid var(--line);
+}
+
+.hub-btn-apply-template {
+	margin-top: auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 8px 12px;
+	background: var(--paper);
+	border: 1px solid var(--teal);
+	border-radius: 6px;
+	color: var(--teal);
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hub-btn-apply-template:hover {
+	background: var(--teal);
+	color: #ffffff;
+}
+
+/* --- ТАБ 3: ДАШБОРД NPS И ОТЗЫВОВ --- */
+.hub-nps-workspace {
+	flex: 1;
+	padding: 20px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.hub-nps-metrics-row {
+	display: grid;
+	grid-template-columns: 1.4fr 1fr 1fr 1fr;
+	gap: 12px;
+}
+
+.hub-nps-metric-card {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.hub-nps-metric-card.hero {
+	background: linear-gradient(135deg, var(--paper-strong) 0%, rgba(13, 148, 136, 0.08) 100%);
+	border-color: var(--teal);
+}
+
+.metric-title {
+	font-size: 0.76rem;
+	font-weight: 600;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.metric-hero-value {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+}
+
+.score-sign {
+	font-size: 2.2rem;
+	font-weight: 800;
+	color: var(--teal);
+	line-height: 1;
+}
+
+.score-badge-label {
+	font-size: 0.76rem;
+	font-weight: 700;
+	color: var(--ok-fg);
+	background: rgba(34, 197, 94, 0.15);
+	padding: 3px 8px;
+	border-radius: 12px;
+}
+
+.metric-card-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.metric-val-num {
+	font-size: 1.5rem;
+	font-weight: 800;
+	line-height: 1.1;
+}
+
+.metric-count {
+	font-size: 0.85rem;
+	font-weight: 500;
+	color: var(--muted);
+}
+
+.metric-bar-track {
+	width: 100%;
+	height: 6px;
+	background: var(--paper);
+	border-radius: 3px;
+	overflow: hidden;
+	margin-top: 4px;
+}
+
+.metric-bar-fill {
+	height: 100%;
+	border-radius: 3px;
+}
+
+.metric-bar-fill.bar-promoter {
+	background: var(--ok-fg);
+}
+
+.metric-bar-fill.bar-neutral {
+	background: #f59e0b;
+}
+
+.metric-bar-fill.bar-detractor {
+	background: var(--bad-fg);
+}
+
+.metric-hint {
+	margin: 0;
+	font-size: 0.72rem;
+	color: var(--muted);
+}
+
+/* Таблица отзывов NPS */
+.hub-nps-table-container {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.hub-nps-table-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--line);
+}
+
+.hub-nps-table-heading {
+	margin: 0;
+	font-size: 0.92rem;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.hub-nps-filters {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.nps-filter-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.75rem;
+	color: var(--muted);
+}
+
+.hub-nps-select {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 4px 8px;
+	font-size: 0.76rem;
+	color: var(--ink);
+	outline: none;
+}
+
+.hub-nps-table-wrapper {
+	overflow-x: auto;
+}
+
+.hub-nps-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8rem;
+	text-align: left;
+}
+
+.hub-nps-table th {
+	background: var(--paper-soft);
+	padding: 10px 14px;
+	font-weight: 600;
+	color: var(--muted);
+	border-bottom: 1px solid var(--line);
+	white-space: nowrap;
+}
+
+.hub-nps-table td {
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+	vertical-align: middle;
+}
+
+.hub-nps-table tr:hover {
+	background: var(--paper-soft);
+}
+
+.nps-row-critical {
+	background: rgba(225, 29, 72, 0.05);
+}
+
+.cell-date {
+	font-size: 0.75rem;
+	color: var(--muted);
+	white-space: nowrap;
+}
+
+.cell-patient .patient-name {
+	display: block;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.cell-patient .patient-phone {
+	font-size: 0.72rem;
+	color: var(--muted);
+}
+
+.nps-score-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-weight: 700;
+	font-size: 0.78rem;
+}
+
+.nps-score-badge.score-10,
+.nps-score-badge.score-9 {
+	background: rgba(34, 197, 94, 0.15);
+	color: var(--ok-fg);
+}
+
+.nps-score-badge.score-8,
+.nps-score-badge.score-7 {
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+}
+
+.nps-score-badge.score-6,
+.nps-score-badge.score-5,
+.nps-score-badge.score-4,
+.nps-score-badge.score-3,
+.nps-score-badge.score-2,
+.nps-score-badge.score-1,
+.nps-score-badge.score-0 {
+	background: rgba(239, 68, 68, 0.15);
+	color: var(--bad-fg);
+}
+
+.nps-urgency-pill {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 0.72rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.nps-urgency-pill.urgency-critical {
+	background: var(--bad-fg);
+	color: #ffffff;
+}
+
+.nps-urgency-pill.urgency-high {
+	background: rgba(239, 68, 68, 0.15);
+	color: var(--bad-fg);
+}
+
+.nps-urgency-pill.urgency-medium {
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+}
+
+.nps-urgency-pill.urgency-low {
+	background: rgba(34, 197, 94, 0.15);
+	color: var(--ok-fg);
+}
+
+.cell-comment .comment-text {
+	margin: 0;
+	font-size: 0.8rem;
+	line-height: 1.35;
+	max-width: 320px;
+}
+
+.cell-comment .resolution-note {
+	margin: 4px 0 0 0;
+	font-size: 0.72rem;
+	color: var(--ok-fg);
+}
+
+.cell-doctor .doctor-name {
+	display: block;
+	font-weight: 600;
+	font-size: 0.78rem;
+}
+
+.cell-doctor .service-name {
+	font-size: 0.72rem;
+	color: var(--muted);
+}
+
+.status-select {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	padding: 4px 6px;
+	font-size: 0.74rem;
+	color: var(--ink);
+}
+
+.status-select.status-pending {
+	border-color: var(--bad-fg);
+	color: var(--bad-fg);
+	font-weight: 600;
+}
+
+.status-select.status-in_progress {
+	border-color: #d97706;
+	color: #d97706;
+}
+
+.status-select.status-resolved,
+.status-select.status-thanked {
+	border-color: var(--ok-fg);
+	color: var(--ok-fg);
+}
+
+.hub-table-btn-chat {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 5px 8px;
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	font-size: 0.74rem;
+	font-weight: 600;
+	color: var(--teal);
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.hub-table-btn-chat:hover {
+	background: var(--teal);
+	color: #ffffff;
+}
+
+/* --- ОКНО ОПЛАТЫ СБП (SbpPaymentQrModal) --- */
+.sbp-header-brand {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.sbp-emblem-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	padding: 6px 10px;
+	background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+	color: #ffffff;
+	border-radius: 8px;
+	font-weight: 800;
+	font-size: 0.9rem;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sbp-icon-tri {
+	color: #38bdf8;
+}
+
+.sbp-brand-text {
+	letter-spacing: 0.05em;
+}
+
+.sbp-header-sub {
+	margin: 2px 0 0 0;
+	font-size: 0.78rem;
+	color: var(--muted);
+}
+
+.sbp-modal-body {
+	padding: 20px;
+	display: grid;
+	grid-template-columns: 280px 1fr;
+	gap: 24px;
+	background: var(--paper);
+}
+
+/* Левая колонка QR */
+.sbp-qr-column {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+}
+
+.sbp-qr-frame {
+	position: relative;
+	width: 240px;
+	height: 240px;
+	background: #ffffff;
+	border: 2px solid var(--line-strong);
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+	box-sizing: border-box;
+}
+
+.sbp-qr-wrapper {
+	position: relative;
+	width: 220px;
+	height: 220px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.sbp-qr-svg-holder svg {
+	display: block;
+	width: 220px;
+	height: 220px;
+}
+
+.sbp-qr-center-logo {
+	position: absolute;
+	width: 38px;
+	height: 38px;
+	background: #0f172a;
+	color: #38bdf8;
+	border: 2px solid #ffffff;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 900;
+	font-size: 0.72rem;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.sbp-timer-card {
+	width: 100%;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 8px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	box-sizing: border-box;
+}
+
+.sbp-timer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.sbp-timer-label {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.74rem;
+	color: var(--muted);
+}
+
+.sbp-timer-digits {
+	font-size: 0.86rem;
+	font-weight: 700;
+	font-family: monospace;
+	color: var(--ink);
+}
+
+.sbp-timer-digits.timer-warning {
+	color: var(--bad-fg);
+}
+
+.sbp-progress-track {
+	width: 100%;
+	height: 4px;
+	background: var(--paper);
+	border-radius: 2px;
+	overflow: hidden;
+}
+
+.sbp-progress-fill {
+	height: 100%;
+	background: var(--teal);
+	transition: width 1s linear;
+}
+
+.sbp-progress-fill.progress-warning {
+	background: var(--bad-fg);
+}
+
+.sbp-live-status-pill {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.76rem;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: 20px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink-2);
+}
+
+.sbp-live-status-pill.status-awaiting_scan {
+	border-color: #38bdf8;
+	color: #0284c7;
+}
+
+.sbp-live-status-pill.status-paid_success {
+	background: rgba(34, 197, 94, 0.15);
+	border-color: var(--ok-fg);
+	color: var(--ok-fg);
+}
+
+.sbp-live-status-pill.status-expired {
+	background: rgba(239, 68, 68, 0.15);
+	border-color: var(--bad-fg);
+	color: var(--bad-fg);
+}
+
+.sbp-pulse-dot {
+	width: 8px;
+	height: 8px;
+	background: #0284c7;
+	border-radius: 50%;
+	animation: sbpPulse 1.5s infinite;
+}
+
+@keyframes sbpPulse {
+	0% {
+		transform: scale(0.9);
+		box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+	}
+	70% {
+		transform: scale(1.1);
+		box-shadow: 0 0 0 8px rgba(2, 132, 199, 0);
+	}
+	100% {
+		transform: scale(0.9);
+		box-shadow: 0 0 0 0 rgba(2, 132, 199, 0);
+	}
+}
+
+.sbp-spin-icon {
+	animation: sbpSpin 1s linear infinite;
+}
+
+@keyframes sbpSpin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.sbp-success-banner {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 6px;
+	padding: 16px;
+}
+
+.sbp-success-icon-wrap {
+	color: var(--ok-fg);
+}
+
+.sbp-success-title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 800;
+	color: var(--ok-fg);
+}
+
+.sbp-success-sum {
+	margin: 0;
+	font-size: 1.4rem;
+	font-weight: 800;
+	color: var(--ink);
+}
+
+.sbp-success-receipt {
+	margin: 0;
+	font-size: 0.78rem;
+	color: var(--muted);
+}
+
+.sbp-badge-online {
+	font-size: 0.7rem;
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.1);
+	padding: 2px 6px;
+	border-radius: 4px;
+	margin-top: 4px;
+}
+
+.sbp-expired-banner {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 8px;
+	padding: 16px;
+}
+
+.sbp-expired-icon {
+	color: var(--bad-fg);
+}
+
+/* Правая колонка с деталями счета */
+.sbp-details-column {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.sbp-invoice-summary-card {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.sbp-summary-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.85rem;
+}
+
+.sbp-summary-row.highlight {
+	font-size: 1.1rem;
+	font-weight: 800;
+}
+
+.sbp-sum-value {
+	color: var(--teal);
+	font-size: 1.35rem;
+}
+
+.sbp-summary-row.sub {
+	font-size: 0.78rem;
+	color: var(--muted);
+}
+
+.sbp-summary-divider {
+	height: 1px;
+	background: var(--line);
+	margin: 4px 0;
+}
+
+.sbp-meta-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px 16px;
+}
+
+.sbp-meta-item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.sbp-meta-item.full {
+	grid-column: 1 / -1;
+}
+
+.sbp-meta-title {
+	font-size: 0.7rem;
+	color: var(--muted);
+	text-transform: uppercase;
+}
+
+.sbp-meta-val {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.sbp-actions-section {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.sbp-actions-heading {
+	margin: 0;
+	font-size: 0.84rem;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.sbp-action-buttons-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.sbp-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 10px 14px;
+	border-radius: 8px;
+	font-size: 0.82rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: opacity 0.15s ease, background 0.15s ease;
+	border: 1px solid transparent;
+}
+
+.sbp-btn-copy {
+	background: var(--paper-strong);
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+.sbp-btn-copy.copied {
+	background: rgba(34, 197, 94, 0.15);
+	border-color: var(--ok-fg);
+	color: var(--ok-fg);
+}
+
+.sbp-btn-whatsapp {
+	background: #22c55e;
+	color: #ffffff;
+}
+
+.sbp-btn-telegram {
+	background: #0284c7;
+	color: #ffffff;
+}
+
+.sbp-btn-print {
+	background: var(--paper-strong);
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+.sbp-btn:hover {
+	opacity: 0.9;
+}
+
+.sbp-demo-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	background: var(--paper-soft);
+	border: 1px dashed var(--teal);
+	border-radius: 6px;
+	margin-top: 4px;
+}
+
+.sbp-demo-label {
+	font-size: 0.72rem;
+	color: var(--muted);
+	font-weight: 600;
+}
+
+.sbp-btn-simulate {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px;
+	background: var(--teal);
+	color: #ffffff;
+	border: none;
+	border-radius: 4px;
+	font-size: 0.74rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+/* --- Футер модальных окон --- */
+.omnichannel-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+	gap: 16px;
+	box-sizing: border-box;
+}
+
+.hub-footer-status,
+.sbp-footer-legal {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.74rem;
+	color: var(--muted);
+}
+
+.omnichannel-btn-secondary {
+	padding: 7px 16px;
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: var(--ink);
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.omnichannel-btn-secondary:hover {
+	background: var(--paper-soft);
+}
+
+/* --- Утилитарные цвета --- */
+.text-ok {
+	color: var(--ok-fg);
+}
+
+.text-bad {
+	color: var(--bad-fg);
+}
+
+.text-amber {
+	color: #f59e0b;
+}
+
+.text-teal {
+	color: var(--teal);
+}
+
+.text-muted {
+	color: var(--muted);
+}
+
+/* --- Адаптивность для мобильных и планшетов --- */
+@media (max-width: 900px) {
+	.hub-main-container {
+		height: calc(100vh - 20px);
+	}
+
+	.hub-chat-workspace {
+		flex-direction: column;
+	}
+
+	.hub-contacts-sidebar {
+		width: 100%;
+		height: 180px;
+		border-right: none;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.hub-nps-metrics-row {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.sbp-modal-body {
+		grid-template-columns: 1fr;
+	}
+}

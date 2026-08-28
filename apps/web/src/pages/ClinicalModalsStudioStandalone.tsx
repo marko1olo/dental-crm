@@ -2,12 +2,13 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import {
 	Activity,
+	Archive,
+	Award,
 	Boxes,
 	Calculator,
 	Calendar,
 	Camera,
 	CheckCircle2,
-	Award,
 	Clock,
 	Coins,
 	Compass,
@@ -23,7 +24,9 @@ import {
 	FlaskConical,
 	Gauge,
 	HeartPulse,
+	KeyRound,
 	Layers,
+	MessagesSquare,
 	Moon,
 	PackageCheck,
 	Palette,
@@ -116,6 +119,11 @@ import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerm
 import { PatientPortalModal } from "../components/portal/PatientPortalModal";
 import { PatientWebappPortalModal } from "../components/patient-portal/PatientWebappPortalModal";
 import { EgiszRemdHubModal } from "../components/egisz/EgiszRemdHubModal";
+import { EgiszCdaExportModal } from "../components/egisz/EgiszCdaExportModal";
+import { EgiszRemdSigningModal } from "../components/egisz/EgiszRemdSigningModal";
+import { EgiszDocumentsJournalModal } from "../components/egisz/EgiszDocumentsJournalModal";
+import { PatientOmnichannelHubModal } from "../components/messaging/PatientOmnichannelHubModal";
+import { SbpPaymentQrModal } from "../components/messaging/SbpPaymentQrModal";
 import { LabWorkOrderModal } from "../components/lab/orders/LabWorkOrderModal";
 import { ClinicalWriteoffModal } from "../components/inventory/writeoff/ClinicalWriteoffModal";
 import { DmsInsuranceManagerModal } from "../components/insurance/dmsManager/DmsInsuranceManagerModal";
@@ -563,6 +571,11 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isDmsInsurersOpen, setIsDmsInsurersOpen] = useState(false);
 	const [isAdvancedDoctorPayrollOpen, setIsAdvancedDoctorPayrollOpen] = useState(false);
 	const [isFormT13TimesheetOpen, setIsFormT13TimesheetOpen] = useState(false);
+	const [isEgiszCdaExportOpen, setIsEgiszCdaExportOpen] = useState(false);
+	const [isEgiszJournalOpen, setIsEgiszJournalOpen] = useState(false);
+	const [isEgiszSigningOpen, setIsEgiszSigningOpen] = useState(false);
+	const [isOmnichannelHubOpen, setIsOmnichannelHubOpen] = useState(false);
+	const [isSbpPaymentQrOpen, setIsSbpPaymentQrOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -683,6 +696,27 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsDmsInsurersOpen(false);
 					setIsAdvancedDoctorPayrollOpen(false);
 					setIsFormT13TimesheetOpen(false);
+					setIsEgiszCdaExportOpen(false);
+					setIsEgiszJournalOpen(false);
+					setIsEgiszSigningOpen(false);
+					setIsOmnichannelHubOpen(false);
+					setIsSbpPaymentQrOpen(false);
+
+					if (requestedModal === "egisz_cda_export" || requestedModal === "cda_export" || requestedModal === "egisz_cda" || requestedModal === "cda_modal") {
+						setIsEgiszCdaExportOpen(true);
+					}
+					if (requestedModal === "egisz_journal" || requestedModal === "remd_journal" || requestedModal === "egisz_documents") {
+						setIsEgiszJournalOpen(true);
+					}
+					if (requestedModal === "egisz_signing" || requestedModal === "remd_signing" || requestedModal === "signing_studio" || requestedModal === "egisz_sign") {
+						setIsEgiszSigningOpen(true);
+					}
+					if (requestedModal === "omnichannel_hub" || requestedModal === "omnichannel" || requestedModal === "messaging_hub" || requestedModal === "nps_hub" || requestedModal === "bot_hub") {
+						setIsOmnichannelHubOpen(true);
+					}
+					if (requestedModal === "sbp_qr" || requestedModal === "sbp_payment" || requestedModal === "sbp" || requestedModal === "sbp_modal") {
+						setIsSbpPaymentQrOpen(true);
+					}
 
 					if (requestedModal === "before_after" || requestedModal === "before_after_slider" || requestedModal === "photo_comparison" || requestedModal === "photography") {
 						setIsBeforeAfterOpen(true);
@@ -2852,6 +2886,126 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть табель Т-13</span>
 						</button>
 					</div>
+
+					{/* 68. Wave 15: Statutory EGISZ REMD CDA R2 & UKEP CryptoPro Export */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									СЭМД ЕГИСЗ CDA R2 & УКЭП (Приказ 911н)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Генератор CDA XML (Консультация 302 / Вмешательство 303), валидация OID, СНИЛС 192п, канонизация C14N и открепленная подпись УКЭП CAdES-BES.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsEgiszCdaExportOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-egisz-cda-export-modal-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>Открыть экспорт СЭМД CDA</span>
+						</button>
+					</div>
+
+					{/* 68b. Wave 15: Statutory EGISZ REMD Documents Journal & Bulk Sign */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Archive className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Журнал документов ЕГИСЗ РЭМД
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Реестр СЭМД протоколов, пакетное подписание УКЭП, скачивание ZIP-архивов с открепленными подписями и аудит ошибок ЕГИСЗ.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsEgiszJournalOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-egisz-journal-modal-btn"
+						>
+							<Archive size={15} />
+							<span>Открыть журнал ЕГИСЗ</span>
+						</button>
+					</div>
+
+					{/* 68c. Wave 15: Statutory EGISZ REMD UKEP CryptoPro Signing Studio */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<KeyRound className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Студия подписания СЭМД УКЭП (Приказ 947н)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Подписание медицинской карты 043/у квалифицированной электронной подписью ГОСТ Р 34.10-2012, плагин КриптоПро CSP и синий штамп ЭП.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsEgiszSigningOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-egisz-signing-modal-btn"
+						>
+							<KeyRound size={15} />
+							<span>Открыть подписание УКЭП</span>
+						</button>
+					</div>
+
+					{/* 69. Wave 16: Omnichannel Messaging Center & NPS Triage Hub */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<MessagesSquare className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Омниканальный бот & NPS дашборд
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Единая лента диалогов (WhatsApp, Telegram, SMS), библиотека быстрых клинических шаблонов и дашборд индекса лояльности NPS с триажем инцидентов.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsOmnichannelHubOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-omnichannel-hub-modal-btn"
+						>
+							<MessagesSquare size={15} />
+							<span>Открыть омниканальный центр</span>
+						</button>
+					</div>
+
+					{/* 70. Wave 16: Fast Payments System (SBP Dynamic QR & 54-FZ) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<QrCode className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Динамический QR-код СБП (НСПК)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								1-кликовая генерация динамического платежного QR-кода НСПК Банка России, таймер 15 минут, отправка в WhatsApp/Telegram и чек 54-ФЗ.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsSbpPaymentQrOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-sbp-qr-modal-btn"
+						>
+							<QrCode size={15} />
+							<span>Открыть оплату по СБП</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -3958,6 +4112,75 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					clinicName="ООО «Денте Стоматология»"
 					organizationInn="7701234567"
 					organizationKpp="770101001"
+				/>
+			)}
+
+			{isEgiszCdaExportOpen && (
+				<EgiszCdaExportModal
+					isOpen={isEgiszCdaExportOpen}
+					onClose={() => setIsEgiszCdaExportOpen(false)}
+					visitId="VISIT-2026-891"
+					patientId="PAT-001"
+					patientName={SAMPLE_PATIENT.fullName}
+					patientSnils="123-456-789 64"
+					patientBirthDate={SAMPLE_PATIENT.birthDate}
+					patientGender="female"
+					patientPhone={SAMPLE_PATIENT.phone}
+					clinicName="ООО «Стоматологическая клиника ДЕНТЕ»"
+					clinicOid="1.2.643.5.1.13.13.12.2.77.10425"
+					clinicOgrn="1027739820921"
+					clinicInn="7701234567"
+					doctorName="Д-р Смирнов Алексей Петрович"
+					doctorSnils="123-456-789 64"
+					doctorPosition="Врач-стоматолог терапевт"
+					doctorPositionCode="71"
+					diagnosisText={SAMPLE_DIARY.statusLocalis}
+					icd10Code={SAMPLE_DIARY.diagnosisIcd10}
+					diagnosisTooth={SAMPLE_DIARY.diagnosisTooth}
+					anamnesis={SAMPLE_DIARY.anamnesis}
+					treatmentDescription={SAMPLE_DIARY.treatmentDescription}
+				/>
+			)}
+
+			{isEgiszJournalOpen && (
+				<EgiszDocumentsJournalModal
+					isOpen={isEgiszJournalOpen}
+					onClose={() => setIsEgiszJournalOpen(false)}
+				/>
+			)}
+
+			{isEgiszSigningOpen && (
+				<EgiszRemdSigningModal
+					isOpen={isEgiszSigningOpen}
+					onClose={() => setIsEgiszSigningOpen(false)}
+				/>
+			)}
+
+			{isOmnichannelHubOpen && (
+				<PatientOmnichannelHubModal
+					isOpen={isOmnichannelHubOpen}
+					onClose={() => setIsOmnichannelHubOpen(false)}
+					initialPatientId="pat-101"
+					clinicName="ООО «Стоматологическая клиника ДЕНТЕ»"
+					clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 2"
+				/>
+			)}
+
+			{isSbpPaymentQrOpen && (
+				<SbpPaymentQrModal
+					isOpen={isSbpPaymentQrOpen}
+					onClose={() => setIsSbpPaymentQrOpen(false)}
+					invoice={{
+						orderId: "ORD-2026-891",
+						patientId: "PAT-001",
+						patientName: SAMPLE_PATIENT.fullName,
+						phone: SAMPLE_PATIENT.phone,
+						sumRub: 14500,
+						sumKopecks: 1450000,
+						purpose: "Оплата стоматологических услуг (ООО «ДЕНТЕ»)",
+						clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+						totalInvoiceRub: 14500,
+					}}
 				/>
 			)}
 
