@@ -329,7 +329,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 				overflowY: "auto",
 				overscrollBehavior: "contain",
 				gap: "20px",
-				padding: "12px 0 32px 0",
+				padding: "12px 0 48px 0",
 				boxSizing: "border-box",
 			}}
 		>
@@ -468,42 +468,44 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			{/* NAVIGATION TABS */}
 			<div
 				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(5, minmax(130px, 1fr))",
-					gap: "6px",
+					display: "flex",
+					flexWrap: "nowrap",
+					overflowX: "auto",
+					gap: "4px",
 					borderBottom: "1px solid var(--glass-border, #e2e8f0)",
 					paddingBottom: "8px",
-					overflowX: "auto",
 					WebkitOverflowScrolling: "touch",
 				}}
 			>
 				{[
-					{ id: "export", label: "1-Клик Экспорт (.dente)", icon: <HardDrive size={16} /> },
-					{ id: "restore", label: "Восстановление и Dry-Run", icon: <UploadCloud size={16} /> },
-					{ id: "snapshots", label: "Снапшоты и SHA-256", icon: <Database size={16} /> },
-					{ id: "scheduler", label: "Автобэкап (Шедулер)", icon: <Clock size={16} /> },
-					{ id: "integrity", label: "Целостность и Здоровье", icon: <ShieldCheck size={16} /> },
+					{ id: "export", label: "1-Клик Экспорт (.dente)", icon: <HardDrive size={14} /> },
+					{ id: "restore", label: "Восстановление и Dry-Run", icon: <UploadCloud size={14} /> },
+					{ id: "snapshots", label: "Снапшоты и SHA-256", icon: <Database size={14} /> },
+					{ id: "scheduler", label: "Автобэкап (Шедулер)", icon: <Clock size={14} /> },
+					{ id: "integrity", label: "Целостность и Здоровье", icon: <ShieldCheck size={14} /> },
 				].map((tab) => (
 					<button
 						key={tab.id}
 						type="button"
 						onClick={() => setActiveSection(tab.id as any)}
 						style={{
-							minHeight: "38px",
-							padding: "0 12px",
+							minHeight: "34px",
+							padding: "4px 10px",
 							borderRadius: "6px",
 							border: "none",
 							background: activeSection === tab.id ? "var(--paper-strong, #ffffff)" : "transparent",
 							color: activeSection === tab.id ? "#0284c7" : "var(--muted, #64748b)",
 							fontWeight: activeSection === tab.id ? "600" : "500",
-							fontSize: "13px",
+							fontSize: "12px",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "6px",
+							gap: "5px",
 							whiteSpace: "nowrap",
+							flex: "1 0 auto",
 							boxShadow: activeSection === tab.id ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
+							transition: "all 0.15s ease",
 						}}
 					>
 						{tab.icon}
@@ -571,8 +573,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 					<div
 						style={{
 							display: "grid",
-							gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-							gap: "16px",
+							gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+							gap: "14px",
 							marginBottom: "20px",
 						}}
 					>
@@ -677,10 +679,13 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								fontWeight: "600",
 								fontSize: "14px",
 								cursor: isExporting ? "not-allowed" : "pointer",
-								display: "flex",
+								display: "inline-flex",
 								alignItems: "center",
+								justifyContent: "center",
 								gap: "8px",
 								boxShadow: "0 2px 4px rgba(5,150,105,0.2)",
+								flex: "1 1 auto",
+								boxSizing: "border-box",
 							}}
 						>
 							<Download size={18} />
@@ -701,9 +706,12 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								fontWeight: "500",
 								fontSize: "14px",
 								cursor: isExporting ? "not-allowed" : "pointer",
-								display: "flex",
+								display: "inline-flex",
 								alignItems: "center",
+								justifyContent: "center",
 								gap: "6px",
+								flex: "1 1 auto",
+								boxSizing: "border-box",
 							}}
 						>
 							<Download size={16} />

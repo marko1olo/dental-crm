@@ -3041,7 +3041,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					aria-modal="true"
 					data-testid="offline-vault-modal-container"
 				>
-					<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[calc(100dvh-32px)] flex flex-col">
+					<div
+						className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden flex flex-col"
+						style={{
+							maxHeight: "calc(100dvh - 24px)",
+							display: "flex",
+							flexDirection: "column",
+							boxSizing: "border-box",
+						}}
+					>
 						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
 							<div className="flex items-center gap-2.5">
 								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
@@ -3066,7 +3074,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								<X className="w-5 h-5" />
 							</button>
 						</div>
-						<div className="flex-1 overflow-y-auto overscroll-contain pb-6">
+						<div
+							className="flex-1 overflow-y-auto overscroll-contain"
+							style={{
+								paddingBottom: "48px",
+								maxHeight: "calc(100dvh - 32px)",
+								overflowY: "auto",
+								overscrollBehavior: "contain",
+							}}
+						>
 							<OfflineBackupVaultPanel
 								organizationId="c-1"
 								clinicName="ООО «Денте Стоматология»"
