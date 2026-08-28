@@ -169,7 +169,7 @@ export interface PatientRecallCandidate {
 	readonly patientId: string;
 	readonly fullName: string;
 	readonly phone: string | null;
-	readonly email: string | null;
+	readonly email?: string | null | undefined;
 	readonly cycleType: RecallCycleType;
 	readonly customIntervalMonths?: number | undefined;
 	readonly lastVisitDate: string; // ISO date string YYYY-MM-DD

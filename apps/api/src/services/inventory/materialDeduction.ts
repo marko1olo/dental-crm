@@ -189,22 +189,28 @@ export async function deductMaterialsForVisit(
 		const inv = inventoryMap.get(itemId);
 		if (!inv) continue;
 
-		const currentStock = Number(inv.stockQuantity ?? 0);
-		if (!Number.isFinite(currentStock) || currentStock < requiredQty) {
-			throw new InsufficientStockError({
-				inventoryItemId: inv.id,
-				inventoryItemName: inv.name,
-				availableStock: Number.isFinite(currentStock) ? currentStock : 0,
-				requiredStock: requiredQty,
-			});
-		}
-
-		const newStock = currentStock - requiredQty;
+		const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
+		const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+		const newStock = baseStock - requiredQty;
 		const quantityChanged = String(-requiredQty);
+
+		// Дефицит материалов: при нехватке остатка списываем в отрицательный остаток (дефицит),
+		// логируем предупреждение и создаем транзакцию списания, чтобы врач беспрепятственно завершил клинический прием.
+		if (newStock < 0) {
+			console.warn(
+				`[materialDeduction] Внимание: списание в дефицит по материалу «${inv.name}» (ID: ${inv.id}) ` +
+					`для визита ${visitId} (клиника ${organizationId}): ` +
+					`в наличии ${baseStock}, требовалось ${requiredQty}, итоговый остаток (дефицит): ${newStock}.`,
+			);
+		}
 
 		await tx
 			.update(inventoryItems)
-			.set({ stockQuantity: String(newStock) })
+			.set({
+				stockQuantity: String(newStock),
+				currentQty: String(newStock),
+				updatedAt: new Date(),
+			})
 			.where(
 				and(
 					eq(inventoryItems.id, inv.id),
@@ -215,6 +221,7 @@ export async function deductMaterialsForVisit(
 		transactionsToInsert.push({
 			organizationId,
 			visitId,
+			itemId: inv.id,
 			inventoryItemId: inv.id,
 			quantityChanged,
 			unitCostRub: inv.unitCostRub != null ? String(inv.unitCostRub) : null,
@@ -238,3 +245,4 @@ export async function deductMaterialsForVisit(
 		deductions,
 	};
 }
+

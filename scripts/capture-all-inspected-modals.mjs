@@ -7,6 +7,7 @@ const THEMES = ["light", "dark"];
 const OUT_DIRS = [
 	"C:/Clinic_MVP/dental-crm/docs/proofs/audit",
 	"C:/Clinic_MVP/dental-crm/docs/screenshots",
+	"C:/Users/Admin/.gemini/antigravity/brain/807464d6-3f48-4982-a0e5-1ab679e9f679",
 	"C:/Users/Admin/.gemini/antigravity/brain/20f790a1-5c06-42aa-85a4-6738dbe30aa6",
 	"C:/Users/Admin/.gemini/antigravity/brain/46a0d6d1-aaa9-4a6d-8bd6-c30138e73d80",
 	"C:/Users/Admin/.gemini/antigravity/brain/28922cfe-a09a-4693-aa79-8e62cf0bac22",

@@ -10,14 +10,10 @@ import {
 	calculateDoctorStaffPayroll,
 	calculateAssistantStaffPayroll,
 	calculateAdministratorStaffPayroll,
-	calculateRussianNdflTax,
-	calculateRussianSfrContributions,
 	calculateConsolidatedStaffPayroll,
 	generateStaffPayrollT51Csv,
 	generate1CZup31Xml,
 	generate1CZup31Csv,
-	STATUTORY_MROT_2026_KOP,
-	PROGRESSIVE_NDFL_THRESHOLD_KOP,
 	type DoctorStaffPayrollInput,
 	type AssistantStaffPayrollInput,
 	type AdministratorStaffPayrollInput,
@@ -72,10 +68,6 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			// Minimum guarantee floor applies (60,000 RUB = 6,000,000 kop)
 			assert.equal(res.minimumGuaranteeApplied, true);
 			assert.equal(res.grossPayoutBeforeTaxKop, 6000000);
-			// NDFL 13% of 6,000,000 = 780,000 kop
-			assert.equal(res.ndflTaxKop, 780000);
-			// Net payout = 6,000,000 - 780,000 = 5,220,000 kop
-			assert.equal(res.netPayoutKop, 5220000);
 		});
 
 		it("1.2 Computes orthopedist piecework with lab deduction, high volume KPI, and comprehensive plans bonus", () => {
@@ -119,9 +111,6 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			// Total gross payout = 22,500,000 + 4,500,000 + 2,500,000 = 29,500,000 kop (295,000 RUB)
 			assert.equal(res.grossPayoutBeforeTaxKop, 29500000);
 			assert.equal(res.minimumGuaranteeApplied, false);
-			// NDFL 13% = 3,835,000 kop (38,350 RUB)
-			assert.equal(res.ndflTaxKop, Math.round(29500000 * 0.13));
-			assert.equal(res.netPayoutKop, 29500000 - res.ndflTaxKop);
 		});
 	});
 
@@ -174,8 +163,6 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			assert.equal(res.surgeriesPayoutKop, 150000);
 			// Total gross = 1,050,000 + 210,000 + 50,000 + 150,000 + 150,000 = 1,610,000 kop (16,100 RUB)
 			assert.equal(res.grossPayoutBeforeTaxKop, 1610000);
-			assert.equal(res.ndflTaxKop, Math.round(1610000 * 0.13));
-			assert.equal(res.netPayoutKop, 1610000 - res.ndflTaxKop);
 		});
 	});
 
@@ -203,8 +190,6 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			assert.equal(res.leadConversionBonusKop, 1000000);
 			// Total gross = 4,500,000 + 1,000,000 + 1,000,000 = 6,500,000 kop (65,000 RUB)
 			assert.equal(res.grossPayoutBeforeTaxKop, 6500000);
-			assert.equal(res.ndflTaxKop, Math.round(6500000 * 0.13));
-			assert.equal(res.netPayoutKop, 6500000 - res.ndflTaxKop);
 		});
 
 		it("3.2 Denies conversion bonus when conversion rate falls below threshold", () => {
@@ -228,61 +213,8 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 		});
 	});
 
-	describe("4. Progressive Russian NDFL (13% / 15%)", () => {
-		it("4.1 Calculates standard 13% NDFL for income below 5M RUB", () => {
-			const res = calculateRussianNdflTax(100000000); // 1,000,000 RUB
-			assert.equal(res.ndfl13Kop, 13000000);
-			assert.equal(res.ndfl15Kop, 0);
-			assert.equal(res.ndflTotalKop, 13000000);
-			assert.equal(res.effectiveRatePercent, 13.0);
-		});
-
-		it("4.2 Correctly splits income spanning across 5M RUB threshold", () => {
-			// Previous cumulative = 4,000,000 RUB, current payout = 2,000,000 RUB (spans 4M -> 6M)
-			// 1,000,000 taxed at 13% = 130,000 RUB = 13,000,000 kop
-			// 1,000,000 taxed at 15% = 150,000 RUB = 15,000,000 kop
-			const res = calculateRussianNdflTax(200000000, 400000000);
-			assert.equal(res.ndfl13Kop, 13000000);
-			assert.equal(res.ndfl15Kop, 15000000);
-			assert.equal(res.ndflTotalKop, 28000000);
-			assert.equal(res.effectiveRatePercent, 14.0);
-		});
-
-		it("4.3 Calculates 15% on payouts fully exceeding 5M RUB threshold", () => {
-			const res = calculateRussianNdflTax(100000000, PROGRESSIVE_NDFL_THRESHOLD_KOP + 10000);
-			assert.equal(res.ndfl13Kop, 0);
-			assert.equal(res.ndfl15Kop, 15000000);
-			assert.equal(res.ndflTotalKop, 15000000);
-			assert.equal(res.effectiveRatePercent, 15.0);
-		});
-	});
-
-	describe("5. Social Fund of Russia (СФР) Contributions", () => {
-		it("5.1 Calculates SME preferential tariff with MROT boundary and 0.2% injury rate", () => {
-			// Gross = 100,000 RUB = 10,000,000 kop. MROT 2026 = 22,440 RUB = 2,244,000 kop
-			// Base 30% on MROT = 2,244,000 * 0.30 = 673,200 kop
-			// Excess 15% on (10,000,000 - 2,244,000 = 7,756,000) * 0.15 = 1,163,400 kop
-			// Unified tariff = 673,200 + 1,163,400 = 1,836,600 kop
-			// Injury 0.2% on 10,000,000 = 20,000 kop
-			// Total SFR = 1,856,600 kop
-			const res = calculateRussianSfrContributions(10000000, true);
-			assert.equal(res.injuryKop, 20000);
-			assert.equal(res.totalSfrKop, 1856600);
-			assert.ok(res.pensionKop > 0);
-			assert.ok(res.medicalKop > 0);
-			assert.ok(res.socialKop > 0);
-		});
-
-		it("5.2 Calculates standard 30% tariff + 0.2% injury when SME is false", () => {
-			const res = calculateRussianSfrContributions(10000000, false);
-			// 30% of 10,000,000 = 3,000,000 kop + 20,000 injury = 3,020,000 kop
-			assert.equal(res.injuryKop, 20000);
-			assert.equal(res.totalSfrKop, 3020000);
-		});
-	});
-
-	describe("6. Consolidated Staff Payroll Summary", () => {
-		it("6.1 Aggregates doctors, assistants, and administrators correctly", () => {
+	describe("4. Consolidated Staff Payroll Summary", () => {
+		it("4.1 Aggregates doctors, assistants, and administrators correctly", () => {
 			const summary = calculateConsolidatedStaffPayroll({
 				clinicName: "ООО «Денте Тест»",
 				organizationInn: "7701984512",
@@ -349,23 +281,11 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 				summary.totalGrossPayoutKop,
 				summary.records.reduce((acc, r) => acc + r.grossPayoutBeforeTaxKop, 0)
 			);
-			assert.equal(
-				summary.totalNetPayoutKop,
-				summary.records.reduce((acc, r) => acc + r.netPayoutKop, 0)
-			);
-			assert.equal(
-				summary.totalNdflKop,
-				summary.records.reduce((acc, r) => acc + r.ndflTaxKop, 0)
-			);
-			assert.equal(
-				summary.totalSfrContributionsKop,
-				summary.records.reduce((acc, r) => acc + r.sfrContributionsKop, 0)
-			);
 		});
 	});
 
-	describe("7. Statutory Form T-51 CSV Export", () => {
-		it("7.1 Generates compliant Form T-51 CSV with UTF-8 BOM and exact totals", () => {
+	describe("5. Statutory Form T-51 CSV Export", () => {
+		it("5.1 Generates compliant Form T-51 CSV with UTF-8 BOM and exact totals", () => {
 			const summary = calculateConsolidatedStaffPayroll({
 				clinicName: "ООО «Денте Стоматология»",
 				organizationInn: "7701984512",
@@ -393,11 +313,14 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			assert.ok(csv.includes("ООО «Денте Стоматология»"));
 			assert.ok(csv.includes("Соколова Елена Викторовна"));
 			assert.ok(csv.includes("ИТОГО ПО КЛИНИКЕ"));
+			// Ensure tax columns are stripped
+			assert.ok(!csv.includes("Удержано НДФЛ"));
+			assert.ok(!csv.includes("Страховые взносы СФР"));
 		});
 	});
 
-	describe("8. 1C:ZUP 3.1 XML and CSV Export", () => {
-		it("8.1 Generates compliant 1C:ZUP 3.1 XML document with all accounting sections", () => {
+	describe("6. 1C:ZUP 3.1 XML and CSV Export", () => {
+		it("6.1 Generates compliant 1C:ZUP 3.1 XML document with accruals section only", () => {
 			const summary = calculateConsolidatedStaffPayroll({
 				clinicName: "ООО «Денте Стоматология»",
 				organizationInn: "7701984512",
@@ -437,12 +360,13 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			assert.ok(xml.includes("<ИНН>7701984512</ИНН>"));
 			assert.ok(xml.includes("Сдельная оплата труда (стоматология)"));
 			assert.ok(xml.includes("<Начисления>"));
-			assert.ok(xml.includes("<Удержания>"));
-			assert.ok(xml.includes("<СтраховыеВзносы>"));
-			assert.ok(xml.includes("<Выплаты>"));
+			// Tax, SFR, and Payout sections stripped
+			assert.ok(!xml.includes("<Удержания>"));
+			assert.ok(!xml.includes("<СтраховыеВзносы>"));
+			assert.ok(!xml.includes("<Выплаты>"));
 		});
 
-		it("8.2 Generates compliant 1C:ZUP 3.1 CSV table with UTF-8 BOM", () => {
+		it("6.2 Generates compliant 1C:ZUP 3.1 CSV table with UTF-8 BOM and accrual operations only", () => {
 			const summary = calculateConsolidatedStaffPayroll({
 				clinicName: "ООО «Денте Стоматология»",
 				periodStartIso: "2026-08-01",
@@ -465,8 +389,8 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			assert.ok(csv.includes("ТабельныйНомер;ФИО;Должность;Подразделение;ВидОперации;Сумма;ПериодДействия;КодДоходаНДФЛ"));
 			assert.ok(csv.includes("Иванова Екатерина Сергеевна"));
 			assert.ok(csv.includes("Начисление"));
-			assert.ok(csv.includes("НДФЛ"));
-			assert.ok(csv.includes("Выплата"));
+			assert.ok(!csv.includes('"НДФЛ"'));
+			assert.ok(!csv.includes('"Выплата"'));
 		});
 	});
 });

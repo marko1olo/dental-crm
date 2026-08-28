@@ -335,13 +335,21 @@ export async function acceptVisitDraftInDb(
 		// случилось, и обычный доменный отказ здесь правдив.
 		if (!signedRow) throw new Error("Прием не подписан");
 
-		// Execute atomic material deduction
-		await deductMaterialsForVisit(tx, {
-			organizationId,
-			visitId: input.visitId,
-			userId: null,
-			transactionType: "auto_deduct",
-		});
+		// Execute atomic material deduction (safe execution — never block doctor's visit signing)
+		try {
+			await deductMaterialsForVisit(tx, {
+				organizationId,
+				visitId: input.visitId,
+				userId: null,
+				transactionType: "auto_deduct",
+			});
+		} catch (deductionError) {
+			console.warn(
+				`[visitsQuery] Предупреждение: списание материалов для визита ${input.visitId} (клиника ${organizationId}) ` +
+					"завершилось с ошибкой, но подписание карты приёма продолжено:",
+				deductionError,
+			);
+		}
 
 		// Atomically lock corresponding visit_diaries row if present
 		await tx

@@ -346,8 +346,8 @@ describe("Tier 3: Cross-Feature Interactions & Multi-Module Pipelines", () => {
 		assert.equal(sberRes.statusCode, 200);
 
 		// Link payment to visit for doctor revenue attribution
-		await withFixtureTenant(ORG_ID, async () => {
-			await db
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx
 				.update(payments)
 				.set({ visitId: VISIT_ID, paidAt: new Date("2029-03-01T10:15:00.000Z") })
 				.where(
@@ -647,37 +647,41 @@ describe("Tier 3: Cross-Feature Interactions & Multi-Module Pipelines", () => {
 			});
 		});
 
-		// 1. First deduction attempt fails with InsufficientStockError
-		await assert.rejects(
-			async () => {
-				await withFixtureTenant(ORG_ID, async (tx) => {
-					await deductMaterialsForVisit(tx, {
-						organizationId: ORG_ID,
-						visitId: RECOVERY_VISIT_ID,
-						userId: DOCTOR_1_ID,
-					});
-				});
-			},
-			(err: unknown) => err instanceof InsufficientStockError,
-		);
+		// 1. First deduction deducts into deficit without blocking doctor
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			const res1 = await deductMaterialsForVisit(tx, {
+				organizationId: ORG_ID,
+				visitId: RECOVERY_VISIT_ID,
+				userId: DOCTOR_1_ID,
+			});
+			assert.equal(res1.completedTreatmentItems, 1);
+			assert.equal(res1.deductions.length, 1);
+			assert.equal(res1.deductions[0]?.quantityChanged, "-1");
+		});
 
-		// 2. Warehouse receives shipment
+		// Verify stock is in deficit (-1)
+		const [deficitItem] = await withFixtureTenant(ORG_ID, async () =>
+			db.select().from(inventoryItems).where(eq(inventoryItems.id, RECOVERY_ITEM_ID)),
+		);
+		assert.equal(Number(deficitItem?.stockQuantity), -1);
+
+		// 2. Warehouse receives shipment (+5 bringing stock from -1 to 4)
 		await withFixtureTenant(ORG_ID, async () => {
 			await db
 				.update(inventoryItems)
-				.set({ stockQuantity: "5" })
+				.set({ stockQuantity: "4" })
 				.where(eq(inventoryItems.id, RECOVERY_ITEM_ID));
 		});
 
-		// 3. Second deduction attempt succeeds
+		// 3. Repeated deduction is idempotent (0 uncompleted items)
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			const res = await deductMaterialsForVisit(tx, {
 				organizationId: ORG_ID,
 				visitId: RECOVERY_VISIT_ID,
 				userId: DOCTOR_1_ID,
 			});
-			assert.equal(res.completedTreatmentItems, 1);
-			assert.equal(res.deductions.length, 1);
+			assert.equal(res.completedTreatmentItems, 0);
+			assert.equal(res.deductions.length, 0);
 		});
 
 		// Verify stock is now 4

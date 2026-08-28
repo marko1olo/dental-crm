@@ -2,11 +2,13 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * DENTE Dental CRM — Staff Multi-Role Payroll Ledger Modal (Form T-51 & 1C:ZUP 3.1)
  *
- * Provides:
+ * Operational Russian Dental Practice Payroll Accounting:
  * 1. Multi-role consolidated payroll management (Doctors, Assistants, Administrators).
- * 2. Real-time kopeck-exact calculation of piecework rates, shift bonuses, NDFL 13%/15%, and SFR contributions.
- * 3. 1-Click statutory exports: Form T-51 (CSV), 1C:ZUP 3.1 (XML & CSV), Form T-13 timesheet summary.
+ * 2. Real-time kopeck-exact calculation of piecework rates, lab/material deductions, shift bonuses, and KPI.
+ * 3. 1-Click statutory exports: Form T-51 (CSV), 1C:ZUP 3.1 (XML EnterpriseData & CSV), Form T-13 timesheet summary.
  * 4. Granular employee calculation breakdown inspection drawer.
+ *
+ * Note: Tax calculation (NDFL, SFR contributions, standard tax deductions) is strictly handled in 1C:ZUP 3.1.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -20,19 +22,17 @@ import {
 	User,
 	Users,
 	X,
-	CheckCircle2,
-	AlertCircle,
 	Calendar,
 	DollarSign,
 	Award,
 	TrendingUp,
 	Layers,
-	ShieldCheck,
 	ChevronRight,
 	Search,
 	Building,
 	Stethoscope,
 	Activity,
+	Clock,
 } from "lucide-react";
 import {
 	calculateConsolidatedStaffPayroll,
@@ -271,7 +271,6 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 			doctors: initialDoctors,
 			assistants: initialAssistants,
 			administrators: initialAdministrators,
-			isSmeTariff: true,
 		});
 	}, [
 		clinicName,
@@ -305,6 +304,25 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 		if (!selectedEmployeeId) return undefined;
 		return summary.records.find((r) => r.employeeId === selectedEmployeeId);
 	}, [summary.records, selectedEmployeeId]);
+
+	// Total worked shifts/days and hours across clinic
+	const totalWorkedStats = useMemo(() => {
+		let daysOrShifts = 0;
+		let hours = 0;
+		for (const r of summary.records) {
+			if (r.role === "doctor") {
+				daysOrShifts += r.daysWorked;
+				hours += r.hoursWorked;
+			} else if (r.role === "assistant") {
+				daysOrShifts += r.totalShiftsCount;
+				hours += r.totalHoursWorked;
+			} else if (r.role === "administrator") {
+				daysOrShifts += r.shiftsWorked;
+				hours += r.hoursWorked;
+			}
+		}
+		return { daysOrShifts, hours };
+	}, [summary.records]);
 
 	// Export handlers
 	const handleDownloadT51Csv = useCallback(() => {
@@ -423,48 +441,15 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 				<div className="staff-payroll-kpi-grid">
 					<div className="staff-payroll-kpi-card">
 						<div className="staff-payroll-kpi-label">
-							<DollarSign className="w-3.5 h-3.5 text-blue-500" />
-							<span>Общий ФОТ (Gross)</span>
+							<DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+							<span>Общий ФОТ (Начислено)</span>
 						</div>
-						<div className="staff-payroll-kpi-value">
+						<div className="staff-payroll-kpi-value text-emerald-600">
 							{formatRub(summary.totalGrossPayoutKop)}
 						</div>
 						<div className="staff-payroll-kpi-sub">
 							{summary.totalEmployeesCount} сотрудников клиники
 						</div>
-					</div>
-
-					<div className="staff-payroll-kpi-card">
-						<div className="staff-payroll-kpi-label">
-							<ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
-							<span>НДФЛ 13% / 15%</span>
-						</div>
-						<div className="staff-payroll-kpi-value text-amber-600">
-							{formatRub(summary.totalNdflKop)}
-						</div>
-						<div className="staff-payroll-kpi-sub">Налоговый агент НК РФ</div>
-					</div>
-
-					<div className="staff-payroll-kpi-card">
-						<div className="staff-payroll-kpi-label">
-							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-							<span>К выплате на руки</span>
-						</div>
-						<div className="staff-payroll-kpi-value text-emerald-600">
-							{formatRub(summary.totalNetPayoutKop)}
-						</div>
-						<div className="staff-payroll-kpi-sub">Зарплатный проект / банк</div>
-					</div>
-
-					<div className="staff-payroll-kpi-card">
-						<div className="staff-payroll-kpi-label">
-							<Building className="w-3.5 h-3.5 text-indigo-500" />
-							<span>Взносы СФР (МСП)</span>
-						</div>
-						<div className="staff-payroll-kpi-value text-indigo-600">
-							{formatRub(summary.totalSfrContributionsKop)}
-						</div>
-						<div className="staff-payroll-kpi-sub">Единый тариф + 0.2% травматизм</div>
 					</div>
 
 					<div className="staff-payroll-kpi-card">
@@ -478,6 +463,41 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 						<div className="staff-payroll-kpi-sub">
 							Вычет ЗТЛ/мат: {formatRub(summary.totalLabDeductionsKop + summary.totalMaterialDeductionsKop)}
 						</div>
+					</div>
+
+					<div className="staff-payroll-kpi-card">
+						<div className="staff-payroll-kpi-label">
+							<Layers className="w-3.5 h-3.5 text-blue-500" />
+							<span>Чистая база сделки</span>
+						</div>
+						<div className="staff-payroll-kpi-value text-blue-600">
+							{formatRub(summary.totalNetBaseKop)}
+						</div>
+						<div className="staff-payroll-kpi-sub">
+							База расчета врачебного %
+						</div>
+					</div>
+
+					<div className="staff-payroll-kpi-card">
+						<div className="staff-payroll-kpi-label">
+							<Clock className="w-3.5 h-3.5 text-indigo-500" />
+							<span>Отработано персоналом</span>
+						</div>
+						<div className="staff-payroll-kpi-value text-indigo-600">
+							{totalWorkedStats.daysOrShifts} смен ({totalWorkedStats.hours.toFixed(0)} ч)
+						</div>
+						<div className="staff-payroll-kpi-sub">По данным табеля Т-13</div>
+					</div>
+
+					<div className="staff-payroll-kpi-card">
+						<div className="staff-payroll-kpi-label">
+							<Building className="w-3.5 h-3.5 text-amber-500" />
+							<span>Экспорт в 1С:ЗУП 3.1</span>
+						</div>
+						<div className="staff-payroll-kpi-value text-amber-600">
+							EnterpriseData
+						</div>
+						<div className="staff-payroll-kpi-sub">Готово к выгрузке начислений</div>
 					</div>
 				</div>
 
@@ -542,10 +562,7 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 									<th className="staff-payroll-th text-center">Отработано</th>
 									<th className="staff-payroll-th text-right">База / Выручка</th>
 									<th className="staff-payroll-th text-right">Премии & KPI</th>
-									<th className="staff-payroll-th text-right">Начислено (Gross)</th>
-									<th className="staff-payroll-th text-right">НДФЛ</th>
-									<th className="staff-payroll-th text-right font-bold">На руки (Net)</th>
-									<th className="staff-payroll-th text-right">Взносы СФР</th>
+									<th className="staff-payroll-th text-right font-bold">Всего начислено (Gross)</th>
 									<th className="staff-payroll-th text-center staff-payroll-no-print">Инфо</th>
 								</tr>
 							</thead>
@@ -635,15 +652,6 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 											<td className="staff-payroll-td text-right font-bold text-[var(--ink)]">
 												{formatRub(r.grossPayoutBeforeTaxKop)}
 											</td>
-											<td className="staff-payroll-td text-right text-amber-600">
-												{formatRub(r.ndflTaxKop)}
-											</td>
-											<td className="staff-payroll-td text-right font-extrabold text-emerald-700">
-												{formatRub(r.netPayoutKop)}
-											</td>
-											<td className="staff-payroll-td text-right text-xs text-indigo-600">
-												{formatRub(r.sfrContributionsKop)}
-											</td>
 											<td className="staff-payroll-td text-center staff-payroll-no-print">
 												<ChevronRight
 													className={`w-4 h-4 text-[var(--muted)] transition-transform ${
@@ -665,7 +673,7 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 								<div className="flex items-center gap-2">
 									<Award className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 									<h3 className="text-sm font-bold text-[var(--ink)]">
-										Детализация расчета: {selectedRecord.employeeFullName} (Таб. № {selectedRecord.employeeTabNumber})
+										Детализация расчета начислений: {selectedRecord.employeeFullName} (Таб. № {selectedRecord.employeeTabNumber})
 									</h3>
 								</div>
 								<span className="text-xs text-[var(--muted)]">{selectedRecord.positionRu}</span>
@@ -711,6 +719,15 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 											</div>
 											<div className="text-[10px] text-[var(--muted)]">{selectedRecord.kpiBadgeLabelRu}</div>
 										</div>
+										<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+											<div className="text-xs text-[var(--muted)]">Итого начислено (Gross)</div>
+											<div className="font-bold text-sm text-[var(--ink)]">
+												{formatRub(selectedRecord.grossPayoutBeforeTaxKop)}
+											</div>
+											<div className="text-[10px] text-[var(--muted)]">
+												{selectedRecord.minimumGuaranteeApplied ? "Применена минимальная гарантия" : "По фактической выработке"}
+											</div>
+										</div>
 									</>
 								)}
 
@@ -746,6 +763,13 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 												{selectedRecord.totalRadiographsCount} снимков • {selectedRecord.totalSurgeriesCount} операций
 											</div>
 										</div>
+										<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+											<div className="text-xs text-[var(--muted)]">Итого начислено (Gross)</div>
+											<div className="font-bold text-sm text-[var(--ink)]">
+												{formatRub(selectedRecord.grossPayoutBeforeTaxKop)}
+											</div>
+											<div className="text-[10px] text-[var(--muted)]">Передается в 1С:ЗУП 3.1</div>
+										</div>
 									</>
 								)}
 
@@ -774,19 +798,15 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 												Конверсия {selectedRecord.conversionRatePercent}% (цель {selectedRecord.conversionThresholdPercent}%) • {selectedRecord.convertedLeadsCount}/{selectedRecord.primaryLeadsCount} пациентов
 											</div>
 										</div>
+										<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+											<div className="text-xs text-[var(--muted)]">Итого начислено (Gross)</div>
+											<div className="font-bold text-sm text-[var(--ink)]">
+												{formatRub(selectedRecord.grossPayoutBeforeTaxKop)}
+											</div>
+											<div className="text-[10px] text-[var(--muted)]">Передается в 1С:ЗУП 3.1</div>
+										</div>
 									</>
 								)}
-
-								{/* Taxes and Contributions Breakdown */}
-								<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
-									<div className="text-xs text-[var(--muted)]">Взносы СФР (разбивка)</div>
-									<div className="font-bold text-sm text-indigo-600">
-										{formatRub(selectedRecord.sfrContributionsKop)}
-									</div>
-									<div className="text-[10px] text-[var(--muted)]">
-										ОПС: {formatRub(selectedRecord.sfrBreakdown.pensionKop)} • ОМС: {formatRub(selectedRecord.sfrBreakdown.medicalKop)} • Травма: {formatRub(selectedRecord.sfrBreakdown.injuryKop)}
-									</div>
-								</div>
 							</div>
 						</div>
 					)}
@@ -797,7 +817,7 @@ export const StaffPayrollLedgerModal: React.FC<StaffPayrollLedgerModalProps> = (
 					<div className="text-xs text-[var(--muted)] flex items-center gap-2">
 						<Building className="w-3.5 h-3.5" />
 						<span>
-							Федеральный МРОТ 2026: 22 440 ₽ • Единый тариф СФР для субъектов МСП (15% сверх МРОТ + 0.2% НС)
+							ФОТ клиники формирует суммы начислений и табель Т-13 • Расчет НДФЛ, вычетов и страховых взносов выполняется бухгалтером в 1С:ЗУП 3.1
 						</span>
 					</div>
 

@@ -9,7 +9,7 @@ import {
 	RECALL_CYCLE_CATALOG,
 	type PatientRecallCandidate,
 	type RecallCycleType,
-} from "./recallEngine";
+} from "./patientRecallEngine";
 
 export interface RecallTemplateVariables {
 	readonly patientFirstName: string;
@@ -121,7 +121,7 @@ export function interpolateRecallTemplate(
 /**
  * Базовые шаблоны сообщений по клиническим циклам для WhatsApp.
  */
-const WHATSAPP_TEMPLATES: Record<RecallCycleType, string> = {
+const WHATSAPP_TEMPLATES: Partial<Record<RecallCycleType, string>> = {
 	caries_high_risk:
 		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
 		"Стоматология «{{CLINIC_NAME}}» беспокоится о здоровье Ваших зубов. " +
@@ -168,7 +168,7 @@ const WHATSAPP_TEMPLATES: Record<RecallCycleType, string> = {
 /**
  * Короткие шаблоны сообщений для SMS (лимит длины, без эмодзи).
  */
-const SMS_TEMPLATES: Record<RecallCycleType, string> = {
+const SMS_TEMPLATES: Partial<Record<RecallCycleType, string>> = {
 	caries_high_risk:
 		"{{PATIENT_FIRST_NAME}}, пора на осмотр и фторирование зубов (прошло {{MONTHS_SINCE}} мес). {{CLINIC_NAME}}. Запись: {{BOOKING_URL}}",
 	periodontal_maintenance:
@@ -197,8 +197,8 @@ export function generateWhatsAppRecallMessage(
 	const doctorName = candidate.attendingDoctorName || "Ваш лечащий врач";
 	const firstName = extractFirstName(candidate.fullName);
 	const monthsSince = candidate.daysOverdue >= 0
-		? Math.max(1, Math.round(candidate.daysOverdue / 30) + (RECALL_CYCLE_CATALOG[candidate.cycleType]?.defaultIntervalMonths ?? 6))
-		: RECALL_CYCLE_CATALOG[candidate.cycleType]?.defaultIntervalMonths ?? 6;
+		? Math.max(1, Math.round(candidate.daysOverdue / 30) + (RECALL_CYCLE_CATALOG[candidate.cycleType]?.defaultIntervalValue ?? 6))
+		: RECALL_CYCLE_CATALOG[candidate.cycleType]?.defaultIntervalValue ?? 6;
 
 	const bookingUrl = generate1ClickBookingLink({
 		baseUrl: options.baseUrl,
@@ -209,7 +209,7 @@ export function generateWhatsAppRecallMessage(
 		source: "whatsapp",
 	});
 
-	const template = WHATSAPP_TEMPLATES[candidate.cycleType] || WHATSAPP_TEMPLATES.standard_prophylaxis;
+	const template = WHATSAPP_TEMPLATES[candidate.cycleType] || WHATSAPP_TEMPLATES.standard_prophylaxis || "";
 
 	const vars: RecallTemplateVariables = {
 		patientFirstName: firstName,
@@ -254,8 +254,8 @@ export function generateSmsRecallMessage(
 	const doctorName = candidate.attendingDoctorName || "Врач";
 	const firstName = extractFirstName(candidate.fullName);
 	const monthsSince = candidate.daysOverdue >= 0
-		? Math.max(1, Math.round(candidate.daysOverdue / 30) + (RECALL_CYCLE_CATALOG[candidate.cycleType]?.defaultIntervalMonths ?? 6))
-		: RECALL_CYCLE_CATALOG[candidate.cycleType]?.defaultIntervalMonths ?? 6;
+		? Math.max(1, Math.round(candidate.daysOverdue / 30) + (RECALL_CYCLE_CATALOG[candidate.cycleType]?.defaultIntervalValue ?? 6))
+		: RECALL_CYCLE_CATALOG[candidate.cycleType]?.defaultIntervalValue ?? 6;
 
 	const bookingUrl = generate1ClickBookingLink({
 		baseUrl: options.baseUrl,
@@ -280,7 +280,7 @@ export function generateSmsRecallMessage(
 		phone: candidate.phone || "",
 	};
 
-	return interpolateRecallTemplate(template, vars);
+	return interpolateRecallTemplate(template || "", vars);
 }
 
 /**
@@ -292,6 +292,17 @@ export function buildWhatsAppUrl(phone: string | null | undefined, text: string)
 	return cleanPhone
 		? `https://wa.me/${cleanPhone}?text=${encodedText}`
 		: `https://wa.me/?text=${encodedText}`;
+}
+
+/**
+ * Построение прямой ссылки t.me для отправки в 1 клик.
+ */
+export function buildTelegramUrl(phone: string | null | undefined, text: string): string {
+	const cleanPhone = sanitizePhoneNumber(phone);
+	const encodedText = encodeURIComponent(text);
+	return cleanPhone
+		? `https://t.me/+${cleanPhone}?text=${encodedText}`
+		: `https://t.me/share/url?url=&text=${encodedText}`;
 }
 
 /**
@@ -457,6 +468,69 @@ export const CLINICAL_CALLING_SCRIPTS: Readonly<Record<RecallCycleType, RecallCa
 				suggestedResponse:
 					"«Молочные зубы держат место для постоянных. Если под молочным зубом начнется воспаление, может пострадать зачаток постоянного зуба. Простая безболезненная минерализация гелем со вкусом клубники защитит зубки и сформирует у ребенка позитивное отношение к стоматологу без страха.»",
 				psychologicalTip: "Успокоить родителя, подчеркнуть безболезненный игровой формат визита.",
+			},
+		],
+	},
+	orthodontic_braces: {
+		cycleType: "orthodontic_braces",
+		title: "Активация и коррекция брекет-системы",
+		greeting:
+			"«Здравствуйте, {{PATIENT_FIRST_NAME}}! Клиника «{{CLINIC_NAME}}», звоню по поручению доктора {{DOCTOR_NAME}}.»",
+		clinicalContext:
+			"«Подошел срок плановой активации брекет-системы и замены дуг (каждые 4 недели). Это необходимо для непрерывного и правильного перемещения зубов.»",
+		callToAction:
+			"«Давайте подберем удобное время: вторник 16:00 или пятница 11:30?»",
+		objections: [
+			{
+				id: "nothing_hurts_braces",
+				title: "«Ничего не отклеилось, зачем идти?»",
+				patientPhrase: "«Замки на месте, дуга не колет, вроде всё нормально.»",
+				clinicalRationale: "Сила ортодонтической дуги угасает за 4 недели, без активации процесс выравнивания останавливается.",
+				suggestedResponse:
+					"«Это здорово, что замочки целы! Но за 4 недели дуга отработала свою силу и зубы перестают двигаться. Доктор активирует систему, чтобы не затягивать общий срок лечения.»",
+				psychologicalTip: "Подчеркнуть важность соблюдения сроков лечения.",
+			},
+		],
+	},
+	orthodontic_aligners: {
+		cycleType: "orthodontic_aligners",
+		title: "Контроль элайнеров и выдача нового сета капп",
+		greeting:
+			"«Добрый день, {{PATIENT_FIRST_NAME}}! Стоматология «{{CLINIC_NAME}}», ортодонт {{DOCTOR_NAME}} ждет Вас на контрольный чекап.»",
+		clinicalContext:
+			"«Подошел срок контрольного 3D-сканирования трекинга элайнеров и выдачи следующего набора капп.»",
+		callToAction:
+			"«Когда Вам удобнее подойти: в первой половине дня или после работы?»",
+		objections: [
+			{
+				id: "aligners_fit",
+				title: "«Каппы сидят плотно»",
+				patientPhrase: "«Каппы сидят отлично, я просто надену следующий номер сам.»",
+				clinicalRationale: "Необходим очный контроль аттачментов и микросепарации контактов.",
+				suggestedResponse:
+					"«Доктору важно проверить точное прилегание аттачментов и убедиться, что зубы двигаются строго по цифровому плану ClinCheck перед переходом на следующий этап.»",
+				psychologicalTip: "Напомнить о важности врачебного надзора за цифровым протоколом.",
+			},
+		],
+	},
+	prosthetic_check: {
+		cycleType: "prosthetic_check",
+		title: "Гарантийный осмотр ортопедических конструкций",
+		greeting:
+			"«Здравствуйте, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}», звоню по поводу гарантийного осмотра Ваших коронок и виниров.»",
+		clinicalContext:
+			"«Прошел год с момента фиксации ортопедических конструкций. Доктор {{DOCTOR_NAME}} приглашает на бесплатный контрольный осмотр окклюзионных контактов и проверку краевого прилегания для продления гарантии.»",
+		callToAction:
+			"«Прием займет всего 20 минут. Запишемся на удобный день?»",
+		objections: [
+			{
+				id: "crowns_fine",
+				title: "«Коронки не беспокоят, всё красиво»",
+				patientPhrase: "«Ничего не шатается, ем без проблем.»",
+				clinicalRationale: "Окклюзионная перегрузка и стираемость антагонистов требуют своевременной коррекции.",
+				suggestedResponse:
+					"«Замечательно! Осмотр бесплатный и нужен для проверки баланса прикуса и сохранения официальной гарантии клиники на керамику.»",
+				psychologicalTip: "Указать на бесплатность и гарантийную защиту.",
 			},
 		],
 	},

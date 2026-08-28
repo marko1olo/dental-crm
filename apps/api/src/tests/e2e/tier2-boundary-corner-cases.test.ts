@@ -1000,7 +1000,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 	describe("Feature 9: Atomic Inventory Deductions Boundaries", () => {
 		const DEDUCT_VISIT_ID = fixtureUuid(NAMESPACE, 92);
 
-		it("9.1 throws InsufficientStockError when required quantity exceeds available stock", async (context) => {
+		it("9.1 deducts into deficit (negative stock) when required quantity exceeds available stock", async (context) => {
 			if (!databaseAvailable) return context.skip("DB unavailable");
 
 			await withFixtureTenant(ORG_ID, async (tx) => {
@@ -1043,20 +1043,24 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 					unitPriceRub: 5000,
 					status: "approved",
 				});
-			});
 
-			await assert.rejects(
-				async () => {
-					await withFixtureTenant(ORG_ID, async (tx) => {
-						await deductMaterialsForVisit(tx, {
-							organizationId: ORG_ID,
-							visitId: DEDUCT_VISIT_ID,
-							userId: DOCTOR_1_ID,
-						});
-					});
-				},
-				(err: unknown) => err instanceof InsufficientStockError,
-			);
+				const res = await deductMaterialsForVisit(tx, {
+					organizationId: ORG_ID,
+					visitId: DEDUCT_VISIT_ID,
+					userId: DOCTOR_1_ID,
+				});
+
+				assert.equal(res.completedTreatmentItems, 1);
+				assert.equal(res.deductions.length, 1);
+				assert.equal(res.deductions[0]?.inventoryItemId, ITEM_1_ID);
+				assert.equal(res.deductions[0]?.quantityChanged, "-5");
+
+				const [item] = await tx
+					.select()
+					.from(inventoryItems)
+					.where(eq(inventoryItems.id, ITEM_1_ID));
+				assert.equal(Number(item?.stockQuantity), -4);
+			});
 		});
 
 		it("9.2 ignores rules with 0 quantityToDeduct without creating empty transaction logs", async (context) => {

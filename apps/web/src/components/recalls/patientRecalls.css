@@ -52,8 +52,8 @@
 	border-radius: var(--rm-radius-lg);
 	box-shadow: var(--rm-shadow);
 	width: 100%;
-	max-width: 1180px;
-	max-height: 92vh;
+	max-width: 1200px;
+	max-height: 94vh;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -113,10 +113,12 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 18px 24px;
+	padding: 16px 24px;
 	border-bottom: 1px solid var(--rm-border);
 	background: var(--rm-surface);
 	flex-shrink: 0;
+	gap: 12px;
+	flex-wrap: wrap;
 }
 
 .recall-header-title-wrap {
@@ -138,7 +140,7 @@
 }
 
 .recall-header-title {
-	font-size: 1.25rem;
+	font-size: 1.1875rem;
 	font-weight: 700;
 	margin: 0;
 	line-height: 1.3;
@@ -149,6 +151,42 @@
 	font-size: 0.8125rem;
 	color: var(--rm-text-muted);
 	margin: 2px 0 0 0;
+}
+
+.recall-view-mode-tabs {
+	display: inline-flex;
+	background: var(--rm-bg);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	padding: 2px;
+	gap: 2px;
+}
+
+.recall-tab-btn {
+	min-height: 38px;
+	padding: 6px 14px;
+	border-radius: var(--rm-radius-sm);
+	border: none;
+	background: transparent;
+	color: var(--rm-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.recall-tab-btn:hover {
+	color: var(--rm-text-main);
+}
+
+.recall-tab-btn.active {
+	background: var(--rm-primary);
+	color: #ffffff;
+	font-weight: 700;
 }
 
 .recall-close-btn {
@@ -177,7 +215,7 @@
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 	gap: 12px;
-	padding: 16px 24px;
+	padding: 14px 24px;
 	background: var(--rm-bg);
 	border-bottom: 1px solid var(--rm-border);
 	flex-shrink: 0;
@@ -212,6 +250,10 @@
 	border-left: 4px solid var(--rm-success);
 }
 
+.recall-metric-card--info {
+	border-left: 4px solid var(--rm-info);
+}
+
 .recall-metric-label {
 	font-size: 0.75rem;
 	font-weight: 600;
@@ -243,7 +285,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	padding: 16px 24px;
+	padding: 14px 24px;
 	background: var(--rm-surface);
 	border-bottom: 1px solid var(--rm-border);
 	flex-shrink: 0;
@@ -539,6 +581,17 @@
 .recall-action-btn--whatsapp:hover:not(:disabled) {
 	background: rgba(34, 197, 94, 0.2);
 	color: #166534;
+}
+
+.recall-action-btn--telegram {
+	color: #0284c7;
+	background: rgba(2, 132, 199, 0.1);
+	border-color: rgba(2, 132, 199, 0.3);
+}
+
+.recall-action-btn--telegram:hover:not(:disabled) {
+	background: rgba(2, 132, 199, 0.2);
+	color: #0369a1;
 }
 
 .recall-action-btn--script {

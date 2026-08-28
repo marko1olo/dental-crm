@@ -40,6 +40,7 @@ import {
 	Sparkles,
 	Spline,
 	Sun,
+	Tablet,
 	Syringe,
 	Truck,
 	UploadCloud,
@@ -53,6 +54,8 @@ import { useThemeStore } from "../store/themeStore";
 import { showToast } from "../components/GlobalToast";
 import { ToothAnesthesiaCalculator } from "../components/diagnostic/ToothAnesthesiaCalculator";
 import { PrescriptionModal } from "../components/visit/PrescriptionModal";
+import { ChairsideTabletConsentModal } from "../components/chairside/ChairsideTabletConsentModal";
+import { CashShiftClosingModal } from "../components/billing/CashShiftClosingModal";
 import { InformedConsentModal } from "../components/documents/InformedConsentModal";
 import {
 	RadiologyModule,
@@ -80,9 +83,11 @@ import { CephalometricAnalysisModal } from "../components/orthodontics/Cephalome
 import { SAMPLE_TRG_CEPHALOGRAM_URL } from "../components/orthodontics/CephalometricCanvas";
 import { ImplantIsqProtocolModal } from "../components/implant/isq/ImplantIsqProtocolModal";
 import { DentalLabOrderModal } from "../components/lab/DentalLabOrderModal";
+import { DentalLabOrdersHubModal } from "../components/lab/DentalLabOrdersHubModal";
 import { LabTrackingDrawer } from "../components/lab/LabTrackingDrawer";
 import { ClinicalPhotoProtocolModal } from "../components/photography/ClinicalPhotoProtocolModal";
 import { PatientRecallManagerModal } from "../components/recalls/PatientRecallManagerModal";
+import { PatientRecallsHubModal } from "../components/recalls/PatientRecallsHubModal";
 import { AutoclaveCycleModal } from "../components/sanpin/autoclave/AutoclaveCycleModal";
 import { InsurancePreAuthModal } from "../components/insurance/InsurancePreAuthModal";
 import { TreatmentPlanComparatorModal } from "../components/treatment-plans/comparator/TreatmentPlanComparatorModal";
@@ -486,6 +491,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isLabOrderOpen, setIsLabOrderOpen] = useState(false);
 	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState(false);
 	const [isRecallOpen, setIsRecallOpen] = useState(false);
+	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
 	const [isAutoclaveOpen, setIsAutoclaveOpen] = useState(false);
 	const [isInsuranceOpen, setIsInsuranceOpen] = useState(false);
 	const [isPlanComparatorOpen, setIsPlanComparatorOpen] = useState(false);
@@ -495,6 +501,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPortalOpen, setIsPortalOpen] = useState(false);
 	const [isBeforeAfterOpen, setIsBeforeAfterOpen] = useState(false);
 	const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
+	const [isChairsideConsentOpen, setIsChairsideConsentOpen] = useState(false);
 	const [isConsent323Open, setIsConsent323Open] = useState(false);
 	const [isAnesthesiaProtocolOpen, setIsAnesthesiaProtocolOpen] = useState(false);
 	const [isAnesthesiaHubOpen, setIsAnesthesiaHubOpen] = useState(false);
@@ -511,6 +518,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
 	const [isLabWorkOrderOpen, setIsLabWorkOrderOpen] = useState(false);
 	const [isLabTrackingOpen, setIsLabTrackingOpen] = useState(false);
+	const [isLabHubOpen, setIsLabHubOpen] = useState(false);
 	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
 	const [isDmsManagerOpen, setIsDmsManagerOpen] = useState(false);
 	const [isKraftBarcodeOpen, setIsKraftBarcodeOpen] = useState(false);
@@ -532,6 +540,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isStaffPayrollLedgerOpen, setIsStaffPayrollLedgerOpen] = useState(false);
 	const [isSterilizationJournalModalOpen, setIsSterilizationJournalModalOpen] = useState(false);
 	const [isAnesthesiaSafetyHubOpen, setIsAnesthesiaSafetyHubOpen] = useState(false);
+	const [isCashShiftClosingOpen, setIsCashShiftClosingOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -632,6 +641,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsPatientCabinetOpen(false);
 					setIsPatientMemoOpen(false);
 					setIsRecallOpen(false);
+					setIsRecallsHubOpen(false);
 					setIsIncomingCallOpen(false);
 					setIsTelephonyWidgetOpen(false);
 					setIsSettingsAccessOpen(false);
@@ -639,6 +649,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsCmoHubOpen(false);
 					setIsForm043PrintOpen(false);
 					setIsOfflineVaultOpen(false);
+					setIsCashShiftClosingOpen(false);
+					setIsLabHubOpen(false);
+					setIsChairsideConsentOpen(false);
 
 					if (requestedModal === "before_after" || requestedModal === "before_after_slider" || requestedModal === "photo_comparison" || requestedModal === "photography") {
 						setIsBeforeAfterOpen(true);
@@ -714,6 +727,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "retention" || requestedModal === "recall" || requestedModal === "recalls" || requestedModal === "patient_retention_recalls") {
 						setIsRecallOpen(true);
 					}
+					if (requestedModal === "recalls_hub" || requestedModal === "patient_recalls_hub" || requestedModal === "recalls_hub_modal") {
+						setIsRecallsHubOpen(true);
+					}
 					if (requestedModal === "incoming_call" || requestedModal === "incoming_call_popup" || requestedModal === "telephony_popup") {
 						useTelephonyStore.getState().triggerIncomingCall({
 							phone: "+7 (926) 555-12-34",
@@ -745,6 +761,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					}
 					if (requestedModal === "staff_payroll" || requestedModal === "payroll_ledger" || requestedModal === "payroll_t51_staff") {
 						setIsStaffPayrollLedgerOpen(true);
+					}
+					if (requestedModal === "cash_shift_closing" || requestedModal === "cash_shift" || requestedModal === "closing_shift" || requestedModal === "z_report" || requestedModal === "cash_shift_closing_modal") {
+						setIsCashShiftClosingOpen(true);
+					}
+					if (requestedModal === "lab_hub" || requestedModal === "dental_lab_orders_hub" || requestedModal === "lab_orders_hub" || requestedModal === "dental_lab_orders_hub_modal") {
+						setIsLabHubOpen(true);
+					}
+					if (requestedModal === "chairside_consent" || requestedModal === "chairside_tablet_consent" || requestedModal === "chairside_tablet_consent_modal") {
+						setIsChairsideConsentOpen(true);
 					}
 				}
 		};
@@ -1247,6 +1272,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<PhoneCall size={15} />
 							<span>Открыть реколл-менеджер</span>
+						</button>
+					</div>
+
+					{/* Patient Recalls Hub Trigger (Wave 8) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Диспансерный учет & Recalls Hub (Wave 8)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Профгигиена 6 мес, импланты 3/6/12 мес, ортодонтия, когортный Retention & LTV, 1-Click WhatsApp/SMS.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsRecallsHubOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-recalls-hub-modal-btn"
+						>
+							<PhoneCall size={15} />
+							<span>Открыть Recalls Hub</span>
 						</button>
 					</div>
 
@@ -1955,6 +2004,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								<Clock size={15} />
 								<span>Трекинг ЗТЛ</span>
 							</button>
+							<button
+								type="button"
+								onClick={() => setIsLabHubOpen(true)}
+								className="flex-1 min-w-[130px] min-h-[44px] px-3 py-2.5 rounded-xl text-xs font-bold bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-surface)] shadow-sm transition-all flex items-center justify-center gap-2"
+								data-testid="open-lab-hub-modal-btn"
+							>
+								<Layers size={15} />
+								<span>Хаб ЗТЛ (4 статуса)</span>
+							</button>
 						</div>
 					</div>
 
@@ -2027,6 +2085,31 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<QrCode size={15} />
 							<span>Открыть крафт-пакеты ЦСО</span>
+						</button>
+					</div>
+
+					
+					{/* Chairside Consent & SMS-PEP Trigger (63-FZ / 1051n) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Tablet className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Планшет согласий у кресла (ПЭП 63-ФЗ / 1051н)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Подписание ИДС (1051н), согласия 152-ФЗ и сметы (804н) простой электронной подписью по СМС-коду (63-ФЗ) с фиксацией SHA-256.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsChairsideConsentOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-chairside-consent-modal-btn"
+						>
+							<Tablet size={15} />
+							<span>Открыть планшет согласий (ПЭП)</span>
 						</button>
 					</div>
 
@@ -2444,6 +2527,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть офлайн-хранилище</span>
 						</button>
 					</div>
+
+					{/* 58. Wave 8: 54-FZ Cash Shift Closing & Statutory Reconciliation Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Receipt className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Закрытие кассовой смены (54-ФЗ / Z-отчет)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								3-кнопочный регламент 54-ФЗ (ФФД 1.2): внесение размена, X-отчет, Z-отчет, сверка наличных и инкассация по 3210-У.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsCashShiftClosingOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-cash-shift-closing-modal-btn"
+						>
+							<Receipt size={15} />
+							<span>Открыть закрытие смены (Z)</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -2710,6 +2817,14 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<PatientRecallManagerModal
 					isOpen={isRecallOpen}
 					onClose={() => setIsRecallOpen(false)}
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
+
+			{isRecallsHubOpen && (
+				<PatientRecallsHubModal
+					isOpen={isRecallsHubOpen}
+					onClose={() => setIsRecallsHubOpen(false)}
 					clinicName="ООО «Денте Стоматология»"
 				/>
 			)}
@@ -3003,6 +3118,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					isOpen={isLabTrackingOpen}
 					onClose={() => setIsLabTrackingOpen(false)}
 					order={SAMPLE_LAB_TRACKING_ORDER}
+				/>
+			)}
+
+			{isLabHubOpen && (
+				<DentalLabOrdersHubModal
+					isOpen={isLabHubOpen}
+					onClose={() => setIsLabHubOpen(false)}
 				/>
 			)}
 
@@ -3402,6 +3524,14 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					</div>
 				</div>
 			)}
+			
+			{isChairsideConsentOpen && (
+				<ChairsideTabletConsentModal
+					isOpen={isChairsideConsentOpen}
+					onClose={() => setIsChairsideConsentOpen(false)}
+				/>
+			)}
+
 			{isStaffPayrollLedgerOpen && (
 				<StaffPayrollLedgerModal
 					isOpen={isStaffPayrollLedgerOpen}
@@ -3421,6 +3551,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<AnesthesiaSafetyHubModal
 					isOpen={isAnesthesiaSafetyHubOpen}
 					onClose={() => setIsAnesthesiaSafetyHubOpen(false)}
+				/>
+			)}
+
+			{isCashShiftClosingOpen && (
+				<CashShiftClosingModal
+					isOpen={isCashShiftClosingOpen}
+					onClose={() => setIsCashShiftClosingOpen(false)}
 				/>
 			)}
 

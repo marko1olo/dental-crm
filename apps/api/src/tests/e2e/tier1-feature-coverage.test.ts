@@ -1215,7 +1215,7 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 			assert.equal(sorted[0]! < sorted[1]! && sorted[1]! < sorted[2]!, true);
 		});
 
-		it("15.4 throws InsufficientStockError and rolls back entire transaction if any material is out of stock", async () => {
+		it("15.4 records warehouse deficit and does not block transaction when material is out of stock", async () => {
 			if (!databaseAvailable) return;
 			const outOfStockVisitId = fixtureUuid(NAMESPACE, 153);
 			const outOfStockTreatmentId = fixtureUuid(NAMESPACE, 154);
@@ -1270,18 +1270,22 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 					status: "in_progress",
 				}).onConflictDoNothing();
 
-				await assert.rejects(
-					async () => {
-						await deductMaterialsForVisit(db, {
-							organizationId: ORG_ID,
-							visitId: outOfStockVisitId,
-							userId: DOCTOR_1_ID,
-						});
-					},
-					(err: Error) => {
-						return err instanceof InsufficientStockError || err.name === "InsufficientStockError";
-					},
-				);
+				const result = await deductMaterialsForVisit(db, {
+					organizationId: ORG_ID,
+					visitId: outOfStockVisitId,
+					userId: DOCTOR_1_ID,
+				});
+
+				assert.equal(result.completedTreatmentItems, 1);
+				assert.equal(result.deductions.length, 1);
+				assert.equal(result.deductions[0]?.inventoryItemId, scarceItemId);
+				assert.equal(result.deductions[0]?.quantityChanged, "-1");
+
+				const [item] = await db
+					.select()
+					.from(inventoryItems)
+					.where(eq(inventoryItems.id, scarceItemId));
+				assert.equal(Number(item?.stockQuantity), -1);
 			});
 		});
 

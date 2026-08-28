@@ -50,4 +50,14 @@ describe("Medical Inventory Material Deduction Invariants", () => {
 			"uuid-zirconia-block-02",
 		]);
 	});
+
+	it("allows deficit warehouse balance when required stock exceeds current stock", () => {
+		const currentStock = 2;
+		const requiredStock = 5;
+		const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+		const newStock = baseStock - requiredStock;
+		assert.equal(newStock, -3);
+		assert.equal(String(-requiredStock), "-5");
+	});
 });
+

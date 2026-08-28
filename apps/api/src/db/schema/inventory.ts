@@ -72,14 +72,6 @@ export const inventoryItems = pgTable(
 	},
 	(table) => {
 		return {
-			stockCheck: check(
-				"inventory_items_stock_quantity_check",
-				sql`CAST(${table.stockQuantity} AS NUMERIC) >= 0`,
-			),
-			currentQtyCheck: check(
-				"inventory_items_current_qty_check",
-				sql`CAST(${table.currentQty} AS NUMERIC) >= 0`,
-			),
 			organizationIdIdx: index("inventory_items_organizationId_idx").on(
 				table.organizationId,
 			),
