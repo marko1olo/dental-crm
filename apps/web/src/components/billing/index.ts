@@ -4,3 +4,4 @@
 
 export * from "./cashShiftClosingEngine";
 export * from "./CashShiftClosingModal";
+export * from "./tax/index";

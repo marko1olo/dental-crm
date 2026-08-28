@@ -108,6 +108,7 @@ import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueMod
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal";
 import { CmoEmrAuditModal } from "../components/emr/audit/CmoEmrAuditModal";
 import { FnsNdflXmlModal } from "../components/documents/ndflXml/index";
+import { FnsTaxDeductionModal } from "../components/billing/tax/FnsTaxDeductionModal";
 import { TreatmentPlanPriceValidatorModal } from "../components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal";
 import { PatientPortalModal } from "../components/portal/PatientPortalModal";
@@ -138,6 +139,7 @@ import { OfflineBackupVaultPanel } from "../components/settings/OfflineBackupVau
 import { ClinicalPnlHubModal } from "../components/finance/pnl/ClinicalPnlHubModal";
 import { AuditTrailHubModal } from "../components/security/AuditTrailHubModal";
 import { CmoQualityAuditModal } from "../components/cmo/CmoQualityAuditModal";
+import { OfflineSyncGuardModal } from "../components/sync/OfflineSyncGuardModal";
 import {
 	STANDARD_12_SLOT_PROTOCOL,
 	type PhotoSlotRecord,
@@ -548,6 +550,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isClinicalPnlOpen, setIsClinicalPnlOpen] = useState(false);
 	const [isAuditTrailOpen, setIsAuditTrailOpen] = useState(false);
 	const [isCmoQualityAuditOpen, setIsCmoQualityAuditOpen] = useState(false);
+	const [isFnsTaxDeductionOpen, setIsFnsTaxDeductionOpen] = useState(false);
+	const [isOfflineSyncGuardOpen, setIsOfflineSyncGuardOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -662,6 +666,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsClinicalPnlOpen(false);
 					setIsAuditTrailOpen(false);
 					setIsCmoQualityAuditOpen(false);
+					setIsFnsTaxDeductionOpen(false);
+					setIsOfflineSyncGuardOpen(false);
 
 					if (requestedModal === "before_after" || requestedModal === "before_after_slider" || requestedModal === "photo_comparison" || requestedModal === "photography") {
 						setIsBeforeAfterOpen(true);
@@ -792,6 +798,12 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					}
 					if (requestedModal === "egisz" || requestedModal === "egisz_remd" || requestedModal === "semd" || requestedModal === "cda" || requestedModal === "egisz_hub" || requestedModal === "egisz_remd_hub") {
 						setIsEgiszRemdOpen(true);
+					}
+					if (requestedModal === "fns_tax" || requestedModal === "fns_knd_1151156" || requestedModal === "fns_tax_deduction" || requestedModal === "tax_deduction" || requestedModal === "knd_1151156" || requestedModal === "fns_knd") {
+						setIsFnsTaxDeductionOpen(true);
+					}
+					if (requestedModal === "offline_sync" || requestedModal === "sync_guard" || requestedModal === "crdt_sync" || requestedModal === "offline_sync_guard") {
+						setIsOfflineSyncGuardOpen(true);
 					}
 				}
 		};
@@ -2645,6 +2657,54 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть экспертизу ЭКМП</span>
 						</button>
 					</div>
+
+					{/* 62. Wave 10: FNS Tax Deduction & KND 1151156 Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FileText className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Справка для налогового вычета (ФНС КНД 1151156)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Приказ ФНС № ЕА-7-11/824@: Код 01 (лимит 150 000 ₽), Код 02 (дорогостоящее без лимита по ПП РФ № 458), QR-код и XML 5.01 для ТКС.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsFnsTaxDeductionOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-fns-tax-deduction-modal-btn"
+						>
+							<FileText size={15} />
+							<span>Открыть справку ФНС</span>
+						</button>
+					</div>
+
+					{/* 63. Offline Sync & CRDT Storage Guard Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Database className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Автономная синхронизация (CRDT LWW)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Мониторинг IndexedDB, буферизация приемов и зубных формул (FDI 11–48), статус очереди Outbox и выгрузка аварийного слепка .dente.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsOfflineSyncGuardOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-offline-sync-guard-modal-btn"
+						>
+							<Database size={15} />
+							<span>Открыть монитор синхронизации</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -3673,6 +3733,23 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<CmoQualityAuditModal
 					isOpen={isCmoQualityAuditOpen}
 					onClose={() => setIsCmoQualityAuditOpen(false)}
+				/>
+			)}
+
+			{isFnsTaxDeductionOpen && (
+				<FnsTaxDeductionModal
+					isOpen={isFnsTaxDeductionOpen}
+					onClose={() => setIsFnsTaxDeductionOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					patientBirthDate={SAMPLE_PATIENT.birthDate}
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
+
+			{isOfflineSyncGuardOpen && (
+				<OfflineSyncGuardModal
+					isOpen={isOfflineSyncGuardOpen}
+					onClose={() => setIsOfflineSyncGuardOpen(false)}
 				/>
 			)}
 
