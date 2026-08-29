@@ -257,35 +257,29 @@ export function SettingsAccessTab({
 					</div>
 				</div>
 
-				{/* 8 кнопок переключения ролей: гибкий адаптивный ряд с полными названиями */}
-				<div className="w-full overflow-x-auto pb-1 scrollbar-thin">
-					<div
-						className="flex flex-wrap items-center gap-2 min-w-full"
-						role="tablist"
-						aria-label="Выбор роли для проверки матрицы прав"
-					>
-						{GRANULAR_STAFF_ROLES.map((roleKey) => {
-							const roleTitle = ROLE_DISPLAY_NAMES[roleKey] || ROLE_METADATA_REGISTRY[roleKey]?.title;
-							const isSelected = selectedMatrixRole === roleKey;
-							return (
-								<button
-									key={roleKey}
-									type="button"
-									role="tab"
-									aria-selected={isSelected}
-									onClick={() => setSelectedMatrixRole(roleKey)}
-									className={`flex-shrink-0 px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all text-center whitespace-nowrap border cursor-pointer ${
-										isSelected
-											? "bg-[var(--teal-surface,#f0fdfa)] dark:bg-teal-500/15 text-[var(--teal,#0d9488)] dark:text-teal-300 border-[var(--teal,#0d9488)] dark:border-teal-500 shadow-sm font-bold ring-1 ring-[var(--teal,#0d9488)] dark:ring-teal-500/40"
-											: "bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
-									}`}
-									data-testid={`role-matrix-tab-${roleKey}`}
-								>
-									<span>{roleTitle}</span>
-								</button>
-							);
-						})}
-					</div>
+				{/* 8 кнопок переключения ролей: горизонтальный ряд со свайпом */}
+				<div className="w-full overflow-x-auto whitespace-nowrap scrollbar-none snap-x pb-2 -mx-1 px-1 flex gap-2 flex-nowrap">
+					{GRANULAR_STAFF_ROLES.map((roleKey) => {
+						const roleTitle = ROLE_DISPLAY_NAMES[roleKey] || ROLE_METADATA_REGISTRY[roleKey]?.title;
+						const isSelected = selectedMatrixRole === roleKey;
+						return (
+							<button
+								key={roleKey}
+								type="button"
+								role="tab"
+								aria-selected={isSelected}
+								onClick={() => setSelectedMatrixRole(roleKey)}
+								className={`snap-start flex-shrink-0 px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all text-center whitespace-nowrap border cursor-pointer touch-manipulation ${
+									isSelected
+										? "bg-[var(--teal-surface,#f0fdfa)] dark:bg-teal-500/15 text-[var(--teal,#0d9488)] dark:text-teal-300 border-[var(--teal,#0d9488)] dark:border-teal-500 shadow-sm font-bold ring-1 ring-[var(--teal,#0d9488)] dark:ring-teal-500/40"
+										: "bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
+								}`}
+								data-testid={`role-matrix-tab-${roleKey}`}
+							>
+								<span>{roleTitle}</span>
+							</button>
+						);
+					})}
 				</div>
 
 				{/* Карточка выбранной роли */}
@@ -318,8 +312,8 @@ export function SettingsAccessTab({
 					</div>
 				</div>
 
-				{/* Таблица полномочий для выбранной роли */}
-				<div className="overflow-x-auto">
+				{/* Таблица полномочий для выбранной роли (Desktop / Tablet >= 640px) */}
+				<div className="hidden sm:block overflow-x-auto">
 					<table className="w-full text-left text-xs border-collapse">
 						<thead>
 							<tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 font-medium">
@@ -365,6 +359,49 @@ export function SettingsAccessTab({
 						</tbody>
 					</table>
 				</div>
+
+				{/* Карточки полномочий для выбранной роли на мобильных экранах (< 640px) */}
+				<div className="flex flex-col gap-2.5 sm:hidden" data-testid="rbac-mobile-cards">
+					{filteredPermissions.map((perm) => {
+						const level = activeRolePermissions[perm.key] || "none";
+						const badge = getAccessLevelBadge(level);
+						const hasAccess = level !== "none";
+						return (
+							<div
+								key={`mobile-${perm.key}`}
+								className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 flex flex-col gap-2 shadow-2xs"
+								data-testid={`perm-card-mobile-${perm.key}`}
+							>
+								<div className="flex items-start justify-between gap-2">
+									<div className="flex-1 min-w-0">
+										<div className="flex items-center gap-1.5 flex-wrap">
+											<span className="font-bold text-xs text-slate-900 dark:text-white">
+												{perm.title}
+											</span>
+											<span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+												{perm.module}
+											</span>
+										</div>
+									</div>
+									<span
+										className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${badge.badgeClass} ${badge.borderClass}`}
+										data-testid={`perm-badge-mobile-${perm.key}-${level}`}
+									>
+										{hasAccess ? (
+											<Check size={11} className="stroke-[3]" />
+										) : (
+											<ShieldAlert size={11} />
+										)}
+										<span>{badge.label}</span>
+									</span>
+								</div>
+								<p className="text-[11px] text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+									{perm.description}
+								</p>
+							</div>
+						);
+					})}
+				</div>
 			</article>
 
 			{/* Пригласить сотрудника */}
@@ -380,7 +417,7 @@ export function SettingsAccessTab({
 				</div>
 				<form
 					onSubmit={handleGenerateInvite}
-					className="flex gap-3 items-center flex-wrap"
+					className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2.5 items-center"
 				>
 					<input
 						type="email"
@@ -388,7 +425,7 @@ export function SettingsAccessTab({
 						value={inviteEmail}
 						onChange={(e) => setInviteEmail(e.target.value)}
 						disabled={loading}
-						className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex-1 min-w-[200px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+						className="w-full px-3.5 py-2 min-h-[44px] rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 					/>
 					<select
 						id="invite-role"
@@ -396,7 +433,7 @@ export function SettingsAccessTab({
 						value={inviteRole}
 						onChange={(e) => setInviteRole(e.target.value as StaffRole)}
 						disabled={loading}
-						className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 min-w-[150px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+						className="w-full sm:w-auto px-3.5 py-2 min-h-[44px] rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 min-w-[160px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 					>
 						{INVITABLE_STAFF_ROLES.map((role) => (
 							<option key={role} value={role}>
@@ -407,7 +444,7 @@ export function SettingsAccessTab({
 					<button
 						type="submit"
 						disabled={loading}
-						className="px-4 py-2 rounded-lg bg-[var(--teal)] hover:opacity-90 text-white font-medium text-sm transition-opacity cursor-pointer disabled:opacity-50"
+						className="w-full sm:w-auto px-4 py-2 min-h-[44px] rounded-lg bg-[var(--teal)] hover:opacity-90 text-white font-semibold text-sm transition-opacity cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-1.5 touch-manipulation"
 					>
 						{loading ? "Создание..." : "Сгенерировать"}
 					</button>

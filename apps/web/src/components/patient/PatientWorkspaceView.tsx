@@ -27,7 +27,7 @@ const TreatmentPlanCardItem: React.FC<{
 	const statusColorClass = useMemo(() => {
 		switch (item.status) {
 			case "completed":
-				return "bg-[var(--good-bg,rgba(16,185,129,0.12))] text-[var(--good-fg,#047857)] border border-[var(--good-border,rgba(16,185,129,0.3))]";
+				return "bg-[var(--ok-bg,rgba(16,185,129,0.12))] text-[var(--ok-fg,#047857)] border border-[var(--ok-border,rgba(16,185,129,0.3))]";
 			case "in_progress":
 				return "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30";
 			case "cancelled":
@@ -311,7 +311,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 									type="button"
 									className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
 										activeTab === "timeline"
-											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
+											? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
 									}`}
 									onClick={() => setActiveTab("timeline")}
@@ -323,7 +323,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 									type="button"
 									className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
 										activeTab === "plans"
-											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
+											? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
 									}`}
 									onClick={() => setActiveTab("plans")}
@@ -335,7 +335,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 									type="button"
 									className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
 										activeTab === "visits"
-											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
+											? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
 									}`}
 									onClick={() => setActiveTab("visits")}

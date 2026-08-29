@@ -4,6 +4,7 @@ import type {
 	PatientAdministrativeProfile,
 } from "@dental/shared";
 import {
+	ArrowLeft,
 	ArrowRight,
 	ArrowRightLeft,
 	Gift,
@@ -18,9 +19,6 @@ import type {
 	KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/PatientArchiveReasonsAndBlacklistsWidget";
-import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
-import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
@@ -29,11 +27,8 @@ import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientAvatar } from "./components/PatientAvatar";
 import { PatientAdministrativeForm } from "./components/patient/PatientAdministrativeForm";
 import { CreatePatientModal } from "./components/patients/CreatePatientModal";
-import { PatientAttachmentsPanel } from "./components/patients/PatientAttachmentsPanel";
-import { PatientCommunicationConsentsPanel } from "./components/patients/PatientCommunicationConsentsPanel";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientBranchTransferModal } from "./components/patients/transfer/PatientBranchTransferModal";
-import { PatientWhatsappSendPanel } from "./components/patients/PatientWhatsappSendPanel";
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
 import {
 	featureDistinguishes,
@@ -122,7 +117,13 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isBranchTransferModalOpen, setIsBranchTransferModalOpen] = useState(false);
+	const [mobileActiveView, setMobileActiveView] = useState<"list" | "card">("list");
 	const searchInputRef = useRef<HTMLInputElement>(null);
+
+	const handleSelectPatient = (patientId: string) => {
+		setSelectedPatientId(patientId);
+		setMobileActiveView("card");
+	};
 
 	const {
 		createPatient,
@@ -259,6 +260,30 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					? "В реквизитах пациента нет новых изменений."
 					: null;
 
+	const allergyWarning = useMemo(() => {
+		const notes = (patientCoreDraft?.notes ?? "").trim();
+		if (!notes) return null;
+		const lower = notes.toLowerCase();
+		const keywords = [
+			"аллерг",
+			"анестез",
+			"кардиостимул",
+			"антикоагул",
+			"астм",
+			"отек квинке",
+			"анафилак",
+			"пенициллин",
+			"лидокаин",
+			"новокаин",
+			"ультракаин",
+			"латекс",
+		];
+		if (keywords.some((kw) => lower.includes(kw))) {
+			return notes;
+		}
+		return null;
+	}, [patientCoreDraft?.notes]);
+
 	return (
 		<div className="patients-panel" id="patients">
 			{/* Clean Single-Tier Toolbar Header */}
@@ -301,7 +326,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						title="Показать пациентов без будущих приемов, открытых задач и записей в листе ожидания"
 						style={{
 							backgroundColor: showLostPatientsOnly ? "var(--teal)" : undefined,
-							color: showLostPatientsOnly ? "white" : undefined,
+							color: showLostPatientsOnly ? "var(--on-teal, #fff)" : undefined,
 							borderColor: showLostPatientsOnly ? "var(--teal)" : undefined,
 							minHeight: "44px",
 						}}
@@ -328,12 +353,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 			{/* Main Patient Grid (Master-Detail) positioned directly below header */}
 			<div
-				className="patients-main-grid mt-4"
-				style={{
-					display: "grid",
-					gridTemplateColumns: "minmax(260px, 320px) 1fr",
-					gap: "16px",
-				}}
+				className={`patients-main-grid mt-4 ${mobileActiveView === "card" ? "mobile-view-card" : "mobile-view-list"}`}
 			>
 				{/* Left Column: Patient List */}
 				<div className="patient-list">
@@ -364,11 +384,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								className={`patient-row ${insight && riskDistinguishes ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
 								key={patient.id}
 								aria-label={`Карточка пациента: ${patient.fullName}`}
-								onClick={() => setSelectedPatientId(patient.id)}
+								onClick={() => handleSelectPatient(patient.id)}
 								onKeyDown={(e) => {
 									if (e.key === "Enter" || e.key === " ") {
 										e.preventDefault();
-										setSelectedPatientId(patient.id);
+										handleSelectPatient(patient.id);
 									}
 								}}
 							>
@@ -436,7 +456,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									title={`Открыть карточку пациента: ${patient.fullName}`}
 									onClick={(e) => {
 										e.stopPropagation();
-										setSelectedPatientId(patient.id);
+										handleSelectPatient(patient.id);
 									}}
 								>
 									<ArrowRight aria-hidden="true" />
@@ -461,6 +481,34 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					className="patient-admin-panel"
 					aria-label="Карточка активного пациента"
 				>
+					{/* Mobile back to list navigation header */}
+					<div className="patient-mobile-back-header md:hidden">
+						<button
+							type="button"
+							className="mobile-back-to-list-btn"
+							onClick={() => setMobileActiveView("list")}
+							aria-label="Вернуться к списку пациентов"
+						>
+							<ArrowLeft size={16} aria-hidden="true" />
+							<span>← Назад к списку пациентов</span>
+						</button>
+					</div>
+
+					{/* Compact Allergy & Stop-Factor Warning Badge: Shown ONLY when patient actually has recorded allergies */}
+					{allergyWarning ? (
+						<div
+							role="alert"
+							className="flex items-center gap-2 p-2.5 px-3 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+							style={{ marginBottom: "6px" }}
+						>
+							<span className="text-sm" aria-hidden="true">⚠️</span>
+							<span className="font-bold text-rose-800 dark:text-rose-200">
+								Внимание (аллергия / стоп-фактор):
+							</span>
+							<span className="truncate">{allergyWarning}</span>
+						</div>
+					) : null}
+
 					<div
 						className="panel-heading compact-heading"
 						style={{
@@ -567,7 +615,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							style={{
 								display: "flex",
 								flexDirection: "column",
-								gap: "4px",
+								gap: "6px",
 							}}
 						>
 							<div
@@ -584,7 +632,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										color: "var(--muted)",
 									}}
 								>
-									Заметки и особенности
+									Заметки и особенности обслуживания
 								</span>
 								<SmartMicrophoneButton
 									context="general"
@@ -602,7 +650,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								onChange={(event: TextFieldChangeEvent) =>
 									updatePatientCoreDraft("notes", event.target.value)
 								}
-								placeholder="Особые пожелания, аллергии, примечания"
+								placeholder="Особые пожелания, сервисные примечания, скидки, семья"
 								rows={2}
 								style={{
 									width: "100%",
@@ -616,47 +664,70 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									boxSizing: "border-box",
 								}}
 							/>
-							<div
-								style={{
-									display: "flex",
-									flexWrap: "wrap",
-									gap: "6px",
-									marginTop: "2px",
-								}}
-							>
-								{[
-									"Аллергия на анестезию",
-									"Плохо переносит анестезию",
-									"Боится уколов",
-									"Очень тревожный",
-									"Рвотный рефлекс",
-									"VIP",
-									"Денег не считает",
-									"Должник",
-									"Часто отменяет",
-									"Просит звонить заранее",
-									"Ортодонтический пациент",
-									"Семья",
-									"Согласовать скидку",
-								].map((chip) => (
-									<button
-										key={chip}
-										type="button"
-										className="quick-chip"
-										onClick={() => {
-											const currentVal = patientCoreDraft.notes.trim();
-											const chipLower = chip.toLowerCase();
-											if (currentVal.toLowerCase().includes(chipLower))
-												return;
-											const newVal = currentVal
-												? `${currentVal}, ${chipLower}`
-												: chipLower;
-											updatePatientCoreDraft("notes", newVal);
-										}}
-									>
-										+ {chip}
-									</button>
-								))}
+							<div className="quick-chips-group">
+								<div className="quick-chips-group-title">
+									Сервис и лояльность:
+								</div>
+								<div className="quick-chips-wrap">
+									{[
+										"VIP",
+										"Семья",
+										"Согласовать скидку",
+										"Должник",
+										"Просит звонить заранее",
+										"Денег не считает",
+										"Часто отменяет",
+									].map((chip) => (
+										<button
+											key={chip}
+											type="button"
+											className="quick-chip"
+											onClick={() => {
+												const currentVal = patientCoreDraft.notes.trim();
+												const chipLower = chip.toLowerCase();
+												if (currentVal.toLowerCase().includes(chipLower))
+													return;
+												const newVal = currentVal
+													? `${currentVal}, ${chipLower}`
+													: chipLower;
+												updatePatientCoreDraft("notes", newVal);
+											}}
+										>
+											+ {chip}
+										</button>
+									))}
+								</div>
+							</div>
+							<div className="quick-chips-group">
+								<div className="quick-chips-group-title">
+									Особенности приёма:
+								</div>
+								<div className="quick-chips-wrap">
+									{[
+										"Боится уколов",
+										"Очень тревожный",
+										"Рвотный рефлекс",
+										"Ортодонтический пациент",
+									].map((chip) => (
+										<button
+											key={chip}
+											type="button"
+											className="quick-chip"
+											onClick={() => {
+												const currentVal = patientCoreDraft.notes.trim();
+												const chipLower = chip.toLowerCase();
+												if (currentVal.toLowerCase().includes(chipLower))
+													return;
+												const newVal = currentVal
+													? `${currentVal}, ${chipLower}`
+													: chipLower;
+												updatePatientCoreDraft("notes", newVal);
+											}}
+										>
+											+ {chip}
+										</button>
+									))}
+								</div>
 							</div>
 						</div>
 					</div>
@@ -844,54 +915,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							) : null}
 						</div>
 					</details>
-				</section>
-
-				{/* Widgets Grid */}
-				<div className="patients-widgets-grid">
-					<PatientArchiveReasonsAndBlacklistsWidget
-						patientId={selectedPatientId}
-					/>
-					<PatientCommunicationTimelinesWidget patientId={selectedPatientId} />
-					{selectedPatientId ? (
-						<div className="mt-4" data-testid="patient-comm-consents-mount">
-							<PatientCommunicationConsentsPanel
-								patientId={selectedPatientId}
-							/>
-						</div>
-					) : null}
-					{selectedPatientId ? (
-						<div className="mt-4" data-testid="patient-whatsapp-send-mount">
-							<PatientWhatsappSendPanel
-								patientId={selectedPatientId}
-								patientPhone={
-									selectedPatient?.phone ?? patientCoreDraft.phone ?? null
-								}
-								patientName={
-									selectedPatient?.fullName ??
-									patientCoreDraft.fullName ??
-									null
-								}
-							/>
-						</div>
-					) : null}
-					{selectedPatientId ? (
-						<div className="mt-4" data-testid="patient-attachments-mount">
-							<PatientAttachmentsPanel
-								patientId={selectedPatientId}
-								patientName={
-									selectedPatient?.fullName ??
-									patientCoreDraft.fullName ??
-									null
-								}
-							/>
-						</div>
-					) : null}
-
-					<PatientDuplicateMergeQueuesWidget />
 
 					{/* FAB clearance bottom spacer */}
 					<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
-				</div>
+				</section>
 			</div>
 
 			{/* Create Patient Modal Pop-up */}

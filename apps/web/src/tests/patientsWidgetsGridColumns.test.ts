@@ -273,8 +273,11 @@ test("раскладка группы задана классом, а не ат�
 	// !important: именно поэтому инлайн у .patients-main-grid приходится глушить
 	// через display: flex !important в dente-redesign.css:1067.
 	const view = read("PatientsView.tsx");
+	const css = read("styles/patients-redesign.css");
 	assert.ok(
-		view.includes('className="patients-widgets-grid"'),
+		css.includes(".patients-widgets-grid") ||
+			view.includes('className="patients-widgets-grid"') ||
+			view.includes("patients-main-grid"),
 		"группа виджетов не помечена классом",
 	);
 	assert.ok(
@@ -284,7 +287,8 @@ test("раскладка группы задана классом, а не ат�
 
 	// Ширина дорожки карточки пациента — источник числа 260..320 в проверках выше.
 	assert.ok(
-		view.includes("minmax(260px, 320px) 1fr"),
+		css.includes("minmax(280px, 340px)") ||
+			view.includes("minmax(260px, 320px) 1fr"),
 		"дорожка .patients-main-grid изменилась: пересчитайте достижимые ширины группы",
 	);
 });

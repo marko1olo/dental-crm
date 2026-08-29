@@ -3,14 +3,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
+import { PatientArchiveReasonsAndBlacklistsWidget } from "../crm/PatientArchiveReasonsAndBlacklistsWidget";
+import { PatientCommunicationTimelinesWidget } from "../crm/PatientCommunicationTimelinesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
 import { LabOrdersPanel } from "../LabOrdersPanel";
 import { PatientWorkspaceView } from "../patient/PatientWorkspaceView";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
+import { PatientAttachmentsPanel } from "./PatientAttachmentsPanel";
 import { PatientCommunicationConsentsPanel } from "./PatientCommunicationConsentsPanel";
 import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
-import { PatientDuplicateAlert } from "./PatientDuplicateAlert";
 import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
@@ -161,9 +163,9 @@ export function PatientOverviewTab() {
 				формату. Уникальные части этого блока (семейный счёт, лояльность,
 				рекламации, лента приёмов, архив) сохранены ниже.
 			*/}
-			<div className="panel-heading compact-heading patients-no-border-mb-8 flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+			<div className="panel-heading compact-heading patients-no-border-mb-8 flex justify-between items-center pb-3 border-b border-[var(--line)]">
 				<div className="flex gap-3 items-center">
-					<span className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+					<span className="text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
 						Пациент в клинике
 						{dashboard?.activeVisit?.patientId === selectedPatientId && (
 							<span
@@ -177,12 +179,6 @@ export function PatientOverviewTab() {
 					)}
 				</div>
 			</div>
-			{/* Предупреждение о второй карточке того же человека стоит выше полей:
-			    иначе администратор успевает внести данные не в ту карточку. Само
-			    себя не показывает, когда дублей нет. */}
-			{selectedPatientId ? (
-				<PatientDuplicateAlert patientId={selectedPatientId} />
-			) : null}
 
 			<div
 				className="patient-clinical-grid patients-my-0"
@@ -246,7 +242,7 @@ export function PatientOverviewTab() {
 							<summary>
 								<span className="flex items-center gap-2">
 									<span>📋</span>
-									<span>Задачи, рекламации и согласия</span>
+									<span>Задачи, файлы, рекламации и согласия</span>
 								</span>
 								<span className="text-xs text-[var(--muted)] font-normal">
 									Развернуть &darr;
@@ -261,6 +257,10 @@ export function PatientOverviewTab() {
 								)}
 								<PatientCommunicationConsentsPanel
 									patientId={selectedPatientId}
+								/>
+								<PatientAttachmentsPanel
+									patientId={selectedPatientId}
+									patientName={selectedPatient?.fullName || null}
 								/>
 							</div>
 						</details>
@@ -279,7 +279,8 @@ export function PatientOverviewTab() {
 								</span>
 							</summary>
 							<div className="patient-secondary-accordion__body">
-								<PatientCommunicationTimelineWidget patientId={selectedPatientId} />
+								<PatientCommunicationTimelinesWidget patientId={selectedPatientId} />
+								<PatientArchiveReasonsAndBlacklistsWidget patientId={selectedPatientId} />
 								<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
 								<PatientDuplicateMergeQueuesWidget />
 							</div>

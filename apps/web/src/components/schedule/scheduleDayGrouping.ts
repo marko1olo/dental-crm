@@ -170,7 +170,10 @@ export function groupAppointmentsByClinicDay(
 	const byDay = new Map<string, DayGroupingAppointment[]>();
 
 	for (const appointment of appointments) {
-		const dateKey = options.toClinicLocal(appointment.startsAt).slice(0, 10);
+		const rawStartsAt =
+			appointment?.startsAt ?? (appointment as { startTime?: string })?.startTime ?? "";
+		const localIso = rawStartsAt ? options.toClinicLocal(rawStartsAt) : "";
+		const dateKey = localIso ? localIso.slice(0, 10) : options.todayKey;
 		const bucket = byDay.get(dateKey);
 		if (bucket) bucket.push(appointment);
 		else byDay.set(dateKey, [appointment]);
@@ -178,7 +181,13 @@ export function groupAppointmentsByClinicDay(
 
 	return [...byDay.keys()].sort().map((dateKey) => {
 		const dayAppointments = [...(byDay.get(dateKey) ?? [])].sort(
-			(left, right) => left.startsAt.localeCompare(right.startsAt),
+			(left, right) => {
+				const leftStart =
+					left?.startsAt ?? (left as { startTime?: string })?.startTime ?? "";
+				const rightStart =
+					right?.startsAt ?? (right as { startTime?: string })?.startTime ?? "";
+				return leftStart.localeCompare(rightStart);
+			},
 		);
 		const rows: ScheduleDayRow[] = [];
 		let bookedMinutes = 0;
@@ -189,8 +198,16 @@ export function groupAppointmentsByClinicDay(
 		const occupyingSoFar: DayGroupingAppointment[] = [];
 
 		for (const appointment of dayAppointments) {
-			const startMs = Date.parse(appointment.startsAt);
-			const endMs = Date.parse(appointment.endsAt);
+			const startIso =
+				appointment?.startsAt ?? (appointment as { startTime?: string })?.startTime;
+			const endIso =
+				appointment?.endsAt ?? (appointment as { endTime?: string })?.endTime;
+			if (!startIso || !endIso) {
+				rows.push({ kind: "appointment", appointment });
+				continue;
+			}
+			const startMs = Date.parse(startIso);
+			const endMs = Date.parse(endIso);
 			const occupies = timeOccupyingAppointmentStatuses.has(appointment.status);
 			const measurable =
 				Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs;

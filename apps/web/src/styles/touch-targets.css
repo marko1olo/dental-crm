@@ -62,9 +62,11 @@
      `.visit-sub-nav-tabs button` (VisitView.tsx:417). То есть правило про 44px
      существовало, но ни к чему не применялось, и вкладки оставались 29px даже
      на телефоне. */
-	.emk-tab-button,
 	.visit-sub-nav-tabs button {
 		min-height: 44px;
+	}
+	.emk-tab-button {
+		min-height: 32px;
 	}
 
 	/* !important обязателен: main.css:14512 задаёт
@@ -77,7 +79,6 @@
 
 	/* --- Плотные наборы чипов ---
      44px для соблюдения минимальной зоны нажатия на сенсорных устройствах. */
-	.quick-chip,
 	.dictation-quick-row button {
 		min-height: 44px;
 	}
@@ -375,10 +376,14 @@
 	}
 
 	.clinical-quick-presets-bar button,
-	.clinical-action-btn,
+	.clinical-action-btn {
+		min-height: 48px !important;
+		touch-action: manipulation;
+	}
+
 	.emk-tab-button,
 	.quick-chip {
-		min-height: 48px !important;
+		min-height: 32px !important;
 		touch-action: manipulation;
 	}
 

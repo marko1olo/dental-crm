@@ -374,9 +374,9 @@
 	border-radius: 8px;
 	font-size: 11.5px;
 	font-weight: 600;
-	background: var(--good-bg, rgba(16, 185, 129, 0.12));
-	color: var(--good-fg, #047857);
-	border: 1px solid var(--good-border, rgba(16, 185, 129, 0.3));
+	background: var(--ok-bg, rgba(16, 185, 129, 0.12));
+	color: var(--ok-fg, #047857);
+	border: 1px solid var(--ok-border, rgba(16, 185, 129, 0.3));
 	display: flex;
 	align-items: center;
 	gap: 6px;

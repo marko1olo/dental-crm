@@ -53,14 +53,14 @@ export function ScheduleSubNavTabs({
 			<button
 				className={`shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer select-none ${
 					showShiftAnalytics
-						? "bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
+						? "bg-[var(--teal-dark)] text-[var(--on-teal)] shadow-2xs border border-transparent"
 						: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
 				}`}
 				type="button"
 				onClick={() => setShowShiftAnalytics((prev) => !prev)}
 				aria-pressed={showShiftAnalytics}
 			>
-				<BarChart3 size={14} className={showShiftAnalytics ? "text-white" : "text-[var(--teal,var(--brand-primary))]"} />
+				<BarChart3 size={14} className={showShiftAnalytics ? "text-[var(--on-teal)]" : "text-[var(--teal,var(--brand-primary))]"} />
 				<span>{showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}</span>
 			</button>
 
@@ -98,7 +98,7 @@ export function ScheduleSubNavTabs({
 			<button
 				className={`shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer select-none ${
 					showConfirmationsPanel
-						? "active bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
+						? "active bg-[var(--teal-dark)] text-[var(--on-teal)] shadow-2xs border border-transparent"
 						: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
 				}`}
 				type="button"
@@ -110,14 +110,14 @@ export function ScheduleSubNavTabs({
 				title="Панель утреннего обзвона и подтверждений"
 				aria-pressed={showConfirmationsPanel}
 			>
-				<PhoneCall size={14} className={showConfirmationsPanel ? "text-white" : "text-[var(--teal,var(--brand-primary))]"} />
+				<PhoneCall size={14} className={showConfirmationsPanel ? "text-[var(--on-teal)]" : "text-[var(--teal,var(--brand-primary))]"} />
 				<span>Утренний обзвон</span>
 			</button>
 
 			<button
 				className={`shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer select-none ${
 					showFreedSlotsPanel
-						? "active bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
+						? "active bg-[var(--teal-dark)] text-[var(--on-teal)] shadow-2xs border border-transparent"
 						: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
 				}`}
 				type="button"
@@ -129,14 +129,14 @@ export function ScheduleSubNavTabs({
 				title="Освободившиеся окна и подбор из листа ожидания"
 				aria-pressed={showFreedSlotsPanel}
 			>
-				<Clock size={14} className={showFreedSlotsPanel ? "text-white" : "text-[var(--teal,var(--brand-primary))]"} />
+				<Clock size={14} className={showFreedSlotsPanel ? "text-[var(--on-teal)]" : "text-[var(--teal,var(--brand-primary))]"} />
 				<span>Освободившиеся окна</span>
 			</button>
 
 			<button
 				className={`shrink-0 whitespace-nowrap min-w-fit h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer select-none ${
 					showClipboardPanel
-						? "active bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
+						? "active bg-[var(--teal-dark)] text-[var(--on-teal)] shadow-2xs border border-transparent"
 						: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
 				}`}
 				type="button"
@@ -148,7 +148,7 @@ export function ScheduleSubNavTabs({
 				title="Буфер расписания: скопированные приёмы для вставки на другое время"
 				aria-pressed={showClipboardPanel}
 			>
-				<Clipboard size={14} className={showClipboardPanel ? "text-white" : "text-[var(--teal,var(--brand-primary))]"} />
+				<Clipboard size={14} className={showClipboardPanel ? "text-[var(--on-teal)]" : "text-[var(--teal,var(--brand-primary))]"} />
 				<span>Буфер</span>
 			</button>
 		</nav>

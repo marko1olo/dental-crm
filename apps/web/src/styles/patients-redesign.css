@@ -217,12 +217,55 @@
 	min-width: 0;
 }
 
+/* Mobile Master-Detail Navigation Stack on <= 900px */
 @media (max-width: 900px) {
 	.patients-main-grid {
 		display: flex !important;
 		flex-direction: column !important;
 		grid-template-columns: 1fr !important;
 	}
+
+	.patients-main-grid.mobile-view-list .patient-admin-panel {
+		display: none !important;
+	}
+
+	.patients-main-grid.mobile-view-card .patient-list {
+		display: none !important;
+	}
+
+	.patient-mobile-back-header {
+		display: flex !important;
+		align-items: center;
+		margin-bottom: 0.75rem;
+	}
+}
+
+@media (min-width: 901px) {
+	.patient-mobile-back-header {
+		display: none !important;
+	}
+}
+
+.mobile-back-to-list-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 40px;
+	padding: 6px 14px;
+	border-radius: 10px;
+	border: 1px solid var(--line-strong);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 0.85rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.mobile-back-to-list-btn:hover {
+	background: var(--teal-surface);
+	border-color: var(--teal);
+	color: var(--teal-dark);
 }
 
 /* Patient List & Row Items */
@@ -421,6 +464,27 @@
 }
 
 /* Quick Chips */
+.quick-chips-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.quick-chips-group-title {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted);
+}
+
+.quick-chips-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
 .quick-chip {
 	padding: 5px 10px;
 	min-height: 32px;

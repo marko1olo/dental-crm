@@ -1,12 +1,20 @@
 import {
 	AlertTriangle,
+	Bold,
 	Calendar,
 	Check,
+	CheckSquare,
+	ChevronDown,
+	Clock,
 	Copy,
 	Download,
+	Eraser,
 	FileCheck,
 	FileCode,
 	FileText,
+	Hash,
+	Italic,
+	List,
 	Pill,
 	PlusCircle,
 	Printer,
@@ -188,6 +196,126 @@ export function VisitEmkTab() {
 	const [isNextVisitModalOpen, setIsNextVisitModalOpen] = React.useState<boolean>(false);
 	const [nextVisitAppointment, setNextVisitAppointment] = React.useState<Appointment | null>(null);
 	const [activeSelectedTooth, setActiveSelectedTooth] = React.useState<number | null>(null);
+	const textareaRefs = React.useRef<Record<string, HTMLTextAreaElement | null>>({});
+
+	const applyTextFormatting = React.useCallback(
+		(
+			fieldKey: string,
+			formatType:
+				| "bold"
+				| "italic"
+				| "bullet"
+				| "check"
+				| "tooth"
+				| "time"
+				| "clear"
+				| "copy",
+		) => {
+			const el = textareaRefs.current[fieldKey];
+			const currentValue = String(visitNoteForm?.[fieldKey] ?? "");
+
+			if (formatType === "copy") {
+				if (!currentValue.trim()) {
+					showToast("Поле пустое", "warning", 2000);
+					return;
+				}
+				navigator.clipboard?.writeText(currentValue);
+				showToast("Текст поля скопирован в буфер", "success", 2000);
+				return;
+			}
+
+			if (formatType === "clear") {
+				if (!currentValue) return;
+				updateVisitNoteField?.(fieldKey, "");
+				showToast("Поле очищено", "info", 2000);
+				return;
+			}
+
+			if (!el) {
+				let newText = currentValue;
+				if (formatType === "bold")
+					newText = currentValue ? `**${currentValue}**` : "**Текст**";
+				else if (formatType === "italic")
+					newText = currentValue ? `*${currentValue}*` : "*Текст*";
+				else if (formatType === "bullet")
+					newText = currentValue ? `${currentValue}\n• ` : "• ";
+				else if (formatType === "check")
+					newText = currentValue ? `${currentValue}\n[✓] ` : "[✓] ";
+				else if (formatType === "tooth") {
+					const toothNum = activeSelectedTooth || 16;
+					newText = currentValue
+						? `${currentValue} [Зуб ${toothNum}]`
+						: `[Зуб ${toothNum}]`;
+				} else if (formatType === "time") {
+					const timeStr = new Date().toLocaleTimeString("ru-RU", {
+						hour: "2-digit",
+						minute: "2-digit",
+					});
+					newText = currentValue ? `${currentValue} [${timeStr}]` : `[${timeStr}]`;
+				}
+				updateVisitNoteField?.(fieldKey, newText);
+				return;
+			}
+
+			const start = el.selectionStart ?? currentValue.length;
+			const end = el.selectionEnd ?? currentValue.length;
+			const selectedText = currentValue.substring(start, end);
+			let replacement = "";
+			let cursorOffset = 0;
+
+			switch (formatType) {
+				case "bold":
+					replacement = selectedText ? `**${selectedText}**` : "**Текст**";
+					cursorOffset = selectedText ? replacement.length : 2;
+					break;
+				case "italic":
+					replacement = selectedText ? `*${selectedText}*` : "*Текст*";
+					cursorOffset = selectedText ? replacement.length : 1;
+					break;
+				case "bullet":
+					replacement = selectedText
+						? `\n• ${selectedText}`
+						: start === 0 || currentValue[start - 1] === "\n"
+							? "• "
+							: "\n• ";
+					cursorOffset = replacement.length;
+					break;
+				case "check":
+					replacement = selectedText
+						? `\n[✓] ${selectedText}`
+						: start === 0 || currentValue[start - 1] === "\n"
+							? "[✓] "
+							: "\n[✓] ";
+					cursorOffset = replacement.length;
+					break;
+				case "tooth": {
+					const toothNum = activeSelectedTooth || 16;
+					replacement = `[Зуб ${toothNum}] `;
+					cursorOffset = replacement.length;
+					break;
+				}
+				case "time": {
+					const timeStr = `[${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}] `;
+					replacement = timeStr;
+					cursorOffset = replacement.length;
+					break;
+				}
+			}
+
+			const newText =
+				currentValue.substring(0, start) +
+				replacement +
+				currentValue.substring(end);
+			updateVisitNoteField?.(fieldKey, newText);
+
+			setTimeout(() => {
+				el.focus();
+				const newCursorPos = start + cursorOffset;
+				el.setSelectionRange(newCursorPos, newCursorPos);
+			}, 0);
+		},
+		[visitNoteForm, updateVisitNoteField, activeSelectedTooth],
+	);
 
 	const handleOpenNextVisitBooking = React.useCallback((daysAhead = 5) => {
 		const staffList = Array.isArray(dashboard?.clinicSettings?.staff) ? dashboard.clinicSettings.staff : [];
@@ -1095,8 +1223,8 @@ export function VisitEmkTab() {
 				onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 			/>
 
-			{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
-			<div className="emk-tabs-container" role="tablist">
+			{/* Компактные 32px вкладки (EMK Tabs) */}
+			<div className="emk-tabs-container flex items-center gap-1.5 flex-wrap my-2 pb-1 border-b border-[var(--line)]" role="tablist">
 				{emkTabs.map((tab) => {
 					const isFilled =
 						tab.id !== "all" &&
@@ -1107,10 +1235,14 @@ export function VisitEmkTab() {
 							type="button"
 							role="tab"
 							aria-selected={activeEmkTab === tab.id}
-							className={`emk-tab-button min-h-[48px] font-bold ${activeEmkTab === tab.id ? "active" : ""}`}
+							className={`emk-tab-button h-8 !min-h-[32px] px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 ${
+								activeEmkTab === tab.id
+									? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-xs"
+									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
+							}`}
 							onClick={() => setActiveEmkTab(tab.id)}
 						>
-							{tab.label}
+							<span>{tab.label}</span>
 							{isFilled && <span className="emk-tab-dot" title="Заполнено" />}
 						</button>
 					);
@@ -1312,13 +1444,13 @@ export function VisitEmkTab() {
 								/>
 							</div>
 							{chips.length > 0 && (
-								<div className="flex flex-wrap gap-2 min-w-0">
+								<div className="flex flex-wrap gap-1.5 min-w-0">
 									{chips.map((chip) => (
 										<button
 											key={chip}
 											type="button"
 											onClick={() => handleChipClick(chip)}
-											className="quick-chip min-h-[48px] min-w-0 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation break-words shadow-2xs inline-flex items-center gap-1.5"
+											className="quick-chip h-8 !min-h-[32px] min-w-0 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation break-words shadow-2xs inline-flex items-center gap-1.5 shrink-0"
 										>
 											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold">+</span>
 											<span>{chip}</span>
@@ -1326,543 +1458,650 @@ export function VisitEmkTab() {
 									))}
 								</div>
 							)}
-							{field.key === "treatmentPlan" && (
-								<>
-									<div className="flex flex-col gap-3 p-4 rounded-2xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] shadow-xs">
-										<div className="flex items-center justify-between gap-2 flex-wrap border-b border-[var(--teal,var(--line))]/20 pb-2.5">
-											<div className="flex items-center gap-2">
-												<div className="w-7 h-7 rounded-lg bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center font-bold text-sm">
-													💉
-												</div>
-												<div>
-													<span className="text-xs sm:text-sm font-extrabold text-[var(--ink)] flex items-center gap-1.5">
-														Местная карпульная анестезия & Расчет МДД по весу
-													</span>
-													<span className="text-[11px] text-[var(--muted)] block">
-														Стандарты СтАР и Минздрава РФ • Контроль токсической дозы
-													</span>
-												</div>
-											</div>
-											<div className="flex items-center gap-2 flex-wrap">
-												<button
-													type="button"
-													onClick={() => setIsAnesthesiaProtocolModalOpen(true)}
-													className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
-													data-testid="btn-open-anesthesia-protocol-modal"
-												>
-													<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-													<span>Расширенный калькулятор СтАР</span>
-												</button>
-												<button
-													type="button"
-													onClick={() => setIsAnesthesiaAspirationModalOpen(true)}
-													className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
-													data-testid="btn-open-anesthesia-aspiration-modal"
-												>
-													<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-													<span>Журнал аспирационных проб</span>
-												</button>
-											</div>
-										</div>
 
-										{/* Выбор препарата анестетика */}
-										<div className="space-y-1.5">
-											<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-												1. Выберите анестетик (карпулы):
-											</label>
-											<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-												<button
-													type="button"
-													onClick={() => setSelectedAnesDrugKey("ultracain_ds_forte")}
-													className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[48px] flex items-start justify-between gap-2 ${
-														selectedAnesDrugKey === "ultracain_ds_forte"
-															? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] ring-1 ring-[var(--teal)] shadow-2xs"
-															: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]/40"
-													}`}
-													data-testid="btn-anes-ultracain-ds-forte"
-												>
-													<div className="min-w-0">
-														<div className="text-xs font-extrabold truncate">
-															Ультракаин Д-С Форте
-														</div>
-														<div className="text-[11px] opacity-80">
-															1:100 000 · 1.7 мл (68 мг)
-														</div>
-													</div>
-													<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 shrink-0">
-														1:100k
-													</span>
-												</button>
-
-												<button
-													type="button"
-													onClick={() => setSelectedAnesDrugKey("ultracain_ds")}
-													className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[48px] flex items-start justify-between gap-2 ${
-														selectedAnesDrugKey === "ultracain_ds"
-															? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] ring-1 ring-[var(--teal)] shadow-2xs"
-															: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]/40"
-													}`}
-													data-testid="btn-anes-ultracain-ds"
-												>
-													<div className="min-w-0">
-														<div className="text-xs font-extrabold truncate">
-															Ультракаин Д-С
-														</div>
-														<div className="text-[11px] opacity-80">
-															1:200 000 · 1.7 мл (68 мг)
-														</div>
-													</div>
-													<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] shrink-0">
-														1:200k
-													</span>
-												</button>
-
-												<button
-													type="button"
-													onClick={() => setSelectedAnesDrugKey("scandonest_3")}
-													className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[48px] flex items-start justify-between gap-2 ${
-														selectedAnesDrugKey === "scandonest_3"
-															? "bg-[var(--ok-bg)] border-[var(--ok-fg)] text-[var(--ink)] ring-1 ring-[var(--ok-fg)]/40 shadow-2xs"
-															: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--ok-fg)]/40"
-													}`}
-													data-testid="btn-anes-scandonest-3"
-												>
-													<div className="min-w-0">
-														<div className="text-xs font-extrabold truncate text-[var(--ok-fg)]">
-															Скандонест 3%
-														</div>
-														<div className="text-[11px] opacity-80">
-															Без адреналина · 1.7 мл
-														</div>
-													</div>
-													<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 shrink-0">
-														Группа риска
-													</span>
-												</button>
-											</div>
-										</div>
-
-										{/* Дозировка в карпулах и масса тела */}
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-											{/* Выбор числа карпул */}
-											<div className="space-y-1.5">
-												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-													2. Количество карпул: <strong>{selectedCarpulesCount} шт.</strong> ({liveAnesCalc.volumeMl} мл)
-												</label>
-												<div className="flex flex-wrap gap-1.5">
-													{[0.5, 1.0, 1.5, 2.0, 3.0].map((cCount) => (
-														<button
-															key={cCount}
-															type="button"
-															onClick={() => setSelectedCarpulesCount(cCount)}
-															className={`px-3 py-1.5 rounded-lg text-xs font-extrabold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
-																selectedCarpulesCount === cCount
-																	? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-															}`}
-															data-testid={`btn-carpules-${cCount}`}
-														>
-															{cCount} карп.
-														</button>
-													))}
-												</div>
-											</div>
-
-											{/* Масса тела пациента */}
-											<div className="space-y-1.5">
-												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
-													<span>3. Масса тела пациента:</span>
-													<strong className="text-[var(--teal,var(--brand-primary))]">{patientWeightKg} кг</strong>
-												</label>
-												<div className="flex items-center gap-2">
-													<input
-														type="range"
-														min={15}
-														max={140}
-														step={1}
-														value={patientWeightKg}
-														onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 70)}
-														className="w-full accent-[var(--teal,var(--brand-primary))] cursor-pointer"
-														data-testid="input-patient-weight-slider"
-													/>
-													<input
-														type="number"
-														min={10}
-														max={250}
-														value={patientWeightKg}
-														onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 70)}
-														className="w-16 min-h-[38px] px-2 py-1 text-xs font-bold text-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
-														data-testid="input-patient-weight-num"
-													/>
-												</div>
-											</div>
-										</div>
-
-										{/* Индикатор безопасности дозировки и кнопка внесения */}
-										<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3 flex-wrap">
-											<div className="space-y-0.5 min-w-0 flex-1">
-												<div className="flex items-center gap-2">
-													<span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-														liveAnesCalc.safetyLevel === "safe"
-															? "bg-[var(--ok-fg)]"
-															: liveAnesCalc.safetyLevel === "caution"
-																? "bg-lime-500"
-																: liveAnesCalc.safetyLevel === "warning"
-																	? "bg-amber-500"
-																	: "bg-rose-500"
-													}`} />
-													<span className="text-xs font-bold text-[var(--ink)] truncate">
-														МДД для {patientWeightKg} кг: макс. <strong>{liveAnesCalc.maxSafeCarpules} карп.</strong> ({liveAnesCalc.maxSafeDoseMg} мг)
-													</span>
-													<span className="text-[11px] font-semibold text-[var(--muted)]">
-														• {liveAnesCalc.safetyPercentage}% от лимита
-													</span>
-												</div>
-												<div className="text-[11px] text-[var(--muted)] truncate">
-													Препарат: {liveAnesCalc.drugName} • Введено: {liveAnesCalc.volumeMl} мл ({liveAnesCalc.activeDoseMg} мг)
-													{liveAnesCalc.epinephrineMg > 0 ? ` • Адреналин: ${liveAnesCalc.epinephrineMg.toFixed(3)} мг` : " • Без адреналина"}
-												</div>
-											</div>
-
-											<button
-												type="button"
-												onClick={() => {
-													if (!updateVisitNoteField) return;
-													const curr = visitNoteForm.treatmentPlan || "";
-													updateVisitNoteField(
-														"treatmentPlan",
-														appendClinicalText(curr, liveAnesCalc.formattedTreatmentSnippet, "\n\n"),
-													);
-													showToast(`Анестезия (${liveAnesCalc.drugName}, ${selectedCarpulesCount} карп.) внесена в лечение`, "success", 3000);
-												}}
-												className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
-												data-testid="btn-apply-anesthesia-to-plan"
-											>
-												<span>💉</span>
-												<span>+ Внести в протокол</span>
-											</button>
-										</div>
-
-										{/* Предупреждение о кардиоваскулярном риске */}
-										{anesthesiaRisk.isWarningTriggered && (
-											<div
-												className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 flex items-start justify-between gap-2.5 text-xs text-amber-950 dark:text-amber-200"
-												role="alert"
-											>
-												<div className="flex items-start gap-2">
-													<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-													<div className="space-y-1">
-														<strong className="font-extrabold block text-amber-950 dark:text-amber-100">
-															Внимание: Группа кардиоваскулярного риска (Гипертония / ССЗ)
-														</strong>
-														<p className="m-0 leading-relaxed font-medium">
-															{anesthesiaRisk.warningMessage}
-														</p>
-													</div>
-												</div>
-												<button
-													type="button"
-													onClick={() => setSelectedAnesDrugKey("scandonest_3")}
-													className="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-200 dark:bg-amber-800 text-amber-950 dark:text-amber-100 hover:bg-amber-300 shrink-0 cursor-pointer"
-												>
-													Выбрать Скандонест 3%
-												</button>
-											</div>
-										)}
-									</div>
-
-									{/* ⚡ ЭНДОДОНТИЯ: Таблица учета корневых каналов, апекслокатор, мастер-файлы и силеры */}
-									<div className="flex flex-col gap-3 p-3.5 rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)]">
-										<div className="flex items-center justify-between gap-2 flex-wrap">
-											<div className="flex items-center gap-2">
-												<span className="text-base">⚡</span>
-												<span className="text-xs sm:text-sm font-extrabold text-[var(--ink)]">
-													Эндодонтия: Учет каналов, апекслокация, мастер-файлы и силеры (Форма 043/у)
-												</span>
-											</div>
-											<button
-												type="button"
-												onClick={() => setIsEndoModalOpen(true)}
-												className="min-h-[38px] px-3.5 py-1.5 text-xs font-extrabold rounded-lg bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-												data-testid="btn-open-full-endo-modal"
-											>
-												<FileText size={14} />
-												<span>📋 Интерактивный журнал каналов</span>
-											</button>
-										</div>
-
-										{/* 1. Выбор анатомического корневого канала */}
-										<div className="space-y-1.5">
-											<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-												1. Анатомический корневой канал:
-											</label>
-											<div className="flex flex-wrap gap-1.5">
-												{[
-													{ key: "MB1", name: "МБ-1 (MB1)", ref: "Щечный бугор", defWl: 21.5, defMaf: "#25", defTaper: ".06" },
-													{ key: "MB2", name: "МБ-2 (MB2)", ref: "Щечный бугор", defWl: 20.0, defMaf: "#20", defTaper: ".04" },
-													{ key: "DB", name: "ДБ (DB)", ref: "Дистально-щечный бугор", defWl: 20.5, defMaf: "#25", defTaper: ".06" },
-													{ key: "P", name: "Нёбный (P)", ref: "Нёбный бугор", defWl: 22.0, defMaf: "#30", defTaper: ".06" },
-													{ key: "D", name: "Дистальный (D)", ref: "Дистальный бугор", defWl: 22.0, defMaf: "#30", defTaper: ".06" },
-													{ key: "MB", name: "Медиально-щечный (MB)", ref: "Щечный бугор", defWl: 21.5, defMaf: "#25", defTaper: ".06" },
-													{ key: "ML", name: "Медиально-язычный (ML)", ref: "Медиально-язычный бугор", defWl: 21.0, defMaf: "#25", defTaper: ".06" },
-												].map((c) => (
-													<button
-														key={c.key}
-														type="button"
-														onClick={() => {
-															setSelectedEndoCanalKey(c.key);
-															setEndoRefPoint(c.ref);
-															setEndoWorkingLengthMm(c.defWl);
-															setEndoMasterFile(c.defMaf);
-															setEndoTaper(c.defTaper);
-														}}
-														className={`px-3 py-1.5 rounded-lg text-xs font-extrabold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
-															selectedEndoCanalKey === c.key
-																? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-														}`}
-														data-testid={`btn-endo-canal-${c.key}`}
-													>
-														{c.name}
-													</button>
-												))}
-											</div>
-										</div>
-
-										{/* 2. Рабочая длина по апекслокатору (WL) и мастер-файл (MAF) */}
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-											{/* Рабочая длина */}
-											<div className="space-y-1.5">
-												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
-													<span>2. Длина по апекслокатору (WL):</span>
-													<strong className="text-[var(--teal,var(--brand-primary))] font-mono text-xs">{endoWorkingLengthMm} мм (Apex 0.0)</strong>
-												</label>
-												<div className="flex items-center gap-2">
-													<input
-														type="range"
-														min={15}
-														max={28}
-														step={0.5}
-														value={endoWorkingLengthMm}
-														onChange={(e) => setEndoWorkingLengthMm(parseFloat(e.target.value) || 21.5)}
-														className="w-full accent-[var(--teal,var(--brand-primary))] cursor-pointer"
-														data-testid="input-endo-wl-slider"
-													/>
-													<input
-														type="number"
-														min={15}
-														max={28}
-														step={0.5}
-														value={endoWorkingLengthMm}
-														onChange={(e) => setEndoWorkingLengthMm(parseFloat(e.target.value) || 21.5)}
-														className="w-16 min-h-[38px] px-2 py-1 text-xs font-bold text-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
-														data-testid="input-endo-wl-num"
-													/>
-												</div>
-												<div className="flex flex-wrap gap-1">
-													{[19.0, 20.0, 21.0, 21.5, 22.0, 23.0, 24.0].map((len) => (
-														<button
-															key={len}
-															type="button"
-															onClick={() => setEndoWorkingLengthMm(len)}
-															className={`px-2 py-0.5 rounded text-[11px] font-semibold border cursor-pointer ${
-																endoWorkingLengthMm === len
-																	? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal,var(--brand-primary))]"
-																	: "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
-															}`}
-														>
-															{len}
-														</button>
-													))}
-												</div>
-											</div>
-
-											{/* Мастер-апикальный файл и конусность */}
-											<div className="space-y-1.5">
-												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-													3. Мастер-файл (MAF) и конусность:
-												</label>
-												<div className="flex flex-wrap gap-1.5">
-													{[
-														{ maf: "#20", taper: ".04" },
-														{ maf: "#25", taper: ".04" },
-														{ maf: "#25", taper: ".06" },
-														{ maf: "#30", taper: ".04" },
-														{ maf: "#30", taper: ".06" },
-														{ maf: "#35", taper: ".06" },
-														{ maf: "#40", taper: ".06" },
-													].map((opt) => {
-														const isSel = endoMasterFile === opt.maf && endoTaper === opt.taper;
-														return (
-															<button
-																key={`${opt.maf}-${opt.taper}`}
-																type="button"
-																onClick={() => {
-																	setEndoMasterFile(opt.maf);
-																	setEndoTaper(opt.taper);
-																}}
-																className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
-																	isSel
-																		? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-																}`}
-																data-testid={`btn-maf-${opt.maf.replace('#','')}-${opt.taper.replace('.','')}`}
-															>
-																{opt.maf}/{opt.taper}
-															</button>
-														);
-													})}
-												</div>
-											</div>
-										</div>
-
-										{/* 4. Силеры и метод обтурации */}
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-											{/* Силер */}
-											<div className="space-y-1.5">
-												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-													4. Эндодонтический силер:
-												</label>
-												<div className="flex flex-wrap gap-1.5">
-													{[
-														{ key: "AH Plus", label: "AH Plus (эпоксидный)" },
-														{ key: "BioRoot RCS", label: "BioRoot RCS (биокерамика)" },
-														{ key: "TotalFill BC", label: "TotalFill BC Sealer" },
-														{ key: "Каласепт", label: "Каласепт (Ca(OH)2)" },
-													].map((s) => (
-														<button
-															key={s.key}
-															type="button"
-															onClick={() => setEndoSealer(s.key)}
-															className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
-																endoSealer === s.key
-																	? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-															}`}
-															data-testid={`btn-sealer-${s.key.replace(/\s+/g, '')}`}
-														>
-															{s.label}
-														</button>
-													))}
-												</div>
-											</div>
-
-											{/* Метод обтурации */}
-											<div className="space-y-1.5">
-												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-													5. Метод обтурации:
-												</label>
-												<div className="flex flex-wrap gap-1.5">
-													{[
-														{ key: "Латеральная компакция", label: "Латеральная компакция" },
-														{ key: "Вертикальная конденсация", label: "Вертикальная конденсация" },
-														{ key: "Моноштифт + Биокерамика", label: "Моноштифт (BioRoot)" },
-														{ key: "Непрерывная волна", label: "Непрерывная волна" },
-													].map((m) => (
-														<button
-															key={m.key}
-															type="button"
-															onClick={() => setEndoObturation(m.key)}
-															className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
-																endoObturation === m.key
-																	? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-															}`}
-															data-testid={`btn-obturation-${m.key.slice(0, 5)}`}
-														>
-															{m.label}
-														</button>
-													))}
-												</div>
-											</div>
-										</div>
-
-										{/* Кнопка 1-клик внесения в протокол */}
-										<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3 flex-wrap">
-											<div className="text-xs text-[var(--muted)]">
-												Канал <strong>{selectedEndoCanalKey}</strong> ({endoRefPoint}): WL = <strong>{endoWorkingLengthMm} мм</strong>, MAF = <strong>{endoMasterFile}/{endoTaper}</strong>, Обтурация: <strong>{endoObturation} + {endoSealer}</strong>
-											</div>
-											<button
-												type="button"
-												onClick={() => {
-													if (!updateVisitNoteField) return;
-													const curr = visitNoteForm.treatmentPlan || "";
-													const targetTooth = activeSelectedTooth || (typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/)?.[0] : null) || 16;
-													const endoText = formatEndoProtocolQuickSnippet({
-														toothNumber: targetTooth,
-														canals: [
-															{
-																canalName: selectedEndoCanalKey,
-																referencePoint: endoRefPoint,
-																workingLengthMm: endoWorkingLengthMm,
-																masterApicalFile: endoMasterFile,
-																taper: endoTaper,
-																obturationTechnique: endoObturation,
-																sealer: endoSealer,
-															},
-														],
-														sealer: endoSealer,
-														obturationTechnique: endoObturation,
-													});
-													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, endoText, "\n\n"));
-													showToast(`Эндо-протокол (Канал ${selectedEndoCanalKey}, ${endoWorkingLengthMm} мм) внесен в карту`, "success", 3000);
-												}}
-												className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
-												data-testid="btn-apply-endo-to-plan"
-											>
-												<span>⚡</span>
-												<span>+ Внести эндо-протокол в 043/у</span>
-											</button>
-										</div>
-									</div>
-
-									{/* 1-клик быстрый подбор услуг из прайса клиники */}
-									<div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-indigo-500/25 bg-indigo-500/5 dark:bg-indigo-950/20">
-										<div className="flex items-center justify-between gap-2 flex-wrap">
-											<span className="text-xs font-extrabold text-[var(--ink)] flex items-center gap-1.5">
-												<Tag className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-												Подбор услуг из прайса клиники (1 клик в протокол и счет):
-											</span>
-											<button
-												type="button"
-												onClick={() => setIsPriceSearchModalOpen(true)}
-												className="min-h-[48px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
-												data-testid="btn-open-price-search-treatment-plan"
-											>
-												<Search size={16} />
-												<span>+ Добавить из прайса</span>
-											</button>
-										</div>
-										<div className="flex flex-wrap gap-2">
-											{allPriceServices.slice(0, 6).map((srv) => (
-												<button
-													key={srv.id}
-													type="button"
-													onClick={() => handleAddServiceToPlan(srv)}
-													className="min-h-[48px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-indigo-500 hover:bg-[var(--paper-strong)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shadow-2xs touch-manipulation"
-													title={`Добавить «${srv.title}» (${srv.basePriceRub.toLocaleString('ru-RU')} ₽) в протокол`}
-													data-testid={`fast-price-chip-${srv.id}`}
-												>
-													<span className="text-indigo-600 dark:text-indigo-400 font-extrabold">+</span>
-													<span>{srv.shortLabel}</span>
-													<span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--ok-bg)] text-[var(--ok-fg)] font-black">
-														{srv.basePriceRub.toLocaleString("ru-RU")} ₽
-													</span>
-												</button>
-											))}
-										</div>
-									</div>
-								</>
-							)}
+							{/* Компактный 32px тулбар форматирования текста медицинского протокола */}
+							<div
+								className="flex items-center justify-between gap-1 h-8 px-2 py-0.5 rounded-t-xl border border-b-0 border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--muted)]"
+								role="toolbar"
+								aria-label={`Форматирование текста: ${field.label}`}
+							>
+								<div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+									<button
+										type="button"
+										onClick={() => applyTextFormatting(field.key, "bold")}
+										className="h-6 px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-black inline-flex items-center justify-center transition-colors cursor-pointer"
+										title="Полужирный (**текст**)"
+										aria-label="Полужирный"
+									>
+										<Bold size={12} className="stroke-[3]" />
+									</button>
+									<button
+										type="button"
+										onClick={() => applyTextFormatting(field.key, "italic")}
+										className="h-6 px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold inline-flex items-center justify-center transition-colors cursor-pointer"
+										title="Курсив (*текст*)"
+										aria-label="Курсив"
+									>
+										<Italic size={12} />
+									</button>
+									<button
+										type="button"
+										onClick={() => applyTextFormatting(field.key, "bullet")}
+										className="h-6 px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+										title="Маркированный список (• )"
+										aria-label="Список"
+									>
+										<List size={12} />
+										<span className="text-[10px]">Список</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => applyTextFormatting(field.key, "check")}
+										className="h-6 px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+										title="Отметка выполнения ([✓] )"
+										aria-label="Выполнено"
+									>
+										<CheckSquare size={12} />
+										<span className="text-[10px]">Выполнено</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => applyTextFormatting(field.key, "tooth")}
+										className="h-6 px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer text-[var(--teal,var(--brand-primary))]"
+										title="Вставить ссылку на зуб"
+										aria-label="Зуб"
+									>
+										<Hash size={12} />
+										<span className="text-[10px] font-bold">Зуб {activeSelectedTooth ? `#${activeSelectedTooth}` : ""}</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => applyTextFormatting(field.key, "time")}
+										className="h-6 px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+										title="Вставить текущее время"
+										aria-label="Время"
+									>
+										<Clock size={12} />
+									</button>
+								</div>
+								<div className="flex items-center gap-1 shrink-0">
+									<button
+										type="button"
+										onClick={() => applyTextFormatting(field.key, "copy")}
+										className="h-6 px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs inline-flex items-center justify-center transition-colors cursor-pointer"
+										title="Копировать текст поля"
+										aria-label="Копировать"
+									>
+										<Copy size={12} />
+									</button>
+									<button
+										type="button"
+										onClick={() => applyTextFormatting(field.key, "clear")}
+										className="h-6 px-1.5 rounded hover:bg-rose-500/15 hover:text-rose-600 text-xs inline-flex items-center justify-center transition-colors cursor-pointer"
+										title="Очистить поле"
+										aria-label="Очистить"
+									>
+										<Eraser size={12} />
+									</button>
+								</div>
+							</div>
 							<textarea
+								ref={(el) => {
+									textareaRefs.current[field.key] = el;
+								}}
 								aria-label={field.label}
 								value={visitNoteForm[field.key] ?? ""}
 								placeholder={`Введите ${field.label.toLowerCase()} или выберите кнопки выше...`}
 								onChange={(event) =>
 									updateVisitNoteField?.(field.key, event.target.value)
 								}
-								className="min-h-[120px] rounded-xl p-3.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
+								className="min-h-[120px] rounded-b-xl rounded-t-none p-3.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
 							/>
+
+							{field.key === "treatmentPlan" && (
+								<div className="flex flex-col gap-2.5 mt-1">
+									{/* Аккордеон: Местная карпульная анестезия & Расчет МДД по весу */}
+									<details className="group rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] overflow-hidden">
+										<summary className="flex items-center justify-between p-3 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--teal-soft)]/40 transition-colors">
+											<div className="flex items-center gap-2">
+												<span className="w-6 h-6 rounded-md bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center text-xs">💉</span>
+												<span>Местная карпульная анестезия & Расчет МДД по весу ({liveAnesCalc.drugName}, {selectedCarpulesCount} карп.)</span>
+											</div>
+											<ChevronDown size={16} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
+										</summary>
+										<div className="p-4 pt-1 flex flex-col gap-3 border-t border-[var(--teal,var(--line))]/20">
+											<div className="flex items-center justify-between gap-2 flex-wrap border-b border-[var(--teal,var(--line))]/20 pb-2.5">
+												<div>
+													<span className="text-xs font-extrabold text-[var(--ink)] block">
+														Стандарты СтАР и Минздрава РФ • Контроль токсической дозы
+													</span>
+												</div>
+												<div className="flex items-center gap-2 flex-wrap">
+													<button
+														type="button"
+														onClick={() => setIsAnesthesiaProtocolModalOpen(true)}
+														className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
+														data-testid="btn-open-anesthesia-protocol-modal"
+													>
+														<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+														<span>Расширенный калькулятор СтАР</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => setIsAnesthesiaAspirationModalOpen(true)}
+														className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
+														data-testid="btn-open-anesthesia-aspiration-modal"
+													>
+														<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+														<span>Журнал аспирационных проб</span>
+													</button>
+												</div>
+											</div>
+
+											{/* Выбор препарата анестетика */}
+											<div className="space-y-1.5">
+												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
+													1. Выберите анестетик (карпулы):
+												</label>
+												<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+													<button
+														type="button"
+														onClick={() => setSelectedAnesDrugKey("ultracain_ds_forte")}
+														className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[44px] flex items-start justify-between gap-2 ${
+															selectedAnesDrugKey === "ultracain_ds_forte"
+																? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] ring-1 ring-[var(--teal)] shadow-2xs"
+																: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]/40"
+														}`}
+														data-testid="btn-anes-ultracain-ds-forte"
+													>
+														<div className="min-w-0">
+															<div className="text-xs font-extrabold truncate">
+																Ультракаин Д-С Форте
+															</div>
+															<div className="text-[11px] opacity-80">
+																1:100 000 · 1.7 мл (68 мг)
+															</div>
+														</div>
+														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 shrink-0">
+															1:100k
+														</span>
+													</button>
+
+													<button
+														type="button"
+														onClick={() => setSelectedAnesDrugKey("ultracain_ds")}
+														className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[44px] flex items-start justify-between gap-2 ${
+															selectedAnesDrugKey === "ultracain_ds"
+																? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] ring-1 ring-[var(--teal)] shadow-2xs"
+																: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]/40"
+														}`}
+														data-testid="btn-anes-ultracain-ds"
+													>
+														<div className="min-w-0">
+															<div className="text-xs font-extrabold truncate">
+																Ультракаин Д-С
+															</div>
+															<div className="text-[11px] opacity-80">
+																1:200 000 · 1.7 мл (68 мг)
+															</div>
+														</div>
+														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] shrink-0">
+															1:200k
+														</span>
+													</button>
+
+													<button
+														type="button"
+														onClick={() => setSelectedAnesDrugKey("scandonest_3")}
+														className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[44px] flex items-start justify-between gap-2 ${
+															selectedAnesDrugKey === "scandonest_3"
+																? "bg-[var(--ok-bg)] border-[var(--ok-fg)] text-[var(--ink)] ring-1 ring-[var(--ok-fg)]/40 shadow-2xs"
+																: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--ok-fg)]/40"
+														}`}
+														data-testid="btn-anes-scandonest-3"
+													>
+														<div className="min-w-0">
+															<div className="text-xs font-extrabold truncate text-[var(--ok-fg)]">
+																Скандонест 3%
+															</div>
+															<div className="text-[11px] opacity-80">
+																Без адреналина · 1.7 мл
+															</div>
+														</div>
+														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 shrink-0">
+															Группа риска
+														</span>
+													</button>
+												</div>
+											</div>
+
+											{/* Дозировка в карпулах и масса тела */}
+											<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+												{/* Выбор числа карпул */}
+												<div className="space-y-1.5">
+													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
+														2. Количество карпул: <strong>{selectedCarpulesCount} шт.</strong> ({liveAnesCalc.volumeMl} мл)
+													</label>
+													<div className="flex flex-wrap gap-1.5">
+														{[0.5, 1.0, 1.5, 2.0, 3.0].map((cCount) => (
+															<button
+																key={cCount}
+																type="button"
+																onClick={() => setSelectedCarpulesCount(cCount)}
+																className={`px-3 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
+																	selectedCarpulesCount === cCount
+																		? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
+																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
+																}`}
+																data-testid={`btn-carpules-${cCount}`}
+															>
+																{cCount} карп.
+															</button>
+														))}
+													</div>
+												</div>
+
+												{/* Масса тела пациента */}
+												<div className="space-y-1.5">
+													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
+														<span>3. Масса тела пациента:</span>
+														<strong className="text-[var(--teal,var(--brand-primary))]">{patientWeightKg} кг</strong>
+													</label>
+													<div className="flex items-center gap-2">
+														<input
+															type="range"
+															min={15}
+															max={140}
+															step={1}
+															value={patientWeightKg}
+															onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 70)}
+															className="w-full accent-[var(--teal,var(--brand-primary))] cursor-pointer"
+															data-testid="input-patient-weight-slider"
+														/>
+														<input
+															type="number"
+															min={10}
+															max={250}
+															value={patientWeightKg}
+															onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 70)}
+															className="w-16 min-h-[32px] h-8 px-2 py-1 text-xs font-bold text-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+															data-testid="input-patient-weight-num"
+														/>
+													</div>
+												</div>
+											</div>
+
+											{/* Индикатор безопасности дозировки и кнопка внесения */}
+											<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3 flex-wrap">
+												<div className="space-y-0.5 min-w-0 flex-1">
+													<div className="flex items-center gap-2">
+														<span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+															liveAnesCalc.safetyLevel === "safe"
+																? "bg-[var(--ok-fg)]"
+																: liveAnesCalc.safetyLevel === "caution"
+																	? "bg-lime-500"
+																	: liveAnesCalc.safetyLevel === "warning"
+																		? "bg-amber-500"
+																		: "bg-rose-500"
+														}`} />
+														<span className="text-xs font-bold text-[var(--ink)] truncate">
+															МДД для {patientWeightKg} кг: макс. <strong>{liveAnesCalc.maxSafeCarpules} карп.</strong> ({liveAnesCalc.maxSafeDoseMg} мг)
+														</span>
+														<span className="text-[11px] font-semibold text-[var(--muted)]">
+															• {liveAnesCalc.safetyPercentage}% от лимита
+														</span>
+													</div>
+													<div className="text-[11px] text-[var(--muted)] truncate">
+														Препарат: {liveAnesCalc.drugName} • Введено: {liveAnesCalc.volumeMl} мл ({liveAnesCalc.activeDoseMg} мг)
+														{liveAnesCalc.epinephrineMg > 0 ? ` • Адреналин: ${liveAnesCalc.epinephrineMg.toFixed(3)} мг` : " • Без адреналина"}
+													</div>
+												</div>
+
+												<button
+													type="button"
+													onClick={() => {
+														if (!updateVisitNoteField) return;
+														const curr = visitNoteForm.treatmentPlan || "";
+														updateVisitNoteField(
+															"treatmentPlan",
+															appendClinicalText(curr, liveAnesCalc.formattedTreatmentSnippet, "\n\n"),
+														);
+														showToast(`Анестезия (${liveAnesCalc.drugName}, ${selectedCarpulesCount} карп.) внесена в лечение`, "success", 3000);
+													}}
+													className="min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
+													data-testid="btn-apply-anesthesia-to-plan"
+												>
+													<span>💉</span>
+													<span>+ Внести в протокол</span>
+												</button>
+											</div>
+
+											{/* Предупреждение о кардиоваскулярном риске */}
+											{anesthesiaRisk.isWarningTriggered && (
+												<div
+													className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 flex items-start justify-between gap-2.5 text-xs text-amber-950 dark:text-amber-200"
+													role="alert"
+												>
+													<div className="flex items-start gap-2">
+														<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+														<div className="space-y-1">
+															<strong className="font-extrabold block text-amber-950 dark:text-amber-100">
+																Внимание: Группа кардиоваскулярного риска (Гипертония / ССЗ)
+															</strong>
+															<p className="m-0 leading-relaxed font-medium">
+																{anesthesiaRisk.warningMessage}
+															</p>
+														</div>
+													</div>
+													<button
+														type="button"
+														onClick={() => setSelectedAnesDrugKey("scandonest_3")}
+														className="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-200 dark:bg-amber-800 text-amber-950 dark:text-amber-100 hover:bg-amber-300 shrink-0 cursor-pointer"
+													>
+														Выбрать Скандонест 3%
+													</button>
+												</div>
+											)}
+										</div>
+									</details>
+
+									{/* Аккордеон: ЭНДОДОНТИЯ: Таблица учета корневых каналов, апекслокатор, мастер-файлы и силеры */}
+									<details className="group rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] overflow-hidden">
+										<summary className="flex items-center justify-between p-3 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--teal-soft)]/40 transition-colors">
+											<div className="flex items-center gap-2">
+												<span className="w-6 h-6 rounded-md bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center text-xs">⚡</span>
+												<span>Эндодонтия: Учет каналов, апекслокация, мастер-файлы и силеры ({selectedEndoCanalKey}, {endoWorkingLengthMm} мм)</span>
+											</div>
+											<ChevronDown size={16} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
+										</summary>
+										<div className="p-3.5 pt-1 flex flex-col gap-3 border-t border-[var(--teal,var(--line))]/20">
+											<div className="flex items-center justify-between gap-2 flex-wrap">
+												<span className="text-xs text-[var(--muted)]">
+													Форма 043/у • Протокол инструментации и пломбирования каналов
+												</span>
+												<button
+													type="button"
+													onClick={() => setIsEndoModalOpen(true)}
+													className="min-h-[32px] h-8 px-3 py-1 text-xs font-extrabold rounded-lg bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
+													data-testid="btn-open-full-endo-modal"
+												>
+													<FileText size={14} />
+													<span>📋 Интерактивный журнал каналов</span>
+												</button>
+											</div>
+
+											{/* 1. Выбор анатомического корневого канала */}
+											<div className="space-y-1.5">
+												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
+													1. Анатомический корневой канал:
+												</label>
+												<div className="flex flex-wrap gap-1.5">
+													{[
+														{ key: "MB1", name: "МБ-1 (MB1)", ref: "Щечный бугор", defWl: 21.5, defMaf: "#25", defTaper: ".06" },
+														{ key: "MB2", name: "МБ-2 (MB2)", ref: "Щечный бугор", defWl: 20.0, defMaf: "#20", defTaper: ".04" },
+														{ key: "DB", name: "ДБ (DB)", ref: "Дистально-щечный бугор", defWl: 20.5, defMaf: "#25", defTaper: ".06" },
+														{ key: "P", name: "Нёбный (P)", ref: "Нёбный бугор", defWl: 22.0, defMaf: "#30", defTaper: ".06" },
+														{ key: "D", name: "Дистальный (D)", ref: "Дистальный бугор", defWl: 22.0, defMaf: "#30", defTaper: ".06" },
+														{ key: "MB", name: "Медиально-щечный (MB)", ref: "Щечный бугор", defWl: 21.5, defMaf: "#25", defTaper: ".06" },
+														{ key: "ML", name: "Медиально-язычный (ML)", ref: "Медиально-язычный бугор", defWl: 21.0, defMaf: "#25", defTaper: ".06" },
+													].map((c) => (
+														<button
+															key={c.key}
+															type="button"
+															onClick={() => {
+																setSelectedEndoCanalKey(c.key);
+																setEndoRefPoint(c.ref);
+																setEndoWorkingLengthMm(c.defWl);
+																setEndoMasterFile(c.defMaf);
+																setEndoTaper(c.defTaper);
+															}}
+															className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
+																selectedEndoCanalKey === c.key
+																	? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
+																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
+															}`}
+															data-testid={`btn-endo-canal-${c.key}`}
+														>
+															{c.name}
+														</button>
+													))}
+												</div>
+											</div>
+
+											{/* 2. Рабочая длина по апекслокатору (WL) и мастер-файл (MAF) */}
+											<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+												{/* Рабочая длина */}
+												<div className="space-y-1.5">
+													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
+														<span>2. Длина по апекслокатору (WL):</span>
+														<strong className="text-[var(--teal,var(--brand-primary))] font-mono text-xs">{endoWorkingLengthMm} мм (Apex 0.0)</strong>
+													</label>
+													<div className="flex items-center gap-2">
+														<input
+															type="range"
+															min={15}
+															max={28}
+															step={0.5}
+															value={endoWorkingLengthMm}
+															onChange={(e) => setEndoWorkingLengthMm(parseFloat(e.target.value) || 21.5)}
+															className="w-full accent-[var(--teal,var(--brand-primary))] cursor-pointer"
+															data-testid="input-endo-wl-slider"
+														/>
+														<input
+															type="number"
+															min={15}
+															max={28}
+															step={0.5}
+															value={endoWorkingLengthMm}
+															onChange={(e) => setEndoWorkingLengthMm(parseFloat(e.target.value) || 21.5)}
+															className="w-16 min-h-[32px] h-8 px-2 py-1 text-xs font-bold text-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+															data-testid="input-endo-wl-num"
+														/>
+													</div>
+													<div className="flex flex-wrap gap-1">
+														{[19.0, 20.0, 21.0, 21.5, 22.0, 23.0, 24.0].map((len) => (
+															<button
+																key={len}
+																type="button"
+																onClick={() => setEndoWorkingLengthMm(len)}
+																className={`px-2 py-0.5 rounded text-[11px] font-semibold border cursor-pointer ${
+																	endoWorkingLengthMm === len
+																		? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal,var(--brand-primary))]"
+																		: "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
+																}`}
+															>
+																{len}
+															</button>
+														))}
+													</div>
+												</div>
+
+												{/* Мастер-апикальный файл и конусность */}
+												<div className="space-y-1.5">
+													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
+														3. Мастер-файл (MAF) и конусность:
+													</label>
+													<div className="flex flex-wrap gap-1.5">
+														{[
+															{ maf: "#20", taper: ".04" },
+															{ maf: "#25", taper: ".04" },
+															{ maf: "#25", taper: ".06" },
+															{ maf: "#30", taper: ".04" },
+															{ maf: "#30", taper: ".06" },
+															{ maf: "#35", taper: ".06" },
+															{ maf: "#40", taper: ".06" },
+														].map((opt) => {
+															const isSel = endoMasterFile === opt.maf && endoTaper === opt.taper;
+															return (
+																<button
+																	key={`${opt.maf}-${opt.taper}`}
+																	type="button"
+																	onClick={() => {
+																		setEndoMasterFile(opt.maf);
+																		setEndoTaper(opt.taper);
+																	}}
+																	className={`px-2 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
+																		isSel
+																			? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
+																			: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
+																	}`}
+																	data-testid={`btn-maf-${opt.maf.replace('#','')}-${opt.taper.replace('.','')}`}
+																>
+																	{opt.maf}/{opt.taper}
+																</button>
+															);
+														})}
+													</div>
+												</div>
+											</div>
+
+											{/* 4. Силеры и метод обтурации */}
+											<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+												{/* Силер */}
+												<div className="space-y-1.5">
+													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
+														4. Эндодонтический силер:
+													</label>
+													<div className="flex flex-wrap gap-1.5">
+														{[
+															{ key: "AH Plus", label: "AH Plus (эпоксидный)" },
+															{ key: "BioRoot RCS", label: "BioRoot RCS (биокерамика)" },
+															{ key: "TotalFill BC", label: "TotalFill BC Sealer" },
+															{ key: "Каласепт", label: "Каласепт (Ca(OH)2)" },
+														].map((s) => (
+															<button
+																key={s.key}
+																type="button"
+																onClick={() => setEndoSealer(s.key)}
+																className={`px-2 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
+																	endoSealer === s.key
+																		? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
+																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
+																}`}
+																data-testid={`btn-sealer-${s.key.replace(/\s+/g, '')}`}
+															>
+																{s.label}
+															</button>
+														))}
+													</div>
+												</div>
+
+												{/* Метод обтурации */}
+												<div className="space-y-1.5">
+													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
+														5. Метод обтурации:
+													</label>
+													<div className="flex flex-wrap gap-1.5">
+														{[
+															{ key: "Латеральная компакция", label: "Латеральная компакция" },
+															{ key: "Вертикальная конденсация", label: "Вертикальная конденсация" },
+															{ key: "Моноштифт + Биокерамика", label: "Моноштифт (BioRoot)" },
+															{ key: "Непрерывная волна", label: "Непрерывная волна" },
+														].map((m) => (
+															<button
+																key={m.key}
+																type="button"
+																onClick={() => setEndoObturation(m.key)}
+																className={`px-2 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
+																	endoObturation === m.key
+																		? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
+																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
+																}`}
+																data-testid={`btn-obturation-${m.key.slice(0, 5)}`}
+															>
+																{m.label}
+															</button>
+														))}
+													</div>
+												</div>
+											</div>
+
+											{/* Кнопка 1-клик внесения в протокол */}
+											<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3 flex-wrap">
+												<div className="text-xs text-[var(--muted)]">
+													Канал <strong>{selectedEndoCanalKey}</strong> ({endoRefPoint}): WL = <strong>{endoWorkingLengthMm} мм</strong>, MAF = <strong>{endoMasterFile}/{endoTaper}</strong>, Обтурация: <strong>{endoObturation} + {endoSealer}</strong>
+												</div>
+												<button
+													type="button"
+													onClick={() => {
+														if (!updateVisitNoteField) return;
+														const curr = visitNoteForm.treatmentPlan || "";
+														const targetTooth = activeSelectedTooth || (typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/)?.[0] : null) || 16;
+														const endoText = formatEndoProtocolQuickSnippet({
+															toothNumber: targetTooth,
+															canals: [
+																{
+																	canalName: selectedEndoCanalKey,
+																	referencePoint: endoRefPoint,
+																	workingLengthMm: endoWorkingLengthMm,
+																	masterApicalFile: endoMasterFile,
+																	taper: endoTaper,
+																	obturationTechnique: endoObturation,
+																	sealer: endoSealer,
+																},
+															],
+															sealer: endoSealer,
+															obturationTechnique: endoObturation,
+														});
+														updateVisitNoteField("treatmentPlan", appendClinicalText(curr, endoText, "\n\n"));
+														showToast(`Эндо-протокол (Канал ${selectedEndoCanalKey}, ${endoWorkingLengthMm} мм) внесен в карту`, "success", 3000);
+													}}
+													className="min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
+													data-testid="btn-apply-endo-to-plan"
+												>
+													<span>⚡</span>
+													<span>+ Внести эндо-протокол в 043/у</span>
+												</button>
+											</div>
+										</div>
+									</details>
+
+									{/* Аккордеон: 1-клик быстрый подбор услуг из прайса клиники */}
+									<details className="group rounded-xl border border-indigo-500/25 bg-indigo-500/5 dark:bg-indigo-950/20 overflow-hidden">
+										<summary className="flex items-center justify-between p-3 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-indigo-500/10 transition-colors">
+											<div className="flex items-center gap-2">
+												<Tag className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+												<span>Подбор услуг из прайса клиники (1 клик в протокол и счет)</span>
+											</div>
+											<ChevronDown size={16} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
+										</summary>
+										<div className="p-3.5 pt-1 flex flex-col gap-2.5 border-t border-indigo-500/20">
+											<div className="flex items-center justify-between gap-2 flex-wrap">
+												<span className="text-xs text-[var(--muted)]">
+													Быстрое добавление услуг прайса в Форму 043/у:
+												</span>
+												<button
+													type="button"
+													onClick={() => setIsPriceSearchModalOpen(true)}
+													className="min-h-[32px] h-8 px-3.5 py-1 text-xs font-extrabold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
+													data-testid="btn-open-price-search-treatment-plan"
+												>
+													<Search size={14} />
+													<span>+ Каталог прайса</span>
+												</button>
+											</div>
+											<div className="flex flex-wrap gap-1.5">
+												{allPriceServices.slice(0, 6).map((srv) => (
+													<button
+														key={srv.id}
+														type="button"
+														onClick={() => handleAddServiceToPlan(srv)}
+														className="h-8 !min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-indigo-500 hover:bg-[var(--paper-strong)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation shrink-0"
+														title={`Добавить «${srv.title}» (${srv.basePriceRub.toLocaleString('ru-RU')} ₽) в протокол`}
+														data-testid={`fast-price-chip-${srv.id}`}
+													>
+														<span className="text-indigo-600 dark:text-indigo-400 font-extrabold">+</span>
+														<span>{srv.shortLabel}</span>
+														<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--ok-bg)] text-[var(--ok-fg)] font-black">
+															{srv.basePriceRub.toLocaleString("ru-RU")} ₽
+														</span>
+													</button>
+												))}
+											</div>
+										</div>
+									</details>
+								</div>
+							)}
 						</div>
 					);
 				})}
