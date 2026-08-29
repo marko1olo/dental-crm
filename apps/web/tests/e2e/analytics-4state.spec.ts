@@ -237,9 +237,9 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 	test('1. PC Light Mode (1440x900) — Overview & Retention Hub', async ({ page }) => {
 		await setupPage(page, 'light', { width: 1440, height: 900 });
 		await page.goto('/#analytics', { waitUntil: 'load' });
-		await page.waitForTimeout(2000);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-		await page.waitForTimeout(500);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
 		await expect(page.locator('#analytics')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -250,7 +250,7 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 		const panel = page.locator('[data-testid="lost-patients-panel"]');
 		await expect(panel).toBeVisible({ timeout: 10000 });
 		await panel.scrollIntoViewIfNeeded();
-		await page.waitForTimeout(500);
+		await expect(panel).toBeInViewport();
 
 		await panel.screenshot({
 			path: path.join(OUT_DIR, '05_retention_hub_tab1_pc_light.png'),
@@ -265,7 +265,6 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 			await offerBtn.click();
 			const modal = page.locator('#offer-modal-title');
 			await expect(modal).toBeVisible({ timeout: 5000 });
-			await page.waitForTimeout(300);
 			await page.screenshot({
 				path: path.join(OUT_DIR, '06_retention_1click_offer_modal_pc_light.png'),
 				fullPage: false,
@@ -274,13 +273,16 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 				path: path.join(DOCS_OUT_DIR, '06_retention_1click_offer_modal_pc_light.png'),
 				fullPage: false,
 			});
-			await page.locator('button[aria-label="Закрыть"]').click();
-			await page.waitForTimeout(300);
+			const closeBtn = page.locator('button[aria-label="Закрыть"]');
+			await closeBtn.click();
+			await expect(modal).toBeHidden({ timeout: 5000 });
 		}
 
 		// Tab 2: Cohorts Recall 6/12m in PC Light
-		await panel.locator('button:has-text("Когорты")').click();
-		await page.waitForTimeout(300);
+		const cohortsTab = panel.locator('button:has-text("Когорты")');
+		await cohortsTab.click();
+		await expect(cohortsTab).toHaveAttribute('aria-selected', 'true');
+		await expect(panel.locator('text=Методология когортного удержания')).toBeVisible({ timeout: 5000 });
 		await panel.screenshot({
 			path: path.join(OUT_DIR, '07_retention_hub_tab2_cohorts_pc_light.png'),
 		});
@@ -289,8 +291,9 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 		});
 
 		// Tab 3: Chair Utilization Calculator in PC Light
-		await panel.locator('button:has-text("Утилизация кресел")').click();
-		await page.waitForTimeout(300);
+		const chairTab = panel.locator('button:has-text("Утилизация кресел")');
+		await chairTab.click();
+		await expect(chairTab).toHaveAttribute('aria-selected', 'true');
 		await panel.screenshot({
 			path: path.join(OUT_DIR, '08_retention_hub_tab3_chair_calc_pc_light.png'),
 		});
@@ -302,7 +305,7 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 	test('2. PC Dark Mode (1440x900) — Overview & Retention Hub', async ({ page }) => {
 		await setupPage(page, 'dark', { width: 1440, height: 900 });
 		await page.goto('/#analytics', { waitUntil: 'load' });
-		await page.waitForTimeout(2000);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => {
 			document.documentElement.setAttribute('data-theme', 'dark');
 			document.documentElement.classList.add('dark');
@@ -310,7 +313,8 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 			localStorage.setItem('dente_theme', 'dark');
 			(window as any).__useThemeStore?.getState()?.setThemeMode?.('dark');
 		});
-		await page.waitForTimeout(500);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+		await expect(page.locator('html')).toHaveClass(/dark/);
 
 		await expect(page.locator('#analytics')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -321,7 +325,7 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 		const panel = page.locator('[data-testid="lost-patients-panel"]');
 		await expect(panel).toBeVisible({ timeout: 10000 });
 		await panel.scrollIntoViewIfNeeded();
-		await page.waitForTimeout(500);
+		await expect(panel).toBeInViewport();
 
 		await panel.screenshot({
 			path: path.join(OUT_DIR, '09_retention_hub_tab1_pc_dark.png'),
@@ -336,7 +340,6 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 			await offerBtn.click();
 			const modal = page.locator('#offer-modal-title');
 			await expect(modal).toBeVisible({ timeout: 5000 });
-			await page.waitForTimeout(300);
 			await page.screenshot({
 				path: path.join(OUT_DIR, '10_retention_1click_offer_modal_pc_dark.png'),
 				fullPage: false,
@@ -345,13 +348,16 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 				path: path.join(DOCS_OUT_DIR, '10_retention_1click_offer_modal_pc_dark.png'),
 				fullPage: false,
 			});
-			await page.locator('button[aria-label="Закрыть"]').click();
-			await page.waitForTimeout(300);
+			const closeBtn = page.locator('button[aria-label="Закрыть"]');
+			await closeBtn.click();
+			await expect(modal).toBeHidden({ timeout: 5000 });
 		}
 
 		// Tab 2: Cohorts Recall 6/12m in PC Dark
-		await panel.locator('button:has-text("Когорты")').click();
-		await page.waitForTimeout(300);
+		const cohortsTab = panel.locator('button:has-text("Когорты")');
+		await cohortsTab.click();
+		await expect(cohortsTab).toHaveAttribute('aria-selected', 'true');
+		await expect(panel.locator('text=Методология когортного удержания')).toBeVisible({ timeout: 5000 });
 		await panel.screenshot({
 			path: path.join(OUT_DIR, '11_retention_hub_tab2_cohorts_pc_dark.png'),
 		});
@@ -360,8 +366,9 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 		});
 
 		// Tab 3: Chair Utilization Calculator in PC Dark
-		await panel.locator('button:has-text("Утилизация кресел")').click();
-		await page.waitForTimeout(300);
+		const chairTab = panel.locator('button:has-text("Утилизация кресел")');
+		await chairTab.click();
+		await expect(chairTab).toHaveAttribute('aria-selected', 'true');
 		await panel.screenshot({
 			path: path.join(OUT_DIR, '12_retention_hub_tab3_chair_calc_pc_dark.png'),
 		});
@@ -373,9 +380,9 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 	test('3. Mobile Light Mode (390x844)', async ({ page }) => {
 		await setupPage(page, 'light', { width: 390, height: 844 });
 		await page.goto('/#analytics', { waitUntil: 'load' });
-		await page.waitForTimeout(2000);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-		await page.waitForTimeout(500);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
 		await expect(page.locator('#analytics')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -386,7 +393,7 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 		const panel = page.locator('[data-testid="lost-patients-panel"]');
 		await expect(panel).toBeVisible({ timeout: 10000 });
 		await panel.scrollIntoViewIfNeeded();
-		await page.waitForTimeout(500);
+		await expect(panel).toBeInViewport();
 
 		await panel.screenshot({
 			path: path.join(OUT_DIR, '13_retention_hub_mobile_light.png'),
@@ -399,7 +406,7 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 	test('4. Mobile Dark Mode (390x844)', async ({ page }) => {
 		await setupPage(page, 'dark', { width: 390, height: 844 });
 		await page.goto('/#analytics', { waitUntil: 'load' });
-		await page.waitForTimeout(2000);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => {
 			document.documentElement.setAttribute('data-theme', 'dark');
 			document.documentElement.classList.add('dark');
@@ -407,7 +414,8 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 			localStorage.setItem('dente_theme', 'dark');
 			(window as any).__useThemeStore?.getState()?.setThemeMode?.('dark');
 		});
-		await page.waitForTimeout(500);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+		await expect(page.locator('html')).toHaveClass(/dark/);
 
 		await expect(page.locator('#analytics')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -418,7 +426,7 @@ test.describe('Analytics Dashboard 4-State Visual Proof', () => {
 		const panel = page.locator('[data-testid="lost-patients-panel"]');
 		await expect(panel).toBeVisible({ timeout: 10000 });
 		await panel.scrollIntoViewIfNeeded();
-		await page.waitForTimeout(500);
+		await expect(panel).toBeInViewport();
 
 		await panel.screenshot({
 			path: path.join(OUT_DIR, '14_retention_hub_mobile_dark.png'),

@@ -197,7 +197,7 @@ async function screenshot(page: Page, name: string) {
 
 // ─── TESTS ────────────────────────────────────────────────────────────────────
 // NOTE: networkidle is intentionally NOT used — the app has active API polling
-// that never reaches "network idle". Using 'load' + explicit wait instead.
+// that never reaches "network idle". Using 'load' + domcontentloaded + deterministic locator assertions instead.
 
 test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => {
 	test.beforeEach(async ({ page }) => {
@@ -212,7 +212,9 @@ test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => 
 		page.on("pageerror", (err) => pageErrors.push(`PageError: ${err.message}`));
 
 		await page.goto("/", { waitUntil: "load" });
-		await page.waitForTimeout(4000);
+		await page.waitForLoadState("domcontentloaded");
+		await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
+		await expect(page.locator("#root")).not.toBeEmpty({ timeout: 10000 });
 		await screenshot(page, "01_workspace_authed");
 
 		// #root should have actual content (not hidden)
@@ -237,6 +239,7 @@ test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => 
 		});
 
 		await page.goto("/", { waitUntil: "load" });
+		await page.waitForLoadState("domcontentloaded");
 
 		// Login form should have an email input — wait for React lazy component hydration
 		const emailInput = page.locator(
@@ -259,7 +262,9 @@ test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => 
 		page.on("pageerror", (err) => pageErrors.push(err.message));
 
 		await page.goto("/", { waitUntil: "load" });
-		await page.waitForTimeout(4000);
+		await page.waitForLoadState("domcontentloaded");
+		await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
+		await expect(page.locator("#root")).not.toBeEmpty({ timeout: 10000 });
 		await screenshot(page, "03_dashboard");
 
 		expect(pageErrors, `JS crashes:\n${pageErrors.join("\n")}`).toEqual([]);
@@ -277,7 +282,8 @@ test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => 
 		page.on("pageerror", (err) => pageErrors.push(err.message));
 
 		await page.goto("/", { waitUntil: "load" });
-		await page.waitForTimeout(3000);
+		await page.waitForLoadState("domcontentloaded");
+		await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
 
 		for (const hash of [
 			"schedule",
@@ -289,7 +295,9 @@ test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => 
 			await page.evaluate((h) => {
 				window.location.hash = `#${h}`;
 			}, hash);
-			await page.waitForTimeout(700);
+			await page.waitForFunction((h) => window.location.hash.includes(h), hash, { timeout: 5000 });
+			await page.waitForLoadState("domcontentloaded");
+			await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
 			await screenshot(page, `04_view_${hash}`);
 		}
 
@@ -315,19 +323,30 @@ test.describe("DENTE CRM — Smoke E2E (mocked API + localStorage auth)", () => 
 		});
 
 		await page.goto("/", { waitUntil: "load" });
-		await page.waitForTimeout(3000);
+		await page.waitForLoadState("domcontentloaded");
+		await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
+
 		await page.evaluate(() => {
 			window.location.hash = "#schedule";
 		});
-		await page.waitForTimeout(700);
+		await page.waitForFunction(() => window.location.hash.includes("schedule"), null, { timeout: 5000 });
+		await page.waitForLoadState("domcontentloaded");
+		await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
+
 		await page.evaluate(() => {
 			window.location.hash = "#patients";
 		});
-		await page.waitForTimeout(700);
+		await page.waitForFunction(() => window.location.hash.includes("patients"), null, { timeout: 5000 });
+		await page.waitForLoadState("domcontentloaded");
+		await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
+
 		await page.evaluate(() => {
 			window.location.hash = "#finance";
 		});
-		await page.waitForTimeout(700);
+		await page.waitForFunction(() => window.location.hash.includes("finance"), null, { timeout: 5000 });
+		await page.waitForLoadState("domcontentloaded");
+		await expect(page.locator("#root")).toBeVisible({ timeout: 10000 });
+
 		await screenshot(page, "05_final_state");
 
 		const bodyText = await page.locator("body").innerText();

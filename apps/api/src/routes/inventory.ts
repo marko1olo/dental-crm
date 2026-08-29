@@ -28,9 +28,20 @@ import { seedDefaultProcedureMaterialRules } from "../services/inventory/default
  */
 const inventoryCreateBodySchema = z.object({
 	name: z.string().optional(),
-	criticalThreshold: z.number().finite().optional(),
-	unitCostRub: z.number().finite().optional(),
-	stockQuantity: z.number().finite().optional(),
+	criticalThreshold: z.number().finite().nonnegative().optional(),
+	unitCostRub: z.number().finite().nonnegative().optional(),
+	stockQuantity: z.number().finite().nonnegative().optional(),
+	sku: z.string().nullable().optional(),
+	barcode: z.string().nullable().optional(),
+	lotNumber: z.string().nullable().optional(),
+	expirationDate: z.string().nullable().optional(),
+});
+
+const inventoryUpdateBodySchema = z.object({
+	name: z.string().optional(),
+	criticalThreshold: z.number().finite().nonnegative().optional(),
+	unitCostRub: z.number().finite().nonnegative().optional(),
+	stockQuantity: z.number().finite().nonnegative().optional(),
 	sku: z.string().nullable().optional(),
 	barcode: z.string().nullable().optional(),
 	lotNumber: z.string().nullable().optional(),
@@ -361,6 +372,10 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			const actualAdjustment = adjustment;
 			const newStock = currentStock + actualAdjustment;
 
+			if (newStock < 0) {
+				return { insufficientStock: true as const, currentStock };
+			}
+
 			const [updated] = await tx
 				.update(inventoryItems)
 				.set({ stockQuantity: String(newStock), updatedAt: new Date() })
@@ -396,6 +411,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				message:
 					"Этот материал на складе клиники не найден: возможно, его уже удалили из списка. Обновите список склада и повторите — если материал нужен, добавьте его заново.",
 			});
+		if ("insufficientStock" in result)
+			return reply.status(400).send({
+				error: "insufficientStock",
+				message: `Недостаточно остатка на складе (текущий остаток: ${result.currentStock}). Списание не может уводить остаток в минус.`,
+			});
 		if ("failed" in result)
 			return reply.status(500).send({
 				error: "StockNotSaved",
@@ -412,6 +432,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			name: string;
 			criticalThreshold?: number;
 			unitCostRub?: number;
+			stockQuantity?: number;
 			sku?: string | null;
 			barcode?: string | null;
 			lotNumber?: string | null;
@@ -442,7 +463,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		 * пятёрка бралась с потолка и заставляла склад сигналить о дефиците
 		 * материала, для которого порога не задавали.
 		 */
-		const parsedUpdate = inventoryCreateBodySchema.safeParse(
+		const parsedUpdate = inventoryUpdateBodySchema.safeParse(
 			request.body ?? {},
 		);
 		if (!parsedUpdate.success) {

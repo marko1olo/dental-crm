@@ -1730,8 +1730,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 
 			// If drug allergies were specified, save to patientDrugAllergies
 			if (allergies.hasAllergies && allergies.drugList && allergies.drugList.length > 0) {
-				for (const drugName of allergies.drugList) {
-					await db.insert(patientDrugAllergies).values({
+				await db.insert(patientDrugAllergies).values(
+					allergies.drugList.map((drugName) => ({
 						organizationId: auth.organizationId,
 						patientId: auth.patientId,
 						allergenGroup: "Лекарственные препараты",
@@ -1739,8 +1739,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 						reactionSeverity: "high",
 						clinicalManifestations: allergies.details || "Указано пациентом при самочекине",
 						isConfirmedByAllergist: false,
-					});
-				}
+					})),
+				);
 			}
 
 			return {

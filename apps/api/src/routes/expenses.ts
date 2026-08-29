@@ -12,11 +12,12 @@ import {
 	expensePaymentMethodSchema,
 	type ExpenseRecord,
 } from "@dental/shared";
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 
 const createExpenseBodySchema = z.object({
-	organizationId: z.string().uuid().default("00000000-0000-0000-0000-000000000001"),
+	organizationId: z.string().uuid().optional(),
 	clinicId: z.string().uuid().optional().nullable(),
 	category: expenseCategorySchema,
 	amountKopecks: z.number().int().positive(),
@@ -47,20 +48,27 @@ const expensesStore = new Map<string, ExpenseRecord>();
 
 export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 	// 1. GET /api/v1/expenses & /api/expenses
-	const handleListExpenses = async (request: any, reply: any) => {
+	const handleListExpenses = async (request: FastifyRequest, reply: FastifyReply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"expenses list",
+		);
+		if (!organizationId) return;
+
 		const parsed = listExpensesQuerySchema.safeParse(request.query);
 		if (!parsed.success) {
 			reply.status(400);
 			return { error: "InvalidQuery", message: "Некорректные параметры фильтрации расходов." };
 		}
 
-		const { organizationId, startDate, endDate, category } = parsed.data;
+		const { startDate, endDate, category } = parsed.data;
 
 		let items = Array.from(expensesStore.values());
 
-		if (organizationId) {
-			items = items.filter((e) => e.organizationId === organizationId);
-		}
+		// Strictly filter by current authenticated organizationId (BOLA/IDOR prevention)
+		items = items.filter((e) => e.organizationId === organizationId);
+
 		if (category) {
 			items = items.filter((e) => e.category === category);
 		}
@@ -78,7 +86,14 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 	server.get("/api/expenses", handleListExpenses);
 
 	// 2. POST /api/v1/expenses & /api/expenses
-	const handleCreateExpense = async (request: any, reply: any) => {
+	const handleCreateExpense = async (request: FastifyRequest, reply: FastifyReply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"expenses create",
+		);
+		if (!organizationId) return;
+
 		const parsed = createExpenseBodySchema.safeParse(request.body);
 		if (!parsed.success) {
 			request.log.error({ issues: parsed.error.issues, body: request.body }, "Expense validation failed");
@@ -95,6 +110,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 		const newExpense: ExpenseRecord = {
 			id,
 			...parsed.data,
+			organizationId, // Enforce current authenticated organizationId
 			createdAt: nowIso,
 			updatedAt: nowIso,
 		};
@@ -108,20 +124,27 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 	server.post("/api/expenses", handleCreateExpense);
 
 	// 3. GET /api/v1/expenses/summary & /api/expenses/summary
-	const handleExpensesSummary = async (request: any, reply: any) => {
+	const handleExpensesSummary = async (request: FastifyRequest, reply: FastifyReply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"expenses summary",
+		);
+		if (!organizationId) return;
+
 		const parsed = summaryQuerySchema.safeParse(request.query);
 		if (!parsed.success) {
 			reply.status(400);
 			return { error: "InvalidQuery", message: "Некорректные параметры отчёта." };
 		}
 
-		const { organizationId, month, revenueRub } = parsed.data;
+		const { month, revenueRub } = parsed.data;
 
 		let items = Array.from(expensesStore.values());
 
-		if (organizationId) {
-			items = items.filter((e) => e.organizationId === organizationId);
-		}
+		// Strictly filter by current authenticated organizationId
+		items = items.filter((e) => e.organizationId === organizationId);
+
 		if (month) {
 			items = items.filter((e) => e.expenseDate.startsWith(month));
 		}
@@ -141,9 +164,17 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 	server.get("/api/expenses/summary", handleExpensesSummary);
 
 	// 4. DELETE /api/v1/expenses/:id & /api/expenses/:id
-	const handleDeleteExpense = async (request: any, reply: any) => {
-		const { id } = request.params as { id: string };
-		if (!expensesStore.has(id)) {
+	const handleDeleteExpense = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"expenses delete",
+		);
+		if (!organizationId) return;
+
+		const { id } = request.params;
+		const expense = expensesStore.get(id);
+		if (!expense || expense.organizationId !== organizationId) {
 			reply.status(404);
 			return { error: "NotFound", message: "Расходная операция не найдена." };
 		}

@@ -169,6 +169,50 @@ export async function registerAnesthesiaRoutes(app: FastifyInstance) {
 					return reply.status(404).send({ message: "Пациент не найден" });
 				}
 
+				if (data.visitId) {
+					const [visit] = await db
+						.select({ id: visits.id, patientId: visits.patientId })
+						.from(visits)
+						.where(
+							and(
+								eq(visits.organizationId, orgId),
+								eq(visits.id, data.visitId),
+							),
+						)
+						.limit(1);
+
+					if (!visit) {
+						return reply.status(404).send({
+							message: "Приём не найден в текущей клинике",
+						});
+					}
+
+					if (visit.patientId !== patientId) {
+						return reply.status(400).send({
+							message: "Приём принадлежит другому пациенту",
+						});
+					}
+				}
+
+				if (data.doctorId) {
+					const [doctor] = await db
+						.select({ id: users.id })
+						.from(users)
+						.where(
+							and(
+								eq(users.organizationId, orgId),
+								eq(users.id, data.doctorId),
+							),
+						)
+						.limit(1);
+
+					if (!doctor) {
+						return reply.status(404).send({
+							message: "Врач не найден в текущей клинике",
+						});
+					}
+				}
+
 				const safety = calculateAnestheticSafety({
 					drug: data.drug,
 					concentrationPct: data.concentrationPct,

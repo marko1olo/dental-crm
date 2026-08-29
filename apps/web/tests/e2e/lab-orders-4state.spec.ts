@@ -88,7 +88,12 @@ async function setupPage(page: Page, theme: 'light' | 'dark', viewport: { width:
 			localStorage.setItem(clinicKey, clinicToken);
 			localStorage.setItem(staffKey, staffToken);
 			localStorage.setItem('dente_theme', t);
+			localStorage.setItem('dente_theme_mode', t);
+			localStorage.setItem('dente_ui_preferences_v1', JSON.stringify({ onboardingDismissed: true, theme: t }));
 			document.documentElement.setAttribute('data-theme', t);
+			if (t === 'dark') {
+				document.documentElement.classList.add('dark');
+			}
 		},
 		{
 			clinicKey: DENTE_CLINIC_TOKEN_KEY,
@@ -123,9 +128,9 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('1. DentalLabOrderModal — PC Light Mode (1440x900)', async ({ page }) => {
 		await setupPage(page, 'light', { width: 1440, height: 900 });
 		await page.goto('/#clinical-modals-studio?modal=lab_order', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-		await page.waitForTimeout(500);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
 		await expect(page.locator('#dental-lab-modal-title')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -137,9 +142,13 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('2. DentalLabOrderModal — PC Dark Mode (1440x900)', async ({ page }) => {
 		await setupPage(page, 'dark', { width: 1440, height: 900 });
 		await page.goto('/#clinical-modals-studio?modal=lab_order', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
-		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
-		await page.waitForTimeout(500);
+		await page.waitForLoadState('domcontentloaded');
+		await page.evaluate(() => {
+			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('dark');
+		});
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+		await expect(page.locator('html')).toHaveClass(/dark/);
 
 		await expect(page.locator('#dental-lab-modal-title')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -151,9 +160,9 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('3. DentalLabOrderModal — Mobile Light Mode (390x844)', async ({ page }) => {
 		await setupPage(page, 'light', { width: 390, height: 844 });
 		await page.goto('/#clinical-modals-studio?modal=lab_order', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-		await page.waitForTimeout(500);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
 		await expect(page.locator('#dental-lab-modal-title')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -165,9 +174,13 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('4. DentalLabOrderModal — Mobile Dark Mode (390x844)', async ({ page }) => {
 		await setupPage(page, 'dark', { width: 390, height: 844 });
 		await page.goto('/#clinical-modals-studio?modal=lab_order', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
-		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
-		await page.waitForTimeout(500);
+		await page.waitForLoadState('domcontentloaded');
+		await page.evaluate(() => {
+			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('dark');
+		});
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+		await expect(page.locator('html')).toHaveClass(/dark/);
 
 		await expect(page.locator('#dental-lab-modal-title')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -179,14 +192,15 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('5. DentalLabOrderModal Shade Selector Tab — PC Light Mode (1440x900)', async ({ page }) => {
 		await setupPage(page, 'light', { width: 1440, height: 900 });
 		await page.goto('/#clinical-modals-studio?modal=lab_order', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
 		// Click on Tab 2: VITA Shades & Stump
 		const shadeTabBtn = page.getByRole('button', { name: /2\.\s*Расцветка VITA/i });
 		await expect(shadeTabBtn).toBeVisible({ timeout: 10000 });
 		await shadeTabBtn.click();
-		await page.waitForTimeout(500);
+		await expect(shadeTabBtn).toHaveClass(/is-active/);
 
 		await page.screenshot({
 			path: path.join(OUT_DIR, '05_dental_lab_shades_tab_pc_light_1440.png'),
@@ -197,14 +211,19 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('6. DentalLabOrderModal Shade Selector Tab — PC Dark Mode (1440x900)', async ({ page }) => {
 		await setupPage(page, 'dark', { width: 1440, height: 900 });
 		await page.goto('/#clinical-modals-studio?modal=lab_order', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
-		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+		await page.waitForLoadState('domcontentloaded');
+		await page.evaluate(() => {
+			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('dark');
+		});
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+		await expect(page.locator('html')).toHaveClass(/dark/);
 
 		// Click on Tab 2: VITA Shades & Stump
 		const shadeTabBtn = page.getByRole('button', { name: /2\.\s*Расцветка VITA/i });
 		await expect(shadeTabBtn).toBeVisible({ timeout: 10000 });
 		await shadeTabBtn.click();
-		await page.waitForTimeout(500);
+		await expect(shadeTabBtn).toHaveClass(/is-active/);
 
 		await page.screenshot({
 			path: path.join(OUT_DIR, '06_dental_lab_shades_tab_pc_dark_1440.png'),
@@ -215,9 +234,9 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('7. LabWorkOrderModal — PC Light Mode (1440x900)', async ({ page }) => {
 		await setupPage(page, 'light', { width: 1440, height: 900 });
 		await page.goto('/#clinical-modals-studio?modal=lab_work_order', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-		await page.waitForTimeout(500);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
 		await expect(page.locator('.lab-order-modal-container')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -229,9 +248,13 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('8. LabWorkOrderModal — PC Dark Mode (1440x900)', async ({ page }) => {
 		await setupPage(page, 'dark', { width: 1440, height: 900 });
 		await page.goto('/#clinical-modals-studio?modal=lab_work_order', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
-		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
-		await page.waitForTimeout(500);
+		await page.waitForLoadState('domcontentloaded');
+		await page.evaluate(() => {
+			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('dark');
+		});
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+		await expect(page.locator('html')).toHaveClass(/dark/);
 
 		await expect(page.locator('.lab-order-modal-container')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -243,9 +266,9 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('9. LabTrackingDrawer — PC Light Mode (1440x900)', async ({ page }) => {
 		await setupPage(page, 'light', { width: 1440, height: 900 });
 		await page.goto('/#clinical-modals-studio?modal=lab_tracking', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-		await page.waitForTimeout(500);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
 		await expect(page.locator('#lab-drawer-title')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -257,9 +280,13 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('10. LabTrackingDrawer — PC Dark Mode (1440x900)', async ({ page }) => {
 		await setupPage(page, 'dark', { width: 1440, height: 900 });
 		await page.goto('/#clinical-modals-studio?modal=lab_tracking', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
-		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
-		await page.waitForTimeout(500);
+		await page.waitForLoadState('domcontentloaded');
+		await page.evaluate(() => {
+			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('dark');
+		});
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+		await expect(page.locator('html')).toHaveClass(/dark/);
 
 		await expect(page.locator('#lab-drawer-title')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -271,9 +298,9 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('11. LabTrackingDrawer — Mobile Light Mode (390x844)', async ({ page }) => {
 		await setupPage(page, 'light', { width: 390, height: 844 });
 		await page.goto('/#clinical-modals-studio?modal=lab_tracking', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
+		await page.waitForLoadState('domcontentloaded');
 		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-		await page.waitForTimeout(500);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
 		await expect(page.locator('#lab-drawer-title')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({
@@ -285,9 +312,13 @@ test.describe('Dental Lab Orders 4-State Visual Proof', () => {
 	test('12. LabTrackingDrawer — Mobile Dark Mode (390x844)', async ({ page }) => {
 		await setupPage(page, 'dark', { width: 390, height: 844 });
 		await page.goto('/#clinical-modals-studio?modal=lab_tracking', { waitUntil: 'load' });
-		await page.waitForTimeout(1500);
-		await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
-		await page.waitForTimeout(500);
+		await page.waitForLoadState('domcontentloaded');
+		await page.evaluate(() => {
+			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('dark');
+		});
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+		await expect(page.locator('html')).toHaveClass(/dark/);
 
 		await expect(page.locator('#lab-drawer-title')).toBeVisible({ timeout: 10000 });
 		await page.screenshot({

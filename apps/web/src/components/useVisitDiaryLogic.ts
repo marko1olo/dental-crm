@@ -18,7 +18,6 @@ import {
 	requestFailureCause,
 } from "../lib/panelStateText";
 import { useVisitStore } from "../store/visitStore";
-import { useAppLogic } from "../useAppLogic";
 import { logger } from "../utils/logger";
 import {
 	deleteOfflineDraft,
@@ -211,7 +210,8 @@ function asDiaryRevisionRow(raw: unknown): DiaryRevisionRow | null {
 }
 
 export function useVisitDiaryLogic(visitId: string, patientId: string) {
-	const { activeDoctor } = useAppLogic();
+	const appLogic = useAppLogicContext();
+	const activeDoctor = appLogic?.activeDoctor ?? null;
 	const [diary, setDiary] = useState<DiaryState>(EMPTY_DIARY);
 	const [diaryId, setDiaryId] = useState<string | null>(null);
 	const [isLocked, setIsLocked] = useState(false);
@@ -315,7 +315,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	 * набранный врачом текст на каждом рендере. ref делает это структурно
 	 * невозможным.
 	 */
-	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
 	const authRef = useRef(auth);
 	authRef.current = auth;

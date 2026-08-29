@@ -48,7 +48,7 @@ const PEDIATRIC_BOTTOM_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
 const MIXED_TOP_TEETH = [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26];
 const MIXED_BOTTOM_TEETH = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36];
 
-const MIN_ARCH_SCALE = 0.5;
+const MIN_ARCH_SCALE = 0.28;
 
 function scaleCssPx(value: string, factor: number): string {
 	const parsed = Number.parseFloat(value);
@@ -250,7 +250,7 @@ const getAnatomicalToothColors = (
 	}
 };
 
-const AnatomicalToothSVG = ({
+const AnatomicalToothSVG = React.memo(({
 	number,
 	state,
 	scale,
@@ -311,8 +311,8 @@ const AnatomicalToothSVG = ({
 	const geom = getAnatomicalToothGeometry(number);
 	const colors = getAnatomicalToothColors(state, material);
 
-	const scaledWidth = scaleCssPx(`${geom.standardWidthPx}px`, scale);
-	const scaledHeight = scaleCssPx(`${geom.standardHeightPx}px`, scale);
+	const scaledWidth = scaleCssPx(`${Math.round(geom.standardWidthPx * 1.3)}px`, scale);
+	const scaledHeight = scaleCssPx(`${Math.round(geom.standardHeightPx * 1.3)}px`, scale);
 
 	const isRightSide =
 		(number >= 21 && number <= 28) ||
@@ -1023,11 +1023,12 @@ const AnatomicalToothSVG = ({
 	return state === "Implant" || state === "Planned_Implant"
 		? renderImplant()
 		: renderStandard();
-};
+});
 
 export interface ToothWrapperProps {
 	tooth: ToothData;
 	isSelected: boolean;
+	isHovered?: boolean | undefined;
 	selectedTeeth?: number[] | undefined;
 	activeStamp?: ToothState | null | undefined;
 	onClick: (
@@ -1045,21 +1046,96 @@ export interface ToothWrapperProps {
 	showPeriodontalBoneLoss?: boolean | undefined;
 }
 
-const ToothWrapper: React.FC<ToothWrapperProps> = ({
-	tooth,
-	isSelected,
-	selectedTeeth,
-	activeStamp,
-	onClick,
-	onQuickStateChange,
-	useSurfaces,
-	isTop,
-	scale = 1,
-	pediatricMode,
-	showPulpAndCanals,
-	showPeriapicalHalos = true,
-	showPeriodontalBoneLoss = true,
-}) => {
+function areSurfacesEqual(
+	a?: readonly string[] | string[] | undefined,
+	b?: readonly string[] | string[] | undefined,
+): boolean {
+	if (a === b) return true;
+	if (!a || !b) return !a && !b;
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) {
+		if (a[i] !== b[i]) return false;
+	}
+	return true;
+}
+
+function areToothDataEqual(prev: ToothData, next: ToothData): boolean {
+	if (prev === next) return true;
+	if (prev.toothNumber !== next.toothNumber) return false;
+	if (prev.state !== next.state) return false;
+	if (prev.material !== next.material) return false;
+	if (prev.canalObturation !== next.canalObturation) return false;
+	if (prev.hasPost !== next.hasPost) return false;
+	if (prev.postType !== next.postType) return false;
+	if (prev.boneLossLevel !== next.boneLossLevel) return false;
+	if (prev.boneLossType !== next.boneLossType) return false;
+	if (prev.furcationGrade !== next.furcationGrade) return false;
+	if (prev.furcation !== next.furcation) return false;
+	if (prev.mobility !== next.mobility) return false;
+	if (prev.gingivalRecession !== next.gingivalRecession) return false;
+	if (prev.periapicalLesion !== next.periapicalLesion) return false;
+	if (prev.rootResorptionStage !== next.rootResorptionStage) return false;
+	if (prev.rootResorption !== next.rootResorption) return false;
+	if (prev.pocketDepth !== next.pocketDepth) return false;
+	if (prev.pocketDepthMm !== next.pocketDepthMm) return false;
+	if (prev.maxPocketDepth !== next.maxPocketDepth) return false;
+	if (!areSurfacesEqual(prev.surfaces, next.surfaces)) return false;
+	if (!areSurfacesEqual(prev.bopSites, next.bopSites)) return false;
+	if (!areSurfacesEqual(prev.suppurationSites, next.suppurationSites)) return false;
+	return true;
+}
+
+function areToothWrapperPropsEqual(
+	prev: ToothWrapperProps,
+	next: ToothWrapperProps,
+): boolean {
+	if (prev.isSelected !== next.isSelected) return false;
+	if (prev.isHovered !== next.isHovered) return false;
+	if (prev.isTop !== next.isTop) return false;
+	if (prev.scale !== next.scale) return false;
+	if (prev.useSurfaces !== next.useSurfaces) return false;
+	if (prev.activeStamp !== next.activeStamp) return false;
+	if (prev.pediatricMode !== next.pediatricMode) return false;
+	if (prev.showPulpAndCanals !== next.showPulpAndCanals) return false;
+	if (prev.showPeriapicalHalos !== next.showPeriapicalHalos) return false;
+	if (prev.showPeriodontalBoneLoss !== next.showPeriodontalBoneLoss) return false;
+	if (prev.onClick !== next.onClick) return false;
+	if (prev.onQuickStateChange !== next.onQuickStateChange) return false;
+	if (!areToothDataEqual(prev.tooth, next.tooth)) return false;
+
+	if (
+		(prev.isSelected || next.isSelected) &&
+		prev.selectedTeeth !== next.selectedTeeth
+	) {
+		const prevLen = prev.selectedTeeth?.length ?? 0;
+		const nextLen = next.selectedTeeth?.length ?? 0;
+		if (prevLen !== nextLen) return false;
+		if (prevLen > 0) {
+			for (let i = 0; i < prevLen; i++) {
+				if (prev.selectedTeeth![i] !== next.selectedTeeth![i]) return false;
+			}
+		}
+	}
+	return true;
+}
+
+export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
+	({
+		tooth,
+		isSelected,
+		isHovered,
+		selectedTeeth,
+		activeStamp,
+		onClick,
+		onQuickStateChange,
+		useSurfaces,
+		isTop,
+		scale = 1,
+		pediatricMode,
+		showPulpAndCanals,
+		showPeriapicalHalos = true,
+		showPeriodontalBoneLoss = true,
+	}) => {
 	const {
 		toothNumber: number,
 		state,
@@ -1283,7 +1359,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 					const navDir = dirMap[e.key];
 					if (navDir) {
 						const nextTooth = getNextFocusedTooth(number, navDir, pediatricMode);
-						const nextEl = document.querySelector<HTMLElement>(`[data-tooth-id="${nextTooth}"]`);
+						const nextEl = document.querySelector(`[data-tooth-id="${nextTooth}"]`) as HTMLElement | null;
 						nextEl?.focus();
 					}
 					return;
@@ -1329,7 +1405,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 			{!isTop && renderNumberBadge()}
 		</div>
 	);
-};
+}, areToothWrapperPropsEqual);
 
 function splitArchAtMidline(teeth: number[]): { left: number[]; right: number[] } {
 	if (teeth.length <= 1) return { left: teeth, right: [] };
@@ -1442,7 +1518,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 		const recalculate = () => {
 			const element = archContainerRef.current;
 			if (!element) return;
-			const available = Math.max(0, element.clientWidth - 16);
+			// 8px safety buffer for container inner padding
+			const available = Math.max(0, element.clientWidth - 8);
 			const row = element.querySelector<HTMLElement>(".teeth-row");
 			if (!available || !row) return;
 
@@ -1453,8 +1530,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 			const isQuadrantView = currentQuadrant !== "all";
 			const minScale = isQuadrantView ? 0.75 : MIN_ARCH_SCALE;
 			const next = Math.min(
-				1.75,
-				Math.max(minScale, available / naturalWidth),
+				2.2,
+				Math.max(minScale, (available / naturalWidth) * 1.3),
 			);
 			if (Math.abs(applied - next) < 0.005) return;
 			appliedArchScaleRef.current = next;
@@ -1524,14 +1601,17 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 		};
 	}, [selectedTeeth, onQuickStateChange, pediatricMode, currentQuadrant, teethData]);
 
-	const handleToothClick = (
-		e: React.MouseEvent,
-		num: number,
-		surface?: string,
-	) => {
-		const rect = e.currentTarget.getBoundingClientRect();
-		onToothClick(num, rect, surface);
-	};
+	const handleToothClick = React.useCallback(
+		(
+			e: React.MouseEvent,
+			num: number,
+			surface?: string,
+		) => {
+			const rect = e.currentTarget.getBoundingClientRect();
+			onToothClick(num, rect, surface);
+		},
+		[onToothClick],
+	);
 
 	const topSplit = splitArchAtMidline(topTeethList);
 	const bottomSplit = splitArchAtMidline(bottomTeethList);
@@ -1580,8 +1660,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 								title={pediatricMode ? "Q5 55–51 (Верхняя челюсть, Правый)" : "Q1 18–11 (Верхняя челюсть, Правый)"}
 								data-testid={pediatricMode ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
 							>
-								<span className="font-extrabold truncate">{pediatricMode ? "Q5 55–51" : "Q1 18–11"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">ВЧ·П</span>
+								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q5 55–51" : "Q1 18–11"}</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·П</span>
 							</button>
 
 							{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
@@ -1596,8 +1676,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 								title={pediatricMode ? "Q6 61–65 (Верхняя челюсть, Левый)" : "Q2 21–28 (Верхняя челюсть, Левый)"}
 								data-testid={pediatricMode ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
 							>
-								<span className="font-extrabold truncate">{pediatricMode ? "Q6 61–65" : "Q2 21–28"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">ВЧ·Л</span>
+								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q6 61–65" : "Q2 21–28"}</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·Л</span>
 							</button>
 
 							{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
@@ -1612,8 +1692,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 								title={pediatricMode ? "Q8 85–81 (Нижняя челюсть, Правый)" : "Q4 48–41 (Нижняя челюсть, Правый)"}
 								data-testid={pediatricMode ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
 							>
-								<span className="font-extrabold truncate">{pediatricMode ? "Q8 85–81" : "Q4 48–41"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">НЧ·П</span>
+								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q8 85–81" : "Q4 48–41"}</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·П</span>
 							</button>
 
 							{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
@@ -1628,8 +1708,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 								title={pediatricMode ? "Q7 71–75 (Нижняя челюсть, Левый)" : "Q3 31–38 (Нижняя челюсть, Левый)"}
 								data-testid={pediatricMode ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
 							>
-								<span className="font-extrabold truncate">{pediatricMode ? "Q7 71–75" : "Q3 31–38"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">НЧ·Л</span>
+								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q7 71–75" : "Q3 31–38"}</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·Л</span>
 							</button>
 						</div>
 					</div>

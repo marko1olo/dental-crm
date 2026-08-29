@@ -147,70 +147,91 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 				const expiresAt = new Date();
 				expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
-				// Upsert patient bonus balance
-				const [existingBalance] = await db
-					.select()
-					.from(patientBonusBalances)
-					.where(
-						and(
-							eq(patientBonusBalances.organizationId, orgId),
-							eq(patientBonusBalances.patientId, patientId),
-						),
-					)
-					.limit(1);
+				const result = await db.transaction(async (tx) => {
+					// Verify patient exists and lock row to prevent race conditions
+					const [patient] = await tx
+						.select({ id: patients.id, fullName: patients.fullName })
+						.from(patients)
+						.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
+						.limit(1)
+						.for("update");
 
-				const currentActive = Number(existingBalance?.activePoints ?? 0);
-				const currentLifetime = Number(existingBalance?.lifetimeEarnedPoints ?? 0);
-				const newActive = Number((currentActive + amountPoints).toFixed(2));
-				const newLifetime = Number((currentLifetime + amountPoints).toFixed(2));
+					if (!patient) {
+						return { notFound: true as const };
+					}
 
-				if (existingBalance) {
-					await db
-						.update(patientBonusBalances)
-						.set({
-							activePoints: String(newActive),
-							lifetimeEarnedPoints: String(newLifetime),
-							updatedAt: new Date(),
-						})
+					// Lock and retrieve patient bonus balance row
+					const [existingBalance] = await tx
+						.select()
+						.from(patientBonusBalances)
 						.where(
 							and(
 								eq(patientBonusBalances.organizationId, orgId),
 								eq(patientBonusBalances.patientId, patientId),
 							),
-						);
-				} else {
-					await db.insert(patientBonusBalances).values({
-						organizationId: orgId,
-						patientId,
-						activePoints: String(newActive),
-						lifetimeEarnedPoints: String(newLifetime),
-					});
+						)
+						.limit(1)
+						.for("update");
+
+					const currentActive = Number(existingBalance?.activePoints ?? 0);
+					const currentLifetime = Number(existingBalance?.lifetimeEarnedPoints ?? 0);
+					const newActive = Number((currentActive + amountPoints).toFixed(2));
+					const newLifetime = Number((currentLifetime + amountPoints).toFixed(2));
+
+					if (existingBalance) {
+						await tx
+							.update(patientBonusBalances)
+							.set({
+								activePoints: String(newActive),
+								lifetimeEarnedPoints: String(newLifetime),
+								updatedAt: new Date(),
+							})
+							.where(
+								and(
+									eq(patientBonusBalances.organizationId, orgId),
+									eq(patientBonusBalances.patientId, patientId),
+								),
+							);
+					} else {
+						await tx.insert(patientBonusBalances).values({
+							organizationId: orgId,
+							patientId,
+							activePoints: String(newActive),
+							lifetimeEarnedPoints: String(newLifetime),
+						});
+					}
+
+					const [txRecord] = await tx
+						.insert(bonusTransactions)
+						.values({
+							organizationId: orgId,
+							patientId,
+							amountPoints: String(amountPoints),
+							balanceAfterPoints: String(newActive),
+							type: "accrual_manual_admin",
+							description,
+							expiresAt,
+							unspentPoints: String(amountPoints),
+						})
+						.returning();
+
+					return {
+						success: true as const,
+						activePoints: newActive,
+						transaction: {
+							id: txRecord?.id || "manual-accrual",
+							amountPoints,
+							balanceAfterPoints: newActive,
+							description,
+						},
+					};
+				});
+
+				if ("notFound" in result) {
+					return reply.status(404).send({ message: "Пациент не найден" });
 				}
 
-				const [txRecord] = await db
-					.insert(bonusTransactions)
-					.values({
-						organizationId: orgId,
-						patientId,
-						amountPoints: String(amountPoints),
-						balanceAfterPoints: String(newActive),
-						type: "accrual_manual_admin",
-						description,
-						expiresAt,
-						unspentPoints: String(amountPoints),
-					})
-					.returning();
-
-				return reply.status(201).send({
-					success: true,
-					activePoints: newActive,
-					transaction: {
-						id: txRecord?.id || "manual-accrual",
-						amountPoints,
-						balanceAfterPoints: newActive,
-						description,
-					},
-				});
+				return reply.status(201).send(result);
 			});
 		},
 	);
@@ -242,71 +263,114 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 			} = parsed.data;
 
 			return withTenantCtx(orgId, async () => {
-				const [balance] = await db
-					.select()
-					.from(patientBonusBalances)
-					.where(
-						and(
-							eq(patientBonusBalances.organizationId, orgId),
-							eq(patientBonusBalances.patientId, patientId),
+				const result = await db.transaction(async (tx) => {
+					// Verify patient exists and lock row
+					const [patient] = await tx
+						.select({ id: patients.id })
+						.from(patients)
+						.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
+						.limit(1)
+						.for("update");
+
+					if (!patient) {
+						return { notFound: true as const };
+					}
+
+					// Lock patient balance row to prevent double spending
+					const [balance] = await tx
+						.select()
+						.from(patientBonusBalances)
+						.where(
+							and(
+								eq(patientBonusBalances.organizationId, orgId),
+								eq(patientBonusBalances.patientId, patientId),
+							),
+						)
+						.limit(1)
+						.for("update");
+
+					const activePoints = Number(balance?.activePoints ?? 0);
+					const coverage = calculateMaxRedeemablePoints(invoiceAmountRub, activePoints);
+
+					if (pointsToRedeem > coverage.maxAllowedPoints) {
+						return {
+							limitExceeded: true as const,
+							maxAllowedPoints: coverage.maxAllowedPoints,
+						};
+					}
+
+					if (pointsToRedeem > activePoints) {
+						return {
+							insufficientPoints: true as const,
+							activePoints,
+						};
+					}
+
+					const currentLifetimeSpent = Number(balance?.lifetimeSpentPoints ?? 0);
+					const newActivePoints = Number((activePoints - pointsToRedeem).toFixed(2));
+					const newLifetimeSpent = Number(
+						(currentLifetimeSpent + pointsToRedeem).toFixed(2),
+					);
+
+					await tx
+						.update(patientBonusBalances)
+						.set({
+							activePoints: String(newActivePoints),
+							lifetimeSpentPoints: String(newLifetimeSpent),
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(patientBonusBalances.organizationId, orgId),
+								eq(patientBonusBalances.patientId, patientId),
+							),
+						);
+
+					const [txRecord] = await tx
+						.insert(bonusTransactions)
+						.values({
+							organizationId: orgId,
+							patientId,
+							amountPoints: String(-pointsToRedeem),
+							balanceAfterPoints: String(newActivePoints),
+							type: "redemption_payment",
+							relatedInvoiceId: invoiceId || null,
+							clientMutationId: clientMutationId || null,
+							description,
+						})
+						.returning();
+
+					return {
+						success: true as const,
+						redeemedPoints: pointsToRedeem,
+						discountRub: pointsToRedeem, // 1 point = 1 RUB
+						remainingInvoicePaymentRub: Number(
+							(invoiceAmountRub - pointsToRedeem).toFixed(2),
 						),
-					)
-					.limit(1);
+						newActivePoints,
+						transactionId: txRecord?.id || "redemption",
+					};
+				});
 
-				const activePoints = Number(balance?.activePoints ?? 0);
-				const coverage = calculateMaxRedeemablePoints(invoiceAmountRub, activePoints);
+				if ("notFound" in result) {
+					return reply.status(404).send({ message: "Пациент не найден" });
+				}
 
-				if (pointsToRedeem > coverage.maxAllowedPoints) {
+				if ("limitExceeded" in result) {
 					return reply.status(400).send({
-						message: `Превышен лимит списания баллов. Максимально допустимо: ${coverage.maxAllowedPoints} баллов (30% чека).`,
-						maxAllowedPoints: coverage.maxAllowedPoints,
+						message: `Превышен лимит списания баллов. Максимально допустимо: ${result.maxAllowedPoints} баллов (30% чека).`,
+						maxAllowedPoints: result.maxAllowedPoints,
 					});
 				}
 
-				const currentLifetimeSpent = Number(balance?.lifetimeSpentPoints ?? 0);
-				const newActivePoints = Number((activePoints - pointsToRedeem).toFixed(2));
-				const newLifetimeSpent = Number(
-					(currentLifetimeSpent + pointsToRedeem).toFixed(2),
-				);
+				if ("insufficientPoints" in result) {
+					return reply.status(400).send({
+						message: `Недостаточно бонусных баллов (доступно: ${result.activePoints}).`,
+						activePoints: result.activePoints,
+					});
+				}
 
-				await db
-					.update(patientBonusBalances)
-					.set({
-						activePoints: String(newActivePoints),
-						lifetimeSpentPoints: String(newLifetimeSpent),
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(patientBonusBalances.organizationId, orgId),
-							eq(patientBonusBalances.patientId, patientId),
-						),
-					);
-
-				const [txRecord] = await db
-					.insert(bonusTransactions)
-					.values({
-						organizationId: orgId,
-						patientId,
-						amountPoints: String(-pointsToRedeem),
-						balanceAfterPoints: String(newActivePoints),
-						type: "redemption_payment",
-						relatedInvoiceId: invoiceId || null,
-						clientMutationId: clientMutationId || null,
-						description,
-					})
-					.returning();
-
-				return reply.status(200).send({
-					success: true,
-					redeemedPoints: pointsToRedeem,
-					discountRub: pointsToRedeem, // 1 point = 1 RUB
-					remainingInvoicePaymentRub: Number(
-						(invoiceAmountRub - pointsToRedeem).toFixed(2),
-					),
-					newActivePoints,
-					transactionId: txRecord?.id || "redemption",
-				});
+				return reply.status(200).send(result);
 			});
 		},
 	);

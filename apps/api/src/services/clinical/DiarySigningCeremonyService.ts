@@ -13,7 +13,7 @@
  */
 
 import crypto from "node:crypto";
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	clinicalAuditLogs,
@@ -454,6 +454,7 @@ export async function runDiarySigningCeremony(
 					.from(procedureMaterialRules)
 					.where(
 						and(
+							inArray(procedureMaterialRules.serviceId, serviceIds),
 							or(
 								eq(procedureMaterialRules.organizationId, organizationId),
 								isNull(procedureMaterialRules.organizationId),
@@ -485,22 +486,21 @@ export async function runDiarySigningCeremony(
 					// Блокировка строк в строго сортированном порядке (Deadlock-free locking)
 					const sortedItemIds = Array.from(requiredByItem.keys()).sort();
 
-					for (const itemId of sortedItemIds) {
-						const qtyNeeded = requiredByItem.get(itemId) ?? 0;
+					const lockedItems = await tx
+						.select()
+						.from(inventoryItems)
+						.where(
+							and(
+								eq(inventoryItems.organizationId, organizationId),
+								inArray(inventoryItems.id, sortedItemIds),
+							),
+						)
+						.orderBy(inventoryItems.id)
+						.for("update");
+
+					for (const inv of lockedItems) {
+						const qtyNeeded = requiredByItem.get(inv.id) ?? 0;
 						if (qtyNeeded <= 0) continue;
-
-						const [inv] = await tx
-							.select()
-							.from(inventoryItems)
-							.where(
-								and(
-									eq(inventoryItems.id, itemId),
-									eq(inventoryItems.organizationId, organizationId),
-								),
-							)
-							.for("update");
-
-						if (!inv) continue;
 
 						const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
 						const baseStock = Number.isFinite(currentStock) ? currentStock : 0;

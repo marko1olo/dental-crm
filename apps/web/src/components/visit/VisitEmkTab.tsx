@@ -121,6 +121,92 @@ function appendClinicalText(
 	return `${base}${separator}${addition}`;
 }
 
+interface DebouncedEmkTextareaProps {
+	fieldKey: string;
+	label: string;
+	value: string;
+	onCommit: (fieldKey: string, value: string) => void;
+	textareaRef?: (el: HTMLTextAreaElement | null) => void;
+	className?: string;
+	placeholder?: string;
+}
+
+function DebouncedEmkTextarea({
+	fieldKey,
+	label,
+	value,
+	onCommit,
+	textareaRef,
+	className,
+	placeholder,
+}: DebouncedEmkTextareaProps) {
+	const [localValue, setLocalValue] = React.useState(value);
+	const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+	const lastCommittedValueRef = React.useRef(value);
+	const localValueRef = React.useRef(localValue);
+	localValueRef.current = localValue;
+	const onCommitRef = React.useRef(onCommit);
+	onCommitRef.current = onCommit;
+
+	// Sync local value when external value changes (e.g. from templates, voice dictation, chips)
+	React.useEffect(() => {
+		if (value !== lastCommittedValueRef.current) {
+			setLocalValue(value);
+			lastCommittedValueRef.current = value;
+		}
+	}, [value]);
+
+	const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+		const nextVal = e.target.value;
+		setLocalValue(nextVal);
+
+		if (debounceTimerRef.current) {
+			clearTimeout(debounceTimerRef.current);
+		}
+
+		debounceTimerRef.current = setTimeout(() => {
+			if (nextVal !== lastCommittedValueRef.current) {
+				lastCommittedValueRef.current = nextVal;
+				onCommitRef.current(fieldKey, nextVal);
+			}
+		}, 300);
+	};
+
+	const handleBlur = () => {
+		if (debounceTimerRef.current) {
+			clearTimeout(debounceTimerRef.current);
+		}
+		if (localValue !== lastCommittedValueRef.current) {
+			lastCommittedValueRef.current = localValue;
+			onCommitRef.current(fieldKey, localValue);
+		}
+	};
+
+	React.useEffect(() => {
+		return () => {
+			if (debounceTimerRef.current) {
+				clearTimeout(debounceTimerRef.current);
+			}
+			if (localValueRef.current !== lastCommittedValueRef.current) {
+				lastCommittedValueRef.current = localValueRef.current;
+				onCommitRef.current(fieldKey, localValueRef.current);
+			}
+		};
+	}, [fieldKey]);
+
+	return (
+		<textarea
+			ref={textareaRef}
+			aria-label={label}
+			value={localValue}
+			placeholder={placeholder}
+			onChange={handleChange}
+			onBlur={handleBlur}
+			className={className}
+		/>
+	);
+}
+
 export function VisitEmkTab() {
 	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
 	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
@@ -1078,7 +1164,7 @@ export function VisitEmkTab() {
 					<button
 						type="button"
 						onClick={() => handleOpenNextVisitBooking(5)}
-						className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-blue-600 hover:bg-blue-500 text-white shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+						className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-98"
 						data-testid="btn-schedule-next-stage"
 						title="Записать пациента на следующий этап лечения через 5-7 дней"
 					>
@@ -1443,22 +1529,6 @@ export function VisitEmkTab() {
 									style={{ padding: "4px" }}
 								/>
 							</div>
-							{chips.length > 0 && (
-								<div className="flex flex-wrap gap-1.5 min-w-0">
-									{chips.map((chip) => (
-										<button
-											key={chip}
-											type="button"
-											onClick={() => handleChipClick(chip)}
-											className="quick-chip h-8 !min-h-[32px] min-w-0 px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation break-words shadow-2xs inline-flex items-center gap-1.5 shrink-0"
-										>
-											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold">+</span>
-											<span>{chip}</span>
-										</button>
-									))}
-								</div>
-							)}
-
 							{/* Компактный 32px тулбар форматирования текста медицинского протокола */}
 							<div
 								className="flex items-center justify-between gap-1 h-8 px-2 py-0.5 rounded-t-xl border border-b-0 border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--muted)]"
@@ -1545,18 +1615,34 @@ export function VisitEmkTab() {
 									</button>
 								</div>
 							</div>
-							<textarea
-								ref={(el) => {
+							<DebouncedEmkTextarea
+								fieldKey={field.key}
+								label={field.label}
+								value={visitNoteForm[field.key] ?? ""}
+								placeholder={`Введите ${field.label.toLowerCase()} или выберите кнопки быстрого набора...`}
+								onCommit={(key, val) => updateVisitNoteField?.(key, val)}
+								textareaRef={(el) => {
 									textareaRefs.current[field.key] = el;
 								}}
-								aria-label={field.label}
-								value={visitNoteForm[field.key] ?? ""}
-								placeholder={`Введите ${field.label.toLowerCase()} или выберите кнопки выше...`}
-								onChange={(event) =>
-									updateVisitNoteField?.(field.key, event.target.value)
-								}
 								className="min-h-[120px] rounded-b-xl rounded-t-none p-3.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
 							/>
+
+							{/* Горизонтальный скролл быстрых чипов 32px под textarea */}
+							{chips.length > 0 && (
+								<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5 min-w-0 max-w-full shrink-0">
+									{chips.map((chip) => (
+										<button
+											key={chip}
+											type="button"
+											onClick={() => handleChipClick(chip)}
+											className="quick-chip h-8 !min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation whitespace-nowrap shadow-2xs inline-flex items-center gap-1.5 shrink-0"
+										>
+											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold">+</span>
+											<span>{chip}</span>
+										</button>
+									))}
+								</div>
+							)}
 
 							{field.key === "treatmentPlan" && (
 								<div className="flex flex-col gap-2.5 mt-1">

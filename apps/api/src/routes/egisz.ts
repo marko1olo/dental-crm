@@ -1104,6 +1104,54 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 
 				const body = egiszSendBodySchema.parse(request.body);
 
+				// Verify patient belongs to current organization
+				const [patient] = await db
+					.select({ id: schema.patients.id })
+					.from(schema.patients)
+					.where(
+						and(
+							eq(schema.patients.id, body.patientId),
+							eq(schema.patients.organizationId, orgId),
+						),
+					)
+					.limit(1);
+
+				if (!patient) {
+					return reply.status(404).send({
+						error: "PatientNotFound",
+						message: "Пациент не найден в текущей клинике.",
+					});
+				}
+
+				// Verify visit belongs to current organization and matches patient
+				const [visit] = await db
+					.select({
+						id: schema.visits.id,
+						patientId: schema.visits.patientId,
+					})
+					.from(schema.visits)
+					.where(
+						and(
+							eq(schema.visits.id, body.visitId),
+							eq(schema.visits.organizationId, orgId),
+						),
+					)
+					.limit(1);
+
+				if (!visit) {
+					return reply.status(404).send({
+						error: "VisitNotFound",
+						message: "Приём не найден в текущей клинике.",
+					});
+				}
+
+				if (visit.patientId !== body.patientId) {
+					return reply.status(400).send({
+						error: "VisitPatientMismatch",
+						message: "Указанный приём принадлежит другому пациенту.",
+					});
+				}
+
 				const [inserted] = await db
 					.insert(schema.egiszLogs)
 					.values({

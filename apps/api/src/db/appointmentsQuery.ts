@@ -3,7 +3,7 @@ import type {
 	CreateAppointmentInput,
 	UpdateAppointmentInput,
 } from "@dental/shared";
-import { and, eq, gt, lt, ne, or, type SQL } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, ne, or, type SQL } from "drizzle-orm";
 import {
 	createAppointment as createAppointmentInMemory,
 	appointments as inMemoryAppointments,
@@ -31,7 +31,7 @@ function useInMemory() {
  * первой. Порядок блокировок фиксированный — кресло, врач, пациент, — иначе
  * встречные вызовы могут заклиниться друг о друга.
  */
-async function lockAppointmentResources(
+export async function acquireHierarchyLocks(
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	executor: any,
 	organizationId: string,
@@ -55,18 +55,18 @@ async function lockAppointmentResources(
 		),
 	).sort();
 
-	for (const chairId of chairIdsToLock) {
+	if (chairIdsToLock.length > 0) {
 		await executor
 			.select({ id: schema.chairs.id })
 			.from(schema.chairs)
 			.where(
 				and(
 					eq(schema.chairs.organizationId, organizationId),
-					eq(schema.chairs.id, chairId),
+					inArray(schema.chairs.id, chairIdsToLock),
 				),
 			)
-			.for("update")
-			.limit(1);
+			.orderBy(schema.chairs.id)
+			.for("update");
 	}
 
 	// Level 2: Сотрудники (врачи + ассистенты, дедуплицированы и отсортированы по UUID)
@@ -83,18 +83,18 @@ async function lockAppointmentResources(
 		),
 	).sort();
 
-	for (const userId of userIdsToLock) {
+	if (userIdsToLock.length > 0) {
 		await executor
 			.select({ id: schema.users.id })
 			.from(schema.users)
 			.where(
 				and(
 					eq(schema.users.organizationId, organizationId),
-					eq(schema.users.id, userId),
+					inArray(schema.users.id, userIdsToLock),
 				),
 			)
-			.for("update")
-			.limit(1);
+			.orderBy(schema.users.id)
+			.for("update");
 	}
 
 	// Level 3: Пациенты (сортировка по UUID)
@@ -107,20 +107,22 @@ async function lockAppointmentResources(
 		),
 	).sort();
 
-	for (const patientId of patientIdsToLock) {
+	if (patientIdsToLock.length > 0) {
 		await executor
 			.select({ id: schema.patients.id })
 			.from(schema.patients)
 			.where(
 				and(
 					eq(schema.patients.organizationId, organizationId),
-					eq(schema.patients.id, patientId),
+					inArray(schema.patients.id, patientIdsToLock),
 				),
 			)
-			.for("update")
-			.limit(1);
+			.orderBy(schema.patients.id)
+			.for("update");
 	}
 }
+
+export const lockAppointmentResources = acquireHierarchyLocks;
 
 /**
  * Ищет приём, который пересекается по времени с кандидатом по любому из

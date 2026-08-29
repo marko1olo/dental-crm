@@ -253,24 +253,24 @@ export async function registerPharmacologyRoutes(app: FastifyInstance) {
 			}
 
 			// Insert items
-			for (let idx = 0; idx < input.items.length; idx++) {
-				const item = input.items[idx];
-				if (!item) continue;
-				await tx.insert(electronicPrescriptionItems).values({
-					organizationId: orgId,
-					prescriptionId: presc.id,
-					catalogDrugId: item.catalogDrugId,
-					itemIndex: idx + 1,
-					innLatin: item.innLatin,
-					dosageFormLatin: item.dosageFormLatin,
-					dosageDoseConcentration: item.dosageDoseConcentration,
-					dispenseInstructionLatin: item.dispenseInstructionLatin,
-					signatureDirectionRussian: item.signatureDirectionRussian,
-					quantityPackages: item.quantityPackages,
-					durationDays: item.durationDays,
-					frequencyTimesPerDay: item.frequencyTimesPerDay,
-					mealRelation: item.mealRelation,
-				});
+			if (input.items.length > 0) {
+				await tx.insert(electronicPrescriptionItems).values(
+					input.items.map((item, idx) => ({
+						organizationId: orgId,
+						prescriptionId: presc.id,
+						catalogDrugId: item.catalogDrugId,
+						itemIndex: idx + 1,
+						innLatin: item.innLatin,
+						dosageFormLatin: item.dosageFormLatin,
+						dosageDoseConcentration: item.dosageDoseConcentration,
+						dispenseInstructionLatin: item.dispenseInstructionLatin,
+						signatureDirectionRussian: item.signatureDirectionRussian,
+						quantityPackages: item.quantityPackages,
+						durationDays: item.durationDays,
+						frequencyTimesPerDay: item.frequencyTimesPerDay,
+						mealRelation: item.mealRelation,
+					})),
+				);
 			}
 
 			return presc;
