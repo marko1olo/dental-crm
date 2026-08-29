@@ -10,6 +10,7 @@ export * from "./types";
 export * from "./boneDensityMischMath";
 export * from "./cbctMprMath";
 export * from "./cbctObliqueMath";
+export * from "./cbctAutoArchEngine";
 export * from "./dentalCurveEngine";
 export * from "./CbctMprViewer";
 export * from "./implantSafetyEngine";

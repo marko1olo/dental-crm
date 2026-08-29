@@ -724,3 +724,6 @@ export function getPanoramicSliceFanTicks(
 	});
 }
 
+// ─── 5. CBCT AUTOMATED OCCLUSAL PLANE & DENTAL ARCH TRACING ENGINE ──────────
+export * from "./cbctAutoArchEngine";
+

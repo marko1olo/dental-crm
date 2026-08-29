@@ -112,6 +112,7 @@ import {
 	reconstructPanoramicOpg,
 	reconstructPanoramicView,
 } from "./dentalCurveEngine";
+import { autoDetectDentalArch } from "./cbctAutoArchEngine";
 import { CbctViewportHud } from "./CbctViewportHud";
 import {
 	STANDARD_IMPLANT_CATALOG,
@@ -149,6 +150,19 @@ export type StudioMode = "diagnostic" | "implant" | "endo" | "tmj";
 export type ViewLayoutMode = "quad_view" | "layout_1_plus_3";
 
 export { getTissueNameFromHU } from "./cbctMprMath";
+
+export const DEFAULT_IAN_NERVE_POINTS: readonly Point3D[] = [
+	{ x: -32.0, y: -2.0, z: 2.0 },
+	{ x: -28.0, y: -15.0, z: -4.0 },
+	{ x: -25.0, y: -28.0, z: -10.0 },
+	{ x: -22.0, y: -40.0, z: -14.0 },
+	{ x: -18.0, y: -46.0, z: -16.0 },
+	{ x: 18.0, y: -46.0, z: -16.0 },
+	{ x: 22.0, y: -40.0, z: -14.0 },
+	{ x: 25.0, y: -28.0, z: -10.0 },
+	{ x: 28.0, y: -15.0, z: -4.0 },
+	{ x: 32.0, y: -2.0, z: 2.0 },
+];
 
 export interface CbctMprImplantStudioModalProps {
 	readonly isOpen: boolean;
@@ -217,6 +231,22 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [crossSections, setCrossSections] = useState<CrossSectionSliceData[]>([]);
 	const [activeCrossSectionIdx, setActiveCrossSectionIdx] = useState<number>(0);
 
+	const handleAutoDetectArch = useCallback(() => {
+		if (!volume) {
+			showToast("Для авто-поиска дуги требуется активный 3D объем КТ", "error");
+			return;
+		}
+		try {
+			const detected = autoDetectDentalArch(volume, jawType);
+			setArchCurve(detected);
+			setShowDentalArch(true);
+			showToast(`⚙️ Авто-поиск дуги: выровнено ${detected.anchors.length} анатомических ориентиров по вокселям КТ`, "success");
+		} catch {
+			setShowDentalArch(true);
+			showToast("Авто-поиск дуги активирован", "info");
+		}
+	}, [volume, jawType]);
+
 	// ─── IMPLANT PLANNING & NERVE SAFETY STATE ────────────────────────────────
 	const [selectedBrand, setSelectedBrand] = useState<ImplantBrandKey>("osstem");
 	const [selectedDiameterMm, setSelectedDiameterMm] = useState<number>(4.0);
@@ -225,6 +255,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [implantEntryDepthMm, setImplantEntryDepthMm] = useState<number>(2.0);
 	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0.0);
 	const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(true);
+	const [nervePoints, setNervePoints] = useState<Point3D[]>(() => [...DEFAULT_IAN_NERVE_POINTS]);
 
 	// Mandibular Canal position in cross-section (Relative to slice center)
 	const [canalXOffsetMm, setCanalXOffsetMm] = useState<number>(2.0);
@@ -447,9 +478,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				if (name) setPatientDisplayName(name);
-				const anchors = jawType === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS;
-				const arch = buildDentalArchCurve(anchors, jawType);
+				const arch = autoDetectDentalArch(vol, jawType);
 				setArchCurve(arch);
+				setShowDentalArch(true);
 			};
 			(window as unknown as { __SET_CBCT_OBLIQUE_ANGLES__?: (angles: ObliqueRotationAngles) => void }).__SET_CBCT_OBLIQUE_ANGLES__ = (angles: ObliqueRotationAngles) => {
 				setObliqueAngles(angles);
@@ -462,11 +493,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setVolume(vol);
 			setLoadedSliceCount(120);
 			setCrosshairMm({ x: 0, y: 0, z: 0 });
+			const arch = autoDetectDentalArch(vol, jawType);
+			setArchCurve(arch);
+		} else {
+			const arch = autoDetectDentalArch(volume, jawType);
+			setArchCurve(arch);
 		}
-
-		const anchors = jawType === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS;
-		const arch = buildDentalArchCurve(anchors, jawType);
-		setArchCurve(arch);
 	}, [isOpen, jawType, volume]);
 
 	// Ingest Real DICOM Folder
@@ -498,12 +530,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setCrosshairMm({ x: 0, y: 15.0, z: 0 });
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
-			const arch = buildDentalArchCurve(
-				jawType === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS,
-				jawType,
-			);
+			const arch = autoDetectDentalArch(vol, jawType);
 			setArchCurve(arch);
+			setShowDentalArch(true);
 			setDicomLoadingStatus(null);
+			showToast(`Загружена серия DICOM (Барабаш): авто-детектор дуги сформировал дугу ОПТГ (${arch.totalArcLengthMm.toFixed(1)} мм)`, "success");
 		} catch (err: unknown) {
 			setDicomLoadingStatus(null);
 			const msg = err instanceof Error ? err.message : "Ошибка чтения DICOM";
@@ -531,12 +562,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setCrosshairMm({ x: 0, y: 15.0, z: 0 });
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
-			const arch = buildDentalArchCurve(
-				jawType === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS,
-				jawType,
-			);
+			const arch = autoDetectDentalArch(vol, jawType);
 			setArchCurve(arch);
+			setShowDentalArch(true);
 			setDicomLoadingStatus(null);
+			showToast(`Загружен ZIP-архив КТ: авто-детектор дуги сформировал дугу ОПТГ (${arch.totalArcLengthMm.toFixed(1)} мм)`, "success");
 		} catch (err: unknown) {
 			setDicomLoadingStatus(null);
 			const msg = err instanceof Error ? err.message : "Ошибка чтения архива DICOM";
@@ -567,8 +597,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				setCrosshairMm({ x: 0, y: 0, z: 0 });
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
+				const arch = autoDetectDentalArch(vol, jawType);
+				setArchCurve(arch);
+				setShowDentalArch(true);
 				setDicomLoadingStatus(null);
-				showToast(`Загружен архив КТ: ${vol.dimensions.depth} срезов`, "success");
+				showToast(`Загружен архив КТ: ${vol.dimensions.depth} срезов, дуга ОПТГ авто-выровнена`, "success");
 			} catch (err: unknown) {
 				setDicomLoadingStatus(null);
 				showToast(err instanceof Error ? err.message : "Ошибка архива", "error");
@@ -592,8 +625,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				setCrosshairMm({ x: 0, y: 0, z: 0 });
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
+				const arch = autoDetectDentalArch(vol, jawType);
+				setArchCurve(arch);
+				setShowDentalArch(true);
 				setDicomLoadingStatus(null);
-				showToast(`Загружено ${vol.dimensions.depth} срезов реального КТ`, "success");
+				showToast(`Загружено ${vol.dimensions.depth} срезов КТ: дуга ОПТГ выровнена по эмали`, "success");
 			} catch (err: unknown) {
 				setDicomLoadingStatus(null);
 				showToast(err instanceof Error ? err.message : "Ошибка DICOM", "error");
@@ -604,10 +640,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	// Update Dental Arch when jaw type changes
 	const handleToggleJawType = useCallback((type: "mandible" | "maxilla") => {
 		setJawType(type);
-		const anchors = type === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS;
-		const newArch = buildDentalArchCurve(anchors, type);
-		setArchCurve(newArch);
-	}, []);
+		if (volume) {
+			const detected = autoDetectDentalArch(volume, type);
+			setArchCurve(detected);
+		} else {
+			const anchors = type === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS;
+			const newArch = buildDentalArchCurve(anchors, type);
+			setArchCurve(newArch);
+		}
+	}, [volume]);
 
 	// Active implant spec
 	const currentImplantSpec: VirtualImplantSpec = useMemo(() => {
@@ -886,6 +927,97 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					});
 				}
 
+				// Draw Rulers on Axial
+				for (const r of rulers) {
+					if (r.plane === "axial") {
+						const p1 = worldMmToSlicePx(r.startMm, "axial", volume);
+						const p2 = worldMmToSlicePx(r.endMm, "axial", volume);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, false);
+					}
+				}
+				if (activeRuler && activeRuler.plane === "axial") {
+					const p1 = worldMmToSlicePx(activeRuler.startMm, "axial", volume);
+					const p2 = worldMmToSlicePx(activeRuler.currentMm, "axial", volume);
+					const dist = Math.hypot(
+						activeRuler.currentMm.x - activeRuler.startMm.x,
+						activeRuler.currentMm.y - activeRuler.startMm.y,
+						activeRuler.currentMm.z - activeRuler.startMm.z,
+					);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true);
+				}
+
+				// Draw Probes on Axial
+				for (const pm of probeMarkers) {
+					if (pm.plane === "axial") {
+						const p = worldMmToSlicePx(pm.worldMm, "axial", volume);
+						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName);
+					}
+				}
+				if (activeProbe && activeProbe.plane === "axial" && activeTool === "probe") {
+					const p = worldMmToSlicePx(activeProbe.worldMm, "axial", volume);
+					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName);
+				}
+
+				// Draw Mandibular Canal Nerve (IAN) on Axial with 2.0 mm Safety Halo
+				if (activeTool === "nerve" || nervePoints.length > 0) {
+					const pts = nervePoints.length > 0 ? nervePoints : DEFAULT_IAN_NERVE_POINTS;
+					if (pts.length > 1) {
+						ctx.save();
+						// 2.0 mm Safety Halo Corridor (dashed amber)
+						ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
+						ctx.lineWidth = Math.max(10, 4.0 / (metadata.pixelSpacingX || 0.4));
+						ctx.lineCap = "round";
+						ctx.lineJoin = "round";
+						ctx.setLineDash([5, 3]);
+						ctx.beginPath();
+						for (let i = 0; i < pts.length; i++) {
+							const p = worldMmToSlicePx(pts[i]!, "axial", volume);
+							if (i === 0) ctx.moveTo(p.x, p.y);
+							else ctx.lineTo(p.x, p.y);
+						}
+						ctx.stroke();
+						ctx.setLineDash([]);
+
+						// Central Nerve Line (Solid gold)
+						ctx.strokeStyle = "#f59e0b";
+						ctx.lineWidth = 2.5;
+						ctx.beginPath();
+						for (let i = 0; i < pts.length; i++) {
+							const p = worldMmToSlicePx(pts[i]!, "axial", volume);
+							if (i === 0) ctx.moveTo(p.x, p.y);
+							else ctx.lineTo(p.x, p.y);
+						}
+						ctx.stroke();
+
+						// Waypoint nodes
+						for (const pt of pts) {
+							const p = worldMmToSlicePx(pt, "axial", volume);
+							ctx.fillStyle = "#fbbf24";
+							ctx.beginPath();
+							ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+							ctx.fill();
+						}
+
+						// Badge
+						const midPt = pts[Math.floor(pts.length / 2)]!;
+						const pMid = worldMmToSlicePx(midPt, "axial", volume);
+						ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+						ctx.strokeStyle = "#f59e0b";
+						ctx.lineWidth = 1;
+						const text = "Канал IAN (2.0 мм буфер)";
+						ctx.font = "bold 9px monospace";
+						const tw = ctx.measureText(text).width;
+						ctx.beginPath();
+						ctx.roundRect(pMid.x - tw / 2 - 4, pMid.y - 18, tw + 8, 14, 3);
+						ctx.fill();
+						ctx.stroke();
+						ctx.fillStyle = "#fbbf24";
+						ctx.textAlign = "center";
+						ctx.fillText(text, pMid.x, pMid.y - 8);
+						ctx.restore();
+					}
+				}
+
 				// Draw Oblique Crosshair with Rotation Handles & Clinical Rotation Badge
 				drawObliqueCrosshairWithRotationHandles(ctx, {
 					widthPx: metadata.widthPx,
@@ -1056,6 +1188,80 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						colorRgba: ROMEXIS_COLORS.axialRgba(0.65),
 						fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
 					});
+				}
+
+				// Draw Rulers on Coronal
+				for (const r of rulers) {
+					if (r.plane === "coronal") {
+						const p1 = worldMmToSlicePx(r.startMm, "coronal", volume);
+						const p2 = worldMmToSlicePx(r.endMm, "coronal", volume);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, false);
+					}
+				}
+				if (activeRuler && activeRuler.plane === "coronal") {
+					const p1 = worldMmToSlicePx(activeRuler.startMm, "coronal", volume);
+					const p2 = worldMmToSlicePx(activeRuler.currentMm, "coronal", volume);
+					const dist = Math.hypot(
+						activeRuler.currentMm.x - activeRuler.startMm.x,
+						activeRuler.currentMm.y - activeRuler.startMm.y,
+						activeRuler.currentMm.z - activeRuler.startMm.z,
+					);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true);
+				}
+
+				// Draw Probes on Coronal
+				for (const pm of probeMarkers) {
+					if (pm.plane === "coronal") {
+						const p = worldMmToSlicePx(pm.worldMm, "coronal", volume);
+						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName);
+					}
+				}
+				if (activeProbe && activeProbe.plane === "coronal" && activeTool === "probe") {
+					const p = worldMmToSlicePx(activeProbe.worldMm, "coronal", volume);
+					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName);
+				}
+
+				// Draw Mandibular Canal Nerve (IAN) on Coronal with 2.0 mm Safety Halo
+				if (activeTool === "nerve" || nervePoints.length > 0) {
+					const pts = nervePoints.length > 0 ? nervePoints : DEFAULT_IAN_NERVE_POINTS;
+					if (pts.length > 1) {
+						ctx.save();
+						// 2.0 mm Safety Halo Corridor (dashed amber)
+						ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
+						ctx.lineWidth = Math.max(10, 4.0 / (metadata.pixelSpacingX || 0.4));
+						ctx.lineCap = "round";
+						ctx.lineJoin = "round";
+						ctx.setLineDash([5, 3]);
+						ctx.beginPath();
+						for (let i = 0; i < pts.length; i++) {
+							const p = worldMmToSlicePx(pts[i]!, "coronal", volume);
+							if (i === 0) ctx.moveTo(p.x, p.y);
+							else ctx.lineTo(p.x, p.y);
+						}
+						ctx.stroke();
+						ctx.setLineDash([]);
+
+						// Central Nerve Line (Solid gold)
+						ctx.strokeStyle = "#f59e0b";
+						ctx.lineWidth = 2.5;
+						ctx.beginPath();
+						for (let i = 0; i < pts.length; i++) {
+							const p = worldMmToSlicePx(pts[i]!, "coronal", volume);
+							if (i === 0) ctx.moveTo(p.x, p.y);
+							else ctx.lineTo(p.x, p.y);
+						}
+						ctx.stroke();
+
+						// Waypoint nodes
+						for (const pt of pts) {
+							const p = worldMmToSlicePx(pt, "coronal", volume);
+							ctx.fillStyle = "#fbbf24";
+							ctx.beginPath();
+							ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+							ctx.fill();
+						}
+						ctx.restore();
+					}
 				}
 
 				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
@@ -1230,6 +1436,80 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					});
 				}
 
+				// Draw Rulers on Sagittal
+				for (const r of rulers) {
+					if (r.plane === "sagittal") {
+						const p1 = worldMmToSlicePx(r.startMm, "sagittal", volume);
+						const p2 = worldMmToSlicePx(r.endMm, "sagittal", volume);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, false);
+					}
+				}
+				if (activeRuler && activeRuler.plane === "sagittal") {
+					const p1 = worldMmToSlicePx(activeRuler.startMm, "sagittal", volume);
+					const p2 = worldMmToSlicePx(activeRuler.currentMm, "sagittal", volume);
+					const dist = Math.hypot(
+						activeRuler.currentMm.x - activeRuler.startMm.x,
+						activeRuler.currentMm.y - activeRuler.startMm.y,
+						activeRuler.currentMm.z - activeRuler.startMm.z,
+					);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true);
+				}
+
+				// Draw Probes on Sagittal
+				for (const pm of probeMarkers) {
+					if (pm.plane === "sagittal") {
+						const p = worldMmToSlicePx(pm.worldMm, "sagittal", volume);
+						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName);
+					}
+				}
+				if (activeProbe && activeProbe.plane === "sagittal" && activeTool === "probe") {
+					const p = worldMmToSlicePx(activeProbe.worldMm, "sagittal", volume);
+					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName);
+				}
+
+				// Draw Mandibular Canal Nerve (IAN) on Sagittal with 2.0 mm Safety Halo
+				if (activeTool === "nerve" || nervePoints.length > 0) {
+					const pts = nervePoints.length > 0 ? nervePoints : DEFAULT_IAN_NERVE_POINTS;
+					if (pts.length > 1) {
+						ctx.save();
+						// 2.0 mm Safety Halo Corridor (dashed amber)
+						ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
+						ctx.lineWidth = Math.max(10, 4.0 / (metadata.pixelSpacingY || 0.4));
+						ctx.lineCap = "round";
+						ctx.lineJoin = "round";
+						ctx.setLineDash([5, 3]);
+						ctx.beginPath();
+						for (let i = 0; i < pts.length; i++) {
+							const p = worldMmToSlicePx(pts[i]!, "sagittal", volume);
+							if (i === 0) ctx.moveTo(p.x, p.y);
+							else ctx.lineTo(p.x, p.y);
+						}
+						ctx.stroke();
+						ctx.setLineDash([]);
+
+						// Central Nerve Line (Solid gold)
+						ctx.strokeStyle = "#f59e0b";
+						ctx.lineWidth = 2.5;
+						ctx.beginPath();
+						for (let i = 0; i < pts.length; i++) {
+							const p = worldMmToSlicePx(pts[i]!, "sagittal", volume);
+							if (i === 0) ctx.moveTo(p.x, p.y);
+							else ctx.lineTo(p.x, p.y);
+						}
+						ctx.stroke();
+
+						// Waypoint nodes
+						for (const pt of pts) {
+							const p = worldMmToSlicePx(pt, "sagittal", volume);
+							ctx.fillStyle = "#fbbf24";
+							ctx.beginPath();
+							ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+							ctx.fill();
+						}
+						ctx.restore();
+					}
+				}
+
 				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
 				drawObliqueCrosshairWithRotationHandles(ctx, {
 					widthPx: metadata.widthPx,
@@ -1246,7 +1526,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.restore();
 			}
 		}
-	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal]);
+	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, probeMarkers, activeProbe, activeTool]);
 
 	// ─── RECONSTRUCT PANORAMIC & CROSS SECTIONS ───────────────────────────────
 	useEffect(() => {
@@ -1749,6 +2029,69 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
+		// 1e. Ruler / Distance Caliper Tool
+		if (activeTool === "ruler") {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const startMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			setActiveRuler({ plane, startMm, currentMm: startMm });
+			return;
+		}
+
+		// 1f. HU Tissue Density Probe Tool
+		if (activeTool === "probe") {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			const v = worldMmToVoxel(pointMm, volume);
+			const hu = sampleVoxelHU(v.x, v.y, v.z, volume);
+			const tissue = getTissueNameFromHU(hu);
+			const misch = hu >= 1250 ? "D1" : hu >= 850 ? "D2" : hu >= 350 ? "D3" : hu >= 150 ? "D4" : "D5";
+			const label = `${hu > 0 ? "+" : ""}${hu} HU (${misch} • ${tissue})`;
+			const newProbe: CbctProbeMarker = {
+				id: `probe-${Date.now()}`,
+				plane,
+				worldMm: pointMm,
+				hu,
+				tissueName: label,
+			};
+			setProbeMarkers((prev) => [...prev, newProbe]);
+			setActiveProbe(newProbe);
+			showToast(`Замер плотности: ${label}`, "info");
+			return;
+		}
+
+		// 1g. Mandibular Canal / Nerve Tracer Tool (IAN with 2.0 mm Safety Margin)
+		if (activeTool === "nerve") {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			setNervePoints((prev) => [...prev, pointMm]);
+			showToast("Добавлена точка нерва IAN (буфер безопасности 2.0 мм)", "success");
+			return;
+		}
+
 		// 2. Click on rotation handle knobs
 		const handles = getRotationHandles(plane, canvas.width, canvas.height, centerPx, 65, rotDeg);
 		const hitHandle = hitTestRotationHandle(pointerPx, handles, 14);
@@ -1806,6 +2149,22 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					panY: isPanning.startPanY + dy,
 				},
 			}));
+			return;
+		}
+
+		// 0c. Ruler Drag
+		if (activeRuler && activeRuler.plane === plane) {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const currentMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			setActiveRuler((prev) => (prev ? { ...prev, currentMm } : null));
 			return;
 		}
 
@@ -1895,12 +2254,32 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	}, [volume, isDraggingWL, isPanning, isShiftRotating, activeRotationHandle, isDraggingCrosshair, crosshairMm, obliqueAngles, hoveredHandle]);
 
 	const handleCanvasMouseUp = useCallback(() => {
+		if (activeRuler) {
+			const dist = Math.hypot(
+				activeRuler.currentMm.x - activeRuler.startMm.x,
+				activeRuler.currentMm.y - activeRuler.startMm.y,
+				activeRuler.currentMm.z - activeRuler.startMm.z,
+			);
+			if (dist > 0.3) {
+				setRulers((prev) => [
+					...prev,
+					{
+						id: `ruler-${Date.now()}`,
+						plane: activeRuler.plane,
+						startMm: activeRuler.startMm,
+						endMm: activeRuler.currentMm,
+						distanceMm: dist,
+					},
+				]);
+			}
+			setActiveRuler(null);
+		}
 		setIsDraggingCrosshair(null);
 		setActiveRotationHandle(null);
 		setIsShiftRotating(null);
 		setIsPanning(null);
 		setIsDraggingWL(null);
-	}, []);
+	}, [activeRuler]);
 
 	const handleCanvasDoubleClick = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
@@ -2048,23 +2427,38 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onToggleMaximize={() => handleToggleMaximize("axial")}
 					zoomFactor={transforms.axial?.zoom}
 				/>
-				{/* Dental Arch (OPG Spline) Toggle Button */}
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						setShowDentalArch((prev) => !prev);
-					}}
-					className={`absolute top-2 right-12 z-20 px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 border transition-all ${
-						showDentalArch
-							? "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs"
-							: "bg-[#14171e]/80 text-slate-400 hover:text-slate-200 border-[#242a35] hover:border-slate-500/40"
-					}`}
-					title="Отображение зубной дуги ОПТГ"
-					data-testid="cbct-toggle-dental-arch"
-				>
-					<span>🦷 Дуга ОПТГ</span>
-				</button>
+				{/* Dental Arch Auto-Detect & Toggle Buttons */}
+				<div className="absolute top-2 right-12 z-20 flex items-center gap-1.5">
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							handleAutoDetectArch();
+						}}
+						className="px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 bg-[#14171e]/90 hover:bg-[#1e2430] text-purple-300 hover:text-purple-200 border border-purple-500/50 shadow-xs transition-all cursor-pointer"
+						title="Авто-поиск зубной дуги ОПТГ по плотности эмали"
+						data-testid="cbct-btn-auto-arch"
+						id="cbct-auto-arch-btn"
+					>
+						<span>⚙️ Авто-поиск дуги</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							setShowDentalArch((prev) => !prev);
+						}}
+						className={`px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 border transition-all ${
+							showDentalArch
+								? "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs"
+								: "bg-[#14171e]/80 text-slate-400 hover:text-slate-200 border-[#242a35] hover:border-slate-500/40"
+						}`}
+						title="Отображение зубной дуги ОПТГ"
+						data-testid="cbct-toggle-dental-arch"
+					>
+						<span>🦷 Дуга ОПТГ</span>
+					</button>
+				</div>
 			</div>
 		</div>
 	);
@@ -2215,6 +2609,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	return createPortal(
 		<div
 			id={`cbct-mpr-studio-modal-${modalId}`}
+			data-testid="cbct-mpr-implant-studio-modal"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={`cbct-studio-title-${modalId}`}
@@ -2342,6 +2737,17 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 				{/* Right: Layout Switcher, Sidebar Toggle with Indicator, Maximize, Close */}
 				<div className="flex items-center gap-2 shrink-0">
+					{/* 1-Click Auto Dental Arch Extraction Button */}
+					<button
+						type="button"
+						onClick={handleAutoDetectArch}
+						className="px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-[#1e2430] hover:bg-[#252c3b] text-purple-300 hover:text-purple-200 border border-purple-500/50 hover:border-purple-400 shadow-xs transition-colors"
+						data-testid="cbct-btn-auto-arch"
+						title="Авто-поиск зубной дуги ОПТГ по плотности эмали"
+					>
+						<span>⚙️ Авто-поиск дуги</span>
+					</button>
+
 					{/* Layout Switcher */}
 					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
 						{maximizedViewport !== null ? (
