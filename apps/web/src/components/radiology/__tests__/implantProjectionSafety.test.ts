@@ -5,7 +5,9 @@ import {
 	calculateAxialImplantIntersection,
 	calculateImplant3DWorldPose,
 	auditMandibularNerveSafety,
+	checkImplantSliceIntersection,
 	findImplantSpec,
+	sampleCrossSectionHUProfile,
 	type CrossSectionImplantPose,
 	type MandibularCanalCrossSection,
 } from "../implantSafetyEngine";
@@ -192,5 +194,83 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 		assert.equal(fanTicks[0]?.isMajor, true);
 		assert.equal(fanTicks[1]?.sliceIndex, 20);
 		assert.equal(fanTicks[1]?.isMajor, true);
+	});
+
+	it("gates Coronal and Sagittal implant projection by distance to avoid phantom spine/incisor ghosts", () => {
+		const implant3D = calculateImplant3DWorldPose(mockPose, mockSliceCenter, mockNormal2D, 32.0, 4.0);
+
+		// Case 1: Coronal slice right at implant Y coordinate (5.5 mm)
+		const coronalExact = checkImplantSliceIntersection(implant3D, "coronal", 5.5, 2.5);
+		assert.equal(coronalExact.isIntersecting, true);
+		assert.ok(coronalExact.alpha >= 0.95);
+		assert.ok(coronalExact.distanceMm < 0.1);
+
+		// Case 2: Coronal slice 3.5 mm away from implant center (1.5 mm outside the 2.0 mm cylinder radius)
+		const coronalNear = checkImplantSliceIntersection(implant3D, "coronal", 9.0, 2.5);
+		assert.equal(coronalNear.isIntersecting, true);
+		assert.ok(coronalNear.alpha > 0.3 && coronalNear.alpha < 1.0);
+
+		// Case 3: Coronal slice far away (e.g. Y = 30.0 mm, cervical spine region)
+		const coronalSpine = checkImplantSliceIntersection(implant3D, "coronal", 30.0, 2.5);
+		assert.equal(coronalSpine.isIntersecting, false);
+		assert.equal(coronalSpine.alpha, 0.0);
+		assert.ok(coronalSpine.distanceMm > 20.0);
+
+		// Case 4: Sagittal slice right at implant X coordinate (23.0 mm)
+		const sagittalExact = checkImplantSliceIntersection(implant3D, "sagittal", 23.0, 2.5);
+		assert.equal(sagittalExact.isIntersecting, true);
+		assert.ok(sagittalExact.alpha >= 0.95);
+
+		// Case 5: Sagittal slice at midline / front incisors (X = 0.0 mm)
+		const sagittalIncisors = checkImplantSliceIntersection(implant3D, "sagittal", 0.0, 2.5);
+		assert.equal(sagittalIncisors.isIntersecting, false);
+		assert.equal(sagittalIncisors.alpha, 0.0);
+		assert.ok(sagittalIncisors.distanceMm > 20.0);
+	});
+
+	it("samples real HU density from 3D voxel volume with trilinear interpolation", () => {
+		// Build synthetic 40x40x40 CT volume
+		const dim = 40;
+		const data = new Int16Array(dim * dim * dim);
+
+		// Fill with D2 bone profile (Coronal crest ~1100 HU, Core ~700 HU, Apex ~850 HU)
+		for (let z = 0; z < dim; z++) {
+			for (let y = 0; y < dim; y++) {
+				for (let x = 0; x < dim; x++) {
+					const idx = z * dim * dim + y * dim + x;
+					if (z >= 36) {
+						data[idx] = 1100; // Crest
+					} else if (z >= 25) {
+						data[idx] = 700; // Trabecular core
+					} else {
+						data[idx] = 850; // Apical
+					}
+				}
+			}
+		}
+
+		const mockVolume = {
+			id: "vol-synthetic-test",
+			dimensions: { width: dim, height: dim, depth: dim },
+			spacingMm: { x: 0.5, y: 0.5, z: 0.5 },
+			physicalSizeMm: { x: 20, y: 20, z: 20 },
+			originMm: { x: -10, y: -10, z: -10 },
+			minHU: -1000,
+			maxHU: 3000,
+			data,
+			dataRange: { min: -1000, max: 3000 },
+			windowWidth: 4000,
+			windowLevel: 1000,
+			photometricInterpretation: "MONOCHROME2",
+			isDisposed: false,
+		};
+
+		const implant3D = calculateImplant3DWorldPose(mockPose, { x: 0, y: 0, z: 0 }, { x: 1, y: 0 }, 32.0, 4.0);
+		const huResult = sampleCrossSectionHUProfile(mockVolume, mockPose, implant3D);
+
+		assert.ok(huResult.coronalCrestalHU >= 900);
+		assert.ok(huResult.trabecularCoreHU >= 500 && huResult.trabecularCoreHU <= 900);
+		assert.ok(huResult.apicalBaseHU >= 700);
+		assert.ok(huResult.overallMeanHU > 600);
 	});
 });

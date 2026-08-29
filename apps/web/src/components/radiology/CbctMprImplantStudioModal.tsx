@@ -122,13 +122,16 @@ import {
 	type VirtualImplantSpec,
 	type Implant3DWorldProjection,
 	type AxialImplantIntersection,
+	type SliceImplantIntersection,
 	auditAlveolarBoneContainment,
 	auditNerveSafetyMargin,
 	calculateApexCoordinates,
 	calculateImplant3DWorldPose,
 	calculateAxialImplantIntersection,
+	checkImplantSliceIntersection,
 	generateForm043CbctDiary,
 	playNerveSafetyAudioAlarm,
+	pointToSegmentDistance2D,
 	sampleCrossSectionHUProfile,
 } from "./implantSafetyEngine";
 import {
@@ -269,6 +272,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0.0);
 	const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(true);
 	const [nervePoints, setNervePoints] = useState<Point3D[]>([]);
+
+	// Interactive Cross-Section Drag & Drop State
+	const [dragImplantPart, setDragImplantPart] = useState<"entry" | "apex" | "body" | null>(null);
+	const [crossSectionDragStart, setCrossSectionDragStart] = useState<{
+		clientX: number;
+		clientY: number;
+		startX: number;
+		startY: number;
+		startAng: number;
+	} | null>(null);
 
 	// Mandibular Canal position in cross-section (Relative to slice center)
 	const [canalXOffsetMm, setCanalXOffsetMm] = useState<number>(2.0);
@@ -761,9 +774,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	}, [currentImplantPose, currentEnvelope]);
 
 	const huSamplingResult: HUZoneSampling = useMemo(() => {
-		if (!volume) return { coronalCrestalHU: 1100, trabecularCoreHU: 700, apicalBaseHU: 850, overallMeanHU: 837 };
-		return sampleCrossSectionHUProfile(volume, currentImplantPose);
-	}, [volume, currentImplantPose]);
+		return sampleCrossSectionHUProfile(volume, currentImplantPose, implant3DWorld);
+	}, [volume, currentImplantPose, implant3DWorld]);
 
 	const mischClassification: MischClassificationResult = useMemo(() => {
 		return classifyMischBoneQuality(huSamplingResult);
@@ -1124,93 +1136,99 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					showScaleBar: true,
 				});
 
-				// Synchronized Virtual Implant 3D Projection on Coronal (Y)
+				// Synchronized Virtual Implant 3D Projection on Coronal (Y) with Distance Gating
 				if (studioMode === "implant" && implant3DWorld) {
-					const vEntry = worldMmToVoxel(implant3DWorld.entry3D, volume);
-					const vApex = worldMmToVoxel(implant3DWorld.apex3D, volume);
-					const depthMax = volume.dimensions.depth - 1;
+					const coronalGate = checkImplantSliceIntersection(implant3DWorld, "coronal", crosshairMm.y, 2.5);
+					if (coronalGate.isIntersecting) {
+						ctx.save();
+						ctx.globalAlpha = coronalGate.alpha;
+						const vEntry = worldMmToVoxel(implant3DWorld.entry3D, volume);
+						const vApex = worldMmToVoxel(implant3DWorld.apex3D, volume);
+						const depthMax = volume.dimensions.depth - 1;
 
-					const pEntry = { x: vEntry.x, y: depthMax - vEntry.z };
-					const pApex = { x: vApex.x, y: depthMax - vApex.z };
+						const pEntry = { x: vEntry.x, y: depthMax - vEntry.z };
+						const pApex = { x: vApex.x, y: depthMax - vApex.z };
 
-					const spX = volume.spacingMm.x || 0.4;
-					const rPlatPx = (implant3DWorld.platformDiameterMm / 2.0) / spX;
-					const rApexPx = (implant3DWorld.apexDiameterMm / 2.0) / spX;
-					const rHaloPlatPx = rPlatPx + 2.0 / spX;
-					const rHaloApexPx = rApexPx + 2.0 / spX;
+						const spX = volume.spacingMm.x || 0.4;
+						const rPlatPx = (implant3DWorld.platformDiameterMm / 2.0) / spX;
+						const rApexPx = (implant3DWorld.apexDiameterMm / 2.0) / spX;
+						const rHaloPlatPx = rPlatPx + 2.0 / spX;
+						const rHaloApexPx = rApexPx + 2.0 / spX;
 
-					const dx = pApex.x - pEntry.x;
-					const dy = pApex.y - pEntry.y;
-					const len = Math.hypot(dx, dy) || 1.0;
-					const nx = -dy / len;
-					const ny = dx / len;
+						const dx = pApex.x - pEntry.x;
+						const dy = pApex.y - pEntry.y;
+						const len = Math.hypot(dx, dy) || 1.0;
+						const nx = -dy / len;
+						const ny = dx / len;
 
-					const statusColor = nerveAuditResult.isDangerous
-						? "#ef4444"
-						: nerveAuditResult.isWarning
-							? "#f59e0b"
-							: "#10b981";
-					const statusFill = nerveAuditResult.isDangerous
-						? "rgba(239, 68, 68, 0.45)"
-						: nerveAuditResult.isWarning
-							? "rgba(245, 158, 11, 0.4)"
-							: "rgba(16, 185, 129, 0.35)";
+						const statusColor = nerveAuditResult.isDangerous
+							? "#ef4444"
+							: nerveAuditResult.isWarning
+								? "#f59e0b"
+								: "#10b981";
+						const statusFill = nerveAuditResult.isDangerous
+							? "rgba(239, 68, 68, 0.45)"
+							: nerveAuditResult.isWarning
+								? "rgba(245, 158, 11, 0.4)"
+								: "rgba(16, 185, 129, 0.35)";
 
-					// 2.0 mm Safety Halo boundary
-					ctx.strokeStyle = statusColor;
-					ctx.lineWidth = 1.5;
-					ctx.setLineDash([3, 2]);
-					ctx.beginPath();
-					ctx.moveTo(pEntry.x + nx * rHaloPlatPx, pEntry.y + ny * rHaloPlatPx);
-					ctx.lineTo(pApex.x + nx * rHaloApexPx, pApex.y + ny * rHaloApexPx);
-					ctx.lineTo(pApex.x - nx * rHaloApexPx, pApex.y - ny * rHaloApexPx);
-					ctx.lineTo(pEntry.x - nx * rHaloPlatPx, pEntry.y - ny * rHaloPlatPx);
-					ctx.closePath();
-					ctx.stroke();
-					ctx.setLineDash([]);
+						// 2.0 mm Safety Halo boundary
+						ctx.strokeStyle = statusColor;
+						ctx.lineWidth = 1.5;
+						ctx.setLineDash([3, 2]);
+						ctx.beginPath();
+						ctx.moveTo(pEntry.x + nx * rHaloPlatPx, pEntry.y + ny * rHaloPlatPx);
+						ctx.lineTo(pApex.x + nx * rHaloApexPx, pApex.y + ny * rHaloApexPx);
+						ctx.lineTo(pApex.x - nx * rHaloApexPx, pApex.y - ny * rHaloApexPx);
+						ctx.lineTo(pEntry.x - nx * rHaloPlatPx, pEntry.y - ny * rHaloPlatPx);
+						ctx.closePath();
+						ctx.stroke();
+						ctx.setLineDash([]);
 
-					// Tapered Implant cylinder body
-					ctx.fillStyle = statusFill;
-					ctx.strokeStyle = statusColor;
-					ctx.lineWidth = 2.0;
-					ctx.beginPath();
-					ctx.moveTo(pEntry.x + nx * rPlatPx, pEntry.y + ny * rPlatPx);
-					ctx.lineTo(pApex.x + nx * rApexPx, pApex.y + ny * rApexPx);
-					ctx.lineTo(pApex.x - nx * rApexPx, pApex.y - ny * rApexPx);
-					ctx.lineTo(pEntry.x - nx * rPlatPx, pEntry.y - ny * rPlatPx);
-					ctx.closePath();
-					ctx.fill();
-					ctx.stroke();
+						// Tapered Implant cylinder body
+						ctx.fillStyle = statusFill;
+						ctx.strokeStyle = statusColor;
+						ctx.lineWidth = 2.0;
+						ctx.beginPath();
+						ctx.moveTo(pEntry.x + nx * rPlatPx, pEntry.y + ny * rPlatPx);
+						ctx.lineTo(pApex.x + nx * rApexPx, pApex.y + ny * rApexPx);
+						ctx.lineTo(pApex.x - nx * rApexPx, pApex.y - ny * rApexPx);
+						ctx.lineTo(pEntry.x - nx * rPlatPx, pEntry.y - ny * rPlatPx);
+						ctx.closePath();
+						ctx.fill();
+						ctx.stroke();
 
-					// Central Axis
-					ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-					ctx.lineWidth = 1.0;
-					ctx.beginPath();
-					ctx.moveTo(pEntry.x, pEntry.y);
-					ctx.lineTo(pApex.x, pApex.y);
-					ctx.stroke();
+						// Central Axis
+						ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+						ctx.lineWidth = 1.0;
+						ctx.beginPath();
+						ctx.moveTo(pEntry.x, pEntry.y);
+						ctx.lineTo(pApex.x, pApex.y);
+						ctx.stroke();
 
-					// Semi-transparent compact Tooth FDI badge with pointer arrow
-					const badgeY = Math.max(2, pEntry.y - 18);
-					ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
-					ctx.strokeStyle = statusColor;
-					ctx.lineWidth = 1;
-					ctx.beginPath();
-					ctx.roundRect(pEntry.x - 13, badgeY, 26, 12, 3);
-					ctx.fill();
-					ctx.stroke();
-					// Pointer arrow
-					ctx.beginPath();
-					ctx.moveTo(pEntry.x - 3, badgeY + 12);
-					ctx.lineTo(pEntry.x, badgeY + 15);
-					ctx.lineTo(pEntry.x + 3, badgeY + 12);
-					ctx.closePath();
-					ctx.fillStyle = statusColor;
-					ctx.fill();
-					ctx.fillStyle = "#ffffff";
-					ctx.font = "bold 8.5px monospace";
-					ctx.textAlign = "center";
-					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, badgeY + 9);
+						// Semi-transparent compact Tooth FDI badge with pointer arrow
+						const badgeY = Math.max(2, pEntry.y - 18);
+						ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+						ctx.strokeStyle = statusColor;
+						ctx.lineWidth = 1;
+						ctx.beginPath();
+						ctx.roundRect(pEntry.x - 13, badgeY, 26, 12, 3);
+						ctx.fill();
+						ctx.stroke();
+						// Pointer arrow
+						ctx.beginPath();
+						ctx.moveTo(pEntry.x - 3, badgeY + 12);
+						ctx.lineTo(pEntry.x, badgeY + 15);
+						ctx.lineTo(pEntry.x + 3, badgeY + 12);
+						ctx.closePath();
+						ctx.fillStyle = statusColor;
+						ctx.fill();
+						ctx.fillStyle = "#ffffff";
+						ctx.font = "bold 8.5px monospace";
+						ctx.textAlign = "center";
+						ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, badgeY + 9);
+						ctx.restore();
+					}
 				}
 
 				const zPx = metadata.heightPx - 1 - vox.z;
@@ -1368,93 +1386,99 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					showScaleBar: true,
 				});
 
-				// Synchronized Virtual Implant 3D Projection on Sagittal (X)
+				// Synchronized Virtual Implant 3D Projection on Sagittal (X) with Distance Gating
 				if (studioMode === "implant" && implant3DWorld) {
-					const vEntry = worldMmToVoxel(implant3DWorld.entry3D, volume);
-					const vApex = worldMmToVoxel(implant3DWorld.apex3D, volume);
-					const depthMax = volume.dimensions.depth - 1;
+					const sagittalGate = checkImplantSliceIntersection(implant3DWorld, "sagittal", crosshairMm.x, 2.5);
+					if (sagittalGate.isIntersecting) {
+						ctx.save();
+						ctx.globalAlpha = sagittalGate.alpha;
+						const vEntry = worldMmToVoxel(implant3DWorld.entry3D, volume);
+						const vApex = worldMmToVoxel(implant3DWorld.apex3D, volume);
+						const depthMax = volume.dimensions.depth - 1;
 
-					const pEntry = { x: vEntry.y, y: depthMax - vEntry.z };
-					const pApex = { x: vApex.y, y: depthMax - vApex.z };
+						const pEntry = { x: vEntry.y, y: depthMax - vEntry.z };
+						const pApex = { x: vApex.y, y: depthMax - vApex.z };
 
-					const spY = volume.spacingMm.y || 0.4;
-					const rPlatPx = (implant3DWorld.platformDiameterMm / 2.0) / spY;
-					const rApexPx = (implant3DWorld.apexDiameterMm / 2.0) / spY;
-					const rHaloPlatPx = rPlatPx + 2.0 / spY;
-					const rHaloApexPx = rApexPx + 2.0 / spY;
+						const spY = volume.spacingMm.y || 0.4;
+						const rPlatPx = (implant3DWorld.platformDiameterMm / 2.0) / spY;
+						const rApexPx = (implant3DWorld.apexDiameterMm / 2.0) / spY;
+						const rHaloPlatPx = rPlatPx + 2.0 / spY;
+						const rHaloApexPx = rApexPx + 2.0 / spY;
 
-					const dx = pApex.x - pEntry.x;
-					const dy = pApex.y - pEntry.y;
-					const len = Math.hypot(dx, dy) || 1.0;
-					const nx = -dy / len;
-					const ny = dx / len;
+						const dx = pApex.x - pEntry.x;
+						const dy = pApex.y - pEntry.y;
+						const len = Math.hypot(dx, dy) || 1.0;
+						const nx = -dy / len;
+						const ny = dx / len;
 
-					const statusColor = nerveAuditResult.isDangerous
-						? "#ef4444"
-						: nerveAuditResult.isWarning
-							? "#f59e0b"
-							: "#10b981";
-					const statusFill = nerveAuditResult.isDangerous
-						? "rgba(239, 68, 68, 0.45)"
-						: nerveAuditResult.isWarning
-							? "rgba(245, 158, 11, 0.4)"
-							: "rgba(16, 185, 129, 0.35)";
+						const statusColor = nerveAuditResult.isDangerous
+							? "#ef4444"
+							: nerveAuditResult.isWarning
+								? "#f59e0b"
+								: "#10b981";
+						const statusFill = nerveAuditResult.isDangerous
+							? "rgba(239, 68, 68, 0.45)"
+							: nerveAuditResult.isWarning
+								? "rgba(245, 158, 11, 0.4)"
+								: "rgba(16, 185, 129, 0.35)";
 
-					// 2.0 mm Safety Halo boundary
-					ctx.strokeStyle = statusColor;
-					ctx.lineWidth = 1.5;
-					ctx.setLineDash([3, 2]);
-					ctx.beginPath();
-					ctx.moveTo(pEntry.x + nx * rHaloPlatPx, pEntry.y + ny * rHaloPlatPx);
-					ctx.lineTo(pApex.x + nx * rHaloApexPx, pApex.y + ny * rHaloApexPx);
-					ctx.lineTo(pApex.x - nx * rHaloApexPx, pApex.y - ny * rHaloApexPx);
-					ctx.lineTo(pEntry.x - nx * rHaloPlatPx, pEntry.y - ny * rHaloPlatPx);
-					ctx.closePath();
-					ctx.stroke();
-					ctx.setLineDash([]);
+						// 2.0 mm Safety Halo boundary
+						ctx.strokeStyle = statusColor;
+						ctx.lineWidth = 1.5;
+						ctx.setLineDash([3, 2]);
+						ctx.beginPath();
+						ctx.moveTo(pEntry.x + nx * rHaloPlatPx, pEntry.y + ny * rHaloPlatPx);
+						ctx.lineTo(pApex.x + nx * rHaloApexPx, pApex.y + ny * rHaloApexPx);
+						ctx.lineTo(pApex.x - nx * rHaloApexPx, pApex.y - ny * rHaloApexPx);
+						ctx.lineTo(pEntry.x - nx * rHaloPlatPx, pEntry.y - ny * rHaloPlatPx);
+						ctx.closePath();
+						ctx.stroke();
+						ctx.setLineDash([]);
 
-					// Tapered Implant cylinder body
-					ctx.fillStyle = statusFill;
-					ctx.strokeStyle = statusColor;
-					ctx.lineWidth = 2.0;
-					ctx.beginPath();
-					ctx.moveTo(pEntry.x + nx * rPlatPx, pEntry.y + ny * rPlatPx);
-					ctx.lineTo(pApex.x + nx * rApexPx, pApex.y + ny * rApexPx);
-					ctx.lineTo(pApex.x - nx * rApexPx, pApex.y - ny * rApexPx);
-					ctx.lineTo(pEntry.x - nx * rPlatPx, pEntry.y - ny * rPlatPx);
-					ctx.closePath();
-					ctx.fill();
-					ctx.stroke();
+						// Tapered Implant cylinder body
+						ctx.fillStyle = statusFill;
+						ctx.strokeStyle = statusColor;
+						ctx.lineWidth = 2.0;
+						ctx.beginPath();
+						ctx.moveTo(pEntry.x + nx * rPlatPx, pEntry.y + ny * rPlatPx);
+						ctx.lineTo(pApex.x + nx * rApexPx, pApex.y + ny * rApexPx);
+						ctx.lineTo(pApex.x - nx * rApexPx, pApex.y - ny * rApexPx);
+						ctx.lineTo(pEntry.x - nx * rPlatPx, pEntry.y - ny * rPlatPx);
+						ctx.closePath();
+						ctx.fill();
+						ctx.stroke();
 
-					// Central Axis
-					ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-					ctx.lineWidth = 1.0;
-					ctx.beginPath();
-					ctx.moveTo(pEntry.x, pEntry.y);
-					ctx.lineTo(pApex.x, pApex.y);
-					ctx.stroke();
+						// Central Axis
+						ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+						ctx.lineWidth = 1.0;
+						ctx.beginPath();
+						ctx.moveTo(pEntry.x, pEntry.y);
+						ctx.lineTo(pApex.x, pApex.y);
+						ctx.stroke();
 
-					// Semi-transparent compact Tooth FDI badge with pointer arrow
-					const badgeY = Math.max(2, pEntry.y - 18);
-					ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
-					ctx.strokeStyle = statusColor;
-					ctx.lineWidth = 1;
-					ctx.beginPath();
-					ctx.roundRect(pEntry.x - 13, badgeY, 26, 12, 3);
-					ctx.fill();
-					ctx.stroke();
-					// Pointer arrow
-					ctx.beginPath();
-					ctx.moveTo(pEntry.x - 3, badgeY + 12);
-					ctx.lineTo(pEntry.x, badgeY + 15);
-					ctx.lineTo(pEntry.x + 3, badgeY + 12);
-					ctx.closePath();
-					ctx.fillStyle = statusColor;
-					ctx.fill();
-					ctx.fillStyle = "#ffffff";
-					ctx.font = "bold 8.5px monospace";
-					ctx.textAlign = "center";
-					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, badgeY + 9);
+						// Semi-transparent compact Tooth FDI badge with pointer arrow
+						const badgeY = Math.max(2, pEntry.y - 18);
+						ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+						ctx.strokeStyle = statusColor;
+						ctx.lineWidth = 1;
+						ctx.beginPath();
+						ctx.roundRect(pEntry.x - 13, badgeY, 26, 12, 3);
+						ctx.fill();
+						ctx.stroke();
+						// Pointer arrow
+						ctx.beginPath();
+						ctx.moveTo(pEntry.x - 3, badgeY + 12);
+						ctx.lineTo(pEntry.x, badgeY + 15);
+						ctx.lineTo(pEntry.x + 3, badgeY + 12);
+						ctx.closePath();
+						ctx.fillStyle = statusColor;
+						ctx.fill();
+						ctx.fillStyle = "#ffffff";
+						ctx.font = "bold 8.5px monospace";
+						ctx.textAlign = "center";
+						ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, badgeY + 9);
+						ctx.restore();
+					}
 				}
 
 				const zPx = metadata.heightPx - 1 - vox.z;
@@ -1899,7 +1923,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.fill();
 			ctx.stroke();
 
-			// 4. Draw Virtual Implant Caliper Outline with 2.0 mm Safety Halo
+			// 4. Draw Virtual Implant Caliper Outline with 2.0 mm Safety Halo & Interactive CAD Handles
 			const entryPxX = centerX + (currentImplantPose.entryPoint.x / pxSpacing);
 			const entryPxY = topY + (currentImplantPose.entryPoint.y / pxSpacing);
 			const radiusPx = (currentImplantSpec.diameterMm / 2.0) / pxSpacing;
@@ -1923,15 +1947,24 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					? "rgba(245, 158, 11, 0.35)"
 					: "rgba(16, 185, 129, 0.35)";
 
-			// 2.0 mm IAN Safety Halo around implant body
+			// 2.0 mm IAN Safety Halo boundary
 			ctx.strokeStyle = statusStroke;
 			ctx.lineWidth = 1.5;
-			ctx.setLineDash([4, 3]);
+			ctx.setLineDash([3, 2]);
+			ctx.beginPath();
+			ctx.moveTo(-haloRadiusPx, -2.0 / pxSpacing);
+			ctx.lineTo(haloRadiusPx, -2.0 / pxSpacing);
+			ctx.lineTo(haloRadiusPx * 0.7, haloLengthPx);
+			ctx.lineTo(-haloRadiusPx * 0.7, haloLengthPx);
 			ctx.closePath();
 			ctx.stroke();
 			ctx.setLineDash([]);
 
-			// Implant Body
+			// Implant Platform Cap Bar
+			ctx.fillStyle = "#94a3b8";
+			ctx.fillRect(-radiusPx - 1, -2, (radiusPx + 1) * 2, 3);
+
+			// Tapered Implant Body
 			ctx.fillStyle = statusFill;
 			ctx.strokeStyle = statusStroke;
 			ctx.lineWidth = 2.0;
@@ -1945,14 +1978,63 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.fill();
 			ctx.stroke();
 
-			// Central Axis
-			ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+			// Central Axis with depth tick marks
+			ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
 			ctx.lineWidth = 1.0;
 			ctx.beginPath();
 			ctx.moveTo(0, 0);
 			ctx.lineTo(0, lengthPx);
 			ctx.stroke();
 
+			// Interactive CAD Handles (Entry Point / Apex)
+			// Platform entry handle (Blue circle)
+			ctx.fillStyle = "#38bdf8";
+			ctx.strokeStyle = "#ffffff";
+			ctx.lineWidth = 1.5;
+			ctx.beginPath();
+			ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.stroke();
+
+			// Apex angulation handle (White circle with status stroke)
+			ctx.fillStyle = "#ffffff";
+			ctx.strokeStyle = statusStroke;
+			ctx.lineWidth = 1.5;
+			ctx.beginPath();
+			ctx.arc(0, lengthPx, 4.0, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.stroke();
+
+			ctx.restore();
+
+			// 5. Direct Clearance Distance Line from Apex to Canal / Sinus
+			const apexPxX = entryPxX + (lengthPx * Math.sin((currentImplantPose.angulationDeg * Math.PI) / 180));
+			const apexPxY = entryPxY + (lengthPx * Math.cos((currentImplantPose.angulationDeg * Math.PI) / 180));
+
+			ctx.save();
+			ctx.strokeStyle = statusStroke;
+			ctx.lineWidth = 1.2;
+			ctx.setLineDash([2, 2]);
+			ctx.beginPath();
+			ctx.moveTo(apexPxX, apexPxY);
+			ctx.lineTo(canalCenterX, canalCenterY);
+			ctx.stroke();
+			ctx.setLineDash([]);
+
+			// Clearance label badge along distance vector
+			const midLineX = (apexPxX + canalCenterX) / 2;
+			const midLineY = (apexPxY + canalCenterY) / 2;
+			ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+			ctx.strokeStyle = statusStroke;
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			ctx.roundRect(midLineX - 22, midLineY - 8, 44, 16, 3);
+			ctx.fill();
+			ctx.stroke();
+			ctx.fillStyle = "#ffffff";
+			ctx.font = "bold 9px monospace";
+			ctx.textAlign = "center";
+			ctx.fillText(`${nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм`, midLineX, midLineY + 3.5);
 			ctx.restore();
 		}
 
@@ -1998,6 +2080,118 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const handlePanoMouseUp = useCallback(() => {
 		setIsDraggingPano(false);
 	}, []);
+
+	// ─── INTERACTIVE CROSS-SECTION IMPLANT DRAG & DROP ────────────────────────
+	const handleCrossSectionMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (studioMode !== "implant" || !activeCrossSection || !crossSectionCanvasRef.current) return;
+		const canvas = crossSectionCanvasRef.current;
+		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const pxSpacing = activeCrossSection.pixelSpacingMm || 0.25;
+		const centerX = canvas.width / 2;
+		const topY = 20;
+
+		const entryPxX = centerX + (implantEntryXOffsetMm / pxSpacing);
+		const entryPxY = topY + (implantEntryDepthMm / pxSpacing);
+		const angRad = (implantAngulationDeg * Math.PI) / 180;
+		const lengthPx = currentImplantSpec.lengthMm / pxSpacing;
+		const apexPxX = entryPxX + lengthPx * Math.sin(angRad);
+		const apexPxY = entryPxY + lengthPx * Math.cos(angRad);
+
+		const distToEntry = Math.hypot(x - entryPxX, y - entryPxY);
+		const distToApex = Math.hypot(x - apexPxX, y - apexPxY);
+
+		if (distToEntry <= 14) {
+			setDragImplantPart("entry");
+			setCrossSectionDragStart({
+				clientX: e.clientX,
+				clientY: e.clientY,
+				startX: implantEntryXOffsetMm,
+				startY: implantEntryDepthMm,
+				startAng: implantAngulationDeg,
+			});
+			return;
+		}
+		if (distToApex <= 14) {
+			setDragImplantPart("apex");
+			setCrossSectionDragStart({
+				clientX: e.clientX,
+				clientY: e.clientY,
+				startX: implantEntryXOffsetMm,
+				startY: implantEntryDepthMm,
+				startAng: implantAngulationDeg,
+			});
+			return;
+		}
+
+		const seg = pointToSegmentDistance2D({ x, y }, { x: entryPxX, y: entryPxY }, { x: apexPxX, y: apexPxY });
+		const radiusPx = (currentImplantSpec.diameterMm / 2.0) / pxSpacing;
+		if (seg.distance <= radiusPx + 8) {
+			setDragImplantPart("body");
+			setCrossSectionDragStart({
+				clientX: e.clientX,
+				clientY: e.clientY,
+				startX: implantEntryXOffsetMm,
+				startY: implantEntryDepthMm,
+				startAng: implantAngulationDeg,
+			});
+		}
+	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec]);
+
+	const handleCrossSectionMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (!dragImplantPart || !crossSectionDragStart || !activeCrossSection || !crossSectionCanvasRef.current) return;
+		const canvas = crossSectionCanvasRef.current;
+		const pxSpacing = activeCrossSection.pixelSpacingMm || 0.25;
+		const dxPx = e.clientX - crossSectionDragStart.clientX;
+		const dyPx = e.clientY - crossSectionDragStart.clientY;
+
+		if (dragImplantPart === "entry" || dragImplantPart === "body") {
+			const newX = Math.max(-8.0, Math.min(8.0, crossSectionDragStart.startX + dxPx * pxSpacing));
+			const newY = Math.max(0.0, Math.min(15.0, crossSectionDragStart.startY + dyPx * pxSpacing));
+			setImplantEntryXOffsetMm(Number(newX.toFixed(1)));
+			setImplantEntryDepthMm(Number(newY.toFixed(1)));
+		} else if (dragImplantPart === "apex") {
+			const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const centerX = canvas.width / 2;
+			const topY = 20;
+			const entryPxX = centerX + (implantEntryXOffsetMm / pxSpacing);
+			const entryPxY = topY + (implantEntryDepthMm / pxSpacing);
+
+			const relX = x - entryPxX;
+			const relY = y - entryPxY;
+			if (Math.hypot(relX, relY) > 8) {
+				const angleRad = Math.atan2(relX, relY);
+				const angleDeg = Math.round((angleRad * 180) / Math.PI);
+				const clampedAngle = Math.max(-30, Math.min(30, angleDeg));
+				setImplantAngulationDeg(clampedAngle);
+			}
+		}
+	}, [dragImplantPart, crossSectionDragStart, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm]);
+
+	const handleCrossSectionMouseUp = useCallback(() => {
+		setDragImplantPart(null);
+		setCrossSectionDragStart(null);
+	}, []);
+
+	// ─── 1-CLICK TOOTH SELECTION & AUTO-CENTERING ──────────────────────────────
+	const handleSelectTooth = useCallback((toothFdi: number) => {
+		if (crossSections.length > 0) {
+			const idx = crossSections.findIndex(
+				(s) => Number.parseInt(s.nearestToothFdi, 10) === toothFdi,
+			);
+			if (idx >= 0) {
+				setActiveCrossSectionIdx(idx);
+				const targetSlice = crossSections[idx];
+				if (targetSlice) {
+					setCrosshairMm(targetSlice.centerPointMm);
+				}
+				return;
+			}
+		}
+		const anchor = archCurve.anchors.find((a) => Number.parseInt(a.toothFdi, 10) === toothFdi);
+		if (anchor) {
+			setCrosshairMm((prev) => ({ x: anchor.positionMm.x, y: anchor.positionMm.y, z: prev.z }));
+		}
+	}, [crossSections, archCurve.anchors]);
 
 	// ─── INTERACTIVE CROSSHAIR DRAGGING & WHEEL NAVIGATION ────────────────────
 	const handleCanvasMouseDown = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -2628,8 +2822,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={crossSectionCanvasRef}
+					onMouseDown={handleCrossSectionMouseDown}
+					onMouseMove={handleCrossSectionMouseMove}
+					onMouseUp={handleCrossSectionMouseUp}
+					onMouseLeave={handleCrossSectionMouseUp}
 					onWheel={(e) => handleCanvasWheel("cross_section", e)}
-					className="w-full h-full object-contain"
+					className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
+					data-testid="cbct-cross-section-canvas"
 				/>
 				<CbctViewportHud
 					viewportType="cross_section"
@@ -3055,7 +3254,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					>
 						<canvas
 							ref={crossSectionCanvasRef}
-							className="w-full h-full object-contain"
+							onMouseDown={handleCrossSectionMouseDown}
+							onMouseMove={handleCrossSectionMouseMove}
+							onMouseUp={handleCrossSectionMouseUp}
+							onMouseLeave={handleCrossSectionMouseUp}
+							className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
+							data-testid="cbct-cross-section-sidebar-canvas"
 						/>
 						<CbctViewportHud
 							viewportType="cross_section"
@@ -3140,6 +3344,56 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						</div>
 					) : (
 						<div className="flex flex-col gap-3">
+							{/* ─── 1-CLICK TOOTH FORMULA SELECTOR ───────────────────────── */}
+							<div className="p-2.5 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-1.5">
+								<div className="text-[11px] font-bold text-[#94a3b8] flex items-center justify-between">
+									<span>Выбор позиции зуба (FDI):</span>
+									<span className="text-cyan-400 font-mono">#{activeCrossSection?.nearestToothFdi ?? "46"}</span>
+								</div>
+								<div className="flex flex-col gap-1 text-[10px]">
+									{/* Upper jaw teeth */}
+									<div className="flex items-center justify-between gap-0.5 overflow-x-auto pb-0.5">
+										{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((fdi) => {
+											const isTarget = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) === fdi;
+											return (
+												<button
+													key={fdi}
+													type="button"
+													onClick={() => handleSelectTooth(fdi)}
+													className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
+														isTarget
+															? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
+															: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35]"
+													}`}
+												>
+													{fdi}
+												</button>
+											);
+										})}
+									</div>
+									{/* Lower jaw teeth */}
+									<div className="flex items-center justify-between gap-0.5 overflow-x-auto pb-0.5">
+										{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((fdi) => {
+											const isTarget = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) === fdi;
+											return (
+												<button
+													key={fdi}
+													type="button"
+													onClick={() => handleSelectTooth(fdi)}
+													className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
+														isTarget
+															? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
+															: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35]"
+													}`}
+												>
+													{fdi}
+												</button>
+											);
+										})}
+									</div>
+								</div>
+							</div>
+
 							{/* ─── ANATOMICAL SAFETY ALARM BANNER (SINUS / IAN NERVE SENTINEL) ── */}
 							{(() => {
 								const isMaxilla = (implant3DWorld?.targetToothFdi ?? 46) < 30;
@@ -3202,11 +3456,17 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 										<div className="font-mono font-bold text-cyan-400 text-xs">{huSamplingResult.apicalBaseHU} HU</div>
 									</div>
 								</div>
-								<div className="text-[11px] text-[#94a3b8]">
-									Протокол: <strong className="text-[#e2e8f0]">{mischClassification.recommendedDrillingRpm}</strong>.
-									{mischClassification.underdrillingRecommended && (
-										<span className="text-amber-400 font-semibold ml-1">Недопрепарирование (Underdrilling).</span>
-									)}
+								<div className="text-[11px] text-[#94a3b8] flex flex-col gap-0.5">
+									<div>
+										Протокол: <strong className="text-[#e2e8f0]">{mischClassification.recommendedDrillingRpm}</strong>.
+										{mischClassification.underdrillingRecommended && (
+											<span className="text-amber-400 font-semibold ml-1">Недопрепарирование (Underdrilling).</span>
+										)}
+									</div>
+									<div className="text-[10px] text-[#64748b] flex items-center justify-between pt-1 border-t border-[#242a35]">
+										<span>Торк: <strong className="text-[#94a3b8]">{mischClassification.estimatedInsertionTorqueNcm.expectedNcm} Н·см</strong></span>
+										<span>ISQ: <strong className="text-[#94a3b8]">{mischClassification.estimatedIsqScore.expectedIsq}</strong></span>
+									</div>
 								</div>
 							</div>
 
@@ -3296,6 +3556,49 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 										onChange={(e) => setImplantEntryXOffsetMm(Number.parseFloat(e.target.value))}
 										className="w-full accent-cyan-400 min-h-[44px] py-2 cursor-pointer bg-transparent"
 									/>
+								</div>
+
+								{/* ─── 1-CLICK CLINICAL ACTION BUTTONS (TIER 1 HOT PATH) ── */}
+								<div className="flex flex-col gap-2 pt-2 border-t border-[#242a35]">
+									<button
+										type="button"
+										onClick={() => {
+											showToast(`Имплантат ${currentImplantSpec.brand.toUpperCase()} Ø${currentImplantSpec.diameterMm}x${currentImplantSpec.lengthMm} добавлен в план лечения (#${activeCrossSection?.nearestToothFdi ?? "46"})`, "success");
+										}}
+										className="w-full py-2.5 px-3 rounded-md bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-sm shadow-cyan-600/30"
+										data-testid="add-implant-to-plan-btn"
+									>
+										<Check className="w-4 h-4" />
+										<span>Добавить в план лечения (18 500 ₽)</span>
+									</button>
+
+									<div className="grid grid-cols-2 gap-1.5">
+										<button
+											type="button"
+											onClick={handleExportForm043Diary}
+											className="py-2 px-2 rounded-md bg-[#1e2430] hover:bg-[#252c3b] text-[#e2e8f0] border border-[#242a35] hover:border-cyan-500/60 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
+											data-testid="copy-diary-btn"
+											title="Копировать клинический протокол в карту 043/у"
+										>
+											<FileText className="w-3.5 h-3.5 text-cyan-400" />
+											<span>В Форму 043/у</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setImplantEntryXOffsetMm(0);
+												setImplantEntryDepthMm(2.0);
+												setImplantAngulationDeg(0);
+												showToast("Положение имплантата центрировано на гребне", "info");
+											}}
+											className="py-2 px-2 rounded-md bg-[#14171e] hover:bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] border border-[#242a35] text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
+											data-testid="reset-center-btn"
+											title="Центрировать имплантат на гребне"
+										>
+											<Compass className="w-3.5 h-3.5 text-[#94a3b8]" />
+											<span>Центрировать</span>
+										</button>
+									</div>
 								</div>
 							</div>
 						</div>

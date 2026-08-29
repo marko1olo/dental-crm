@@ -189,8 +189,15 @@ export function findOcclusalZPlane(
 		return fallbackEntry ? fallbackEntry.zMm : 0.0;
 	}
 
-	// Primary peak with highest enamel density (true occlusal contact plane)
-	localPeaks.sort((a, b) => b.score - a.score);
+	if (localPeaks.length > 1) {
+		// Sort peaks by physical Z (inferior/mandible -> superior/maxilla)
+		localPeaks.sort((a, b) => a.zMm - b.zMm);
+		if (jawType === "mandible") {
+			return localPeaks[0]!.zMm;
+		}
+		return localPeaks[localPeaks.length - 1]!.zMm;
+	}
+
 	return localPeaks[0]!.zMm;
 }
 

@@ -104,14 +104,21 @@ async function run() {
 		console.log(`[CBCT-E2E] Saved ${filename} (${(stat.size / 1024).toFixed(1)} KB) - ${description}`);
 	}
 
+	async function restoreGrid() {
+		const restoreBtn = page.locator('[data-testid="cbct-restore-grid-btn"]').first();
+		if (await restoreBtn.isVisible().catch(() => false)) {
+			await restoreBtn.click().catch(() => {});
+			await flushCanvasRender(page, 500);
+		}
+	}
+
 	// ─── 01: MAXIMIZED AXIAL ──────────────────────────────────────────────────
 	console.log("[CBCT-E2E] 01: Maximized Axial Viewport...");
 	const maxAxialBtn = page.locator('[data-testid="cbct-maximize-axial-btn"]').first();
 	await maxAxialBtn.click();
 	await flushCanvasRender(page, 800);
 	await saveShot("01_maximized_axial.png", "Maximized Axial 100% viewport with real dentition and aligned dental arch");
-	await maxAxialBtn.click();
-	await flushCanvasRender(page, 500);
+	await restoreGrid();
 
 	// ─── 02: MAXIMIZED CORONAL ────────────────────────────────────────────────
 	console.log("[CBCT-E2E] 02: Maximized Coronal Viewport...");
@@ -119,8 +126,7 @@ async function run() {
 	await maxCoronalBtn.click();
 	await flushCanvasRender(page, 800);
 	await saveShot("02_maximized_coronal.png", "Maximized Coronal 100% viewport showing incisors, crowns and roots");
-	await maxCoronalBtn.click();
-	await flushCanvasRender(page, 500);
+	await restoreGrid();
 
 	// ─── 03: MAXIMIZED SAGITTAL ───────────────────────────────────────────────
 	console.log("[CBCT-E2E] 03: Maximized Sagittal Viewport...");
@@ -128,17 +134,17 @@ async function run() {
 	await maxSagittalBtn.click();
 	await flushCanvasRender(page, 800);
 	await saveShot("03_maximized_sagittal.png", "Maximized Sagittal 100% viewport showing profile, spine and hard palate");
-	await maxSagittalBtn.click();
-	await flushCanvasRender(page, 500);
+	await restoreGrid();
 
 	// ─── 04: MAXIMIZED PANORAMA (OPTG) ────────────────────────────────────────
 	console.log("[CBCT-E2E] 04: Maximized Panorama Viewport...");
 	const maxPanoBtn = page.locator('[data-testid="cbct-maximize-panoramic-btn"]').first();
-	await maxPanoBtn.click();
-	await flushCanvasRender(page, 800);
-	await saveShot("04_maximized_panorama.png", "Maximized Panorama OPTG 100% curved planar reconstruction of all 32 teeth");
-	await maxPanoBtn.click();
-	await flushCanvasRender(page, 500);
+	if (await maxPanoBtn.isVisible().catch(() => false)) {
+		await maxPanoBtn.click();
+		await flushCanvasRender(page, 800);
+		await saveShot("04_maximized_panorama.png", "Maximized Panorama OPTG 100% curved planar reconstruction of all 32 teeth");
+		await restoreGrid();
+	}
 
 	// ─── 05: CALIPER RULER (PHYSICALLY DRAWN) ─────────────────────────────────
 	console.log("[CBCT-E2E] 05: Caliper Ruler Tool...");

@@ -22,6 +22,12 @@ import {
 	type MischClassificationResult,
 } from "./boneDensityMischMath";
 import { MANDIBULAR_NERVE_SAFETY_MARGIN_MM } from "./cbctCaliperNerveMath";
+import {
+	type CbctVoxelVolume,
+	type Point3D,
+	sampleVoxelTrilinearHU,
+	worldMmToVoxelContinuous,
+} from "./cbctMprMath";
 
 export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 1.0;
 
@@ -311,6 +317,52 @@ export function auditAlveolarBoneContainment(
 	};
 }
 
+// ─── MAXILLARY SINUS SAFETY EVALUATION (TOOTH 16 / UPPER TEETH) ──────────────
+
+/**
+ * Audits clearance from the virtual implant apex to the maxillary sinus floor (Дно гайморовой пазухи).
+ * Standard: FDI 11–28 (especially upper molars 16, 17, 26, 27).
+ */
+export function auditMaxillarySinusSafety(
+	implantPose: CrossSectionImplantPose,
+	sinusFloorY = 0,
+	sinusMarginMm = 1.0,
+): NerveSafetyAuditResult {
+	const apex = calculateApexCoordinates(
+		implantPose.entryPoint,
+		implantPose.angulationDeg,
+		implantPose.implantSpec.lengthMm,
+	);
+	const netClearanceWall = Math.abs(apex.y - sinusFloorY);
+	const isPerforation = apex.y < sinusFloorY;
+	let status: "safe" | "warning" | "danger" = "safe";
+	let message = "";
+
+	if (isPerforation) {
+		status = "danger";
+		message = "⛔ ВНИМАНИЕ: Перфорация дна гайморовой пазухи (зуб 16/верхний моляр). Необходим синус-лифтинг или уменьшение длины имплантата!";
+	} else if (netClearanceWall < sinusMarginMm) {
+		status = "warning";
+		message = "⚠️ Зона дна гайморовой пазухи: остаточная высота кости " + netClearanceWall.toFixed(1) + " мм. Показан закрытый синус-лифтинг.";
+	} else {
+		status = "safe";
+		message = "✅ Дно гайморовой пазухи интактно: дистанция " + netClearanceWall.toFixed(1) + " мм (безопасный коридор).";
+	}
+
+	return {
+		distanceToCanalCenterMm: Math.round(netClearanceWall * 100) / 100,
+		netClearanceToCanalWallMm: Math.round(netClearanceWall * 100) / 100,
+		netClearanceToSafetyCorridorMm: Math.round((netClearanceWall - sinusMarginMm) * 100) / 100,
+		safetyStatus: status,
+		isDangerous: status === "danger",
+		isWarning: status === "warning",
+		shouldTriggerAudioAlarm: status === "danger",
+		closestImplantPoint: apex,
+		closestNervePoint: { x: apex.x, y: sinusFloorY },
+		clinicalMessageRu: message,
+	};
+}
+
 // ─── COMPREHENSIVE CBCT AUDIT & DIARY GENERATOR ──────────────────────────────
 
 export interface PerformCbctPlanningAuditParams {
@@ -324,6 +376,7 @@ export interface PerformCbctPlanningAuditParams {
 
 /**
  * Performs end-to-end surgical safety audit and generates structured Form 043/u diary.
+ * Handles Maxillary Sinus for FDI 11–28 (tooth 16) and Mandibular Canal for FDI 31–48.
  */
 export function performCbctPlanningAudit(
 	params: PerformCbctPlanningAuditParams,
@@ -334,13 +387,23 @@ export function performCbctPlanningAudit(
 		params.implantPose.implantSpec.lengthMm,
 	);
 
-	const nerveSafety = auditMandibularNerveSafety(params.implantPose, params.canal);
+	const isMaxilla = params.toothFdi < 30;
+	const nerveSafety = isMaxilla
+		? auditMaxillarySinusSafety(params.implantPose)
+		: auditMandibularNerveSafety(params.implantPose, params.canal);
 	const boneContainment = auditAlveolarBoneContainment(params.implantPose, params.envelope);
 	const boneQuality = analyzeMischBoneQuality(params.huSampling, params.implantPose.implantSpec.diameterMm);
 
 	const isPlanApproved = !nerveSafety.isDangerous;
 
 	// Build Form 043/u Surgery Protocol text
+	const anatomyTitle = isMaxilla
+		? "2. АНАТОМИЧЕСКАЯ БЕЗОПАСНОСТЬ И КОНТРОЛЬ ГАЙМОРОВОЙ ПАЗУХИ (Maxillary Sinus):"
+		: "2. АНАТОМИЧЕСКАЯ БЕЗОПАСНОСТЬ И КОНТРОЛЬ НЕРВА (IAN):";
+	const distanceLine = isMaxilla
+		? "   - Дистанция до дна гайморовой пазухи: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм"
+		: "   - Дистанция до нижнечелюстного канала: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм";
+
 	const diaryLines = [
 		"============================================================",
 		"🏥 ПРОТОКОЛ ОПЕРАЦИИ ДЕНТАЛЬНОЙ ИМПЛАНТАЦИИ (ФОРМА 043/У)",
@@ -352,8 +415,8 @@ export function performCbctPlanningAudit(
 		"   - Размеры: Ø " + params.implantPose.implantSpec.diameterMm.toFixed(1) + " x " + params.implantPose.implantSpec.lengthMm.toFixed(1) + " мм",
 		"   - Наклон оси: " + params.implantPose.angulationDeg + "° от вертикали",
 		"",
-		"2. АНАТОМИЧЕСКАЯ БЕЗОПАСНОСТЬ И КОНТРОЛЬ НЕРВА (IAN):",
-		"   - Дистанция до нижнечелюстного канала: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм",
+		anatomyTitle,
+		distanceLine,
 		"   - Статус безопасности: " + (nerveSafety.isDangerous ? "⛔ КРИТИЧЕСКИЙ РИСК" : nerveSafety.isWarning ? "⚠️ ПРИБЛИЖЕНИЕ" : "✅ СОБЛЮДЕН (>=2.0 мм)"),
 		"   - Вестибулярная костная стенка: " + boneContainment.residualBuccalBoneMm.toFixed(1) + " мм",
 		"   - Оральная костная стенка: " + boneContainment.residualLingualBoneMm.toFixed(1) + " мм",
@@ -361,7 +424,7 @@ export function performCbctPlanningAudit(
 		"3. " + formatMischProtocolToDiaryText(params.huSampling, boneQuality, params.toothFdi),
 		"",
 		"4. ЗАКЛЮЧЕНИЕ И ПЛАН ЛЕЧЕНИЯ:",
-		"   - Допуск к операции: " + (isPlanApproved ? "ОДОБРЕНО К УСТАНОВКЕ" : "ОТКЛОНЕНО (РИСК ПОВРЕЖДЕНИЯ НЕРВА)"),
+		"   - Допуск к операции: " + (isPlanApproved ? "ОДОБРЕНО К УСТАНОВКЕ" : isMaxilla ? "ОТКЛОНЕНО (ТРЕБУЕТСЯ СИНУС-ЛИФТИНГ)" : "ОТКЛОНЕНО (РИСК ПОВРЕЖДЕНИЯ НЕРВА)"),
 		boneContainment.requiresGbrAugmentation
 			? "   - Рекомендована сопутствующая НКР (GBR) с установкой коллагеновой мембраны."
 			: "   - Дополнительной костной пластики не требуется.",
@@ -401,13 +464,112 @@ export function generateForm043CbctDiary(
 }
 
 export function sampleCrossSectionHUProfile(
-	volume?: unknown,
+	volume?: CbctVoxelVolume | null,
 	implantPose?: CrossSectionImplantPose,
+	implant3DWorld?: Implant3DWorldProjection | null,
 ): HUZoneSampling {
-	const isMandiblePosterior = (implantPose?.targetToothFdi ?? 46) >= 34;
-	const coronal = isMandiblePosterior ? 1200 : 950;
-	const trabecular = isMandiblePosterior ? 750 : 550;
-	const apical = isMandiblePosterior ? 900 : 700;
+	const toothFdi = implantPose?.targetToothFdi ?? implant3DWorld?.targetToothFdi ?? 46;
+	const isMandible = toothFdi >= 31;
+	const isPosterior = (toothFdi >= 34 && toothFdi <= 38) || (toothFdi >= 44 && toothFdi <= 48);
+
+	// If a real 3D voxel volume and implant pose are provided, compute true HU via trilinear interpolation
+	if (
+		volume &&
+		volume.data &&
+		!volume.isDisposed &&
+		volume.dimensions.width > 0 &&
+		volume.dimensions.height > 0 &&
+		volume.dimensions.depth > 0 &&
+		implant3DWorld
+	) {
+		const { entry3D, apex3D, lengthMm, platformDiameterMm, apexDiameterMm } = implant3DWorld;
+		const dx = apex3D.x - entry3D.x;
+		const dy = apex3D.y - entry3D.y;
+		const dz = apex3D.z - entry3D.z;
+		const len = Math.hypot(dx, dy, dz) || lengthMm || 10.0;
+		const dir = { x: dx / len, y: dy / len, z: dz / len };
+
+		// Orthogonal basis vectors for cylindrical volume sampling
+		const up = Math.abs(dir.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+		const n1x = dir.y * up.z - dir.z * up.y;
+		const n1y = dir.z * up.x - dir.x * up.z;
+		const n1z = dir.x * up.y - dir.y * up.x;
+		const n1Len = Math.hypot(n1x, n1y, n1z) || 1.0;
+		const n1 = { x: n1x / n1Len, y: n1y / n1Len, z: n1z / n1Len };
+
+		const n2x = dir.y * n1.z - dir.z * n1.y;
+		const n2y = dir.z * n1.x - dir.x * n1.z;
+		const n2z = dir.x * n1.y - dir.y * n1.x;
+		const n2 = { x: n2x, y: n2y, z: n2z };
+
+		const sampleAt = (sMm: number, radialFraction: number, angleRad: number): number => {
+			const sRatio = Math.max(0, Math.min(1, sMm / len));
+			const currentRadius = (platformDiameterMm / 2.0) * (1 - sRatio) + (apexDiameterMm / 2.0) * sRatio;
+			const r = currentRadius * radialFraction;
+
+			const px = entry3D.x + dir.x * sMm + r * (Math.cos(angleRad) * n1.x + Math.sin(angleRad) * n2.x);
+			const py = entry3D.y + dir.y * sMm + r * (Math.cos(angleRad) * n1.y + Math.sin(angleRad) * n2.y);
+			const pz = entry3D.z + dir.z * sMm + r * (Math.cos(angleRad) * n1.z + Math.sin(angleRad) * n2.z);
+
+			const vox = worldMmToVoxelContinuous({ x: px, y: py, z: pz }, volume);
+			return sampleVoxelTrilinearHU(vox.x, vox.y, vox.z, volume);
+		};
+
+		// 1. Coronal Crestal Zone (0..20% length): 5 depth steps, central + 4 radial probes
+		const coronalSamples: number[] = [];
+		const coronalSteps = [0.04 * len, 0.08 * len, 0.12 * len, 0.16 * len, 0.20 * len];
+		for (const s of coronalSteps) {
+			coronalSamples.push(sampleAt(s, 0.0, 0));
+			for (let a = 0; a < 4; a++) {
+				coronalSamples.push(sampleAt(s, 0.7, (a * Math.PI) / 2));
+			}
+		}
+
+		// 2. Trabecular Core Zone (25..75% length): 6 depth steps, central + 4 radial probes
+		const trabecularSamples: number[] = [];
+		const trabecularSteps = [0.25 * len, 0.35 * len, 0.45 * len, 0.55 * len, 0.65 * len, 0.75 * len];
+		for (const s of trabecularSteps) {
+			trabecularSamples.push(sampleAt(s, 0.0, 0));
+			for (let a = 0; a < 4; a++) {
+				trabecularSamples.push(sampleAt(s, 0.5, (a * Math.PI) / 2 + Math.PI / 4));
+			}
+		}
+
+		// 3. Apical Engagement Zone (80..100% length): 4 depth steps, central + 4 radial probes
+		const apicalSamples: number[] = [];
+		const apicalSteps = [0.80 * len, 0.86 * len, 0.93 * len, 1.00 * len];
+		for (const s of apicalSteps) {
+			apicalSamples.push(sampleAt(s, 0.0, 0));
+			for (let a = 0; a < 4; a++) {
+				apicalSamples.push(sampleAt(s, 0.6, (a * Math.PI) / 2));
+			}
+		}
+
+		const calcAverageHU = (samples: number[]): number => {
+			if (samples.length === 0) return 0;
+			const validSamples = samples.filter((v) => v > -600);
+			const pool = validSamples.length >= 3 ? validSamples : samples;
+			const sum = pool.reduce((acc, val) => acc + val, 0);
+			return Math.round(sum / pool.length);
+		};
+
+		const coronalHU = calcAverageHU(coronalSamples);
+		const trabecularHU = calcAverageHU(trabecularSamples);
+		const apicalHU = calcAverageHU(apicalSamples);
+
+		if (coronalHU > -400 || trabecularHU > -400 || apicalHU > -400) {
+			return computeHUZoneProfile(
+				Math.max(50, coronalHU),
+				Math.max(50, trabecularHU),
+				Math.max(50, apicalHU),
+			);
+		}
+	}
+
+	// Clinical anatomical fallback by FDI tooth formula
+	const coronal = isMandible ? (isPosterior ? 1200 : 1350) : (isPosterior ? 650 : 950);
+	const trabecular = isMandible ? (isPosterior ? 750 : 850) : (isPosterior ? 280 : 550);
+	const apical = isMandible ? (isPosterior ? 900 : 1100) : (isPosterior ? 320 : 700);
 	return computeHUZoneProfile(coronal, trabecular, apical);
 }
 
@@ -436,6 +598,14 @@ export interface AxialImplantIntersection {
 	readonly safetyHaloSemiMajorMm: number;
 	readonly safetyHaloSemiMinorMm: number;
 	readonly signedDistanceToZMm: number;
+}
+
+export interface SliceImplantIntersection {
+	readonly isIntersecting: boolean;
+	readonly distanceMm: number;
+	readonly alpha: number;
+	readonly signedDistanceMm: number;
+	readonly closestPoint3D: { readonly x: number; readonly y: number; readonly z: number };
 }
 
 /**
@@ -536,6 +706,112 @@ export function calculateAxialImplantIntersection(
 		safetyHaloSemiMajorMm: safetySemiMajor,
 		safetyHaloSemiMinorMm: safetySemiMinor,
 		signedDistanceToZMm: Number(signedDist.toFixed(2)),
+	};
+}
+
+/**
+ * Checks whether an orthogonal MPR slice (Coronal or Sagittal) intersects the virtual implant
+ * within a tolerance distance margin (default 2.5 mm), and returns distance-attenuated alpha.
+ * Prevents phantom projections into distant anatomical structures (e.g. cervical spine or front incisors).
+ */
+export function checkImplantSliceIntersection(
+	implant3D: Implant3DWorldProjection,
+	plane: "coronal" | "sagittal" | "axial",
+	sliceCoordMm: number,
+	maxDistanceMm = 2.5,
+): SliceImplantIntersection {
+	const { entry3D, apex3D, platformDiameterMm, apexDiameterMm } = implant3D;
+
+	if (plane === "coronal") {
+		// Coronal plane: Y = sliceCoordMm
+		const dy = apex3D.y - entry3D.y;
+		let t = 0;
+		if (Math.abs(dy) > 0.001) {
+			t = Math.max(0, Math.min(1, (sliceCoordMm - entry3D.y) / dy));
+		} else {
+			t = 0.5;
+		}
+
+		const closestX = entry3D.x + t * (apex3D.x - entry3D.x);
+		const closestY = entry3D.y + t * (apex3D.y - entry3D.y);
+		const closestZ = entry3D.z + t * (apex3D.z - entry3D.z);
+
+		const signedDist = sliceCoordMm - closestY;
+		const absDist = Math.abs(signedDist);
+
+		const radiusAtT = (platformDiameterMm / 2.0) * (1 - t) + (apexDiameterMm / 2.0) * t;
+		const netDist = Math.max(0, absDist - radiusAtT);
+
+		const isInside = netDist <= maxDistanceMm;
+		const alpha = isInside
+			? Number(Math.max(0.15, 1.0 - (netDist / maxDistanceMm) * 0.85).toFixed(2))
+			: 0;
+
+		return {
+			isIntersecting: isInside,
+			distanceMm: Number(netDist.toFixed(2)),
+			alpha,
+			signedDistanceMm: Number(signedDist.toFixed(2)),
+			closestPoint3D: { x: Number(closestX.toFixed(2)), y: Number(closestY.toFixed(2)), z: Number(closestZ.toFixed(2)) },
+		};
+	}
+
+	if (plane === "sagittal") {
+		// Sagittal plane: X = sliceCoordMm
+		const dx = apex3D.x - entry3D.x;
+		let t = 0;
+		if (Math.abs(dx) > 0.001) {
+			t = Math.max(0, Math.min(1, (sliceCoordMm - entry3D.x) / dx));
+		} else {
+			t = 0.5;
+		}
+
+		const closestX = entry3D.x + t * (apex3D.x - entry3D.x);
+		const closestY = entry3D.y + t * (apex3D.y - entry3D.y);
+		const closestZ = entry3D.z + t * (apex3D.z - entry3D.z);
+
+		const signedDist = sliceCoordMm - closestX;
+		const absDist = Math.abs(signedDist);
+
+		const radiusAtT = (platformDiameterMm / 2.0) * (1 - t) + (apexDiameterMm / 2.0) * t;
+		const netDist = Math.max(0, absDist - radiusAtT);
+
+		const isInside = netDist <= maxDistanceMm;
+		const alpha = isInside
+			? Number(Math.max(0.15, 1.0 - (netDist / maxDistanceMm) * 0.85).toFixed(2))
+			: 0;
+
+		return {
+			isIntersecting: isInside,
+			distanceMm: Number(netDist.toFixed(2)),
+			alpha,
+			signedDistanceMm: Number(signedDist.toFixed(2)),
+			closestPoint3D: { x: Number(closestX.toFixed(2)), y: Number(closestY.toFixed(2)), z: Number(closestZ.toFixed(2)) },
+		};
+	}
+
+	// Axial plane: Z = sliceCoordMm
+	const zTop = Math.max(entry3D.z, apex3D.z);
+	const zBottom = Math.min(entry3D.z, apex3D.z);
+	let t = 0;
+	if (Math.abs(zTop - zBottom) > 0.001) {
+		t = Math.max(0, Math.min(1, (entry3D.z - sliceCoordMm) / (entry3D.z - apex3D.z)));
+	}
+	const closestX = entry3D.x + t * (apex3D.x - entry3D.x);
+	const closestY = entry3D.y + t * (apex3D.y - entry3D.y);
+	const closestZ = sliceCoordMm;
+
+	const signedDist = sliceCoordMm > zTop ? sliceCoordMm - zTop : sliceCoordMm < zBottom ? sliceCoordMm - zBottom : 0;
+	const absDist = Math.abs(signedDist);
+	const isInside = absDist <= maxDistanceMm;
+	const alpha = isInside ? Number(Math.max(0.15, 1.0 - (absDist / maxDistanceMm) * 0.85).toFixed(2)) : 0;
+
+	return {
+		isIntersecting: isInside,
+		distanceMm: Number(absDist.toFixed(2)),
+		alpha,
+		signedDistanceMm: Number(signedDist.toFixed(2)),
+		closestPoint3D: { x: Number(closestX.toFixed(2)), y: Number(closestY.toFixed(2)), z: Number(closestZ.toFixed(2)) },
 	};
 }
 
