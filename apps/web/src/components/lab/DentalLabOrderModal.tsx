@@ -480,7 +480,7 @@ export function DentalLabOrderModal({
 				</div>
 
 				{/* ─── NAVIGATION TABS ───────────────────────────────────────────── */}
-				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 px-4 sm:px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs">
+				<div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
 					{[
 						{ id: "main", label: "1. Зубы & Вид", icon: FlaskConical, fullTitle: "1. Зубная формула & Конструкция" },
 						{ id: "shades", label: "2. Расцветка VITA", icon: Palette, fullTitle: "2. Расцветка VITA & Культя" },
@@ -496,18 +496,18 @@ export function DentalLabOrderModal({
 								key={tab.id}
 								type="button"
 								onClick={() => setActiveTab(tab.id as TabKey)}
-								className={`lab-modal-tab-btn ${isActive ? "is-active" : ""}`}
+								className={`lab-modal-tab-btn whitespace-nowrap flex-shrink-0 ${isActive ? "is-active" : ""}`}
 								title={tab.fullTitle}
 							>
 								<Icon className="w-4 h-4 shrink-0" />
-								<span className="truncate">{tab.label}</span>
+								<span className="whitespace-nowrap">{tab.label}</span>
 							</button>
 						);
 					})}
 				</div>
 
 				{/* ─── MODAL BODY WITH TAB PANELS ───────────────────────────────── */}
-				<div className="flex-1 overflow-y-auto p-6 space-y-6">
+				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-6">
 
 					{/* ═══ TAB 1: MAIN SPECS & ODONTOGRAM ═══════════════════════════ */}
 					{activeTab === "main" && (

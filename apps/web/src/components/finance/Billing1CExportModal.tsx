@@ -263,47 +263,47 @@ export function Billing1CExportModal({
 				</div>
 
 				{/* Sub-tabs bar */}
-				<div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs shrink-0 overflow-x-auto [scrollbar-width:none]">
-					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]">
+				<div className="flex items-center justify-between gap-2 px-3 sm:px-6 py-2 border-b border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
+					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] shrink-0 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 						<button
 							type="button"
 							onClick={() => setActiveSubTab("items")}
-							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+							className={`h-8 px-2.5 sm:px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
 								activeSubTab === "items"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							<Receipt size={14} />
+							<Receipt size={14} className="shrink-0" />
 							<span>Услуги и позиции ({items.length})</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveSubTab("xml")}
-							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+							className={`h-8 px-2.5 sm:px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
 								activeSubTab === "xml"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							<Code2 size={14} />
+							<Code2 size={14} className="shrink-0" />
 							<span>XML CommerceML</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveSubTab("requisites")}
-							className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+							className={`h-8 px-2.5 sm:px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
 								activeSubTab === "requisites"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							<FileText size={14} />
+							<FileText size={14} className="shrink-0" />
 							<span>Реквизиты документа</span>
 						</button>
 					</div>
 
-					<div className="text-[11px] text-[var(--muted,#64748b)] hidden md:flex items-center gap-1 font-mono">
+					<div className="text-[11px] text-[var(--muted,#64748b)] hidden md:flex items-center gap-1 font-mono shrink-0">
 						<span>XML Schema:</span>
 						<strong className="text-[var(--ink,#0f172a)] font-bold">1C_Enterprise_v2.09</strong>
 					</div>
@@ -615,20 +615,20 @@ export function Billing1CExportModal({
 						<button
 							type="button"
 							onClick={handleCopyAccountantSummary}
-							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap"
+							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0"
 							title="Сводка для бухгалтерии"
 						>
 							<FileText size={13} className="shrink-0" />
-							<span>Сводка для бухгалтерии</span>
+							<span><span className="hidden sm:inline">Сводка для бухгалтерии</span><span className="sm:hidden">Сводка</span></span>
 						</button>
 						<button
 							type="button"
 							onClick={handleCopyXml}
-							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap"
+							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0"
 							title="Скопировать XML CommerceML"
 						>
 							<Copy size={13} className="shrink-0" />
-							<span>Скопировать XML</span>
+							<span><span className="hidden sm:inline">Скопировать XML</span><span className="sm:hidden">XML</span></span>
 						</button>
 					</div>
 

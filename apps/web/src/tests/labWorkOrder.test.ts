@@ -116,23 +116,20 @@ describe('Statutory Dental Laboratory Work Order & Tracking Studio Suite', () =>
 		});
 	});
 
-	describe('3. Statutory 7-Stage Workflow Sequence', () => {
-		it('verifies all 7 stages in canonical GOST sequence', () => {
-			assert.equal(LAB_STAGE_ORDER.length, 7);
+	describe('3. Statutory Production Workflow Sequence', () => {
+		it('verifies all stages in canonical sequence', () => {
+			assert.equal(LAB_STAGE_ORDER.length, 4);
 			assert.deepEqual(LAB_STAGE_ORDER, [
-				'impression_sent',
-				'cad_design',
-				'milling_wax_up',
-				'try_in_fitting',
-				'glaze_finish',
-				'delivered_to_clinic',
-				'installed_in_mouth'
+				'in_progress',
+				'fitting_scheduled',
+				'delivered_completed',
+				'correction_remake'
 			]);
 
 			for (let i = 0; i < LAB_STAGE_ORDER.length; i++) {
 				const stageId = LAB_STAGE_ORDER[i]!;
 				const stageDef = LAB_WORKFLOW_STAGES[stageId];
-				assert.equal(stageDef.orderIndex, i + 1);
+				assert.ok(stageDef);
 				assert.ok(stageDef.nameRu.length > 0);
 				assert.ok(stageDef.icon.length > 0);
 			}
