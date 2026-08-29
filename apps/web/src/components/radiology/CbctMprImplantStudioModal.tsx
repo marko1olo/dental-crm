@@ -494,7 +494,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setVolume(vol);
 			setLoadedSliceCount(vol.dimensions.depth);
 			setPatientDisplayName("Барабаш С.В.");
-			setCrosshairMm({ x: 0, y: -5, z: jawType === "mandible" ? 16.8 : -16.0 });
+			setCrosshairMm({ x: 0, y: 0, z: 0 });
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 			const arch = buildDentalArchCurve(
@@ -528,7 +528,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 			setVolume(vol);
 			setLoadedSliceCount(vol.dimensions.depth);
-			setCrosshairMm({ x: 0, y: -5, z: 0 });
+			setCrosshairMm({ x: 0, y: 0, z: 0 });
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 			const arch = buildDentalArchCurve(
@@ -565,7 +565,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				});
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
-				setCrosshairMm({ x: 0, y: -5, z: 0 });
+				setCrosshairMm({ x: 0, y: 0, z: 0 });
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				setDicomLoadingStatus(null);
@@ -590,7 +590,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				});
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
-				setCrosshairMm({ x: 0, y: -5, z: 0 });
+				setCrosshairMm({ x: 0, y: 0, z: 0 });
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				setDicomLoadingStatus(null);
@@ -1052,18 +1052,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					ctx.lineTo(pApex.x, pApex.y);
 					ctx.stroke();
 
-					// Tooth FDI badge
-					ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+					// Semi-transparent compact Tooth FDI badge with pointer arrow
+					const badgeY = Math.max(2, pEntry.y - 18);
+					ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
 					ctx.strokeStyle = statusColor;
 					ctx.lineWidth = 1;
 					ctx.beginPath();
-					ctx.roundRect(pEntry.x - 14, Math.max(2, pEntry.y - 16), 28, 13, 3);
+					ctx.roundRect(pEntry.x - 13, badgeY, 26, 12, 3);
 					ctx.fill();
 					ctx.stroke();
+					// Pointer arrow
+					ctx.beginPath();
+					ctx.moveTo(pEntry.x - 3, badgeY + 12);
+					ctx.lineTo(pEntry.x, badgeY + 15);
+					ctx.lineTo(pEntry.x + 3, badgeY + 12);
+					ctx.closePath();
+					ctx.fillStyle = statusColor;
+					ctx.fill();
 					ctx.fillStyle = "#ffffff";
-					ctx.font = "bold 9px monospace";
+					ctx.font = "bold 8.5px monospace";
 					ctx.textAlign = "center";
-					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, Math.max(2, pEntry.y - 16) + 10);
+					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, badgeY + 9);
 				}
 
 				const zPx = metadata.heightPx - 1 - vox.z;
@@ -1215,18 +1224,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					ctx.lineTo(pApex.x, pApex.y);
 					ctx.stroke();
 
-					// Tooth FDI badge
-					ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+					// Semi-transparent compact Tooth FDI badge with pointer arrow
+					const badgeY = Math.max(2, pEntry.y - 18);
+					ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
 					ctx.strokeStyle = statusColor;
 					ctx.lineWidth = 1;
 					ctx.beginPath();
-					ctx.roundRect(pEntry.x - 14, Math.max(2, pEntry.y - 16), 28, 13, 3);
+					ctx.roundRect(pEntry.x - 13, badgeY, 26, 12, 3);
 					ctx.fill();
 					ctx.stroke();
+					// Pointer arrow
+					ctx.beginPath();
+					ctx.moveTo(pEntry.x - 3, badgeY + 12);
+					ctx.lineTo(pEntry.x, badgeY + 15);
+					ctx.lineTo(pEntry.x + 3, badgeY + 12);
+					ctx.closePath();
+					ctx.fillStyle = statusColor;
+					ctx.fill();
 					ctx.fillStyle = "#ffffff";
-					ctx.font = "bold 9px monospace";
+					ctx.font = "bold 8.5px monospace";
 					ctx.textAlign = "center";
-					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, Math.max(2, pEntry.y - 16) + 10);
+					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, badgeY + 9);
 				}
 
 				const zPx = metadata.heightPx - 1 - vox.z;
@@ -2690,36 +2708,45 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						</div>
 					) : (
 						<div className="flex flex-col gap-3">
-							{/* ─── MANDIBULAR NERVE SAFETY ALARM BANNER (2.0 MM HALO SENTINEL) ── */}
-							<div
-								className={`p-3 rounded-md border flex items-start gap-2.5 transition-colors ${
-									nerveAuditResult.isDangerous
-										? "bg-[#2d1215] border-rose-600/80 text-rose-200"
-										: nerveAuditResult.isWarning
-											? "bg-[#2d2212] border-amber-600/80 text-amber-200"
-											: "bg-[#12241b] border-emerald-600/80 text-emerald-200"
-								}`}
-								data-testid="cbct-nerve-safety-banner"
-							>
-								{nerveAuditResult.isDangerous ? (
-									<ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-								) : nerveAuditResult.isWarning ? (
-									<AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-								) : (
-									<ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-								)}
-								<div className="text-xs flex-1">
-									<div className="font-bold flex items-center justify-between">
-										<span>Зазор до нерва (IAN): {nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм</span>
-										<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/40 font-mono">
-											Норма {">="} 2.0 мм
-										</span>
+							{/* ─── ANATOMICAL SAFETY ALARM BANNER (SINUS / IAN NERVE SENTINEL) ── */}
+							{(() => {
+								const isMaxilla = (implant3DWorld?.targetToothFdi ?? 46) < 30;
+								const anatomyLabel = isMaxilla ? "Гайморова пазуха (Sinus)" : "Зазор до нерва (IAN)";
+								const anatomyNorm = isMaxilla ? "Дно пазухи интактно" : "Норма >= 2.0 мм";
+								return (
+									<div
+										className={`p-3 rounded-md border flex items-start gap-2.5 transition-colors ${
+											nerveAuditResult.isDangerous
+												? "bg-[#2d1215] border-rose-600/80 text-rose-200"
+												: nerveAuditResult.isWarning
+													? "bg-[#2d2212] border-amber-600/80 text-amber-200"
+													: "bg-[#12241b] border-emerald-600/80 text-emerald-200"
+										}`}
+										data-testid="cbct-nerve-safety-banner"
+									>
+										{nerveAuditResult.isDangerous ? (
+											<ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+										) : nerveAuditResult.isWarning ? (
+											<AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+										) : (
+											<ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+										)}
+										<div className="text-xs flex-1">
+											<div className="font-bold flex items-center justify-between">
+												<span>{anatomyLabel}: {nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм</span>
+												<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/40 font-mono">
+													{anatomyNorm}
+												</span>
+											</div>
+											<p className="text-[11px] mt-1 opacity-90 leading-tight">
+												{isMaxilla && (implant3DWorld?.targetToothFdi === 16 || implant3DWorld?.targetToothFdi === 26)
+													? "✅ Зуб 16/26 (Верхняя челюсть): контроль дна гайморовой пазухи. При дефиците высоты показан синус-лифтинг."
+													: nerveAuditResult.clinicalMessageRu}
+											</p>
+										</div>
 									</div>
-									<p className="text-[11px] mt-1 opacity-90 leading-tight">
-										{nerveAuditResult.clinicalMessageRu}
-									</p>
-								</div>
-							</div>
+								);
+							})()}
 
 							{/* ─── MISCH BONE DENSITY (HU) & DRILLING PROTOCOL ────────────── */}
 							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">

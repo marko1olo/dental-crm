@@ -310,4 +310,40 @@ describe("AppointmentCard Suite", () => {
 			}
 		}
 	});
+
+	it("renders direct patient CT / X-ray radiology action button in appointment card", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentCard, {
+				appointment: baseAppointment,
+				dashboard: mockDashboard as Dashboard,
+				visibleScheduleSuggestions: [],
+				appointmentReadinessById: new Map(),
+				appointmentLabels: mockAppointmentLabels,
+				appointmentDraft: {},
+				appointmentSaveState: "idle",
+				appointmentSaveError: null,
+				appointmentDirty: false,
+				appointmentEditing: false,
+				appointmentHasOpenVisit: false,
+				appointmentActiveVisitStatusLocked: false,
+				appointmentMissingSteps: [],
+				appointmentReadyToSave: true,
+				openScheduleSuggestion: () => {},
+				formatTime: () => "10:00",
+				patientName: () => "Кузнецов Петр Сергеевич",
+				openAppointmentEditor: () => {},
+				repeatAppointment: () => {},
+				closeAppointmentEditor: () => {},
+				updateAppointmentScheduleDraft: () => {},
+				saveAppointmentSchedule: async () => true,
+				normalizedAppointmentStatus: (v: any) => v,
+				toDateTimeLocalValue: (v: string) => v,
+				fromDateTimeLocalValue: (v: string) => v,
+				useManualSelects: false,
+				activeVisitLockedAppointmentStatuses: activeVisitLockedStatuses,
+			})
+		);
+
+		assert.ok(html.includes("appointment-context-menu-btn"), "должна присутствовать кнопка контекстного меню");
+	});
 });

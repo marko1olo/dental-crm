@@ -6,14 +6,14 @@ import type {
 	ScheduleSuggestion,
 } from "@dental/shared";
 import React, { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Check, Clock, Copy, CreditCard, MessageSquare, MoreVertical, Phone, User, Zap } from "lucide-react";
+import { AlertTriangle, Check, Clock, Copy, CreditCard, MessageSquare, MoreVertical, Phone, Scan, User, Zap } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
-import { AppointmentQuickActions } from "./AppointmentQuickActions";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
+import { AppointmentQuickActions } from "./AppointmentQuickActions";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -233,15 +233,15 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		const sameChair = Boolean(curChairId && conflicting.chairId === curChairId);
 		const samePatient = Boolean(curPatientId && conflicting.patientId === curPatientId);
 
-		let message = "⚠️ Коллизия: пересечение по времени";
+		let message = "Коллизия: пересечение по времени";
 		if (sameDoctor && !sameChair) {
-			message = "⚠️ Коллизия: врач записан в два кабинета одновременно";
+			message = "Коллизия: врач записан в два кабинета одновременно";
 		} else if (sameDoctor && sameChair) {
-			message = "⚠️ Коллизия: двойная запись у врача в одном кабинете";
+			message = "Коллизия: двойная запись у врача в одном кабинете";
 		} else if (sameChair) {
-			message = "⚠️ Коллизия: наложение двух пациентов в одном кабинете";
+			message = "Коллизия: наложение двух пациентов в одном кабинете";
 		} else if (samePatient) {
-			message = "⚠️ Коллизия: пациент записан на два приема одновременно";
+			message = "Коллизия: пациент записан на два приема одновременно";
 		}
 
 		return {
@@ -285,18 +285,18 @@ export function AppointmentCard(props: AppointmentCardProps) {
 			(appointmentPatient as { allergies?: string | null } | undefined)?.allergies ||
 			(appointmentPatient as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
 		if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
-			return `⚠️ Внимание: ${rawAllergies.trim()}`;
+			return `Внимание: ${rawAllergies.trim()}`;
 		}
 		const notes = appointmentPatient?.notes || "";
 		const match = notes.match(/аллерги[яеи][^.;\n]*/i);
 		if (match) {
-			return `⚠️ Внимание: ${match[0].trim()}`;
+			return `Внимание: ${match[0].trim()}`;
 		}
 		if (
 			/лидокаин/i.test(appointment?.reason || "") ||
 			/аллерги/i.test(appointment?.reason || "")
 		) {
-			return "⚠️ Внимание: Аллергия на лидокаин";
+			return "Внимание: Аллергия на лидокаин";
 		}
 		return null;
 	}, [appointmentPatient, appointment?.reason]);
@@ -511,6 +511,16 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		) {
 			e.preventDefault();
 			copyAppointmentToBuffer(appointment);
+		} else if (
+			(e.key === "x" || e.key === "X" || e.key === "ч" || e.key === "Ч") &&
+			!e.ctrlKey &&
+			!e.metaKey
+		) {
+			e.preventDefault();
+			if (typeof window !== "undefined") {
+				window.location.hash = "#radiology";
+				showToast(`Открыты снимки и КТ пациента ${appointmentPatientName}`, "info");
+			}
 		}
 	};
 
@@ -645,9 +655,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							</span>
 						</div>
 						<div className="flex items-center gap-1.5 flex-wrap min-w-0">
-							{/* Status indicator badge */}
-							<span
-								className={`px-2 py-0.5 rounded-lg text-xs font-bold shrink-0 flex items-center gap-1 ${
+							{/* Unified Interactive Status Selector with Color Indication */}
+							<div
+								className={`appointment-status-badge-selector relative inline-flex items-center gap-1.5 h-7 px-2 py-0.5 rounded-lg text-xs font-bold border transition-colors shrink-0 ${
 									displayStatus === "in_treatment"
 										? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/40"
 										: displayStatus === "confirmed"
@@ -656,15 +666,64 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500"
 												: displayStatus === "completed"
 													? "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-400/40"
-													: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+													: displayStatus === "cancelled" || displayStatus === "no_show"
+														? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
+														: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
 								}`}
 								data-testid={`appointment-status-badge-${appointment.id}`}
 							>
-								{displayStatus === "in_treatment" && (
-									<span className="w-2 h-2 rounded-full bg-teal-500 animate-ping shrink-0" />
+								{displayStatus === "in_treatment" ? (
+									<span className="w-2 h-2 rounded-full bg-teal-500 animate-ping shrink-0" aria-hidden="true" />
+								) : displayStatus === "completed" ? (
+									<Check size={12} className="shrink-0 text-current" aria-hidden="true" />
+								) : (
+									<span
+										className={`w-2 h-2 rounded-full shrink-0 ${
+											displayStatus === "confirmed"
+												? "bg-emerald-500"
+												: displayStatus === "arrived"
+													? "bg-amber-500"
+													: displayStatus === "cancelled" || displayStatus === "no_show"
+														? "bg-rose-500"
+														: "bg-slate-400"
+										}`}
+										aria-hidden="true"
+									/>
 								)}
-								<span>{appointmentLabels?.[displayStatus] || displayStatus}</span>
-							</span>
+								<select
+									className="appointment-status-select bg-transparent text-current font-bold text-xs cursor-pointer outline-none border-none p-0 pr-0.5 appearance-none"
+									value={displayStatus}
+									disabled={
+										isQuickStatusUpdating ||
+										Boolean(
+											appointmentHasOpenVisit &&
+												activeVisitLockedAppointmentStatuses?.has?.(displayStatus),
+										)
+									}
+									onChange={(e) => {
+										e.stopPropagation();
+										void handleQuickStatusChange(e.target.value as Appointment["status"]);
+									}}
+									title={`Статус записи: ${appointmentLabels?.[displayStatus] || displayStatus}`}
+									aria-label="Изменить статус приема"
+								>
+									{(Object.keys(appointmentLabels ?? {}) as Appointment["status"][]).map((status) => (
+										<option
+											key={status}
+											value={status}
+											className="bg-[var(--paper)] text-[var(--ink)] font-normal"
+											disabled={
+												Boolean(
+													appointmentHasOpenVisit &&
+														activeVisitLockedAppointmentStatuses?.has?.(status),
+												)
+											}
+										>
+											{appointmentLabels?.[status] ?? status}
+										</option>
+									))}
+								</select>
+							</div>
 
 							{patientBalance !== null ? (
 								patientBalance < 0 ? (
@@ -716,28 +775,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									Открыт прием: пациент закреплен
 								</span>
 							) : null}
-							{/* Compact Status Selector Dropdown */}
-							<select
-								className="appointment-status-select h-7 px-2 py-0.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer outline-none hover:border-[var(--teal,var(--brand-primary))] transition-colors shrink-0"
-								value={displayStatus}
-								disabled={isQuickStatusUpdating || (appointmentHasOpenVisit && Boolean(activeVisitLockedAppointmentStatuses?.has?.(displayStatus)))}
-								onChange={(e) => {
-									e.stopPropagation();
-									void handleQuickStatusChange(e.target.value as Appointment["status"]);
-								}}
-								title={`Статус записи: ${appointmentLabels?.[displayStatus] || displayStatus}`}
-								aria-label="Изменить статус приема"
-							>
-								{(Object.keys(appointmentLabels ?? {}) as Appointment["status"][]).map((status) => (
-									<option
-										key={status}
-										value={status}
-										disabled={appointmentHasOpenVisit && Boolean(activeVisitLockedAppointmentStatuses?.has?.(status))}
-									>
-										{appointmentLabels?.[status] ?? status}
-									</option>
-								))}
-							</select>
 
 							{/* Single Context Actions Menu Button [...] */}
 							<div className="relative inline-flex items-center shrink-0" ref={cardMenuRef}>
@@ -862,6 +899,31 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											<span>Настроить запись</span>
 											<span className="text-[10px] font-mono opacity-70">Enter</span>
 										</button>
+
+										{/* 4. Диагностика и КТ */}
+										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
+											Диагностика
+										</div>
+										<button
+											type="button"
+											className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+											role="menuitem"
+											data-testid="appointment-open-cbct-radiology-btn"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												if (typeof window !== "undefined") {
+													window.location.hash = "#radiology";
+													showToast(`Открыты снимки и КТ пациента ${appointmentPatientName}`, "info");
+												}
+											}}
+											title="Открыть рентген и 3D КТ (Клавиша X)"
+										>
+											<div className="flex items-center gap-2">
+												<Scan size={13} className="text-cyan-600 dark:text-cyan-400" />
+												<span>[ 📷 КТ / Рентген снимки ]</span>
+											</div>
+											<span className="text-[10px] font-mono opacity-70">X</span>
+										</button>
 									</div>
 								)}
 							</div>
@@ -906,7 +968,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									}}
 									title={suggestion.detail || suggestion.title}
 								>
-									⚠️ <span className="break-words">{suggestion.title}</span>
+									<AlertTriangle size={12} className="inline mr-1 text-amber-600 dark:text-amber-400 shrink-0" />
+									<span className="break-words">{suggestion.title}</span>
 								</button>
 							))}
 							<span
@@ -1243,66 +1306,71 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								</div>
 
 								<div className="min-w-0">
-									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
-										Статус и быстрые действия
+									<span className="text-xs font-semibold text-[var(--muted)] block mb-1.5">
+										Статус приема
 									</span>
-									<AppointmentQuickActions
-										appointmentId={appointment.id}
-										currentStatus={
-											(appointmentDraft?.status || appointment.status) as any
-										}
-										patientName={appointmentPatientName || "Пациент"}
-										patientPhone={appointmentPatient?.phone}
-										doctorName={appointmentDoctor?.fullName}
-										doctorSpecialty={appointmentDoctor?.role}
-										startsAt={
-											String(appointmentDraft?.startsAt || appointment.startsAt)
-										}
-										clinicName={dashboard.clinicSettings?.profile?.clinicName}
-										treatmentReason={
-											appointmentDraft?.reason ? String(appointmentDraft.reason) : (appointment.reason ? String(appointment.reason) : undefined)
-										}
-										appointmentHasOpenVisit={appointmentHasOpenVisit}
-										activeVisitLockedAppointmentStatuses={
-											activeVisitLockedAppointmentStatuses
-										}
-										onStatusChange={(status) => {
+									<select
+										className="appointment-status-select w-full max-w-xs h-8 px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] cursor-pointer outline-none hover:border-[var(--teal,var(--brand-primary))] transition-colors"
+										value={String(appointmentDraft?.status || appointment.status)}
+										onChange={(e) => {
 											updateAppointmentScheduleDraft(
 												appointment.id,
 												"status",
-												normalizedAppointmentStatus(status),
+												normalizedAppointmentStatus(e.target.value as Appointment["status"]),
 											);
 										}}
-										compact
-									/>
-									<div className="flex flex-wrap gap-1.5 min-w-0 mt-2">
-										{(
-											Object.keys(
-												appointmentLabels ?? {},
-											) as Appointment["status"][]
-										).map((status) => (
-											<button
-												key={status}
-												type="button"
-												className={`quick-chip max-w-full truncate ${appointmentDraft?.status === status ? "active" : ""}`}
-												title={appointmentLabels?.[status] ?? status}
-												onClick={() =>
-													updateAppointmentScheduleDraft(
-														appointment.id,
-														"status",
-														normalizedAppointmentStatus(status),
-													)
-												}
-												disabled={
-													appointmentHasOpenVisit &&
-													Boolean(
-														activeVisitLockedAppointmentStatuses?.has?.(status),
-													)
-												}
-											>
-												<span className="truncate">{appointmentLabels?.[status] ?? status}</span>
-											</button>
-										))}
+										disabled={
+											appointmentHasOpenVisit &&
+											Boolean(
+												activeVisitLockedAppointmentStatuses?.has?.(
+													(appointmentDraft?.status || appointment.status) as any,
+												),
+											)
+										}
+										aria-label="Статус приема"
+									>
+										{Object.keys(appointmentLabels ?? {}).map((key) => {
+											const statusKey = key as Appointment["status"];
+											return (
+												<option
+													key={statusKey}
+													value={statusKey}
+													disabled={Boolean(
+														appointmentHasOpenVisit &&
+															activeVisitLockedAppointmentStatuses?.has?.(statusKey),
+													)}
+												>
+													{appointmentLabels?.[statusKey] ?? statusKey}
+												</option>
+											);
+										})}
+									</select>
+									<div className="mt-2">
+										<AppointmentQuickActions
+											appointmentId={appointment.id}
+											currentStatus={(appointmentDraft?.status || appointment.status) as Appointment["status"]}
+											patientName={appointmentPatientName || "Пациент"}
+											patientPhone={appointmentPatient?.phone}
+											doctorName={appointmentDoctor?.fullName}
+											doctorSpecialty={
+												appointmentDoctor?.specialties?.[0]
+													? specialtyLabels[appointmentDoctor.specialties[0]]
+													: undefined
+											}
+											startsAt={appointment.startsAt}
+											treatmentReason={appointment.reason}
+											cabinetName={appointmentChair?.name}
+											appointmentHasOpenVisit={appointmentHasOpenVisit}
+											activeVisitLockedAppointmentStatuses={activeVisitLockedAppointmentStatuses}
+											onStatusChange={(newStatus) =>
+												updateAppointmentScheduleDraft(
+													appointment.id,
+													"status",
+													normalizedAppointmentStatus(newStatus),
+												)
+											}
+											disabled={!appointmentReadyToSave}
+										/>
 									</div>
 									{appointmentHasOpenVisit && (
 										<div

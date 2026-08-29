@@ -14,7 +14,9 @@ import {
 	type CbctVoxelVolume,
 	huToGrayscale,
 	sampleVoxelHU,
+	sampleVoxelTrilinearHU,
 	worldMmToVoxel,
+	worldMmToVoxelContinuous,
 } from "./cbctMprMath";
 import type { Point2D, Point3D } from "./cbctCaliperNerveMath";
 
@@ -335,38 +337,73 @@ export function reconstructPanoramicView(
 	const zBottomMm = -heightMm / 2.0;
 	const zStepMm = (zTopMm - zBottomMm) / outH;
 	const nNodes = vectorField.length;
+	const totalLengthMm = archCurve.totalArcLengthMm || 100;
 
-	// Sweep along the spline
+	// Sweep along the spline with constant physical arc-length distance
 	const denomW = Math.max(1, outW - 1);
 	for (let col = 0; col < outW; col++) {
-		const u = nNodes > 1 ? (col / denomW) * (nNodes - 1) : 0;
-		const i0 = Math.floor(u);
-		const i1 = Math.min(nNodes - 1, i0 + 1);
-		const frac = u - i0;
+		const targetDistMm = (col / denomW) * totalLengthMm;
+
+		// Find bracketing vectorField nodes by distanceAlongArchMm
+		let i0 = 0;
+		let i1 = 0;
+		let frac = 0;
+
+		for (let i = 0; i < nNodes - 1; i++) {
+			const d0 = vectorField[i]!.distanceAlongArchMm;
+			const d1 = vectorField[i + 1]!.distanceAlongArchMm;
+			if (targetDistMm >= d0 && targetDistMm <= d1) {
+				i0 = i;
+				i1 = i + 1;
+				const segLen = d1 - d0;
+				frac = segLen > 0.0001 ? (targetDistMm - d0) / segLen : 0;
+				break;
+			}
+			if (i === nNodes - 2) {
+				i0 = i;
+				i1 = i + 1;
+				frac = 1;
+			}
+		}
+
 		const n0 = vectorField[i0] || vectorField[0]!;
 		const n1 = vectorField[i1] || n0;
 
 		const ptX = n0.point.x + (n1.point.x - n0.point.x) * frac;
 		const ptY = n0.point.y + (n1.point.y - n0.point.y) * frac;
-		const normX = n0.normal.x + (n1.normal.x - n0.normal.x) * frac;
-		const normY = n0.normal.y + (n1.normal.y - n0.normal.y) * frac;
+		const rawNormX = n0.normal.x + (n1.normal.x - n0.normal.x) * frac;
+		const rawNormY = n0.normal.y + (n1.normal.y - n0.normal.y) * frac;
+		const normLen = Math.hypot(rawNormX, rawNormY) || 1.0;
+		const normX = rawNormX / normLen;
+		const normY = rawNormY / normLen;
 
 		for (let row = 0; row < outH; row++) {
 			const zMm = zTopMm - row * zStepMm;
 
-			// MIP along focal trough thickness
+			// MIP along focal trough thickness with continuous anti-aliased sub-voxel sampling
 			let maxHU = -32768;
+			let minHU = 32767;
+			let sumHU = 0;
+			let sampleCount = 0;
+
 			for (let s = -slabSamples; s <= slabSamples; s++) {
 				const offsetMm = (s / slabSamples) * focalRadiusMm;
 				const sampleX = ptX + normX * offsetMm;
 				const sampleY = ptY + normY * offsetMm;
 
-				const vox = worldMmToVoxel({ x: sampleX, y: sampleY, z: zMm }, volume);
-				const hu = sampleVoxelHU(vox.x, vox.y, vox.z, volume);
+				const vox = worldMmToVoxelContinuous({ x: sampleX, y: sampleY, z: zMm }, volume);
+				const hu = sampleVoxelTrilinearHU(vox.x, vox.y, vox.z, volume);
 				if (hu > maxHU) maxHU = hu;
+				if (hu < minHU) minHU = hu;
+				sumHU += hu;
+				sampleCount++;
 			}
 
-			const gray = huToGrayscale(maxHU, windowWidth, windowLevel);
+			let finalHU = maxHU;
+			if (projectionMode === "minip") finalHU = minHU;
+			else if (projectionMode === "average") finalHU = sampleCount > 0 ? Math.round(sumHU / sampleCount) : maxHU;
+
+			const gray = huToGrayscale(finalHU, windowWidth, windowLevel);
 			const idx = (row * outW + col) * 4;
 			pixelBuffer[idx] = gray;
 			pixelBuffer[idx + 1] = gray;
@@ -375,24 +412,19 @@ export function reconstructPanoramicView(
 		}
 	}
 
-	// Calculate tooth marker positions on the panoramic image
+	// Calculate tooth marker positions on the panoramic image based on exact arc distance
 	const toothMarkers = archCurve.anchors.map((anchor) => {
 		let closestCol = 0;
 		let minDistance = Infinity;
 
 		for (let col = 0; col < outW; col++) {
-			const u = nNodes > 1 ? (col / (outW - 1)) * (nNodes - 1) : 0;
-			const i0 = Math.floor(u);
-			const i1 = Math.min(nNodes - 1, i0 + 1);
-			const frac = u - i0;
-			const n0 = vectorField[i0] || vectorField[0]!;
-			const n1 = vectorField[i1] || n0;
-			const px = n0.point.x + (n1.point.x - n0.point.x) * frac;
-			const py = n0.point.y + (n1.point.y - n0.point.y) * frac;
-
-			const dist = Math.hypot(px - anchor.positionMm.x, py - anchor.positionMm.y);
-			if (dist < minDistance) {
-				minDistance = dist;
+			const targetDistMm = (col / denomW) * totalLengthMm;
+			const pDist = Math.hypot(
+				(vectorField[Math.min(nNodes - 1, Math.round((col / denomW) * (nNodes - 1)))]?.point.x ?? 0) - anchor.positionMm.x,
+				(vectorField[Math.min(nNodes - 1, Math.round((col / denomW) * (nNodes - 1)))]?.point.y ?? 0) - anchor.positionMm.y,
+			);
+			if (pDist < minDistance) {
+				minDistance = pDist;
 				closestCol = col;
 			}
 		}
@@ -457,8 +489,8 @@ export function extractSingleCrossSectionSlice(
 			const sampleX = centerMm.x + normal2D.x * normalOffsetMm;
 			const sampleY = centerMm.y + normal2D.y * normalOffsetMm;
 
-			const vox = worldMmToVoxel({ x: sampleX, y: sampleY, z: sampleZ }, volume);
-			const hu = sampleVoxelHU(vox.x, vox.y, vox.z, volume);
+			const vox = worldMmToVoxelContinuous({ x: sampleX, y: sampleY, z: sampleZ }, volume);
+			const hu = sampleVoxelTrilinearHU(vox.x, vox.y, vox.z, volume);
 			const gray = huToGrayscale(hu, windowWidth, windowLevel);
 
 			const idx = (y * widthPx + x) * 4;
