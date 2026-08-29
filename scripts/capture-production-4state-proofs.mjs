@@ -293,10 +293,10 @@ const TARGET_SCREENS = [
     url: "http://127.0.0.1:5173/#clinical-modals-studio",
     setup: async (page) => {
       await page.waitForTimeout(800);
-      const el = page.locator('h2:has-text("Журналы СанПиН")').or(page.locator('.sanpin-registers-container')).first();
-      if (await el.isVisible().catch(() => false)) {
-        await el.scrollIntoViewIfNeeded();
-        await page.waitForTimeout(400);
+      const tabs = page.locator('[data-testid="sanpin-tabs-12-nav"]').or(page.locator('.sanpin-tabs-nav')).first();
+      if (await tabs.isVisible().catch(() => false)) {
+        await tabs.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(500);
       }
     },
     all4States: true,
@@ -485,22 +485,32 @@ const TARGET_SCREENS = [
   {
     prefix: "14_settings_access_matrix",
     name: "14. Clinic Settings: Role Access Control Matrix & Staff Invitation Link Engine",
-    url: "http://127.0.0.1:5173/#settings",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=settings_access_matrix#clinical-modals-studio?modal=settings_access_matrix",
     setup: async (page) => {
-      await page.waitForSelector('.settings-nav, [data-testid="settings-tabs"]', { timeout: 6000 }).catch(() => {});
-      const accessTabBtn = page.locator('button:has-text("Доступ")').or(page.locator('[data-testid="tab-access"]')).first();
-      if (await accessTabBtn.isVisible().catch(() => false)) {
-        await accessTabBtn.click({ force: true }).catch(() => {});
-        await page.waitForTimeout(600);
-      } else {
-        await page.goto("http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=settings_access_matrix#clinical-modals-studio?modal=settings_access_matrix", { waitUntil: "domcontentloaded" });
-        await page.waitForTimeout(600);
-        const trigger = page.locator('[data-testid="open-settings-access-modal-btn"]').first();
-        if (await trigger.isVisible().catch(() => false)) {
-          await trigger.click({ force: true }).catch(() => {});
-          await page.waitForTimeout(600);
+      await page.waitForSelector('[data-testid="settings-access-modal-container"]', { timeout: 15000 });
+      await page.waitForTimeout(800);
+    },
+    all4States: true,
+  },
+  {
+    prefix: "14_settings_access_matrix_roles",
+    name: "14b. Clinic Settings: RBAC Roles Scroll Strip & Mobile Permission Cards",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=settings_access_matrix#clinical-modals-studio?modal=settings_access_matrix",
+    setup: async (page) => {
+      await page.waitForSelector('[data-testid="settings-access-modal-container"]', { timeout: 8000 }).catch(() => {});
+      await page.waitForTimeout(600);
+      await page.evaluate(() => {
+        const modal = document.querySelector('[data-testid="settings-access-modal-container"]');
+        if (modal) {
+          const scrollables = modal.querySelectorAll('.overflow-y-auto');
+          for (const s of scrollables) {
+            if (s !== modal) {
+              s.scrollTop = 320;
+            }
+          }
         }
-      }
+      });
+      await page.waitForTimeout(600);
     },
     all4States: true,
   },
@@ -536,10 +546,29 @@ const TARGET_SCREENS = [
   {
     prefix: "15_cmo_compliance_remd_hub",
     name: "15. Chief Medical Officer: EGISZ/REMD Compliance Hub & Batch UKEP Signer (Order 203n)",
-    url: "http://127.0.0.1:5173/#cmo-audit",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=cmo_compliance_hub#clinical-modals-studio?modal=cmo_compliance_hub",
     setup: async (page) => {
-      await page.waitForSelector('.cmo-compliance-hub-container, [data-testid="cmo-compliance-hub"]', { timeout: 6000 }).catch(() => {});
       await page.waitForTimeout(800);
+      const modalDialog = page.locator('[data-testid="cmo-compliance-modal-container"], .cmo-hub-container').first();
+      if (!await modalDialog.isVisible().catch(() => false)) {
+        const trigger = page.locator('[data-testid="open-cmo-compliance-modal-btn"]').first();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.click();
+          await page.waitForTimeout(600);
+        }
+      }
+      await page.waitForSelector('.cmo-hub-container, [data-testid="cmo-compliance-modal-container"]', { timeout: 6000 }).catch(() => {});
+      await page.waitForTimeout(800);
+      await page.evaluate(() => {
+        const modal = document.querySelector('[data-testid="cmo-compliance-modal-container"]');
+        if (modal) {
+          const scrollable = modal.querySelector('.overflow-y-auto');
+          if (scrollable) {
+            scrollable.scrollTop = 160;
+          }
+        }
+      });
+      await page.waitForTimeout(400);
     },
     all4States: true,
   },
@@ -618,7 +647,12 @@ const CONFIGS = [
   },
 ];
 
-for (const screen of TARGET_SCREENS) {
+const screenFilter = process.argv[2];
+const screensToRun = screenFilter
+  ? TARGET_SCREENS.filter((s) => s.prefix.includes(screenFilter))
+  : TARGET_SCREENS;
+
+for (const screen of screensToRun) {
   console.log(`\n=============================================================`);
   console.log(`📸 CAPTURING: ${screen.name}`);
   console.log(`=============================================================`);
@@ -793,6 +827,11 @@ for (const screen of TARGET_SCREENS) {
       // Perform screen specific setup / trigger
       await screen.setup(page);
       await page.waitForTimeout(600);
+
+      // Dismiss transient toasts so they don't occlude screen controls
+      await page.evaluate(() => {
+        document.querySelectorAll('.sa-toast, .global-toast, .toast, [role="alert"], [data-testid="toast-item"], [data-testid="global-toast"]').forEach(el => el.remove());
+      }).catch(() => {});
 
       const fileName = `${screen.prefix}_${cfg.key}.png`;
       const filePath = path.join(DOCS_SCREENSHOTS_DIR, fileName);

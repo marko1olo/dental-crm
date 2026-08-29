@@ -67,7 +67,447 @@ export type SanpinRegisterTab =
 	| "cleaning"
 	| "waste"
 	| "biohazard"
-	| "temperature";
+	| "temperature"
+	| "disinfectants"
+	| "bac_lab"
+	| "needle_disposal";
+
+export const SANPIN_TABS: Array<{
+	id: SanpinRegisterTab;
+	label: string;
+	icon: React.ComponentType<{ size?: number; color?: string; className?: string }>;
+}> = [
+	{ id: "retroactive_batch", label: "Пакетный расчет", icon: Rocket },
+	{ id: "cabinet_readiness", label: "0. Готовность", icon: ShieldCheck },
+	{ id: "pso", label: "1. ПСО (№ 366/у)", icon: FlaskConical },
+	{ id: "autoclave", label: "2. Автоклавы (№ 257/у)", icon: Flame },
+	{ id: "bactericidal", label: "3. Рециркуляторы", icon: Wind },
+	{ id: "cleaning", label: "4. Генуборки", icon: Sparkles },
+	{ id: "waste", label: "5. Медотходы А, Б, В, Г", icon: Recycle },
+	{ id: "biohazard", label: "6. Аварии («Анти-ВИЧ»)", icon: ShieldAlert },
+	{ id: "temperature", label: "7. T° и влажность", icon: Thermometer },
+	{ id: "disinfectants", label: "8. Дезсредства", icon: Droplets },
+	{ id: "bac_lab", label: "9. Баклаборатория", icon: Activity },
+	{ id: "needle_disposal", label: "10. Утилизация игл", icon: Trash2 },
+];
+
+interface DisinfectantSolutionRecord {
+	id: string;
+	tradeNameRu: string;
+	purposeRu: string;
+	concentrationPercent: number;
+	preparationDate: string;
+	expiryDate: string;
+	testStripResultRu: string;
+	responsibleNurseRu: string;
+	volumeLiters: number;
+}
+
+const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
+	{
+		id: "ds-01",
+		tradeNameRu: "Аламинол (раствор 1.5%)",
+		purposeRu: "Предстерилизационная очистка и дезинфекция инструментов (ЦСО)",
+		concentrationPercent: 1.5,
+		preparationDate: "2026-08-29 08:00",
+		expiryDate: "2026-09-12 08:00",
+		testStripResultRu: "Дезиконт-Аламинол: 1.5% норма (тест пройден)",
+		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		volumeLiters: 10,
+	},
+	{
+		id: "ds-02",
+		tradeNameRu: "Бациллол АФ (экспресс-спрей)",
+		purposeRu: "Экстренная дезинфекция поверхностей установки и наконечников",
+		concentrationPercent: 100,
+		preparationDate: "2026-08-29 (заводской)",
+		expiryDate: "2027-08-29",
+		testStripResultRu: "Готовый заводской раствор (активен)",
+		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		volumeLiters: 1.0,
+	},
+	{
+		id: "ds-03",
+		tradeNameRu: "Оптимакс Про (раствор 1.0%)",
+		purposeRu: "Дезинфекция слепков, зуботехнических оттисков и ложек",
+		concentrationPercent: 1.0,
+		preparationDate: "2026-08-28 09:00",
+		expiryDate: "2026-09-11 09:00",
+		testStripResultRu: "Тест-полоска Оптимакс: 1.0% норма",
+		responsibleNurseRu: "Смирнова Е.А. (старшая медсестра)",
+		volumeLiters: 5,
+	},
+	{
+		id: "ds-04",
+		tradeNameRu: "Дезискраб (раствор 2.0%)",
+		purposeRu: "Хирургическая обработка поверхностей и генеральная уборка операционной",
+		concentrationPercent: 2.0,
+		preparationDate: "2026-08-29 07:30",
+		expiryDate: "2026-09-12 07:30",
+		testStripResultRu: "Дезиконт-Дезискраб: 2.0% норма",
+		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		volumeLiters: 8,
+	},
+	{
+		id: "ds-05",
+		tradeNameRu: "Бриллиант Классик (раствор 2.0%)",
+		purposeRu: "Обезвреживание медицинских отходов классов Б и В",
+		concentrationPercent: 2.0,
+		preparationDate: "2026-08-29 08:15",
+		expiryDate: "2026-09-05 08:15",
+		testStripResultRu: "Тест-полоска Бриллиант: 2.0% норма",
+		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		volumeLiters: 15,
+	},
+];
+
+function DisinfectantsRegisterTab() {
+	const [query, setQuery] = useState("");
+	const filtered = DEFAULT_DISINFECTANT_RECORDS.filter(
+		(r) =>
+			r.tradeNameRu.toLowerCase().includes(query.toLowerCase()) ||
+			r.purposeRu.toLowerCase().includes(query.toLowerCase())
+	);
+
+	return (
+		<div className="sanpin-tab-content">
+			<div className="sanpin-print-title">
+				<h2>ЖУРНАЛ УЧЕТА ПОЛУЧЕНИЯ, РАСХОДА ДЕЗИНФИЦИРУЮЩИХ СРЕДСТВ И ПРИГОТОВЛЕНИЯ РАБОЧИХ РАСТВОРОВ</h2>
+				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней» (п. 3582)</p>
+			</div>
+
+			<div className="sanpin-control-bar">
+				<div className="sanpin-filter-group">
+					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+						<Search size={18} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
+						<input
+							type="text"
+							placeholder="Поиск по препарату, назначению..."
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							className="sanpin-input"
+							style={{ paddingLeft: "2.3rem", minWidth: "300px", minHeight: "44px", fontSize: "0.9rem" }}
+						/>
+					</div>
+				</div>
+
+				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+					<button
+						type="button"
+						onClick={() => showToast("Рабочий раствор зарегистрирован в журнале!", "success")}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal-600, #0d9488)", color: "#fff", border: "none" }}
+					>
+						<Plus size={16} /> Приготовить раствор
+					</button>
+					<button
+						type="button"
+						onClick={() => showToast("Тест-полоски концентрации: все 5 емкостей в норме!", "success")}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700 }}
+					>
+						<Droplets size={16} /> Экспресс-контроль полосками
+					</button>
+				</div>
+			</div>
+
+			<div className="sanpin-table-wrapper">
+				<table className="sanpin-table">
+					<thead>
+						<tr>
+							<th style={{ fontSize: "0.85rem" }}>Наименование дезсредства</th>
+							<th style={{ fontSize: "0.85rem" }}>Назначение и зона применения</th>
+							<th style={{ fontSize: "0.85rem" }}>Концентрация / Объем</th>
+							<th style={{ fontSize: "0.85rem" }}>Дата приготовления</th>
+							<th style={{ fontSize: "0.85rem" }}>Годен до</th>
+							<th style={{ fontSize: "0.85rem" }}>Тест-полоски / Контроль</th>
+							<th style={{ fontSize: "0.85rem" }}>Ответственный</th>
+						</tr>
+					</thead>
+					<tbody>
+						{filtered.map((r) => (
+							<tr key={r.id} style={{ minHeight: "54px" }}>
+								<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.tradeNameRu}</td>
+								<td style={{ fontSize: "0.875rem" }}>{r.purposeRu}</td>
+								<td>
+									<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.8rem" }}>
+										{r.concentrationPercent}% ({r.volumeLiters} л)
+									</span>
+								</td>
+								<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.preparationDate}</td>
+								<td style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.expiryDate}</td>
+								<td>
+									<span style={{ fontSize: "0.8rem", color: "#059669", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
+										<Check size={13} /> {r.testStripResultRu}
+									</span>
+								</td>
+								<td style={{ fontSize: "0.85rem", fontWeight: 500 }}>{r.responsibleNurseRu}</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	);
+}
+
+interface BacLabRecord {
+	id: string;
+	actNumberRu: string;
+	sampleDate: string;
+	targetObjectRu: string;
+	pathogensTestedRu: string;
+	resultRu: string;
+	labNameRu: string;
+	statusRu: string;
+}
+
+const DEFAULT_BAC_LAB_RECORDS: BacLabRecord[] = [
+	{
+		id: "bac-01",
+		actNumberRu: "Акт № 264/С",
+		sampleDate: "2026-08-25",
+		targetObjectRu: "Наконечник турбинный и угловой после автоклавирования",
+		pathogensTestedRu: "БГКП, Staphylococcus aureus, спорообразующие бациллы",
+		resultRu: "Рост микрофлоры отсутствует (100% стерильно)",
+		labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
+		statusRu: "Протокол утвержден",
+	},
+	{
+		id: "bac-02",
+		actNumberRu: "Акт № 265/С",
+		sampleDate: "2026-08-25",
+		targetObjectRu: "Столик врача, подголовник кресла, светильник (Кабинет 1)",
+		pathogensTestedRu: "ОМЧ, БГКП, синегнойная палочка (Pseudomonas)",
+		resultRu: "ОМЧ < 10 КОЕ/см², патогенная микрофлора не выделена",
+		labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
+		statusRu: "Протокол утвержден",
+	},
+	{
+		id: "bac-03",
+		actNumberRu: "Акт № 266/С",
+		sampleDate: "2026-08-20",
+		targetObjectRu: "Крафт-пакет хирургический базовый (контроль стерильности)",
+		pathogensTestedRu: "Аэробные и факультативно-анаэробные бактерии",
+		resultRu: "Стерильность подтверждена, посев стерилен",
+		labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
+		statusRu: "Протокол утвержден",
+	},
+	{
+		id: "bac-04",
+		actNumberRu: "Акт № 267/С",
+		sampleDate: "2026-08-15",
+		targetObjectRu: "Проба воздуха рабочей зоны при включенном Дезар-4",
+		pathogensTestedRu: "Общее микробное число (ОМЧ) в 1 м³ воздуха",
+		resultRu: "ОМЧ = 120 КОЕ/м³ (норматив до 500 КОЕ/м³ соблюден)",
+		labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
+		statusRu: "Протокол утвержден",
+	},
+];
+
+function BacLabRegisterTab() {
+	const [query, setQuery] = useState("");
+	const filtered = DEFAULT_BAC_LAB_RECORDS.filter(
+		(r) =>
+			r.actNumberRu.toLowerCase().includes(query.toLowerCase()) ||
+			r.targetObjectRu.toLowerCase().includes(query.toLowerCase())
+	);
+
+	return (
+		<div className="sanpin-tab-content">
+			<div className="sanpin-print-title">
+				<h2>ЖУРНАЛ БАКТЕРИОЛОГИЧЕСКОГО КОНТРОЛЯ И СМЫВОВ НА СТЕРИЛЬНОСТЬ</h2>
+				<p>СанПиН 3.3686-21 (п. 3640) / МУК 4.2.2942-11 «Методы санитарно-бактериологических исследований»</p>
+			</div>
+
+			<div className="sanpin-control-bar">
+				<div className="sanpin-filter-group">
+					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+						<Search size={18} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
+						<input
+							type="text"
+							placeholder="Поиск по акту, объекту смыва..."
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							className="sanpin-input"
+							style={{ paddingLeft: "2.3rem", minWidth: "300px", minHeight: "44px", fontSize: "0.9rem" }}
+						/>
+					</div>
+				</div>
+
+				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+					<button
+						type="button"
+						onClick={() => showToast("Протокол смывов аккредитованной лаборатории зарегистрирован!", "success")}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal-600, #0d9488)", color: "#fff", border: "none" }}
+					>
+						<Plus size={16} /> Внести протокол смывов
+					</button>
+				</div>
+			</div>
+
+			<div className="sanpin-table-wrapper">
+				<table className="sanpin-table">
+					<thead>
+						<tr>
+							<th style={{ fontSize: "0.85rem" }}>№ Протокола / Акт</th>
+							<th style={{ fontSize: "0.85rem" }}>Дата забора</th>
+							<th style={{ fontSize: "0.85rem" }}>Объект контроля / Смыв</th>
+							<th style={{ fontSize: "0.85rem" }}>Определяемые патогены</th>
+							<th style={{ fontSize: "0.85rem" }}>Результат посева</th>
+							<th style={{ fontSize: "0.85rem" }}>Аккредитованная лаборатория</th>
+							<th style={{ fontSize: "0.85rem" }}>Статус</th>
+						</tr>
+					</thead>
+					<tbody>
+						{filtered.map((r) => (
+							<tr key={r.id} style={{ minHeight: "54px" }}>
+								<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.actNumberRu}</td>
+								<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.sampleDate}</td>
+								<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{r.targetObjectRu}</td>
+								<td style={{ fontSize: "0.825rem" }}>{r.pathogensTestedRu}</td>
+								<td>
+									<span style={{ fontSize: "0.825rem", color: "#059669", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
+										<Check size={13} /> {r.resultRu}
+									</span>
+								</td>
+								<td style={{ fontSize: "0.825rem", color: "var(--muted)" }}>{r.labNameRu}</td>
+								<td>
+									<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.8rem" }}>
+										{r.statusRu}
+									</span>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	);
+}
+
+interface NeedleDisposalRecord {
+	id: string;
+	shiftDateRu: string;
+	wasteTypeRu: string;
+	treatmentMethodRu: string;
+	netWeightKg: number;
+	containerCodeRu: string;
+	surrenderedNurseRu: string;
+	acceptedNurseRu: string;
+}
+
+const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
+	{
+		id: "nd-01",
+		shiftDateRu: "2026-08-29 14:00",
+		wasteTypeRu: "Иглы инъекционные карпульные 30G/27G отсеченные + карпулы анестетика",
+		treatmentMethodRu: "Иглоотсекатель / деструктор игл + хим. дезинфекция Бриллиант Классик 2%",
+		netWeightKg: 1.2,
+		containerCodeRu: "Желтый контейнер КБ-12 (одноразовый с иглосъемником)",
+		surrenderedNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		acceptedNurseRu: "Смирнова Е.А. (старшая медсестра)",
+	},
+	{
+		id: "nd-02",
+		shiftDateRu: "2026-08-28 19:30",
+		wasteTypeRu: "Иглы хирургические шовные, лезвия скальпелей, карпулы пустые",
+		treatmentMethodRu: "Механическое разрушение + автоклавирование 134°C (класс Б)",
+		netWeightKg: 0.85,
+		containerCodeRu: "Желтый контейнер КБ-11 (проколостойкий герметичный)",
+		surrenderedNurseRu: "Иванова О.С. (медсестра ЦСО)",
+		acceptedNurseRu: "Смирнова Е.А. (старшая медсестра)",
+	},
+	{
+		id: "nd-03",
+		shiftDateRu: "2026-08-27 20:00",
+		wasteTypeRu: "Отработанные инъекционные карпулы с остатками анестетика и крови",
+		treatmentMethodRu: "Химическое обезвреживание дезсредством в желтом баке",
+		netWeightKg: 1.4,
+		containerCodeRu: "Желтый контейнер КБ-10 (пломба № 04812)",
+		surrenderedNurseRu: "Смирнова Е.А. (старшая медсестра)",
+		acceptedNurseRu: "ООО «ЭкоМедТранс» (лицензия № 77-04/182)",
+	},
+];
+
+function NeedleDisposalRegisterTab() {
+	const [query, setQuery] = useState("");
+	const filtered = DEFAULT_NEEDLE_DISPOSAL_RECORDS.filter(
+		(r) =>
+			r.wasteTypeRu.toLowerCase().includes(query.toLowerCase()) ||
+			r.containerCodeRu.toLowerCase().includes(query.toLowerCase())
+	);
+
+	return (
+		<div className="sanpin-tab-content">
+			<div className="sanpin-print-title">
+				<h2>ТЕХНОЛОГИЧЕСКИЙ ЖУРНАЛ УЧЕТА МЕДИЦИНСКИХ ОТХОДОВ КЛАССА Б (ОСТРЫЙ ИНСТРУМЕНТАРИЙ, ИГЛЫ, КАРПУЛЫ)</h2>
+				<p>СанПиН 2.1.3684-21 «Санитарно-эпидемиологические требования к содержанию территорий и обращению с отходами» (разд. X)</p>
+			</div>
+
+			<div className="sanpin-control-bar">
+				<div className="sanpin-filter-group">
+					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+						<Search size={18} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
+						<input
+							type="text"
+							placeholder="Поиск по типу отходов, контейнеру..."
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							className="sanpin-input"
+							style={{ paddingLeft: "2.3rem", minWidth: "300px", minHeight: "44px", fontSize: "0.9rem" }}
+						/>
+					</div>
+				</div>
+
+				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+					<button
+						type="button"
+						onClick={() => showToast("Партия утилизированных игл внесена в журнал!", "success")}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal-600, #0d9488)", color: "#fff", border: "none" }}
+					>
+						<Plus size={16} /> Внести партию игл
+					</button>
+				</div>
+			</div>
+
+			<div className="sanpin-table-wrapper">
+				<table className="sanpin-table">
+					<thead>
+						<tr>
+							<th style={{ fontSize: "0.85rem" }}>Дата / Время смены</th>
+							<th style={{ fontSize: "0.85rem" }}>Вид острого инструментария</th>
+							<th style={{ fontSize: "0.85rem" }}>Способ обезвреживания</th>
+							<th style={{ fontSize: "0.85rem" }}>Масса нетто</th>
+							<th style={{ fontSize: "0.85rem" }}>Маркировка емкости / Контейнер</th>
+							<th style={{ fontSize: "0.85rem" }}>Сдал (медсестра)</th>
+							<th style={{ fontSize: "0.85rem" }}>Принял</th>
+						</tr>
+					</thead>
+					<tbody>
+						{filtered.map((r) => (
+							<tr key={r.id} style={{ minHeight: "54px" }}>
+								<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.shiftDateRu}</td>
+								<td style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--ink)" }}>{r.wasteTypeRu}</td>
+								<td style={{ fontSize: "0.825rem" }}>{r.treatmentMethodRu}</td>
+								<td>
+									<span className="sanpin-tag" style={{ fontSize: "0.825rem", fontWeight: 700, background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a" }}>
+										{r.netWeightKg} кг (Класс Б)
+									</span>
+								</td>
+								<td style={{ fontSize: "0.825rem", fontFamily: "monospace" }}>{r.containerCodeRu}</td>
+								<td style={{ fontSize: "0.85rem" }}>{r.surrenderedNurseRu}</td>
+								<td style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.acceptedNurseRu}</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	);
+}
 
 export function SanpinRegisters() {
 	const appLogic = useOptionalAppLogicContext();
@@ -516,7 +956,7 @@ export function SanpinRegisters() {
 						}}
 						data-testid="sanpin-new-cycle-primary-btn"
 					>
-						<Plus size={16} /> + Новый цикл
+						<Plus size={16} /> Новый цикл
 					</button>
 
 					{/* 2. Компактное выпадающее меню: [⋮ Опции СанПиН] */}
@@ -888,93 +1328,59 @@ export function SanpinRegisters() {
 				</div>
 			)}
 
-			{/* Tab Switcher */}
-			<div className="sanpin-tabs-nav">
-				<button
-					type="button"
-					onClick={() => setActiveTab("retroactive_batch")}
-					className={`sanpin-tab-btn ${activeTab === "retroactive_batch" ? "active" : ""}`}
-					style={{ minHeight: "44px", fontSize: "0.9rem", fontWeight: 700 }}
-					data-testid="tab-retroactive-batch-btn"
-				>
-					<Rocket size={18} color={activeTab === "retroactive_batch" ? "#ffffff" : "var(--brand-primary, #2563eb)"} /> Пакетное закрытие (за период)
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveTab("cabinet_readiness")}
-					className={`sanpin-tab-btn ${activeTab === "cabinet_readiness" ? "active" : ""}`}
-					style={{ minHeight: "44px", fontSize: "0.9rem", fontWeight: 700 }}
-					data-testid="tab-cabinet-readiness-btn"
-				>
-					<ShieldCheck size={18} color="var(--brand-primary, #2563eb)" /> 0. Готовность кабинета
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveTab("pso")}
-					className={`sanpin-tab-btn ${activeTab === "pso" ? "active" : ""}`}
-					style={{ minHeight: "44px", fontSize: "0.9rem" }}
-				>
-					<FlaskConical size={18} /> 1. ПСО (Форма № 366/у)
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveTab("autoclave")}
-					className={`sanpin-tab-btn ${activeTab === "autoclave" ? "active" : ""}`}
-					style={{ minHeight: "44px", fontSize: "0.9rem" }}
-				>
-					<Flame size={18} /> 2. Автоклавы (Форма № 257/у)
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveTab("bactericidal")}
-					className={`sanpin-tab-btn ${activeTab === "bactericidal" ? "active" : ""}`}
-					style={{ minHeight: "44px", fontSize: "0.9rem" }}
-				>
-					<Wind size={18} /> 3. Рециркуляторы и облучатели
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveTab("cleaning")}
-					className={`sanpin-tab-btn ${activeTab === "cleaning" ? "active" : ""}`}
-					style={{ minHeight: "44px", fontSize: "0.9rem" }}
-				>
-					<Sparkles size={18} /> 4. Генеральные уборки
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveTab("waste")}
-					className={`sanpin-tab-btn ${activeTab === "waste" ? "active" : ""}`}
-					style={{ minHeight: "44px", fontSize: "0.9rem" }}
-				>
-					<Recycle size={18} /> 5. Медотходы А, Б, В, Г
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveTab("biohazard")}
-					className={`sanpin-tab-btn ${activeTab === "biohazard" ? "active" : ""}`}
-					style={{ minHeight: "44px", fontSize: "0.9rem" }}
-				>
-					<ShieldAlert size={18} /> 6. Аварии («Анти-ВИЧ»)
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveTab("temperature")}
-					className={`sanpin-tab-btn ${activeTab === "temperature" ? "active" : ""}`}
-					style={{ minHeight: "44px", fontSize: "0.9rem" }}
-				>
-					<Thermometer size={18} /> 7. Температура и влажность
-				</button>
+			{/* Tab Switcher: 1-line horizontal scroll for all 12 statutory registers */}
+			<div
+				className="sanpin-tabs-nav flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 touch-pan-x min-w-0"
+				style={{
+					display: "flex",
+					gap: "0.375rem",
+					overflowX: "auto",
+					whiteSpace: "nowrap",
+					padding: "0 16px 0.5rem 16px",
+					WebkitOverflowScrolling: "touch",
+					scrollbarWidth: "none",
+					width: "100%",
+					boxSizing: "border-box",
+				}}
+				data-testid="sanpin-tabs-12-nav"
+			>
+				{SANPIN_TABS.map((tab) => {
+					const Icon = tab.icon;
+					const isActive = activeTab === tab.id;
+					return (
+						<button
+							key={tab.id}
+							type="button"
+							onClick={() => setActiveTab(tab.id)}
+							className={`sanpin-tab-btn ${isActive ? "active" : ""}`}
+							style={{
+								minHeight: "34px",
+								height: "34px",
+								padding: "0.35rem 0.65rem",
+								fontSize: "0.8125rem",
+								fontWeight: isActive ? 700 : 600,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.35rem",
+								flexShrink: 0,
+								cursor: "pointer",
+								borderRadius: "0.375rem",
+								border: "1px solid",
+								borderColor: isActive ? "var(--teal-600, #0d9488)" : "transparent",
+								background: isActive ? "var(--teal-600, #0d9488)" : "transparent",
+								color: isActive ? "#ffffff" : "var(--muted, #64748b)",
+								transition: "all 0.15s ease",
+							}}
+							data-testid={`tab-${tab.id}-btn`}
+						>
+							<Icon size={15} color={isActive ? "#ffffff" : "currentColor"} />
+							<span>{tab.label}</span>
+						</button>
+					);
+				})}
 			</div>
 
-			{/* Tab Views */}
+			{/* Tab Views: All 12 Statutory Registers */}
 			{activeTab === "retroactive_batch" && <RetroactiveBatchTab />}
 			{activeTab === "cabinet_readiness" && <CabinetReadinessTab />}
 			{activeTab === "pso" && <PsoRegisterTab />}
@@ -984,6 +1390,9 @@ export function SanpinRegisters() {
 			{activeTab === "waste" && <MedicalWasteRegisterTab />}
 			{activeTab === "biohazard" && <EmergencyBiohazardRegisterTab />}
 			{activeTab === "temperature" && <TemperatureHumidityRegisterTab />}
+			{activeTab === "disinfectants" && <DisinfectantsRegisterTab />}
+			{activeTab === "bac_lab" && <BacLabRegisterTab />}
+			{activeTab === "needle_disposal" && <NeedleDisposalRegisterTab />}
 
 			{/* SanPiN Sterilization Cycle Modal */}
 			<SanpinCycleModal

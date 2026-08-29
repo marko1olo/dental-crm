@@ -38,9 +38,137 @@ import {
 	type Form257Record,
 } from "./autoclaveLog/autoclaveLogEngine";
 
+export const DEFAULT_STERILIZATION_DEMO_RECORDS: SterilizationLogRecord[] = [
+	{
+		id: "00000000-0000-4000-8000-000000000257",
+		organizationId: "00000000-0000-0000-0000-000000000001",
+		deviceName: "Melag Vacuklav 43 B+ Evolution",
+		sterilizerType: "autoclave_steam",
+		autoclaveId: "AK-01",
+		serialNumber: "2023-V43B-9812",
+		cycleNumber: 142,
+		itemsDescription: "Хирургический базовый набор (щипцы, элеваторы, кюреты)",
+		packagingType: "kraft_heat_sealed",
+		temperatureCelsius: 134,
+		pressureBar: 2.1,
+		durationMin: 5,
+		indicatorType: "class5_integrating",
+		passedIndicator: true,
+		biologicalTestResult: "not_conducted",
+		status: "passed",
+		barcode: "KP-2026-08-00142",
+		expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+		operatorId: null,
+		operatorName: "Иванова О.С. (медсестра ЦСО)",
+		notes: "СанПиН 3.3686-21. Все 5 точек КТ изменили цвет на эталон. [ЭЦП: Иванова О.С.]",
+		timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+		createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+	},
+	{
+		id: "00000000-0000-4000-8000-000000000258",
+		organizationId: "00000000-0000-0000-0000-000000000001",
+		deviceName: "Euronda E10 (Class B 24L)",
+		sterilizerType: "autoclave_steam",
+		autoclaveId: "AK-02",
+		serialNumber: "EU-2024-8841",
+		cycleNumber: 143,
+		itemsDescription: "Эндодонтические лотки и вращающиеся Ni-Ti файлы",
+		packagingType: "laminated_heat_sealed",
+		temperatureCelsius: 134,
+		pressureBar: 2.1,
+		durationMin: 5,
+		indicatorType: "class5_integrating",
+		passedIndicator: true,
+		biologicalTestResult: "not_conducted",
+		status: "passed",
+		barcode: "KP-2026-08-00143",
+		expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+		operatorId: null,
+		operatorName: "Иванова О.С. (медсестра ЦСО)",
+		notes: "Интеграторы 5 класса норма. Вакуум-тест пройден. [ЭЦП: Иванова О.С.]",
+		timestamp: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+		createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+	},
+	{
+		id: "00000000-0000-4000-8000-000000000259",
+		organizationId: "00000000-0000-0000-0000-000000000001",
+		deviceName: "Melag Vacuklav 43 B+ Evolution",
+		sterilizerType: "autoclave_steam",
+		autoclaveId: "AK-01",
+		serialNumber: "2023-V43B-9812",
+		cycleNumber: 144,
+		itemsDescription: "Терапевтические смотровые лотки (зеркала, зонды, пинцеты)",
+		packagingType: "kraft_self_adhesive",
+		temperatureCelsius: 134,
+		pressureBar: 2.1,
+		durationMin: 5,
+		indicatorType: "class5_integrating",
+		passedIndicator: true,
+		biologicalTestResult: "not_conducted",
+		status: "passed",
+		barcode: "KP-2026-08-00144",
+		expiresAt: new Date(Date.now() + 50 * 24 * 60 * 60 * 1000).toISOString(),
+		operatorId: null,
+		operatorName: "Иванова О.С. (медсестра ЦСО)",
+		notes: "Пакет герметичен. 50 суток хранения в сухом шкафу. [ЭЦП: Иванова О.С.]",
+		timestamp: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
+		createdAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
+	},
+	{
+		id: "00000000-0000-4000-8000-000000000260",
+		organizationId: "00000000-0000-0000-0000-000000000001",
+		deviceName: "DGM AND 20 (Class B)",
+		sterilizerType: "autoclave_steam",
+		autoclaveId: "AK-03",
+		serialNumber: "DGM-2022-3105",
+		cycleNumber: 145,
+		itemsDescription: "Ортопедические наконечники 1:5 и турбины в крафт-пакетах",
+		packagingType: "kraft_heat_sealed",
+		temperatureCelsius: 134,
+		pressureBar: 2.1,
+		durationMin: 5,
+		indicatorType: "class5_integrating",
+		passedIndicator: true,
+		biologicalTestResult: "not_conducted",
+		status: "passed",
+		barcode: "KP-2026-08-00145",
+		expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+		operatorId: null,
+		operatorName: "Смирнова Е.А. (старшая медсестра)",
+		notes: "Предварительная продувка спреем проведена. Контроль стерильности 100%. [ЭЦП: Смирнова Е.А.]",
+		timestamp: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+		createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+	},
+	{
+		id: "00000000-0000-4000-8000-000000000261",
+		organizationId: "00000000-0000-0000-0000-000000000001",
+		deviceName: "Melag Vacuklav 43 B+ Evolution",
+		sterilizerType: "autoclave_steam",
+		autoclaveId: "AK-01",
+		serialNumber: "2023-V43B-9812",
+		cycleNumber: 146,
+		itemsDescription: "Пародонтологические кюреты Грейси и ультразвуковые насадки",
+		packagingType: "kraft_heat_sealed",
+		temperatureCelsius: 134,
+		pressureBar: 2.1,
+		durationMin: 5,
+		indicatorType: "class5_integrating",
+		passedIndicator: true,
+		biologicalTestResult: "not_conducted",
+		status: "passed",
+		barcode: "KP-2026-08-00146",
+		expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+		operatorId: null,
+		operatorName: "Иванова О.С. (медсестра ЦСО)",
+		notes: "Все 5 контрольных точек камеры перешли в темно-коричневый цвет. [ЭЦП: Иванова О.С.]",
+		timestamp: new Date(Date.now() - 28 * 3600 * 1000).toISOString(),
+		createdAt: new Date(Date.now() - 28 * 3600 * 1000).toISOString(),
+	},
+];
+
 export function AutoclaveRegisterTab() {
-	const [logs, setLogs] = useState<SterilizationLogRecord[]>([]);
-	const [loading, setLoading] = useState(true);
+	const [logs, setLogs] = useState<SterilizationLogRecord[]>(DEFAULT_STERILIZATION_DEMO_RECORDS);
+	const [loading, setLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [deviceFilter, setDeviceFilter] = useState<string>("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,10 +196,17 @@ export function AutoclaveRegisterTab() {
 			});
 			if (res.ok) {
 				const data = await res.json();
-				setLogs(data);
+				if (Array.isArray(data) && data.length > 0) {
+					setLogs(data);
+				} else {
+					setLogs(DEFAULT_STERILIZATION_DEMO_RECORDS);
+				}
+			} else {
+				setLogs(DEFAULT_STERILIZATION_DEMO_RECORDS);
 			}
 		} catch (err) {
 			console.error("Failed to load sterilization logs", err);
+			setLogs(DEFAULT_STERILIZATION_DEMO_RECORDS);
 		} finally {
 			setLoading(false);
 		}

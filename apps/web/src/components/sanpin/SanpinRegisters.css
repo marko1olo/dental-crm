@@ -197,10 +197,10 @@
 }
 
 .sanpin-tab-btn.active {
-	background: var(--brand-primary, #2563eb);
+	background: var(--teal-600, #0d9488);
 	color: #ffffff;
 	font-weight: 700;
-	box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3);
 }
 
 .sanpin-tab-pill {
