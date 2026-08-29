@@ -1,4 +1,4 @@
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, Flame, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3 } from "lucide-react";
 import React, { type ReactElement, useState, useRef, useEffect } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -159,10 +159,10 @@ export function ScheduleFilterStrip({
 			aria-label="Сохраненные фильтры расписания"
 		>
 			{/* Left: Date Stepper (< dd.mm.yyyy >) */}
-			<div className="schedule-date-picker-group flex items-center gap-0.5 shrink-0 pr-1.5 border-r border-[var(--line)]">
+			<div className="schedule-date-picker-group flex items-center gap-0.5 shrink-0 pr-1 sm:pr-1.5 border-r border-[var(--line)]">
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-prev h-7 w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
+					className="secondary-button schedule-day-step-prev h-7 w-6 sm:w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(-1)}
 					aria-label="Показать предыдущий день"
 					title="День назад"
@@ -176,11 +176,11 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input h-7 px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[105px] sm:w-[125px]"
+					className="schedule-date-input h-7 px-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[96px] sm:w-[115px] text-center"
 				/>
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-next h-7 w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
+					className="secondary-button schedule-day-step-next h-7 w-6 sm:w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(1)}
 					aria-label="Показать следующий день"
 					title="День вперёд"
@@ -212,12 +212,13 @@ export function ScheduleFilterStrip({
 							<button
 								key={member.id}
 								type="button"
-								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} h-7 min-w-fit flex-shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg`}
+								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} h-7 min-w-fit shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg`}
 								onClick={() =>
 									setScheduleDoctorFilterId(
 										scheduleDoctorFilterId === member.id ? null : member.id,
 									)
 								}
+								title={`Фильтр по врачу: ${member?.fullName || "Врач"}`}
 							>
 								{member?.fullName
 									?.split(" ")
@@ -239,7 +240,7 @@ export function ScheduleFilterStrip({
 						<button
 							key={chair.id}
 							type="button"
-							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} h-7 min-w-fit flex-shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg flex items-center gap-1`}
+							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} h-7 min-w-fit shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg flex items-center gap-1`}
 							onClick={() =>
 								setScheduleChairFilterId(
 									scheduleChairFilterId === chair.id ? null : chair.id,
@@ -249,24 +250,55 @@ export function ScheduleFilterStrip({
 							aria-label={`Фильтр по кабинету / креслу: ${chairLabel}`}
 						>
 							<span className="whitespace-nowrap">{chairLabel}</span>
-							{chair.room && (
-								<span className="text-[9px] opacity-75 font-normal px-1 py-0.2 rounded bg-black/5 dark:bg-white/10 shrink-0 whitespace-nowrap">
-									{chair.room.split(" ")[0]}
-								</span>
-							)}
 						</button>
 					);
 				})}
 			</div>
 
-			{/* Right: [⋮ Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
-			<div className="flex items-center gap-1.5 shrink-0 pl-1 border-l border-[var(--line)]">
+			{/* Right: [⊞ Сетка | ☰ Лента] Switcher + [⋮ Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
+			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 border-l border-[var(--line)]">
+				{/* 1-Click View Mode Switcher: [ ⊞ Сетка | ☰ Лента ] */}
+				{setScheduleViewMode && (
+					<div className="flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Режим отображения">
+						<button
+							type="button"
+							onClick={() => setScheduleViewMode("grid")}
+							className={`h-6.5 px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+								scheduleViewMode === "grid"
+									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							title="Сетка по кабинетам и креслам"
+							aria-label="Сетка по кабинетам"
+							aria-pressed={scheduleViewMode === "grid"}
+						>
+							<LayoutGrid size={12} className="shrink-0" />
+							<span className="hidden md:inline">Сетка</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setScheduleViewMode("timeline")}
+							className={`h-6.5 px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+								scheduleViewMode === "timeline"
+									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							title="Лента приемов по дням"
+							aria-label="Лента по дням"
+							aria-pressed={scheduleViewMode === "timeline"}
+						>
+							<List size={12} className="shrink-0" />
+							<span className="hidden md:inline">Лента</span>
+						</button>
+					</div>
+				)}
+
 				{/* Secondary Actions Overflow Dropdown Menu */}
 				<div className="relative inline-flex items-center" ref={optionsMenuRef}>
 					<button
 						type="button"
 						onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-						className="h-7.5 px-2 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+						className="h-7.5 px-1.5 sm:px-2 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
 						title="Дополнительные режимы и списки расписания"
 						aria-label="Опции расписания"
 						aria-expanded={isOptionsMenuOpen}
@@ -459,7 +491,7 @@ export function ScheduleFilterStrip({
 									role="menuitem"
 									aria-label="Пациент с острой болью CITO: быстрая запись дежурному врачу"
 								>
-									<Flame size={14} className="text-rose-600 dark:text-rose-400" />
+									<AlertCircle size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
 									<span>CITO! Острая боль</span>
 								</button>
 							)}
@@ -562,12 +594,13 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={onQuickBooking}
-						className="primary-button h-7.5 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-extrabold flex items-center gap-1.5 shrink-0 shadow-sm border border-transparent transition-all cursor-pointer select-none"
+						className="primary-button h-7.5 px-2 sm:px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-sm border border-transparent transition-all cursor-pointer select-none"
 						title="Новая запись пациента на прием (горячая клавиша N)"
 						aria-label="Добавить запись"
 					>
 						<Sparkles size={13} className="shrink-0" />
-						<span className="whitespace-nowrap font-black">+ Запись</span>
+						<span className="hidden sm:inline whitespace-nowrap font-black">+ Запись</span>
+						<span className="sm:hidden font-black text-sm leading-none">+</span>
 					</button>
 				)}
 			</div>

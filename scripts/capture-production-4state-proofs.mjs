@@ -13,6 +13,7 @@ const BRAIN_DIRS = [
   "C:/Users/Admin/.gemini/antigravity/brain/28922cfe-a09a-4693-aa79-8e62cf0bac22",
   "C:/Users/Admin/.gemini/antigravity/brain/69ded610-4c1d-4d3f-8359-693851dbbfd7",
   "C:/Users/Admin/.gemini/antigravity/brain/0284cf50-cf45-4b19-be4c-f6f53b03120f",
+  "C:/Users/Admin/.gemini/antigravity/brain/f5824999-6581-4e72-bf2d-f5efa07f56fa",
   "C:/Clinic_MVP/dental-crm/docs/proofs/audit",
   process.env.BRAIN_DIR,
 ].filter(Boolean);
@@ -313,7 +314,7 @@ const TARGET_SCREENS = [
       if (fs.existsSync(dicomDir)) {
         const files = fs.readdirSync(dicomDir)
           .filter((f) => f.endsWith(".dcm"))
-          .slice(150, 250) // 100 central clinical slices covering maxilla, mandible, roots and sinuses
+          .slice(50, 350) // 300 central clinical slices covering full maxilla, mandible, roots and sinuses
           .map((f) => path.join(dicomDir, f));
 
         if (files.length > 0) {

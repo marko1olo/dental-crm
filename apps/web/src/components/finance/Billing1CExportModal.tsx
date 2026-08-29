@@ -275,7 +275,7 @@ export function Billing1CExportModal({
 							}`}
 						>
 							<Receipt size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-							<span>Услуги и позиции ({items.length})</span>
+							<span><span className="hidden sm:inline">Услуги и позиции</span><span className="sm:hidden">Услуги</span> ({items.length})</span>
 						</button>
 						<button
 							type="button"
@@ -287,7 +287,7 @@ export function Billing1CExportModal({
 							}`}
 						>
 							<Code2 size={14} className="text-slate-600 dark:text-slate-400 shrink-0" />
-							<span>XML CommerceML</span>
+							<span><span className="hidden sm:inline">XML CommerceML</span><span className="sm:hidden">XML</span></span>
 						</button>
 						<button
 							type="button"
@@ -299,7 +299,7 @@ export function Billing1CExportModal({
 							}`}
 						>
 							<FileText size={14} className="text-slate-600 dark:text-slate-400 shrink-0" />
-							<span>Реквизиты документа</span>
+							<span><span className="hidden sm:inline">Реквизиты документа</span><span className="sm:hidden">Реквизиты</span></span>
 						</button>
 					</div>
 

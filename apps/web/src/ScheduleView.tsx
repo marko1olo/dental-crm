@@ -35,7 +35,6 @@ import {
 import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
 import { ScheduleFilterStrip } from "./components/schedule/ScheduleFilterStrip";
 import { ScheduleGrid } from "./components/schedule/ScheduleGrid";
-import { ScheduleSubNavTabs } from "./components/schedule/ScheduleSubNavTabs";
 import { ScheduleTimeline } from "./components/schedule/ScheduleTimeline";
 import {
 	type DayGroupingAppointment,
@@ -349,10 +348,29 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const [modalAppointment, setModalAppointment] =
 		useState<Appointment | null>(null);
 
-	/** Режим отображения: лента (timeline) или сетка по креслам (grid) */
+	/** Режим отображения: сетка по креслам (grid - дефолт для десктопа) или лента (timeline - дефолт для мобайла) */
 	const [scheduleViewMode, setScheduleViewMode] = useState<"timeline" | "grid">(
-		"timeline",
+		() => {
+			try {
+				const saved = typeof window !== "undefined" ? localStorage.getItem("dente_schedule_view_mode") : null;
+				if (saved === "timeline" || saved === "grid") return saved;
+				if (typeof window !== "undefined" && window.innerWidth < 640) {
+					return "timeline";
+				}
+			} catch {
+				/* ignore */
+			}
+			return "grid";
+		},
 	);
+
+	useEffect(() => {
+		try {
+			localStorage.setItem("dente_schedule_view_mode", scheduleViewMode);
+		} catch {
+			/* ignore */
+		}
+	}, [scheduleViewMode]);
 
 	const todayScheduleDate = useCallback(
 		() =>
@@ -1094,24 +1112,53 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			id="schedule"
 			data-testid="schedule-view"
 		>
-			<div className="panel-heading flex flex-wrap items-center justify-between gap-3 min-w-0">
-				<h2 className="truncate min-w-0">Расписание приемов</h2>
-				<ScheduleSubNavTabs
-					showShiftAnalytics={showShiftAnalytics}
-					setShowShiftAnalytics={setShowShiftAnalytics}
-					setScheduleDateFilter={setScheduleDateFilter}
-					todayScheduleDate={todayScheduleDate}
-					waitlistCount={waitlistCount}
-					setWaitlistOpen={setWaitlistOpen}
-					showConfirmationsPanel={showConfirmationsPanel}
-					setShowConfirmationsPanel={setShowConfirmationsPanel}
-					showFreedSlotsPanel={showFreedSlotsPanel}
-					setShowFreedSlotsPanel={setShowFreedSlotsPanel}
-					showClipboardPanel={showClipboardPanel}
-					setShowClipboardPanel={setShowClipboardPanel}
-					onOpenShiftRoster={() => setIsRosterModalOpen(true)}
-				/>
+			<div className="panel-heading flex items-center justify-between gap-3 min-w-0 py-1.5 mb-1">
+				<h2 className="truncate min-w-0 text-base font-bold text-[var(--ink)]">Расписание приемов</h2>
 			</div>
+
+			{/* STRICTLY 1 COMPACT 36px TOOLBAR ROW */}
+			<ScheduleFilterStrip
+				scheduleDateFilter={scheduleDateFilter}
+				setScheduleDateFilter={setScheduleDateFilter}
+				stepScheduleDay={stepScheduleDay}
+				activeScheduleFilterCount={activeScheduleFilterCount}
+				resetScheduleFilters={resetScheduleFilters}
+				staffMembers={dashboard?.clinicSettings?.staff ?? []}
+				chairs={dashboard?.clinicSettings?.chairs ?? []}
+				isSoloDoctor={
+					dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
+				}
+				scheduleDoctorFilterId={scheduleDoctorFilterId}
+				setScheduleDoctorFilterId={setScheduleDoctorFilterId}
+				scheduleChairFilterId={scheduleChairFilterId}
+				setScheduleChairFilterId={setScheduleChairFilterId}
+				scheduleViewMode={scheduleViewMode}
+				setScheduleViewMode={setScheduleViewMode}
+				isSmartAiOpen={isSmartAiOpen}
+				onToggleSmartAi={() => setIsSmartAiOpen((prev) => !prev)}
+				onOpenDoctorFreeSlots={() => setDoctorFreeSlotsOpen(true)}
+				onEmergencyCitoBooking={handleEmergencyCitoBooking}
+				onToggleShiftAnalytics={() => setShowShiftAnalytics((prev) => !prev)}
+				showShiftAnalytics={showShiftAnalytics}
+				onOpenShiftRoster={() => setIsRosterModalOpen(true)}
+				onOpenWaitlist={() => setWaitlistOpen(true)}
+				waitlistCount={waitlistCount}
+				onToggleConfirmations={() => setShowConfirmationsPanel((prev) => !prev)}
+				showConfirmationsPanel={showConfirmationsPanel}
+				onToggleFreedSlots={() => setShowFreedSlotsPanel((prev) => !prev)}
+				showFreedSlotsPanel={showFreedSlotsPanel}
+				onToggleClipboard={() => setShowClipboardPanel((prev) => !prev)}
+				showClipboardPanel={showClipboardPanel}
+				onQuickBooking={() => {
+					setQuickBookingSlot({
+						dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+						doctorUserId: scheduleDoctorFilterId || null,
+						chairId: scheduleChairFilterId || null,
+						durationMinutes: 30,
+					});
+					setQuickBookingOpen(true);
+				}}
+			/>
 			{showConfirmationsPanel && <DayConfirmationsPanel />}
 			{showFreedSlotsPanel && <FreedSlotsPanel />}
 			{showClipboardPanel && (
@@ -1310,48 +1357,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					)}
 				</section>
 			) : null}
-			<ScheduleFilterStrip
-				scheduleDateFilter={scheduleDateFilter}
-				setScheduleDateFilter={setScheduleDateFilter}
-				stepScheduleDay={stepScheduleDay}
-				activeScheduleFilterCount={activeScheduleFilterCount}
-				resetScheduleFilters={resetScheduleFilters}
-				staffMembers={dashboard?.clinicSettings?.staff ?? []}
-				chairs={dashboard?.clinicSettings?.chairs ?? []}
-				isSoloDoctor={
-					dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-				}
-				scheduleDoctorFilterId={scheduleDoctorFilterId}
-				setScheduleDoctorFilterId={setScheduleDoctorFilterId}
-				scheduleChairFilterId={scheduleChairFilterId}
-				setScheduleChairFilterId={setScheduleChairFilterId}
-				scheduleViewMode={scheduleViewMode}
-				setScheduleViewMode={setScheduleViewMode}
-				isSmartAiOpen={isSmartAiOpen}
-				onToggleSmartAi={() => setIsSmartAiOpen((prev) => !prev)}
-				onOpenDoctorFreeSlots={() => setDoctorFreeSlotsOpen(true)}
-				onEmergencyCitoBooking={handleEmergencyCitoBooking}
-				onToggleShiftAnalytics={() => setShowShiftAnalytics((prev) => !prev)}
-				showShiftAnalytics={showShiftAnalytics}
-				onOpenShiftRoster={() => setIsRosterModalOpen(true)}
-				onOpenWaitlist={() => setWaitlistOpen(true)}
-				waitlistCount={waitlistCount}
-				onToggleConfirmations={() => setShowConfirmationsPanel((prev) => !prev)}
-				showConfirmationsPanel={showConfirmationsPanel}
-				onToggleFreedSlots={() => setShowFreedSlotsPanel((prev) => !prev)}
-				showFreedSlotsPanel={showFreedSlotsPanel}
-				onToggleClipboard={() => setShowClipboardPanel((prev) => !prev)}
-				showClipboardPanel={showClipboardPanel}
-				onQuickBooking={() => {
-					setQuickBookingSlot({
-						dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
-						doctorUserId: scheduleDoctorFilterId || null,
-						chairId: scheduleChairFilterId || null,
-						durationMinutes: 30,
-					});
-					setQuickBookingOpen(true);
-				}}
-			/>
 			{scheduleAdminSecretNeeded ? (
 				<fieldset
 					className="appointment-editor schedule-admin-unlock min-w-0"

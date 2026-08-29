@@ -218,17 +218,6 @@ export const OdontogramStudioStandalone: React.FC = () => {
 		showToast("Зубы мудрости (18, 28, 38, 48) удалены", "success", 2000);
 	}, [updateToothState, showToast]);
 
-	const handleDeleteMaxilla = useCallback(() => {
-		const targets = pediatricMode ? PEDIATRIC_UPPER_TEETH : ADULT_UPPER_TEETH;
-		updateToothState(targets, "Missing");
-		showToast("Все зубы верхней челюсти удалены", "warning", 2000);
-	}, [pediatricMode, updateToothState, showToast]);
-
-	const handleDeleteMandible = useCallback(() => {
-		const targets = pediatricMode ? PEDIATRIC_LOWER_TEETH : ADULT_LOWER_TEETH;
-		updateToothState(targets, "Missing");
-		showToast("Все зубы нижней челюсти удалены", "warning", 2000);
-	}, [pediatricMode, updateToothState, showToast]);
 
 	const handleFullEdentulism = useCallback(() => {
 		const targets = pediatricMode ? ALL_PEDIATRIC_TEETH : ALL_ADULT_TEETH;
@@ -413,467 +402,398 @@ export const OdontogramStudioStandalone: React.FC = () => {
 		);
 	}, [radialMenu, teethData]);
 
+	const [isPresetsPanelOpen, setIsPresetsPanelOpen] = useState<boolean>(false);
+	const [isHotkeysHelpOpen, setIsHotkeysHelpOpen] = useState<boolean>(false);
+
 	return (
 		<div
 			className="min-h-screen w-full bg-[var(--canvas,var(--paper-soft))] text-[var(--ink)] flex flex-col font-sans select-none overflow-x-hidden transition-colors duration-200"
 			data-testid="odontogram-studio-container"
 		>
-			{/* Top Bar Header */}
-			<header className="w-full px-4 sm:px-6 py-3.5 bg-[var(--paper-strong,var(--paper))] backdrop-blur-xl border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 shadow-xs transition-colors duration-200">
-				{/* Logo & Title */}
+			{/* Top Bar Header (Clean Strict Medical Header) */}
+			<header className="w-full px-4 sm:px-6 py-2.5 bg-[var(--paper-strong,var(--paper))] backdrop-blur-xl border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 shadow-xs transition-colors duration-200">
+				{/* Medical Title without marketing jargon */}
 				<div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-					<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 shrink-0">
-						<Sparkles className="text-white" size={20} />
+					<div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-teal-600 dark:bg-teal-700 flex items-center justify-center text-white shrink-0 shadow-xs">
+						<Sparkles size={18} />
 					</div>
 					<div className="min-w-0">
-						<div className="flex items-center gap-2 flex-wrap">
-							<h1 className="text-base sm:text-lg font-black tracking-tight text-[var(--odontogram-ink)] m-0 truncate">
-								DENTE <span className="text-cyan-500 font-light">ODONTOGRAM PRO</span>
-							</h1>
-							<span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 shrink-0">
-								Studio v2.7
-							</span>
-						</div>
-						<p className="text-[11px] sm:text-xs text-[var(--odontogram-ink-muted)] m-0 hidden sm:block truncate">
-							Интерактивная векторная зубная формула · 1-Click Fast Keys · Стрелочная навигация · Живая смета (804н)
-						</p>
+						<h1 className="text-base sm:text-lg font-bold tracking-tight text-[var(--odontogram-ink)] m-0 whitespace-nowrap">
+							Зубная формула DENTE
+						</h1>
 					</div>
 				</div>
 
-				{/* Center Mode Switcher Tabs */}
-				<div className="flex items-center p-1 bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] rounded-xl shadow-inner gap-1 max-w-full overflow-x-auto scrollbar-none order-last lg:order-none w-full lg:w-auto justify-start sm:justify-center min-w-0">
+				{/* Center Mode Switcher Tabs (32-36px compact height, responsive labels) */}
+				<div className="flex items-center p-0.5 bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] rounded-xl shadow-inner gap-1 max-w-full overflow-x-auto scrollbar-none order-last lg:order-none w-full lg:w-auto justify-start sm:justify-center shrink-0">
 					<button
 						type="button"
 						onClick={() => setViewMode("anatomical_svg")}
-						className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[38px] min-w-0 ${
+						className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[34px] ${
 							viewMode === "anatomical_svg"
 								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md"
 								: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)]"
 						}`}
 						title="3D Векторная анатомическая проекция коронок и корней"
 					>
-						<Sparkles size={14} className="shrink-0" />
-						<span className="hidden sm:inline min-w-0">3D Анатомический</span>
-						<span className="sm:hidden min-w-0">3D Схема</span>
+						<Sparkles size={14} className="shrink-0 text-amber-400" />
+						<span className="hidden sm:inline whitespace-nowrap font-bold">3D Анатомический</span>
+						<span className="sm:hidden whitespace-nowrap font-bold">3D</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setViewMode("compact_clinical")}
-						className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[38px] min-w-0 ${
+						className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[34px] ${
 							viewMode === "compact_clinical"
 								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md"
 								: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)]"
 						}`}
 						title="Клиническая 5-поверхностная полигональная схема"
 					>
-						<Zap size={14} className="shrink-0" />
-						<span className="hidden sm:inline min-w-0">5-Поверхностный</span>
-						<span className="sm:hidden min-w-0">5-Поверхн.</span>
+						<Zap size={14} className="shrink-0 text-cyan-400" />
+						<span className="hidden sm:inline whitespace-nowrap font-bold">5-Поверхностный</span>
+						<span className="sm:hidden whitespace-nowrap font-bold">5-Пов.</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setViewMode("classic_gost")}
-						className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[38px] min-w-0 ${
+						className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[34px] ${
 							viewMode === "classic_gost"
 								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md"
 								: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)]"
 						}`}
 						title="Сетка Минздрава России ГОСТ 043/у с КПУ-индексами"
 					>
-						<FileText size={14} className="shrink-0" />
-						<span className="min-w-0">ГОСТ 043/у</span>
+						<FileText size={14} className="shrink-0 text-indigo-400" />
+						<span className="hidden sm:inline whitespace-nowrap font-bold">ГОСТ 043/у</span>
+						<span className="sm:hidden whitespace-nowrap font-bold">ГОСТ</span>
 					</button>
 				</div>
 
 				{/* Right Quick Controls */}
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+					<button
+						type="button"
+						onClick={() => setIsPresetsPanelOpen((prev) => !prev)}
+						className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer min-h-[36px] ${
+							isPresetsPanelOpen || activeStamp
+								? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/40 shadow-xs"
+								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)] border-[var(--odontogram-border)]"
+						}`}
+						title="Открыть панель быстрых пресетов, кистей и легенды"
+						data-testid="toggle-presets-panel-btn"
+					>
+						<Layers size={14} className={isPresetsPanelOpen ? "text-indigo-600" : "text-[var(--odontogram-ink-muted)]"} />
+						<span className="hidden md:inline whitespace-nowrap">Клавиши & Пресеты</span>
+						<span className="md:hidden whitespace-nowrap">Пресеты</span>
+						{activeStamp && (
+							<span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+						)}
+					</button>
+
 					<button
 						type="button"
 						onClick={toggleTheme}
-						className="p-2.5 rounded-xl bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] transition-all shadow-xs cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+						className="p-2 rounded-xl bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] transition-all shadow-xs cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
 						title={currentTheme === "dark" ? "Переключить на светлую тему" : "Переключить на тёмную тему"}
 						aria-label="Сменить тему"
 					>
-						{currentTheme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-indigo-600" />}
+						{currentTheme === "dark" ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-indigo-600" />}
 					</button>
 
 					<button
 						type="button"
 						onClick={resetAllTeeth}
-						className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--odontogram-paper)] hover:bg-red-500/10 text-[var(--odontogram-ink-muted)] hover:text-red-500 border border-[var(--odontogram-border)] hover:border-red-500/40 transition-all text-xs font-bold cursor-pointer min-h-[44px]"
+						className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--odontogram-paper)] hover:bg-red-500/10 text-[var(--odontogram-ink-muted)] hover:text-red-500 border border-[var(--odontogram-border)] hover:border-red-500/40 transition-all text-xs font-bold cursor-pointer min-h-[36px]"
 						title="Сбросить все зубы к исходному здоровому состоянию"
 					>
-						<RotateCcw size={15} />
+						<RotateCcw size={14} />
 						<span className="hidden sm:inline">Сброс</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsInvoiceOpen(!isInvoiceOpen)}
-						className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer min-h-[44px] ${
+						className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer min-h-[36px] ${
 							isInvoiceOpen
 								? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/50 shadow-md shadow-emerald-500/20"
 								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)] border-[var(--odontogram-border)]"
 						}`}
 						title="Открыть / скрыть живую смету лечения (Приказ 804н)"
 					>
-						<Coins size={16} className="text-emerald-500" />
-						<span>Живая смета</span>
+						<Coins size={14} className="text-emerald-500" />
+						<span className="hidden sm:inline whitespace-nowrap">Живая смета</span>
+						<span className="sm:hidden whitespace-nowrap">Смета</span>
 					</button>
 				</div>
 			</header>
 
-			{/* Fast Action Sub-Toolbar 1: Layers & Batch Presets */}
-			<div className="w-full px-4 sm:px-6 py-2 bg-[var(--odontogram-paper)] border-b border-[var(--odontogram-border-subtle)] flex flex-wrap items-center justify-between gap-2 text-xs transition-colors duration-200">
-				{/* Layer Toggles & 1-Click Fast Presets */}
-				<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 max-w-full shrink-0 min-w-0">
-					<span className="text-[var(--odontogram-ink-muted)] font-medium mr-0.5 hidden sm:inline whitespace-nowrap">Пресеты:</span>
+			{/* Collapsible Accordion Drawer: Presets & Rapid Stamps & Legend */}
+			{isPresetsPanelOpen && (
+				<div className="w-full px-4 sm:px-6 py-3 bg-[var(--odontogram-paper)] border-b border-[var(--odontogram-border-subtle)] flex flex-col gap-2.5 text-xs transition-all animate-in slide-in-from-top-2 duration-150">
+					{/* 1. Presets Row */}
+					<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 max-w-full flex-wrap">
+						<span className="text-[var(--odontogram-ink-muted)] font-bold mr-1 whitespace-nowrap">Пресеты:</span>
 
-					<button
-						type="button"
-						onClick={handleDeleteAllWisdom}
-						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
-						title="Удалить все 4 зуба мудрости (18, 28, 38, 48) в 1 клик"
-					>
-						<Trash2 size={13} className="text-rose-500 shrink-0" />
-						<span className="whitespace-nowrap min-w-0">Удалить 8-ки</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleDeleteMaxilla}
-						className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--odontogram-surface)] hover:bg-rose-500/15 text-[var(--odontogram-ink)] hover:text-rose-600 border border-[var(--odontogram-border)] font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
-						title="Удалить все зубы верхней челюсти (18–28)"
-					>
-						<span className="whitespace-nowrap min-w-0">В/Ч (0)</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleDeleteMandible}
-						className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--odontogram-surface)] hover:bg-rose-500/15 text-[var(--odontogram-ink)] hover:text-rose-600 border border-[var(--odontogram-border)] font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
-						title="Удалить все зубы нижней челюсти (48–38)"
-					>
-						<span className="whitespace-nowrap min-w-0">Н/Ч (0)</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleFullEdentulism}
-						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-700 dark:text-red-300 border border-red-500/40 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
-						title="Полная адентия: все зубы отсутствуют (под съёмный протез / All-on-4)"
-					>
-						<span className="whitespace-nowrap min-w-0">Адентия (Все 0)</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleResetAllHealthy}
-						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
-						title="Восстановить все зубы как здоровые (интактные)"
-					>
-						<Sparkles size={13} className="text-emerald-500 shrink-0" />
-						<span className="whitespace-nowrap min-w-0">Все здоровы</span>
-					</button>
-
-					<div className="h-4 w-[1px] bg-[var(--odontogram-border)] mx-1 shrink-0" />
-
-					<button
-						type="button"
-						onClick={() => setShowWisdom(!showWisdom)}
-						className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0 ${
-							showWisdom
-								? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/40"
-								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] border-[var(--odontogram-border)] hover:text-[var(--odontogram-ink)]"
-						}`}
-						title="Показать / скрыть зубы мудрости (18, 28, 38, 48)"
-					>
-						{showWisdom ? <Eye size={13} className="shrink-0" /> : <EyeOff size={13} className="shrink-0" />}
-						<span className="whitespace-nowrap min-w-0">8-ки</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setShowCanals(!showCanals)}
-						className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0 ${
-							showCanals
-								? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/40"
-								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] border-[var(--odontogram-border)] hover:text-[var(--odontogram-ink)]"
-						}`}
-						title="Просмотр эндодонтических корневых каналов и пульпарной камеры"
-					>
-						<Activity size={13} className="shrink-0" />
-						<span className="whitespace-nowrap min-w-0">Каналы</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleTogglePediatric}
-						className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0 ${
-							pediatricMode
-								? "bg-pink-500/15 text-pink-700 dark:text-pink-300 border-pink-500/40 font-bold"
-								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] border-[var(--odontogram-border)] hover:text-[var(--odontogram-ink)]"
-						}`}
-						title="Переключить на детский молочный прикус (51–85)"
-					>
-						<User size={13} className="shrink-0" />
-						<span className="whitespace-nowrap min-w-0">Детский</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setIsVoiceOpen(true)}
-						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-violet-600/15 hover:bg-violet-600/25 text-violet-700 dark:text-violet-300 border border-violet-500/40 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
-						title="Голосовая диктовка зубной формулы по стандартам МЗ РФ"
-					>
-						<Mic size={13} className="text-violet-500 shrink-0" />
-						<span className="whitespace-nowrap min-w-0">Диктовка</span>
-					</button>
-				</div>
-
-				{/* Quadrant Quick Selection & Live DMFT / КПУ Counter */}
-				<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 max-w-full shrink-0">
-					<span className="text-[var(--odontogram-ink-muted)] font-medium mr-0.5 hidden sm:inline whitespace-nowrap">
-						Выбор:
-					</span>
-
-					<button
-						type="button"
-						onClick={() => selectQuadrant(1)}
-						className="px-2 py-1 rounded-md bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold text-[11px] cursor-pointer min-h-[30px]"
-						title="Выбрать 1-й квадрант (18–11 / 55–51, Alt+1)"
-					>
-						Q1
-					</button>
-					<button
-						type="button"
-						onClick={() => selectQuadrant(2)}
-						className="px-2 py-1 rounded-md bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold text-[11px] cursor-pointer min-h-[30px]"
-						title="Выбрать 2-й квадрант (21–28 / 61–65, Alt+2)"
-					>
-						Q2
-					</button>
-					<button
-						type="button"
-						onClick={() => selectQuadrant(3)}
-						className="px-2 py-1 rounded-md bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold text-[11px] cursor-pointer min-h-[30px]"
-						title="Выбрать 3-й квадрант (31–38 / 71–75, Alt+3)"
-					>
-						Q3
-					</button>
-					<button
-						type="button"
-						onClick={() => selectQuadrant(4)}
-						className="px-2 py-1 rounded-md bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold text-[11px] cursor-pointer min-h-[30px]"
-						title="Выбрать 4-й квадрант (48–41 / 85–81, Alt+4)"
-					>
-						Q4
-					</button>
-
-					<button
-						type="button"
-						onClick={() => selectArch("upper")}
-						className="px-2 py-1 rounded-md bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-medium text-[11px] cursor-pointer min-h-[30px]"
-						title="Выбрать верхнюю челюсть (Alt+U)"
-					>
-						В/ч
-					</button>
-					<button
-						type="button"
-						onClick={() => selectArch("lower")}
-						className="px-2 py-1 rounded-md bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-medium text-[11px] cursor-pointer min-h-[30px]"
-						title="Выбрать нижнюю челюсть (Alt+L)"
-					>
-						Н/ч
-					</button>
-					<button
-						type="button"
-						onClick={() => selectArch("all")}
-						className="px-2 py-1 rounded-md bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-medium text-[11px] cursor-pointer min-h-[30px]"
-						title="Выбрать все зубы (Ctrl+A)"
-					>
-						Все
-					</button>
-
-					{selectedTeeth.length > 0 && (
 						<button
 							type="button"
-							onClick={() => selectArch("clear")}
-							className="px-2 py-1 rounded-md bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold text-[11px] cursor-pointer min-h-[30px]"
-							title="Снять выделение (Escape)"
+							onClick={handleDeleteAllWisdom}
+							className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-semibold transition-all cursor-pointer min-h-[32px] shrink-0"
+							title="Удалить все 4 зуба мудрости (18, 28, 38, 48) в 1 клик"
 						>
-							Сброс ({selectedTeeth.length})
+							<Trash2 size={13} className="text-rose-500 shrink-0" />
+							<span className="whitespace-nowrap">Удалить 8-ки</span>
 						</button>
-					)}
-				</div>
 
-				{/* 2. Rapid Stamps (Кисти быстрых состояний) */}
-				<div className="flex items-center gap-1.5 flex-wrap">
-					<button
-						type="button"
-						onClick={() => setActiveStamp(activeStamp === "Filled" ? null : "Filled")}
-						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
-							activeStamp === "Filled"
-								? "bg-emerald-500 text-slate-950 ring-2 ring-emerald-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-emerald-500/50"
-						}`}
-						title="Кисть: Пломба — кликайте по зубам для быстрой установки"
-					>
-						<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />
-						<span>Пломба</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveStamp(activeStamp === "Caries" ? null : "Caries")}
-						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
-							activeStamp === "Caries"
-								? "bg-red-500 text-white ring-2 ring-red-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-red-500/50"
-						}`}
-						title="Кисть: Кариес — кликайте по зубам для быстрой установки"
-					>
-						<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" />
-						<span>Кариес</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveStamp(activeStamp === "Missing" ? null : "Missing")}
-						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
-							activeStamp === "Missing"
-								? "bg-rose-600 text-white ring-2 ring-rose-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-rose-500/50"
-						}`}
-						title="Кисть: Удален — кликайте по зубам для быстрой установки"
-					>
-						<span className="w-2.5 h-2.5 rounded-full bg-rose-600 shadow-sm" />
-						<span>Удален</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveStamp(activeStamp === "Crown" ? null : "Crown")}
-						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
-							activeStamp === "Crown"
-								? "bg-indigo-600 text-white ring-2 ring-indigo-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-indigo-500/50"
-						}`}
-						title="Кисть: Коронка — кликайте по зубам для быстрой установки"
-					>
-						<span className="w-2.5 h-2.5 rounded-full bg-indigo-600 shadow-sm" />
-						<span>Коронка</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveStamp(activeStamp === "Planned_Implant" ? null : "Planned_Implant")}
-						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
-							activeStamp === "Planned_Implant"
-								? "bg-cyan-500 text-slate-950 ring-2 ring-cyan-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-cyan-500/50"
-						}`}
-						title="Кисть: Имплантат — кликайте по зубам для быстрой установки"
-					>
-						<span className="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-sm" />
-						<span>Имплантат</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveStamp(activeStamp === "Pulpitis" ? null : "Pulpitis")}
-						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
-							activeStamp === "Pulpitis"
-								? "bg-rose-600 text-white ring-2 ring-rose-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-rose-500/50"
-						}`}
-						title="Кисть: Пульпит — кликайте по зубам для быстрой установки"
-					>
-						<span className="w-2.5 h-2.5 rounded-full bg-rose-600 shadow-sm" />
-						<span>Пульпит</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveStamp(activeStamp === "Periodontitis" ? null : "Periodontitis")}
-						className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[30px] ${
-							activeStamp === "Periodontitis"
-								? "bg-orange-500 text-white ring-2 ring-orange-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-orange-500/50"
-						}`}
-						title="Кисть: Периодонтит (Е) — кликайте по зубам для быстрой установки"
-					>
-						<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" />
-						<span>Периодонтит (Е)</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveStamp(activeStamp === "Healthy" ? null : "Healthy")}
-						className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[30px] ${
-							activeStamp === "Healthy"
-								? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-emerald-500/50"
-						}`}
-						title="Кисть: Здоров (З) — кликайте по зубам для возврата к здоровому"
-					>
-						<span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shadow-sm" />
-						<span>Здоров (З)</span>
-					</button>
-
-					{activeStamp && (
 						<button
 							type="button"
-							onClick={() => setActiveStamp(null)}
-							className="px-2.5 py-1 rounded-full bg-rose-600/15 hover:bg-rose-600/25 text-rose-700 dark:text-rose-300 font-bold border border-rose-500/40 text-[11px] cursor-pointer min-h-[30px] whitespace-nowrap"
-							title="Снять активную кисть и вернуться к Радиальному меню (Esc)"
+							onClick={handleFullEdentulism}
+							className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-700 dark:text-red-300 border border-red-500/40 font-semibold transition-all cursor-pointer min-h-[32px] shrink-0"
+							title="Полная адентия: все зубы отсутствуют (под съёмный протез / All-on-4)"
 						>
-							✕ Снять кисть (Esc)
+							<span className="whitespace-nowrap">Адентия (Все 0)</span>
 						</button>
-					)}
-				</div>
 
-				<div className="text-[11px] text-[var(--odontogram-ink-muted)] hidden md:block whitespace-nowrap">
-					{activeStamp ? (
-						<span className="text-amber-500 font-bold">● Режим кисти: 1 клик = 1 зуб</span>
-					) : (
-						<span>● Обычный режим: клик открывает радиальное меню</span>
-					)}
-				</div>
-			</div>
+						<button
+							type="button"
+							onClick={handleResetAllHealthy}
+							className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-semibold transition-all cursor-pointer min-h-[32px] shrink-0"
+							title="Восстановить все зубы как здоровые (интактные)"
+						>
+							<Sparkles size={13} className="text-emerald-500 shrink-0" />
+							<span className="whitespace-nowrap">Все здоровы</span>
+						</button>
 
-			{/* Active Stamp Banner */}
-			{activeStamp && (
-				<div className="w-full px-4 sm:px-6 py-2 bg-gradient-to-r from-amber-500/15 via-indigo-500/15 to-emerald-500/15 border-b border-amber-500/30 flex items-center justify-between gap-2 text-xs transition-all animate-pulse">
+						<div className="h-4 w-[1px] bg-[var(--odontogram-border)] mx-1 shrink-0" />
+
+						<button
+							type="button"
+							onClick={() => setShowWisdom(!showWisdom)}
+							className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[32px] shrink-0 ${
+								showWisdom
+									? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/40"
+									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] border-[var(--odontogram-border)] hover:text-[var(--odontogram-ink)]"
+							}`}
+							title="Показать / скрыть зубы мудрости (18, 28, 38, 48)"
+						>
+							{showWisdom ? <Eye size={13} className="shrink-0" /> : <EyeOff size={13} className="shrink-0" />}
+							<span className="whitespace-nowrap">8-ки</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setShowCanals(!showCanals)}
+							className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[32px] shrink-0 ${
+								showCanals
+									? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/40"
+									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] border-[var(--odontogram-border)] hover:text-[var(--odontogram-ink)]"
+							}`}
+							title="Просмотр эндодонтических корневых каналов и пульпарной камеры"
+						>
+							<Activity size={13} className="shrink-0" />
+							<span className="whitespace-nowrap">Каналы</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleTogglePediatric}
+							className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[32px] shrink-0 ${
+								pediatricMode
+									? "bg-pink-500/15 text-pink-700 dark:text-pink-300 border-pink-500/40 font-bold"
+									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] border-[var(--odontogram-border)] hover:text-[var(--odontogram-ink)]"
+							}`}
+							title="Переключить на детский молочный прикус (51–85)"
+						>
+							<User size={13} className="shrink-0" />
+							<span className="whitespace-nowrap">Детский</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setIsVoiceOpen(true)}
+							className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-violet-600/15 hover:bg-violet-600/25 text-violet-700 dark:text-violet-300 border border-violet-500/40 font-semibold transition-all cursor-pointer min-h-[32px] shrink-0"
+							title="Голосовая диктовка зубной формулы по стандартам МЗ РФ"
+						>
+							<Mic size={13} className="text-violet-500 shrink-0" />
+							<span className="whitespace-nowrap">Диктовка</span>
+						</button>
+					</div>
+
+					{/* 2. Rapid Stamps */}
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className="text-[var(--odontogram-ink-muted)] font-bold mr-1 whitespace-nowrap">Кисти быстрых статусов:</span>
+
+						<button
+							type="button"
+							onClick={() => setActiveStamp(activeStamp === "Filled" ? null : "Filled")}
+							className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[28px] ${
+								activeStamp === "Filled"
+									? "bg-emerald-500 text-slate-950 ring-2 ring-emerald-400 shadow-md"
+									: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-emerald-500/50"
+							}`}
+							title="Кисть: Пломба — кликайте по зубам для быстрой установки"
+						>
+							<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />
+							<span>Пломба</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setActiveStamp(activeStamp === "Caries" ? null : "Caries")}
+							className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[28px] ${
+								activeStamp === "Caries"
+									? "bg-red-500 text-white ring-2 ring-red-400 shadow-md"
+									: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-red-500/50"
+							}`}
+							title="Кисть: Кариес — кликайте по зубам для быстрой установки"
+						>
+							<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" />
+							<span>Кариес</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setActiveStamp(activeStamp === "Missing" ? null : "Missing")}
+							className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[28px] ${
+								activeStamp === "Missing"
+									? "bg-rose-600 text-white ring-2 ring-rose-400 shadow-md"
+									: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-rose-500/50"
+							}`}
+							title="Кисть: Удален — кликайте по зубам для быстрой установки"
+						>
+							<span className="w-2.5 h-2.5 rounded-full bg-rose-600 shadow-sm" />
+							<span>Удален</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setActiveStamp(activeStamp === "Crown" ? null : "Crown")}
+							className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[28px] ${
+								activeStamp === "Crown"
+									? "bg-indigo-600 text-white ring-2 ring-indigo-400 shadow-md"
+									: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-indigo-500/50"
+							}`}
+							title="Кисть: Коронка — кликайте по зубам для быстрой установки"
+						>
+							<span className="w-2.5 h-2.5 rounded-full bg-indigo-600 shadow-sm" />
+							<span>Коронка</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setActiveStamp(activeStamp === "Planned_Implant" ? null : "Planned_Implant")}
+							className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[28px] ${
+								activeStamp === "Planned_Implant"
+									? "bg-cyan-500 text-slate-950 ring-2 ring-cyan-400 shadow-md"
+									: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-cyan-500/50"
+							}`}
+							title="Кисть: Имплантат — кликайте по зубам для быстрой установки"
+						>
+							<span className="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-sm" />
+							<span>Имплантат</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setActiveStamp(activeStamp === "Pulpitis" ? null : "Pulpitis")}
+							className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[28px] ${
+								activeStamp === "Pulpitis"
+									? "bg-rose-600 text-white ring-2 ring-rose-400 shadow-md"
+									: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-rose-500/50"
+							}`}
+							title="Кисть: Пульпит — кликайте по зубам для быстрой установки"
+						>
+							<span className="w-2.5 h-2.5 rounded-full bg-rose-600 shadow-sm" />
+							<span>Пульпит</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setActiveStamp(activeStamp === "Periodontitis" ? null : "Periodontitis")}
+							className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[28px] ${
+								activeStamp === "Periodontitis"
+									? "bg-orange-500 text-white ring-2 ring-orange-400 shadow-md"
+									: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-orange-500/50"
+							}`}
+							title="Кисть: Периодонтит (Е) — кликайте по зубам для быстрой установки"
+						>
+							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" />
+							<span>Периодонтит (Е)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setActiveStamp(activeStamp === "Healthy" ? null : "Healthy")}
+							className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[28px] ${
+								activeStamp === "Healthy"
+									? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-md"
+									: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-emerald-500/50"
+							}`}
+							title="Кисть: Здоров (З) — кликайте по зубам для возврата к здоровому"
+						>
+							<span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shadow-sm" />
+							<span>Здоров (З)</span>
+						</button>
+
+						{activeStamp && (
+							<button
+								type="button"
+								onClick={() => setActiveStamp(null)}
+								className="px-2.5 py-0.5 rounded-full bg-rose-600/15 hover:bg-rose-600/25 text-rose-700 dark:text-rose-300 font-bold border border-rose-500/40 text-[11px] cursor-pointer min-h-[28px] whitespace-nowrap"
+								title="Снять активную кисть и вернуться к Радиальному меню (Esc)"
+							>
+								✕ Снять кисть (Esc)
+							</button>
+						)}
+					</div>
+
+					{/* 3. Clinical Legend */}
+					<div className="flex items-center gap-3 flex-wrap pt-1 border-t border-[var(--odontogram-border-subtle)] text-[11px] text-[var(--odontogram-ink-muted)]">
+						<span className="font-bold text-[var(--odontogram-ink)]">Легенда:</span>
+						<span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Кариес</span>
+						<span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> Пульпит</span>
+						<span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /> Периодонтит</span>
+						<span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)]" /> Пломба</span>
+						<span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--brand-500,#3b82f6)]" /> Коронка</span>
+						<span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Имплант</span>
+						<span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400 opacity-50" /> Отсутствует</span>
+						<span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Здоров</span>
+					</div>
+				</div>
+			)}
+
+			{/* Active Stamp Banner (Compact Slim Status Ribbon) */}
+			{activeStamp && !isPresetsPanelOpen && (
+				<div className="w-full px-4 sm:px-6 py-1.5 bg-gradient-to-r from-amber-500/15 via-teal-500/15 to-emerald-500/15 border-b border-amber-500/30 flex items-center justify-between gap-2 text-xs transition-all">
 					<div className="flex items-center gap-2">
-						<Paintbrush size={15} className="text-amber-500 shrink-0" />
-						<span className="text-[var(--odontogram-ink)]">
-							Активен режим штампа: <strong className="text-amber-600 dark:text-amber-300 uppercase font-black">{TOOTH_STATE_LABELS[activeStamp]}</strong>. Кликайте прямо по зубам в формуле для мгновенного окрашивания.
+						<Paintbrush size={13} className="text-amber-500 shrink-0" />
+						<span className="text-[var(--odontogram-ink)] font-bold">
+							Режим кисти: <strong className="text-amber-600 dark:text-amber-300 uppercase">{TOOTH_STATE_LABELS[activeStamp]}</strong>. Клик по зубу красит мгновенно.
 						</span>
 					</div>
 					<button
 						type="button"
 						onClick={() => setActiveStamp(null)}
-						className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs cursor-pointer shrink-0 shadow-xs"
+						className="px-2.5 py-0.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs cursor-pointer shrink-0 shadow-xs"
 					>
-						Снять кисть (Esc)
+						Снять (Esc)
 					</button>
 				</div>
 			)}
 
-			{/* Main Central Stage */}
-			<main className="flex-1 w-full max-w-[1600px] mx-auto p-2 sm:p-4 flex flex-col lg:flex-row gap-4 relative items-start">
+			{/* Main Central Stage — Dominant Workspace Scale (75%+ Viewport Area) */}
+			<main className="flex-1 w-full max-w-full p-2 sm:p-4 flex flex-col lg:flex-row gap-3 relative items-stretch">
 				{/* Dental Arch Stage Canvas */}
-				<div className="flex-1 w-full min-w-0 bg-[var(--odontogram-paper)] border border-[var(--odontogram-border)] rounded-2xl p-2 sm:p-4 shadow-xs flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-200">
+				<div className="flex-1 w-full min-w-0 bg-[var(--odontogram-paper)] border border-[var(--odontogram-border)] rounded-2xl p-2 sm:p-6 shadow-xs flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-200 min-h-[calc(100vh-130px)]">
 					{/* Glow accent */}
-					<div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+					<div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
 					<div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
 
 					{/* 1. 3D Anatomical Mode */}
 					{viewMode === "anatomical_svg" && (
-						<div className="w-full flex flex-col items-center">
+						<div className="w-full flex flex-col items-center justify-center flex-1">
 							<AnatomicalSvgOdontogram
 								teethData={teethData}
 								pediatricMode={pediatricMode}
@@ -889,7 +809,7 @@ export const OdontogramStudioStandalone: React.FC = () => {
 
 					{/* 2. Compact Clinical 5-surface Mode */}
 					{viewMode === "compact_clinical" && (
-						<div className="w-full flex flex-col items-center">
+						<div className="w-full flex flex-col items-center justify-center flex-1">
 							<ToothChart
 								teethData={teethData}
 								pediatricMode={pediatricMode}
@@ -903,7 +823,7 @@ export const OdontogramStudioStandalone: React.FC = () => {
 
 					{/* 3. Classic GOST 043/u Mode */}
 					{viewMode === "classic_gost" && (
-						<div className="w-full">
+						<div className="w-full flex flex-col items-center justify-center flex-1">
 							<ClassicGostOdontogram
 								teethData={teethData}
 								pediatricMode={pediatricMode}
@@ -915,7 +835,7 @@ export const OdontogramStudioStandalone: React.FC = () => {
 					)}
 				</div>
 
-				{/* Sliding Live Invoice Drawer (Desktop Sticky, Mobile Slide-over Overlay) */}
+				{/* Sliding Live Invoice Drawer */}
 				{isInvoiceOpen && (
 					<>
 						{/* Mobile Backdrop */}
@@ -923,7 +843,7 @@ export const OdontogramStudioStandalone: React.FC = () => {
 							className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40 lg:hidden"
 							onClick={() => setIsInvoiceOpen(false)}
 						/>
-						<div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm lg:static lg:w-96 lg:shrink-0 lg:sticky lg:top-24 lg:z-30 animate-in slide-in-from-right duration-300 p-3 lg:p-0">
+						<div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm lg:static lg:w-96 lg:shrink-0 lg:sticky lg:top-16 lg:z-30 animate-in slide-in-from-right duration-300 p-3 lg:p-0">
 							<OdontogramLiveInvoice
 								teethData={teethData}
 								isOpen={isInvoiceOpen}
@@ -964,53 +884,48 @@ export const OdontogramStudioStandalone: React.FC = () => {
 				}}
 			/>
 
-			{/* Footer Help & Standards Bar */}
-			<footer className="w-full px-4 sm:px-6 py-3 bg-[var(--odontogram-paper)] border-t border-[var(--odontogram-border-subtle)] flex flex-wrap items-center justify-between gap-4 text-xs text-[var(--odontogram-ink-muted)] transition-colors duration-200">
-				<div className="hidden md:flex items-center gap-2.5 flex-wrap">
-					<span className="font-semibold text-[var(--odontogram-ink)]">Горячие клавиши:</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono">
-						←↑→↓ / Tab
-					</span>
-					<span>Навигация</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold">
-						К
-					</span>
-					<span>Кариес</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold">
-						П
-					</span>
-					<span>Пломба</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold">
-						Ф
-					</span>
-					<span>Пульпит</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold">
-						Е
-					</span>
-					<span>Периодонтит</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold">
-						Ц
-					</span>
-					<span>Коронка</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold">
-						И
-					</span>
-					<span>Имплант</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold">
-						0
-					</span>
-					<span>Удален</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold">
-						З
-					</span>
-					<span>Здоров</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono font-bold">
-						Alt+1..4
-					</span>
-					<span>Квадранты</span>
+			{/* Footer Help & Compact Hotkeys Trigger */}
+			<footer className="w-full px-4 sm:px-6 py-2 bg-[var(--paper-strong,var(--paper))] border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-4 text-xs text-[var(--odontogram-ink-muted)] transition-colors duration-200">
+				{/* Compact Hotkeys Trigger with Popup */}
+				<div className="relative group/hotkeys">
+					<button
+						type="button"
+						onClick={() => setIsHotkeysHelpOpen((prev) => !prev)}
+						className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] text-xs font-bold transition-all cursor-pointer select-none"
+						title="Справка по горячим клавишам"
+						data-testid="compact-hotkeys-help-btn"
+					>
+						<span>⌨️</span>
+						<span>Горячие клавиши</span>
+					</button>
+
+					{/* Popover on hover/click */}
+					{(isHotkeysHelpOpen || true) && (
+						<div className="absolute bottom-full left-0 mb-2 hidden group-hover/hotkeys:flex group-focus-within/hotkeys:flex flex-col gap-2 p-3 rounded-xl bg-[var(--odontogram-paper)] border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl z-50 text-xs w-80 pointer-events-auto">
+							<div className="font-bold text-[var(--odontogram-ink)] border-b border-[var(--odontogram-border-subtle)] pb-1.5 flex items-center justify-between">
+								<span>Горячие клавиши формулы</span>
+								<span className="text-[10px] text-[var(--odontogram-ink-muted)] font-mono">1-Key Fast Mode</span>
+							</div>
+							<div className="grid grid-cols-2 gap-1.5 text-[11px]">
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold">←↑→↓</kbd> Навигация</div>
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold">Tab</kbd> След. зуб</div>
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold text-amber-500">К</kbd> Кариес</div>
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold text-teal-500">П</kbd> Пломба</div>
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold text-rose-500">Ф</kbd> Пульпит</div>
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold text-orange-500">Е</kbd> Периодонтит</div>
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold text-blue-500">Ц</kbd> Коронка</div>
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold text-cyan-500">И</kbd> Имплант</div>
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold text-rose-600">0</kbd> Удален</div>
+								<div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold text-emerald-500">З</kbd> Здоров</div>
+								<div className="flex items-center gap-1 col-span-2"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold">Alt+1..4</kbd> Квадранты Q1..Q4</div>
+								<div className="flex items-center gap-1 col-span-2"><kbd className="px-1.5 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] font-mono font-bold">Esc</kbd> Снять кисть / меню</div>
+							</div>
+						</div>
+					)}
 				</div>
+
 				<div className="flex items-center gap-2 text-[var(--odontogram-ink-muted)]">
-					<span>Стандарты МЗ РФ · ISO 3950 FDI · СанПиН 2.6.1.1192-03</span>
+					<span>Стандарты МЗ РФ · ISO 3950 FDI · Форма 043/у</span>
 				</div>
 			</footer>
 		</div>

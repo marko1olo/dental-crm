@@ -35,7 +35,6 @@ import {
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
 } from "./ClassicGostOdontogram";
-import "./odontogram.css";
 
 const TOP_TEETH = [
 	18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
@@ -1476,9 +1475,13 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 	const [archScale, setArchScale] = useState(1);
 	const appliedArchScaleRef = useRef(1);
 
-	const [localQuadrant, setLocalQuadrant] = useState<OdontogramQuadrantId>(
-		controlledQuadrant ?? "all",
-	);
+	const [localQuadrant, setLocalQuadrant] = useState<OdontogramQuadrantId>(() => {
+		if (controlledQuadrant !== undefined) return controlledQuadrant;
+		if (typeof window !== "undefined" && window.innerWidth < 640) {
+			return pediatricMode ? "Q5" : "Q1";
+		}
+		return "all";
+	});
 	const currentQuadrant = controlledQuadrant ?? localQuadrant;
 
 	const handleSelectQuadrant = (q: OdontogramQuadrantId) => {
@@ -1518,8 +1521,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 		const recalculate = () => {
 			const element = archContainerRef.current;
 			if (!element) return;
-			// 8px safety buffer for container inner padding
-			const available = Math.max(0, element.clientWidth - 8);
+			// 24px safety buffer so outer molars (18, 28, 48, 38) are never clipped by container boundaries
+			const available = Math.max(0, element.clientWidth - 24);
 			const row = element.querySelector<HTMLElement>(".teeth-row");
 			if (!available || !row) return;
 
@@ -1528,10 +1531,10 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 			if (!Number.isFinite(naturalWidth) || naturalWidth <= 0) return;
 
 			const isQuadrantView = currentQuadrant !== "all";
-			const minScale = isQuadrantView ? 0.75 : MIN_ARCH_SCALE;
+			const minScale = isQuadrantView ? 0.95 : MIN_ARCH_SCALE;
 			const next = Math.min(
 				2.2,
-				Math.max(minScale, (available / naturalWidth) * 1.3),
+				Math.max(minScale, (available / naturalWidth) * 1.25),
 			);
 			if (Math.abs(applied - next) < 0.005) return;
 			appliedArchScaleRef.current = next;
@@ -1794,7 +1797,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 										<ToothWrapper
 											key={num}
 											tooth={tData}
-											scale={Math.max(0.85, archScale)}
+											scale={Math.max(1.0, archScale)}
 											isTop={isTopQuadrant}
 											isSelected={selectedTeeth.includes(num)}
 											selectedTeeth={selectedTeeth}

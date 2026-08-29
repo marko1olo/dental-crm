@@ -887,6 +887,79 @@ export function sampleVoxelHU(
 }
 
 /**
+ * Trilinear continuous sub-voxel interpolation of Hounsfield Unit (HU).
+ * Guarantees smooth, anti-aliased reslicing without nearest-neighbor jagged comb artifacts.
+ */
+export function sampleVoxelTrilinearHU(
+	x: number,
+	y: number,
+	z: number,
+	volume: CbctVoxelVolume,
+): number {
+	if (
+		!volume ||
+		!volume.data ||
+		volume.isDisposed ||
+		x < 0 ||
+		x > volume.dimensions.width - 1 ||
+		y < 0 ||
+		y > volume.dimensions.height - 1 ||
+		z < 0 ||
+		z > volume.dimensions.depth - 1
+	) {
+		return -1000;
+	}
+
+	const x0 = Math.floor(x);
+	const y0 = Math.floor(y);
+	const z0 = Math.floor(z);
+	const x1 = Math.min(volume.dimensions.width - 1, x0 + 1);
+	const y1 = Math.min(volume.dimensions.height - 1, y0 + 1);
+	const z1 = Math.min(volume.dimensions.depth - 1, z0 + 1);
+
+	const dx = x - x0;
+	const dy = y - y0;
+	const dz = z - z0;
+
+	const w = volume.dimensions.width;
+	const wh = w * volume.dimensions.height;
+	const data = volume.data;
+
+	const c000 = data[z0 * wh + y0 * w + x0] ?? -1000;
+	const c100 = data[z0 * wh + y0 * w + x1] ?? -1000;
+	const c010 = data[z0 * wh + y1 * w + x0] ?? -1000;
+	const c110 = data[z0 * wh + y1 * w + x1] ?? -1000;
+	const c001 = data[z1 * wh + y0 * w + x0] ?? -1000;
+	const c101 = data[z1 * wh + y0 * w + x1] ?? -1000;
+	const c011 = data[z1 * wh + y1 * w + x0] ?? -1000;
+	const c111 = data[z1 * wh + y1 * w + x1] ?? -1000;
+
+	const c00 = c000 + dx * (c100 - c000);
+	const c10 = c010 + dx * (c110 - c010);
+	const c01 = c001 + dx * (c101 - c001);
+	const c11 = c011 + dx * (c111 - c011);
+
+	const c0 = c00 + dy * (c10 - c00);
+	const c1 = c01 + dy * (c11 - c01);
+
+	return c0 + dz * (c1 - c0);
+}
+
+/**
+ * Continuous millimeter to fractional sub-voxel coordinate mapping.
+ */
+export function worldMmToVoxelContinuous(
+	pointMm: Point3D,
+	volume: CbctVoxelVolume,
+): { x: number; y: number; z: number } {
+	return {
+		x: (pointMm.x - volume.originMm.x) / (volume.spacingMm.x || 0.2),
+		y: (pointMm.y - volume.originMm.y) / (volume.spacingMm.y || 0.2),
+		z: (pointMm.z - volume.originMm.z) / (volume.spacingMm.z || 0.2),
+	};
+}
+
+/**
  * Maps Hounsfield Unit (HU) to 8-bit grayscale intensity [0..255] via linear or gamma windowing.
  * Standards: DICOM Part 3 PS 3.3 (C.11.2.1.2 VOI LUT Windowing), Planmeca Romexis, Vatech Ez3D-i.
  *

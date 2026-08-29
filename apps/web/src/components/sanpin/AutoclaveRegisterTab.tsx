@@ -6,11 +6,13 @@ import {
 	Award,
 	Camera,
 	CheckCircle2,
+	ChevronDown,
 	Clock,
 	FileBadge,
 	FileSpreadsheet,
 	FileText,
 	Flame,
+	MoreVertical,
 	Plus,
 	Printer,
 	QrCode,
@@ -21,7 +23,7 @@ import {
 	Trash2,
 	XCircle,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { SanpinCycleModal } from "./SanpinCycleModal";
@@ -176,12 +178,26 @@ export function AutoclaveRegisterTab() {
 	const [isSeniorNurseUnsealOpen, setIsSeniorNurseUnsealOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isWasteJournalOpen, setIsWasteJournalOpen] = useState(false);
+	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+	const moreMenuRef = useRef<HTMLDivElement>(null);
 	const [kraftPrefill, setKraftPrefill] = useState<{
 		autoclaveId?: string | undefined;
 		cycleNumber?: number | undefined;
 		operatorName?: string | undefined;
 	}>({});
 	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+				setIsMoreMenuOpen(false);
+			}
+		};
+		if (isMoreMenuOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isMoreMenuOpen]);
 
 	const fetchLogs = async () => {
 		try {
@@ -416,18 +432,18 @@ export function AutoclaveRegisterTab() {
 				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»</p>
 			</div>
 
-			{/* Control Bar: Filters, Search, Actions */}
-			<div className="sanpin-control-bar">
-				<div className="sanpin-filter-group">
-					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={18} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
+			{/* Control Bar: Filters, Search, Actions (Strict 1 row 36px) */}
+			<div className="sanpin-control-bar" style={{ padding: "0.5rem 0.75rem", gap: "0.5rem", minHeight: "48px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+				<div className="sanpin-filter-group" style={{ gap: "0.4rem", flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
+					<div style={{ position: "relative", display: "flex", alignItems: "center", flex: "1 1 200px", minWidth: "160px", maxWidth: "340px" }}>
+						<Search size={15} style={{ position: "absolute", left: "0.65rem", color: "var(--muted)" }} />
 						<input
 							type="text"
 							placeholder="Поиск по аппарату, лотку, штрихкоду, оператору..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="sanpin-input"
-							style={{ paddingLeft: "2.3rem", minWidth: "300px", minHeight: "44px", fontSize: "0.9rem" }}
+							style={{ paddingLeft: "2rem", minHeight: "36px", height: "36px", fontSize: "0.825rem", width: "100%" }}
 						/>
 					</div>
 
@@ -435,57 +451,172 @@ export function AutoclaveRegisterTab() {
 						value={deviceFilter}
 						onChange={(e) => setDeviceFilter(e.target.value)}
 						className="sanpin-select"
-						style={{ minHeight: "44px", fontSize: "0.9rem" }}
+						style={{ minHeight: "36px", height: "36px", fontSize: "0.825rem", padding: "0.35rem 0.65rem" }}
 					>
-						<option value="all">Все циклы стерилизации</option>
-						<option value="passed">Стерилизация подтверждена (Норма)</option>
-						<option value="failed">Брак индикатора / Сбой</option>
+						<option value="all">Все циклы</option>
+						<option value="passed">Стерильно (Норма)</option>
+						<option value="failed">Брак индикатора</option>
 					</select>
 				</div>
 
-				<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-					<button
-						type="button"
-						onClick={handleGenerateMonthlyForm257}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1.1rem", fontSize: "0.9rem", fontWeight: 800, background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)", color: "#fff", border: "none", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)" }}
-						title="Автоматическое формирование и печать нормативного журнала стерилизаторов (Форма 257/у) за текущий месяц"
-						data-testid="generate-monthly-form257-btn"
-					>
-						<Sparkles size={18} />
-						<span>Сгенерировать Форму 257/у за месяц</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setIsSeniorNurseUnsealOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.9rem", fontWeight: 700 }}
-						title="Режим медсестры: Сканирование и вскрытие крафт-пакета автоклава"
-						data-testid="open-senior-nurse-kraft-btn"
-					>
-						<Camera size={16} /> <span>Вскрыть крафт-пакет</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setIsWasteJournalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.45rem 0.95rem", fontSize: "0.85rem", fontWeight: 700, borderColor: "#f59e0b" }}
-						title="Журнал и утилизация медотходов классов Б и В после автоклавирования (СанПиН 2.1.3684-21)"
-						data-testid="open-autoclave-waste-btn"
-					>
-						<Trash2 size={16} className="text-amber-500" /> <span>Медотходы (СанПиН 2.1.3684-21)</span>
-					</button>
-
+				<div style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexShrink: 0 }}>
+					{/* Primary Action: + Зафиксировать цикл */}
 					<button
 						type="button"
 						onClick={() => setIsModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.88rem", fontWeight: 700 }}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{
+							minHeight: "36px",
+							height: "36px",
+							padding: "0.35rem 0.85rem",
+							fontSize: "0.825rem",
+							fontWeight: 700,
+							background: "var(--teal-600, #0d9488)",
+							borderColor: "var(--teal-600, #0d9488)",
+							color: "#ffffff",
+							boxShadow: "0 2px 6px rgba(13, 148, 136, 0.25)",
+							cursor: "pointer",
+							whiteSpace: "nowrap",
+						}}
+						data-testid="sanpin-autoclave-new-cycle-btn"
 					>
-						<Plus size={16} /> Зафиксировать цикл
+						<Plus size={15} /> <span>Зафиксировать цикл</span>
 					</button>
+
+					{/* Dropdown: [⋮ Дополнительно] */}
+					<div ref={moreMenuRef} style={{ position: "relative", display: "inline-block" }}>
+						<button
+							type="button"
+							onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.65rem",
+								fontSize: "0.825rem",
+								fontWeight: 600,
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.25rem",
+								whiteSpace: "nowrap",
+							}}
+							aria-expanded={isMoreMenuOpen}
+							title="Дополнительные операции: Форма 257/у, вскрытие крафт-пакетов"
+							data-testid="autoclave-more-options-btn"
+						>
+							<MoreVertical size={15} color="var(--brand-primary, #2563eb)" />
+							<span className="hidden sm:inline">Дополнительно</span>
+							<ChevronDown size={13} style={{ transform: isMoreMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+						</button>
+
+						{isMoreMenuOpen && (
+							<div
+								style={{
+									position: "absolute",
+									right: 0,
+									top: "calc(100% + 4px)",
+									minWidth: "260px",
+									background: "var(--paper-strong, #ffffff)",
+									border: "1px solid var(--line, #e2e8f0)",
+									borderRadius: "8px",
+									boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+									zIndex: 50,
+									padding: "0.35rem",
+									display: "flex",
+									flexDirection: "column",
+									gap: "0.2rem",
+								}}
+							>
+								{/* Сгенерировать Форму 257/у за месяц */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										handleGenerateMonthlyForm257();
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="generate-monthly-form257-btn"
+								>
+									<Sparkles size={15} color="#0d9488" />
+									<span>Печать Формы 257/у за месяц</span>
+								</button>
+
+								{/* Вскрыть крафт-пакет */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										setIsSeniorNurseUnsealOpen(true);
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="open-senior-nurse-kraft-btn"
+								>
+									<Camera size={15} color="#2563eb" />
+									<span>Вскрыть крафт-пакет (сканер)</span>
+								</button>
+
+								{/* Форма 257/у Студия */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										setIsJournal257ModalOpen(true);
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="open-journal-257-studio-btn"
+								>
+									<FileSpreadsheet size={15} color="#059669" />
+									<span>Студия журнала 257/у</span>
+								</button>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 
@@ -500,7 +631,7 @@ export function AutoclaveRegisterTab() {
 							<th style={{ fontSize: "0.85rem" }}>Вид упаковки</th>
 							<th style={{ fontSize: "0.85rem" }}>Режим (T°, Давл., Время)</th>
 							<th style={{ fontSize: "0.85rem" }}>Хим. индикатор</th>
-							<th style={{ fontSize: "0.85rem" }}>Срок годности</th>
+							<th style={{ fontSize: "0.85rem", minWidth: "120px" }}>Срок годности</th>
 							<th style={{ fontSize: "0.85rem" }}>Штрихкод / Статус</th>
 							<th style={{ fontSize: "0.85rem" }}>Заверка / Оператор</th>
 						</tr>
@@ -589,7 +720,7 @@ export function AutoclaveRegisterTab() {
 											)}
 										</td>
 
-										<td style={{ fontSize: "0.85rem", whiteSpace: "nowrap" }}>
+										<td style={{ fontSize: "0.85rem", whiteSpace: "nowrap", minWidth: "120px" }}>
 											{log.expiresAt ? (
 												<span style={{ fontWeight: 600, color: "#059669" }}>
 													{new Date(log.expiresAt).toLocaleDateString("ru-RU")}

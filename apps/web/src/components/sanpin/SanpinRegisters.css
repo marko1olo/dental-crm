@@ -159,6 +159,8 @@
 	-ms-overflow-style: none;
 	-webkit-overflow-scrolling: touch;
 	box-sizing: border-box;
+	mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+	-webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
 }
 
 .sanpin-tabs-nav::-webkit-scrollbar {
