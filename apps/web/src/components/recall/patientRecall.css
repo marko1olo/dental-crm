@@ -1,0 +1,933 @@
+/* ==========================================================================
+   DENTE Patient Recall Manager HUD & Retention Workspace
+   Dense Desktop-First UI (32-36px toolbars), DENTE Tokens, Multi-Theme Support
+   ========================================================================== */
+
+.patient-recall-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.72);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.patient-recall-container {
+	--pr-bg: var(--paper, #ffffff);
+	--pr-surface: var(--paper-strong, #f8fafc);
+	--pr-surface-hover: var(--paper-soft, #f1f5f9);
+	--pr-border: var(--line, #e2e8f0);
+	--pr-border-focus: var(--teal, var(--brand-500, #0d9488));
+	--pr-ink: var(--ink, #0f172a);
+	--pr-muted: var(--muted, #64748b);
+	--pr-teal: var(--teal, var(--brand-500, #0d9488));
+	--pr-teal-fill: var(--teal-fill, #0d9488);
+	--pr-on-teal: var(--on-teal, #ffffff);
+	--pr-success: var(--ok-fg, #16a34a);
+	--pr-success-bg: var(--ok-bg, rgba(22, 163, 74, 0.12));
+	--pr-warning: var(--warn-fg, #d97706);
+	--pr-warning-bg: var(--warn-bg, rgba(217, 119, 6, 0.12));
+	--pr-danger: var(--bad-fg, #dc2626);
+	--pr-danger-bg: var(--bad-bg, rgba(220, 38, 38, 0.12));
+	--pr-info: #0284c7;
+	--pr-info-bg: rgba(2, 132, 199, 0.12);
+	--pr-radius: 12px;
+	--pr-radius-sm: 6px;
+
+	background: var(--pr-bg);
+	color: var(--pr-ink);
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	width: 100%;
+	max-width: 1280px;
+	height: 92vh;
+	max-height: 900px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+/* Header */
+.pr-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--pr-border);
+	background: var(--pr-surface);
+	flex-shrink: 0;
+	gap: 12px;
+}
+
+.pr-header-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.pr-header-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	background: var(--pr-teal-fill);
+	color: var(--pr-on-teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pr-header-title {
+	font-size: 1.0625rem;
+	font-weight: 800;
+	margin: 0;
+	line-height: 1.2;
+	color: var(--pr-ink);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pr-header-badge {
+	font-size: 0.6875rem;
+	padding: 2px 7px;
+	border-radius: 9999px;
+	background: var(--pr-teal-fill);
+	color: var(--pr-on-teal);
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.pr-header-subtitle {
+	font-size: 0.75rem;
+	color: var(--pr-muted);
+	margin: 2px 0 0 0;
+}
+
+.pr-header-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pr-view-toggle {
+	display: inline-flex;
+	background: var(--pr-bg);
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	padding: 2px;
+	gap: 2px;
+}
+
+.pr-view-btn {
+	height: 32px;
+	padding: 0 12px;
+	border-radius: 4px;
+	border: none;
+	background: transparent;
+	color: var(--pr-muted);
+	font-size: 0.75rem;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.pr-view-btn:hover {
+	color: var(--pr-ink);
+}
+
+.pr-view-btn.active {
+	background: var(--pr-teal-fill);
+	color: var(--pr-on-teal);
+}
+
+.pr-close-btn {
+	width: 34px;
+	height: 34px;
+	border-radius: var(--pr-radius-sm);
+	border: 1px solid var(--pr-border);
+	background: var(--pr-bg);
+	color: var(--pr-muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.pr-close-btn:hover {
+	background: var(--pr-surface-hover);
+	color: var(--pr-ink);
+}
+
+/* Metrics Bar */
+.pr-metrics-bar {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	gap: 10px;
+	padding: 10px 20px;
+	background: var(--pr-bg);
+	border-bottom: 1px solid var(--pr-border);
+	flex-shrink: 0;
+}
+
+.pr-metric-card {
+	background: var(--pr-surface);
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	padding: 8px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.pr-metric-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	color: var(--pr-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.pr-metric-value-row {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.pr-metric-val {
+	font-size: 1.1875rem;
+	font-weight: 800;
+	color: var(--pr-ink);
+	line-height: 1;
+}
+
+.pr-metric-hint {
+	font-size: 0.6875rem;
+	color: var(--pr-muted);
+}
+
+.pr-metric-card--danger {
+	border-left: 3px solid var(--pr-danger);
+}
+
+.pr-metric-card--warning {
+	border-left: 3px solid var(--pr-warning);
+}
+
+.pr-metric-card--success {
+	border-left: 3px solid var(--pr-success);
+}
+
+.pr-metric-card--primary {
+	border-left: 3px solid var(--pr-teal);
+}
+
+/* Dense Desktop Toolbar (Height 32-36px) */
+.pr-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 20px;
+	background: var(--pr-surface);
+	border-bottom: 1px solid var(--pr-border);
+	gap: 12px;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+.pr-filters-group {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.pr-filter-pill {
+	height: 32px;
+	padding: 0 12px;
+	border-radius: 9999px;
+	border: 1px solid var(--pr-border);
+	background: var(--pr-bg);
+	color: var(--pr-muted);
+	font-size: 0.75rem;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.pr-filter-pill:hover {
+	background: var(--pr-surface-hover);
+	color: var(--pr-ink);
+}
+
+.pr-filter-pill.active {
+	background: var(--pr-teal-fill);
+	border-color: var(--pr-teal-fill);
+	color: var(--pr-on-teal);
+}
+
+.pr-filter-pill-count {
+	font-size: 0.6875rem;
+	padding: 1px 5px;
+	border-radius: 9999px;
+	background: rgba(0, 0, 0, 0.08);
+}
+
+.pr-filter-pill.active .pr-filter-pill-count {
+	background: rgba(255, 255, 255, 0.25);
+	color: var(--pr-on-teal);
+}
+
+.pr-search-box {
+	position: relative;
+	width: 240px;
+}
+
+.pr-search-input {
+	width: 100%;
+	height: 32px;
+	padding: 0 10px 0 30px;
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	background: var(--pr-bg);
+	color: var(--pr-ink);
+	font-size: 0.75rem;
+	box-sizing: border-box;
+}
+
+.pr-search-input:focus {
+	outline: none;
+	border-color: var(--pr-border-focus);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+}
+
+.pr-search-icon {
+	position: absolute;
+	left: 9px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--pr-muted);
+	pointer-events: none;
+}
+
+/* Notice Strip */
+.pr-notice-strip {
+	background: var(--pr-success-bg);
+	color: var(--pr-success);
+	padding: 6px 20px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+	border-bottom: 1px solid var(--pr-border);
+}
+
+/* Main Body Layout (Content + Interactive Generator / Script Drawer) */
+.pr-body {
+	flex: 1;
+	display: flex;
+	overflow: hidden;
+	position: relative;
+}
+
+.pr-main-pane {
+	flex: 1;
+	overflow-y: auto;
+	padding: 14px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Table View */
+.pr-table-container {
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	background: var(--pr-bg);
+	overflow: hidden;
+}
+
+.pr-table {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: left;
+	font-size: 0.8125rem;
+}
+
+.pr-table th {
+	background: var(--pr-surface);
+	padding: 9px 12px;
+	font-weight: 700;
+	font-size: 0.75rem;
+	color: var(--pr-muted);
+	border-bottom: 1px solid var(--pr-border);
+	white-space: nowrap;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.pr-table td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--pr-border);
+	vertical-align: middle;
+}
+
+.pr-table tr:last-child td {
+	border-bottom: none;
+}
+
+.pr-table tr:hover td {
+	background: var(--pr-surface-hover);
+}
+
+.pr-patient-title {
+	font-weight: 700;
+	color: var(--pr-ink);
+	font-size: 0.875rem;
+}
+
+.pr-patient-meta {
+	font-size: 0.75rem;
+	color: var(--pr-muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 2px;
+}
+
+.pr-cycle-tag {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 8px;
+	border-radius: 4px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	background: var(--pr-surface);
+	border: 1px solid var(--pr-border);
+	color: var(--pr-ink);
+	white-space: nowrap;
+}
+
+.pr-urgency-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 7px;
+	border-radius: 9999px;
+	font-size: 0.6875rem;
+	font-weight: 800;
+	white-space: nowrap;
+}
+
+.pr-urgency-badge--due_now {
+	background: var(--pr-danger-bg);
+	color: var(--pr-danger);
+	border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.pr-urgency-badge--overdue_30 {
+	background: var(--pr-warning-bg);
+	color: var(--pr-warning);
+	border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+.pr-urgency-badge--overdue_90 {
+	background: var(--pr-danger-bg);
+	color: var(--pr-danger);
+	border: 1px solid rgba(220, 38, 38, 0.4);
+	font-weight: 900;
+}
+
+.pr-urgency-badge--upcoming {
+	background: var(--pr-info-bg);
+	color: var(--pr-info);
+	border: 1px solid rgba(2, 132, 199, 0.3);
+}
+
+.pr-urgency-badge--completed {
+	background: var(--pr-success-bg);
+	color: var(--pr-success);
+	border: 1px solid rgba(22, 163, 74, 0.3);
+}
+
+/* Status Pill in Table */
+.pr-status-select {
+	height: 32px;
+	padding: 0 8px;
+	border-radius: var(--pr-radius-sm);
+	border: 1px solid var(--pr-border);
+	background: var(--pr-bg);
+	color: var(--pr-ink);
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+/* 1-Click Action Buttons in Table (Height 32px) */
+.pr-actions-cell {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+}
+
+.pr-btn {
+	height: 32px;
+	padding: 0 10px;
+	border-radius: var(--pr-radius-sm);
+	border: 1px solid var(--pr-border);
+	background: var(--pr-bg);
+	color: var(--pr-ink);
+	font-size: 0.75rem;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.pr-btn:hover:not(:disabled) {
+	background: var(--pr-surface-hover);
+	border-color: var(--pr-muted);
+}
+
+.pr-btn--whatsapp {
+	color: #15803d;
+	background: rgba(34, 197, 94, 0.1);
+	border-color: rgba(34, 197, 94, 0.3);
+}
+
+.pr-btn--whatsapp:hover:not(:disabled) {
+	background: rgba(34, 197, 94, 0.2);
+	color: #166534;
+}
+
+.pr-btn--telegram {
+	color: #0284c7;
+	background: rgba(2, 132, 199, 0.1);
+	border-color: rgba(2, 132, 199, 0.3);
+}
+
+.pr-btn--telegram:hover:not(:disabled) {
+	background: rgba(2, 132, 199, 0.2);
+	color: #0369a1;
+}
+
+.pr-btn--call {
+	color: var(--pr-teal);
+	background: rgba(13, 148, 136, 0.1);
+	border-color: rgba(13, 148, 136, 0.3);
+}
+
+.pr-btn--call:hover:not(:disabled) {
+	background: rgba(13, 148, 136, 0.2);
+}
+
+.pr-btn--book {
+	background: var(--pr-teal-fill);
+	color: var(--pr-on-teal);
+	border-color: var(--pr-teal-fill);
+}
+
+.pr-btn--book:hover:not(:disabled) {
+	opacity: 0.9;
+}
+
+.pr-btn--preview {
+	color: var(--pr-muted);
+}
+
+.pr-btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+/* Kanban Board View */
+.pr-kanban-board {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	gap: 12px;
+	min-height: 480px;
+	height: 100%;
+	align-items: stretch;
+}
+
+.pr-kanban-col {
+	background: var(--pr-surface);
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.pr-kanban-col-header {
+	padding: 10px 12px;
+	background: var(--pr-bg);
+	border-bottom: 1px solid var(--pr-border);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.pr-kanban-col-title {
+	font-size: 0.75rem;
+	font-weight: 800;
+	color: var(--pr-ink);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.pr-kanban-col-badge {
+	font-size: 0.6875rem;
+	padding: 1px 6px;
+	border-radius: 9999px;
+	background: var(--pr-surface);
+	color: var(--pr-muted);
+	border: 1px solid var(--pr-border);
+	font-weight: 700;
+}
+
+.pr-kanban-col-body {
+	flex: 1;
+	padding: 8px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pr-kanban-card {
+	background: var(--pr-bg);
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	padding: 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.pr-kanban-card:hover {
+	border-color: var(--pr-teal);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.pr-kanban-card-top {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 6px;
+}
+
+.pr-kanban-card-name {
+	font-weight: 700;
+	font-size: 0.8125rem;
+	color: var(--pr-ink);
+	line-height: 1.25;
+}
+
+.pr-kanban-card-meta {
+	font-size: 0.6875rem;
+	color: var(--pr-muted);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.pr-kanban-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 4px;
+	flex-wrap: wrap;
+}
+
+/* Side Drawer (Message Preview / Calling Script) */
+.pr-side-drawer {
+	width: 440px;
+	border-left: 1px solid var(--pr-border);
+	background: var(--pr-surface);
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	overflow: hidden;
+}
+
+.pr-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--pr-border);
+	background: var(--pr-bg);
+}
+
+.pr-drawer-title {
+	font-size: 0.875rem;
+	font-weight: 800;
+	color: var(--pr-ink);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.pr-drawer-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+/* Channel Tabs (WhatsApp / Telegram / SMS) */
+.pr-channel-tabs {
+	display: flex;
+	background: var(--pr-bg);
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	padding: 2px;
+	gap: 2px;
+}
+
+.pr-channel-btn {
+	flex: 1;
+	height: 32px;
+	border-radius: 4px;
+	border: none;
+	background: transparent;
+	color: var(--pr-muted);
+	font-size: 0.75rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.pr-channel-btn:hover {
+	color: var(--pr-ink);
+}
+
+.pr-channel-btn.active {
+	background: var(--pr-teal-fill);
+	color: var(--pr-on-teal);
+}
+
+/* Interactive Textarea */
+.pr-textarea-box {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pr-textarea-label-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	color: var(--pr-muted);
+	text-transform: uppercase;
+}
+
+.pr-textarea {
+	width: 100%;
+	min-height: 140px;
+	padding: 10px;
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	background: var(--pr-bg);
+	color: var(--pr-ink);
+	font-size: 0.8125rem;
+	font-family: inherit;
+	line-height: 1.45;
+	resize: vertical;
+	box-sizing: border-box;
+}
+
+.pr-textarea:focus {
+	outline: none;
+	border-color: var(--pr-border-focus);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+}
+
+/* Smartphone Mockup Preview Bubble */
+.pr-phone-mockup {
+	background: var(--pr-bg);
+	border: 1px solid var(--pr-border);
+	border-radius: 12px;
+	padding: 12px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pr-phone-header {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	color: var(--pr-muted);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--pr-border);
+	padding-bottom: 6px;
+}
+
+.pr-message-bubble {
+	padding: 10px 12px;
+	border-radius: 10px 10px 2px 10px;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.pr-message-bubble--whatsapp {
+	background: #dcf8c6;
+	color: #054740;
+}
+
+[data-theme="dark"] .pr-message-bubble--whatsapp {
+	background: #054740;
+	color: #e9fbe5;
+}
+
+.pr-message-bubble--telegram {
+	background: #e1f5fe;
+	color: #01579b;
+}
+
+[data-theme="dark"] .pr-message-bubble--telegram {
+	background: #01579b;
+	color: #e1f5fe;
+}
+
+.pr-message-bubble--sms {
+	background: var(--pr-surface-hover);
+	color: var(--pr-ink);
+	border: 1px solid var(--pr-border);
+}
+
+.pr-drawer-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: auto;
+}
+
+/* Call Script Drawer Styling */
+.pr-script-steps {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.pr-script-card {
+	background: var(--pr-bg);
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	padding: 10px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pr-script-card-label {
+	font-size: 0.6875rem;
+	font-weight: 800;
+	color: var(--pr-teal);
+	text-transform: uppercase;
+}
+
+.pr-script-card-text {
+	font-size: 0.8125rem;
+	line-height: 1.45;
+	color: var(--pr-ink);
+}
+
+.pr-objections-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 6px 0;
+}
+
+.pr-obj-btn {
+	height: 28px;
+	padding: 0 8px;
+	border-radius: 4px;
+	border: 1px solid var(--pr-border);
+	background: var(--pr-bg);
+	color: var(--pr-muted);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.pr-obj-btn.active {
+	background: var(--pr-teal-fill);
+	color: var(--pr-on-teal);
+	border-color: var(--pr-teal-fill);
+}
+
+.pr-objection-box {
+	background: var(--pr-bg);
+	border-left: 3px solid var(--pr-teal);
+	border-radius: 0 var(--pr-radius-sm) var(--pr-radius-sm) 0;
+	padding: 10px 12px;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+}
+
+/* Empty State */
+.pr-empty-state {
+	text-align: center;
+	padding: 48px 16px;
+	color: var(--pr-muted);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.pr-empty-state h3 {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--pr-ink);
+}
+
+.pr-empty-state p {
+	margin: 0;
+	font-size: 0.8125rem;
+}

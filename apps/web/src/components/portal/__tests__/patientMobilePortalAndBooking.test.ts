@@ -123,13 +123,13 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 		it("filters by surgery specialty correctly", () => {
 			const surgeons = filterAvailableDoctors(SAMPLE_BOOKING_DOCTORS, "branch-central", "surgery");
 			assert.strictEqual(surgeons.length, 1);
-			assert.strictEqual(surgeons[0].specialtyCategory, "surgery");
+			assert.strictEqual(surgeons[0]!.specialtyCategory, "surgery");
 		});
 
 		it("filters by therapy specialty correctly", () => {
 			const therapists = filterAvailableDoctors(SAMPLE_BOOKING_DOCTORS, "branch-central", "therapy");
 			assert.strictEqual(therapists.length, 1);
-			assert.strictEqual(therapists[0].specialtyCategory, "therapy");
+			assert.strictEqual(therapists[0]!.specialtyCategory, "therapy");
 		});
 	});
 
@@ -146,9 +146,9 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 			assert.ok(afternoon.length > 0);
 			assert.ok(evening.length > 0);
 
-			assert.strictEqual(morning[0].timeRu, "09:00");
-			assert.strictEqual(afternoon[0].timeRu, "12:30");
-			assert.strictEqual(evening[0].timeRu, "17:30");
+			assert.strictEqual(morning[0]!.timeRu, "09:00");
+			assert.strictEqual(afternoon[0]!.timeRu, "12:30");
+			assert.strictEqual(evening[0]!.timeRu, "17:30");
 		});
 	});
 

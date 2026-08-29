@@ -33,6 +33,9 @@ export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
 export * from "./messaging/index.js";
 export * from "./portal/index.js";
+export * from "./treatment-plans/index.js";
+export * as dispensaryRecall from "./recall/index.js";
+export { clinicalRecallCategorySchema, CLINICAL_RECALL_CADENCES, normalizeRecallCategory, recallDispensaryStatusSchema, RECALL_STATUS_LABELS_RU, calculateRecallDueDate, calculateRecallDueDateString, determineRecallStatus, renderRecallMessageTemplate, DEFAULT_CLINICAL_TEMPLATES, generateRecallMessage, recallDispensaryRecordSchema, canTransitionDispensaryRecallStatus, filterDueDispensaryRecalls, filterUpcomingRecalls, filterOverdueRecalls, calculateRecallCohortMetrics, type ClinicalRecallCategory, type ClinicalRecallType, type RecallIntervalConfig, type RecallCadenceDefinition, type RecallDispensaryStatus, type RecallTemplateContext, type GenerateRecallMessageParams, type RecallDispensaryRecord, type RecallCohortMetrics, } from "./recall/index.js";
 export { validateRussianSnils } from "./fiscal/index.js";
 export { calculateEmployeeTimesheetT13, aggregateTimesheetDays, generateTimesheetT13Csv, getDaysInMonth, renderFormT13Html, TIMESHEET_STATUTORY_CODES, timesheetCodeSchema, timesheetDayRecordSchema, employeeTimesheetInputSchema, formT13DocumentPayloadSchema, type TimesheetCode, type TimesheetCodeMetadata, type TimesheetDayRecord, type EmployeeTimesheetInput, type TimesheetPeriodSummary, type EmployeeTimesheetResult, type FormT13DocumentPayload, calculateAdvancedDoctorPayroll, calculateAssistantPayroll, buildOneCZupAccrualsList, exportOneCZup31Xml, exportOneCZup31Csv, ADVANCED_DOCTOR_SPECIALTY_PRESETS, DEFAULT_ASSISTANT_PAYROLL_RULES, DEFAULT_DOCTOR_KPI_TIERS, advancedDoctorServiceItemSchema, advancedDoctorPayrollInputSchema, type DoctorSpecialtyCategory, type DoctorSpecialtyCommissionPreset, type AssistantPayrollRules, type DoctorKpiTier, type AdvancedDoctorServiceItem, type AdvancedDoctorPayrollInput, type SpecialtyBreakdownAggregate, type AdvancedDoctorPayrollResult, type AssistantWorkShiftItem, type AdvancedAssistantPayrollInput, type AdvancedAssistantPayrollResult, type OneCZupAccrualEntry, } from "./payroll/index.js";
 export declare function isHttpUrl(value: string): boolean;
@@ -10788,6 +10791,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     patientBirthDate?: string | null | undefined;
     patientPhone?: string | null | undefined;
     snils?: string | null | undefined;
+    patientEmail?: string | null | undefined;
     omsPolicy?: string | null | undefined;
     identityDocument?: string | null | undefined;
     registrationAddress?: string | null | undefined;
@@ -10797,7 +10801,6 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     citizenship?: string | null | undefined;
     identityDocumentSeries?: string | null | undefined;
     identityDocumentNumber?: string | null | undefined;
-    patientEmail?: string | null | undefined;
     stayAddress?: string | null | undefined;
     omsIssuedAt?: string | null | undefined;
     insurerName?: string | null | undefined;
@@ -10986,6 +10989,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     patientBirthDate?: string | null | undefined;
     patientPhone?: string | null | undefined;
     snils?: string | null | undefined;
+    patientEmail?: string | null | undefined;
     omsPolicy?: string | null | undefined;
     identityDocument?: string | null | undefined;
     registrationAddress?: string | null | undefined;
@@ -10995,7 +10999,6 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     citizenship?: string | null | undefined;
     identityDocumentSeries?: string | null | undefined;
     identityDocumentNumber?: string | null | undefined;
-    patientEmail?: string | null | undefined;
     stayAddress?: string | null | undefined;
     omsIssuedAt?: string | null | undefined;
     insurerName?: string | null | undefined;
@@ -14006,6 +14009,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         patientBirthDate?: string | null | undefined;
         patientPhone?: string | null | undefined;
         snils?: string | null | undefined;
+        patientEmail?: string | null | undefined;
         omsPolicy?: string | null | undefined;
         identityDocument?: string | null | undefined;
         registrationAddress?: string | null | undefined;
@@ -14015,7 +14019,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         citizenship?: string | null | undefined;
         identityDocumentSeries?: string | null | undefined;
         identityDocumentNumber?: string | null | undefined;
-        patientEmail?: string | null | undefined;
         stayAddress?: string | null | undefined;
         omsIssuedAt?: string | null | undefined;
         insurerName?: string | null | undefined;
@@ -14204,6 +14207,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         patientBirthDate?: string | null | undefined;
         patientPhone?: string | null | undefined;
         snils?: string | null | undefined;
+        patientEmail?: string | null | undefined;
         omsPolicy?: string | null | undefined;
         identityDocument?: string | null | undefined;
         registrationAddress?: string | null | undefined;
@@ -14213,7 +14217,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         citizenship?: string | null | undefined;
         identityDocumentSeries?: string | null | undefined;
         identityDocumentNumber?: string | null | undefined;
-        patientEmail?: string | null | undefined;
         stayAddress?: string | null | undefined;
         omsIssuedAt?: string | null | undefined;
         insurerName?: string | null | undefined;
@@ -17259,6 +17262,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         patientBirthDate?: string | null | undefined;
         patientPhone?: string | null | undefined;
         snils?: string | null | undefined;
+        patientEmail?: string | null | undefined;
         omsPolicy?: string | null | undefined;
         identityDocument?: string | null | undefined;
         registrationAddress?: string | null | undefined;
@@ -17268,7 +17272,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         citizenship?: string | null | undefined;
         identityDocumentSeries?: string | null | undefined;
         identityDocumentNumber?: string | null | undefined;
-        patientEmail?: string | null | undefined;
         stayAddress?: string | null | undefined;
         omsIssuedAt?: string | null | undefined;
         insurerName?: string | null | undefined;
@@ -18418,6 +18421,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         patientBirthDate?: string | null | undefined;
         patientPhone?: string | null | undefined;
         snils?: string | null | undefined;
+        patientEmail?: string | null | undefined;
         omsPolicy?: string | null | undefined;
         identityDocument?: string | null | undefined;
         registrationAddress?: string | null | undefined;
@@ -18427,7 +18431,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         citizenship?: string | null | undefined;
         identityDocumentSeries?: string | null | undefined;
         identityDocumentNumber?: string | null | undefined;
-        patientEmail?: string | null | undefined;
         stayAddress?: string | null | undefined;
         omsIssuedAt?: string | null | undefined;
         insurerName?: string | null | undefined;
@@ -22328,6 +22331,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -22337,7 +22341,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -22526,6 +22529,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -22535,7 +22539,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -25581,6 +25584,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -25590,7 +25594,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -26740,6 +26743,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -26749,7 +26753,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -28752,6 +28755,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -28761,7 +28765,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -30141,6 +30144,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -30150,7 +30154,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -33138,6 +33141,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -33147,7 +33151,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -33336,6 +33339,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -33345,7 +33349,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -36391,6 +36394,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -36400,7 +36404,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -37550,6 +37553,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -37559,7 +37563,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -43226,6 +43229,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 patientBirthDate?: string | null | undefined;
                 patientPhone?: string | null | undefined;
                 snils?: string | null | undefined;
+                patientEmail?: string | null | undefined;
                 omsPolicy?: string | null | undefined;
                 identityDocument?: string | null | undefined;
                 registrationAddress?: string | null | undefined;
@@ -43235,7 +43239,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 citizenship?: string | null | undefined;
                 identityDocumentSeries?: string | null | undefined;
                 identityDocumentNumber?: string | null | undefined;
-                patientEmail?: string | null | undefined;
                 stayAddress?: string | null | undefined;
                 omsIssuedAt?: string | null | undefined;
                 insurerName?: string | null | undefined;
@@ -43424,6 +43427,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 patientBirthDate?: string | null | undefined;
                 patientPhone?: string | null | undefined;
                 snils?: string | null | undefined;
+                patientEmail?: string | null | undefined;
                 omsPolicy?: string | null | undefined;
                 identityDocument?: string | null | undefined;
                 registrationAddress?: string | null | undefined;
@@ -43433,7 +43437,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 citizenship?: string | null | undefined;
                 identityDocumentSeries?: string | null | undefined;
                 identityDocumentNumber?: string | null | undefined;
-                patientEmail?: string | null | undefined;
                 stayAddress?: string | null | undefined;
                 omsIssuedAt?: string | null | undefined;
                 insurerName?: string | null | undefined;
@@ -46479,6 +46482,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 patientBirthDate?: string | null | undefined;
                 patientPhone?: string | null | undefined;
                 snils?: string | null | undefined;
+                patientEmail?: string | null | undefined;
                 omsPolicy?: string | null | undefined;
                 identityDocument?: string | null | undefined;
                 registrationAddress?: string | null | undefined;
@@ -46488,7 +46492,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 citizenship?: string | null | undefined;
                 identityDocumentSeries?: string | null | undefined;
                 identityDocumentNumber?: string | null | undefined;
-                patientEmail?: string | null | undefined;
                 stayAddress?: string | null | undefined;
                 omsIssuedAt?: string | null | undefined;
                 insurerName?: string | null | undefined;
@@ -47638,6 +47641,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 patientBirthDate?: string | null | undefined;
                 patientPhone?: string | null | undefined;
                 snils?: string | null | undefined;
+                patientEmail?: string | null | undefined;
                 omsPolicy?: string | null | undefined;
                 identityDocument?: string | null | undefined;
                 registrationAddress?: string | null | undefined;
@@ -47647,7 +47651,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 citizenship?: string | null | undefined;
                 identityDocumentSeries?: string | null | undefined;
                 identityDocumentNumber?: string | null | undefined;
-                patientEmail?: string | null | undefined;
                 stayAddress?: string | null | undefined;
                 omsIssuedAt?: string | null | undefined;
                 insurerName?: string | null | undefined;
@@ -54773,6 +54776,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -54782,7 +54786,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -54971,6 +54974,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -54980,7 +54984,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -58026,6 +58029,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -58035,7 +58039,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -59185,6 +59188,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -59194,7 +59198,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -60352,6 +60355,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -60361,7 +60365,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -61520,6 +61523,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -61529,7 +61533,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -62688,6 +62691,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -62697,7 +62701,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;
@@ -63856,6 +63859,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             patientBirthDate?: string | null | undefined;
             patientPhone?: string | null | undefined;
             snils?: string | null | undefined;
+            patientEmail?: string | null | undefined;
             omsPolicy?: string | null | undefined;
             identityDocument?: string | null | undefined;
             registrationAddress?: string | null | undefined;
@@ -63865,7 +63869,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             citizenship?: string | null | undefined;
             identityDocumentSeries?: string | null | undefined;
             identityDocumentNumber?: string | null | undefined;
-            patientEmail?: string | null | undefined;
             stayAddress?: string | null | undefined;
             omsIssuedAt?: string | null | undefined;
             insurerName?: string | null | undefined;

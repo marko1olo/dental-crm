@@ -292,6 +292,7 @@ export function calculateLevenshteinDistance(a: string, b: string): number {
 // ─── 4. ПАРСЕР ИМЁН ФАЙЛОВ И DICOM МЕТАДАННЫХ ─────────────────────────────────
 
 export function isValidToothFdi(tooth: number): boolean {
+	if (!Number.isInteger(tooth)) return false;
 	return (
 		(tooth >= 11 && tooth <= 18) ||
 		(tooth >= 21 && tooth <= 28) ||
@@ -384,13 +385,13 @@ export function extractRadiologyMetadata(
 	// 4. Поиск даты съемки (ГГГГММДД или ГГГГ-ММ-ДД или ДД.ММ.ГГГГ)
 	let dateDay = "";
 	let dateMonth = "";
-	const isoDateMatch = cleanName.match(/\b(20\d{2})[-_.]?(0[1-9]|1[0-2])[-_.]?(0[1-9]|[12]\d|3[01])\b/);
+	const isoDateMatch = cleanName.match(/(?:^|[^0-9])(20\d{2})[-_.]?(0[1-9]|1[0-2])[-_.]?(0[1-9]|[12]\d|3[01])(?![0-9])/);
 	if (isoDateMatch && isoDateMatch[1] && isoDateMatch[2] && isoDateMatch[3]) {
 		acquisitionDate = `${isoDateMatch[1]}${isoDateMatch[2]}${isoDateMatch[3]}`;
 		dateMonth = isoDateMatch[2];
 		dateDay = isoDateMatch[3];
 	} else {
-		const ruDateMatch = cleanName.match(/\b(0[1-9]|[12]\d|3[01])[-_.](0[1-9]|1[0-2])[-_.](20\d{2})\b/);
+		const ruDateMatch = cleanName.match(/(?:^|[^0-9])(0[1-9]|[12]\d|3[01])[-_.](0[1-9]|1[0-2])[-_.](20\d{2})(?![0-9])/);
 		if (ruDateMatch && ruDateMatch[1] && ruDateMatch[2] && ruDateMatch[3]) {
 			acquisitionDate = `${ruDateMatch[3]}${ruDateMatch[2]}${ruDateMatch[1]}`;
 			dateDay = ruDateMatch[1];

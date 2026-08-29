@@ -80,6 +80,16 @@
 			"types": "./dist/portal/index.d.ts",
 			"import": "./dist/portal/index.js",
 			"default": "./dist/portal/index.js"
+		},
+		"./recall": {
+			"types": "./dist/recall/index.d.ts",
+			"import": "./dist/recall/index.js",
+			"default": "./dist/recall/index.js"
+		},
+		"./treatment-plans": {
+			"types": "./dist/treatment-plans/index.d.ts",
+			"import": "./dist/treatment-plans/index.js",
+			"default": "./dist/treatment-plans/index.js"
 		}
 	},
 	"scripts": {

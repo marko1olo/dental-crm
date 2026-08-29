@@ -95,13 +95,14 @@ import { DentalLabOrderModal } from "../components/lab/DentalLabOrderModal";
 import { DentalLabOrdersHubModal } from "../components/lab/DentalLabOrdersHubModal";
 import { LabTrackingDrawer } from "../components/lab/LabTrackingDrawer";
 import { ClinicalPhotoProtocolModal } from "../components/photography/ClinicalPhotoProtocolModal";
-import { PatientRecallManagerModal } from "../components/recalls/PatientRecallManagerModal";
+import { PatientRecallManagerModal } from "../components/recall/PatientRecallManagerModal";
 import { PatientRecallsHubModal } from "../components/recalls/PatientRecallsHubModal";
 import { AutoclaveCycleModal } from "../components/sanpin/autoclave/AutoclaveCycleModal";
 import { InsurancePreAuthModal } from "../components/insurance/InsurancePreAuthModal";
 import { TreatmentPlanComparatorModal } from "../components/treatment-plans/comparator/TreatmentPlanComparatorModal";
 import { TreatmentPlan3TierComparison } from "../components/treatment-plans/TreatmentPlan3TierComparison";
 import { TreatmentPlanPhased4StageView } from "../components/treatment-plans/TreatmentPlanPhased4StageView";
+import { TreatmentPlanPresenterModal } from "../components/treatment-plans/TreatmentPlanPresenterModal";
 import { generate3TierPlanComparison, generateTreatmentPlanStages } from "../components/treatment-plans/treatmentPlanStagesEngine";
 import type { ToothData } from "../components/odontogram/ToothChart";
 import { WarehouseTransferModal } from "../components/inventory/transfers/WarehouseTransferModal";
@@ -583,6 +584,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isDirectRvgCaptureOpen, setIsDirectRvgCaptureOpen] = useState(false);
 	const [isPatientMobilePortalOpen, setIsPatientMobilePortalOpen] = useState(false);
 	const [isPatientOnlineBookingOpen, setIsPatientOnlineBookingOpen] = useState(false);
+	const [isTreatmentPlanPresenterOpen, setIsTreatmentPlanPresenterOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -712,6 +714,18 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsDirectRvgCaptureOpen(false);
 					setIsPatientMobilePortalOpen(false);
 					setIsPatientOnlineBookingOpen(false);
+					setIsTreatmentPlanPresenterOpen(false);
+
+					if (
+						requestedModal === "treatment_plan_presenter" ||
+						requestedModal === "treatment_presenter" ||
+						requestedModal === "plan_presenter" ||
+						requestedModal === "chairside_plan_presenter" ||
+						requestedModal === "treatment_plan_presentation" ||
+						requestedModal === "presenter"
+					) {
+						setIsTreatmentPlanPresenterOpen(true);
+					}
 
 					if (requestedModal === "hotfolder_intake" || requestedModal === "hot_folder" || requestedModal === "xray_intake" || requestedModal === "hotfolder" || requestedModal === "ezdent" || requestedModal === "romexis") {
 						setIsHotFolderIntakeOpen(true);
@@ -812,7 +826,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "patient_memo" || requestedModal === "post_op" || requestedModal === "care_memo" || requestedModal === "memo" || requestedModal === "post_op_patient_memo") {
 						setIsPatientMemoOpen(true);
 					}
-					if (requestedModal === "retention" || requestedModal === "recall" || requestedModal === "recalls" || requestedModal === "patient_retention_recalls") {
+					if (requestedModal === "patient_recall_manager" || requestedModal === "recall_manager" || requestedModal === "retention" || requestedModal === "recall" || requestedModal === "recalls" || requestedModal === "patient_retention_recalls") {
 						setIsRecallOpen(true);
 					}
 					if (requestedModal === "recalls_hub" || requestedModal === "patient_recalls_hub" || requestedModal === "recalls_hub_modal") {
@@ -1654,6 +1668,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Layers size={15} />
 							<span>Открыть 3-Tier Сравнение</span>
+						</button>
+					</div>
+
+					{/* 19b-2. Chairside Treatment Plan Presenter (Wave 19) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Tablet className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Презентация планов (Chairside Presenter)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								3 варианта «Эконом/Оптимум/Премиум», бейдж «Рекомендация врача», раскрывающиеся этапы 804н, фиксация выбора и 1-клик печать Приложения №1 (ПП РФ № 736).
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsTreatmentPlanPresenterOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+							data-testid="open-treatment-plan-presenter-btn"
+						>
+							<Tablet size={15} />
+							<span>Открыть презентацию планов</span>
 						</button>
 					</div>
 
@@ -3515,6 +3553,39 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 					</div>
 				</div>
+			)}
+
+			{isTreatmentPlanPresenterOpen && (
+				<TreatmentPlanPresenterModal
+					isOpen={isTreatmentPlanPresenterOpen}
+					onClose={() => setIsTreatmentPlanPresenterOpen(false)}
+					patientName="Смирнова Екатерина Васильевна"
+					patientId="PAT-2026-0891"
+					patientPhone="+7 (926) 555-12-34"
+					patientBirthDate="14.06.1988"
+					doctorFullName="Д-р Смирнов Алексей Петрович"
+					doctorSpecialty="Врач-стоматолог терапевт-ортопед"
+					clinicName="Стоматологическая клиника «ДЕНТЕ СТОМАТОЛОГИЯ»"
+					clinicLegalName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+					clinicInn="7701234567"
+					clinicOgrn="1237700456789"
+					clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 1"
+					clinicLicense="ЛО41-01137-77/00567890 от 15.01.2023 выдана Департаментом здравоохранения г. Москвы"
+					contractNumber="ДОГ-2026-0891"
+					teeth={[
+						{ id: 16, toothNumber: 16, state: "Caries", systemicNotes: "Глубокий кариес" } as any,
+						{ id: 36, toothNumber: 36, state: "Missing", systemicNotes: "Отсутствует зуб, показана имплантация" } as any,
+						{ id: 46, toothNumber: 46, state: "Pulpitis", systemicNotes: "Острый пульпит" } as any,
+					]}
+					onSelectPlan={(tier) => showToast(`Выбран вариант «${tier.title}»`, "info")}
+					onConfirmSelection={(tier) =>
+						showToast(
+							`Выбор пациента зафиксирован: «${tier.title}» (${tier.totalRub.toLocaleString("ru-RU")} ₽)`,
+							"success",
+						)
+					}
+					onPrintContract={() => showToast("Печать Приложения №1 к Договору (ПП РФ № 736)", "info")}
+				/>
 			)}
 
 			{isTransferOpen && (

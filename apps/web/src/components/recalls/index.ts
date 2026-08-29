@@ -63,4 +63,4 @@ export {
 export {
 	PatientRecallManagerModal,
 	type PatientRecallManagerModalProps,
-} from "./PatientRecallManagerModal";
+} from "../recall";

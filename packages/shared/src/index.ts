@@ -34,6 +34,36 @@ export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
 export * from "./messaging/index.js";
 export * from "./portal/index.js";
+export * from "./treatment-plans/index.js";
+export * as dispensaryRecall from "./recall/index.js";
+export {
+	clinicalRecallCategorySchema,
+	CLINICAL_RECALL_CADENCES,
+	normalizeRecallCategory,
+	recallDispensaryStatusSchema,
+	RECALL_STATUS_LABELS_RU,
+	calculateRecallDueDate,
+	calculateRecallDueDateString,
+	determineRecallStatus,
+	renderRecallMessageTemplate,
+	DEFAULT_CLINICAL_TEMPLATES,
+	generateRecallMessage,
+	recallDispensaryRecordSchema,
+	canTransitionDispensaryRecallStatus,
+	filterDueDispensaryRecalls,
+	filterUpcomingRecalls,
+	filterOverdueRecalls,
+	calculateRecallCohortMetrics,
+	type ClinicalRecallCategory,
+	type ClinicalRecallType,
+	type RecallIntervalConfig,
+	type RecallCadenceDefinition,
+	type RecallDispensaryStatus,
+	type RecallTemplateContext,
+	type GenerateRecallMessageParams,
+	type RecallDispensaryRecord,
+	type RecallCohortMetrics,
+} from "./recall/index.js";
 export { validateRussianSnils } from "./fiscal/index.js";
 export {
 	calculateEmployeeTimesheetT13,
