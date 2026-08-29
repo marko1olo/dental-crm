@@ -211,12 +211,12 @@ const TARGET_SCREENS = [
   {
     prefix: "02_treatment_plan_4stages",
     name: "02. 4-Stage Clinical Treatment Plan (Hygiene, Endo, Surgery, Ortho)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=phased4#clinical-modals-studio?modal=phased4",
     setup: async (page) => {
       const btn = page.locator('[data-testid="open-plan-phased4-preview-btn"]').or(page.locator('[data-testid="open-plan-comparator-modal-btn"]')).first();
-      if (await btn.isVisible()) {
+      if (await btn.isVisible().catch(() => false)) {
         await btn.scrollIntoViewIfNeeded();
-        await btn.click();
+        await btn.click({ force: true }).catch(() => {});
         await page.waitForTimeout(700);
       }
     },
@@ -225,12 +225,12 @@ const TARGET_SCREENS = [
   {
     prefix: "02_treatment_plan_3tier",
     name: "02. 3-Tier Treatment Plan Comparison (Economy, Optimum, Premium)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=3tier#clinical-modals-studio?modal=3tier",
     setup: async (page) => {
       const btn = page.locator('[data-testid="open-plan-3tier-preview-btn"]').or(page.locator('[data-testid="open-plan-comparator-modal-btn"]')).first();
-      if (await btn.isVisible()) {
+      if (await btn.isVisible().catch(() => false)) {
         await btn.scrollIntoViewIfNeeded();
-        await btn.click();
+        await btn.click({ force: true }).catch(() => {});
         await page.waitForTimeout(700);
       }
     },
@@ -239,13 +239,13 @@ const TARGET_SCREENS = [
   {
     prefix: "03_billing_1c_export_modal",
     name: "03. Patient Billing with 1C XML Export Modal",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=billing_1c",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=billing_1c#clinical-modals-studio?modal=billing_1c",
     setup: async (page) => {
       await page.waitForTimeout(800);
       const modal = page.locator('[data-testid="fiscal-receipt-54fz-modal"]');
       const oneCTab = modal.locator('button:has-text("1С:Экспорт XML")').or(modal.locator('[data-testid="tab-oneC"]')).first();
-      if (await oneCTab.isVisible()) {
-        await oneCTab.click();
+      if (await oneCTab.isVisible().catch(() => false)) {
+        await oneCTab.click({ force: true }).catch(() => {});
         await page.waitForTimeout(500);
       }
     },
@@ -254,7 +254,7 @@ const TARGET_SCREENS = [
   {
     prefix: "03_patient_billing_modal",
     name: "03. Patient Billing Modal (Completed Works Act & Implant Care Titanium Badge)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=patient_billing",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=patient_billing#clinical-modals-studio?modal=patient_billing",
     setup: async (page) => {
       await page.waitForTimeout(800);
     },
@@ -272,7 +272,7 @@ const TARGET_SCREENS = [
   {
     prefix: "05_trg_cephalometrics",
     name: "05. TRG Cephalometric Analysis Canvas (Empty Honest Dropzone 0%)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=trg&state=empty",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=ceph&state=empty#clinical-modals-studio?modal=ceph&state=empty",
     setup: async (page) => {
       await page.waitForTimeout(800);
     },
@@ -281,7 +281,7 @@ const TARGET_SCREENS = [
   {
     prefix: "05_trg_cephalometrics_loaded",
     name: "05. TRG Cephalometric Analysis Canvas with 16 Anatomical Landmarks & Reference X-Ray",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=trg&loaded=true",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=ceph&loaded=true#clinical-modals-studio?modal=ceph&loaded=true",
     setup: async (page) => {
       await page.waitForTimeout(800);
     },
@@ -294,7 +294,7 @@ const TARGET_SCREENS = [
     setup: async (page) => {
       await page.waitForTimeout(800);
       const el = page.locator('h2:has-text("Журналы СанПиН")').or(page.locator('.sanpin-registers-container')).first();
-      if (await el.isVisible()) {
+      if (await el.isVisible().catch(() => false)) {
         await el.scrollIntoViewIfNeeded();
         await page.waitForTimeout(400);
       }
@@ -304,7 +304,7 @@ const TARGET_SCREENS = [
   {
     prefix: "07_cbct_mpr_viewer",
     name: "07. 3D CBCT MPR Multi-Planar Reconstruction (Romexis/Ez3D-i Orthogonal Viewer)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=cbct",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=cbct#clinical-modals-studio?modal=cbct",
     setup: async (page) => {
       await page.waitForTimeout(800);
 
@@ -330,7 +330,7 @@ const TARGET_SCREENS = [
   {
     prefix: "08_radiology_dicom_viewer",
     name: "08. 2D Dental Radiology & DICOM Viewer (Tooth 16, Sinus maxillaris, Delicate Pin)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=viewer",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=viewer#clinical-modals-studio?modal=viewer",
     setup: async (page) => {
       await page.waitForTimeout(800);
     },
@@ -339,7 +339,7 @@ const TARGET_SCREENS = [
   {
     prefix: "08_radiology_dropzone",
     name: "08. 2D Dental Radiology Dropzone (Dark Graphite Radiation Protection Theme)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=dropzone",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=dropzone#clinical-modals-studio?modal=dropzone",
     setup: async (page) => {
       await page.waitForTimeout(800);
     },
@@ -350,14 +350,17 @@ const TARGET_SCREENS = [
   {
     prefix: "09_dental_lab_work_order",
     name: "09. Dental Laboratory (ЗТЛ) CAD/CAM Work Order & Shade Matrix",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=lab_work_order",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=lab_work_order#clinical-modals-studio?modal=lab_work_order",
     setup: async (page) => {
       await page.waitForTimeout(800);
-      const trigger = page.locator('[data-testid="open-lab-work-order-modal-btn"]').or(page.locator('[data-testid="open-lab-order-modal-btn"]')).first();
-      if (await trigger.isVisible()) {
-        await trigger.scrollIntoViewIfNeeded();
-        await trigger.click();
-        await page.waitForTimeout(600);
+      const modalDialog = page.locator('.lab-order-modal-overlay, [role="dialog"]').first();
+      if (!await modalDialog.isVisible().catch(() => false)) {
+        const trigger = page.locator('[data-testid="open-lab-work-order-modal-btn"]').or(page.locator('[data-testid="open-lab-order-modal-btn"]')).first();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.scrollIntoViewIfNeeded();
+          await trigger.click({ force: true }).catch(() => {});
+          await page.waitForTimeout(600);
+        }
       }
     },
     all4States: true,
@@ -367,7 +370,7 @@ const TARGET_SCREENS = [
     name: "09. Guest Laboratory External Portal for Dental Technician",
     url: "http://127.0.0.1:5173/#/portal/lab-order/demo-token-123",
     setup: async (page) => {
-      await page.waitForSelector('.guest-lab-portal, .lab-orders-container, .panel, [data-testid="guest-lab-portal"]', { timeout: 6000 }).catch(() => {});
+      await page.waitForSelector('.guest-lab-portal, .lab-portal-container, .panel, [data-testid="guest-lab-portal"]', { timeout: 6000 }).catch(() => {});
       await page.waitForTimeout(800);
     },
     all4States: true,
@@ -377,14 +380,17 @@ const TARGET_SCREENS = [
   {
     prefix: "10_material_bom_deduction",
     name: "10. Material Write-off & BOM Tech Maps Deduction (Order 804n / FEFO)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=procedure_deduction",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=procedure_deduction#clinical-modals-studio?modal=procedure_deduction",
     setup: async (page) => {
       await page.waitForTimeout(800);
-      const trigger = page.locator('[data-testid="open-procedure-deduction-modal-btn"]').or(page.locator('[data-testid="open-clinical-writeoff-modal-btn"]')).first();
-      if (await trigger.isVisible()) {
-        await trigger.scrollIntoViewIfNeeded();
-        await trigger.click();
-        await page.waitForTimeout(600);
+      const modalDialog = page.locator('[data-testid="procedure-deduction-modal"], [role="dialog"]').first();
+      if (!await modalDialog.isVisible().catch(() => false)) {
+        const trigger = page.locator('[data-testid="open-procedure-deduction-modal-btn"]').or(page.locator('[data-testid="open-clinical-writeoff-modal-btn"]')).first();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.scrollIntoViewIfNeeded();
+          await trigger.click({ force: true }).catch(() => {});
+          await page.waitForTimeout(600);
+        }
       }
     },
     all4States: true,
@@ -404,14 +410,17 @@ const TARGET_SCREENS = [
   {
     prefix: "11_post_op_care_patient_memo",
     name: "11. Post-Op Patient Care Memo & Clinical Guidelines (1-Click Print A4/A5)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=patient_memo",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=patient_memo#clinical-modals-studio?modal=patient_memo",
     setup: async (page) => {
       await page.waitForTimeout(800);
-      const trigger = page.locator('[data-testid="open-patient-memo-modal-btn"]').first();
-      if (await trigger.isVisible()) {
-        await trigger.scrollIntoViewIfNeeded();
-        await trigger.click();
-        await page.waitForTimeout(600);
+      const modalDialog = page.locator('[data-testid="post-op-memo-modal"], [role="dialog"]').first();
+      if (!await modalDialog.isVisible().catch(() => false)) {
+        const trigger = page.locator('[data-testid="open-patient-memo-modal-btn"]').first();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.scrollIntoViewIfNeeded();
+          await trigger.click({ force: true }).catch(() => {});
+          await page.waitForTimeout(600);
+        }
       }
     },
     all4States: true,
@@ -426,7 +435,7 @@ const TARGET_SCREENS = [
       await page.waitForSelector('.analytics-dashboard, [data-testid="lost-patients-panel"], [data-testid="analytics-dashboard-view"]', { timeout: 6000 }).catch(() => {});
       await page.waitForTimeout(800);
       const lostPanel = page.locator('[data-testid="lost-patients-panel"]').or(page.locator('.lost-patients-panel')).first();
-      if (await lostPanel.isVisible()) {
+      if (await lostPanel.isVisible().catch(() => false)) {
         await lostPanel.scrollIntoViewIfNeeded();
         await page.waitForTimeout(400);
       }
@@ -438,14 +447,17 @@ const TARGET_SCREENS = [
   {
     prefix: "13_telephony_incoming_call_popup",
     name: "13. Telephony: Patient Incoming Call Popup with Live Timer & Audio Player",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=incoming_call_popup",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=incoming_call_popup#clinical-modals-studio?modal=incoming_call_popup",
     setup: async (page) => {
       await page.waitForTimeout(800);
-      const trigger = page.locator('[data-testid="open-incoming-call-modal-btn"]').first();
-      if (await trigger.isVisible()) {
-        await trigger.scrollIntoViewIfNeeded();
-        await trigger.click();
-        await page.waitForTimeout(600);
+      const modalDialog = page.locator('[data-testid="incoming-call-popup"], [role="dialog"]').first();
+      if (!await modalDialog.isVisible().catch(() => false)) {
+        const trigger = page.locator('[data-testid="open-incoming-call-modal-btn"]').first();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.scrollIntoViewIfNeeded();
+          await trigger.click({ force: true }).catch(() => {});
+          await page.waitForTimeout(600);
+        }
       }
     },
     all4States: true,
@@ -453,14 +465,17 @@ const TARGET_SCREENS = [
   {
     prefix: "13_telephony_floating_widget",
     name: "13. Telephony: Softphone Dialer & Floating Call Bar (Touch-First >= 48px)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=telephony_softphone",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=telephony_softphone#clinical-modals-studio?modal=telephony_softphone",
     setup: async (page) => {
       await page.waitForTimeout(800);
-      const trigger = page.locator('[data-testid="open-telephony-widget-btn"]').first();
-      if (await trigger.isVisible()) {
-        await trigger.scrollIntoViewIfNeeded();
-        await trigger.click();
-        await page.waitForTimeout(600);
+      const modalDialog = page.locator('[data-testid="telephony-floating-widget"], [role="dialog"]').first();
+      if (!await modalDialog.isVisible().catch(() => false)) {
+        const trigger = page.locator('[data-testid="open-telephony-widget-btn"]').first();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.scrollIntoViewIfNeeded();
+          await trigger.click({ force: true }).catch(() => {});
+          await page.waitForTimeout(600);
+        }
       }
     },
     all4States: true,
@@ -474,15 +489,15 @@ const TARGET_SCREENS = [
     setup: async (page) => {
       await page.waitForSelector('.settings-nav, [data-testid="settings-tabs"]', { timeout: 6000 }).catch(() => {});
       const accessTabBtn = page.locator('button:has-text("Доступ")').or(page.locator('[data-testid="tab-access"]')).first();
-      if (await accessTabBtn.isVisible()) {
-        await accessTabBtn.click();
+      if (await accessTabBtn.isVisible().catch(() => false)) {
+        await accessTabBtn.click({ force: true }).catch(() => {});
         await page.waitForTimeout(600);
       } else {
-        await page.goto("http://127.0.0.1:5173/#clinical-modals-studio?modal=settings_access_matrix", { waitUntil: "domcontentloaded" });
+        await page.goto("http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=settings_access_matrix#clinical-modals-studio?modal=settings_access_matrix", { waitUntil: "domcontentloaded" });
         await page.waitForTimeout(600);
         const trigger = page.locator('[data-testid="open-settings-access-modal-btn"]').first();
-        if (await trigger.isVisible()) {
-          await trigger.click();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.click({ force: true }).catch(() => {});
           await page.waitForTimeout(600);
         }
       }
@@ -496,20 +511,20 @@ const TARGET_SCREENS = [
     setup: async (page) => {
       await page.waitForSelector('.settings-nav, [data-testid="settings-tabs"]', { timeout: 6000 }).catch(() => {});
       const staffTabBtn = page.locator('button:has-text("Персонал")').or(page.locator('[data-testid="tab-staff"]')).first();
-      if (await staffTabBtn.isVisible()) {
-        await staffTabBtn.click();
+      if (await staffTabBtn.isVisible().catch(() => false)) {
+        await staffTabBtn.click({ force: true }).catch(() => {});
         await page.waitForTimeout(600);
         const commissionsPanel = page.locator('.staff-commissions-panel, [data-testid="staff-commissions-panel"]').first();
-        if (await commissionsPanel.isVisible()) {
+        if (await commissionsPanel.isVisible().catch(() => false)) {
           await commissionsPanel.scrollIntoViewIfNeeded();
           await page.waitForTimeout(400);
         }
       } else {
-        await page.goto("http://127.0.0.1:5173/#clinical-modals-studio?modal=staff_commissions_panel", { waitUntil: "domcontentloaded" });
+        await page.goto("http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=staff_commissions_panel#clinical-modals-studio?modal=staff_commissions_panel", { waitUntil: "domcontentloaded" });
         await page.waitForTimeout(600);
         const trigger = page.locator('[data-testid="open-staff-commissions-modal-btn"]').first();
-        if (await trigger.isVisible()) {
-          await trigger.click();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.click({ force: true }).catch(() => {});
           await page.waitForTimeout(600);
         }
       }
@@ -531,14 +546,17 @@ const TARGET_SCREENS = [
   {
     prefix: "15_form043_clinical_print_modal",
     name: "15. Medical Card Form 043/u Print Form (MoH Order 834n / 100% Statutory Compliant)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=form043_print_modal",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=form043_print_modal#clinical-modals-studio?modal=form043_print_modal",
     setup: async (page) => {
       await page.waitForTimeout(800);
-      const trigger = page.locator('[data-testid="open-form043-print-modal-btn"]').first();
-      if (await trigger.isVisible()) {
-        await trigger.scrollIntoViewIfNeeded();
-        await trigger.click();
-        await page.waitForTimeout(600);
+      const modalDialog = page.locator('[data-testid="form043-print-modal"], [role="dialog"]').first();
+      if (!await modalDialog.isVisible().catch(() => false)) {
+        const trigger = page.locator('[data-testid="open-form043-print-modal-btn"]').first();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.scrollIntoViewIfNeeded();
+          await trigger.click({ force: true }).catch(() => {});
+          await page.waitForTimeout(600);
+        }
       }
     },
     all4States: true,
@@ -548,14 +566,17 @@ const TARGET_SCREENS = [
   {
     prefix: "16_offline_backup_vault_panel",
     name: "16. Offline Storage: AES-GCM 256 Database Vault & Cache Integrity Verifier",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=offline_backup_vault",
+    url: "http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=offline_backup_vault#clinical-modals-studio?modal=offline_backup_vault",
     setup: async (page) => {
       await page.waitForTimeout(800);
-      const trigger = page.locator('[data-testid="open-offline-vault-modal-btn"]').first();
-      if (await trigger.isVisible()) {
-        await trigger.scrollIntoViewIfNeeded();
-        await trigger.click();
-        await page.waitForTimeout(600);
+      const modalDialog = page.locator('[data-testid="offline-vault-modal"], [role="dialog"]').first();
+      if (!await modalDialog.isVisible().catch(() => false)) {
+        const trigger = page.locator('[data-testid="open-offline-vault-modal-btn"]').first();
+        if (await trigger.isVisible().catch(() => false)) {
+          await trigger.scrollIntoViewIfNeeded();
+          await trigger.click({ force: true }).catch(() => {});
+          await page.waitForTimeout(600);
+        }
       }
     },
     all4States: true,
@@ -612,6 +633,40 @@ for (const screen of TARGET_SCREENS) {
 
     const page = await context.newPage();
 
+    // Mock all critical routes to guarantee robust, flawless rendering
+    await page.route("**/api/auth/user/me**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "doc-1",
+            fullName: "Д-р Ковалев С.П.",
+            name: "Д-р Ковалев С.П.",
+            role: "doctor",
+            organizationId: "c-1",
+          },
+        }),
+      });
+    });
+
+    await page.route("**/api/auth/staff/unlock**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          token: "dev_token_sample_staff",
+          user: {
+            id: "doc-1",
+            fullName: "Д-р Ковалев С.П.",
+            role: "doctor",
+            organizationId: "c-1",
+          },
+        }),
+      });
+    });
+
     await page.route("**/api/dashboard**", (route) => {
       route.fulfill({
         status: 200,
@@ -628,16 +683,97 @@ for (const screen of TARGET_SCREENS) {
       });
     });
 
+    await page.route("**/api/portal/lab-order/**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "demo-token-123",
+          patientFullName: "Барабаш Светлана Викторовна",
+          toothFdi: "1.6",
+          material: "zirconia",
+          colorVita: "A2",
+          status: "in_progress",
+          clinicalNotes: "Анатомическая коронка с винтовой фиксацией, уступ 0.5мм. Срочно к 30.08.",
+          attachedImageUrl: null,
+          createdAt: new Date().toISOString(),
+        }),
+      });
+    });
+
+    await page.route("**/api/clinical/lab-orders**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "lab-1",
+            organizationId: "c-1",
+            patientId: "p-1",
+            patientFullName: "Барабаш Светлана Викторовна",
+            doctorUserId: "doc-1",
+            doctorName: "Д-р Ковалев С.П.",
+            toothFdi: "1.6",
+            material: "zirconia",
+            colorVita: "A2",
+            status: "in_progress",
+            orderType: "crown",
+            notes: "Анатомическая коронка",
+            costKopecks: 1500000,
+            dueDate: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+          },
+        ]),
+      });
+    });
+
+    await page.route("**/api/settings/clinic/profile**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(mockDashboard.clinicSettings.profile),
+      });
+    });
+
+    await page.route("**/api/telephony/**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ success: true }),
+      });
+    });
+
     // Inject bypass tokens & offline mode to ensure completely clean, unblocked rendering
     await page.addInitScript(() => {
-      window.localStorage.setItem("dente_active_session_token", "mock-session-token");
-      window.localStorage.setItem("dente_user_role", "doctor");
-      window.localStorage.setItem("dente_offline_mode", "true");
+      window.localStorage.setItem("dente_organization_id", "c-1");
       window.localStorage.setItem("dente_clinic_token", "dev_token_sample_clinic");
       window.localStorage.setItem("dente_staff_token", "dev_token_sample_staff");
+      window.localStorage.setItem("dente_active_session_token", "mock-session-token");
+      window.localStorage.setItem("dente_user_role", "doctor");
+      window.localStorage.setItem("dente_user_name", "Д-р Ковалев С.П.");
+      window.localStorage.setItem("dente_active_user", JSON.stringify({
+        id: "doc-1",
+        name: "Д-р Ковалев С.П.",
+        role: "doctor",
+        organizationId: "c-1",
+      }));
+      window.localStorage.setItem("dente_offline_mode", "true");
+      window.localStorage.setItem("dente_offline_readiness_banner_dismissed_v1", "true");
       window.localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
+      window.localStorage.setItem("dente_onboarding_completed", "true");
       window.localStorage.setItem(
         "dental-crm:web-ui-preferences:v1",
+        JSON.stringify({
+          version: 1,
+          uiLanguage: "ru",
+          selectedWorkspaceRole: "doctor",
+          selectedSpecialty: "therapist",
+          selectedPatientId: "PAT-001",
+          onboardingDismissed: true,
+        }),
+      );
+      window.localStorage.setItem(
+        "dente_ui_preferences_v1",
         JSON.stringify({
           version: 1,
           uiLanguage: "ru",
