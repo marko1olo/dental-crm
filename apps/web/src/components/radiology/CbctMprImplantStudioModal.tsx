@@ -112,7 +112,7 @@ import {
 	reconstructPanoramicOpg,
 	reconstructPanoramicView,
 } from "./dentalCurveEngine";
-import { autoDetectDentalArch } from "./cbctAutoArchEngine";
+import { autoDetectDentalArch, findOcclusalZPlane } from "./cbctAutoArchEngine";
 import { CbctViewportHud } from "./CbctViewportHud";
 import {
 	STANDARD_IMPLANT_CATALOG,
@@ -240,6 +240,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const detected = autoDetectDentalArch(volume, jawType);
 			setArchCurve(detected);
 			setShowDentalArch(true);
+			const occlusalZMm = findOcclusalZPlane(volume, jawType);
+			let archCenterX = 0;
+			let archCenterY = 0;
+			if (detected.splinePointsMm.length > 0) {
+				const midIdx = Math.floor(detected.splinePointsMm.length / 2);
+				archCenterX = detected.splinePointsMm[midIdx]?.x ?? 0;
+				archCenterY = detected.splinePointsMm[midIdx]?.y ?? 0;
+			} else if (detected.anchors.length > 0) {
+				const midAnchor = detected.anchors[Math.floor(detected.anchors.length / 2)];
+				archCenterX = midAnchor?.positionMm.x ?? 0;
+				archCenterY = midAnchor?.positionMm.y ?? 0;
+			}
+			setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
 			showToast(`⚙️ Авто-поиск дуги: выровнено ${detected.anchors.length} анатомических ориентиров по вокселям КТ`, "success");
 		} catch {
 			setShowDentalArch(true);
@@ -474,13 +487,25 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			(window as unknown as { __INJECT_CBCT_VOLUME__?: (vol: CbctVoxelVolume, name?: string) => void }).__INJECT_CBCT_VOLUME__ = (vol: CbctVoxelVolume, name?: string) => {
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
-				setCrosshairMm({ x: 0, y: 0, z: 0 });
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				if (name) setPatientDisplayName(name);
 				const arch = autoDetectDentalArch(vol, jawType);
 				setArchCurve(arch);
 				setShowDentalArch(true);
+				const occlusalZMm = findOcclusalZPlane(vol, jawType);
+				let archCenterX = 0;
+				let archCenterY = 0;
+				if (arch.splinePointsMm.length > 0) {
+					const midIdx = Math.floor(arch.splinePointsMm.length / 2);
+					archCenterX = arch.splinePointsMm[midIdx]?.x ?? 0;
+					archCenterY = arch.splinePointsMm[midIdx]?.y ?? 0;
+				} else if (arch.anchors.length > 0) {
+					const midAnchor = arch.anchors[Math.floor(arch.anchors.length / 2)];
+					archCenterX = midAnchor?.positionMm.x ?? 0;
+					archCenterY = midAnchor?.positionMm.y ?? 0;
+				}
+				setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
 			};
 			(window as unknown as { __SET_CBCT_OBLIQUE_ANGLES__?: (angles: ObliqueRotationAngles) => void }).__SET_CBCT_OBLIQUE_ANGLES__ = (angles: ObliqueRotationAngles) => {
 				setObliqueAngles(angles);
@@ -492,150 +517,152 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const vol = createEmptyCbctVolume(120, 120, 120, 0.5);
 			setVolume(vol);
 			setLoadedSliceCount(120);
-			setCrosshairMm({ x: 0, y: 0, z: 0 });
 			const arch = autoDetectDentalArch(vol, jawType);
 			setArchCurve(arch);
+			const occlusalZMm = findOcclusalZPlane(vol, jawType);
+			let archCenterX = 0;
+			let archCenterY = 0;
+			if (arch.splinePointsMm.length > 0) {
+				const midIdx = Math.floor(arch.splinePointsMm.length / 2);
+				archCenterX = arch.splinePointsMm[midIdx]?.x ?? 0;
+				archCenterY = arch.splinePointsMm[midIdx]?.y ?? 0;
+			} else if (arch.anchors.length > 0) {
+				const midAnchor = arch.anchors[Math.floor(arch.anchors.length / 2)];
+				archCenterX = midAnchor?.positionMm.x ?? 0;
+				archCenterY = midAnchor?.positionMm.y ?? 0;
+			}
+			setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
 		} else {
 			const arch = autoDetectDentalArch(volume, jawType);
 			setArchCurve(arch);
 		}
 	}, [isOpen, jawType, volume]);
 
-	// Ingest Real DICOM Folder
-	const handleSelectDicomFolder = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const files = e.target.files ? Array.from(e.target.files) : [];
-		if (files.length === 0) return;
+	// Ingest Real DICOM Files / Folders / ZIP
+	const handleDicomFilesChange = useCallback(
+		async (files: File[] | FileList | null | undefined) => {
+			if (!files) return;
+			const fileArray = Array.from(files);
+			if (fileArray.length === 0) return;
 
-		const dcmFiles = files.filter(
-			(f) => f.name.toLowerCase().endsWith(".dcm") || f.name.toLowerCase().endsWith(".dicom") || !f.name.includes("."),
-		);
+			const zipFile = fileArray.find((f) => f.name.toLowerCase().endsWith(".zip"));
+			if (zipFile) {
+				setDicomLoadingStatus("Распаковка ZIP-архива КТ...");
+				setDicomProgress(5);
+				try {
+					const buf = await zipFile.arrayBuffer();
+					const vol = await buildVolumeFromDicomZip(buf, (pct, msg) => {
+						setDicomProgress(pct);
+						setDicomLoadingStatus(msg);
+					});
 
-		if (dcmFiles.length === 0) {
-			showToast("В выбранной папке не найдено файлов DICOM (.dcm)", "error");
-			return;
-		}
-
-		setDicomLoadingStatus("Чтение DICOM файлов...");
-		setDicomProgress(5);
-
-		try {
-			const vol = await buildVolumeFromDicomFiles(dcmFiles, (pct, msg) => {
-				setDicomProgress(pct);
-				setDicomLoadingStatus(msg);
-			});
-
-			setVolume(vol);
-			setLoadedSliceCount(vol.dimensions.depth);
-			setPatientDisplayName("Барабаш С.В.");
-			setCrosshairMm({ x: 0, y: 15.0, z: 0 });
-			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
-			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
-			const arch = autoDetectDentalArch(vol, jawType);
-			setArchCurve(arch);
-			setShowDentalArch(true);
-			setDicomLoadingStatus(null);
-			showToast(`Загружена серия DICOM (Барабаш): авто-детектор дуги сформировал дугу ОПТГ (${arch.totalArcLengthMm.toFixed(1)} мм)`, "success");
-		} catch (err: unknown) {
-			setDicomLoadingStatus(null);
-			const msg = err instanceof Error ? err.message : "Ошибка чтения DICOM";
-			showToast(msg, "error");
-		}
-	}, [jawType]);
-
-	// Ingest Real DICOM ZIP
-	const handleSelectDicomZip = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-
-		setDicomLoadingStatus("Распаковка ZIP-архива КТ...");
-		setDicomProgress(5);
-
-		try {
-			const buf = await file.arrayBuffer();
-			const vol = await buildVolumeFromDicomZip(buf, (pct, msg) => {
-				setDicomProgress(pct);
-				setDicomLoadingStatus(msg);
-			});
-
-			setVolume(vol);
-			setLoadedSliceCount(vol.dimensions.depth);
-			setCrosshairMm({ x: 0, y: 15.0, z: 0 });
-			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
-			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
-			const arch = autoDetectDentalArch(vol, jawType);
-			setArchCurve(arch);
-			setShowDentalArch(true);
-			setDicomLoadingStatus(null);
-			showToast(`Загружен ZIP-архив КТ: авто-детектор дуги сформировал дугу ОПТГ (${arch.totalArcLengthMm.toFixed(1)} мм)`, "success");
-		} catch (err: unknown) {
-			setDicomLoadingStatus(null);
-			const msg = err instanceof Error ? err.message : "Ошибка чтения архива DICOM";
-			showToast(msg, "error");
-		}
-	}, [jawType]);
-
-	// Drag and Drop DICOM files
-	const handleDropFiles = useCallback(async (e: React.DragEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-		setIsDragOverWindow(false);
-
-		const items = e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
-		if (items.length === 0) return;
-
-		const zipFile = items.find((f) => f.name.toLowerCase().endsWith(".zip"));
-		if (zipFile) {
-			setDicomLoadingStatus("Распаковка ZIP-архива КТ...");
-			try {
-				const buf = await zipFile.arrayBuffer();
-				const vol = await buildVolumeFromDicomZip(buf, (pct, msg) => {
-					setDicomProgress(pct);
-					setDicomLoadingStatus(msg);
-				});
-				setVolume(vol);
-				setLoadedSliceCount(vol.dimensions.depth);
-				setCrosshairMm({ x: 0, y: 0, z: 0 });
-				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
-				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
-				const arch = autoDetectDentalArch(vol, jawType);
-				setArchCurve(arch);
-				setShowDentalArch(true);
-				setDicomLoadingStatus(null);
-				showToast(`Загружен архив КТ: ${vol.dimensions.depth} срезов, дуга ОПТГ авто-выровнена`, "success");
-			} catch (err: unknown) {
-				setDicomLoadingStatus(null);
-				showToast(err instanceof Error ? err.message : "Ошибка архива", "error");
+					setVolume(vol);
+					setLoadedSliceCount(vol.dimensions.depth);
+					if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
+					if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
+					const arch = autoDetectDentalArch(vol, jawType);
+					setArchCurve(arch);
+					setShowDentalArch(true);
+					const occlusalZMm = findOcclusalZPlane(vol, jawType);
+					let archCenterX = 0;
+					let archCenterY = 0;
+					if (arch.splinePointsMm.length > 0) {
+						const midIdx = Math.floor(arch.splinePointsMm.length / 2);
+						archCenterX = arch.splinePointsMm[midIdx]?.x ?? 0;
+						archCenterY = arch.splinePointsMm[midIdx]?.y ?? 0;
+					} else if (arch.anchors.length > 0) {
+						const midAnchor = arch.anchors[Math.floor(arch.anchors.length / 2)];
+						archCenterX = midAnchor?.positionMm.x ?? 0;
+						archCenterY = midAnchor?.positionMm.y ?? 0;
+					}
+					setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
+					setDicomLoadingStatus(null);
+					showToast(`Загружен ZIP-архив КТ: ${vol.dimensions.depth} срезов, дуга ОПТГ авто-выровнена`, "success");
+				} catch (err: unknown) {
+					setDicomLoadingStatus(null);
+					showToast(err instanceof Error ? err.message : "Ошибка архива", "error");
+				}
+				return;
 			}
-			return;
-		}
 
-		const dcmFiles = items.filter(
-			(f) => f.name.toLowerCase().endsWith(".dcm") || f.name.toLowerCase().endsWith(".dicom") || !f.name.includes("."),
-		);
+			const dcmFiles = fileArray.filter(
+				(f) => f.name.toLowerCase().endsWith(".dcm") || f.name.toLowerCase().endsWith(".dicom") || !f.name.includes("."),
+			);
 
-		if (dcmFiles.length > 0) {
+			if (dcmFiles.length === 0) {
+				showToast("В выбранных файлах не найдено файлов DICOM (.dcm)", "error");
+				return;
+			}
+
 			setDicomLoadingStatus(`Загрузка ${dcmFiles.length} срезов DICOM...`);
+			setDicomProgress(5);
+
 			try {
 				const vol = await buildVolumeFromDicomFiles(dcmFiles, (pct, msg) => {
 					setDicomProgress(pct);
 					setDicomLoadingStatus(msg);
 				});
+
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
-				setCrosshairMm({ x: 0, y: 0, z: 0 });
+				setPatientDisplayName("Барабаш С.В.");
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				const arch = autoDetectDentalArch(vol, jawType);
 				setArchCurve(arch);
 				setShowDentalArch(true);
+				const occlusalZMm = findOcclusalZPlane(vol, jawType);
+				let archCenterX = 0;
+				let archCenterY = 0;
+				if (arch.splinePointsMm.length > 0) {
+					const midIdx = Math.floor(arch.splinePointsMm.length / 2);
+					archCenterX = arch.splinePointsMm[midIdx]?.x ?? 0;
+					archCenterY = arch.splinePointsMm[midIdx]?.y ?? 0;
+				} else if (arch.anchors.length > 0) {
+					const midAnchor = arch.anchors[Math.floor(arch.anchors.length / 2)];
+					archCenterX = midAnchor?.positionMm.x ?? 0;
+					archCenterY = midAnchor?.positionMm.y ?? 0;
+				}
+				setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
 				setDicomLoadingStatus(null);
-				showToast(`Загружено ${vol.dimensions.depth} срезов КТ: дуга ОПТГ выровнена по эмали`, "success");
+				showToast(`Загружена серия DICOM (Барабаш): авто-детектор дуги сформировал дугу ОПТГ (${arch.totalArcLengthMm.toFixed(1)} мм)`, "success");
 			} catch (err: unknown) {
 				setDicomLoadingStatus(null);
-				showToast(err instanceof Error ? err.message : "Ошибка DICOM", "error");
+				const msg = err instanceof Error ? err.message : "Ошибка чтения DICOM";
+				showToast(msg, "error");
 			}
-		}
-	}, [jawType]);
+		},
+		[jawType],
+	);
+
+	// Ingest Real DICOM Folder
+	const handleSelectDicomFolder = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			handleDicomFilesChange(e.target.files);
+		},
+		[handleDicomFilesChange],
+	);
+
+	// Ingest Real DICOM ZIP
+	const handleSelectDicomZip = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			handleDicomFilesChange(e.target.files);
+		},
+		[handleDicomFilesChange],
+	);
+
+	// Drag and Drop DICOM files
+	const handleDropFiles = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			setIsDragOverWindow(false);
+			if (e.dataTransfer.files) {
+				handleDicomFilesChange(e.dataTransfer.files);
+			}
+		},
+		[handleDicomFilesChange],
+	);
 
 	// Update Dental Arch when jaw type changes
 	const handleToggleJawType = useCallback((type: "mandible" | "maxilla") => {
@@ -643,6 +670,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (volume) {
 			const detected = autoDetectDentalArch(volume, type);
 			setArchCurve(detected);
+			const occlusalZMm = findOcclusalZPlane(volume, type);
+			let archCenterX = 0;
+			let archCenterY = 0;
+			if (detected.splinePointsMm.length > 0) {
+				const midIdx = Math.floor(detected.splinePointsMm.length / 2);
+				archCenterX = detected.splinePointsMm[midIdx]?.x ?? 0;
+				archCenterY = detected.splinePointsMm[midIdx]?.y ?? 0;
+			} else if (detected.anchors.length > 0) {
+				const midAnchor = detected.anchors[Math.floor(detected.anchors.length / 2)];
+				archCenterX = midAnchor?.positionMm.x ?? 0;
+				archCenterY = midAnchor?.positionMm.y ?? 0;
+			}
+			setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
 		} else {
 			const anchors = type === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS;
 			const newArch = buildDentalArchCurve(anchors, type);
