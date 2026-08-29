@@ -531,9 +531,15 @@
 	width: 100%;
 	display: flex;
 	justify-content: center;
-	padding: 12px;
+	padding: 16px;
 	border-radius: 12px;
+	background: var(--paper-muted, #f1f5f9);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .paid-contract-dark-frame {
 	background: #090d16;
+	border-color: rgba(255, 255, 255, 0.08);
 }
 
 .paid-contract-a4-sheet {
@@ -541,8 +547,8 @@
 	max-width: 680px;
 	min-height: 800px;
 	padding: 24px 28px;
-	background: #ffffff;
-	color: #0f172a;
+	background: #ffffff !important;
+	color: #0f172a !important;
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
 	border-radius: 4px;
 	font-family: "PT Astra Sans", "Times New Roman", Times, serif;
@@ -556,8 +562,13 @@
 
 .paid-contract-a4-sheet h1,
 .paid-contract-a4-sheet h2,
-.paid-contract-a4-sheet h3 {
-	margin: 0;
+.paid-contract-a4-sheet h3,
+.paid-contract-a4-sheet div,
+.paid-contract-a4-sheet p,
+.paid-contract-a4-sheet span,
+.paid-contract-a4-sheet table,
+.paid-contract-a4-sheet td,
+.paid-contract-a4-sheet th {
 	color: #0f172a;
 }
 

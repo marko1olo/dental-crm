@@ -1187,7 +1187,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 					<div className="bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)] border border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-5 max-w-sm w-full flex flex-col gap-4 shadow-2xl">
 						<div className="flex items-center justify-between pb-2 border-b border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.1))]">
 							<div className="sbp-logo-badge">
-								<QrCode className="w-4 h-4 text-blue-700" />
+								<QrCode className="w-4 h-4 text-teal-700 dark:text-teal-400" />
 								<span>СБП ПЛАТЕЖ</span>
 							</div>
 							<button

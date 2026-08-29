@@ -1015,10 +1015,11 @@ html.dark:not([data-theme="light"]) .patient-portal-modal-window,
 }
 
 .sbp-logo-badge {
-	background: #ffffff;
+	background: var(--teal-surface, #f0fdfa);
+	border: 1px solid var(--teal-subtle, rgba(20, 184, 166, 0.3));
 	border-radius: 0.5rem;
 	padding: 0.25rem 0.65rem;
-	color: #1e3a8a;
+	color: var(--teal, #0d9488);
 	font-weight: 900;
 	font-size: 0.8rem;
 	display: inline-flex;

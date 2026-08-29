@@ -99,7 +99,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 			"Швейцарский/корейский титановый корень надежно интегрировался в костную ткань.",
 		badgeClass: "badge-implant",
 		icon: "🔩",
-		colorHex: "#3b82f6", // Blue
+		colorHex: "#0d9488", // DENTE Teal
 	},
 	implant_crown_loaded: {
 		status: "implant_crown_loaded",
