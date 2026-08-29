@@ -352,17 +352,17 @@ export function extractObliqueMprSlice(
 			break;
 		case "coronal":
 			widthPx = dim.width;
-			heightPx = Math.max(dim.width, Math.round((dim.depth * sp.z) / (sp.x || 1.0)));
+			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.x || 1.0)));
 			pixelSpacingX = sp.x;
-			pixelSpacingY = sp.x;
+			pixelSpacingY = sp.z;
 			maxSliceIndex = dim.height - 1;
 			physicalPosMm = crosshairMm.y;
 			break;
 		case "sagittal":
 			widthPx = dim.height;
-			heightPx = Math.max(dim.height, Math.round((dim.depth * sp.z) / (sp.y || 1.0)));
+			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.y || 1.0)));
 			pixelSpacingX = sp.y;
-			pixelSpacingY = sp.y;
+			pixelSpacingY = sp.z;
 			maxSliceIndex = dim.width - 1;
 			physicalPosMm = crosshairMm.x;
 			break;
