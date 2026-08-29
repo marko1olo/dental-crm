@@ -154,10 +154,10 @@ export function SeniorNurseKraftUnsealModal({
 		const isBad = pkg.status === "expired" || pkg.isBreached || pkg.daysRemaining <= 0;
 		if (isBad) {
 			playExpiredErrorTone();
-			showToast("⛔ ВНИМАНИЕ! Срок стерильности крафт-пакета истёк! Использовать запрещено СанПиН.", "error", 5000);
+			showToast("ВНИМАНИЕ! Срок стерильности крафт-пакета истёк! Использовать запрещено СанПиН.", "error", 5000);
 		} else {
 			playSterileSuccessTone();
-			showToast(`✓ Стерильность пакета «${pkg.toolSetNameRu}» подтверждена (годен до ${pkg.expDate})`, "success", 3000);
+			showToast(`Стерильность пакета «${pkg.toolSetNameRu}» подтверждена (годен до ${pkg.expDate})`, "success", 3000);
 		}
 	};
 
@@ -215,7 +215,7 @@ export function SeniorNurseKraftUnsealModal({
 		}
 
 		showToast(
-			`✓ Крафт-пакет ${activePackage.barcode128} успешно вскрыт и списан на приём!`,
+			`Крафт-пакет ${activePackage.barcode128} успешно вскрыт и списан на приём!`,
 			"success",
 			4000,
 		);
@@ -271,7 +271,7 @@ export function SeniorNurseKraftUnsealModal({
 						data-testid="snk-hero-scan-btn"
 					>
 						<Camera size={28} />
-						<span>[ 📷 СКАН КРАФТ-ПАКЕТА ИЛИ НАЖМИ СЮДА ]</span>
+						<span>Скан крафт-пакета (или нажать для выбора)</span>
 					</button>
 
 					{/* Manual Barcode / USB Scanner Field */}
@@ -333,8 +333,8 @@ export function SeniorNurseKraftUnsealModal({
 								<div>
 									<h4 className="snk-status-title">
 										{isExpiredOrBreached
-											? "⛔ ВНИМАНИЕ! СРОК СТЕРИЛЬНОСТИ ИСТЁК!"
-											: "✓ СТЕРИЛЬНОСТЬ ПОДТВЕРЖДЕНА (СанПиН 3.3686-21)"}
+											? "ВНИМАНИЕ! СРОК СТЕРИЛЬНОСТИ ИСТЁК!"
+											: "СТЕРИЛЬНОСТЬ ПОДТВЕРЖДЕНА (СанПиН 3.3686-21)"}
 									</h4>
 									<div style={{ fontSize: "0.85rem", marginTop: "2px" }}>
 										{isExpiredOrBreached
@@ -397,7 +397,7 @@ export function SeniorNurseKraftUnsealModal({
 						data-testid="snk-confirm-unseal-btn"
 					>
 						<CheckCircle2 size={20} />
-						<span>[ ✓ ВСКРЫТЬ И ПРИВЯЗАТЬ К ПРИЁМУ ]</span>
+						<span>Вскрыть и привязать к приёму</span>
 					</button>
 				</div>
 			</div>

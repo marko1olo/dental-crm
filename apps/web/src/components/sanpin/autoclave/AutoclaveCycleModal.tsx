@@ -274,7 +274,7 @@ export function AutoclaveCycleModal({
 								<div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
 									{isRegisteredSuccess && (
 										<span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--emerald-600, #059669)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-											✓ Цикл #{cycleNumber - 1} успешно внесен в журнал ф. 257/у
+											<CheckCircle2 size={15} /> Цикл #{cycleNumber - 1} успешно внесен в журнал ф. 257/у
 										</span>
 									)}
 									<button

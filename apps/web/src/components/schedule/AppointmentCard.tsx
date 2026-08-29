@@ -5,8 +5,8 @@ import type {
 	DentalSpecialty,
 	ScheduleSuggestion,
 } from "@dental/shared";
-import React, { type ChangeEvent, useCallback, useMemo, useState } from "react";
-import { AlertTriangle, Check, Clock, Copy, CreditCard, MessageSquare, Phone, User, Zap } from "lucide-react";
+import React, { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, Check, Clock, Copy, CreditCard, MessageSquare, MoreVertical, Phone, User, Zap } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
@@ -262,11 +262,23 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		dashboard?.appointments,
 	]);
 
-	const canSave = appointmentReadyToSave && !collision.hasCollision;
-
 	const [isQuickStatusUpdating, setIsQuickStatusUpdating] = useState(false);
 	const [optimisticStatus, setOptimisticStatus] = useState<Appointment["status"] | null>(null);
 	const [isHoverPreviewOpen, setIsHoverPreviewOpen] = useState(false);
+	const [isCardMenuOpen, setIsCardMenuOpen] = useState(false);
+	const cardMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
+				setIsCardMenuOpen(false);
+			}
+		};
+		if (isCardMenuOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isCardMenuOpen]);
 
 	const allergyAlert = useMemo(() => {
 		const rawAllergies =
@@ -657,7 +669,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							{patientBalance !== null ? (
 								patientBalance < 0 ? (
 									<span
-										className="px-2.5 py-1 rounded-lg text-xs font-black font-mono tracking-tight bg-rose-500/20 text-rose-800 dark:text-rose-100 dark:bg-rose-950/70 border-2 border-rose-500 shadow-xs flex items-center gap-1 shrink-0"
+										className="px-2.5 py-1 rounded-lg text-xs font-black font-mono tracking-tight bg-rose-500/15 text-rose-800 dark:text-rose-100 dark:bg-rose-950/70 border-2 border-rose-500 shadow-xs flex items-center gap-1 shrink-0"
 										title={`Задолженность пациента: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`}
 										data-testid="appointment-debt-badge"
 									>
@@ -704,6 +716,155 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									Открыт прием: пациент закреплен
 								</span>
 							) : null}
+							{/* Compact Status Selector Dropdown */}
+							<select
+								className="appointment-status-select h-7 px-2 py-0.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer outline-none hover:border-[var(--teal,var(--brand-primary))] transition-colors shrink-0"
+								value={displayStatus}
+								disabled={isQuickStatusUpdating || (appointmentHasOpenVisit && Boolean(activeVisitLockedAppointmentStatuses?.has?.(displayStatus)))}
+								onChange={(e) => {
+									e.stopPropagation();
+									void handleQuickStatusChange(e.target.value as Appointment["status"]);
+								}}
+								title={`Статус записи: ${appointmentLabels?.[displayStatus] || displayStatus}`}
+								aria-label="Изменить статус приема"
+							>
+								{(Object.keys(appointmentLabels ?? {}) as Appointment["status"][]).map((status) => (
+									<option
+										key={status}
+										value={status}
+										disabled={appointmentHasOpenVisit && Boolean(activeVisitLockedAppointmentStatuses?.has?.(status))}
+									>
+										{appointmentLabels?.[status] ?? status}
+									</option>
+								))}
+							</select>
+
+							{/* Single Context Actions Menu Button [...] */}
+							<div className="relative inline-flex items-center shrink-0" ref={cardMenuRef}>
+								<button
+									type="button"
+									className="secondary-button appointment-context-menu-btn h-7 w-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] flex items-center justify-center cursor-pointer transition-colors shrink-0"
+									onClick={(e) => {
+										e.stopPropagation();
+										setIsCardMenuOpen((prev) => !prev);
+									}}
+									title="Все действия с записью (напоминания, опоздание, повтор, буфер, редактор)"
+									aria-label="Меню действий записи"
+									aria-expanded={isCardMenuOpen}
+								>
+									<MoreVertical size={14} className="text-[var(--teal,var(--brand-primary))]" />
+								</button>
+
+								{isCardMenuOpen && (
+									<div
+										className="appointment-card-context-menu absolute right-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[220px] animate-in fade-in zoom-in-95 duration-100 text-xs"
+										role="menu"
+										onClick={(e) => e.stopPropagation()}
+									>
+										{/* 1. Напоминания и связь */}
+										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+											Связь и напоминания
+										</div>
+										<button
+											type="button"
+											className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+											role="menuitem"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												const text = generateAppointmentWhatsAppMessage({
+													patientName: appointmentPatientName,
+													doctorName: appointmentDoctor?.fullName,
+													doctorSpecialty: appointmentDoctor?.role,
+													appointmentStartsAt: appointment.startsAt,
+													clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+													clinicAddress: dashboard?.clinicSettings?.profile?.address,
+													clinicPhone: dashboard?.clinicSettings?.profile?.phone,
+													treatmentReason: appointment.reason,
+												});
+												if (appointmentPatient?.phone) {
+													openWhatsAppChat(appointmentPatient.phone, text);
+												} else if (typeof navigator !== "undefined" && navigator.clipboard) {
+													void navigator.clipboard.writeText(text);
+													showToast(`Текст напоминания для ${appointmentPatientName} скопирован в буфер`, "success");
+												}
+											}}
+										>
+											<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
+											<span>Напомнить в WhatsApp / СМС</span>
+										</button>
+
+										{/* 2. Сдвиг времени при опоздании */}
+										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
+											Опоздание (сдвиг времени)
+										</div>
+										<div className="grid grid-cols-3 gap-1 px-1 py-0.5">
+											{[15, 30, 45].map((m) => (
+												<button
+													key={m}
+													type="button"
+													disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+													onClick={() => {
+														setIsCardMenuOpen(false);
+														void handleShiftAppointmentTime(m);
+													}}
+													className="h-7 px-1.5 py-0.5 rounded-md border border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center whitespace-nowrap"
+													title={`Сдвинуть на +${m} минут`}
+												>
+													+{m}м
+												</button>
+											))}
+										</div>
+
+										{/* 3. Операции с приемом */}
+										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
+											Операции с приемом
+										</div>
+										<button
+											type="button"
+											className="secondary-button appointment-repeat-button w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+											role="menuitem"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												repeatAppointment(appointment);
+											}}
+											title="Повторить запись (Клавиша R)"
+										>
+											<span>Повторить запись</span>
+											<span className="text-[10px] font-mono opacity-70">R</span>
+										</button>
+
+										{copyAppointmentToBuffer ? (
+											<button
+												type="button"
+												className="secondary-button appointment-buffer-button w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+												role="menuitem"
+												onClick={() => {
+													setIsCardMenuOpen(false);
+													copyAppointmentToBuffer(appointment);
+												}}
+												title="Скопировать в буфер (Клавиша B)"
+											>
+												<span>Скопировать в буфер</span>
+												<span className="text-[10px] font-mono opacity-70">B</span>
+											</button>
+										) : null}
+
+										<button
+											type="button"
+											className="secondary-button appointment-edit-button w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+											role="menuitem"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												openAppointmentEditor(appointment);
+											}}
+											title="Настроить запись в редакторе (Клавиша Enter)"
+										>
+											<span>Настроить запись</span>
+											<span className="text-[10px] font-mono opacity-70">Enter</span>
+										</button>
+									</div>
+								)}
+							</div>
 						</div>
 					</div>
 
@@ -822,15 +983,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</p>
 					) : null}
 
-					{/*
-        ОСВОБОДИВШЕЕСЯ ОКНО → ПОЛНЫЙ ПОДБОР ИЗ ЛИСТА ОЖИДАНИЯ.
-
-        API GET /api/appointments/:id/waitlist-matches уже существовал, но веб
-        его не вызывал. Сводка FreedSlotsPanel показывает только top-3 из
-        freed-slots; здесь, на карточке отменённого / no_show приёма в ленте
-        дня, администратор видит полный список «кому звонить» с причиной.
-        Только future cancelled/no_show: API сам отвергает занятое и прошлое.
-      */}
 					{(appointment?.status === "cancelled" ||
 						appointment?.status === "no_show") &&
 					appointment?.startsAt &&
@@ -848,119 +1000,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							<WaitlistMatchesBlock appointmentId={appointment.id} compact />
 						</div>
 					) : null}
-
-					{/* Ряд 1: Быстрые действия по статусу визита */}
-					<AppointmentQuickActions
-						appointmentId={appointment.id}
-						currentStatus={appointment.status}
-						patientName={appointmentPatientName}
-						patientPhone={appointmentPatient?.phone}
-						doctorName={appointmentDoctor?.fullName}
-						doctorSpecialty={appointmentDoctor?.role}
-						startsAt={appointment.startsAt}
-						clinicName={dashboard?.clinicSettings?.profile?.clinicName}
-						clinicAddress={dashboard?.clinicSettings?.profile?.address}
-						clinicPhone={dashboard?.clinicSettings?.profile?.phone}
-						treatmentReason={appointment.reason}
-						cabinetName={appointmentChair?.name}
-						appointmentHasOpenVisit={appointmentHasOpenVisit}
-						activeVisitLockedAppointmentStatuses={
-							activeVisitLockedAppointmentStatuses
-						}
-						onStatusChange={handleQuickStatusChange}
-						disabled={isQuickStatusUpdating}
-					/>
-
-					{/* Ряд 2: Сдвиг времени при опоздании, связь и операции */}
-					<div className="appointment-card-footer flex flex-wrap items-center justify-between gap-1.5 mt-1 pt-1.5 border-t border-[var(--line)]">
-						<div className="appointment-delay-shift-bar flex items-center gap-1 text-xs flex-wrap">
-							<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1 shrink-0 select-none text-[11px]">
-								<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
-								<span>Опоздание:</span>
-							</span>
-							<div className="flex items-center gap-1 flex-wrap">
-								{[15, 30, 45].map((m) => (
-									<button
-										key={m}
-										type="button"
-										disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
-										onClick={(e) => {
-											e.stopPropagation();
-											void handleShiftAppointmentTime(m);
-										}}
-										className="h-6.5 px-2 py-0.5 rounded-md border border-amber-500/30 bg-[var(--paper,#ffffff)] dark:bg-amber-950/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-40 shadow-2xs select-none active:scale-95 flex items-center justify-center whitespace-nowrap"
-										title={`Сдвинуть время визита на +${m} минут позже`}
-										aria-label={`Сдвинуть запись на +${m} минут`}
-									>
-										+{m} мин
-									</button>
-								))}
-							</div>
-						</div>
-
-						<div className="flex items-center gap-1 flex-wrap shrink-0">
-							<button
-								className="secondary-button h-7.5 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none whitespace-nowrap"
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const text = generateAppointmentWhatsAppMessage({
-										patientName: appointmentPatientName,
-										doctorName: appointmentDoctor?.fullName,
-										doctorSpecialty: appointmentDoctor?.role,
-										appointmentStartsAt: appointment.startsAt,
-										clinicName: dashboard?.clinicSettings?.profile?.clinicName,
-										clinicAddress: dashboard?.clinicSettings?.profile?.address,
-										clinicPhone: dashboard?.clinicSettings?.profile?.phone,
-										treatmentReason: appointment.reason,
-									});
-									if (appointmentPatient?.phone) {
-										openWhatsAppChat(appointmentPatient.phone, text);
-									} else if (typeof navigator !== "undefined" && navigator.clipboard) {
-										void navigator.clipboard.writeText(text);
-										showToast(`Текст напоминания для ${appointmentPatientName} скопирован в буфер`, "success");
-									}
-								}}
-								aria-label={`Напомнить в WhatsApp / СМС: ${appointmentPatientName}`}
-								title="1-Клик: Отправить или скопировать напоминание с реквизитами клиники и временем приема"
-							>
-								<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span>Напомнить</span>
-							</button>
-
-							<button
-								className="secondary-button appointment-repeat-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer whitespace-nowrap"
-								type="button"
-								onClick={() => repeatAppointment(appointment)}
-								aria-label={`Повторить запись: ${appointmentPatientName}. Форма новой записи откроется заполненной, останется выбрать время`}
-								title={`Повторить запись: те же пациент, врач и кресло — останется выбрать время (Клавиша R)`}
-							>
-								Повторить
-							</button>
-							{copyAppointmentToBuffer ? (
-								<button
-									className="secondary-button appointment-buffer-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer whitespace-nowrap"
-									type="button"
-									onClick={() => copyAppointmentToBuffer(appointment)}
-									aria-label={`В буфер: ${appointmentPatientName}`}
-									title="Скопировать в буфер расписания для вставки на другое время (Клавиша B)"
-								>
-									В буфер
-								</button>
-							) : null}
-							<button
-								className="secondary-button appointment-edit-button h-7.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-colors text-xs font-medium flex items-center justify-center cursor-pointer whitespace-nowrap"
-								type="button"
-								onClick={() => openAppointmentEditor(appointment)}
-								aria-expanded={appointmentEditing}
-								aria-controls={appointmentEditorId}
-								aria-label={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
-								title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)} (Клавиша Enter)`}
-							>
-								Настроить
-							</button>
-						</div>
-					</div>
 
 					{appointmentEditing ? (
 						<section
@@ -1205,9 +1244,38 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 								<div className="min-w-0">
 									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
-										Статус
+										Статус и быстрые действия
 									</span>
-									<div className="flex flex-wrap gap-1.5 min-w-0">
+									<AppointmentQuickActions
+										appointmentId={appointment.id}
+										currentStatus={
+											(appointmentDraft?.status || appointment.status) as any
+										}
+										patientName={appointmentPatientName || "Пациент"}
+										patientPhone={appointmentPatient?.phone}
+										doctorName={appointmentDoctor?.fullName}
+										doctorSpecialty={appointmentDoctor?.role}
+										startsAt={
+											String(appointmentDraft?.startsAt || appointment.startsAt)
+										}
+										clinicName={dashboard.clinicSettings?.profile?.clinicName}
+										treatmentReason={
+											appointmentDraft?.reason ? String(appointmentDraft.reason) : (appointment.reason ? String(appointment.reason) : undefined)
+										}
+										appointmentHasOpenVisit={appointmentHasOpenVisit}
+										activeVisitLockedAppointmentStatuses={
+											activeVisitLockedAppointmentStatuses
+										}
+										onStatusChange={(status) => {
+											updateAppointmentScheduleDraft(
+												appointment.id,
+												"status",
+												normalizedAppointmentStatus(status),
+											);
+										}}
+										compact
+									/>
+									<div className="flex flex-wrap gap-1.5 min-w-0 mt-2">
 										{(
 											Object.keys(
 												appointmentLabels ?? {},
@@ -1416,7 +1484,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										type="button"
 										onClick={() => void saveAppointmentSchedule(appointment.id)}
 										disabled={
-											appointmentSaveState === "saving" || !canSave
+											appointmentSaveState === "saving" || !appointmentReadyToSave
 										}
 										aria-busy={appointmentSaveState === "saving" || undefined}
 										aria-describedby={

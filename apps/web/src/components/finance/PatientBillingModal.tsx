@@ -80,7 +80,11 @@ function renderCategoryIcon(categoryGroup: string) {
 			return <Syringe className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
 		case "implant":
 		case "surgery":
-			return <ShieldCheck className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
+			return (
+				<span title="Дентальный титановый имплантат" className="inline-flex">
+					<ShieldCheck className="w-5 h-5 text-[var(--teal,#0d9488)]" />
+				</span>
+			);
 		case "xray":
 			return <FileText className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
 		case "hygiene":

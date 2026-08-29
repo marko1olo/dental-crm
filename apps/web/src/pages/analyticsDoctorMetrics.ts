@@ -546,3 +546,204 @@ export function parseDashboardPayload(
 		},
 	};
 }
+
+/**
+ * Вычисляет показатели дашборда из локального состояния (IndexedDB / store) при
+ * отсутствии сети или сбое бэкенда (500). Обеспечивает плавную офлайн-деградацию
+ * без красных экранов ошибки.
+ */
+export function computeLocalAnalyticsData(
+	dashboard: Record<string, unknown> | null | undefined,
+	_dateRange = "all",
+): AnalyticsDashboardData {
+	if (!dashboard || typeof dashboard !== "object") {
+		return {
+			kpis: {
+				totalPatients: 0,
+				totalRevenue: 0,
+				totalAppointments: 0,
+				avgRevenuePerPatient: 0,
+			},
+			cohortLtvJson: [],
+			planFunnelJson: [],
+			chairUtilizationJson: [],
+			doctorProfitabilityJson: [],
+			isEmpty: true,
+		};
+	}
+
+	const patients = Array.isArray(dashboard.patients)
+		? (dashboard.patients as Record<string, unknown>[])
+		: [];
+	const appointments = Array.isArray(dashboard.appointments)
+		? (dashboard.appointments as Record<string, unknown>[])
+		: [];
+	const payments = Array.isArray(dashboard.payments)
+		? (dashboard.payments as Record<string, unknown>[])
+		: [];
+	const visits = Array.isArray(dashboard.visits)
+		? (dashboard.visits as Record<string, unknown>[])
+		: [];
+	const chairs = Array.isArray(dashboard.chairs)
+		? (dashboard.chairs as Record<string, unknown>[])
+		: [];
+	const staff = Array.isArray(dashboard.staff)
+		? (dashboard.staff as Record<string, unknown>[])
+		: [];
+	const planScenarios = Array.isArray(dashboard.treatmentPlanScenarios)
+		? (dashboard.treatmentPlanScenarios as Record<string, unknown>[])
+		: [];
+
+	// 1. KPIs
+	const totalPatients = patients.length;
+	const totalAppointments = appointments.length;
+	let totalRevenue = 0;
+	for (const p of payments) {
+		const amt =
+			typeof p.amount === "number" && Number.isFinite(p.amount) ? p.amount : 0;
+		totalRevenue += amt;
+	}
+	if (totalRevenue === 0) {
+		for (const v of visits) {
+			const amt =
+				typeof v.totalRub === "number" && Number.isFinite(v.totalRub)
+					? v.totalRub
+					: 0;
+			totalRevenue += amt;
+		}
+	}
+	const avgRevenuePerPatient =
+		totalPatients > 0 ? Math.round(totalRevenue / totalPatients) : 0;
+
+	// 2. Воронка планов лечения
+	const draftEntry = { name: "Черновик", count: 0, fill: "#94a3b8" };
+	const planStatuses: Record<
+		string,
+		{ name: string; count: number; fill: string }
+	> = {
+		draft: draftEntry,
+		in_progress: { name: "В работе", count: 0, fill: "#38bdf8" },
+		agreed: { name: "Согласован", count: 0, fill: "#0d9488" },
+		completed: { name: "Завершён", count: 0, fill: "#10b981" },
+		declined: { name: "Отклонён", count: 0, fill: "#f43f5e" },
+	};
+	for (const item of planScenarios) {
+		const st = typeof item.status === "string" ? item.status : "draft";
+		const target = planStatuses[st];
+		if (target) {
+			target.count += 1;
+		} else {
+			draftEntry.count += 1;
+		}
+	}
+	const planFunnelJson: NamedValuePoint[] = Object.values(planStatuses).map(
+		(entry) => ({
+			name: entry.name,
+			value: entry.count,
+			fill: entry.fill,
+		}),
+	);
+
+	// 3. Загруженность кресел
+	const chairUtilizationJson: ChairUtilizationPoint[] = chairs.map((c, idx) => {
+		const chairId = typeof c.id === "string" ? c.id : null;
+		const chairName =
+			typeof c.name === "string" && c.name.trim().length > 0
+				? c.name.trim()
+				: `Кресло ${idx + 1}`;
+		const chairAppts = appointments.filter((a) => a.chairId === chairId);
+		const occupiedMinutes = chairAppts.length * 60;
+		const availableMinutes = 30 * 12 * 60;
+		const utilizationPercent =
+			availableMinutes > 0
+				? Math.min(100, Math.round((occupiedMinutes / availableMinutes) * 100))
+				: 0;
+		const colors = ["#0d9488", "#06b6d4", "#10b981", "#6366f1", "#f59e0b"];
+		return {
+			chairId,
+			name: chairName,
+			value: chairAppts.length,
+			occupiedMinutes,
+			availableMinutes,
+			utilizationPercent,
+			fill: colors[idx % colors.length] || "#0d9488",
+		};
+	});
+
+	// 4. Эффективность врачей
+	const doctors = staff.filter((s) => s.role === "doctor" || !s.role);
+	const doctorList =
+		doctors.length > 0 ? doctors : [{ id: "doc-1", name: "Дежурный врач" }];
+	const doctorProfitabilityJson: DoctorProfitabilityRow[] = doctorList.map(
+		(doc) => {
+			const docId = typeof doc.id === "string" ? doc.id : "doc-1";
+			const docName =
+				typeof doc.name === "string" && doc.name.trim().length > 0
+					? doc.name.trim()
+					: "Врач";
+			const docAppts = appointments.filter((a) => a.doctorUserId === docId);
+			const completedCount = docAppts.filter(
+				(a) => a.status === "completed" || a.status === "done",
+			).length;
+			const completionRate =
+				docAppts.length > 0
+					? Math.round((completedCount / docAppts.length) * 100)
+					: null;
+			const docRev =
+				totalRevenue > 0
+					? Math.round(totalRevenue / Math.max(1, doctorList.length))
+					: 0;
+			return {
+				doctorId: docId,
+				name: docName,
+				revenue: docRev,
+				appointmentsCount: docAppts.length,
+				avgTicketRub:
+					docAppts.length > 0 ? Math.round(docRev / docAppts.length) : 0,
+				workedHours: docAppts.length * 1,
+				hourlyRevenueRub:
+					docAppts.length > 0 ? Math.round(docRev / docAppts.length) : 0,
+				margin: null,
+				completionRate,
+			};
+		},
+	);
+
+	// 5. Когорты LTV
+	const cohortMap = new Map<string, number>();
+	for (const p of payments) {
+		const dateStr = typeof p.createdAt === "string" ? p.createdAt : "";
+		const date = new Date(dateStr);
+		const monthKey = Number.isNaN(date.getTime())
+			? "2026-08"
+			: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+		const prev = cohortMap.get(monthKey) || 0;
+		cohortMap.set(
+			monthKey,
+			prev + (typeof p.amount === "number" ? p.amount : 0),
+		);
+	}
+	const cohortLtvJson: CohortLtvPoint[] = Array.from(cohortMap.entries()).map(
+		([cohort, amt]) => ({
+			cohort,
+			"Month 12": amt,
+		}),
+	);
+
+	const isEmpty =
+		totalPatients === 0 && totalAppointments === 0 && totalRevenue === 0;
+
+	return {
+		kpis: {
+			totalPatients,
+			totalRevenue,
+			totalAppointments,
+			avgRevenuePerPatient,
+		},
+		cohortLtvJson,
+		planFunnelJson,
+		chairUtilizationJson,
+		doctorProfitabilityJson,
+		isEmpty,
+	};
+}

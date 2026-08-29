@@ -16,6 +16,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	UserCheck,
+	X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
@@ -287,7 +288,7 @@ export function GeneralCleaningRegisterTab() {
 					<div className="sanpin-modal">
 						<div className="sanpin-modal-header">
 							<h3>Проведение генеральной уборки (СанПиН 3.3686-21)</h3>
-							<button type="button" onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>✕</button>
+							<button type="button" onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
 						</div>
 						<form onSubmit={handleSubmit}>
 							<div className="sanpin-modal-body">

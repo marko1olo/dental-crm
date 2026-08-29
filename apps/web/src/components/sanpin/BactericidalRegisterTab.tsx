@@ -18,6 +18,7 @@ import {
 	Sparkles,
 	Trash2,
 	Wind,
+	X,
 	XCircle,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
@@ -413,7 +414,7 @@ export function BactericidalRegisterTab() {
 					<div className="sanpin-modal">
 						<div className="sanpin-modal-header">
 							<h3>Регистрация бактерицидного облучателя / рециркулятора</h3>
-							<button type="button" onClick={() => setIsEquipModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>✕</button>
+							<button type="button" onClick={() => setIsEquipModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
 						</div>
 						<form onSubmit={handleAddEquipment}>
 							<div className="sanpin-modal-body">
@@ -508,7 +509,7 @@ export function BactericidalRegisterTab() {
 					<div className="sanpin-modal">
 						<div className="sanpin-modal-header">
 							<h3>Фиксация сеанса работы бактерицидного облучателя</h3>
-							<button type="button" onClick={() => setIsLogModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>✕</button>
+							<button type="button" onClick={() => setIsLogModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
 						</div>
 						<form onSubmit={handleAddSession}>
 							<div className="sanpin-modal-body">

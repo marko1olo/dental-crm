@@ -610,9 +610,13 @@ export function SterilizationJournalModal({
 													<div style={{ fontWeight: 600 }}>{c.indicatorTradeNameRu}</div>
 													<div style={{ fontSize: "0.75rem" }}>
 														{c.areAllIndicatorsPassed ? (
-															<span style={{ color: "#059669" }}>✓ Все 5 точек КТ ОК</span>
+															<span style={{ color: "#059669", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+																<Check size={13} /> Все 5 точек КТ ОК
+															</span>
 														) : (
-															<span style={{ color: "#dc2626" }}>✗ Отказ индикатора</span>
+															<span style={{ color: "#dc2626", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+																<X size={13} /> Отказ индикатора
+															</span>
 														)}
 													</div>
 												</td>

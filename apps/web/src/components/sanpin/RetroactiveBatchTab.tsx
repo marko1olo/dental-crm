@@ -127,7 +127,7 @@ export function RetroactiveBatchTab() {
 
 		const stats = calculateRetroactiveBatchStats(days);
 		showToast(
-			`🚀 Журналы СанПиН рассчитаны за период: ${days.length} смен (${stats.workingDaysCount} рабочих), ${stats.totalTraysProcessed} лотков, ${stats.totalPsoSamplesTested} проб ПСО, ${stats.totalAutoclaveCycles} циклов автоклава.`,
+			`Журналы СанПиН рассчитаны за период: ${days.length} смен (${stats.workingDaysCount} рабочих), ${stats.totalTraysProcessed} лотков, ${stats.totalPsoSamplesTested} проб ПСО, ${stats.totalAutoclaveCycles} циклов автоклава.`,
 			"success",
 		);
 	};
@@ -202,7 +202,7 @@ export function RetroactiveBatchTab() {
 			);
 
 			showToast(
-				`💾 Все журналы СанПиН за период (${stats.workingDaysCount} рабочих смен) успешно внесены в государственные реестры клиники и заверены ЭЦП!`,
+				`Все журналы СанПиН за период (${stats.workingDaysCount} рабочих смен) успешно внесены в государственные реестры клиники и заверены ЭЦП!`,
 				"success",
 			);
 		} catch (err) {
@@ -588,7 +588,7 @@ export function RetroactiveBatchTab() {
 						data-testid="execute-sanpin-batch-1click-btn"
 					>
 						<Rocket size={22} color="#ffffff" />
-						🚀 Заполнить все журналы СанПиН за период в 1 клик
+						<span>Заполнить все журналы СанПиН за период в 1 клик</span>
 					</button>
 				</div>
 			</div>
@@ -702,7 +702,7 @@ export function RetroactiveBatchTab() {
 							data-testid="save-batch-to-registers-btn"
 						>
 							<Save size={18} />
-							{isSaving ? "Сохранение..." : "💾 Сохранить в реестры клиники"}
+							<span>{isSaving ? "Сохранение..." : "Сохранить в реестры клиники"}</span>
 						</button>
 
 						<button
@@ -721,7 +721,7 @@ export function RetroactiveBatchTab() {
 							data-testid="print-batch-dossier-btn"
 						>
 							<Printer size={18} />
-							🖨️ Распечатать готовые сшивы
+							<span>Распечатать готовые сшивы</span>
 						</button>
 
 						<button
@@ -888,7 +888,7 @@ export function RetroactiveBatchTab() {
 													/>
 												</td>
 												<td>
-													<span className="sanpin-tag sanpin-tag-success">🟢 Норма</span>
+													<span className="sanpin-tag sanpin-tag-success"><Check size={12} /> Норма</span>
 												</td>
 												<td>
 													<input

@@ -20,6 +20,7 @@ import {
 	Thermometer,
 	ThermometerSnowflake,
 	ThermometerSun,
+	X,
 	XCircle,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
@@ -403,7 +404,7 @@ export function TemperatureHumidityRegisterTab() {
 					<div className="sanpin-modal">
 						<div className="sanpin-modal-header">
 							<h3>Регистрация холодильника / зоны хранения ЛС</h3>
-							<button type="button" onClick={() => setIsEquipModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>✕</button>
+							<button type="button" onClick={() => setIsEquipModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
 						</div>
 						<form onSubmit={handleAddEquipment}>
 							<div className="sanpin-modal-body">
@@ -525,7 +526,7 @@ export function TemperatureHumidityRegisterTab() {
 					<div className="sanpin-modal">
 						<div className="sanpin-modal-header">
 							<h3>Фиксация замера температуры и влажности (Приказ 706н)</h3>
-							<button type="button" onClick={() => setIsLogModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>✕</button>
+							<button type="button" onClick={() => setIsLogModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
 						</div>
 						<form onSubmit={handleAddLog}>
 							<div className="sanpin-modal-body">

@@ -283,7 +283,7 @@ export function KraftPackageQuickScanner({
 						data-testid="btn-attach-kraft-to-043"
 					>
 						<Sparkles size={18} />
-						<span>⚡ Привязать к протоколу 043/у (1 клик)</span>
+						<span>Привязать к протоколу 043/у (1 клик)</span>
 					</button>
 				</div>
 			</div>

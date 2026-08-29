@@ -412,7 +412,7 @@ export function generateRetroactiveSanpinDays(
 					? "Аламинол 3.0% (экспозиция 60 мин + УФ 120 мин)"
 					: "Оптимакс Про 1.5% + Бациллол АФ 3 мин",
 				cabinetsReadinessStatus: "ready_sterile",
-				cabinetsReadinessMessageRu: "🟢 Все кабинеты продезинфицированы, наконечники и лотки стерильны",
+				cabinetsReadinessMessageRu: "Все кабинеты продезинфицированы, наконечники и лотки стерильны",
 				wasteClassBWeightKg: wasteB,
 				wasteClassAWeightKg: wasteA,
 				refrigeratorTempMorning: tempFrigMorn,
@@ -739,7 +739,7 @@ export function generateRetroactiveDossierPrintHtml(
 					<td style="text-align: center;">${d.wasteClassBWeightKg} кг / ${d.wasteClassAWeightKg} кг</td>
 					<td style="text-align: center;">+${d.refrigeratorTempMorning}°C / +${d.refrigeratorTempEvening}°C</td>
 					<td style="text-align: center;">+${d.roomTempMorning}°C (${d.roomHumidityMorning}%)</td>
-					<td style="text-align: center;"><span class="tag-norm">🟢 100% НОРМА</span></td>
+					<td style="text-align: center;"><span class="tag-norm">100% НОРМА</span></td>
 				</tr>`,
 					)
 					.join("")}

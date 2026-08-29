@@ -1331,6 +1331,17 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				onToggleSmartAi={() => setIsSmartAiOpen((prev) => !prev)}
 				onOpenDoctorFreeSlots={() => setDoctorFreeSlotsOpen(true)}
 				onEmergencyCitoBooking={handleEmergencyCitoBooking}
+				onToggleShiftAnalytics={() => setShowShiftAnalytics((prev) => !prev)}
+				showShiftAnalytics={showShiftAnalytics}
+				onOpenShiftRoster={() => setIsRosterModalOpen(true)}
+				onOpenWaitlist={() => setWaitlistOpen(true)}
+				waitlistCount={waitlistCount}
+				onToggleConfirmations={() => setShowConfirmationsPanel((prev) => !prev)}
+				showConfirmationsPanel={showConfirmationsPanel}
+				onToggleFreedSlots={() => setShowFreedSlotsPanel((prev) => !prev)}
+				showFreedSlotsPanel={showFreedSlotsPanel}
+				onToggleClipboard={() => setShowClipboardPanel((prev) => !prev)}
+				showClipboardPanel={showClipboardPanel}
 				onQuickBooking={() => {
 					setQuickBookingSlot({
 						dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
@@ -1668,6 +1679,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				isOpen={isRosterModalOpen}
 				onClose={() => setIsRosterModalOpen(false)}
 			/>
+			{/* Floating Softphone & FAB clearance spacer */}
+			<div className="h-32 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 		</div>
 	);
 }

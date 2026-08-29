@@ -19,6 +19,7 @@ import {
 	Tag,
 	Trash2,
 	Truck,
+	X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
@@ -261,7 +262,7 @@ export function MedicalWasteRegisterTab() {
 						title="Интерактивный технологический журнал учета отходов СанПиН 2.1.3684-21 и печать термоэтикеток"
 						data-testid="open-waste-journal-modal-btn"
 					>
-						<Tag size={16} /> [ 🏷️ Термоэтикетка 58x40 мм / Журнал СанПиН ]
+						<Tag size={16} /> <span>Термоэтикетка 58x40 мм / Журнал СанПиН</span>
 					</button>
 					<button type="button" onClick={() => window.print()} className="sanpin-btn sanpin-btn-secondary">
 						<Printer size={15} /> Печать журнала отходов
@@ -394,7 +395,7 @@ export function MedicalWasteRegisterTab() {
 					<div className="sanpin-modal">
 						<div className="sanpin-modal-header">
 							<h3>Регистрация медицинских отходов (СанПиН 2.1.3684-21)</h3>
-							<button type="button" onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>✕</button>
+							<button type="button" onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
 						</div>
 						<form onSubmit={handleSubmit}>
 							<div className="sanpin-modal-body">

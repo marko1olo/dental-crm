@@ -6,6 +6,7 @@ import {
 	Award,
 	Check,
 	CheckCircle2,
+	ChevronDown,
 	Clock,
 	Download,
 	Droplets,
@@ -16,6 +17,8 @@ import {
 	Flame,
 	FlaskConical,
 	Layers,
+	MoreHorizontal,
+	MoreVertical,
 	Plus,
 	Printer,
 	QrCode,
@@ -33,7 +36,7 @@ import {
 	X,
 	XCircle,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { CabinetReadinessTab } from "./CabinetReadinessTab";
@@ -80,6 +83,20 @@ export function SanpinRegisters() {
 	const [nurseSignName, setNurseSignName] = useState("Медсестра ЦСО");
 	const [nurseSignPin, setNurseSignPin] = useState("");
 	const [signingShift, setSigningShift] = useState(false);
+	const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+	const exportMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+				setIsExportMenuOpen(false);
+			}
+		};
+		if (isExportMenuOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isExportMenuOpen]);
 
 	const fetchSummary = async () => {
 		try {
@@ -141,7 +158,7 @@ export function SanpinRegisters() {
 			if (res.ok) {
 				const data = await res.json();
 				showToast(
-					`⚡ Смена успешно оформлена в 1 клик: ${data.batchCount} лотков, выборка ${data.sampleCount} шт. (Азопирам отр., Автоклав 134°C ОК). Досье готово для Роспотребнадзора.`,
+					`Смена успешно оформлена в 1 клик: ${data.batchCount} лотков, выборка ${data.sampleCount} шт. (Азопирам отр., Автоклав 134°C ОК). Досье готово для Роспотребнадзора.`,
 					"success",
 				);
 				fetchSummary();
@@ -478,150 +495,318 @@ export function SanpinRegisters() {
 
 				<div className="sanpin-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
 					<span className="sanpin-badge-gov" style={{ minHeight: "38px", fontSize: "0.82rem", display: "inline-flex", alignItems: "center", padding: "0.3rem 0.65rem" }}>
-						<CheckCircle2 size={16} /> Роспотребнадзор 2026 Ready
+						<CheckCircle2 size={16} /> СанПиН 2026
 					</span>
 
-					<button
-						type="button"
-						onClick={handleAutofillShift}
-						disabled={autoFilling}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{
-							minHeight: "44px",
-							padding: "0.5rem 1rem",
-							fontSize: "0.875rem",
-							fontWeight: 800,
-							background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
-							borderColor: "#047857",
-							color: "#ffffff",
-							boxShadow: "0 2px 8px rgba(5, 150, 105, 0.3)",
-							cursor: "pointer",
-						}}
-						title="1 Клик: Автоматически сформировать и опечатать журналы 257/у и 366/у за всю смену на основе завершенных приемов"
-						data-testid="sanpin-1click-autofill-btn"
-					>
-						<Sparkles size={16} /> {autoFilling ? "Оформление..." : "⚡ Закрыть смену (сегодня)"}
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setIsRetroactiveBatchModalOpen(true)}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{
-							minHeight: "44px",
-							padding: "0.5rem 1rem",
-							fontSize: "0.875rem",
-							fontWeight: 800,
-							background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-							borderColor: "#1d4ed8",
-							color: "#ffffff",
-							boxShadow: "0 2px 8px rgba(37, 99, 235, 0.3)",
-							cursor: "pointer",
-						}}
-						title="Пакетное заполнение журналов СанПиН за период в 1 клик (неделя, месяц, квартал)"
-						data-testid="open-retroactive-batch-header-btn"
-					>
-						<Rocket size={16} /> 🚀 Пакетное закрытие (за период)
-					</button>
-
+					{/* 1. Единственная Primary кнопка: + Новый цикл */}
 					<button
 						type="button"
 						onClick={() => setIsCycleModalOpen(true)}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.875rem", fontWeight: 700, cursor: "pointer" }}
+						className="sanpin-btn"
+						style={{
+							minHeight: "40px",
+							padding: "0.45rem 1rem",
+							fontSize: "0.85rem",
+							fontWeight: 700,
+							background: "var(--teal-600, #0d9488)",
+							borderColor: "var(--teal-600, #0d9488)",
+							color: "#ffffff",
+							boxShadow: "0 2px 6px rgba(13, 148, 136, 0.3)",
+							cursor: "pointer",
+						}}
+						data-testid="sanpin-new-cycle-primary-btn"
 					>
 						<Plus size={16} /> + Новый цикл
 					</button>
 
-					<button
-						type="button"
-						onClick={() => setIsKraftModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{
-							minHeight: "44px",
-							padding: "0.5rem 0.9rem",
-							fontSize: "0.875rem",
-							fontWeight: 600,
-							borderColor: "var(--brand-primary, #2563eb)",
-							color: "var(--brand-primary, #2563eb)",
-							cursor: "pointer",
-						}}
-						title="Студия маркировки крафт-пакетов: термоэтикетки 58x40, DataMatrix, Code128, печать партий"
-						data-testid="open-kraft-studio-header-btn"
-					>
-						<QrCode size={16} color="var(--brand-primary, #2563eb)" /> Маркировка
-					</button>
+					{/* 2. Компактное выпадающее меню: [⋮ Опции СанПиН] */}
+					<div ref={exportMenuRef} style={{ position: "relative", display: "inline-block" }}>
+						<button
+							type="button"
+							onClick={() => setIsExportMenuOpen((prev) => !prev)}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{
+								minHeight: "40px",
+								padding: "0.45rem 0.85rem",
+								fontSize: "0.85rem",
+								fontWeight: 700,
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.35rem",
+							}}
+							aria-expanded={isExportMenuOpen}
+							title="Опции СанПиН: Закрытие смены, пакетный расчет, сшивы, ЭЦП и экспорт"
+							data-testid="sanpin-options-dropdown-btn"
+						>
+							<MoreVertical size={16} color="var(--brand-primary, #2563eb)" />
+							<span>Опции СанПиН</span>
+							<ChevronDown size={14} style={{ transform: isExportMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+						</button>
 
-					<button
-						type="button"
-						onClick={() => setIsJournal257ModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
-						title="Журнал № 257/у: 5 точек камеры, биологический контроль, статистика автоклавов"
-						data-testid="open-journal-257-header-btn"
-					>
-						<FileSpreadsheet size={16} color="var(--brand-primary)" /> Журнал 257/у
-					</button>
+						{isExportMenuOpen && (
+							<div
+								style={{
+									position: "absolute",
+									right: 0,
+									top: "calc(100% + 4px)",
+									minWidth: "270px",
+									background: "var(--paper-strong, #ffffff)",
+									border: "1px solid var(--line, #e2e8f0)",
+									borderRadius: "10px",
+									boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+									zIndex: 50,
+									padding: "0.35rem",
+									display: "flex",
+									flexDirection: "column",
+									gap: "0.2rem",
+								}}
+							>
+								{/* Закрыть смену */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										handleAutofillShift();
+									}}
+									disabled={autoFilling}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="sanpin-1click-autofill-btn"
+								>
+									<Sparkles size={15} color="#0d9488" />
+									<span>{autoFilling ? "Оформление..." : "Закрыть смену (1 клик)"}</span>
+								</button>
 
-					<button
-						type="button"
-						onClick={() => setIsNurseSignModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
-						title="Электронная цифровая подпись медсестры ЦСО на журналы смены"
-					>
-						<Award size={16} color="var(--brand-primary)" /> ЭЦП медсестры
-					</button>
+								{/* Пакетное закрытие */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										setIsRetroactiveBatchModalOpen(true);
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="open-retroactive-batch-header-btn"
+								>
+									<Rocket size={15} color="#2563eb" />
+									<span>Пакетное закрытие (за период)</span>
+								</button>
 
-					<button
-						type="button"
-						onClick={handlePrintConsolidatedBinder}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{
-							minHeight: "44px",
-							padding: "0.5rem 0.9rem",
-							fontSize: "0.875rem",
-							fontWeight: 700,
-							cursor: "pointer",
-							background: "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
-							borderColor: "#3730a3",
-							color: "#fff",
-						}}
-						title="Генератор сшива журналов «Сводный журнал производственного контроля СанПиН за период» (А4 Альбомная с титульным листом и заверительной надписью)"
-						data-testid="print-consolidated-binder-btn"
-					>
-						<FileBadge size={16} /> Сводный сшив СанПиН (А4)
-					</button>
+								<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "0.2rem 0" }} />
 
-					<button
-						type="button"
-						onClick={handleExportConsolidatedCsv}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
-						title="1-клик экспорт в единый многостраничный CSV/Excel архив с разделителями страниц"
-						data-testid="export-consolidated-csv-btn"
-					>
-						<Download size={16} color="var(--brand-primary)" /> Сводный CSV архив
-					</button>
+								{/* Сводный сшив */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										handlePrintConsolidatedBinder();
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="print-consolidated-binder-btn"
+								>
+									<FileBadge size={15} color="#4338ca" />
+									<span>Сводный сшив СанПиН (А4)</span>
+								</button>
 
-					<button
-						type="button"
-						onClick={handleExportDossierPdf}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
-						title="Печать текущей вкладки СанПиН"
-					>
-						<Printer size={16} /> Печать вкладки
-					</button>
+								{/* CSV */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										handleExportConsolidatedCsv();
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="export-consolidated-csv-btn"
+								>
+									<Download size={15} color="#059669" />
+									<span>Сводный CSV архив</span>
+								</button>
 
+								{/* ЭЦП */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										setIsNurseSignModalOpen(true);
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+								>
+									<Award size={15} color="#2563eb" />
+									<span>ЭЦП медсестры ЦСО</span>
+								</button>
+
+								{/* Маркировка */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										setIsKraftModalOpen(true);
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="open-kraft-studio-header-btn"
+								>
+									<QrCode size={15} color="#7c3aed" />
+									<span>Маркировка крафт-пакетов</span>
+								</button>
+
+								{/* Журнал 257/у */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										setIsJournal257ModalOpen(true);
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="open-journal-257-header-btn"
+								>
+									<FileSpreadsheet size={15} color="#0891b2" />
+									<span>Журнал 257/у</span>
+								</button>
+
+								{/* Печать текущей вкладки */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										handleExportDossierPdf();
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+								>
+									<Printer size={15} color="var(--muted, #64748b)" />
+									<span>Печать текущей вкладки</span>
+								</button>
+							</div>
+						)}
+					</div>
+
+					{/* 3. Кнопка обновления */}
 					<button
 						type="button"
 						onClick={fetchSummary}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", minWidth: "44px", padding: "0.5rem 0.75rem", cursor: "pointer" }}
+						style={{ minHeight: "40px", minWidth: "40px", padding: "0.45rem", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyItems: "center" }}
 						title="Обновить сводку"
 					>
-						<RotateCcw size={16} />
+						<RotateCcw size={15} />
 					</button>
 				</div>
 			</div>
@@ -712,7 +897,7 @@ export function SanpinRegisters() {
 					style={{ minHeight: "44px", fontSize: "0.9rem", fontWeight: 700 }}
 					data-testid="tab-retroactive-batch-btn"
 				>
-					<Rocket size={18} color={activeTab === "retroactive_batch" ? "#ffffff" : "var(--brand-primary, #2563eb)"} /> ⚡ Пакетное закрытие (за период)
+					<Rocket size={18} color={activeTab === "retroactive_batch" ? "#ffffff" : "var(--brand-primary, #2563eb)"} /> Пакетное закрытие (за период)
 				</button>
 
 				<button

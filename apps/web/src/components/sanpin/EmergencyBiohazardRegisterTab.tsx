@@ -17,6 +17,7 @@ import {
 	ShieldAlert,
 	Sparkles,
 	Syringe,
+	X,
 	XCircle,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
@@ -327,7 +328,7 @@ export function EmergencyBiohazardRegisterTab() {
 					<div className="sanpin-modal" style={{ maxWidth: "680px" }}>
 						<div className="sanpin-modal-header">
 							<h3>Регистрация аварийной ситуации (Аптечка «Анти-ВИЧ»)</h3>
-							<button type="button" onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>✕</button>
+							<button type="button" onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
 						</div>
 						<form onSubmit={handleSubmit}>
 							<div className="sanpin-modal-body">

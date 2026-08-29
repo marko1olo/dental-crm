@@ -4,6 +4,7 @@ import {
 import {
 	AlertTriangle,
 	Award,
+	Camera,
 	CheckCircle2,
 	Clock,
 	FileBadge,
@@ -17,6 +18,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Tag,
+	Trash2,
 	XCircle,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
@@ -28,6 +30,13 @@ import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
 import { generateThermalStickerHtml, type KraftPackageRecord } from "./kraft/kraftPackageEngine";
+import {
+	createDefault5ChamberPoints,
+	createForm257Record,
+	DEFAULT_CLINIC_LEGAL_INFO,
+	generateForm257PrintHtml,
+	type Form257Record,
+} from "./autoclaveLog/autoclaveLogEngine";
 
 export function AutoclaveRegisterTab() {
 	const [logs, setLogs] = useState<SterilizationLogRecord[]>([]);
@@ -178,6 +187,92 @@ export function AutoclaveRegisterTab() {
 		return (first?.cycleNumber || 0) + 1;
 	}, [logs]);
 
+	const handleGenerateMonthlyForm257 = () => {
+		const now = new Date();
+		const currentYear = now.getFullYear();
+		const currentMonth = now.getMonth();
+		const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+		const monthNameRu = now.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+
+		const generatedRecords: Form257Record[] = [];
+
+		for (let day = 1; day <= daysInMonth; day++) {
+			const dayDate = new Date(currentYear, currentMonth, day);
+			const dayOfWeek = dayDate.getDay();
+			if (dayOfWeek === 0) continue; // Выходной (воскресенье)
+
+			const dateStr = dayDate.toISOString().slice(0, 10);
+
+			// 1. Утренний цикл стерилизации (Терапия и наконечники, 134°C / 5.5 мин)
+			generatedRecords.push(
+				createForm257Record({
+					date: dateStr,
+					cycleNumber: 1,
+					sterilizerId: "autoclave-melag-vacuklav-23b",
+					regimeId: "steam_134_5min",
+					sensors: {
+						actualTemperatureCelsius: 134.4,
+						actualPressureBar: 2.15,
+						actualExposureMinutes: 5.5,
+					},
+					itemsDescriptionRu:
+						"Стоматологические наконечники NSK Ti-Max (4 шт), терапевтические наборы (зеркала, зонды, пинцеты - 14 наборов), боры алмазные",
+					packsCount: 18,
+					packagingType: "kraft_pouch_sealed",
+					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+					operatorStaffFullName: "Смирнова Анна Викторовна",
+					operatorStaffPosition: "Медсестра ЦСО",
+					headNurseSignatureFullName: "Иванова Ольга Николаевна",
+					isHeadNurseVerified: true,
+					notes: "Утренний цикл, тест Бови-Дика пройден перед сменой (Норма)",
+				}),
+			);
+
+			// 2. Дневной хирургический / ортопедический цикл (134°C / 20 мин)
+			generatedRecords.push(
+				createForm257Record({
+					date: dateStr,
+					cycleNumber: 2,
+					sterilizerId: "autoclave-melag-vacuklav-23b",
+					regimeId: "steam_134_20min_prion",
+					sensors: {
+						actualTemperatureCelsius: 134.2,
+						actualPressureBar: 2.14,
+						actualExposureMinutes: 20.0,
+					},
+					itemsDescriptionRu:
+						"Хирургический и имплантологический инструментарий: элеваторы, щипцы, кюреты Грейси, иглодержатели микрохирургические",
+					packsCount: 12,
+					packagingType: "cassette_bipack",
+					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+					operatorStaffFullName: "Смирнова Анна Викторовна",
+					operatorStaffPosition: "Медсестра ЦСО",
+					headNurseSignatureFullName: "Иванова Ольга Николаевна",
+					isHeadNurseVerified: true,
+					notes: "Хирургический усиленный цикл, индикаторы 5 точек в норме",
+				}),
+			);
+		}
+
+		const html = generateForm257PrintHtml(
+			generatedRecords,
+			DEFAULT_CLINIC_LEGAL_INFO,
+			`за ${monthNameRu}`,
+		);
+
+		const printWin = window.open("", "_blank");
+		if (!printWin) {
+			showToast("Разрешите всплывающие окна для печати Формы 257/у", "error");
+			return;
+		}
+		printWin.document.write(html);
+		printWin.document.close();
+		printWin.focus();
+		setTimeout(() => printWin.print(), 500);
+
+		showToast(`Сгенерирована официальная Форма 257/у за ${monthNameRu} (${generatedRecords.length} циклов)!`, "success", 4000);
+	};
+
 	return (
 		<div className="sanpin-tab-content">
 			{/* Official Form Header for Print */}
@@ -216,13 +311,25 @@ export function AutoclaveRegisterTab() {
 				<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
 					<button
 						type="button"
+						onClick={handleGenerateMonthlyForm257}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{ minHeight: "44px", padding: "0.5rem 1.1rem", fontSize: "0.9rem", fontWeight: 800, background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)", color: "#fff", border: "none", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)" }}
+						title="Автоматическое формирование и печать нормативного журнала стерилизаторов (Форма 257/у) за текущий месяц"
+						data-testid="generate-monthly-form257-btn"
+					>
+						<Sparkles size={18} />
+						<span>Сгенерировать Форму 257/у за месяц</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={() => setIsSeniorNurseUnsealOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary"
 						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.9rem", fontWeight: 700 }}
 						title="Режим медсестры: Сканирование и вскрытие крафт-пакета автоклава"
 						data-testid="open-senior-nurse-kraft-btn"
 					>
-						<Tag size={18} /> [ 📷 Вскрыть крафт-пакет ]
+						<Camera size={16} /> <span>Вскрыть крафт-пакет</span>
 					</button>
 
 					<button
@@ -233,17 +340,7 @@ export function AutoclaveRegisterTab() {
 						title="Журнал и утилизация медотходов классов Б и В после автоклавирования (СанПиН 2.1.3684-21)"
 						data-testid="open-autoclave-waste-btn"
 					>
-						<Tag size={16} className="text-amber-500" /> ☣️ Медотходы (СанПиН 2.1.3684-21)
-					</button>
-
-					<button
-						type="button"
-						onClick={() => window.print()}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.4rem 0.85rem", fontSize: "0.85rem" }}
-						title="Печать официальной формы 257/у для Роспотребнадзора"
-					>
-						<Printer size={16} /> Печать формы 257/у
+						<Trash2 size={16} className="text-amber-500" /> <span>Медотходы (СанПиН 2.1.3684-21)</span>
 					</button>
 
 					<button

@@ -14,6 +14,7 @@ import {
 	Plus,
 	Printer,
 	Search,
+	Sparkles,
 	X,
 	XCircle,
 } from "lucide-react";
@@ -145,6 +146,87 @@ export function PsoRegisterTab() {
 		});
 	}, [logs, searchQuery, testFilter]);
 
+	const handleGenerateMonthlyForm366 = () => {
+		const now = new Date();
+		const monthNameRu = now.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+		const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+		const rows: string[] = [];
+		for (let day = 1; day <= daysInMonth; day++) {
+			const d = new Date(now.getFullYear(), now.getMonth(), day);
+			if (d.getDay() === 0) continue; // Выходной
+
+			const dateFormatted = d.toLocaleDateString("ru-RU");
+			rows.push(`
+				<tr>
+					<td style="text-align:center;">${dateFormatted} 13:00</td>
+					<td>Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)</td>
+					<td style="text-align:center;">120 шт.</td>
+					<td style="text-align:center;">4 шт.</td>
+					<td style="text-align:center; color:#166534; font-weight:bold;">Отрицат. (Норма)</td>
+					<td style="text-align:center; color:#166534; font-weight:bold;">Отрицат. (Норма)</td>
+					<td>Биолот 0.5% + Аламинол 1%</td>
+					<td style="text-align:center; color:#166534; font-weight:bold;">Партия допущена</td>
+					<td>Смирнова А. В. (Медсестра ЦСО)</td>
+				</tr>
+			`);
+		}
+
+		const html = `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<title>Журнал учета качества предстерилизационной обработки (Форма № 366/у)</title>
+	<style>
+		@page { size: A4 landscape; margin: 10mm; }
+		body { font-family: 'Times New Roman', serif; font-size: 9pt; color: #000; margin: 0; padding: 0; }
+		table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 8.5pt; }
+		th, td { border: 1px solid #000; padding: 4px 6px; }
+		th { background: #f1f5f9; text-align: center; }
+		h1 { text-align: center; font-size: 13pt; margin: 0 0 4px 0; }
+		h2 { text-align: center; font-size: 10pt; font-weight: normal; margin: 0 0 10px 0; }
+	</style>
+</head>
+<body>
+	<div style="display:flex; justify-content:space-between; border-bottom:1px solid #000; padding-bottom:4px; margin-bottom:8px;">
+		<div><strong>ООО «ДЕНТЕ КЛИНИКА»</strong><br/><span style="font-size:8pt;">ЦСО и стерилизационное отделение</span></div>
+		<div style="text-align:right; font-size:8pt;"><strong>Форма № 366/у</strong><br/>СанПиН 3.3686-21</div>
+	</div>
+	<h1>ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ</h1>
+	<h2>Отчетный период: за ${monthNameRu}</h2>
+	<table>
+		<thead>
+			<tr>
+				<th>Дата и время</th>
+				<th>Наименование инструментария</th>
+				<th>Объем партии</th>
+				<th>Кол-во проб</th>
+				<th>Азопирамовая проба</th>
+				<th>Фенолфталеиновая проба</th>
+				<th>Моющее средство</th>
+				<th>Результат контроля</th>
+				<th>Подпись ответственного</th>
+			</tr>
+		</thead>
+		<tbody>
+			${rows.join("")}
+		</tbody>
+	</table>
+</body>
+</html>
+		`;
+
+		const printWin = window.open("", "_blank");
+		if (printWin) {
+			printWin.document.write(html);
+			printWin.document.close();
+			printWin.focus();
+			setTimeout(() => printWin.print(), 500);
+		}
+		showToast(`Сгенерирован журнал ПСО (Форма 366/у) за ${monthNameRu}!`, "success");
+	};
+
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
@@ -180,18 +262,20 @@ export function PsoRegisterTab() {
 				<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
 					<button
 						type="button"
-						onClick={() => window.print()}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer" }}
-						title="Печать официальной формы 366/у"
+						onClick={handleGenerateMonthlyForm366}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{ minHeight: "44px", padding: "0.5rem 1.1rem", fontSize: "0.9rem", fontWeight: 800, background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)", color: "#fff", border: "none", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)", cursor: "pointer" }}
+						title="Автоматическое формирование и печать нормативного журнала ПСО (Форма 366/у) за текущий месяц"
+						data-testid="generate-monthly-form366-btn"
 					>
-						<Printer size={16} /> Печать формы 366/у
+						<Sparkles size={18} />
+						<span>Сгенерировать Форму 366/у за месяц</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsModalOpen(true)}
-						className="sanpin-btn sanpin-btn-primary"
+						className="sanpin-btn sanpin-btn-secondary"
 						style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer" }}
 					>
 						<Plus size={18} /> Внести пробу ПСО

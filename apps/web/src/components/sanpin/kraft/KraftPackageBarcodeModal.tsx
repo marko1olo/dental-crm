@@ -8,6 +8,7 @@
 
 import {
 	AlertTriangle,
+	ArrowRight,
 	Award,
 	Barcode,
 	Calendar,
@@ -232,7 +233,7 @@ export function KraftPackageBarcodeModal({
 
 	const handleDirectPrinterSend = async () => {
 		showToast(
-			`⚡ Пакет ${tsplProtocol.toUpperCase()} отправлен на сетевой порт термопринтера (RAW 9100 / USB)`,
+			`Пакет ${tsplProtocol.toUpperCase()} отправлен на сетевой порт термопринтера (RAW 9100 / USB)`,
 			"success",
 			3500,
 		);
@@ -757,7 +758,7 @@ export function KraftPackageBarcodeModal({
 														style={{ background: ind.originalColorHex }}
 														title={`Исходный цвет: ${ind.originalColorNameRu}`}
 													/>
-													<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>➔</span>
+													<ArrowRight size={12} color="var(--muted)" />
 													<span
 														className="kraft-swatch-circle"
 														style={{ background: ind.finalColorHex }}
@@ -1022,8 +1023,8 @@ export function KraftPackageBarcodeModal({
 										>
 											<div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.75rem", fontWeight: 700 }}>
 												<span>{pack.toolSetNameRu}</span>
-												<span style={{ color: isSelected ? "var(--teal)" : "var(--muted)" }}>
-													{isSelected ? "✓ Выбрано" : "Пропустить"}
+												<span style={{ color: isSelected ? "var(--teal)" : "var(--muted)", display: "inline-flex", alignItems: "center", gap: "0.2rem" }}>
+													{isSelected ? <><Check size={12} /> Выбрано</> : "Пропустить"}
 												</span>
 											</div>
 											<div

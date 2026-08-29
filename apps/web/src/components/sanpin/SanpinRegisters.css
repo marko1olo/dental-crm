@@ -211,6 +211,19 @@
 	color: inherit;
 }
 
+.sanpin-dropdown-item {
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sanpin-dropdown-item:hover {
+	background-color: var(--paper-soft, rgba(0, 0, 0, 0.05)) !important;
+}
+
+[data-theme="dark"] .sanpin-dropdown-item:hover,
+.dark .sanpin-dropdown-item:hover {
+	background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* Tab Content Layout */
 .sanpin-tab-content {
 	display: flex;

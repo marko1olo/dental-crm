@@ -1507,10 +1507,21 @@ button[data-tooth-state="missing"] {
 	.top-actions {
 		gap: 4px;
 		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		flex-wrap: nowrap;
 	}
 	.top-actions .primary-button {
-		padding: 6px 12px;
+		padding: 6px 10px;
 		font-size: 12px;
+		white-space: nowrap;
+		min-height: 36px;
+	}
+	.top-actions .secondary-button,
+	.top-actions .daily-top-button,
+	.top-actions .topbar-copilot-button,
+	.top-actions .compact-top-button {
+		display: none !important;
 	}
 }
 

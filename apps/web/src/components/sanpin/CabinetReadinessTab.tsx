@@ -221,12 +221,12 @@ export function CabinetReadinessTab() {
 		setHistoryRecords((prev) => [record, ...prev]);
 		if (record.isFullyReady) {
 			showToast(
-				`🟢 ${selectedCabinet} успешно подготовлен: «${currentPreset.shortLabelRu}». Статус готовности зафиксирован в журнале СанПиН.`,
+				`${selectedCabinet} успешно подготовлен: «${currentPreset.shortLabelRu}». Статус готовности зафиксирован в журнале СанПиН.`,
 				"success",
 			);
 		} else {
 			showToast(
-				`⚠️ ${selectedCabinet} сохранен со статусом НЕ ГОТОВ: обнаружены невыполненные пункты чек-листа!`,
+				`${selectedCabinet} сохранен со статусом НЕ ГОТОВ: обнаружены невыполненные пункты чек-листа!`,
 				"error",
 			);
 		}
@@ -251,7 +251,7 @@ export function CabinetReadinessTab() {
 		setRubberDamReady(true);
 		setClampsReady(true);
 		setForcepsReady(true);
-		showToast("⚡ Все пункты чек-листа отмечены как проверенные и готовые", "info");
+		showToast("Все пункты чек-листа отмечены как проверенные и готовые", "info");
 	};
 
 	const handleExportCsv = () => {
@@ -299,7 +299,7 @@ export function CabinetReadinessTab() {
 						title="1 Клик: Отметить все пункты текущего профиля как готовые"
 						data-testid="cabinet-readiness-autofill-btn"
 					>
-						<Zap size={18} /> ⚡ Заполнить всё готовым (1 клик)
+						<Zap size={18} /> <span>Заполнить всё готовым (1 клик)</span>
 					</button>
 
 					<button
@@ -355,7 +355,7 @@ export function CabinetReadinessTab() {
 				</div>
 				<div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", color: "var(--muted, #64748b)" }}>
 					<Save size={14} color="#059669" />
-					<span>💾 Все данные сохранены</span>
+					<span>Все данные сохранены</span>
 				</div>
 			</div>
 
@@ -419,8 +419,8 @@ export function CabinetReadinessTab() {
 						</div>
 
 						<div style={{ marginTop: "0.5rem", borderTop: "1px solid #e2e8f0", paddingTop: "0.75rem" }}>
-							<h4 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.5rem", color: "#0f766e" }}>
-								🧴 Дезинфекция поверхностей установки:
+							<h4 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.5rem", color: "#0f766e", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+								<Sparkles size={16} /> Дезинфекция поверхностей установки:
 							</h4>
 
 							<label style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.85rem", marginBottom: "0.5rem", cursor: "pointer" }}>
@@ -459,7 +459,7 @@ export function CabinetReadinessTab() {
 							</div>
 							{exposureMinutes < currentPreset.minExposureMinutes && (
 								<div style={{ color: "#dc2626", fontSize: "0.75rem", marginTop: "0.3rem", fontWeight: 600 }}>
-									⚠️ Внимание: требуется экспозиция не менее {currentPreset.minExposureMinutes} мин!
+									Внимание: требуется экспозиция не менее {currentPreset.minExposureMinutes} мин!
 								</div>
 							)}
 						</div>
@@ -605,7 +605,7 @@ export function CabinetReadinessTab() {
 										}}
 										title="1 Клик: Отметить все недостающие пункты чек-листа как готовые"
 									>
-										<Zap size={16} /> ⚡ Исправить и заполнить всё в 1 клик
+										<Zap size={16} /> <span>Исправить и заполнить всё в 1 клик</span>
 									</button>
 								</div>
 							)}
@@ -655,7 +655,7 @@ export function CabinetReadinessTab() {
 						data-testid="submit-cabinet-readiness-btn"
 					>
 						<Check size={20} />
-						{evaluation.isFullyReady ? "🟢 Кабинет готов к приёму — зафиксировать (1 клик)" : "⚠️ Сохранить статус проверки"}
+						{evaluation.isFullyReady ? "Кабинет готов к приёму — зафиксировать (1 клик)" : "Сохранить статус проверки"}
 					</button>
 				</div>
 			</div>

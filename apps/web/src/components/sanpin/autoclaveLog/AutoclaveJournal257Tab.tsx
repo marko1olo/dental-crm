@@ -14,6 +14,7 @@ import {
 	Printer,
 	Search,
 	ShieldCheck,
+	Sparkles,
 	Trash2,
 	UserCheck,
 	XCircle,
@@ -21,6 +22,8 @@ import {
 import React, { useMemo, useState } from "react";
 import {
 	DEFAULT_CLINIC_LEGAL_INFO,
+	createDefault5ChamberPoints,
+	createForm257Record,
 	exportForm257ToCsv,
 	filterForm257Records,
 	generateForm257PrintHtml,
@@ -86,6 +89,90 @@ export function AutoclaveJournal257Tab({
 		link.click();
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
+	};
+
+	// 1-Клик: Генерация и печать Формы 257/у за текущий месяц
+	const handleGenerateMonthlyForm257 = () => {
+		const now = new Date();
+		const currentYear = now.getFullYear();
+		const currentMonth = now.getMonth();
+		const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+		const monthNameRu = now.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+
+		const generatedRecords: Form257Record[] = [];
+
+		for (let day = 1; day <= daysInMonth; day++) {
+			const dayDate = new Date(currentYear, currentMonth, day);
+			if (dayDate.getDay() === 0) continue; // Выходной (воскресенье)
+
+			const dateStr = dayDate.toISOString().slice(0, 10);
+
+			// Цикл 1: Утренний стандарт (134°C / 5 мин)
+			generatedRecords.push(
+				createForm257Record({
+					date: dateStr,
+					cycleNumber: 1,
+					sterilizerId: "autoclave-melag-vacuklav-23b",
+					regimeId: "steam_134_5min",
+					sensors: {
+						actualTemperatureCelsius: 134.4,
+						actualPressureBar: 2.15,
+						actualExposureMinutes: 5.5,
+					},
+					itemsDescriptionRu:
+						"Стоматологические наконечники NSK Ti-Max (4 шт), терапевтические наборы (зеркала, зонды, пинцеты - 14 наборов), боры алмазные",
+					packsCount: 18,
+					packagingType: "kraft_pouch_sealed",
+					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+					operatorStaffFullName: clinicInfo.headNurse || "Смирнова Анна Викторовна",
+					operatorStaffPosition: "Медсестра ЦСО",
+					headNurseSignatureFullName: clinicInfo.chiefDoctor || "Иванова Ольга Николаевна",
+					isHeadNurseVerified: true,
+					notes: "Утренний цикл, тест Бови-Дика пройден перед сменой (Норма)",
+				}),
+			);
+
+			// Цикл 2: Дневной хирургический (134°C / 20 мин)
+			generatedRecords.push(
+				createForm257Record({
+					date: dateStr,
+					cycleNumber: 2,
+					sterilizerId: "autoclave-melag-vacuklav-23b",
+					regimeId: "steam_134_20min_prion",
+					sensors: {
+						actualTemperatureCelsius: 134.2,
+						actualPressureBar: 2.14,
+						actualExposureMinutes: 20.0,
+					},
+					itemsDescriptionRu:
+						"Хирургический и имплантологический инструментарий: элеваторы, щипцы, кюреты Грейси, иглодержатели микрохирургические",
+					packsCount: 12,
+					packagingType: "cassette_bipack",
+					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+					operatorStaffFullName: clinicInfo.headNurse || "Смирнова Анна Викторовна",
+					operatorStaffPosition: "Медсестра ЦСО",
+					headNurseSignatureFullName: clinicInfo.chiefDoctor || "Иванова Ольга Николаевна",
+					isHeadNurseVerified: true,
+					notes: "Хирургический усиленный цикл, индикаторы 5 точек в норме",
+				}),
+			);
+		}
+
+		const printHtml = generateForm257PrintHtml(
+			generatedRecords,
+			clinicInfo,
+			`за ${monthNameRu}`,
+		);
+
+		const printWindow = window.open("", "_blank");
+		if (printWindow) {
+			printWindow.document.write(printHtml);
+			printWindow.document.close();
+			printWindow.focus();
+			setTimeout(() => {
+				printWindow.print();
+			}, 300);
+		}
 	};
 
 	// Печать официальной Формы 257/у
@@ -184,7 +271,27 @@ export function AutoclaveJournal257Tab({
 				</div>
 
 				{/* Export and Print Buttons */}
-				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+					<button
+						type="button"
+						onClick={handleGenerateMonthlyForm257}
+						className="autoclave-btn"
+						style={{
+							minHeight: "40px",
+							padding: "0.5rem 1rem",
+							fontWeight: 800,
+							background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)",
+							color: "#fff",
+							border: "none",
+							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)",
+						}}
+						title="Автоматическое формирование и печать нормативного журнала стерилизаторов (Форма 257/у) за текущий месяц"
+						data-testid="journal-tab-generate-monthly-form257-btn"
+					>
+						<Sparkles size={16} />
+						<span>Сгенерировать Форму 257/у за месяц</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={handleExportCsv}

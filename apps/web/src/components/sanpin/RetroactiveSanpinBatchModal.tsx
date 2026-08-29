@@ -142,7 +142,7 @@ export function RetroactiveSanpinBatchModal({
 
 		const stats = calculateRetroactiveBatchStats(days);
 		showToast(
-			`🚀 Журналы СанПиН рассчитаны: ${days.length} смен (${stats.workingDaysCount} рабочих), ${stats.totalTraysProcessed} лотков, ${stats.totalPsoSamplesTested} проб ПСО.`,
+			`Журналы СанПиН рассчитаны: ${days.length} смен (${stats.workingDaysCount} рабочих), ${stats.totalTraysProcessed} лотков, ${stats.totalPsoSamplesTested} проб ПСО.`,
 			"success",
 		);
 	};
@@ -215,7 +215,7 @@ export function RetroactiveSanpinBatchModal({
 			);
 
 			showToast(
-				`💾 Все журналы СанПиН за период (${stats.workingDaysCount} рабочих смен) успешно внесены в реестры клиники и заверены ЭЦП!`,
+				`Все журналы СанПиН за период (${stats.workingDaysCount} рабочих смен) успешно внесены в реестры клиники и заверены ЭЦП!`,
 				"success",
 			);
 			if (onSuccess) {
@@ -589,7 +589,7 @@ export function RetroactiveSanpinBatchModal({
 						data-testid="modal-execute-sanpin-batch-1click-btn"
 					>
 						<Rocket size={22} color="#ffffff" />
-						🚀 Заполнить все журналы СанПиН за период в 1 клик
+						<span>Заполнить все журналы СанПиН за период в 1 клик</span>
 					</button>
 
 					{/* Preview Table */}
@@ -704,7 +704,7 @@ export function RetroactiveSanpinBatchModal({
 															/>
 														</td>
 														<td>
-															<span className="sanpin-tag sanpin-tag-success">🟢 Норма</span>
+															<span className="sanpin-tag sanpin-tag-success"><Check size={12} /> Норма</span>
 														</td>
 														<td style={{ textAlign: "center" }}>
 															<div style={{ display: "flex", gap: "0.2rem", justifyContent: "center" }}>
@@ -839,7 +839,7 @@ export function RetroactiveSanpinBatchModal({
 						}}
 						data-testid="modal-print-batch-dossier-btn"
 					>
-						<Printer size={16} /> 🖨️ Распечатать готовые сшивы
+						<Printer size={16} /> <span>Распечатать готовые сшивы</span>
 					</button>
 
 					<button
@@ -856,7 +856,7 @@ export function RetroactiveSanpinBatchModal({
 						data-testid="modal-save-batch-to-registers-btn"
 					>
 						<Save size={16} />
-						{isSaving ? "Сохранение..." : "💾 Сохранить в реестры клиники"}
+						<span>{isSaving ? "Сохранение..." : "Сохранить в реестры клиники"}</span>
 					</button>
 				</div>
 			</div>

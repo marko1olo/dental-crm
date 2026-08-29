@@ -1,5 +1,5 @@
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, Flame, Stethoscope, UserSearch } from "lucide-react";
-import React, { type ReactElement } from "react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, Flame, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3 } from "lucide-react";
+import React, { type ReactElement, useState, useRef, useEffect } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
 
@@ -48,6 +48,17 @@ export interface ScheduleFilterStripProps {
 	onEmergencyCitoBooking?: () => void;
 	onOpenTomorrowReminders?: () => void;
 	onQuickBookRepeatOffset?: (daysOffset: 7 | 14 | 30) => void;
+	onToggleShiftAnalytics?: () => void;
+	showShiftAnalytics?: boolean;
+	onOpenShiftRoster?: () => void;
+	onOpenWaitlist?: () => void;
+	waitlistCount?: number;
+	onToggleConfirmations?: () => void;
+	showConfirmationsPanel?: boolean;
+	onToggleFreedSlots?: () => void;
+	showFreedSlotsPanel?: boolean;
+	onToggleClipboard?: () => void;
+	showClipboardPanel?: boolean;
 }
 
 export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
@@ -58,9 +69,11 @@ export function formatChairSpecialtyLabel(rawSpec?: string | null): string | nul
 }
 
 /**
- * ScheduleFilterStrip component for filtering schedule view by date, doctor, or chair,
- * with integrated view mode switcher, emergency CITO booking, and quick booking trigger.
- * Ensures strict vertical alignment and >=44px touch targets on mobile viewports.
+ * ScheduleFilterStrip component for filtering schedule view by date, doctor, or chair.
+ * ZERO-CLUTTER LAW: Compressed into STRICTLY 1 COMPACT ROW (36px) with:
+ * - Left: Date stepper (< dd.mm.yyyy 📅 >)
+ * - Center: 1-line horizontal scrollable doctor & chair chips
+ * - Right: [⋮ Опции] dropdown menu (holding all 15 secondary modes) + STRICTLY 1 Primary "+ Запись" button.
  */
 export function ScheduleFilterStrip({
 	scheduleDateFilter,
@@ -86,12 +99,38 @@ export function ScheduleFilterStrip({
 	onEmergencyCitoBooking,
 	onOpenTomorrowReminders,
 	onQuickBookRepeatOffset,
+	onToggleShiftAnalytics,
+	showShiftAnalytics = false,
+	onOpenShiftRoster,
+	onOpenWaitlist,
+	waitlistCount = 0,
+	onToggleConfirmations,
+	showConfirmationsPanel = false,
+	onToggleFreedSlots,
+	showFreedSlotsPanel = false,
+	onToggleClipboard,
+	showClipboardPanel = false,
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
 	const todayIso = new Date().toISOString().slice(0, 10);
 	const tomorrowIso = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 	const currentDateIso = scheduleDateFilter || todayIso;
+
+	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
+	const optionsMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleOutside = (e: MouseEvent) => {
+			if (optionsMenuRef.current && !optionsMenuRef.current.contains(e.target as Node)) {
+				setIsOptionsMenuOpen(false);
+			}
+		};
+		if (isOptionsMenuOpen) {
+			document.addEventListener("mousedown", handleOutside);
+		}
+		return () => document.removeEventListener("mousedown", handleOutside);
+	}, [isOptionsMenuOpen]);
 
 	// Real selected date formatted as dd.MM.yyyy
 	const formattedCurrentDate = (() => {
@@ -116,236 +155,46 @@ export function ScheduleFilterStrip({
 
 	return (
 		<section
-			className="schedule-filter-strip flex flex-col gap-2 px-3 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper)] max-w-full"
+			className="schedule-filter-strip h-9 min-h-[36px] max-h-[36px] flex items-center justify-between gap-1.5 px-2 sm:px-3 py-0 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
 			aria-label="Сохраненные фильтры расписания"
 		>
-			{/* Row 1: Date picker, Quick date offsets & Action Controls */}
-			<div className="flex flex-wrap items-center justify-between gap-2 w-full">
-				<div className="flex items-center gap-2 flex-wrap">
-					{/* Date control group */}
-					<div className="schedule-date-picker-group flex items-center gap-1.5 shrink-0 pr-2 border-r border-[var(--line)]">
-						<div className="schedule-date-stepper inline-flex items-center gap-1">
-							<button
-								type="button"
-								className="secondary-button schedule-day-step-prev h-8 w-8 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
-								onClick={() => stepScheduleDay(-1)}
-								aria-label="Показать предыдущий день"
-								title="День назад"
-							>
-								<ChevronLeft size={15} aria-hidden="true" />
-							</button>
-							<input
-								type="date"
-								aria-label="Фильтр расписания по дате"
-								value={currentDateIso}
-								onChange={(event) => setScheduleDateFilter(event.target.value)}
-								placeholder={formattedCurrentDate}
-								title={`Выбранная дата: ${formattedCurrentDate}`}
-								className="schedule-date-input h-8 px-2 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all"
-							/>
-							<button
-								type="button"
-								className="secondary-button schedule-day-step-next h-8 w-8 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
-								onClick={() => stepScheduleDay(1)}
-								aria-label="Показать следующий день"
-								title="День вперёд"
-							>
-								<ChevronRight size={15} aria-hidden="true" />
-							</button>
-						</div>
-
-						{/* Quick Day Switchers: [Завтра], [Вся неделя] */}
-						<div className="inline-flex items-center gap-1 shrink-0">
-							<button
-								type="button"
-								onClick={() => setScheduleDateFilter(tomorrowIso)}
-								className={`h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
-									scheduleDateFilter === tomorrowIso
-										? "bg-[var(--teal-dark)] text-white shadow-2xs border border-transparent"
-										: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)]"
-								}`}
-								title="Расписание на завтра"
-							>
-								<span className="whitespace-nowrap">Завтра</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									if (onSelectWholeWeek) {
-										onSelectWholeWeek();
-									} else if (setScheduleViewMode) {
-										setScheduleViewMode("timeline");
-									}
-								}}
-								className="h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1.5"
-								title="Обзор на всю неделю"
-							>
-								<span className="whitespace-nowrap">Вся неделя</span>
-							</button>
-						</div>
-
-						{/* 1-Click Fast Repeat Booking Presets: [+ Через 7 дней], [+ Через 14 дней], [+ Через 1 месяц] */}
-						<div className="flex items-center gap-1 pl-1 border-l border-[var(--line)] shrink-0 overflow-x-auto scrollbar-none">
-							<button
-								type="button"
-								onClick={() => handleRepeatBookingOffset(7)}
-								className="h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
-								title="1-Клик: Быстрая повторная запись через 7 дней у того же врача"
-								aria-label="Записать через 7 дней"
-							>
-								<Calendar size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-								<span className="whitespace-nowrap">+ Через 7 дней</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => handleRepeatBookingOffset(14)}
-								className="h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
-								title="1-Клик: Быстрая повторная запись через 14 дней у того же врача"
-								aria-label="Записать через 14 дней"
-							>
-								<Calendar size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-								<span className="whitespace-nowrap">+ Через 14 дней</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => handleRepeatBookingOffset(30)}
-								className="h-8 px-2.5 min-w-fit whitespace-nowrap rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
-								title="1-Клик: Быстрая повторная запись через 1 месяц (30 дней) у того же врача"
-								aria-label="Записать через 1 месяц"
-							>
-								<Calendar size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-								<span className="whitespace-nowrap">+ Через 1 месяц</span>
-							</button>
-						</div>
-					</div>
-				</div>
-
-				{/* Integrated View Switcher & Action Controls */}
-				<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0">
-					{onOpenPatientSearch && (
-						<button
-							type="button"
-							onClick={onOpenPatientSearch}
-							className="secondary-button h-8 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] hover:text-[var(--teal,var(--brand-primary))] shrink-0"
-							title="Мгновенный поиск пациента по телефону или фамилии (Ctrl+K)"
-							aria-label="Поиск пациента"
-						>
-							<UserSearch size={14} className="text-[var(--teal,var(--brand-primary))]" />
-							<span className="hidden md:inline">Пациент</span>
-						</button>
-					)}
-					{onToggleSmartAi && (
-						<button
-							type="button"
-							onClick={onToggleSmartAi}
-							className={`secondary-button h-8 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] ${
-								isSmartAiOpen ? "border-[var(--teal-dark)] text-[var(--teal-dark)] bg-[var(--teal-soft,var(--paper-soft))]" : ""
-							}`}
-							title="Голосовой и текстовый ИИ ввод записи"
-						>
-							<Bot size={14} className="text-[var(--teal,var(--brand-primary))]" />
-							<span className="hidden md:inline">Записать словами</span>
-						</button>
-					)}
-
-					{setScheduleViewMode && (
-						<div
-							className="h-8 flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] shrink-0"
-							role="tablist"
-							aria-label="Вид расписания"
-						>
-							<button
-								type="button"
-								onClick={() => setScheduleViewMode("timeline")}
-								className={`h-7 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all cursor-pointer ${
-									scheduleViewMode === "timeline"
-										? "bg-[var(--teal-dark)] text-white shadow-2xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
-								role="tab"
-								aria-selected={scheduleViewMode === "timeline"}
-								title="Лента по дням"
-							>
-								<List size={14} />
-								<span className="hidden lg:inline">Лента</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => setScheduleViewMode("grid")}
-								className={`h-7 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all cursor-pointer ${
-									scheduleViewMode === "grid"
-										? "bg-[var(--teal-dark)] text-white shadow-2xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
-								role="tab"
-								aria-selected={scheduleViewMode === "grid"}
-								title="Сетка по креслам"
-							>
-								<LayoutGrid size={14} />
-								<span className="hidden lg:inline">Сетка</span>
-							</button>
-						</div>
-					)}
-
-					{onOpenDoctorFreeSlots && (
-						<button
-							type="button"
-							onClick={onOpenDoctorFreeSlots}
-							className="secondary-button h-8 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] shrink-0"
-							title="Поиск свободных окон врача на 7–14 дней"
-						>
-							<Search size={14} className="text-[var(--teal,var(--brand-primary))]" />
-							<span className="hidden md:inline">Свободные окна</span>
-						</button>
-					)}
-
-					{onOpenTomorrowReminders && (
-						<button
-							type="button"
-							onClick={onOpenTomorrowReminders}
-							className="secondary-button h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] shrink-0 shadow-2xs"
-							title="1-клик массовая рассылка напоминаний и инструкций пациентам на завтра"
-							aria-label="Напомнить всем на завтра: рассылка WhatsApp и СМС"
-						>
-							<Send size={14} className="text-[var(--teal,var(--brand-primary))]" />
-							<span className="hidden sm:inline">Напомнить на завтра</span>
-							<span className="sm:hidden">Напомнить</span>
-						</button>
-					)}
-
-					{onEmergencyCitoBooking && (
-						<button
-							type="button"
-							onClick={onEmergencyCitoBooking}
-							className="h-8 px-3 py-1 rounded-lg border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
-							title="Пациент с острой болью (CITO!) — экстренная 1-клик вставка слота дежурному врачу (Горячая клавиша C)"
-							aria-label="Пациент с острой болью CITO: быстрая запись дежурному врачу"
-						>
-							<Flame size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
-							<span className="whitespace-nowrap">Острая боль (CITO!)</span>
-						</button>
-					)}
-
-					{onQuickBooking && (
-						<button
-							type="button"
-							onClick={onQuickBooking}
-							className="primary-button h-8 px-3.5 py-1 rounded-lg bg-[var(--teal-dark)] hover:brightness-110 active:scale-95 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0 border border-transparent whitespace-nowrap"
-							title="Быстрая 1-клик запись на прием (горячая клавиша N)"
-						>
-							<Sparkles size={14} />
-							<span className="whitespace-nowrap">+ Быстрая запись (N)</span>
-						</button>
-					)}
-				</div>
-			</div>
-
-			{/* Row 2: Horizontal Scrollable Chips Container */}
-			<div className="schedule-filter-chips flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none w-full py-1 border-t border-[var(--line)]/50 pt-2 pr-24 sm:pr-0">
-				{/* "Все записи" filter chip button */}
+			{/* Left: Date Stepper (< dd.mm.yyyy >) */}
+			<div className="schedule-date-picker-group flex items-center gap-0.5 shrink-0 pr-1.5 border-r border-[var(--line)]">
 				<button
 					type="button"
-					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} h-7.5 px-3 min-w-fit whitespace-nowrap text-xs font-medium shrink-0 cursor-pointer`}
+					className="secondary-button schedule-day-step-prev h-7 w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
+					onClick={() => stepScheduleDay(-1)}
+					aria-label="Показать предыдущий день"
+					title="День назад"
+				>
+					<ChevronLeft size={14} aria-hidden="true" />
+				</button>
+				<input
+					type="date"
+					aria-label="Фильтр расписания по дате"
+					value={currentDateIso}
+					onChange={(event) => setScheduleDateFilter(event.target.value)}
+					placeholder={formattedCurrentDate}
+					title={`Выбранная дата: ${formattedCurrentDate}`}
+					className="schedule-date-input h-7 px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[105px] sm:w-[125px]"
+				/>
+				<button
+					type="button"
+					className="secondary-button schedule-day-step-next h-7 w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all"
+					onClick={() => stepScheduleDay(1)}
+					aria-label="Показать следующий день"
+					title="День вперёд"
+				>
+					<ChevronRight size={14} aria-hidden="true" />
+				</button>
+			</div>
+
+			{/* Center: 1-line horizontal scrollable doctor & chair filters */}
+			<div className="schedule-filter-chips flex-1 flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0">
+				{/* "Все записи" filter chip */}
+				<button
+					type="button"
+					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} h-7 px-2.5 min-w-fit whitespace-nowrap text-xs font-semibold shrink-0 cursor-pointer rounded-lg`}
 					onClick={resetScheduleFilters}
 				>
 					Все записи
@@ -363,7 +212,7 @@ export function ScheduleFilterStrip({
 							<button
 								key={member.id}
 								type="button"
-								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} h-7.5 min-w-fit flex-shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer`}
+								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} h-7 min-w-fit flex-shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg`}
 								onClick={() =>
 									setScheduleDoctorFilterId(
 										scheduleDoctorFilterId === member.id ? null : member.id,
@@ -379,7 +228,7 @@ export function ScheduleFilterStrip({
 							</button>
 						))}
 
-				{/* Chair filter chips */}
+				{/* Chair filter chips with specializations */}
 				{displayChairs.map((chair) => {
 					const specName = formatChairSpecialtyLabel(chair?.specialization);
 					const chairLabel = specName && !chair.name.includes("(")
@@ -390,7 +239,7 @@ export function ScheduleFilterStrip({
 						<button
 							key={chair.id}
 							type="button"
-							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} h-7.5 min-w-fit flex-shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer flex items-center gap-1.5`}
+							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} h-7 min-w-fit flex-shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg flex items-center gap-1`}
 							onClick={() =>
 								setScheduleChairFilterId(
 									scheduleChairFilterId === chair.id ? null : chair.id,
@@ -401,7 +250,7 @@ export function ScheduleFilterStrip({
 						>
 							<span className="whitespace-nowrap">{chairLabel}</span>
 							{chair.room && (
-								<span className="text-[10px] opacity-75 font-normal px-1 py-0.2 rounded bg-black/5 dark:bg-white/10 shrink-0 whitespace-nowrap">
+								<span className="text-[9px] opacity-75 font-normal px-1 py-0.2 rounded bg-black/5 dark:bg-white/10 shrink-0 whitespace-nowrap">
 									{chair.room.split(" ")[0]}
 								</span>
 							)}
@@ -409,6 +258,320 @@ export function ScheduleFilterStrip({
 					);
 				})}
 			</div>
+
+			{/* Right: [⋮ Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
+			<div className="flex items-center gap-1.5 shrink-0 pl-1 border-l border-[var(--line)]">
+				{/* Secondary Actions Overflow Dropdown Menu */}
+				<div className="relative inline-flex items-center" ref={optionsMenuRef}>
+					<button
+						type="button"
+						onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
+						className="h-7.5 px-2 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+						title="Дополнительные режимы и списки расписания"
+						aria-label="Опции расписания"
+						aria-expanded={isOptionsMenuOpen}
+					>
+						<MoreVertical size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+						<span className="hidden sm:inline">Опции</span>
+					</button>
+
+					<div
+						className={`schedule-options-dropdown absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[240px] max-h-[82vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-100 text-xs ${
+							isOptionsMenuOpen ? "flex" : "hidden"
+						}`}
+						role="menu"
+						aria-hidden={!isOptionsMenuOpen}
+					>
+							{/* Quick dates */}
+							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+								Навигация по датам
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									setScheduleDateFilter(tomorrowIso);
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								role="menuitem"
+							>
+								<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
+								<span>Завтра</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									if (onSelectWholeWeek) {
+										onSelectWholeWeek();
+									} else if (setScheduleViewMode) {
+										setScheduleViewMode("timeline");
+									}
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								role="menuitem"
+							>
+								<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
+								<span>Вся неделя</span>
+							</button>
+
+							{/* Repeat booking offsets */}
+							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
+								Повторный прием (+Повтор)
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									handleRepeatBookingOffset(7);
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+								role="menuitem"
+							>
+								<span>Через 7 дней</span>
+								<span className="text-[10px] font-mono opacity-70">+7д</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									handleRepeatBookingOffset(14);
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+								role="menuitem"
+							>
+								<span>Через 14 дней</span>
+								<span className="text-[10px] font-mono opacity-70">+14д</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									handleRepeatBookingOffset(30);
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+								role="menuitem"
+							>
+								<span>Через 1 месяц</span>
+								<span className="text-[10px] font-mono opacity-70">+30д</span>
+							</button>
+
+							{/* Actions & Utilities */}
+							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
+								Инструменты расписания
+							</div>
+
+							{onOpenPatientSearch && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenPatientSearch();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+									title="Мгновенный поиск пациента по телефону или фамилии (Ctrl+K)"
+								>
+									<UserSearch size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Пациент (Ctrl+K)</span>
+								</button>
+							)}
+
+							{onToggleSmartAi && (
+								<button
+									type="button"
+									onClick={() => {
+										onToggleSmartAi();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<Bot size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Записать словами (ИИ)</span>
+								</button>
+							)}
+
+							{setScheduleViewMode && (
+								<button
+									type="button"
+									onClick={() => {
+										setScheduleViewMode(scheduleViewMode === "timeline" ? "grid" : "timeline");
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									{scheduleViewMode === "timeline" ? (
+										<>
+											<LayoutGrid size={14} className="text-[var(--teal,var(--brand-primary))]" />
+											<span>Сетка по креслам</span>
+										</>
+									) : (
+										<>
+											<List size={14} className="text-[var(--teal,var(--brand-primary))]" />
+											<span>Лента по дням</span>
+										</>
+									)}
+								</button>
+							)}
+
+							{onOpenDoctorFreeSlots && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenDoctorFreeSlots();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<Search size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Свободные окна</span>
+								</button>
+							)}
+
+							{onOpenTomorrowReminders && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenTomorrowReminders();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+									aria-label="Напомнить всем на завтра: рассылка WhatsApp и СМС"
+								>
+									<Send size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Напомнить на завтра</span>
+								</button>
+							)}
+
+							{onEmergencyCitoBooking && (
+								<button
+									type="button"
+									onClick={() => {
+										onEmergencyCitoBooking();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+									aria-label="Пациент с острой болью CITO: быстрая запись дежурному врачу"
+								>
+									<Flame size={14} className="text-rose-600 dark:text-rose-400" />
+									<span>CITO! Острая боль</span>
+								</button>
+							)}
+
+							{/* Secondary Panels and Modes */}
+							{onToggleShiftAnalytics && (
+								<button
+									type="button"
+									onClick={() => {
+										onToggleShiftAnalytics();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<BarChart3 size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>{showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}</span>
+								</button>
+							)}
+
+							{onOpenShiftRoster && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenShiftRoster();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<Users size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>График смен (ТК РФ)</span>
+								</button>
+							)}
+
+							{onOpenWaitlist && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenWaitlist();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<UserPlus size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Лист ожидания {waitlistCount > 0 ? `(${waitlistCount})` : ""}</span>
+								</button>
+							)}
+
+							{onToggleConfirmations && (
+								<button
+									type="button"
+									onClick={() => {
+										onToggleConfirmations();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<PhoneCall size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>{showConfirmationsPanel ? "Скрыть обзвон" : "Утренний обзвон"}</span>
+								</button>
+							)}
+
+							{onToggleFreedSlots && (
+								<button
+									type="button"
+									onClick={() => {
+										onToggleFreedSlots();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<Clock size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>{showFreedSlotsPanel ? "Скрыть окна" : "Освободившиеся окна"}</span>
+								</button>
+							)}
+
+							{onToggleClipboard && (
+								<button
+									type="button"
+									onClick={() => {
+										onToggleClipboard();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<Clipboard size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>{showClipboardPanel ? "Скрыть буфер" : "Буфер расписания"}</span>
+								</button>
+							)}
+						</div>
+				</div>
+
+				{/* STRICTLY 1 PRIMARY ACTION BUTTON: "+ Запись" */}
+				{onQuickBooking && (
+					<button
+						type="button"
+						onClick={onQuickBooking}
+						className="primary-button h-7.5 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-extrabold flex items-center gap-1.5 shrink-0 shadow-sm border border-transparent transition-all cursor-pointer select-none"
+						title="Новая запись пациента на прием (горячая клавиша N)"
+						aria-label="Добавить запись"
+					>
+						<Sparkles size={13} className="shrink-0" />
+						<span className="whitespace-nowrap font-black">+ Запись</span>
+					</button>
+				)}
+			</div>
 		</section>
 	);
 }
+

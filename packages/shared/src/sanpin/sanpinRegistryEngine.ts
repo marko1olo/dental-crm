@@ -1719,9 +1719,9 @@ export function evaluateCabinetReadiness(
 
 	const isFullyReady = missingItems.length === 0;
 	const statusMessageRu = isFullyReady
-		? "🟢 Кабинет стерилен и готов к приёму"
-		: `🔴 Кабинет не готов: ${missingItems.join("; ")}`;
-	const summaryBadgeRu = isFullyReady ? "🟢 Готов к приёму" : "🔴 Не готов";
+		? "Кабинет стерилен и готов к приёму"
+		: `Кабинет не готов: ${missingItems.join("; ")}`;
+	const summaryBadgeRu = isFullyReady ? "Готов к приёму" : "Не готов";
 
 	return {
 		isFullyReady,
@@ -1872,7 +1872,7 @@ export function generateCabinetReadinessPrintHtml(params: {
 				<td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">${r.cabinetNumber}</td>
 				<td style="border: 1px solid #000; padding: 4px;">${r.appointmentTypeTitleRu}</td>
 				<td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: ${r.isFullyReady ? "#059669" : "#dc2626"};">
-					${r.isFullyReady ? "🟢 ГОТОВ" : "🔴 НЕ ГОТОВ"}
+					${r.isFullyReady ? "ГОТОВ" : "НЕ ГОТОВ"}
 				</td>
 				<td style="border: 1px solid #000; padding: 4px; font-size: 8pt;">
 					${r.surfaceDisinfection.disinfectantBrand} (${r.surfaceDisinfection.exposureMinutes} мин)

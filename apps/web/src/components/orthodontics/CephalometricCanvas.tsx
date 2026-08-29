@@ -324,12 +324,17 @@ export function CephalometricCanvas({
 			onDragEnter={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
-			style={{ cursor: isPanning ? "grabbing" : (activeTargetKey && imageUrl) ? "crosshair" : "default" }}
+			style={{
+				backgroundColor: "#020617",
+				borderColor: "#334155",
+				color: "#f8fafc",
+				cursor: isPanning ? "grabbing" : (activeTargetKey && imageUrl) ? "crosshair" : "default",
+			}}
 		>
 			{/* ── UNIFIED 36PX CEPH HUD STRIP: [Пресеты WW/WL] | [Зум/Сброс] | [Скрыть плоскости/полигон] | [Статус] | [Действия] ── */}
 			<div
 				data-testid="ceph-unified-hud-strip"
-				className="absolute top-2 sm:top-2.5 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-700/80 rounded-xl p-1 shadow-2xl backdrop-blur-md min-h-[36px] h-9 select-none overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none pointer-events-auto max-w-full"
+				className="absolute top-2 sm:top-2.5 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center gap-1 sm:gap-1.5 bg-slate-900/95 border border-slate-700/80 rounded-xl p-1 shadow-2xl backdrop-blur-md min-h-[36px] h-9 select-none overflow-x-auto flex-nowrap whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pointer-events-auto max-w-full"
 			>
 				{/* 1. [Пресеты WW/WL] */}
 				<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
@@ -345,7 +350,7 @@ export function CephalometricCanvas({
 							key={flt.id}
 							type="button"
 							onClick={() => onFilterModeChange?.(flt.id)}
-							className={`h-7 min-w-max px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap shrink-0 ${
+							className={`h-7 px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap shrink-0 ${
 								filterMode === flt.id
 									? "bg-teal-950/80 border border-teal-400 text-teal-200 shadow-xs"
 									: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
@@ -360,7 +365,7 @@ export function CephalometricCanvas({
 				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
 
 				{/* 2. [Зум/Сброс] */}
-				<div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
+				<div className="flex items-center gap-0.5 sm:gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
 					<button
 						type="button"
 						disabled={!imageUrl}
@@ -371,7 +376,7 @@ export function CephalometricCanvas({
 					>
 						<ZoomOut size={13} />
 					</button>
-					<span className="text-xs font-mono font-bold text-teal-300 px-1 min-w-[38px] text-center">
+					<span className="text-xs font-mono font-bold text-teal-300 px-1 min-w-[36px] text-center">
 						{Math.round(zoom * 100)}%
 					</span>
 					<button
@@ -401,16 +406,17 @@ export function CephalometricCanvas({
 							setIsCalibrating((prev) => !prev);
 							setCalibrationPoints([]);
 						}}
-						className={`h-7 px-2 rounded-md flex items-center gap-1 text-xs font-bold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+						className={`h-7 min-w-[96px] px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold shrink-0 whitespace-nowrap transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 							isCalibrating
 								? "bg-amber-500 text-slate-950 font-black border border-amber-300 shadow-sm"
 								: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 shadow-sm"
 						}`}
+						style={{ minWidth: "96px", flexShrink: 0, whiteSpace: "nowrap" }}
 						title="Калибровка масштаба по линейке (мм/px)"
 						aria-label="Калибровка масштаба"
 					>
 						<Ruler size={13} className="shrink-0 text-teal-400" />
-						<span>Линейка</span>
+						<span style={{ whiteSpace: "nowrap", flexShrink: 0, fontWeight: 700 }}>Линейка</span>
 					</button>
 				</div>
 
@@ -541,11 +547,16 @@ export function CephalometricCanvas({
 				/* Strict Medical Radiology Dropzone (Drag & Drop ТРГ / DICOM / JPG / PNG) */
 				<div
 					data-testid="ceph-dropzone"
-					className={`w-full max-w-xl mx-3 sm:mx-4 mt-10 sm:mt-12 p-5 sm:p-8 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center select-none ${
+					className={`w-full max-w-xl mx-3 sm:mx-4 mt-10 sm:mt-12 p-5 sm:p-8 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center select-none shadow-2xl ${
 						isDragOver
-							? "border-teal-400 bg-teal-950/60 shadow-2xl scale-[1.01]"
-							: "border-slate-700/80 hover:border-teal-500 bg-slate-900/95 shadow-xl"
+							? "border-teal-400 bg-teal-950/80 scale-[1.01]"
+							: "border-slate-700 hover:border-teal-500 bg-slate-900 text-slate-100"
 					}`}
+					style={{
+						backgroundColor: isDragOver ? "rgba(4, 47, 46, 0.85)" : "#0f172a",
+						borderColor: isDragOver ? "#2dd4bf" : "#334155",
+						color: "#f8fafc",
+					}}
 				>
 					<input
 						ref={fileInputRef}
@@ -562,13 +573,13 @@ export function CephalometricCanvas({
 					<div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-teal-400 mb-3 sm:mb-4 shadow-lg shrink-0">
 						<UploadCloud size={30} />
 					</div>
-					<h3 className="text-sm sm:text-lg font-bold text-slate-100 mb-1 sm:mb-1.5">
+					<h3 className="text-sm sm:text-lg font-black text-white m-0 mb-1.5" style={{ color: "#ffffff" }}>
 						Боковая телерентгенограмма черепа (ТРГ)
 					</h3>
-					<p className="text-xs sm:text-sm text-slate-300 max-w-md mb-2 leading-relaxed">
+					<p className="text-xs sm:text-sm text-slate-200 font-medium max-w-md mb-2 leading-relaxed" style={{ color: "#e2e8f0" }}>
 						Для проведения цефалометрического анализа требуется реальный рентгеновский снимок пациента.
 					</p>
-					<p className="text-[11px] sm:text-xs text-slate-400 mb-4 sm:mb-5 font-mono">
+					<p className="text-[11px] sm:text-xs text-slate-300 mb-4 sm:mb-5 font-mono font-medium" style={{ color: "#cbd5e1" }}>
 						Drag & Drop боковой ТРГ / DICOM / JPG / PNG
 					</p>
 
