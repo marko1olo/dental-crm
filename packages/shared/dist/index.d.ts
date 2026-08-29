@@ -7821,6 +7821,7 @@ export declare const patientSchema: z.ZodObject<{
     phone: string | null;
     email: string | null;
     birthDate: string | null;
+    familyGroupId?: string | null | undefined;
     administrativeProfile?: {
         legalRepresentativeFullName?: string | null | undefined;
         snils?: string | null | undefined;
@@ -7842,7 +7843,6 @@ export declare const patientSchema: z.ZodObject<{
         loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
     } | null | undefined;
     balanceRub?: number | undefined;
-    familyGroupId?: string | null | undefined;
     mergedIntoPatientId?: string | null | undefined;
 }>;
 export type Patient = z.infer<typeof patientSchema>;
@@ -19720,6 +19720,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         phone: string | null;
         email: string | null;
         birthDate: string | null;
+        familyGroupId?: string | null | undefined;
         administrativeProfile?: {
             legalRepresentativeFullName?: string | null | undefined;
             snils?: string | null | undefined;
@@ -19741,7 +19742,6 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
-        familyGroupId?: string | null | undefined;
         mergedIntoPatientId?: string | null | undefined;
     }>;
     clinicProfile: z.ZodObject<{
@@ -20139,6 +20139,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         phone: string | null;
         email: string | null;
         birthDate: string | null;
+        familyGroupId?: string | null | undefined;
         administrativeProfile?: {
             legalRepresentativeFullName?: string | null | undefined;
             snils?: string | null | undefined;
@@ -20160,7 +20161,6 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
-        familyGroupId?: string | null | undefined;
         mergedIntoPatientId?: string | null | undefined;
     };
     createdAt: string;
@@ -27675,6 +27675,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             phone: string | null;
             email: string | null;
             birthDate: string | null;
+            familyGroupId?: string | null | undefined;
             administrativeProfile?: {
                 legalRepresentativeFullName?: string | null | undefined;
                 snils?: string | null | undefined;
@@ -27696,7 +27697,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
-            familyGroupId?: string | null | undefined;
             mergedIntoPatientId?: string | null | undefined;
         }>;
         clinicProfile: z.ZodObject<{
@@ -28094,6 +28094,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             phone: string | null;
             email: string | null;
             birthDate: string | null;
+            familyGroupId?: string | null | undefined;
             administrativeProfile?: {
                 legalRepresentativeFullName?: string | null | undefined;
                 snils?: string | null | undefined;
@@ -28115,7 +28116,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
-            familyGroupId?: string | null | undefined;
             mergedIntoPatientId?: string | null | undefined;
         };
         createdAt: string;
@@ -30887,6 +30887,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             phone: string | null;
             email: string | null;
             birthDate: string | null;
+            familyGroupId?: string | null | undefined;
             administrativeProfile?: {
                 legalRepresentativeFullName?: string | null | undefined;
                 snils?: string | null | undefined;
@@ -30908,7 +30909,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
-            familyGroupId?: string | null | undefined;
             mergedIntoPatientId?: string | null | undefined;
         };
         createdAt: string;
@@ -38485,6 +38485,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             phone: string | null;
             email: string | null;
             birthDate: string | null;
+            familyGroupId?: string | null | undefined;
             administrativeProfile?: {
                 legalRepresentativeFullName?: string | null | undefined;
                 snils?: string | null | undefined;
@@ -38506,7 +38507,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
-            familyGroupId?: string | null | undefined;
             mergedIntoPatientId?: string | null | undefined;
         }>;
         clinicProfile: z.ZodObject<{
@@ -38904,6 +38904,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             phone: string | null;
             email: string | null;
             birthDate: string | null;
+            familyGroupId?: string | null | undefined;
             administrativeProfile?: {
                 legalRepresentativeFullName?: string | null | undefined;
                 snils?: string | null | undefined;
@@ -38925,7 +38926,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
             } | null | undefined;
             balanceRub?: number | undefined;
-            familyGroupId?: string | null | undefined;
             mergedIntoPatientId?: string | null | undefined;
         };
         createdAt: string;
@@ -40826,6 +40826,7 @@ export declare const dashboardSchema: z.ZodObject<{
         phone: string | null;
         email: string | null;
         birthDate: string | null;
+        familyGroupId?: string | null | undefined;
         administrativeProfile?: {
             legalRepresentativeFullName?: string | null | undefined;
             snils?: string | null | undefined;
@@ -40847,7 +40848,6 @@ export declare const dashboardSchema: z.ZodObject<{
             loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
-        familyGroupId?: string | null | undefined;
         mergedIntoPatientId?: string | null | undefined;
     }>, "many">;
     patientInsights: z.ZodArray<z.ZodObject<{
@@ -48573,6 +48573,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 phone: string | null;
                 email: string | null;
                 birthDate: string | null;
+                familyGroupId?: string | null | undefined;
                 administrativeProfile?: {
                     legalRepresentativeFullName?: string | null | undefined;
                     snils?: string | null | undefined;
@@ -48594,7 +48595,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
                 } | null | undefined;
                 balanceRub?: number | undefined;
-                familyGroupId?: string | null | undefined;
                 mergedIntoPatientId?: string | null | undefined;
             }>;
             clinicProfile: z.ZodObject<{
@@ -48992,6 +48992,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 phone: string | null;
                 email: string | null;
                 birthDate: string | null;
+                familyGroupId?: string | null | undefined;
                 administrativeProfile?: {
                     legalRepresentativeFullName?: string | null | undefined;
                     snils?: string | null | undefined;
@@ -49013,7 +49014,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
                 } | null | undefined;
                 balanceRub?: number | undefined;
-                familyGroupId?: string | null | undefined;
                 mergedIntoPatientId?: string | null | undefined;
             };
             createdAt: string;
@@ -50917,6 +50917,7 @@ export declare const dashboardSchema: z.ZodObject<{
         phone: string | null;
         email: string | null;
         birthDate: string | null;
+        familyGroupId?: string | null | undefined;
         administrativeProfile?: {
             legalRepresentativeFullName?: string | null | undefined;
             snils?: string | null | undefined;
@@ -50938,7 +50939,6 @@ export declare const dashboardSchema: z.ZodObject<{
             loyaltyTier?: "silver" | "gold" | "platinum" | "standard" | null | undefined;
         } | null | undefined;
         balanceRub?: number | undefined;
-        familyGroupId?: string | null | undefined;
         mergedIntoPatientId?: string | null | undefined;
     }[];
     payments: {
@@ -52373,15 +52373,15 @@ export declare const updatePatientSchema: z.ZodObject<{
     fullName?: string | undefined;
     phone?: string | null | undefined;
     email?: string | null | undefined;
-    birthDate?: string | null | undefined;
     familyGroupId?: string | null | undefined;
+    birthDate?: string | null | undefined;
 }, {
     notes?: string | null | undefined;
     fullName?: string | undefined;
     phone?: string | null | undefined;
     email?: string | null | undefined;
-    birthDate?: string | null | undefined;
     familyGroupId?: string | null | undefined;
+    birthDate?: string | null | undefined;
 }>;
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
 export declare const updatePatientAdministrativeProfileSchema: z.ZodEffects<z.ZodObject<{

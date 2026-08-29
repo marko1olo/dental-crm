@@ -90,24 +90,50 @@ export function calculateDoctorPeriodPayroll(input) {
     let totalMaterial = 0;
     let earnedBase = 0;
     let earnedRetail = 0;
+    let refundedServicesCount = 0;
+    let totalItemRefundsKop = 0;
     for (const item of input.services) {
-        totalGross += item.grossRevenueKop;
+        const isFullyRefunded = item.isRefunded === true || (item.refundedAmountKop && item.refundedAmountKop >= item.grossRevenueKop);
+        const refundKop = Math.min(item.grossRevenueKop, item.refundedAmountKop ?? (item.isRefunded ? item.grossRevenueKop : 0));
+        if (isFullyRefunded) {
+            refundedServicesCount += 1;
+            totalItemRefundsKop += item.grossRevenueKop;
+            continue;
+        }
+        const effectiveGrossKop = Math.max(0, item.grossRevenueKop - refundKop);
+        if (refundKop > 0) {
+            refundedServicesCount += 1;
+            totalItemRefundsKop += refundKop;
+        }
+        totalGross += effectiveGrossKop;
         const labCost = preset.deductsLabCosts ? item.labCostKop : 0;
         const materialCost = preset.deductsMaterialCosts ? item.materialCostKop : 0;
         totalLab += labCost;
         totalMaterial += materialCost;
         if (item.category === "retail_hygiene") {
             const itemRetailPercent = item.customCommissionPercent ?? preset.retailProductsPercentage;
-            const retailEarned = Math.round((item.grossRevenueKop * itemRetailPercent) / 100);
+            const retailEarned = Math.round((effectiveGrossKop * itemRetailPercent) / 100);
             earnedRetail += retailEarned;
         }
         else {
-            const netItemBase = Math.max(0, item.grossRevenueKop - labCost - materialCost);
+            const netItemBase = Math.max(0, effectiveGrossKop - labCost - materialCost);
             const itemCommissionPercent = item.customCommissionPercent ?? basePercent;
             const itemEarned = Math.round((netItemBase * itemCommissionPercent) / 100);
             earnedBase += itemEarned;
         }
     }
+    // External explicit refund deductions
+    let explicitRefundKop = 0;
+    let explicitRefundClawbackKop = 0;
+    if (input.refundDeductions && input.refundDeductions.length > 0) {
+        for (const ref of input.refundDeductions) {
+            explicitRefundKop += ref.refundedGrossKop;
+            explicitRefundClawbackKop += Math.round((ref.refundedGrossKop * basePercent) / 100);
+            refundedServicesCount += 1;
+        }
+    }
+    const totalRefundDeductionsKop = totalItemRefundsKop + explicitRefundKop;
+    const totalRefundClawbackKop = explicitRefundClawbackKop;
     const totalNetBase = Math.max(0, totalGross - totalLab - totalMaterial);
     // KPI Bonus evaluation
     let kpiPercent = 0;
@@ -121,7 +147,7 @@ export function calculateDoctorPeriodPayroll(input) {
     }
     const kpiBonusEarned = Math.round((totalNetBase * kpiPercent) / 100);
     const manualAdj = input.manualAdjustmentKop ?? 0;
-    let preGuaranteePayout = earnedBase + earnedRetail + kpiBonusEarned + manualAdj;
+    let preGuaranteePayout = earnedBase + earnedRetail + kpiBonusEarned + manualAdj - totalRefundClawbackKop;
     let guaranteeApplied = false;
     if (preGuaranteePayout < preset.minGuaranteeMonthlyKop && input.services.length > 0) {
         preGuaranteePayout = preset.minGuaranteeMonthlyKop;
@@ -139,6 +165,9 @@ export function calculateDoctorPeriodPayroll(input) {
         totalLabDeductionsKop: totalLab,
         totalMaterialDeductionsKop: totalMaterial,
         totalNetBaseKop: totalNetBase,
+        totalRefundDeductionsKop,
+        totalRefundClawbackKop,
+        refundedServicesCount,
         baseCommissionPercent: basePercent,
         earnedBaseCommissionKop: earnedBase,
         kpiBonusPercent: kpiPercent,

@@ -37,6 +37,8 @@ export interface DoctorCompletedServiceItem {
     readonly labCostKop: number;
     readonly materialCostKop: number;
     readonly customCommissionPercent?: number | undefined;
+    readonly isRefunded?: boolean | undefined;
+    readonly refundedAmountKop?: number | undefined;
 }
 export interface DoctorPayrollCalculationInput {
     readonly doctorId: string;
@@ -48,6 +50,13 @@ export interface DoctorPayrollCalculationInput {
     readonly customBasePercentage?: number | undefined;
     readonly manualAdjustmentKop?: number | undefined;
     readonly manualAdjustmentNoteRu?: string | undefined;
+    readonly refundDeductions?: readonly {
+        readonly serviceId?: string | undefined;
+        readonly toothCode?: string | undefined;
+        readonly serviceNameRu?: string | undefined;
+        readonly refundedGrossKop: number;
+        readonly reasonRu?: string | undefined;
+    }[] | undefined;
 }
 export interface DoctorPayrollResult {
     readonly doctorId: string;
@@ -58,6 +67,9 @@ export interface DoctorPayrollResult {
     readonly totalLabDeductionsKop: number;
     readonly totalMaterialDeductionsKop: number;
     readonly totalNetBaseKop: number;
+    readonly totalRefundDeductionsKop: number;
+    readonly totalRefundClawbackKop: number;
+    readonly refundedServicesCount: number;
     readonly baseCommissionPercent: number;
     readonly earnedBaseCommissionKop: number;
     readonly kpiBonusPercent: number;

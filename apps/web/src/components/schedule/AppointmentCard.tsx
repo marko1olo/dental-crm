@@ -6,7 +6,7 @@ import type {
 	ScheduleSuggestion,
 } from "@dental/shared";
 import React, { type ChangeEvent, useCallback, useMemo, useState } from "react";
-import { AlertTriangle, Check, Clock, Copy, MessageSquare, Phone, User, Zap } from "lucide-react";
+import { AlertTriangle, Check, Clock, Copy, CreditCard, MessageSquare, Phone, User, Zap } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
@@ -529,6 +529,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					onBlur={() => setIsHoverPreviewOpen(false)}
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
 					className={`appointment-card mode-fit-card glass-panel rounded-xl p-3 mb-2 shadow-xs transition-all focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 max-w-full relative ${
+						patientBalance !== null && patientBalance < 0 ? "border-l-4 border-l-rose-500" : ""
+					} ${
 						isCito
 							? "border-rose-500 ring-2 ring-rose-500/40 bg-rose-500/5"
 							: displayStatus === "confirmed"
@@ -570,7 +572,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											patientBalance > 0
 												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
 												: patientBalance < 0
-													? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
+													? "bg-rose-500/20 text-rose-800 dark:text-rose-100 border border-rose-500"
 													: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
 										}`}
 									>
@@ -655,10 +657,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							{patientBalance !== null ? (
 								patientBalance < 0 ? (
 									<span
-										className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono tracking-tight bg-rose-500/15 text-rose-700 dark:text-rose-200 dark:bg-rose-950/50 border border-rose-500/40 shadow-xs"
+										className="px-2.5 py-1 rounded-lg text-xs font-black font-mono tracking-tight bg-rose-500/20 text-rose-800 dark:text-rose-100 dark:bg-rose-950/70 border-2 border-rose-500 shadow-xs flex items-center gap-1 shrink-0"
 										title={`Задолженность пациента: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`}
+										data-testid="appointment-debt-badge"
 									>
-										Долг: {Math.abs(patientBalance).toLocaleString("ru-RU")} ₽
+										<CreditCard size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
+										<span>Долг: {Math.abs(patientBalance).toLocaleString("ru-RU")} ₽</span>
 									</span>
 								) : patientBalance > 0 ? (
 									<span

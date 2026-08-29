@@ -41,9 +41,11 @@ import {
 	formatFdiToothName,
 	formatRussianPhone,
 	generateFnsTaxCertificateData,
+	generateSbpPaymentQrPayload,
 	generateSmsOtpCode,
 	verifySmsOtpCode,
 } from "./patientPortalEngine";
+import { generateQrCodeSvg } from "./patientCabinet/patientCabinetEngine";
 import {
 	SAMPLE_FISCAL_RECEIPT_1,
 	SAMPLE_PORTAL_DOCUMENTS,
@@ -1030,8 +1032,8 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 			{/* ============================================================ */}
 			{selectedScan && (
 				<div className="patient-portal-overlay z-50" data-testid="radiology-scan-viewer-modal">
-					<div className="bg-[var(--paper,#1e293b)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-4 max-w-2xl w-full flex flex-col gap-3 shadow-2xl">
-						<div className="flex items-center justify-between border-b border-[var(--line,rgba(255,255,255,0.1))] pb-3">
+					<div className="bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)] border border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-4 max-w-2xl w-full flex flex-col gap-3 shadow-2xl">
+						<div className="flex items-center justify-between border-b border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.1))] pb-3">
 							<div>
 								<h3 className="font-bold text-sm text-[var(--ink,#f8fafc)] flex items-center gap-2">
 									<Scan className="w-4 h-4 text-teal-400" />
@@ -1120,15 +1122,15 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 			{/* ============================================================ */}
 			{activeFiscalReceipt && (
 				<div className="patient-portal-overlay z-50" data-testid="fiscal-receipt-modal">
-					<div className="bg-[var(--paper,#1e293b)] border border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-4 max-w-sm w-full flex flex-col gap-3 shadow-2xl">
-						<div className="flex items-center justify-between pb-2 border-b border-[var(--line,rgba(255,255,255,0.1))]">
-							<h3 className="font-bold text-xs text-[var(--ink,#f8fafc)]">
+					<div className="bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)] border border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-4 max-w-sm w-full flex flex-col gap-3 shadow-2xl">
+						<div className="flex items-center justify-between pb-2 border-b border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.1))]">
+							<h3 className="font-bold text-xs text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)]">
 								Кассовый чек (54-ФЗ ОФД)
 							</h3>
 							<button
 								type="button"
 								onClick={() => setActiveFiscalReceipt(null)}
-								className="p-1 rounded-xl text-[var(--muted,#94a3b8)] hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+								className="p-1 rounded-xl text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] hover:text-slate-900 dark:hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
 								data-testid="close-fiscal-receipt-btn"
 							>
 								<X className="w-4 h-4" />
@@ -1182,8 +1184,8 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 			{/* ============================================================ */}
 			{payingInvoice && (
 				<div className="patient-portal-overlay z-50" data-testid="sbp-payment-modal">
-					<div className="bg-[var(--paper,#1e293b)] border border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-5 max-w-sm w-full flex flex-col gap-4 shadow-2xl">
-						<div className="flex items-center justify-between pb-2 border-b border-[var(--line,rgba(255,255,255,0.1))]">
+					<div className="bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)] border border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-5 max-w-sm w-full flex flex-col gap-4 shadow-2xl">
+						<div className="flex items-center justify-between pb-2 border-b border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.1))]">
 							<div className="sbp-logo-badge">
 								<QrCode className="w-4 h-4 text-blue-700" />
 								<span>СБП ПЛАТЕЖ</span>
@@ -1191,7 +1193,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							<button
 								type="button"
 								onClick={() => setPayingInvoice(null)}
-								className="p-1 rounded-xl text-[var(--muted,#94a3b8)] hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+								className="p-1 rounded-xl text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] hover:text-slate-900 dark:hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
 								data-testid="close-sbp-modal-btn"
 							>
 								<X className="w-4 h-4" />
@@ -1200,28 +1202,39 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 
 						{paymentSuccess ? (
 							<div className="py-8 flex flex-col items-center text-center gap-3">
-								<div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center animate-bounce">
+								<div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center animate-bounce">
 									<CheckCircle2 className="w-10 h-10" />
 								</div>
-								<div className="font-bold text-base text-[var(--ink,#f8fafc)]">Оплата успешно проведена!</div>
-								<p className="text-xs text-[var(--muted,#94a3b8)]">
+								<div className="font-bold text-base text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)]">Оплата успешно проведена!</div>
+								<p className="text-xs text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)]">
 									Счет {payingInvoice.invoiceNumber} оплачен. Фискальный чек отправлен в личный кабинет и налоговую по 54-ФЗ.
 								</p>
 							</div>
 						) : (
 							<div className="flex flex-col items-center text-center gap-3">
 								<div>
-									<div className="text-xs text-[var(--muted,#94a3b8)]">К оплате по счету {payingInvoice.invoiceNumber}:</div>
-									<div className="text-2xl font-black text-[var(--ink,#f8fafc)] mt-1">
+									<div className="text-xs text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)]">К оплате по счету {payingInvoice.invoiceNumber}:</div>
+									<div className="text-2xl font-black text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)] mt-1">
 										{payingInvoice.remainingAmountRub.toLocaleString("ru-RU")} ₽
 									</div>
 								</div>
 
-								<div className="p-3 bg-white rounded-2xl shadow-inner border border-slate-200">
-									<QrCode className="w-40 h-40 text-slate-900" />
-								</div>
+								<div
+									className="p-3 bg-white rounded-2xl shadow-inner border border-slate-200 flex items-center justify-center mx-auto"
+									dangerouslySetInnerHTML={{
+										__html: generateQrCodeSvg(
+											generateSbpPaymentQrPayload(
+												payingInvoice.id,
+												payingInvoice.remainingAmountRub,
+												`Оплата по счету ${payingInvoice.invoiceNumber}`,
+											),
+											{ size: 160, color: "#0f172a", background: "#ffffff" },
+										),
+									}}
+									data-testid="sbp-mobile-qr-svg-wrapper"
+								/>
 
-								<p className="text-xs text-[var(--muted,#94a3b8)] leading-relaxed">
+								<p className="text-xs text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] leading-relaxed">
 									Отсканируйте QR-код в приложении любого банка (Сбер, Т-Банк, ВТБ, Альфа) без комиссии.
 								</p>
 
@@ -1245,19 +1258,19 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 			{/* ============================================================ */}
 			{showTaxCertificate && (
 				<div className="patient-portal-overlay z-50" data-testid="tax-certificate-modal">
-					<div className="bg-[var(--paper,#1e293b)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-5 max-w-lg w-full flex flex-col gap-4 shadow-2xl">
-						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,rgba(255,255,255,0.1))]">
+					<div className="bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)] border border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-5 max-w-lg w-full flex flex-col gap-4 shadow-2xl">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.1))]">
 							<div>
-								<h3 className="font-bold text-sm text-[var(--ink,#f8fafc)] flex items-center gap-2">
-									<FileCheck2 className="w-4 h-4 text-teal-400" />
+								<h3 className="font-bold text-sm text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)] flex items-center gap-2">
+									<FileCheck2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
 									<span>Справка об оплате медицинских услуг (ФНС КНД 1151156)</span>
 								</h3>
-								<p className="text-xs text-[var(--muted,#94a3b8)]">Для социального налогового вычета по НДФЛ 13%</p>
+								<p className="text-xs text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)]">Для социального налогового вычета по НДФЛ 13%</p>
 							</div>
 							<button
 								type="button"
 								onClick={() => setShowTaxCertificate(false)}
-								className="p-1 rounded-xl text-[var(--muted,#94a3b8)] hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+								className="p-1 rounded-xl text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] hover:text-slate-900 dark:hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
 								data-testid="close-tax-certificate-btn"
 							>
 								<X className="w-5 h-5" />

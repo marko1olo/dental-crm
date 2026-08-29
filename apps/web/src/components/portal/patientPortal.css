@@ -19,11 +19,11 @@
 }
 
 .patient-portal-modal-window {
-	background: var(--paper, #1e293b);
-	color: var(--ink, #f8fafc);
-	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--border, #e2e8f0);
 	border-radius: 1.5rem;
-	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 	width: 100%;
 	max-width: 960px;
 	height: 90vh;
@@ -35,13 +35,32 @@
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Multi-Theme Overrides */
+[data-theme="light"] .patient-portal-modal-window,
+:root[data-theme="light"] .patient-portal-modal-window,
+html[data-theme="light"] .patient-portal-modal-window,
+.light .patient-portal-modal-window {
+	background: #ffffff;
+	color: #0f172a;
+	border-color: #e2e8f0;
+	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
+}
+
+html.dark:not([data-theme="light"]) .patient-portal-modal-window,
+[data-theme="dark"] .patient-portal-modal-window {
+	background: #0f172a;
+	color: #f8fafc;
+	border-color: #334155;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
 /* Smartphone PWA View Mode */
 .patient-portal-modal-window.mode-mobile-pwa {
 	max-width: 410px;
 	height: 840px;
 	border-radius: 2.5rem;
 	border: 6px solid #0f172a;
-	box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--line, rgba(255, 255, 255, 0.1));
+	box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--line, rgba(0, 0, 0, 0.05));
 }
 
 /* Top Phone Notch / Dynamic Island */

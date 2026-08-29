@@ -12,6 +12,7 @@ export declare function rubToKopecks(rub: number): number;
  * Converts integer kopecks to rubles formatted as a 2-decimal number.
  */
 export declare function kopecksToRub(kopecks: number): number;
+export declare const kopecksToRubles: typeof kopecksToRub;
 /**
  * Banker's Rounding (Round Half to Even) to eliminate cumulative rounding bias.
  * Standard round-to-even algorithm per IEEE-754 and statutory financial arithmetic.

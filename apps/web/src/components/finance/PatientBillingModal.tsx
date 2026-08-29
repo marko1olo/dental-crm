@@ -19,6 +19,7 @@ import {
 	Printer,
 	QrCode,
 	Receipt,
+	RotateCcw,
 	ShieldCheck,
 	Smartphone,
 	Sparkles,
@@ -43,6 +44,7 @@ import {
 import { generateQrCodeSvg } from "../portal/patientCabinet/patientCabinetEngine";
 import { OneCExportButton } from "./OneCExportButton";
 import { Fiscal54FzReceiptModal } from "./fiscal/Fiscal54FzReceiptModal";
+import { RefundServiceModal } from "./refunds/RefundServiceModal";
 
 export interface PatientBillingModalProps {
 	readonly isOpen: boolean;
@@ -85,6 +87,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	const [copied, setCopied] = useState(false);
 	const [isQrOpen, setIsQrOpen] = useState(false);
 	const [isFiscalOpen, setIsFiscalOpen] = useState(false);
+	const [isRefundOpen, setIsRefundOpen] = useState(false);
 	const [toastMsg, setToastMsg] = useState<string | null>(null);
 	const [discountPreset, setDiscountPreset] = useState<LoyaltyDiscountPreset>("none");
 	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(0);
@@ -242,20 +245,21 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<FileCheck className="w-4 h-4" />
 						</div>
 						<div className="min-w-0 flex-1">
-							<div className="flex items-center gap-2 flex-wrap">
-								<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0 leading-snug break-normal [overflow-wrap:normal]">
-									Акт выполненных работ &amp; Гарантийный талон (А4)
+							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+								<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0 leading-tight truncate sm:break-normal">
+									<span className="hidden sm:inline">Акт выполненных работ &amp; Гарантийный талон (А4)</span>
+									<span className="sm:hidden">Акт выполненных работ</span>
 								</h3>
-								<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0 whitespace-nowrap">
-									Официальный бланк
+								<span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0 whitespace-nowrap">
+									Бланк А4
 								</span>
 							</div>
-							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-snug flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-								<span className="whitespace-nowrap">Лицензия № {clinicLicenseNumber}</span>
-								<span className="text-[var(--muted)]/50">•</span>
-								<span className="whitespace-nowrap">Приказ МЗ РФ № 804н</span>
-								<span className="text-[var(--muted)]/50">•</span>
-								<span className="whitespace-nowrap">Закон РФ № 2300-1</span>
+							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-tight flex items-center gap-x-1.5 truncate">
+								<span className="whitespace-nowrap shrink-0">Лицензия № {clinicLicenseNumber}</span>
+								<span className="hidden sm:inline text-[var(--muted)]/50">•</span>
+								<span className="hidden sm:inline whitespace-nowrap">Приказ МЗ РФ № 804н</span>
+								<span className="hidden sm:inline text-[var(--muted)]/50">•</span>
+								<span className="hidden sm:inline whitespace-nowrap">Закон РФ № 2300-1</span>
 							</p>
 						</div>
 					</div>
@@ -819,7 +823,18 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								<span className="whitespace-nowrap shrink-0">В WhatsApp</span>
 							</button>
 
-							{/* 4. 1C Export */}
+							{/* 4. Partial Refund Button (54-FZ) */}
+							<button
+								type="button"
+								onClick={() => setIsRefundOpen(true)}
+								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+								data-testid="btn-footer-partial-refund"
+							>
+								<RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+								<span className="whitespace-nowrap shrink-0">Возврат</span>
+							</button>
+
+							{/* 5. 1C Export */}
 							<OneCExportButton
 								actNumber={summary.actNumber}
 								documentDate={new Date().toISOString().slice(0, 10)}
@@ -859,10 +874,11 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								totalRub={summary.totalNetRub}
 								contractNumber={actParams.contractNumber}
 								contractDate={actParams.contractDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]}
-								className="h-10 sm:h-9 px-3 font-bold justify-center whitespace-nowrap"
+								label="1С (XML)"
+								className="h-10 sm:h-9 px-2.5 sm:px-3 text-xs font-bold justify-center whitespace-nowrap shrink-0"
 							/>
 
-							{/* 5. Desktop Close */}
+							{/* 6. Desktop Close */}
 							<button
 								type="button"
 								onClick={onClose}
@@ -958,6 +974,33 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						patientPhone={patient?.phone || "+7 (999) 000-00-00"}
 						clinicName={clinicLegalName}
 						clinicLicense={clinicLicenseNumber}
+					/>
+				)}
+
+				{/* 54-FZ Partial Refund & Doctor Clawback Modal */}
+				{isRefundOpen && (
+					<RefundServiceModal
+						isOpen={isRefundOpen}
+						onClose={() => setIsRefundOpen(false)}
+						invoiceId={contractNumber || "inv-1"}
+						invoiceNumber={summary.actNumber}
+						patientId={patient?.id || "pat-1"}
+						patientName={actParams.patient.fullName}
+						doctorName={actParams.doctor.fullName}
+						doctorCommissionPct={30}
+						services={summary.items.map((it) => ({
+							id: it.id,
+							name: it.name,
+							code804n: it.code804n || undefined,
+							toothNumber: it.toothNumber ? Number(it.toothNumber) : undefined,
+							priceRub: it.priceRub,
+							quantity: it.quantity,
+							doctorName: actParams.doctor.fullName,
+							commissionPct: 30,
+						}))}
+						onRefundSuccess={(res) => {
+							setToastMsg(`Чек возврата ${res.refundOperationNumber} на сумму ${res.totalRefundRub} ₽ сформирован.`);
+						}}
 					/>
 				)}
 			</div>

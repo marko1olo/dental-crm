@@ -34,6 +34,10 @@ import {
 	resolvePayoutPeriod,
 } from "../services/finance/doctorPayouts.js";
 import { explainNegativePayouts } from "../services/finance/payoutNegativeExplain.js";
+import {
+	PartialRefundService,
+	PartialRefundValidationError,
+} from "../services/billing/PartialRefundService.js";
 import { clinicTimeZone } from "../services/reports/managerReports.js";
 /*
  * Перевод слов разборщика в слова человека — ОДИН на весь сервер. Своей копии
@@ -749,6 +753,97 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				}
 			}
 			throw error;
+		}
+	});
+
+	/**
+	 * POST /api/billing/refunds/partial
+	 * 1-клик частичный возврат услуги из счета/акта с формированием чека «Возврат прихода» (54-ФЗ)
+	 * и автоматическим вычетом комиссии врача (doctor commission deduction).
+	 */
+	app.post("/api/billing/refunds/partial", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"billing partial refund create",
+			))
+		)
+			return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
+			return;
+
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"billing partial refund create",
+		);
+		if (!orgId) return;
+
+		const partialRefundBodySchema = z.object({
+			invoiceId: z.string().uuid(),
+			invoiceNumber: z.string().optional(),
+			patientId: z.string().uuid(),
+			patientName: z.string().optional(),
+			cashierFullName: z.string().default("Кассир-администратор"),
+			cashierInn: z.string().optional(),
+			customerContact: z.string().optional(),
+			paymentMethod: z
+				.enum(["cash", "card", "sbp", "advance_deposit", "bank_transfer"])
+				.default("card"),
+			refundRequests: z
+				.array(
+					z.object({
+						itemId: z.string().min(1),
+						quantityToRefund: z.number().int().positive().default(1),
+						customAmountKopToRefund: z.number().int().positive().optional(),
+						reasonRu: z.string().optional(),
+					}),
+				)
+				.min(1),
+			reasonCategory: z
+				.enum([
+					"warranty_case",
+					"patient_refusal",
+					"billing_error",
+					"quality_claim",
+					"clinical_contraindication",
+				])
+				.default("patient_refusal"),
+			customReasonDetailsRu: z.string().optional(),
+			clientMutationId: z.string().optional(),
+			defaultDoctorCommissionPct: z.number().min(0).max(100).optional(),
+		});
+
+		const parsed = partialRefundBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "InvalidPartialRefundInput",
+				message: "Некорректные параметры запроса частичного возврата.",
+				details: parsed.error.issues,
+			});
+		}
+
+		try {
+			const result = await PartialRefundService.executePartialRefund({
+				organizationId: orgId,
+				...parsed.data,
+			});
+			return reply.code(200).send(result);
+		} catch (err) {
+			if (err instanceof PartialRefundValidationError) {
+				return reply.code(400).send({
+					error: err.code,
+					message: err.message,
+					details: err.details,
+				});
+			}
+			request.log.error({ err }, "Partial refund failed");
+			return reply.code(500).send({
+				error: "PartialRefundInternalError",
+				message:
+					"Не удалось провести операцию частичного возврата. Обратитесь к администратору.",
+			});
 		}
 	});
 
