@@ -1566,7 +1566,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.restore();
 			}
 		}
-	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, probeMarkers, activeProbe, activeTool]);
+	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, probeMarkers, activeProbe, activeTool, maximizedViewport, viewLayout]);
 
 	// ─── RECONSTRUCT PANORAMIC & CROSS SECTIONS ───────────────────────────────
 	useEffect(() => {
@@ -1684,6 +1684,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		// 3. Draw Numbered Cross-Section Slice Fan Ticks (#1..#N)
 		const fanTicks = getPanoramicSliceFanTicks(crossSections, panoramicData.widthPx, archCurve.totalArcLengthMm);
+		let lastDrawnTickX = -999;
 		for (let i = 0; i < fanTicks.length; i++) {
 			const tick = fanTicks[i]!;
 			const isActive = i === activeCrossSectionIdx;
@@ -1709,7 +1710,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.font = "bold 9px monospace";
 				ctx.textAlign = "center";
 				ctx.fillText(`#${tick.sliceIndex}`, Math.max(18, tick.panoX), canvas.height - 6);
-			} else if (tick.isMajor) {
+				lastDrawnTickX = tick.panoX;
+			} else if (tick.isMajor && Math.abs(tick.panoX - lastDrawnTickX) >= 28) {
 				// Major slice tick mark
 				ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
 				ctx.lineWidth = 1.0;
@@ -1722,6 +1724,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.font = "8px monospace";
 				ctx.textAlign = "center";
 				ctx.fillText(`${tick.sliceIndex}`, tick.panoX, canvas.height - 12);
+				lastDrawnTickX = tick.panoX;
 			} else {
 				// Minor slice tick mark
 				ctx.strokeStyle = "rgba(100, 116, 139, 0.3)";
@@ -1733,10 +1736,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}
 		}
 
-		// 4. Synchronized Virtual Implant Silhouette on Panorama (OPG)
+		// 4. Synchronized Virtual Implant 3D Projection on Panorama
 		if (studioMode === "implant" && activeCrossSection && implant3DWorld) {
 			const panoX = mapSliceToPanoramicX(activeCrossSection, panoramicData.widthPx, archCurve.totalArcLengthMm);
-			const panoH = canvas.height;
+			const panoH = panoramicData.heightPx;
 			const panoHMm = 38.0;
 			const zTopMm = panoHMm / 2.0;
 
@@ -1809,7 +1812,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		}
 
 		ctx.restore();
-	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic]);
+	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout]);
 
 	// ─── RENDER ACTIVE CROSS-SECTION WITH IMPLANT & NERVE ─────────────────────
 	useEffect(() => {
@@ -1958,7 +1961,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		}
 
 		ctx.restore();
-	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section]);
+	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout]);
 
 	// ─── INTERACTIVE PANORAMA CLICK & SCRUB TO JUMP TO CROSS-SECTION ──────────
 	const handlePanoMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
