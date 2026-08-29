@@ -1,10 +1,10 @@
 /**
- * DENTE CRM — Planmeca Romexis & Ez3D-i Left Tool Dock (52px Vertical Toolbar)
+ * DENTE CRM — Planmeca Romexis & Ez3D-i Left Tool Dock (44px Vertical Toolbar)
  * Standards: DICOM Part 3 / PS 3.3, Misch CE, Buser, Planmeca Romexis 6.x
  *
  * Capabilities:
- * 1. 52px matte dark vertical column (bg-[#0f1219] border-r border-[#242a35]) along left modal edge.
- * 2. WCAG 2.1 touch-targets (>= 44x44px) with high-contrast active state (bg-cyan-500/20 text-cyan-400 border-cyan-500/50).
+ * 1. 44px matte dark vertical column (bg-[#0f1219] border-r border-[#242a35]) along left modal edge.
+ * 2. WCAG 2.1 touch-targets with high-contrast active state (bg-cyan-500/20 text-cyan-400 border-cyan-500/50).
  * 3. Group 1: Cursor / Mouse Navigation Modes (Crosshair, Pan, Zoom, Window W/L, Oblique Rotate).
  * 4. Group 2: Measurements & Densitometry (Distance Caliper Ruler, Point HU Probe, Mandibular Nerve IAN).
  * 5. Group 3: Slice Thickness & Slab Projection Flyout (Single 1mm, Slab MIP, Avg IP, Min IP, 1..30 mm slider).
@@ -72,6 +72,11 @@ export interface CbctLeftToolDockProps {
 	/** 1-Click Reset all axes rotation, zoom, and pan */
 	readonly onResetAll?: (() => void) | undefined;
 
+	/** Invert Grayscale LUT (Negative/Positive toggle) */
+	readonly invertColors?: boolean | undefined;
+	/** Callback to toggle LUT inversion */
+	readonly onToggleInvertColors?: (() => void) | undefined;
+
 	/** Trigger loading real DICOM folder */
 	readonly onOpenDicomFolder?: (() => void) | undefined;
 	/** Trigger loading real DICOM ZIP archive */
@@ -93,6 +98,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 	activePresetId = "bone_dense",
 	onSelectPreset,
 	onResetAll,
+	invertColors = false,
+	onToggleInvertColors,
 	onOpenDicomFolder,
 	onOpenDicomZip,
 	className = "",
@@ -173,7 +180,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			role="toolbar"
 			aria-label="Панель инструментов Romexis"
 			data-testid="cbct-left-tool-dock"
-			className={`w-[52px] min-w-[52px] max-w-[52px] h-full bg-[#14171e] border-r border-[#242a35] flex flex-col items-center py-2 px-1 shrink-0 select-none z-30 relative overflow-visible ${className}`}
+			className={`w-[44px] min-w-[44px] max-w-[44px] h-full bg-[#14171e] border-r border-[#242a35] flex flex-col items-center py-2 px-0.5 shrink-0 select-none z-30 relative overflow-visible ${className}`}
 		>
 			{/* Hidden file inputs as fallback triggers */}
 			<input
@@ -213,7 +220,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[54px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Перекрестие</span>
 						<span className="text-[#94a3b8] text-[11px]">Навигация по срезам</span>
@@ -241,7 +248,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[54px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Панорама</span>
 						<span className="text-[#94a3b8] text-[11px]">Сдвиг проекции</span>
@@ -269,7 +276,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[54px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Зум</span>
 						<span className="text-[#94a3b8] text-[11px]">Приближение / Отдаление</span>
@@ -297,7 +304,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[54px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Окно W/L</span>
 						<span className="text-[#94a3b8] text-[11px]">Яркость / Контраст HU</span>
@@ -327,7 +334,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[54px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Вращение осей</span>
 						<span className="text-[#94a3b8] text-[11px]">Косой наклон срезов</span>
@@ -361,7 +368,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[54px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Линейка</span>
 						<span className="text-[#94a3b8] text-[11px]">Калипер расстояния (мм)</span>
@@ -389,7 +396,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[54px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Плотность HU</span>
 						<span className="text-[#94a3b8] text-[11px]">Замер плотности кости</span>
@@ -417,7 +424,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[54px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold">Канал IAN</span>
 						<span className="text-[#94a3b8] text-[11px]">Трассировка нерва (2мм)</span>
@@ -466,7 +473,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Настройки толщины среза и проекции MIP"
 							data-testid="cbct-slab-flyout"
-							className="absolute left-[54px] top-0 z-50 w-64 bg-[#14171e] border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
+							className="absolute left-[48px] top-0 z-50 w-64 bg-[#14171e] border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
 						>
 							<div className="flex items-center justify-between pb-2 border-b border-[#242a35] mb-2.5">
 								<div className="flex items-center gap-1.5">
@@ -615,7 +622,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Клинические пресеты плотности HU"
 							data-testid="cbct-hu-flyout"
-							className="absolute left-[54px] top-0 z-50 w-72 bg-[#14171e] border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
+							className="absolute left-[48px] top-0 z-50 w-72 bg-[#14171e] border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
 						>
 							<div className="flex items-center justify-between pb-2 border-b border-[#242a35] mb-2">
 								<div className="flex items-center gap-1.5">
@@ -673,7 +680,35 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			<div className="mt-auto flex flex-col items-center gap-1.5 w-full shrink-0">
 				<div className="w-7 h-px bg-[#242a35] my-1 shrink-0" role="separator" />
 
-				{/* 11. Reset All (Axes, Zoom, Pan) */}
+				{/* 11. Invert LUT (Negative/Positive toggle) */}
+				<div className="relative group flex items-center justify-center">
+					<button
+						type="button"
+						onClick={onToggleInvertColors}
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+							invertColors
+								? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-white hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
+						}`}
+						title="◑ Инвертировать цвета (Негатив/Позитив) [I]"
+						aria-label="Инвертировать цвета"
+						data-testid="cbct-tool-invert-lut"
+					>
+						<Contrast className="w-5 h-5" />
+					</button>
+					<div
+						role="tooltip"
+						className="pointer-events-none absolute left-[48px] bottom-12 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+					>
+						<span className="font-semibold">Инверсия LUT</span>
+						<span className="text-[#94a3b8] text-[11px]">{invertColors ? "Негатив активен" : "Позитив (Romexis)"}</span>
+						<kbd className="text-[10px] bg-[#1e2430] text-cyan-300 px-1.5 py-0.5 rounded border border-[#242a35] font-mono">
+							I
+						</kbd>
+					</div>
+				</div>
+
+				{/* 12. Reset All (Axes, Zoom, Pan) */}
 				<div className="relative group flex items-center justify-center">
 					<button
 						type="button"
@@ -687,7 +722,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</button>
 					<div
 						role="tooltip"
-						className="pointer-events-none absolute left-[54px] bottom-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
+						className="pointer-events-none absolute left-[48px] bottom-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#14171e] text-[#e2e8f0] text-xs px-2.5 py-1.5 rounded-md border border-[#242a35] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
 						<span className="font-semibold text-amber-300">Сброс осей и зума</span>
 						<span className="text-[#94a3b8] text-[11px]">Возврат в исходное 0°</span>
@@ -718,7 +753,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Загрузка файлов DICOM"
 							data-testid="cbct-dicom-flyout"
-							className="absolute left-[54px] bottom-0 z-50 w-60 bg-[#14171e] border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
+							className="absolute left-[48px] bottom-0 z-50 w-60 bg-[#14171e] border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
 						>
 							<div className="flex items-center justify-between pb-2 border-b border-[#242a35] mb-2">
 								<span className="text-xs font-bold text-[#e2e8f0] flex items-center gap-1.5">

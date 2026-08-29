@@ -494,7 +494,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setVolume(vol);
 			setLoadedSliceCount(vol.dimensions.depth);
 			setPatientDisplayName("Барабаш С.В.");
-			setCrosshairMm({ x: 0, y: 0, z: 0 });
+			setCrosshairMm({ x: 0, y: 15.0, z: 0 });
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 			const arch = buildDentalArchCurve(
@@ -502,7 +502,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				jawType,
 			);
 			setArchCurve(arch);
-			showToast(`Успешно загружено реальное КТ: ${vol.dimensions.width}x${vol.dimensions.height}x${vol.dimensions.depth} вокселей`, "success");
 			setDicomLoadingStatus(null);
 		} catch (err: unknown) {
 			setDicomLoadingStatus(null);
@@ -528,7 +527,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 			setVolume(vol);
 			setLoadedSliceCount(vol.dimensions.depth);
-			setCrosshairMm({ x: 0, y: 0, z: 0 });
+			setCrosshairMm({ x: 0, y: 15.0, z: 0 });
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 			const arch = buildDentalArchCurve(
@@ -536,7 +535,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				jawType,
 			);
 			setArchCurve(arch);
-			showToast(`Успешно загружен архив КТ: ${vol.dimensions.width}x${vol.dimensions.height}x${vol.dimensions.depth} вокселей`, "success");
 			setDicomLoadingStatus(null);
 		} catch (err: unknown) {
 			setDicomLoadingStatus(null);
@@ -2537,6 +2535,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					activePresetId={activePreset}
 					onSelectPreset={handleSelectPreset}
 					onResetAll={handleResetAll}
+					invertColors={invertColors}
+					onToggleInvertColors={() => setInvertColors((prev) => !prev)}
 					onOpenDicomFolder={() => folderInputRef.current?.click()}
 					onOpenDicomZip={() => zipInputRef.current?.click()}
 				/>
