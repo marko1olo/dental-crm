@@ -161,10 +161,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 }) => {
 	const labels = useMemo(() => getViewportOrientationLabels(viewportType), [viewportType]);
 
-	const scaleBarWidthPx = useMemo(() => {
-		if (!pixelSpacingMm || pixelSpacingMm <= 0) return 40;
-		return Math.round(10.0 / pixelSpacingMm);
-	}, [pixelSpacingMm]);
+	// Note: 10 mm calibration scale is rendered directly on Canvas (Zero-GC) by drawCalibratedMillimeterRulers
 
 	const coordText = useMemo(() => {
 		if (!coordinateMm) return null;
@@ -300,24 +297,14 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				{labels.right}
 			</div>
 
-			{/* 4. BOTTOM-LEFT 10 MM CALIBRATION SCALE BAR & W/L BADGE */}
-			<div className="absolute bottom-1.5 left-1.5 pointer-events-auto flex items-center gap-1.5">
-				<div className="px-1.5 py-0.5 rounded bg-[#14171e]/90 backdrop-blur-sm border border-[#242a35] shadow-xs flex flex-col items-center">
-					<div
-						className="h-1 border-b-2 border-l border-r border-[#94a3b8]"
-						style={{ width: `${Math.max(16, Math.min(100, scaleBarWidthPx))}px` }}
-					/>
-					<span className="text-[8px] font-mono font-bold text-[#94a3b8] mt-0.5">
-						10 мм
-					</span>
-				</div>
-
-				{windowWidth !== undefined && windowLevel !== undefined && (
+			{/* 4. BOTTOM-LEFT W/L BADGE (Calibration scale is on Canvas) */}
+			{windowWidth !== undefined && windowLevel !== undefined && (
+				<div className="absolute bottom-1.5 left-1.5 pointer-events-auto flex items-center gap-1.5">
 					<div className="px-1.5 py-0.5 rounded bg-[#14171e]/90 backdrop-blur-sm border border-[#242a35] shadow-xs text-[9px] font-mono text-[#94a3b8]">
 						W: <span className="text-[#e2e8f0] font-bold">{windowWidth}</span> L: <span className="text-[#e2e8f0] font-bold">{windowLevel}</span>
 					</div>
-				)}
-			</div>
+				</div>
+			)}
 
 			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE */}
 			<div className="absolute bottom-1.5 right-1.5 pointer-events-auto">

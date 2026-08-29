@@ -25,6 +25,7 @@ import {
 	RotateCw,
 	Ruler,
 	Sliders,
+	SunMoon,
 	X,
 	Zap,
 	ZoomIn,
@@ -694,7 +695,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						aria-label="Инвертировать цвета"
 						data-testid="cbct-tool-invert-lut"
 					>
-						<Contrast className="w-5 h-5" />
+						<SunMoon className="w-5 h-5" />
 					</button>
 					<div
 						role="tooltip"

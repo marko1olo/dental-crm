@@ -42,7 +42,7 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 			{/* Bottom compact status bar (True Dark Mandate) */}
 			<footer
 				data-theme="dark"
-				className="h-10 px-3 bg-[#0c0e12] border-t border-[#242a35] flex items-center justify-between shrink-0 gap-2 overflow-x-auto text-[11px] text-slate-400 select-none"
+				className="h-10 px-3 bg-[#0c0e12] border-t border-[#242a35] flex items-center justify-between shrink-0 gap-2 overflow-x-auto text-[11px] text-slate-400 select-none w-full min-w-0 max-w-full"
 				style={{ color: "#94a3b8", backgroundColor: "#0c0e12" }}
 				data-testid="cbct-hotkeys-status-bar"
 			>

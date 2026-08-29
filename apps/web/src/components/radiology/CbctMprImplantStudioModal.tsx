@@ -2440,7 +2440,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						data-testid="cbct-btn-auto-arch"
 						id="cbct-auto-arch-btn"
 					>
-						<span>⚙️ Авто-поиск дуги</span>
+						<span>⚙️ Авто-дуга</span>
 					</button>
 					<button
 						type="button"
@@ -2614,7 +2614,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			aria-modal="true"
 			aria-labelledby={`cbct-studio-title-${modalId}`}
 			data-theme="dark"
-			className="fixed inset-0 z-[100] flex flex-col bg-[#0c0e12] text-[#e2e8f0] font-sans select-none overflow-hidden"
+			className="fixed inset-0 z-[100] flex flex-col bg-[#0c0e12] text-[#e2e8f0] font-sans select-none overflow-hidden w-full max-w-full h-full min-w-0"
 			style={{ color: "#e2e8f0", backgroundColor: "#0c0e12" }}
 		>
 			{/* Real DICOM Ingestion Controls (Hidden file inputs for Left Tool Dock) */}
@@ -2640,7 +2640,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			{/* ─── HEADER BAR (TIER 1 CLEAN STATUS & WORKSPACE SWITCHER — TRUE DARK MANDATE) ─── */}
 			<header
 				data-theme="dark"
-				className="min-h-14 px-4 py-1.5 bg-[#14171e] border-b border-[#242a35] flex items-center justify-between shrink-0 gap-3 text-slate-200"
+				className="min-h-14 px-2 sm:px-4 py-1.5 bg-[#14171e] border-b border-[#242a35] flex items-center justify-between shrink-0 gap-2 sm:gap-3 text-slate-200 overflow-x-auto min-w-0 w-full max-w-full"
 				style={{ color: "#e2e8f0", backgroundColor: "#14171e" }}
 			>
 				{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
@@ -2652,12 +2652,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<div className="flex items-center gap-2">
 							<h2
 								id={`cbct-studio-title-${modalId}`}
-								className="text-xs font-bold text-white tracking-wide flex items-center gap-1.5 whitespace-nowrap"
-								style={{ color: "#ffffff" }}
+								className="text-xs font-bold text-[#f1f5f9] tracking-wide flex items-center gap-1.5 whitespace-nowrap"
+								style={{ color: "#f1f5f9" }}
 							>
 								3D CBCT Studio
 								<span
-									className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e2430] text-slate-300 font-mono border border-[#242a35]"
+									className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e2430] text-[#cbd5e1] font-mono border border-[#242a35]"
 									style={{ color: "#cbd5e1" }}
 								>
 									Romexis 6 / Ez3D-i
@@ -2665,7 +2665,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							</h2>
 						</div>
 						<p
-							className="text-[10px] text-slate-400 whitespace-nowrap"
+							className="text-[10px] text-[#94a3b8] whitespace-nowrap"
 							data-testid="cbct-patient-metadata-badge"
 							id="cbct-patient-metadata-badge"
 							style={{ color: "#94a3b8" }}
@@ -2741,11 +2741,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={handleAutoDetectArch}
-						className="px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-[#1e2430] hover:bg-[#252c3b] text-purple-300 hover:text-purple-200 border border-purple-500/50 hover:border-purple-400 shadow-xs transition-colors"
+						className="px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-[#1e2430] hover:bg-[#252c3b] text-purple-300 hover:text-purple-200 border border-purple-500/50 hover:border-purple-400 shadow-xs transition-colors cursor-pointer"
 						data-testid="cbct-btn-auto-arch"
 						title="Авто-поиск зубной дуги ОПТГ по плотности эмали"
 					>
-						<span>⚙️ Авто-поиск дуги</span>
+						<span>⚙️ Авто-дуга</span>
 					</button>
 
 					{/* Layout Switcher */}
@@ -2845,7 +2845,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			</header>
 
 			{/* ─── MOBILE VIEWPORT TABS (VISIBLE ONLY ON < LG SCREENS) ─────────── */}
-			<div className="lg:hidden flex items-center bg-[#14171e] border-b border-[#242a35] p-1.5 shrink-0 gap-1.5 overflow-x-auto min-w-0">
+			<div className="lg:hidden flex items-center bg-[#14171e] border-b border-[#242a35] p-1.5 shrink-0 gap-1.5 overflow-x-auto min-w-0 w-full max-w-full">
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("axial")}
@@ -2917,7 +2917,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			</div>
 
 			{/* ─── MAIN WORKSPACE ROW (LEFT TOOL DOCK + VIEWPORTS + SIDEBAR) ─── */}
-			<div className="flex-1 flex flex-row min-h-0 overflow-hidden">
+			<div className="flex-1 flex flex-row min-h-0 min-w-0 w-full max-w-full overflow-hidden relative">
 				<CbctLeftToolDock
 					activeTool={activeTool}
 					onSelectTool={setActiveTool}
@@ -2935,41 +2935,41 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				/>
 
 				{/* ─── VIEWPORTS & SIDEBAR GRID (COLS 1..12) ───────────────────── */}
-				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[#0c0e12] min-h-0 overflow-hidden">
+				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[#0c0e12] min-h-0 min-w-0 w-full max-w-full overflow-hidden">
 				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP OR 1..12 WHEN SIDEBAR COLLAPSED) ─── */}
-				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 transition-all`}>
+				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all`}>
 					{maximizedViewport !== null ? (
-						<div className="flex-1 flex flex-col min-h-0 w-full">
-							{maximizedViewport === "axial" && renderAxialViewport("flex-1 flex flex-col")}
-							{maximizedViewport === "coronal" && renderCoronalViewport("flex-1 flex flex-col")}
-							{maximizedViewport === "sagittal" && renderSagittalViewport("flex-1 flex flex-col")}
-							{maximizedViewport === "panoramic" && renderPanoramicViewport("flex-1 flex flex-col")}
+						<div className="flex-1 flex flex-col min-h-0 w-full h-full">
+							{maximizedViewport === "axial" && renderAxialViewport("flex-1 flex flex-col w-full h-full")}
+							{maximizedViewport === "coronal" && renderCoronalViewport("flex-1 flex flex-col w-full h-full")}
+							{maximizedViewport === "sagittal" && renderSagittalViewport("flex-1 flex flex-col w-full h-full")}
+							{maximizedViewport === "panoramic" && renderPanoramicViewport("flex-1 flex flex-col w-full h-full")}
 							{maximizedViewport === "cross_section" && renderCrossSectionMaximizedViewport()}
 						</div>
 					) : viewLayout === "layout_1_plus_3" ? (
-						<div className="flex-1 grid grid-cols-12 gap-1 min-h-0">
-							<div className={`col-span-12 lg:col-span-8 min-h-0 ${mobileActiveTab === "axial" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col"}`}>
-								{renderAxialViewport("flex-1 flex flex-col")}
+						<div className="flex-1 grid grid-cols-12 gap-1 min-h-0 min-w-0 w-full h-full">
+							<div className={`col-span-12 lg:col-span-8 min-h-0 min-w-0 w-full h-full ${mobileActiveTab === "axial" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col"}`}>
+								{renderAxialViewport("flex-1 flex flex-col w-full h-full")}
 							</div>
-							<div className="col-span-12 lg:col-span-4 min-h-0 flex flex-col lg:grid lg:grid-rows-3 gap-1">
-								{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
-								{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
-								{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
+							<div className="col-span-12 lg:col-span-4 min-h-0 min-w-0 w-full h-full flex flex-col lg:grid lg:grid-rows-3 gap-1">
+								{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+								{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+								{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
 							</div>
 						</div>
 					) : (
-						<div className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-2 gap-1 min-h-0">
-							{renderAxialViewport(mobileActiveTab === "axial" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
-							{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
-							{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
-							{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
+						<div className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-2 gap-1 min-h-0 min-w-0 w-full h-full">
+							{renderAxialViewport(mobileActiveTab === "axial" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+							{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+							{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+							{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
 						</div>
 					)}
 				</div>
 
 				{/* ─── RIGHT SIDEBAR: DIAGNOSTIC INSPECTOR & IMPLANT PLANNER (COLS 9..12) ─── */}
 				{(isSidebarOpen || mobileActiveTab === "planner") && (
-					<aside className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"} bg-[#14171e] rounded-md border border-[#242a35] min-h-0 overflow-y-auto p-3 flex flex-col gap-3`}>
+					<aside className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0 w-full min-w-0 h-full" : "hidden lg:flex lg:flex-col"} bg-[#14171e] rounded-md border border-[#242a35] min-h-0 min-w-0 w-full overflow-y-auto p-3 flex flex-col gap-3`}>
 						{/* Active Cross-Section Carousel Header */}
 						<div className="flex items-center justify-between pb-2 border-b border-[#242a35]">
 							<div className="flex items-center gap-2">
