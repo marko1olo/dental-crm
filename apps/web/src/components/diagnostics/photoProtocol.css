@@ -1,0 +1,673 @@
+/**
+ * photoProtocol.css — High-Density Orthodontic 8-Angle Photo Protocol Modal Styling
+ * Pure Vanilla CSS with Design System Tokens & Full Dark/Light Theme Support
+ */
+
+.ortho-photo-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1200;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	animation: orthoFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ortho-photo-modal-container {
+	width: 100%;
+	max-width: 1380px;
+	max-height: 94vh;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes orthoFadeIn {
+	from { opacity: 0; transform: scale(0.98); }
+	to { opacity: 1; transform: scale(1); }
+}
+
+/* Header */
+.ortho-modal-header {
+	padding: 14px 20px;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.ortho-header-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.ortho-header-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: var(--teal-surface, #f0fdfa);
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ortho-header-title {
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+}
+
+.ortho-header-subtitle {
+	font-size: 12px;
+	color: var(--muted, #64748b);
+	margin-top: 2px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ortho-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* Toolbar & Stage Switcher */
+.ortho-modal-toolbar {
+	padding: 10px 20px;
+	background: var(--paper-subtle, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.ortho-stage-selector {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--paper, #ffffff);
+	padding: 3px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.ortho-stage-btn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 700;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 32px;
+}
+
+.ortho-stage-btn:hover {
+	color: var(--ink, #0f172a);
+	background: var(--paper-subtle, #f8fafc);
+}
+
+.ortho-stage-btn.active-stage-pre {
+	background: #eff6ff;
+	color: #2563eb;
+}
+[data-theme="dark"] .ortho-stage-btn.active-stage-pre {
+	background: rgba(37, 99, 235, 0.2);
+	color: #60a5fa;
+}
+
+.ortho-stage-btn.active-stage-active {
+	background: #fffbeb;
+	color: #d97706;
+}
+[data-theme="dark"] .ortho-stage-btn.active-stage-active {
+	background: rgba(217, 119, 6, 0.2);
+	color: #fbbf24;
+}
+
+.ortho-stage-btn.active-stage-post {
+	background: #ecfdf5;
+	color: #059669;
+}
+[data-theme="dark"] .ortho-stage-btn.active-stage-post {
+	background: rgba(5, 150, 105, 0.2);
+	color: #34d399;
+}
+
+.ortho-toolbar-tools {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ortho-tool-btn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	min-height: 34px;
+	transition: all 0.15s ease;
+}
+
+.ortho-tool-btn:hover {
+	background: var(--paper-subtle, #f8fafc);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}
+
+.ortho-tool-btn.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+}
+
+.ortho-export-btn {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border: 1px solid var(--teal, #0d9488);
+	font-weight: 700;
+}
+
+.ortho-export-btn:hover {
+	background: #0f766e;
+	border-color: #0f766e;
+	color: #ffffff;
+}
+
+/* Modal Body */
+.ortho-modal-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	background: var(--paper-subtle, #f8fafc);
+}
+
+/* Treatment plan stage ribbon */
+.ortho-plan-ribbon {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 12px 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.ortho-plan-info {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+}
+
+.ortho-plan-badge {
+	padding: 4px 10px;
+	border-radius: 6px;
+	background: var(--teal-surface, #f0fdfa);
+	color: var(--teal, #0d9488);
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.ortho-completeness-meter {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.ortho-progress-bar {
+	width: 120px;
+	height: 8px;
+	border-radius: 4px;
+	background: var(--line, #e2e8f0);
+	overflow: hidden;
+}
+
+.ortho-progress-fill {
+	height: 100%;
+	background: var(--teal, #0d9488);
+	border-radius: 4px;
+	transition: width 0.3s ease;
+}
+
+.ortho-progress-fill.complete {
+	background: #10b981;
+}
+
+.ortho-progress-text {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+/* 8-Slot Grid */
+.ortho-8-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 16px;
+}
+
+@media (max-width: 1180px) {
+	.ortho-8-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 640px) {
+	.ortho-8-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Slot Card */
+.ortho-slot-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	transition: all 0.2s ease;
+	position: relative;
+}
+
+.ortho-slot-card:hover {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.ortho-slot-card.drag-over {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, #f0fdfa);
+	outline: 2px dashed var(--teal, #0d9488);
+}
+
+.ortho-slot-card.has-photo {
+	border-color: var(--line, #e2e8f0);
+}
+
+.ortho-slot-header {
+	padding: 8px 12px;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+}
+
+.ortho-slot-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow: hidden;
+}
+
+.ortho-slot-num {
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--ink, #0f172a);
+	color: #ffffff;
+	font-size: 10px;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.ortho-slot-title {
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ortho-slot-category-badge {
+	font-size: 10px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: var(--paper-subtle, #f8fafc);
+	color: var(--muted, #64748b);
+	border: 1px solid var(--line, #e2e8f0);
+	flex-shrink: 0;
+}
+
+/* Viewport */
+.ortho-slot-viewport {
+	height: 190px;
+	background: #0f172a;
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.ortho-slot-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	user-select: none;
+	pointer-events: none;
+	transition: transform 0.15s ease;
+}
+
+/* Empty Dropzone State */
+.ortho-dropzone-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 16px;
+	text-align: center;
+	color: #94a3b8;
+	width: 100%;
+	height: 100%;
+	transition: all 0.2s ease;
+}
+
+.ortho-dropzone-empty:hover {
+	color: #e2e8f0;
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.ortho-dropzone-icon {
+	width: 32px;
+	height: 32px;
+	opacity: 0.8;
+}
+
+.ortho-dropzone-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #e2e8f0;
+}
+
+.ortho-dropzone-hint {
+	font-size: 10px;
+	color: #64748b;
+	max-width: 180px;
+	line-height: 1.3;
+}
+
+/* Overlay Guidelines Grid */
+.ortho-guide-overlay {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 5;
+}
+
+/* Vertical Midline (Cyan) */
+.ortho-guide-midline {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 50%;
+	width: 1.5px;
+	background: #06b6d4;
+	box-shadow: 0 0 4px rgba(6, 182, 212, 0.8);
+	transform: translateX(-50%);
+}
+
+.ortho-guide-midline::after {
+	content: "MIDLINE";
+	position: absolute;
+	top: 4px;
+	left: 4px;
+	font-size: 8px;
+	font-weight: 800;
+	color: #06b6d4;
+	background: rgba(15, 23, 42, 0.6);
+	padding: 1px 3px;
+	border-radius: 2px;
+	letter-spacing: 0.05em;
+}
+
+/* Horizontal Occlusal Line (Amber) */
+.ortho-guide-occlusal {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 50%;
+	height: 1.5px;
+	background: #f59e0b;
+	box-shadow: 0 0 4px rgba(245, 158, 11, 0.8);
+	transform: translateY(-50%);
+}
+
+.ortho-guide-occlusal::after {
+	content: "OCCLUSAL";
+	position: absolute;
+	bottom: 4px;
+	right: 4px;
+	font-size: 8px;
+	font-weight: 800;
+	color: #f59e0b;
+	background: rgba(15, 23, 42, 0.6);
+	padding: 1px 3px;
+	border-radius: 2px;
+	letter-spacing: 0.05em;
+}
+
+/* Crosshairs Grid */
+.ortho-guide-thirds-h1 {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 33.33%;
+	height: 1px;
+	background: rgba(255, 255, 255, 0.25);
+	border-top: 1px dashed rgba(255, 255, 255, 0.4);
+}
+
+.ortho-guide-thirds-h2 {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 66.66%;
+	height: 1px;
+	background: rgba(255, 255, 255, 0.25);
+	border-top: 1px dashed rgba(255, 255, 255, 0.4);
+}
+
+/* Slot Quick Toolbar */
+.ortho-slot-controls {
+	padding: 6px 10px;
+	background: var(--paper, #ffffff);
+	border-top: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+}
+
+.ortho-slot-btn {
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.ortho-slot-btn:hover {
+	background: var(--paper-subtle, #f8fafc);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}
+
+.ortho-slot-btn.danger:hover {
+	border-color: #ef4444;
+	color: #ef4444;
+	background: #fef2f2;
+}
+
+/* Findings Accordion / Section */
+.ortho-findings-section {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.ortho-findings-header {
+	padding: 12px 16px;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+	user-select: none;
+}
+
+.ortho-findings-title {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ortho-findings-body {
+	padding: 16px;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+}
+
+@media (max-width: 900px) {
+	.ortho-findings-body {
+		grid-template-columns: 1fr;
+	}
+}
+
+.ortho-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.ortho-field-label {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--muted, #64748b);
+	letter-spacing: 0.03em;
+}
+
+.ortho-select, .ortho-input {
+	height: 36px;
+	padding: 6px 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+.ortho-select:focus, .ortho-input:focus {
+	border-color: var(--teal, #0d9488);
+}
+
+.ortho-input-unit {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Modal Footer */
+.ortho-modal-footer {
+	padding: 12px 20px;
+	background: var(--paper, #ffffff);
+	border-top: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+/* Close & Save Buttons */
+.ortho-btn-secondary {
+	padding: 8px 16px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	min-height: 38px;
+}
+
+.ortho-btn-secondary:hover {
+	background: var(--paper-subtle, #f8fafc);
+}
+
+.ortho-btn-primary {
+	padding: 8px 18px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 700;
+	border: none;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	cursor: pointer;
+	min-height: 38px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.ortho-btn-primary:hover {
+	background: #0f766e;
+}

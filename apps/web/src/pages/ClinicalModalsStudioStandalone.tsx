@@ -46,6 +46,7 @@ import {
 	Spline,
 	Sun,
 	Tablet,
+	Smartphone,
 	Syringe,
 	TrendingUp,
 	Truck,
@@ -95,6 +96,7 @@ import { DentalLabOrderModal } from "../components/lab/DentalLabOrderModal";
 import { DentalLabOrdersHubModal } from "../components/lab/DentalLabOrdersHubModal";
 import { LabTrackingDrawer } from "../components/lab/LabTrackingDrawer";
 import { ClinicalPhotoProtocolModal } from "../components/photography/ClinicalPhotoProtocolModal";
+import { OrthodonticPhotoProtocolModal } from "../components/diagnostics";
 import { PatientRecallManagerModal } from "../components/recall/PatientRecallManagerModal";
 import { PatientRecallsHubModal } from "../components/recalls/PatientRecallsHubModal";
 import { AutoclaveCycleModal } from "../components/sanpin/autoclave/AutoclaveCycleModal";
@@ -121,6 +123,7 @@ import { FnsTaxDeductionModal } from "../components/billing/tax/FnsTaxDeductionM
 import { TreatmentPlanPriceValidatorModal } from "../components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal";
 import { PatientPortalModal, PatientMobilePortalModal, PatientOnlineBookingModal } from "../components/portal";
+import { DoctorMobileShiftModal } from "../components/doctor-portal";
 import { PatientWebappPortalModal } from "../components/patient-portal/PatientWebappPortalModal";
 import { EgiszRemdHubModal } from "../components/egisz/EgiszRemdHubModal";
 import { EgiszCdaExportModal } from "../components/egisz/EgiszCdaExportModal";
@@ -158,6 +161,8 @@ import { ClinicalPnlHubModal } from "../components/finance/pnl/ClinicalPnlHubMod
 import { AuditTrailHubModal } from "../components/security/AuditTrailHubModal";
 import { CmoQualityAuditModal } from "../components/cmo/CmoQualityAuditModal";
 import { OfflineSyncGuardModal } from "../components/sync/OfflineSyncGuardModal";
+import { MdlpScanningModal } from "../components/mdlp";
+import { MarketingRoiModal } from "../components/analytics/MarketingRoiModal";
 import {
 	STANDARD_12_SLOT_PROTOCOL,
 	type PhotoSlotRecord,
@@ -585,6 +590,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPatientMobilePortalOpen, setIsPatientMobilePortalOpen] = useState(false);
 	const [isPatientOnlineBookingOpen, setIsPatientOnlineBookingOpen] = useState(false);
 	const [isTreatmentPlanPresenterOpen, setIsTreatmentPlanPresenterOpen] = useState(false);
+	const [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
+	const [isMarketingRoiOpen, setIsMarketingRoiOpen] = useState(false);
+	const [isDoctorMobileShiftOpen, setIsDoctorMobileShiftOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -715,6 +723,41 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsPatientMobilePortalOpen(false);
 					setIsPatientOnlineBookingOpen(false);
 					setIsTreatmentPlanPresenterOpen(false);
+					setIsMdlpScanningOpen(false);
+					setIsMarketingRoiOpen(false);
+					setIsDoctorMobileShiftOpen(false);
+
+					if (
+						requestedModal === "doctor_shift_pwa" ||
+						requestedModal === "doctor_shift" ||
+						requestedModal === "doctor_mobile" ||
+						requestedModal === "doctor_pwa" ||
+						requestedModal === "doctor_mobile_shift" ||
+						requestedModal === "doctor_shift_modal"
+					) {
+						setIsDoctorMobileShiftOpen(true);
+					}
+
+					if (
+						requestedModal === "marketing_roi" ||
+						requestedModal === "marketing" ||
+						requestedModal === "call_tracking" ||
+						requestedModal === "calltracking" ||
+						requestedModal === "romi" ||
+						requestedModal === "roi" ||
+						requestedModal === "marketing_funnel"
+					) {
+						setIsMarketingRoiOpen(true);
+					}
+
+					if (
+						requestedModal === "mdlp_scanning" ||
+						requestedModal === "mdlp_scan" ||
+						requestedModal === "chestny_znak" ||
+						requestedModal === "mdlp"
+					) {
+						setIsMdlpScanningOpen(true);
+					}
 
 					if (
 						requestedModal === "treatment_plan_presenter" ||
@@ -753,6 +796,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					}
 					if (requestedModal === "sbp_qr" || requestedModal === "sbp_payment" || requestedModal === "sbp" || requestedModal === "sbp_modal") {
 						setIsSbpPaymentQrOpen(true);
+					}
+					if (
+						requestedModal === "photo_protocol" ||
+						requestedModal === "orthodontic_photo_protocol" ||
+						requestedModal === "ortho_photo_protocol" ||
+						requestedModal === "ortho_photo" ||
+						requestedModal === "clinical_photo_protocol"
+					) {
+						setIsPhotoProtocolOpen(true);
 					}
 
 					if (requestedModal === "before_after" || requestedModal === "before_after_slider" || requestedModal === "photo_comparison" || requestedModal === "photography") {
@@ -1058,6 +1110,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
+					{/* 2b-3. Chestny Znak & MDLP Scanning Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<QrCode className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Честный ЗНАК · ИС МДЛП (Схема 701/531)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								2D DataMatrix сканирование медикаментов, приемка по УПД (701), списание при оказании медпомощи (531) и 1-клик выгрузка XML.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsMdlpScanningOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-mdlp-scanning-modal-btn"
+						>
+							<QrCode size={15} />
+							<span>Открыть сканер МДЛП (701/531)</span>
+						</button>
+					</div>
+
 					{/* 2c. Patient Billing & Friendly A4 Act Trigger */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
 						<div className="space-y-2">
@@ -1292,6 +1368,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Tablet size={15} />
 							<span>Открыть PWA-кабинет</span>
+						</button>
+					</div>
+
+					{/* 7c. Doctor Mobile PWA & Shift Operations Modal (Wave 21 / Domain 2) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Smartphone className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Мобильная смена врача (PWA)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Изолированное расписание смены, живой счетчик начисленной сделки (с вычетом ЗТЛ в целых копейках) и 1-клик пакетное подписание 043/у по СМС (ПЭП).
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsDoctorMobileShiftOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+							data-testid="open-doctor-mobile-shift-modal-btn"
+						>
+							<Smartphone size={15} />
+							<span>Открыть PWA смену врача</span>
 						</button>
 					</div>
 
@@ -3163,6 +3263,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть оплату по СБП</span>
 						</button>
 					</div>
+
+					{/* Marketing ROI & Call-Tracking Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<TrendingUp className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Сквозная аналитика & Call-Tracking
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Воронка конверсии (Клики — Звонки — Записи — Явки — Оплата 804н), привязка UTM-меток, Roistat/Calltouch ID, расчет ROMI и CAC в целых копейках.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsMarketingRoiOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+							data-testid="open-marketing-roi-modal-btn"
+						>
+							<TrendingUp size={15} />
+							<span>Открыть сквозную аналитику & ROMI</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -3423,12 +3547,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			)}
 
 			{isPhotoProtocolOpen && (
-				<ClinicalPhotoProtocolModal
+				<OrthodonticPhotoProtocolModal
 					isOpen={isPhotoProtocolOpen}
 					onClose={() => setIsPhotoProtocolOpen(false)}
 					patientName="Смирнова Екатерина Васильевна"
 					doctorName="Д-р Смирнов Алексей Петрович"
 					clinicName="ООО «Денте Стоматология»"
+					treatmentStageTitle="Этап 1: Нивелирование и выравнивание зубных рядов"
 				/>
 			)}
 
@@ -4422,6 +4547,52 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					onBookingComplete={(booking) => {
 						showToast(`Запись подтверждена: ${booking.patientFullName} на ${booking.dateIso} в ${booking.timeRu}`, "success");
 					}}
+				/>
+			)}
+
+			{isMdlpScanningOpen && (
+				<MdlpScanningModal
+					isOpen={isMdlpScanningOpen}
+					onClose={() => setIsMdlpScanningOpen(false)}
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
+
+			{isTreatmentPlanPresenterOpen && (
+				<TreatmentPlanPresenterModal
+					isOpen={isTreatmentPlanPresenterOpen}
+					onClose={() => setIsTreatmentPlanPresenterOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					patientId="PAT-2026-0891"
+					patientPhone={SAMPLE_PATIENT.phone}
+					patientBirthDate={SAMPLE_PATIENT.birthDate}
+					doctorFullName="Д-р Смирнов Алексей Петрович"
+				/>
+			)}
+
+			{isRecallOpen && (
+				<PatientRecallManagerModal
+					isOpen={isRecallOpen}
+					onClose={() => setIsRecallOpen(false)}
+				/>
+			)}
+
+			{isDoctorMobileShiftOpen && (
+				<DoctorMobileShiftModal
+					isOpen={isDoctorMobileShiftOpen}
+					onClose={() => setIsDoctorMobileShiftOpen(false)}
+					initialDoctorId="doc-1"
+					initialDoctorName="Д-р Смирнов Алексей Петрович"
+					initialDoctorSpecialty="Врач-стоматолог терапевт-ортопед"
+					initialShiftDateIso="2026-08-29"
+				/>
+			)}
+
+			{isMarketingRoiOpen && (
+				<MarketingRoiModal
+					isOpen={isMarketingRoiOpen}
+					onClose={() => setIsMarketingRoiOpen(false)}
+					clinicName="ООО «Денте Стоматология»"
 				/>
 			)}
 

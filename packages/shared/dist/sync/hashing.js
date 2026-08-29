@@ -47,19 +47,15 @@ function rotr(n, x) {
     return (x >>> n) | (x << (32 - n));
 }
 /**
- * Pure TypeScript portable SHA-256 implementation.
- * Guarantees identical 64-char hex hash in any runtime (Node.js, Browser, WebWorker, Test).
+ * Pure TypeScript portable SHA-256 byte-level implementation.
  */
-export function sha256Hex(ascii) {
-    const utf8Bytes = new TextEncoder().encode(ascii);
-    const length = utf8Bytes.length;
+export function sha256Bytes(data) {
+    const length = data.length;
     const bitLength = length * 8;
-    // Calculate padded length: next multiple of 64 bytes after length + 9
     const paddedLength = Math.ceil((length + 9) / 64) * 64;
     const buffer = new Uint8Array(paddedLength);
-    buffer.set(utf8Bytes);
+    buffer.set(data);
     buffer[length] = 0x80;
-    // Write 64-bit big-endian bit length at the end
     const view = new DataView(buffer.buffer);
     view.setUint32(paddedLength - 4, bitLength >>> 0, false);
     view.setUint32(paddedLength - 8, Math.floor(bitLength / 0x100000000), false);
@@ -116,11 +112,95 @@ export function sha256Hex(ascii) {
         h[6] = ((h[6] ?? 0) + g) >>> 0;
         h[7] = ((h[7] ?? 0) + hVal) >>> 0;
     }
-    let hex = "";
+    const out = new Uint8Array(32);
+    const outView = new DataView(out.buffer);
     for (let i = 0; i < 8; i++) {
-        hex += (h[i] ?? 0).toString(16).padStart(8, "0");
+        outView.setUint32(i * 4, h[i] ?? 0, false);
     }
-    return hex;
+    return out;
+}
+/**
+ * Pure TypeScript portable SHA-256 implementation.
+ * Guarantees identical 64-char hex hash in any runtime (Node.js, Browser, WebWorker, Test).
+ */
+export function sha256Hex(asciiOrBytes) {
+    const bytes = typeof asciiOrBytes === "string" ? new TextEncoder().encode(asciiOrBytes) : asciiOrBytes;
+    const digest = sha256Bytes(bytes);
+    return Array.from(digest, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+/**
+ * Pure TypeScript HMAC-SHA256 implementation.
+ */
+export function hmacSha256(keyInput, messageInput) {
+    const keyBytes = typeof keyInput === "string" ? new TextEncoder().encode(keyInput) : keyInput;
+    const messageBytes = typeof messageInput === "string" ? new TextEncoder().encode(messageInput) : messageInput;
+    const blockSize = 64;
+    const key = new Uint8Array(blockSize);
+    if (keyBytes.length > blockSize) {
+        key.set(sha256Bytes(keyBytes));
+    }
+    else {
+        key.set(keyBytes);
+    }
+    const oKeyPad = new Uint8Array(blockSize);
+    const iKeyPad = new Uint8Array(blockSize);
+    for (let i = 0; i < blockSize; i++) {
+        oKeyPad[i] = (key[i] ?? 0) ^ 0x5c;
+        iKeyPad[i] = (key[i] ?? 0) ^ 0x36;
+    }
+    const inner = new Uint8Array(blockSize + messageBytes.length);
+    inner.set(iKeyPad, 0);
+    inner.set(messageBytes, blockSize);
+    const innerHash = sha256Bytes(inner);
+    const outer = new Uint8Array(blockSize + 32);
+    outer.set(oKeyPad, 0);
+    outer.set(innerHash, blockSize);
+    return sha256Bytes(outer);
+}
+export function hmacSha256Hex(keyInput, messageInput) {
+    const digest = hmacSha256(keyInput, messageInput);
+    return Array.from(digest, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+/**
+ * Generates cryptographically secure random bytes in hex format.
+ */
+export function safeRandomBytesHex(length = 16) {
+    const bytes = new Uint8Array(length);
+    if (typeof globalThis !== "undefined" && globalThis.crypto?.getRandomValues) {
+        globalThis.crypto.getRandomValues(bytes);
+    }
+    else {
+        for (let i = 0; i < length; i++) {
+            bytes[i] = Math.floor(Math.random() * 256);
+        }
+    }
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+/**
+ * Generates a random integer in range [min, max).
+ */
+export function safeRandomInt(min, max) {
+    const range = max - min;
+    if (range <= 0)
+        return min;
+    const bytes = new Uint32Array(1);
+    if (typeof globalThis !== "undefined" && globalThis.crypto?.getRandomValues) {
+        globalThis.crypto.getRandomValues(bytes);
+        return min + ((bytes[0] ?? 0) % range);
+    }
+    return min + Math.floor(Math.random() * range);
+}
+/**
+ * Timing-safe string comparison.
+ */
+export function timingSafeStringEqual(a, b) {
+    if (a.length !== b.length)
+        return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) {
+        diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return diff === 0;
 }
 /**
  * Computes deterministic SHA-256 hash of any JavaScript payload.

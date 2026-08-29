@@ -5,10 +5,31 @@
  */
 export declare function canonicalJsonStringify(value: unknown): string;
 /**
+ * Pure TypeScript portable SHA-256 byte-level implementation.
+ */
+export declare function sha256Bytes(data: Uint8Array): Uint8Array;
+/**
  * Pure TypeScript portable SHA-256 implementation.
  * Guarantees identical 64-char hex hash in any runtime (Node.js, Browser, WebWorker, Test).
  */
-export declare function sha256Hex(ascii: string): string;
+export declare function sha256Hex(asciiOrBytes: string | Uint8Array): string;
+/**
+ * Pure TypeScript HMAC-SHA256 implementation.
+ */
+export declare function hmacSha256(keyInput: string | Uint8Array, messageInput: string | Uint8Array): Uint8Array;
+export declare function hmacSha256Hex(keyInput: string | Uint8Array, messageInput: string | Uint8Array): string;
+/**
+ * Generates cryptographically secure random bytes in hex format.
+ */
+export declare function safeRandomBytesHex(length?: number): string;
+/**
+ * Generates a random integer in range [min, max).
+ */
+export declare function safeRandomInt(min: number, max: number): number;
+/**
+ * Timing-safe string comparison.
+ */
+export declare function timingSafeStringEqual(a: string, b: string): boolean;
 /**
  * Computes deterministic SHA-256 hash of any JavaScript payload.
  */

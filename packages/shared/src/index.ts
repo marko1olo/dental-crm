@@ -30,11 +30,16 @@ export * from "./patients/index.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";
 export * from "./marketing/index.js";
+export * from "./analytics/index.js";
 export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
 export * from "./messaging/index.js";
 export * from "./portal/index.js";
+export * from "./doctor-portal/index.js";
 export * from "./treatment-plans/index.js";
+export * from "./diagnostics/index.js";
+export * from "./branches/index.js";
+export * from "./warehouse/index.js";
 export * as dispensaryRecall from "./recall/index.js";
 export {
 	clinicalRecallCategorySchema,

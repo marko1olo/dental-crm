@@ -107,11 +107,20 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 14px 20px;
+	padding: 12px 20px;
 	background: var(--tp-surface);
 	border-bottom: 1px solid var(--tp-border);
 	gap: 16px;
 	flex-shrink: 0;
+}
+
+.treatment-presenter-header-main {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-width: 0;
+	flex: 1;
 }
 
 .treatment-presenter-title-group {
@@ -122,8 +131,8 @@
 }
 
 .treatment-presenter-icon-badge {
-	width: 42px;
-	height: 42px;
+	width: 38px;
+	height: 38px;
 	border-radius: var(--tp-radius-md);
 	background: var(--tp-primary-light);
 	color: var(--tp-primary);
@@ -148,7 +157,18 @@
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	flex-wrap: wrap;
+	white-space: nowrap;
+}
+
+.treatment-presenter-law-badge {
+	font-size: 10px;
+	padding: 2px 7px;
+	border-radius: 9999px;
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--tp-primary);
+	font-weight: 800;
+	border: 1px solid rgba(13, 148, 136, 0.25);
+	white-space: nowrap;
 }
 
 .treatment-presenter-subtitle {
@@ -160,6 +180,26 @@
 	white-space: nowrap;
 }
 
+.treatment-presenter-close-btn {
+	width: 34px;
+	height: 34px;
+	border-radius: var(--tp-radius-md);
+	border: 1px solid var(--tp-border);
+	background: var(--tp-bg);
+	color: var(--tp-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.treatment-presenter-close-btn:hover {
+	background: var(--tp-surface-soft);
+	color: var(--tp-text-main);
+}
+
 /* Nav Tabs Strip */
 .treatment-presenter-tabs {
 	display: flex;
@@ -169,6 +209,7 @@
 	padding: 4px;
 	border-radius: var(--tp-radius-md);
 	border: 1px solid var(--tp-border);
+	flex-shrink: 0;
 }
 
 .treatment-presenter-tab-btn {
@@ -199,14 +240,56 @@
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
+/* Mobile Tier Switcher Bar (< 768px) */
+.treatment-mobile-tier-bar {
+	display: none;
+	gap: 6px;
+	background: var(--tp-surface-soft);
+	padding: 4px;
+	border-radius: var(--tp-radius-md);
+	border: 1px solid var(--tp-border);
+	margin-bottom: 4px;
+}
+
+.treatment-mobile-tier-btn {
+	flex: 1;
+	min-height: 36px;
+	padding: 4px 8px;
+	border-radius: var(--tp-radius-sm);
+	font-size: 11px;
+	font-weight: 800;
+	color: var(--tp-text-muted);
+	background: transparent;
+	border: 1px solid transparent;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.treatment-mobile-tier-btn.active {
+	background: var(--tp-primary);
+	color: #ffffff;
+	border-color: var(--tp-primary);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.treatment-mobile-tier-btn.active.standard {
+	background: #d97706;
+	border-color: #d97706;
+}
+
 /* Content Container */
 .treatment-presenter-body {
 	flex: 1;
 	overflow-y: auto;
-	padding: 20px;
+	padding: 16px 20px;
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
+	gap: 16px;
 	min-height: 0;
 }
 
@@ -221,6 +304,71 @@
 @media (max-width: 1024px) {
 	.treatment-3tier-grid {
 		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 768px) {
+	.treatment-presenter-header {
+		flex-direction: column;
+		align-items: stretch;
+		padding: 10px 12px;
+		gap: 8px;
+	}
+	.treatment-presenter-header-main {
+		width: 100%;
+	}
+	.treatment-presenter-main-title {
+		font-size: 13px;
+	}
+	.treatment-presenter-law-badge {
+		display: none;
+	}
+	.treatment-presenter-subtitle {
+		font-size: 11px;
+	}
+	.treatment-presenter-tabs {
+		width: 100%;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		padding: 3px;
+		gap: 4px;
+		flex-wrap: nowrap;
+	}
+	.treatment-presenter-tabs::-webkit-scrollbar {
+		display: none;
+	}
+	.treatment-presenter-tab-btn {
+		padding: 5px 10px;
+		font-size: 11px;
+		min-height: 30px;
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+	.treatment-presenter-body {
+		padding: 10px 12px;
+		gap: 12px;
+	}
+	.treatment-mobile-tier-bar {
+		display: flex;
+	}
+	.treatment-3tier-grid {
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+	.treatment-presenter-footer {
+		flex-direction: column;
+		align-items: stretch;
+		padding: 10px 12px;
+		gap: 10px;
+	}
+	.treatment-footer-actions {
+		flex-direction: column;
+		width: 100%;
+		gap: 8px;
+	}
+	.btn-treatment-action {
+		width: 100%;
 	}
 }
 

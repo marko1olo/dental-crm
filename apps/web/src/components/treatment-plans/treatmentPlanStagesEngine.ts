@@ -2445,7 +2445,7 @@ export function generate3TierPlanComparison(
 		true,
 		10,
 		6,
-		"5 лет / Пожизненная на имплантаты",
+		"5 лет (импланты: пож.)",
 		"Швейцарские имплантаты Straumann Roxolid SLActive, навигационный 3D-шаблон, керамика IPS e.max Press, микроскоп Leica",
 		[
 			"Лечение каналов и реставрации под дентальным микроскопом Carl Zeiss / Leica",

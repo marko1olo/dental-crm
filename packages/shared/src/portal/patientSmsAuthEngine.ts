@@ -16,8 +16,54 @@
  *    - Enforced isolation guards preventing cross-patient and cross-tenant data leaks (152-FZ, 323-FZ).
  */
 
-import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
+import {
+	sha256Hex,
+	hmacSha256,
+	hmacSha256Hex,
+	safeRandomBytesHex,
+	safeRandomInt,
+	timingSafeStringEqual,
+	generateUuidV7,
+} from "../sync/hashing.js";
+
+// ─── 0. PURE PORTABLE BASE64URL ENCODING / DECODING ──────────────────────────
+
+function base64UrlEncode(input: string | Uint8Array): string {
+	const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+	let binary = "";
+	for (let i = 0; i < bytes.length; i++) {
+		const byte = bytes[i];
+		if (byte !== undefined) {
+			binary += String.fromCharCode(byte);
+		}
+	}
+	const base64 =
+		typeof btoa === "function"
+			? btoa(binary)
+			: typeof Buffer !== "undefined"
+				? Buffer.from(bytes).toString("base64")
+				: "";
+	return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64UrlDecode(base64url: string): string {
+	let base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+	while (base64.length % 4 !== 0) {
+		base64 += "=";
+	}
+	const binary =
+		typeof atob === "function"
+			? atob(base64)
+			: typeof Buffer !== "undefined"
+				? Buffer.from(base64, "base64").toString("binary")
+				: "";
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i);
+	}
+	return new TextDecoder().decode(bytes);
+}
 
 // ─── 1. PHONE NUMBER NORMALIZATION & FORMATTING (RUSSIAN E.164 & PRESENTATION) ─
 
@@ -151,10 +197,7 @@ export type Pep63FzSignatureAudit = z.infer<typeof pep63FzSignatureAuditSchema>;
  * Timing-safe string comparison preventing side-channel timing leaks.
  */
 export function safeStringCompare(a: string, b: string): boolean {
-	const bufA = Buffer.from(a, "utf8");
-	const bufB = Buffer.from(b, "utf8");
-	if (bufA.length !== bufB.length) return false;
-	return timingSafeEqual(bufA, bufB);
+	return timingSafeStringEqual(a, b);
 }
 
 /**
@@ -163,7 +206,7 @@ export function safeStringCompare(a: string, b: string): boolean {
 export function generateNumericOtpCode(length = 4): string {
 	const safeLength = Math.max(4, Math.min(8, length));
 	const max = 10 ** safeLength;
-	const codeInt = randomInt(0, max);
+	const codeInt = safeRandomInt(0, max);
 	return String(codeInt).padStart(safeLength, "0");
 }
 
@@ -171,7 +214,7 @@ export function generateNumericOtpCode(length = 4): string {
  * Hashes OTP code with a per-challenge salt using SHA-256.
  */
 export function hashOtpWithSalt(code: string, salt: string): string {
-	return createHash("sha256").update(`${salt}:${code}:PEP_63FZ_OTP`).digest("hex");
+	return sha256Hex(`${salt}:${code}:PEP_63FZ_OTP`);
 }
 
 /**
@@ -197,9 +240,9 @@ export function createSmsAuthChallenge(params: {
 	const policy = smsPepPolicySchema.parse(params.policy ?? {});
 	const now = params.now ?? new Date();
 	const plainCode = generateNumericOtpCode(policy.codeLength);
-	const salt = randomBytes(16).toString("hex");
+	const salt = safeRandomBytesHex(16);
 	const codeHash = hashOtpWithSalt(plainCode, salt);
-	const challengeId = `pep-${randomBytes(12).toString("hex")}`;
+	const challengeId = `pep-${safeRandomBytesHex(12)}`;
 	const expiresAt = new Date(now.getTime() + policy.ttlSeconds * 1000);
 	const formattedPhone = formatRussianPhoneNumber(normalizedPhone);
 
@@ -390,7 +433,7 @@ export function computePep63FzIntegrityHash(fields: {
 		fields.authMethod,
 		"63-FZ_SIMPLE_ELECTRONIC_SIGNATURE_STATUTORY_INTEGRITY_V1",
 	].join("|");
-	return createHash("sha256").update(canonical, "utf8").digest("hex");
+	return sha256Hex(canonical);
 }
 
 /**
@@ -404,22 +447,22 @@ export function createPep63FzSignatureAudit(params: {
 	phone: string;
 	documentId: string;
 	documentKind: string;
-	documentContentOrBuffer: string | Buffer;
+	documentContentOrBuffer: string | Uint8Array | Buffer;
 	clientIp?: string | undefined;
 	userAgent?: string | undefined;
 	now?: Date | undefined;
 }): Pep63FzSignatureAudit {
 	const now = params.now ?? new Date();
-	const signatureId = params.signatureId ?? crypto.randomUUID();
+	const signatureId = params.signatureId ?? `pep-sig-${safeRandomBytesHex(16)}`;
 	const timestampIso = now.toISOString();
 
-	const documentSha256Hex = createHash("sha256")
-		.update(
-			typeof params.documentContentOrBuffer === "string"
-				? Buffer.from(params.documentContentOrBuffer, "utf8")
-				: params.documentContentOrBuffer,
-		)
-		.digest("hex");
+	const documentSha256Hex = sha256Hex(
+		typeof params.documentContentOrBuffer === "string"
+			? params.documentContentOrBuffer
+			: params.documentContentOrBuffer instanceof Uint8Array
+				? params.documentContentOrBuffer
+				: new Uint8Array(params.documentContentOrBuffer),
+	);
 
 	const clientIp = params.clientIp ?? "127.0.0.1";
 	const userAgent = params.userAgent ?? "patient_mobile_portal";
@@ -544,17 +587,18 @@ export function signPatientPortalJwt(
 		...(payloadInput.fullName ? { fullName: payloadInput.fullName } : {}),
 		authMethod: "sms_pep",
 		tokenKind: "patient_portal",
-		sessionId: payloadInput.sessionId ?? randomBytes(16).toString("hex"),
+		sessionId: payloadInput.sessionId ?? safeRandomBytesHex(16),
 		permissions: payloadInput.permissions ? [...payloadInput.permissions] : [...DEFAULT_PATIENT_PORTAL_PERMISSIONS],
 		iat: nowSec,
 		exp: nowSec + ttlSeconds,
 	};
 
 	const header = { alg: "HS256", typ: "JWT" };
-	const headerEncoded = Buffer.from(JSON.stringify(header), "utf8").toString("base64url");
-	const payloadEncoded = Buffer.from(JSON.stringify(fullPayload), "utf8").toString("base64url");
+	const headerEncoded = base64UrlEncode(JSON.stringify(header));
+	const payloadEncoded = base64UrlEncode(JSON.stringify(fullPayload));
 	const data = `${headerEncoded}.${payloadEncoded}`;
-	const signature = createHmac("sha256", secret).update(data).digest("base64url");
+	const signatureBytes = hmacSha256(secret, data);
+	const signature = base64UrlEncode(signatureBytes);
 
 	return `${data}.${signature}`;
 }
@@ -578,13 +622,14 @@ export function verifyPatientPortalJwt(
 		if (!headerB64 || !payloadB64 || !signatureB64) return null;
 
 		const data = `${headerB64}.${payloadB64}`;
-		const expectedSignature = createHmac("sha256", secret).update(data).digest("base64url");
+		const expectedSignatureBytes = hmacSha256(secret, data);
+		const expectedSignature = base64UrlEncode(expectedSignatureBytes);
 
 		if (!safeStringCompare(signatureB64, expectedSignature)) {
 			return null;
 		}
 
-		const payloadJson = Buffer.from(payloadB64, "base64url").toString("utf8");
+		const payloadJson = base64UrlDecode(payloadB64);
 		const parsed = JSON.parse(payloadJson) as Record<string, unknown>;
 
 		const nowSec = Math.floor(Date.now() / 1000);

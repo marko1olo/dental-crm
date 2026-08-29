@@ -226,21 +226,34 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 			<div className="treatment-presenter-modal" data-testid="treatment-presenter-modal-card">
 				{/* Top Bar Header */}
 				<header className="treatment-presenter-header no-print">
-					<div className="treatment-presenter-title-group">
-						<div className="treatment-presenter-icon-badge">
-							<Tablet size={22} />
+					<div className="treatment-presenter-header-main">
+						<div className="treatment-presenter-title-group">
+							<div className="treatment-presenter-icon-badge">
+								<Tablet size={22} />
+							</div>
+							<div className="treatment-presenter-header-meta">
+								<h2 id="treatment-presenter-modal-title" className="treatment-presenter-main-title">
+									<span>Презентация планов лечения</span>
+									<span className="treatment-presenter-law-badge">
+										ПП РФ № 736 & 804н
+									</span>
+								</h2>
+								<p className="treatment-presenter-subtitle">
+									Пациент: <strong className="text-[var(--tp-text-main)]">{patientName}</strong> · Врач: {doctorFullName}
+								</p>
+							</div>
 						</div>
-						<div className="treatment-presenter-header-meta">
-							<h2 id="treatment-presenter-modal-title" className="treatment-presenter-main-title">
-								<span>Презентация планов лечения</span>
-								<span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 font-bold border border-teal-500/20">
-									ПП РФ № 736 & 804н
-								</span>
-							</h2>
-							<p className="treatment-presenter-subtitle">
-								Пациент: <strong className="text-[var(--tp-text-main)]">{patientName}</strong> · Врач: {doctorFullName}
-							</p>
-						</div>
+
+						{/* Close Button on Mobile / Desktop */}
+						<button
+							type="button"
+							onClick={onClose}
+							className="treatment-presenter-close-btn"
+							aria-label="Закрыть модальное окно"
+							data-testid="close-treatment-presenter-btn"
+						>
+							<X size={20} />
+						</button>
 					</div>
 
 					{/* Navigation Tabs */}
@@ -282,17 +295,6 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							<span>Приложение №1</span>
 						</button>
 					</nav>
-
-					{/* Close Button */}
-					<button
-						type="button"
-						onClick={onClose}
-						className="p-2 rounded-xl text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] hover:bg-[var(--tp-surface-soft)] transition-colors cursor-pointer"
-						aria-label="Закрыть модальное окно"
-						data-testid="close-treatment-presenter-btn"
-					>
-						<X size={20} />
-					</button>
 				</header>
 
 				{/* Confirmation Notice Banner */}
@@ -314,11 +316,30 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					{/* TAB 1: 3-Tier Side-by-Side Comparison */}
 					{activeTab === "comparison" && (
 						<div className="flex flex-col gap-6" data-testid="comparison-view">
+							{/* Mobile Tier Tabs (Adaptive switcher for < 768px screens) */}
+							<div className="treatment-mobile-tier-bar" data-testid="mobile-tier-tabs">
+								{allTiers.map((t) => {
+									const isCurrent = selectedTierId === t.tierId;
+									return (
+										<button
+											key={t.tierId}
+											type="button"
+											onClick={() => handleSelectTier(t)}
+											className={"treatment-mobile-tier-btn " + (isCurrent ? "active " : "") + t.tierId}
+											data-testid={"mobile-tier-btn-" + t.tierId}
+										>
+											<span>{t.tierId === "economy" ? "А: Эконом" : t.tierId === "standard" ? "Б: Оптимум" : "В: Премиум"}</span>
+											{t.tierId === "standard" && <Sparkles size={11} className="text-amber-500" />}
+										</button>
+									);
+								})}
+							</div>
+
 							{/* Chairside Presentation Grid */}
 							<div className="treatment-3tier-grid">
 								{allTiers.map((tier) => {
 									const isSelected = selectedTierId === tier.tierId;
-									const isRecommended = tier.isRecommended || tier.tierId === "standard";
+									const isRecommended = tier.tierId === "standard";
 									const variantLetter = getTierLetter(tier.tierId);
 
 									return (
@@ -386,7 +407,9 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 												<div className="treatment-metric-item">
 													<ShieldCheck size={13} />
 													<span>Гарантия:</span>
-													<span className="treatment-metric-val">{tier.warrantyYears} лет</span>
+													<span className="treatment-metric-val">
+														{typeof tier.warrantyYears === "number" ? `${tier.warrantyYears} года` : tier.warrantyYears}
+													</span>
 												</div>
 											</div>
 

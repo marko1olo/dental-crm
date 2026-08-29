@@ -15,7 +15,7 @@
  *    - Real-time CRM administrative alert for reception/registry staff.
  */
 
-import { randomUUID } from "node:crypto";
+import { generateUuidV7 } from "../sync/hashing.js";
 import { z } from "zod";
 import {
 	areIntervalsOverlapping,
@@ -315,7 +315,7 @@ export function acquireSlotSoftLock(
 	// 3. Create fresh soft-lock
 	const ttlMinutes = request.lockTtlMinutes ?? SOFT_LOCK_DEFAULT_TTL_MINUTES;
 	const durationMinutes = Math.round((endMs - startMs) / 60000);
-	const lockId = `lock-${randomUUID()}`;
+	const lockId = `lock-${generateUuidV7()}`;
 	const acquiredAtIso = now.toISOString();
 	const expiresAtIso = new Date(nowMs + ttlMinutes * 60 * 1000).toISOString();
 
@@ -859,7 +859,7 @@ export function buildAdminNewBookingAlert(
 	const timeRu = formatSlotTimeRu(startDate);
 
 	return {
-		alertId: randomUUID(),
+		alertId: generateUuidV7(),
 		organizationId: bookingInput.organizationId,
 		branchId: bookingInput.branchId,
 		appointmentId,
@@ -940,7 +940,7 @@ export function createOnlinePortalBooking(params: {
 		};
 	}
 
-	const appointmentId = randomUUID();
+	const appointmentId = generateUuidV7();
 	const bookedAtIso = now.toISOString();
 
 	// Release soft-locks held by this patient

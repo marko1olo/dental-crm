@@ -90,6 +90,21 @@
 			"types": "./dist/treatment-plans/index.d.ts",
 			"import": "./dist/treatment-plans/index.js",
 			"default": "./dist/treatment-plans/index.js"
+		},
+		"./doctor-portal": {
+			"types": "./dist/doctor-portal/index.d.ts",
+			"import": "./dist/doctor-portal/index.js",
+			"default": "./dist/doctor-portal/index.js"
+		},
+		"./branches": {
+			"types": "./dist/branches/index.d.ts",
+			"import": "./dist/branches/index.js",
+			"default": "./dist/branches/index.js"
+		},
+		"./warehouse": {
+			"types": "./dist/warehouse/index.d.ts",
+			"import": "./dist/warehouse/index.js",
+			"default": "./dist/warehouse/index.js"
 		}
 	},
 	"scripts": {

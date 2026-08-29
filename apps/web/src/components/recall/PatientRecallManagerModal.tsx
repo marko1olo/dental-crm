@@ -620,55 +620,57 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 			<div className="patient-recall-container" data-testid="patient-recall-manager-modal">
 				{/* Top Header */}
 				<header className="pr-header">
-					<div className="pr-header-left">
-						<div className="pr-header-icon" aria-hidden="true">
-							<ShieldCheck size={20} />
-						</div>
-						<div>
-							<h2 id="patient-recall-modal-title" className="pr-header-title">
-								<span>Реколл-менеджер & Возврат пациентов</span>
-								<span className="pr-header-badge">DENTE RECALL HUD</span>
-							</h2>
-							<p className="pr-header-subtitle">
-								Диспансерный учет, омниканальные сообщения в 1 клик, скрипты звонка и контроль конверсии
-							</p>
-						</div>
-					</div>
-
-					<div className="pr-header-right">
-						{/* View Mode Toggle */}
-						<div className="pr-view-toggle" role="radiogroup" aria-label="Вид отображения">
-							<button
-								type="button"
-								className={`pr-view-btn ${viewMode === "table" ? "active" : ""}`}
-								onClick={() => setViewMode("table")}
-								data-testid="pr-view-table-btn"
-							>
-								<List size={14} />
-								<span>Реестр</span>
-							</button>
-							<button
-								type="button"
-								className={`pr-view-btn ${viewMode === "kanban" ? "active" : ""}`}
-								onClick={() => setViewMode("kanban")}
-								data-testid="pr-view-kanban-btn"
-							>
-								<Kanban size={14} />
-								<span>Канбан</span>
-							</button>
+					<div className="pr-header-main">
+						<div className="pr-header-left">
+							<div className="pr-header-icon" aria-hidden="true">
+								<ShieldCheck size={20} />
+							</div>
+							<div className="pr-header-text">
+								<h2 id="patient-recall-modal-title" className="pr-header-title">
+									<span>Реколл-менеджер & Возврат пациентов</span>
+									<span className="pr-header-badge">DENTE RECALL HUD</span>
+								</h2>
+								<p className="pr-header-subtitle">
+									Диспансерный учет, омниканальные сообщения в 1 клик, скрипты звонка и контроль конверсии
+								</p>
+							</div>
 						</div>
 
-						{onClose && (
-							<button
-								type="button"
-								className="pr-close-btn"
-								onClick={onClose}
-								aria-label="Закрыть окно"
-								data-testid="pr-close-modal-btn"
-							>
-								<X size={18} />
-							</button>
-						)}
+						<div className="pr-header-actions">
+							{/* View Mode Toggle */}
+							<div className="pr-view-toggle" role="radiogroup" aria-label="Вид отображения">
+								<button
+									type="button"
+									className={`pr-view-btn ${viewMode === "table" ? "active" : ""}`}
+									onClick={() => setViewMode("table")}
+									data-testid="pr-view-table-btn"
+								>
+									<List size={14} />
+									<span>Реестр</span>
+								</button>
+								<button
+									type="button"
+									className={`pr-view-btn ${viewMode === "kanban" ? "active" : ""}`}
+									onClick={() => setViewMode("kanban")}
+									data-testid="pr-view-kanban-btn"
+								>
+									<Kanban size={14} />
+									<span>Канбан</span>
+								</button>
+							</div>
+
+							{onClose && (
+								<button
+									type="button"
+									className="pr-close-btn"
+									onClick={onClose}
+									aria-label="Закрыть окно"
+									data-testid="pr-close-modal-btn"
+								>
+									<X size={18} />
+								</button>
+							)}
+						</div>
 					</div>
 				</header>
 
@@ -818,152 +820,254 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 							</div>
 						) : viewMode === "table" ? (
 							/* Table View */
-							<div className="pr-table-container">
-								<table className="pr-table">
-									<thead>
-										<tr>
-											<th scope="col">Пациент / Телефон</th>
-											<th scope="col">Категория</th>
-											<th scope="col">Визит / Срок</th>
-											<th scope="col">Срочность</th>
-											<th scope="col">Врач</th>
-											<th scope="col">Статус</th>
-											<th scope="col">1-Click Действия</th>
-										</tr>
-									</thead>
-									<tbody>
-										{filteredCandidates.map((candidate) => {
-											return (
-												<tr key={candidate.id} data-testid={`pr-row-${candidate.id}`}>
-													<td>
-														<div>
-															<div className="pr-patient-title">{candidate.fullName}</div>
-															<div className="pr-patient-meta">
-																<span>{candidate.phone || "тел. не указан"}</span>
+							<>
+								<div className="pr-table-container pr-desktop-table-only">
+									<table className="pr-table">
+										<thead>
+											<tr>
+												<th scope="col">Пациент / Телефон</th>
+												<th scope="col">Категория</th>
+												<th scope="col">Визит / Срок</th>
+												<th scope="col">Срочность</th>
+												<th scope="col">Врач</th>
+												<th scope="col">Статус</th>
+												<th scope="col">1-Click Действия</th>
+											</tr>
+										</thead>
+										<tbody>
+											{filteredCandidates.map((candidate) => {
+												return (
+													<tr key={candidate.id} data-testid={`pr-row-${candidate.id}`}>
+														<td>
+															<div>
+																<div className="pr-patient-title">{candidate.fullName}</div>
+																<div className="pr-patient-meta">
+																	<span>{candidate.phone || "тел. не указан"}</span>
+																</div>
 															</div>
-														</div>
-													</td>
+														</td>
 
-													<td>
-														<span className="pr-cycle-tag" title={candidate.clinicalNotes}>
-															{candidate.categoryLabel}
-														</span>
-													</td>
+														<td>
+															<span className="pr-cycle-tag" title={candidate.clinicalNotes}>
+																{candidate.categoryLabel}
+															</span>
+														</td>
 
-													<td>
-														<div style={{ fontSize: "0.75rem" }}>
-															<div>Был: {candidate.lastVisitDate}</div>
-															<div style={{ color: "var(--pr-muted)" }}>План: {candidate.dueDate}</div>
-														</div>
-													</td>
+														<td>
+															<div style={{ fontSize: "0.75rem" }}>
+																<div>Был: {candidate.lastVisitDate}</div>
+																<div style={{ color: "var(--pr-muted)" }}>План: {candidate.dueDate}</div>
+															</div>
+														</td>
 
-													<td>
-														<span className={`pr-urgency-badge pr-urgency-badge--${candidate.urgency}`}>
-															{candidate.urgency === "due_now" && "Пора звать"}
-															{candidate.urgency === "overdue_30" && `+${candidate.daysOverdue} дн.`}
-															{candidate.urgency === "overdue_90" && `+${candidate.daysOverdue} дн. (риск)`}
-															{candidate.urgency === "upcoming" && `через ${Math.abs(candidate.daysOverdue)} дн.`}
-															{candidate.urgency === "completed" && "Завершено"}
-														</span>
-													</td>
+														<td>
+															<span className={`pr-urgency-badge pr-urgency-badge--${candidate.urgency}`}>
+																{candidate.urgency === "due_now" && "Пора звать"}
+																{candidate.urgency === "overdue_30" && `+${candidate.daysOverdue} дн.`}
+																{candidate.urgency === "overdue_90" && `+${candidate.daysOverdue} дн. (риск)`}
+																{candidate.urgency === "upcoming" && `через ${Math.abs(candidate.daysOverdue)} дн.`}
+																{candidate.urgency === "completed" && "Завершено"}
+															</span>
+														</td>
 
-													<td>
-														<span style={{ fontSize: "0.75rem", color: "var(--pr-ink)" }}>
-															{candidate.attendingDoctorName || "—"}
-														</span>
-													</td>
+														<td>
+															<span style={{ fontSize: "0.75rem", color: "var(--pr-ink)" }}>
+																{candidate.attendingDoctorName || "—"}
+															</span>
+														</td>
 
-													<td>
-														<select
-															className="pr-status-select"
-															value={candidate.status}
-															onChange={(e) =>
-																handleStatusUpdate(
-																	candidate.id,
-																	e.target.value as RecallContactStatus,
-																)
-															}
-															data-testid={`pr-status-select-${candidate.id}`}
+														<td>
+															<select
+																className="pr-status-select"
+																value={candidate.status}
+																onChange={(e) =>
+																	handleStatusUpdate(
+																		candidate.id,
+																		e.target.value as RecallContactStatus,
+																	)
+																}
+																data-testid={`pr-status-select-${candidate.id}`}
+															>
+																<option value="pending">Ожидает вызова (PENDING)</option>
+																<option value="contacted">Связались (CONTACTED)</option>
+																<option value="scheduled">Записан (BOOKED)</option>
+																<option value="completed">Визит завершен</option>
+																<option value="declined">Отказ / Перенос</option>
+															</select>
+														</td>
+
+														<td>
+															<div className="pr-actions-cell">
+																{/* WhatsApp */}
+																<button
+																	type="button"
+																	className="pr-btn pr-btn--whatsapp"
+																	title="Отправить в WhatsApp и перевести в CONTACTED"
+																	disabled={!candidate.phone}
+																	onClick={() => void handleSendWhatsApp(candidate)}
+																	data-testid={`pr-whatsapp-btn-${candidate.id}`}
+																>
+																	<MessageCircle size={14} />
+																	<span>WhatsApp</span>
+																</button>
+
+																{/* Telegram */}
+																<button
+																	type="button"
+																	className="pr-btn pr-btn--telegram"
+																	title="Отправить в Telegram и перевести в CONTACTED"
+																	disabled={!candidate.phone}
+																	onClick={() => void handleSendTelegram(candidate)}
+																	data-testid={`pr-telegram-btn-${candidate.id}`}
+																>
+																	<Send size={14} />
+																	<span>Telegram</span>
+																</button>
+
+																{/* Позвонить */}
+																<button
+																	type="button"
+																	className="pr-btn pr-btn--call"
+																	title="Позвонить, открыть скрипт и перевести в CONTACTED"
+																	disabled={!candidate.phone}
+																	onClick={() => void handleCallPhone(candidate)}
+																	data-testid={`pr-call-btn-${candidate.id}`}
+																>
+																	<PhoneCall size={14} />
+																	<span>Позвонить</span>
+																</button>
+
+																{/* Записать (BOOKED) */}
+																<button
+																	type="button"
+																	className="pr-btn pr-btn--book"
+																	title="Записать в расписание (перевести в статус BOOKED)"
+																	onClick={() => handleBookAppointment(candidate)}
+																	data-testid={`pr-book-btn-${candidate.id}`}
+																>
+																	<Calendar size={14} />
+																	<span>Записать</span>
+																</button>
+
+																{/* Предпросмотр текста */}
+																<button
+																	type="button"
+																	className="pr-btn pr-btn--preview"
+																	title="Открыть предпросмотр сообщения"
+																	onClick={() => handleOpenGenerator(candidate, "whatsapp")}
+																	data-testid={`pr-preview-btn-${candidate.id}`}
+																>
+																	<MessageSquare size={14} />
+																</button>
+															</div>
+														</td>
+													</tr>
+												);
+											})}
+										</tbody>
+									</table>
+								</div>
+
+								{/* Mobile Cards View (< 768px touch-friendly) */}
+								<div className="pr-mobile-cards-list" data-testid="pr-mobile-cards-list">
+									{filteredCandidates.map((candidate) => (
+										<div className="pr-mobile-card" key={candidate.id} data-testid={`pr-mobile-card-${candidate.id}`}>
+											<div className="pr-mobile-card-top">
+												<div>
+													<div className="pr-patient-title">{candidate.fullName}</div>
+													<div className="pr-patient-meta">
+														<a
+															href={candidate.phone ? `tel:${candidate.phone.replace(/\s+/g, "")}` : undefined}
+															className="pr-phone-link"
 														>
-															<option value="pending">Ожидает вызова (PENDING)</option>
-															<option value="contacted">Связались (CONTACTED)</option>
-															<option value="scheduled">Записан (BOOKED)</option>
-															<option value="completed">Визит завершен</option>
-															<option value="declined">Отказ / Перенос</option>
-														</select>
-													</td>
+															<Phone size={12} />
+															<span>{candidate.phone || "тел. не указан"}</span>
+														</a>
+													</div>
+												</div>
+												<span className={`pr-urgency-badge pr-urgency-badge--${candidate.urgency}`}>
+													{candidate.urgency === "due_now" && "Пора звать"}
+													{candidate.urgency === "overdue_30" && `+${candidate.daysOverdue} дн.`}
+													{candidate.urgency === "overdue_90" && `+${candidate.daysOverdue} дн. (риск)`}
+													{candidate.urgency === "upcoming" && `через ${Math.abs(candidate.daysOverdue)} дн.`}
+													{candidate.urgency === "completed" && "Завершено"}
+												</span>
+											</div>
 
-													<td>
-														<div className="pr-actions-cell">
-															{/* WhatsApp */}
-															<button
-																type="button"
-																className="pr-btn pr-btn--whatsapp"
-																title="Отправить в WhatsApp и перевести в CONTACTED"
-																disabled={!candidate.phone}
-																onClick={() => void handleSendWhatsApp(candidate)}
-																data-testid={`pr-whatsapp-btn-${candidate.id}`}
-															>
-																<MessageCircle size={14} />
-																<span>WhatsApp</span>
-															</button>
+											<div className="pr-mobile-card-details">
+												<div className="pr-mobile-chip-row">
+													<span className="pr-cycle-tag">{candidate.categoryLabel}</span>
+													<span className="text-[11px] text-[var(--pr-muted)]">
+														Врач: <strong className="text-[var(--pr-ink)]">{candidate.attendingDoctorName || "—"}</strong>
+													</span>
+												</div>
+												<div className="pr-mobile-dates-row">
+													<span>Был: {candidate.lastVisitDate}</span>
+													<span>План: <strong>{candidate.dueDate}</strong></span>
+												</div>
+											</div>
 
-															{/* Telegram */}
-															<button
-																type="button"
-																className="pr-btn pr-btn--telegram"
-																title="Отправить в Telegram и перевести в CONTACTED"
-																disabled={!candidate.phone}
-																onClick={() => void handleSendTelegram(candidate)}
-																data-testid={`pr-telegram-btn-${candidate.id}`}
-															>
-																<Send size={14} />
-																<span>Telegram</span>
-															</button>
+											<div className="pr-mobile-status-row">
+												<label className="text-[11px] text-[var(--pr-muted)] font-bold">Статус:</label>
+												<select
+													className="pr-status-select flex-1"
+													value={candidate.status}
+													onChange={(e) =>
+														handleStatusUpdate(
+															candidate.id,
+															e.target.value as RecallContactStatus,
+														)
+													}
+												>
+													<option value="pending">Ожидает вызова (PENDING)</option>
+													<option value="contacted">Связались (CONTACTED)</option>
+													<option value="scheduled">Записан (BOOKED)</option>
+													<option value="completed">Визит завершен</option>
+													<option value="declined">Отказ / Перенос</option>
+												</select>
+											</div>
 
-															{/* Позвонить */}
-															<button
-																type="button"
-																className="pr-btn pr-btn--call"
-																title="Позвонить, открыть скрипт и перевести в CONTACTED"
-																disabled={!candidate.phone}
-																onClick={() => void handleCallPhone(candidate)}
-																data-testid={`pr-call-btn-${candidate.id}`}
-															>
-																<PhoneCall size={14} />
-																<span>Позвонить</span>
-															</button>
-
-															{/* Записать (BOOKED) */}
-															<button
-																type="button"
-																className="pr-btn pr-btn--book"
-																title="Записать в расписание (перевести в статус BOOKED)"
-																onClick={() => handleBookAppointment(candidate)}
-																data-testid={`pr-book-btn-${candidate.id}`}
-															>
-																<Calendar size={14} />
-																<span>Записать</span>
-															</button>
-
-															{/* Предпросмотр текста */}
-															<button
-																type="button"
-																className="pr-btn pr-btn--preview"
-																title="Открыть предпросмотр сообщения"
-																onClick={() => handleOpenGenerator(candidate, "whatsapp")}
-																data-testid={`pr-preview-btn-${candidate.id}`}
-															>
-																<MessageSquare size={14} />
-															</button>
-														</div>
-													</td>
-												</tr>
-											);
-										})}
-									</tbody>
-								</table>
-							</div>
+											<div className="pr-mobile-actions-grid">
+												<button
+													type="button"
+													className="pr-btn pr-btn--whatsapp"
+													disabled={!candidate.phone}
+													onClick={() => void handleSendWhatsApp(candidate)}
+												>
+													<MessageCircle size={14} />
+													<span>WhatsApp</span>
+												</button>
+												<button
+													type="button"
+													className="pr-btn pr-btn--telegram"
+													disabled={!candidate.phone}
+													onClick={() => void handleSendTelegram(candidate)}
+												>
+													<Send size={14} />
+													<span>Telegram</span>
+												</button>
+												<button
+													type="button"
+													className="pr-btn pr-btn--call"
+													disabled={!candidate.phone}
+													onClick={() => void handleCallPhone(candidate)}
+												>
+													<PhoneCall size={14} />
+													<span>Звонок</span>
+												</button>
+												<button
+													type="button"
+													className="pr-btn pr-btn--book"
+													onClick={() => handleBookAppointment(candidate)}
+												>
+													<Calendar size={14} />
+													<span>Записать</span>
+												</button>
+											</div>
+										</div>
+									))}
+								</div>
+							</>
 						) : (
 							/* Kanban Board View */
 							<div className="pr-kanban-board" data-testid="pr-kanban-board">

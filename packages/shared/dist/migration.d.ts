@@ -508,11 +508,11 @@ export declare const migrationAnalyzeResponseSchema: z.ZodObject<{
         affectedRows: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
         message: string;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         affectedRows: number;
     }, {
         message: string;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         affectedRows: number;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
@@ -546,7 +546,7 @@ export declare const migrationAnalyzeResponseSchema: z.ZodObject<{
     projectedQuarantine: number;
     qualityFindings: {
         message: string;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         affectedRows: number;
     }[];
 }, {
@@ -580,7 +580,7 @@ export declare const migrationAnalyzeResponseSchema: z.ZodObject<{
     projectedQuarantine: number;
     qualityFindings: {
         message: string;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         affectedRows: number;
     }[];
 }>;

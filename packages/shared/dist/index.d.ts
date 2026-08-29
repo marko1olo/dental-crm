@@ -29,11 +29,16 @@ export * from "./patients/index.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";
 export * from "./marketing/index.js";
+export * from "./analytics/index.js";
 export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
 export * from "./messaging/index.js";
 export * from "./portal/index.js";
+export * from "./doctor-portal/index.js";
 export * from "./treatment-plans/index.js";
+export * from "./diagnostics/index.js";
+export * from "./branches/index.js";
+export * from "./warehouse/index.js";
 export * as dispensaryRecall from "./recall/index.js";
 export { clinicalRecallCategorySchema, CLINICAL_RECALL_CADENCES, normalizeRecallCategory, recallDispensaryStatusSchema, RECALL_STATUS_LABELS_RU, calculateRecallDueDate, calculateRecallDueDateString, determineRecallStatus, renderRecallMessageTemplate, DEFAULT_CLINICAL_TEMPLATES, generateRecallMessage, recallDispensaryRecordSchema, canTransitionDispensaryRecallStatus, filterDueDispensaryRecalls, filterUpcomingRecalls, filterOverdueRecalls, calculateRecallCohortMetrics, type ClinicalRecallCategory, type ClinicalRecallType, type RecallIntervalConfig, type RecallCadenceDefinition, type RecallDispensaryStatus, type RecallTemplateContext, type GenerateRecallMessageParams, type RecallDispensaryRecord, type RecallCohortMetrics, } from "./recall/index.js";
 export { validateRussianSnils } from "./fiscal/index.js";
@@ -620,9 +625,9 @@ export declare const speechTranscriptionQualitySchema: z.ZodObject<{
     signals: z.ZodArray<z.ZodString, "many">;
     nextAction: z.ZodString;
 }, "strip", z.ZodTypeAny, {
+    level: "failed" | "empty" | "clear" | "review";
     confidence: number | null;
     durationMs: number | null;
-    level: "failed" | "empty" | "clear" | "review";
     wordCount: number;
     charCount: number;
     bytesPerSecond: number | null;
@@ -630,9 +635,9 @@ export declare const speechTranscriptionQualitySchema: z.ZodObject<{
     signals: string[];
     nextAction: string;
 }, {
+    level: "failed" | "empty" | "clear" | "review";
     confidence: number | null;
     durationMs: number | null;
-    level: "failed" | "empty" | "clear" | "review";
     wordCount: number;
     charCount: number;
     bytesPerSecond: number | null;
@@ -1566,9 +1571,9 @@ export declare const speechTranscriptionChunkSchema: z.ZodObject<{
         signals: z.ZodArray<z.ZodString, "many">;
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
+        level: "failed" | "empty" | "clear" | "review";
         confidence: number | null;
         durationMs: number | null;
-        level: "failed" | "empty" | "clear" | "review";
         wordCount: number;
         charCount: number;
         bytesPerSecond: number | null;
@@ -1576,9 +1581,9 @@ export declare const speechTranscriptionChunkSchema: z.ZodObject<{
         signals: string[];
         nextAction: string;
     }, {
+        level: "failed" | "empty" | "clear" | "review";
         confidence: number | null;
         durationMs: number | null;
-        level: "failed" | "empty" | "clear" | "review";
         wordCount: number;
         charCount: number;
         bytesPerSecond: number | null;
@@ -1610,9 +1615,9 @@ export declare const speechTranscriptionChunkSchema: z.ZodObject<{
     byteLength: number;
     transcript: string;
     quality: {
+        level: "failed" | "empty" | "clear" | "review";
         confidence: number | null;
         durationMs: number | null;
-        level: "failed" | "empty" | "clear" | "review";
         wordCount: number;
         charCount: number;
         bytesPerSecond: number | null;
@@ -1641,9 +1646,9 @@ export declare const speechTranscriptionChunkSchema: z.ZodObject<{
     byteLength: number;
     transcript: string;
     quality?: {
+        level: "failed" | "empty" | "clear" | "review";
         confidence: number | null;
         durationMs: number | null;
-        level: "failed" | "empty" | "clear" | "review";
         wordCount: number;
         charCount: number;
         bytesPerSecond: number | null;
@@ -1682,9 +1687,9 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
             signals: z.ZodArray<z.ZodString, "many">;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
+            level: "failed" | "empty" | "clear" | "review";
             confidence: number | null;
             durationMs: number | null;
-            level: "failed" | "empty" | "clear" | "review";
             wordCount: number;
             charCount: number;
             bytesPerSecond: number | null;
@@ -1692,9 +1697,9 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
             signals: string[];
             nextAction: string;
         }, {
+            level: "failed" | "empty" | "clear" | "review";
             confidence: number | null;
             durationMs: number | null;
-            level: "failed" | "empty" | "clear" | "review";
             wordCount: number;
             charCount: number;
             bytesPerSecond: number | null;
@@ -1726,9 +1731,9 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
         byteLength: number;
         transcript: string;
         quality: {
+            level: "failed" | "empty" | "clear" | "review";
             confidence: number | null;
             durationMs: number | null;
-            level: "failed" | "empty" | "clear" | "review";
             wordCount: number;
             charCount: number;
             bytesPerSecond: number | null;
@@ -1757,9 +1762,9 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
         byteLength: number;
         transcript: string;
         quality?: {
+            level: "failed" | "empty" | "clear" | "review";
             confidence: number | null;
             durationMs: number | null;
-            level: "failed" | "empty" | "clear" | "review";
             wordCount: number;
             charCount: number;
             bytesPerSecond: number | null;
@@ -2018,9 +2023,9 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
         byteLength: number;
         transcript: string;
         quality: {
+            level: "failed" | "empty" | "clear" | "review";
             confidence: number | null;
             durationMs: number | null;
-            level: "failed" | "empty" | "clear" | "review";
             wordCount: number;
             charCount: number;
             bytesPerSecond: number | null;
@@ -2105,9 +2110,9 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
         byteLength: number;
         transcript: string;
         quality?: {
+            level: "failed" | "empty" | "clear" | "review";
             confidence: number | null;
             durationMs: number | null;
-            level: "failed" | "empty" | "clear" | "review";
             wordCount: number;
             charCount: number;
             bytesPerSecond: number | null;
@@ -2945,7 +2950,7 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
     title: string;
     description: string;
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-    scope: "clinic" | "personal" | "branch" | "network";
+    scope: "clinic" | "branch" | "personal" | "network";
     primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
     defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -2958,7 +2963,7 @@ export declare const clinicWorkspaceProfileSchema: z.ZodObject<{
     title: string;
     description: string;
     mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-    scope: "clinic" | "personal" | "branch" | "network";
+    scope: "clinic" | "branch" | "personal" | "network";
     primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
     defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -2981,7 +2986,7 @@ export declare const roleAccessPolicySchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     title: string;
     role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-    scope: "clinic" | "personal" | "branch" | "network";
+    scope: "clinic" | "branch" | "personal" | "network";
     defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
     canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -2991,7 +2996,7 @@ export declare const roleAccessPolicySchema: z.ZodObject<{
 }, {
     title: string;
     role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-    scope: "clinic" | "personal" | "branch" | "network";
+    scope: "clinic" | "branch" | "personal" | "network";
     defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
     canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
     canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3347,7 +3352,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         title: string;
         description: string;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-        scope: "clinic" | "personal" | "branch" | "network";
+        scope: "clinic" | "branch" | "personal" | "network";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3360,7 +3365,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         title: string;
         description: string;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-        scope: "clinic" | "personal" | "branch" | "network";
+        scope: "clinic" | "branch" | "personal" | "network";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3382,7 +3387,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         title: string;
         role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-        scope: "clinic" | "personal" | "branch" | "network";
+        scope: "clinic" | "branch" | "personal" | "network";
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3392,7 +3397,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     }, {
         title: string;
         role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-        scope: "clinic" | "personal" | "branch" | "network";
+        scope: "clinic" | "branch" | "personal" | "network";
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3500,7 +3505,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         title: string;
         description: string;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-        scope: "clinic" | "personal" | "branch" | "network";
+        scope: "clinic" | "branch" | "personal" | "network";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3512,7 +3517,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     roleAccessPolicies: {
         title: string;
         role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-        scope: "clinic" | "personal" | "branch" | "network";
+        scope: "clinic" | "branch" | "personal" | "network";
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3620,7 +3625,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         title: string;
         description: string;
         mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-        scope: "clinic" | "personal" | "branch" | "network";
+        scope: "clinic" | "branch" | "personal" | "network";
         primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3632,7 +3637,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     roleAccessPolicies: {
         title: string;
         role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-        scope: "clinic" | "personal" | "branch" | "network";
+        scope: "clinic" | "branch" | "personal" | "network";
         defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
         canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
         canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -3720,7 +3725,7 @@ export declare const scheduleWarningSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     id: string;
     title: string;
-    severity: "info" | "warning" | "critical";
+    severity: "warning" | "info" | "critical";
     detail: string;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     relatedAppointmentId: string | null;
@@ -3728,7 +3733,7 @@ export declare const scheduleWarningSchema: z.ZodObject<{
 }, {
     id: string;
     title: string;
-    severity: "info" | "warning" | "critical";
+    severity: "warning" | "info" | "critical";
     detail: string;
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     relatedAppointmentId: string | null;
@@ -3919,7 +3924,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         id: string;
         title: string;
-        severity: "info" | "warning" | "critical";
+        severity: "warning" | "info" | "critical";
         detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         relatedAppointmentId: string | null;
@@ -3927,7 +3932,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     }, {
         id: string;
         title: string;
-        severity: "info" | "warning" | "critical";
+        severity: "warning" | "info" | "critical";
         detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         relatedAppointmentId: string | null;
@@ -3990,7 +3995,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     scheduleWarnings: {
         id: string;
         title: string;
-        severity: "info" | "warning" | "critical";
+        severity: "warning" | "info" | "critical";
         detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         relatedAppointmentId: string | null;
@@ -4053,7 +4058,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     scheduleWarnings: {
         id: string;
         title: string;
-        severity: "info" | "warning" | "critical";
+        severity: "warning" | "info" | "critical";
         detail: string;
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         relatedAppointmentId: string | null;
@@ -4689,7 +4694,7 @@ export declare const clinicalRuleSchema: z.ZodObject<{
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     condition: string | null;
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     triggerServiceIds: string[];
     requiredServiceIds: string[];
@@ -4706,7 +4711,7 @@ export declare const clinicalRuleSchema: z.ZodObject<{
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     condition: string | null;
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     triggerServiceIds: string[];
     requiredServiceIds: string[];
@@ -4741,7 +4746,7 @@ export declare const clinicalRuleEvaluationSchema: z.ZodObject<{
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     resolved: boolean;
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     blockedServiceIds: string[];
     ruleId: string;
@@ -4758,7 +4763,7 @@ export declare const clinicalRuleEvaluationSchema: z.ZodObject<{
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     resolved: boolean;
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     blockedServiceIds: string[];
     ruleId: string;
@@ -4841,7 +4846,7 @@ export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         resolved: boolean;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockedServiceIds: string[];
         ruleId: string;
@@ -4858,7 +4863,7 @@ export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         resolved: boolean;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockedServiceIds: string[];
         ruleId: string;
@@ -4911,7 +4916,7 @@ export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         resolved: boolean;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockedServiceIds: string[];
         ruleId: string;
@@ -4939,7 +4944,7 @@ export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         resolved: boolean;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockedServiceIds: string[];
         ruleId: string;
@@ -4972,7 +4977,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     triggerServiceIds: string[];
     requiredServiceIds: string[];
@@ -4986,7 +4991,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     triggerServiceIds: string[];
     warningText: string;
@@ -5002,7 +5007,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     triggerServiceIds: string[];
     requiredServiceIds: string[];
@@ -5016,7 +5021,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
     triggerServiceIds: string[];
     warningText: string;
@@ -5053,7 +5058,7 @@ export declare const updateClinicalRuleSchema: z.ZodObject<{
     action?: "add_required_service" | "block_service" | "show_warning" | "schedule_followup" | undefined;
     condition?: string | null | undefined;
     specialty?: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal" | undefined;
-    severity?: "info" | "warning" | "blocker" | undefined;
+    severity?: "warning" | "info" | "blocker" | undefined;
     ownerRole?: "doctor" | "administrator" | "assistant" | "owner" | "manager" | undefined;
     triggerServiceIds?: string[] | undefined;
     requiredServiceIds?: string[] | undefined;
@@ -5069,7 +5074,7 @@ export declare const updateClinicalRuleSchema: z.ZodObject<{
     action?: "add_required_service" | "block_service" | "show_warning" | "schedule_followup" | undefined;
     condition?: string | null | undefined;
     specialty?: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal" | undefined;
-    severity?: "info" | "warning" | "blocker" | undefined;
+    severity?: "warning" | "info" | "blocker" | undefined;
     ownerRole?: "doctor" | "administrator" | "assistant" | "owner" | "manager" | undefined;
     triggerServiceIds?: string[] | undefined;
     requiredServiceIds?: string[] | undefined;
@@ -9580,6 +9585,7 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
     priority: "urgent" | "routine";
+    requestedBy: string;
     pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
     indication: string;
     clinicalToothRows: {
@@ -9599,12 +9605,12 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
     clinicalQuestion: string;
     includeDicomExport: boolean;
     includeRadiologistReport: boolean;
-    requestedBy: string;
     dueDate?: string | null | undefined;
     recipientClinic?: string | null | undefined;
 }, {
     studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
     priority: "urgent" | "routine";
+    requestedBy: string;
     pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
     indication: string;
     clinicalToothRows: {
@@ -9624,7 +9630,6 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
     clinicalQuestion: string;
     includeDicomExport: boolean;
     includeRadiologistReport: boolean;
-    requestedBy: string;
     dueDate?: string | null | undefined;
     recipientClinic?: string | null | undefined;
 }>;
@@ -11328,6 +11333,7 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
     complications?: string | null | undefined;
     comorbidities?: string | null | undefined;
     instrumentTrayBarcode?: string | null | undefined;
+    diagnosisTooth?: string | null | undefined;
     complaint?: string | null | undefined;
     treatmentPlan?: string | null | undefined;
     clinicalToothRows?: {
@@ -11355,7 +11361,6 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
         generalHealthNotes?: string | null | undefined;
     } | null | undefined;
     statusLocalis?: string | null | undefined;
-    diagnosisTooth?: string | null | undefined;
     nextVisitPlan?: string | null | undefined;
     content?: string | null | undefined;
     lockedAt?: string | null | undefined;
@@ -11399,6 +11404,7 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
     complications?: string | null | undefined;
     comorbidities?: string | null | undefined;
     instrumentTrayBarcode?: string | null | undefined;
+    diagnosisTooth?: string | null | undefined;
     complaint?: string | null | undefined;
     treatmentPlan?: string | null | undefined;
     clinicalToothRows?: {
@@ -11426,7 +11432,6 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
         generalHealthNotes?: string | null | undefined;
     } | null | undefined;
     statusLocalis?: string | null | undefined;
-    diagnosisTooth?: string | null | undefined;
     nextVisitPlan?: string | null | undefined;
     content?: string | null | undefined;
     lockedAt?: string | null | undefined;
@@ -11759,6 +11764,7 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     doctorFullName: string;
     estimatedTotalRub: number;
+    acceptedAt: string;
     paymentTerms: string;
     estimateValidUntil: string;
     teethOrArea: string;
@@ -11787,13 +11793,13 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
     }[];
     rejectedAlternatives: string[];
     warrantyAndControlTerms: string;
-    acceptedAt: string;
     patientUnderstandsAlternatives: true;
     patientUnderstandsCostMayChange: true;
     revisionRequiresNewApproval: true;
 }, {
     doctorFullName: string;
     estimatedTotalRub: number;
+    acceptedAt: string;
     paymentTerms: string;
     estimateValidUntil: string;
     teethOrArea: string;
@@ -11822,7 +11828,6 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
     }[];
     rejectedAlternatives: string[];
     warrantyAndControlTerms: string;
-    acceptedAt: string;
     patientUnderstandsAlternatives: true;
     patientUnderstandsCostMayChange: true;
     revisionRequiresNewApproval: true;
@@ -13174,6 +13179,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
         priority: "urgent" | "routine";
+        requestedBy: string;
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
@@ -13193,12 +13199,12 @@ export declare const documentPayloadSchema: z.ZodObject<{
         clinicalQuestion: string;
         includeDicomExport: boolean;
         includeRadiologistReport: boolean;
-        requestedBy: string;
         dueDate?: string | null | undefined;
         recipientClinic?: string | null | undefined;
     }, {
         studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
         priority: "urgent" | "routine";
+        requestedBy: string;
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
@@ -13218,7 +13224,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         clinicalQuestion: string;
         includeDicomExport: boolean;
         includeRadiologistReport: boolean;
-        requestedBy: string;
         dueDate?: string | null | undefined;
         recipientClinic?: string | null | undefined;
     }>>;
@@ -14433,6 +14438,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         complications?: string | null | undefined;
         comorbidities?: string | null | undefined;
         instrumentTrayBarcode?: string | null | undefined;
+        diagnosisTooth?: string | null | undefined;
         complaint?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
@@ -14460,7 +14466,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
         statusLocalis?: string | null | undefined;
-        diagnosisTooth?: string | null | undefined;
         nextVisitPlan?: string | null | undefined;
         content?: string | null | undefined;
         lockedAt?: string | null | undefined;
@@ -14504,6 +14509,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         complications?: string | null | undefined;
         comorbidities?: string | null | undefined;
         instrumentTrayBarcode?: string | null | undefined;
+        diagnosisTooth?: string | null | undefined;
         complaint?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
@@ -14531,7 +14537,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
         statusLocalis?: string | null | undefined;
-        diagnosisTooth?: string | null | undefined;
         nextVisitPlan?: string | null | undefined;
         content?: string | null | undefined;
         lockedAt?: string | null | undefined;
@@ -16335,6 +16340,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         doctorFullName: string;
         estimatedTotalRub: number;
+        acceptedAt: string;
         paymentTerms: string;
         estimateValidUntil: string;
         teethOrArea: string;
@@ -16363,13 +16369,13 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         rejectedAlternatives: string[];
         warrantyAndControlTerms: string;
-        acceptedAt: string;
         patientUnderstandsAlternatives: true;
         patientUnderstandsCostMayChange: true;
         revisionRequiresNewApproval: true;
     }, {
         doctorFullName: string;
         estimatedTotalRub: number;
+        acceptedAt: string;
         paymentTerms: string;
         estimateValidUntil: string;
         teethOrArea: string;
@@ -16398,7 +16404,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         rejectedAlternatives: string[];
         warrantyAndControlTerms: string;
-        acceptedAt: string;
         patientUnderstandsAlternatives: true;
         patientUnderstandsCostMayChange: true;
         revisionRequiresNewApproval: true;
@@ -17052,6 +17057,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     xrayCbctReferral?: {
         studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
         priority: "urgent" | "routine";
+        requestedBy: string;
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
@@ -17071,7 +17077,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         clinicalQuestion: string;
         includeDicomExport: boolean;
         includeRadiologistReport: boolean;
-        requestedBy: string;
         dueDate?: string | null | undefined;
         recipientClinic?: string | null | undefined;
     } | undefined;
@@ -17327,6 +17332,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         complications?: string | null | undefined;
         comorbidities?: string | null | undefined;
         instrumentTrayBarcode?: string | null | undefined;
+        diagnosisTooth?: string | null | undefined;
         complaint?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
@@ -17354,7 +17360,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
         statusLocalis?: string | null | undefined;
-        diagnosisTooth?: string | null | undefined;
         nextVisitPlan?: string | null | undefined;
         content?: string | null | undefined;
         lockedAt?: string | null | undefined;
@@ -17763,6 +17768,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     treatmentPlanAcceptance?: {
         doctorFullName: string;
         estimatedTotalRub: number;
+        acceptedAt: string;
         paymentTerms: string;
         estimateValidUntil: string;
         teethOrArea: string;
@@ -17791,7 +17797,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         rejectedAlternatives: string[];
         warrantyAndControlTerms: string;
-        acceptedAt: string;
         patientUnderstandsAlternatives: true;
         patientUnderstandsCostMayChange: true;
         revisionRequiresNewApproval: true;
@@ -18211,6 +18216,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     xrayCbctReferral?: {
         studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
         priority: "urgent" | "routine";
+        requestedBy: string;
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
@@ -18230,7 +18236,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         clinicalQuestion: string;
         includeDicomExport: boolean;
         includeRadiologistReport: boolean;
-        requestedBy: string;
         dueDate?: string | null | undefined;
         recipientClinic?: string | null | undefined;
     } | undefined;
@@ -18486,6 +18491,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         complications?: string | null | undefined;
         comorbidities?: string | null | undefined;
         instrumentTrayBarcode?: string | null | undefined;
+        diagnosisTooth?: string | null | undefined;
         complaint?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
@@ -18513,7 +18519,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
         statusLocalis?: string | null | undefined;
-        diagnosisTooth?: string | null | undefined;
         nextVisitPlan?: string | null | undefined;
         content?: string | null | undefined;
         lockedAt?: string | null | undefined;
@@ -18922,6 +18927,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     treatmentPlanAcceptance?: {
         doctorFullName: string;
         estimatedTotalRub: number;
+        acceptedAt: string;
         paymentTerms: string;
         estimateValidUntil: string;
         teethOrArea: string;
@@ -18950,7 +18956,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         rejectedAlternatives: string[];
         warrantyAndControlTerms: string;
-        acceptedAt: string;
         patientUnderstandsAlternatives: true;
         patientUnderstandsCostMayChange: true;
         revisionRequiresNewApproval: true;
@@ -20247,16 +20252,16 @@ export declare const taxXmlSnapshotSchema: z.ZodObject<{
 }, "strict", z.ZodTypeAny, {
     createdAt: string;
     xml: string;
-    sha256: string;
     sourceSnapshotSha256: string;
     fileName: string;
+    sha256: string;
     taxOfficeCode: string;
 }, {
     createdAt: string;
     xml: string;
-    sha256: string;
     sourceSnapshotSha256: string;
     fileName: string;
+    sha256: string;
     taxOfficeCode: string;
 }>;
 export type TaxXmlSnapshot = z.infer<typeof taxXmlSnapshotSchema>;
@@ -21496,6 +21501,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -21515,12 +21521,12 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         }, {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -21540,7 +21546,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         }>>;
@@ -22755,6 +22760,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -22782,7 +22788,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -22826,6 +22831,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -22853,7 +22859,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -24657,6 +24662,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -24685,13 +24691,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
         }, {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -24720,7 +24726,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -25374,6 +25379,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -25393,7 +25399,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -25649,6 +25654,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -25676,7 +25682,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -26085,6 +26090,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -26113,7 +26119,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -26533,6 +26538,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -26552,7 +26558,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -26808,6 +26813,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -26835,7 +26841,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -27244,6 +27249,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -27272,7 +27278,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -28201,16 +28206,16 @@ export declare const generatedDocumentSchema: z.ZodObject<{
     }, "strict", z.ZodTypeAny, {
         createdAt: string;
         xml: string;
-        sha256: string;
         sourceSnapshotSha256: string;
         fileName: string;
+        sha256: string;
         taxOfficeCode: string;
     }, {
         createdAt: string;
         xml: string;
-        sha256: string;
         sourceSnapshotSha256: string;
         fileName: string;
+        sha256: string;
         taxOfficeCode: string;
     }>>>;
     storagePath: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -28545,6 +28550,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -28564,7 +28570,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -28820,6 +28825,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -28847,7 +28853,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -29256,6 +29261,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -29284,7 +29290,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -29598,9 +29603,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
     taxXmlSnapshot?: {
         createdAt: string;
         xml: string;
-        sha256: string;
         sourceSnapshotSha256: string;
         fileName: string;
+        sha256: string;
         taxOfficeCode: string;
     } | null | undefined;
     storagePath?: string | null | undefined;
@@ -29934,6 +29939,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -29953,7 +29959,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -30209,6 +30214,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -30236,7 +30242,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -30645,6 +30650,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -30673,7 +30679,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -30987,9 +30992,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
     taxXmlSnapshot?: {
         createdAt: string;
         xml: string;
-        sha256: string;
         sourceSnapshotSha256: string;
         fileName: string;
+        sha256: string;
         taxOfficeCode: string;
     } | null | undefined;
     storagePath?: string | null | undefined;
@@ -32306,6 +32311,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         }, "strip", z.ZodTypeAny, {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -32325,12 +32331,12 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         }, {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -32350,7 +32356,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         }>>;
@@ -33565,6 +33570,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -33592,7 +33598,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -33636,6 +33641,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -33663,7 +33669,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -35467,6 +35472,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -35495,13 +35501,13 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
         }, {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -35530,7 +35536,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -36184,6 +36189,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -36203,7 +36209,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -36459,6 +36464,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -36486,7 +36492,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -36895,6 +36900,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -36923,7 +36929,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -37343,6 +37348,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -37362,7 +37368,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -37618,6 +37623,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -37645,7 +37651,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -38054,6 +38059,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -38082,7 +38088,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -39011,16 +39016,16 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
     }, "strict", z.ZodTypeAny, {
         createdAt: string;
         xml: string;
-        sha256: string;
         sourceSnapshotSha256: string;
         fileName: string;
+        sha256: string;
         taxOfficeCode: string;
     }, {
         createdAt: string;
         xml: string;
-        sha256: string;
         sourceSnapshotSha256: string;
         fileName: string;
+        sha256: string;
         taxOfficeCode: string;
     }>>>;
     storagePath: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -39623,12 +39628,12 @@ export declare const imagingStudySchema: z.ZodObject<{
     patientId: string;
     organizationId: string;
     title: string;
+    capturedAt: string;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     toothCode: string | null;
     region: string | null;
-    capturedAt: string;
     aiSummary: string | null;
     previewUrl: string;
     viewerUrl: string | null;
@@ -39641,12 +39646,12 @@ export declare const imagingStudySchema: z.ZodObject<{
     patientId: string;
     organizationId: string;
     title: string;
+    capturedAt: string;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     toothCode: string | null;
     region: string | null;
-    capturedAt: string;
     aiSummary: string | null;
     previewUrl: string;
     viewerUrl: string | null;
@@ -40068,7 +40073,7 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             description: string;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40081,7 +40086,7 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             description: string;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40103,7 +40108,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40113,7 +40118,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }, {
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40221,7 +40226,7 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             description: string;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40233,7 +40238,7 @@ export declare const dashboardSchema: z.ZodObject<{
         roleAccessPolicies: {
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40341,7 +40346,7 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             description: string;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40353,7 +40358,7 @@ export declare const dashboardSchema: z.ZodObject<{
         roleAccessPolicies: {
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -40525,7 +40530,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             id: string;
             title: string;
-            severity: "info" | "warning" | "critical";
+            severity: "warning" | "info" | "critical";
             detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
@@ -40533,7 +40538,7 @@ export declare const dashboardSchema: z.ZodObject<{
         }, {
             id: string;
             title: string;
-            severity: "info" | "warning" | "critical";
+            severity: "warning" | "info" | "critical";
             detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
@@ -40596,7 +40601,7 @@ export declare const dashboardSchema: z.ZodObject<{
         scheduleWarnings: {
             id: string;
             title: string;
-            severity: "info" | "warning" | "critical";
+            severity: "warning" | "info" | "critical";
             detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
@@ -40659,7 +40664,7 @@ export declare const dashboardSchema: z.ZodObject<{
         scheduleWarnings: {
             id: string;
             title: string;
-            severity: "info" | "warning" | "critical";
+            severity: "warning" | "info" | "critical";
             detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
@@ -42394,6 +42399,7 @@ export declare const dashboardSchema: z.ZodObject<{
             }, "strip", z.ZodTypeAny, {
                 studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
                 priority: "urgent" | "routine";
+                requestedBy: string;
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
@@ -42413,12 +42419,12 @@ export declare const dashboardSchema: z.ZodObject<{
                 clinicalQuestion: string;
                 includeDicomExport: boolean;
                 includeRadiologistReport: boolean;
-                requestedBy: string;
                 dueDate?: string | null | undefined;
                 recipientClinic?: string | null | undefined;
             }, {
                 studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
                 priority: "urgent" | "routine";
+                requestedBy: string;
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
@@ -42438,7 +42444,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 clinicalQuestion: string;
                 includeDicomExport: boolean;
                 includeRadiologistReport: boolean;
-                requestedBy: string;
                 dueDate?: string | null | undefined;
                 recipientClinic?: string | null | undefined;
             }>>;
@@ -43653,6 +43658,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 complications?: string | null | undefined;
                 comorbidities?: string | null | undefined;
                 instrumentTrayBarcode?: string | null | undefined;
+                diagnosisTooth?: string | null | undefined;
                 complaint?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
@@ -43680,7 +43686,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     generalHealthNotes?: string | null | undefined;
                 } | null | undefined;
                 statusLocalis?: string | null | undefined;
-                diagnosisTooth?: string | null | undefined;
                 nextVisitPlan?: string | null | undefined;
                 content?: string | null | undefined;
                 lockedAt?: string | null | undefined;
@@ -43724,6 +43729,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 complications?: string | null | undefined;
                 comorbidities?: string | null | undefined;
                 instrumentTrayBarcode?: string | null | undefined;
+                diagnosisTooth?: string | null | undefined;
                 complaint?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
@@ -43751,7 +43757,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     generalHealthNotes?: string | null | undefined;
                 } | null | undefined;
                 statusLocalis?: string | null | undefined;
-                diagnosisTooth?: string | null | undefined;
                 nextVisitPlan?: string | null | undefined;
                 content?: string | null | undefined;
                 lockedAt?: string | null | undefined;
@@ -45555,6 +45560,7 @@ export declare const dashboardSchema: z.ZodObject<{
             }, "strip", z.ZodTypeAny, {
                 doctorFullName: string;
                 estimatedTotalRub: number;
+                acceptedAt: string;
                 paymentTerms: string;
                 estimateValidUntil: string;
                 teethOrArea: string;
@@ -45583,13 +45589,13 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 rejectedAlternatives: string[];
                 warrantyAndControlTerms: string;
-                acceptedAt: string;
                 patientUnderstandsAlternatives: true;
                 patientUnderstandsCostMayChange: true;
                 revisionRequiresNewApproval: true;
             }, {
                 doctorFullName: string;
                 estimatedTotalRub: number;
+                acceptedAt: string;
                 paymentTerms: string;
                 estimateValidUntil: string;
                 teethOrArea: string;
@@ -45618,7 +45624,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 rejectedAlternatives: string[];
                 warrantyAndControlTerms: string;
-                acceptedAt: string;
                 patientUnderstandsAlternatives: true;
                 patientUnderstandsCostMayChange: true;
                 revisionRequiresNewApproval: true;
@@ -46272,6 +46277,7 @@ export declare const dashboardSchema: z.ZodObject<{
             xrayCbctReferral?: {
                 studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
                 priority: "urgent" | "routine";
+                requestedBy: string;
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
@@ -46291,7 +46297,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 clinicalQuestion: string;
                 includeDicomExport: boolean;
                 includeRadiologistReport: boolean;
-                requestedBy: string;
                 dueDate?: string | null | undefined;
                 recipientClinic?: string | null | undefined;
             } | undefined;
@@ -46547,6 +46552,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 complications?: string | null | undefined;
                 comorbidities?: string | null | undefined;
                 instrumentTrayBarcode?: string | null | undefined;
+                diagnosisTooth?: string | null | undefined;
                 complaint?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
@@ -46574,7 +46580,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     generalHealthNotes?: string | null | undefined;
                 } | null | undefined;
                 statusLocalis?: string | null | undefined;
-                diagnosisTooth?: string | null | undefined;
                 nextVisitPlan?: string | null | undefined;
                 content?: string | null | undefined;
                 lockedAt?: string | null | undefined;
@@ -46983,6 +46988,7 @@ export declare const dashboardSchema: z.ZodObject<{
             treatmentPlanAcceptance?: {
                 doctorFullName: string;
                 estimatedTotalRub: number;
+                acceptedAt: string;
                 paymentTerms: string;
                 estimateValidUntil: string;
                 teethOrArea: string;
@@ -47011,7 +47017,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 rejectedAlternatives: string[];
                 warrantyAndControlTerms: string;
-                acceptedAt: string;
                 patientUnderstandsAlternatives: true;
                 patientUnderstandsCostMayChange: true;
                 revisionRequiresNewApproval: true;
@@ -47431,6 +47436,7 @@ export declare const dashboardSchema: z.ZodObject<{
             xrayCbctReferral?: {
                 studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
                 priority: "urgent" | "routine";
+                requestedBy: string;
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
@@ -47450,7 +47456,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 clinicalQuestion: string;
                 includeDicomExport: boolean;
                 includeRadiologistReport: boolean;
-                requestedBy: string;
                 dueDate?: string | null | undefined;
                 recipientClinic?: string | null | undefined;
             } | undefined;
@@ -47706,6 +47711,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 complications?: string | null | undefined;
                 comorbidities?: string | null | undefined;
                 instrumentTrayBarcode?: string | null | undefined;
+                diagnosisTooth?: string | null | undefined;
                 complaint?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
@@ -47733,7 +47739,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     generalHealthNotes?: string | null | undefined;
                 } | null | undefined;
                 statusLocalis?: string | null | undefined;
-                diagnosisTooth?: string | null | undefined;
                 nextVisitPlan?: string | null | undefined;
                 content?: string | null | undefined;
                 lockedAt?: string | null | undefined;
@@ -48142,6 +48147,7 @@ export declare const dashboardSchema: z.ZodObject<{
             treatmentPlanAcceptance?: {
                 doctorFullName: string;
                 estimatedTotalRub: number;
+                acceptedAt: string;
                 paymentTerms: string;
                 estimateValidUntil: string;
                 teethOrArea: string;
@@ -48170,7 +48176,6 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 rejectedAlternatives: string[];
                 warrantyAndControlTerms: string;
-                acceptedAt: string;
                 patientUnderstandsAlternatives: true;
                 patientUnderstandsCostMayChange: true;
                 revisionRequiresNewApproval: true;
@@ -49099,16 +49104,16 @@ export declare const dashboardSchema: z.ZodObject<{
         }, "strict", z.ZodTypeAny, {
             createdAt: string;
             xml: string;
-            sha256: string;
             sourceSnapshotSha256: string;
             fileName: string;
+            sha256: string;
             taxOfficeCode: string;
         }, {
             createdAt: string;
             xml: string;
-            sha256: string;
             sourceSnapshotSha256: string;
             fileName: string;
+            sha256: string;
             taxOfficeCode: string;
         }>>>;
         storagePath: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -49374,12 +49379,12 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         title: string;
+        capturedAt: string;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
         toothCode: string | null;
         region: string | null;
-        capturedAt: string;
         aiSummary: string | null;
         previewUrl: string;
         viewerUrl: string | null;
@@ -49392,12 +49397,12 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         title: string;
+        capturedAt: string;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
         toothCode: string | null;
         region: string | null;
-        capturedAt: string;
         aiSummary: string | null;
         previewUrl: string;
         viewerUrl: string | null;
@@ -49636,7 +49641,7 @@ export declare const dashboardSchema: z.ZodObject<{
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         condition: string | null;
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         triggerServiceIds: string[];
         requiredServiceIds: string[];
@@ -49653,7 +49658,7 @@ export declare const dashboardSchema: z.ZodObject<{
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         condition: string | null;
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         triggerServiceIds: string[];
         requiredServiceIds: string[];
@@ -49687,7 +49692,7 @@ export declare const dashboardSchema: z.ZodObject<{
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         resolved: boolean;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockedServiceIds: string[];
         ruleId: string;
@@ -49704,7 +49709,7 @@ export declare const dashboardSchema: z.ZodObject<{
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         resolved: boolean;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockedServiceIds: string[];
         ruleId: string;
@@ -50423,7 +50428,7 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             description: string;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -50435,7 +50440,7 @@ export declare const dashboardSchema: z.ZodObject<{
         roleAccessPolicies: {
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -50503,7 +50508,7 @@ export declare const dashboardSchema: z.ZodObject<{
         scheduleWarnings: {
             id: string;
             title: string;
-            severity: "info" | "warning" | "critical";
+            severity: "warning" | "info" | "critical";
             detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
@@ -50603,12 +50608,12 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         title: string;
+        capturedAt: string;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
         toothCode: string | null;
         region: string | null;
-        capturedAt: string;
         aiSummary: string | null;
         previewUrl: string;
         viewerUrl: string | null;
@@ -50692,7 +50697,7 @@ export declare const dashboardSchema: z.ZodObject<{
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         condition: string | null;
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         triggerServiceIds: string[];
         requiredServiceIds: string[];
@@ -50709,7 +50714,7 @@ export declare const dashboardSchema: z.ZodObject<{
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         resolved: boolean;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockedServiceIds: string[];
         ruleId: string;
@@ -51093,7 +51098,7 @@ export declare const dashboardSchema: z.ZodObject<{
             title: string;
             description: string;
             mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             primaryRoles: ("doctor" | "administrator" | "assistant" | "owner" | "manager")[];
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             visibleSections: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -51105,7 +51110,7 @@ export declare const dashboardSchema: z.ZodObject<{
         roleAccessPolicies: {
             title: string;
             role: "doctor" | "administrator" | "assistant" | "owner" | "manager";
-            scope: "clinic" | "personal" | "branch" | "network";
+            scope: "clinic" | "branch" | "personal" | "network";
             defaultSection: "shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging";
             canRead: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
             canWrite: ("shift" | "visit" | "documents" | "schedule" | "patients" | "finance" | "settings" | "communications" | "imaging")[];
@@ -51173,7 +51178,7 @@ export declare const dashboardSchema: z.ZodObject<{
         scheduleWarnings: {
             id: string;
             title: string;
-            severity: "info" | "warning" | "critical";
+            severity: "warning" | "info" | "critical";
             detail: string;
             ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
             relatedAppointmentId: string | null;
@@ -51273,12 +51278,12 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         title: string;
+        capturedAt: string;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
         toothCode: string | null;
         region: string | null;
-        capturedAt: string;
         aiSummary: string | null;
         previewUrl: string;
         viewerUrl: string | null;
@@ -51362,7 +51367,7 @@ export declare const dashboardSchema: z.ZodObject<{
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         condition: string | null;
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         triggerServiceIds: string[];
         requiredServiceIds: string[];
@@ -51379,7 +51384,7 @@ export declare const dashboardSchema: z.ZodObject<{
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         resolved: boolean;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         ownerRole: "doctor" | "administrator" | "assistant" | "owner" | "manager";
         blockedServiceIds: string[];
         ruleId: string;
@@ -53941,6 +53946,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -53960,12 +53966,12 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         }, {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -53985,7 +53991,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         }>>;
@@ -55200,6 +55205,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -55227,7 +55233,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -55271,6 +55276,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -55298,7 +55304,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -57102,6 +57107,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -57130,13 +57136,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
         }, {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -57165,7 +57171,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -57819,6 +57824,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -57838,7 +57844,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -58094,6 +58099,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -58121,7 +58127,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -58530,6 +58535,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -58558,7 +58564,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -58978,6 +58983,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -58997,7 +59003,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -59253,6 +59258,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -59280,7 +59286,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -59689,6 +59694,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -59717,7 +59723,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -60145,6 +60150,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -60164,7 +60170,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -60420,6 +60425,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -60447,7 +60453,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -60856,6 +60861,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -60884,7 +60890,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -61313,6 +61318,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -61332,7 +61338,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -61588,6 +61593,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -61615,7 +61621,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -62024,6 +62029,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -62052,7 +62058,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -62481,6 +62486,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -62500,7 +62506,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -62756,6 +62761,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -62783,7 +62789,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -63192,6 +63197,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -63220,7 +63226,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -63649,6 +63654,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         xrayCbctReferral?: {
             studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
+            requestedBy: string;
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
@@ -63668,7 +63674,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             clinicalQuestion: string;
             includeDicomExport: boolean;
             includeRadiologistReport: boolean;
-            requestedBy: string;
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         } | undefined;
@@ -63924,6 +63929,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             complications?: string | null | undefined;
             comorbidities?: string | null | undefined;
             instrumentTrayBarcode?: string | null | undefined;
+            diagnosisTooth?: string | null | undefined;
             complaint?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
@@ -63951,7 +63957,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
             statusLocalis?: string | null | undefined;
-            diagnosisTooth?: string | null | undefined;
             nextVisitPlan?: string | null | undefined;
             content?: string | null | undefined;
             lockedAt?: string | null | undefined;
@@ -64360,6 +64365,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlanAcceptance?: {
             doctorFullName: string;
             estimatedTotalRub: number;
+            acceptedAt: string;
             paymentTerms: string;
             estimateValidUntil: string;
             teethOrArea: string;
@@ -64388,7 +64394,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             rejectedAlternatives: string[];
             warrantyAndControlTerms: string;
-            acceptedAt: string;
             patientUnderstandsAlternatives: true;
             patientUnderstandsCostMayChange: true;
             revisionRequiresNewApproval: true;
@@ -64707,10 +64712,10 @@ export declare const createImagingStudySchema: z.ZodObject<{
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     visitId?: string | null | undefined;
+    capturedAt?: string | undefined;
     toothCode?: string | null | undefined;
     storagePath?: string | null | undefined;
     region?: string | null | undefined;
-    capturedAt?: string | undefined;
     dicomStudyUid?: string | null | undefined;
     aiSummary?: string | null | undefined;
 }, {
@@ -64718,12 +64723,12 @@ export declare const createImagingStudySchema: z.ZodObject<{
     title: string;
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     visitId?: string | null | undefined;
+    capturedAt?: string | undefined;
     sourceName?: string | undefined;
     sourceKind?: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch" | undefined;
     toothCode?: string | null | undefined;
     storagePath?: string | null | undefined;
     region?: string | null | undefined;
-    capturedAt?: string | undefined;
     dicomStudyUid?: string | null | undefined;
     aiSummary?: string | null | undefined;
 }>;
@@ -64764,12 +64769,12 @@ export declare const imagingImportPreviewRowSchema: z.ZodObject<{
     patientName: string | null;
     phone: string | null;
     warnings: string[];
+    capturedAt: string | null;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
     toothCode: string | null;
     region: string | null;
-    capturedAt: string | null;
     rowNumber: number;
     filePath: string | null;
 }, {
@@ -64779,12 +64784,12 @@ export declare const imagingImportPreviewRowSchema: z.ZodObject<{
     patientName: string | null;
     phone: string | null;
     warnings: string[];
+    capturedAt: string | null;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
     toothCode: string | null;
     region: string | null;
-    capturedAt: string | null;
     rowNumber: number;
     filePath: string | null;
 }>;
@@ -64818,12 +64823,12 @@ export declare const imagingImportPreviewResponseSchema: z.ZodObject<{
         patientName: string | null;
         phone: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         toothCode: string | null;
         region: string | null;
-        capturedAt: string | null;
         rowNumber: number;
         filePath: string | null;
     }, {
@@ -64833,12 +64838,12 @@ export declare const imagingImportPreviewResponseSchema: z.ZodObject<{
         patientName: string | null;
         phone: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         toothCode: string | null;
         region: string | null;
-        capturedAt: string | null;
         rowNumber: number;
         filePath: string | null;
     }>, "many">;
@@ -64851,12 +64856,12 @@ export declare const imagingImportPreviewResponseSchema: z.ZodObject<{
         patientName: string | null;
         phone: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         toothCode: string | null;
         region: string | null;
-        capturedAt: string | null;
         rowNumber: number;
         filePath: string | null;
     }[];
@@ -64875,12 +64880,12 @@ export declare const imagingImportPreviewResponseSchema: z.ZodObject<{
         patientName: string | null;
         phone: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         toothCode: string | null;
         region: string | null;
-        capturedAt: string | null;
         rowNumber: number;
         filePath: string | null;
     }[];
@@ -64928,12 +64933,12 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }, {
@@ -64943,12 +64948,12 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }>, "many">;
@@ -64961,12 +64966,12 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -64985,12 +64990,12 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -65016,12 +65021,12 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -65047,12 +65052,12 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -65124,12 +65129,12 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }, {
@@ -65139,12 +65144,12 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }>, "many">;
@@ -65157,12 +65162,12 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -65181,12 +65186,12 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -65210,12 +65215,12 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -65242,12 +65247,12 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -65445,10 +65450,10 @@ export declare const dicomSeriesPreviewRowSchema: z.ZodObject<{
     sopInstanceUid: string | null;
     studyInstanceUid: string | null;
     warnings: string[];
+    capturedAt: string | null;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-    capturedAt: string | null;
     rowNumber: number;
     filePath: string | null;
     seriesInstanceUid: string | null;
@@ -65469,10 +65474,10 @@ export declare const dicomSeriesPreviewRowSchema: z.ZodObject<{
     sopInstanceUid: string | null;
     studyInstanceUid: string | null;
     warnings: string[];
+    capturedAt: string | null;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-    capturedAt: string | null;
     rowNumber: number;
     filePath: string | null;
     seriesInstanceUid: string | null;
@@ -65604,10 +65609,10 @@ export declare const dicomSeriesPreviewGroupSchema: z.ZodObject<{
     modality: string | null;
     studyInstanceUid: string | null;
     warnings: string[];
+    capturedAt: string | null;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-    capturedAt: string | null;
     seriesInstanceUid: string | null;
     seriesDescription: string | null;
     imageRows: number | null;
@@ -65650,10 +65655,10 @@ export declare const dicomSeriesPreviewGroupSchema: z.ZodObject<{
     modality: string | null;
     studyInstanceUid: string | null;
     warnings: string[];
+    capturedAt: string | null;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-    capturedAt: string | null;
     seriesInstanceUid: string | null;
     seriesDescription: string | null;
     imageRows: number | null;
@@ -65731,10 +65736,10 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         sopInstanceUid: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         rowNumber: number;
         filePath: string | null;
         seriesInstanceUid: string | null;
@@ -65755,10 +65760,10 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         sopInstanceUid: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         rowNumber: number;
         filePath: string | null;
         seriesInstanceUid: string | null;
@@ -65889,10 +65894,10 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -65935,10 +65940,10 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -65984,10 +65989,10 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -66032,10 +66037,10 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         sopInstanceUid: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         rowNumber: number;
         filePath: string | null;
         seriesInstanceUid: string | null;
@@ -66065,10 +66070,10 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -66113,10 +66118,10 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         sopInstanceUid: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         rowNumber: number;
         filePath: string | null;
         seriesInstanceUid: string | null;
@@ -66213,10 +66218,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             sopInstanceUid: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
             seriesInstanceUid: string | null;
@@ -66237,10 +66242,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             sopInstanceUid: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
             seriesInstanceUid: string | null;
@@ -66371,10 +66376,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -66417,10 +66422,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -66466,10 +66471,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -66514,10 +66519,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             sopInstanceUid: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
             seriesInstanceUid: string | null;
@@ -66547,10 +66552,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -66595,10 +66600,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             sopInstanceUid: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
             seriesInstanceUid: string | null;
@@ -66633,10 +66638,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -66681,10 +66686,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             sopInstanceUid: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
             seriesInstanceUid: string | null;
@@ -66723,10 +66728,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -66771,10 +66776,10 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             sopInstanceUid: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
             seriesInstanceUid: string | null;
@@ -69007,15 +69012,15 @@ export declare const imagingViewerSessionStateSchema: z.ZodObject<{
     windowWidth: number | null;
     brightness: number;
     contrast: number;
+    flipHorizontal: boolean;
+    panX: number;
+    panY: number;
     crosshair: boolean;
     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
     activeQuickActionId: string | null;
     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
     inverted: boolean;
     rotationDeg: number;
-    flipHorizontal: boolean;
-    panX: number;
-    panY: number;
     sliceIndex: number | null;
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
     axisDeg: number;
@@ -69038,14 +69043,14 @@ export declare const imagingViewerSessionStateSchema: z.ZodObject<{
     windowWidth: number | null;
     brightness: number;
     contrast: number;
+    flipHorizontal: boolean;
+    panX: number;
+    panY: number;
     crosshair: boolean;
     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
     inverted: boolean;
     rotationDeg: number;
-    flipHorizontal: boolean;
-    panX: number;
-    panY: number;
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
     axisDeg: number;
     slabMm: number;
@@ -69189,15 +69194,15 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -69220,14 +69225,14 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -69320,15 +69325,15 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -69375,14 +69380,14 @@ export declare const saveImagingViewerSessionRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -69485,15 +69490,15 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -69516,14 +69521,14 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -69625,15 +69630,15 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -69687,14 +69692,14 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -69800,15 +69805,15 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -69831,14 +69836,14 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -69940,15 +69945,15 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -70002,14 +70007,14 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -70068,15 +70073,15 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -70133,14 +70138,14 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -70311,10 +70316,10 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -70357,10 +70362,10 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -70451,15 +70456,15 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -70482,14 +70487,14 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -70586,10 +70591,10 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -70652,15 +70657,15 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -70690,10 +70695,10 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -70755,14 +70760,14 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -70967,15 +70972,15 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -70998,14 +71003,14 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -71134,15 +71139,15 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -71221,14 +71226,14 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -71308,15 +71313,15 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -71395,14 +71400,14 @@ export declare const dicomViewerLaunchManifestResponseSchema: z.ZodEffects<z.Zod
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -72186,10 +72191,10 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -72232,10 +72237,10 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -72384,15 +72389,15 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -72415,14 +72420,14 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -72450,10 +72455,10 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -72515,15 +72520,15 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -72550,10 +72555,10 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -72615,14 +72620,14 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -73058,10 +73063,10 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -73104,10 +73109,10 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -73198,15 +73203,15 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -73229,14 +73234,14 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -73387,10 +73392,10 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -73453,15 +73458,15 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -73508,10 +73513,10 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -73573,14 +73578,14 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -74489,10 +74494,10 @@ export declare const dicomWorkstationReadinessRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -74535,10 +74540,10 @@ export declare const dicomWorkstationReadinessRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -74716,10 +74721,10 @@ export declare const dicomWorkstationReadinessRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -74802,10 +74807,10 @@ export declare const dicomWorkstationReadinessRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -75202,10 +75207,10 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -75248,10 +75253,10 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -75452,15 +75457,15 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -75483,14 +75488,14 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -75610,10 +75615,10 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -75692,15 +75697,15 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -75753,10 +75758,10 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -75833,14 +75838,14 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -76521,15 +76526,15 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -76552,14 +76557,14 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -76688,15 +76693,15 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -76775,14 +76780,14 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -76862,15 +76867,15 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -76949,14 +76954,14 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -77913,15 +77918,15 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             activeQuickActionId: string | null;
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             sliceIndex: number | null;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
@@ -78275,14 +78280,14 @@ export declare const dicomViewerWorkbenchManifestResponseSchema: z.ZodObject<{
             windowWidth: number | null;
             brightness: number;
             contrast: number;
+            flipHorizontal: boolean;
+            panX: number;
+            panY: number;
             crosshair: boolean;
             activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
             windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
             inverted: boolean;
             rotationDeg: number;
-            flipHorizontal: boolean;
-            panX: number;
-            panY: number;
             projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
             axisDeg: number;
             slabMm: number;
@@ -79137,15 +79142,15 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -79168,14 +79173,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -79304,15 +79309,15 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -79391,14 +79396,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -79478,15 +79483,15 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -79565,14 +79570,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -80529,15 +80534,15 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -80891,14 +80896,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -81274,15 +81279,15 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -81652,14 +81657,14 @@ export declare const dicomWorkbenchBundleSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -82504,15 +82509,15 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -82535,14 +82540,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -82671,15 +82676,15 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -82758,14 +82763,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -82845,15 +82850,15 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -82932,14 +82937,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -83896,15 +83901,15 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -84258,14 +84263,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -84624,15 +84629,15 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 activeQuickActionId: string | null;
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 sliceIndex: number | null;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
@@ -84990,14 +84995,14 @@ export declare const saveDicomWorkbenchBundleRequestSchema: z.ZodObject<{
                 windowWidth: number | null;
                 brightness: number;
                 contrast: number;
+                flipHorizontal: boolean;
+                panX: number;
+                panY: number;
                 crosshair: boolean;
                 activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                 windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                 inverted: boolean;
                 rotationDeg: number;
-                flipHorizontal: boolean;
-                panX: number;
-                panY: number;
                 projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                 axisDeg: number;
                 slabMm: number;
@@ -85854,15 +85859,15 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -85885,14 +85890,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -86021,15 +86026,15 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -86108,14 +86113,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -86195,15 +86200,15 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -86282,14 +86287,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87246,15 +87251,15 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -87608,14 +87613,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -87991,15 +87996,15 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -88369,14 +88374,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -88751,15 +88756,15 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -89132,14 +89137,14 @@ export declare const dicomWorkbenchBundleResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -89995,15 +90000,15 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -90026,14 +90031,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -90162,15 +90167,15 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -90249,14 +90254,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -90336,15 +90341,15 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -90423,14 +90428,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -91387,15 +91392,15 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -91749,14 +91754,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -92132,15 +92137,15 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -92510,14 +92515,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -92897,15 +92902,15 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     activeQuickActionId: string | null;
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     sliceIndex: number | null;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
@@ -93281,14 +93286,14 @@ export declare const dicomWorkbenchBundleListResponseSchema: z.ZodObject<{
                     windowWidth: number | null;
                     brightness: number;
                     contrast: number;
+                    flipHorizontal: boolean;
+                    panX: number;
+                    panY: number;
                     crosshair: boolean;
                     activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
                     windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
                     inverted: boolean;
                     rotationDeg: number;
-                    flipHorizontal: boolean;
-                    panX: number;
-                    panY: number;
                     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
                     axisDeg: number;
                     slabMm: number;
@@ -93611,15 +93616,15 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -93642,14 +93647,14 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -93705,15 +93710,15 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         activeQuickActionId: string | null;
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         sliceIndex: number | null;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
@@ -93768,14 +93773,14 @@ export declare const dicomFolderWorkupPlanRequestSchema: z.ZodObject<{
         windowWidth: number | null;
         brightness: number;
         contrast: number;
+        flipHorizontal: boolean;
+        panX: number;
+        panY: number;
         crosshair: boolean;
         activeTool: "note" | "pan" | "zoom" | "window_level" | "invert" | "surgical_guide" | "panoramic_curve" | "measure_distance" | "measure_angle" | "implant_axis" | "implant_library" | "nerve_canal" | "bone_density_probe" | "reset" | "rotate" | "measure_area" | "measure_volume";
         windowPreset: "implant" | "custom" | "endo" | "teeth" | "caries" | "bone" | "soft_tissue" | "perio" | "photo";
         inverted: boolean;
         rotationDeg: number;
-        flipHorizontal: boolean;
-        panX: number;
-        panY: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | null;
         axisDeg: number;
         slabMm: number;
@@ -93915,10 +93920,10 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -93961,10 +93966,10 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -94528,10 +94533,10 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -94701,10 +94706,10 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
         modality: string | null;
         studyInstanceUid: string | null;
         warnings: string[];
+        capturedAt: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-        capturedAt: string | null;
         seriesInstanceUid: string | null;
         seriesDescription: string | null;
         imageRows: number | null;
@@ -94918,10 +94923,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 sopInstanceUid: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
                 seriesInstanceUid: string | null;
@@ -94942,10 +94947,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 sopInstanceUid: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
                 seriesInstanceUid: string | null;
@@ -95076,10 +95081,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 modality: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 seriesInstanceUid: string | null;
                 seriesDescription: string | null;
                 imageRows: number | null;
@@ -95122,10 +95127,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 modality: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 seriesInstanceUid: string | null;
                 seriesDescription: string | null;
                 imageRows: number | null;
@@ -95171,10 +95176,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 modality: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 seriesInstanceUid: string | null;
                 seriesDescription: string | null;
                 imageRows: number | null;
@@ -95219,10 +95224,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 sopInstanceUid: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
                 seriesInstanceUid: string | null;
@@ -95252,10 +95257,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 modality: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 seriesInstanceUid: string | null;
                 seriesDescription: string | null;
                 imageRows: number | null;
@@ -95300,10 +95305,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 sopInstanceUid: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
                 seriesInstanceUid: string | null;
@@ -95338,10 +95343,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 modality: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 seriesInstanceUid: string | null;
                 seriesDescription: string | null;
                 imageRows: number | null;
@@ -95386,10 +95391,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 sopInstanceUid: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
                 seriesInstanceUid: string | null;
@@ -95428,10 +95433,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 modality: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 seriesInstanceUid: string | null;
                 seriesDescription: string | null;
                 imageRows: number | null;
@@ -95476,10 +95481,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 sopInstanceUid: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
                 seriesInstanceUid: string | null;
@@ -95627,10 +95632,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -95673,10 +95678,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -96240,10 +96245,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -96413,10 +96418,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -96597,10 +96602,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 modality: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 seriesInstanceUid: string | null;
                 seriesDescription: string | null;
                 imageRows: number | null;
@@ -96645,10 +96650,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 sopInstanceUid: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
                 seriesInstanceUid: string | null;
@@ -96686,10 +96691,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -96868,10 +96873,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 modality: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 seriesInstanceUid: string | null;
                 seriesDescription: string | null;
                 imageRows: number | null;
@@ -96916,10 +96921,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 sopInstanceUid: string | null;
                 studyInstanceUid: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
                 seriesInstanceUid: string | null;
@@ -96957,10 +96962,10 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             modality: string | null;
             studyInstanceUid: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
-            capturedAt: string | null;
             seriesInstanceUid: string | null;
             seriesDescription: string | null;
             imageRows: number | null;
@@ -97669,8 +97674,8 @@ export declare const visitNoteDraftQualitySchema: z.ZodObject<{
     nextAction: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    confidence: number;
     level: "ready" | "review" | "needs_more_dictation";
+    confidence: number;
     signals: string[];
     nextAction: string;
     detectedToothCodes: string[];
@@ -97678,8 +97683,8 @@ export declare const visitNoteDraftQualitySchema: z.ZodObject<{
     detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
 }, {
     specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-    confidence: number;
     level: "ready" | "review" | "needs_more_dictation";
+    confidence: number;
     signals: string[];
     nextAction: string;
     detectedToothCodes: string[];
@@ -97735,8 +97740,8 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        confidence: number;
         level: "ready" | "review" | "needs_more_dictation";
+        confidence: number;
         signals: string[];
         nextAction: string;
         detectedToothCodes: string[];
@@ -97744,8 +97749,8 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
         detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
     }, {
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        confidence: number;
         level: "ready" | "review" | "needs_more_dictation";
+        confidence: number;
         signals: string[];
         nextAction: string;
         detectedToothCodes: string[];
@@ -97762,8 +97767,8 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
     treatmentPlan: string | null;
     quality?: {
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        confidence: number;
         level: "ready" | "review" | "needs_more_dictation";
+        confidence: number;
         signals: string[];
         nextAction: string;
         detectedToothCodes: string[];
@@ -97790,8 +97795,8 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
     treatmentPlan: string | null;
     quality?: {
         specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-        confidence: number;
         level: "ready" | "review" | "needs_more_dictation";
+        confidence: number;
         signals: string[];
         nextAction: string;
         detectedToothCodes: string[];
@@ -97864,8 +97869,8 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -97873,8 +97878,8 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
         }, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -97891,8 +97896,8 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -97919,8 +97924,8 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -97956,8 +97961,8 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -97995,8 +98000,8 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98077,8 +98082,8 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98086,8 +98091,8 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
         }, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98104,8 +98109,8 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98132,8 +98137,8 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98167,8 +98172,8 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98204,8 +98209,8 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98241,8 +98246,8 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98278,8 +98283,8 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98359,8 +98364,8 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -98368,8 +98373,8 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
             }, {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -98386,8 +98391,8 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -98414,8 +98419,8 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -98451,8 +98456,8 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -98490,8 +98495,8 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -98531,8 +98536,8 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -98572,8 +98577,8 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -98674,8 +98679,8 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98683,8 +98688,8 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
         }, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98701,8 +98706,8 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98729,8 +98734,8 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98760,8 +98765,8 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98797,8 +98802,8 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98885,8 +98890,8 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98894,8 +98899,8 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
         }, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98912,8 +98917,8 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98940,8 +98945,8 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -98975,8 +98980,8 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -99010,8 +99015,8 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -100809,12 +100814,12 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }, {
@@ -100824,12 +100829,12 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }>, "many">;
@@ -100842,12 +100847,12 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -100866,12 +100871,12 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -101244,12 +101249,12 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -101370,12 +101375,12 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             patientName: string | null;
             phone: string | null;
             warnings: string[];
+            capturedAt: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
-            capturedAt: string | null;
             rowNumber: number;
             filePath: string | null;
         }[];
@@ -101552,12 +101557,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }, {
@@ -101567,12 +101572,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }>, "many">;
@@ -101585,12 +101590,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -101609,12 +101614,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -101987,12 +101992,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -102113,12 +102118,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -102337,12 +102342,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }, {
@@ -102352,12 +102357,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }>, "many">;
@@ -102370,12 +102375,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -102394,12 +102399,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -102425,12 +102430,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -102456,12 +102461,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -102520,12 +102525,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -102637,12 +102642,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -102701,12 +102706,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -102818,12 +102823,12 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 phone: string | null;
                 warnings: string[];
+                capturedAt: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
-                capturedAt: string | null;
                 rowNumber: number;
                 filePath: string | null;
             }[];
@@ -110228,22 +110233,22 @@ export declare const imagingViewerStateSchema: z.ZodObject<{
     zoom: number;
     brightness: number;
     contrast: number;
-    inverted: boolean;
-    rotationDeg: number;
     flipHorizontal: boolean;
     panX: number;
     panY: number;
+    inverted: boolean;
+    rotationDeg: number;
     projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction";
     preset: "implant" | "custom" | "teeth" | "bone" | "soft_tissue";
 }, {
     zoom?: number | undefined;
     brightness?: number | undefined;
     contrast?: number | undefined;
-    inverted?: boolean | undefined;
-    rotationDeg?: number | undefined;
     flipHorizontal?: boolean | undefined;
     panX?: number | undefined;
     panY?: number | undefined;
+    inverted?: boolean | undefined;
+    rotationDeg?: number | undefined;
     projection?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | undefined;
     preset?: "implant" | "custom" | "teeth" | "bone" | "soft_tissue" | undefined;
 }>;
@@ -110265,22 +110270,22 @@ export declare const imagingViewerSaveSessionPayloadSchema: z.ZodObject<{
         zoom: number;
         brightness: number;
         contrast: number;
-        inverted: boolean;
-        rotationDeg: number;
         flipHorizontal: boolean;
         panX: number;
         panY: number;
+        inverted: boolean;
+        rotationDeg: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction";
         preset: "implant" | "custom" | "teeth" | "bone" | "soft_tissue";
     }, {
         zoom?: number | undefined;
         brightness?: number | undefined;
         contrast?: number | undefined;
-        inverted?: boolean | undefined;
-        rotationDeg?: number | undefined;
         flipHorizontal?: boolean | undefined;
         panX?: number | undefined;
         panY?: number | undefined;
+        inverted?: boolean | undefined;
+        rotationDeg?: number | undefined;
         projection?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | undefined;
         preset?: "implant" | "custom" | "teeth" | "bone" | "soft_tissue" | undefined;
     }>;
@@ -110290,11 +110295,11 @@ export declare const imagingViewerSaveSessionPayloadSchema: z.ZodObject<{
         zoom: number;
         brightness: number;
         contrast: number;
-        inverted: boolean;
-        rotationDeg: number;
         flipHorizontal: boolean;
         panX: number;
         panY: number;
+        inverted: boolean;
+        rotationDeg: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction";
         preset: "implant" | "custom" | "teeth" | "bone" | "soft_tissue";
     };
@@ -110305,11 +110310,11 @@ export declare const imagingViewerSaveSessionPayloadSchema: z.ZodObject<{
         zoom?: number | undefined;
         brightness?: number | undefined;
         contrast?: number | undefined;
-        inverted?: boolean | undefined;
-        rotationDeg?: number | undefined;
         flipHorizontal?: boolean | undefined;
         panX?: number | undefined;
         panY?: number | undefined;
+        inverted?: boolean | undefined;
+        rotationDeg?: number | undefined;
         projection?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | undefined;
         preset?: "implant" | "custom" | "teeth" | "bone" | "soft_tissue" | undefined;
     };
@@ -110334,22 +110339,22 @@ export declare const imagingViewerSaveStateSchema: z.ZodObject<{
         zoom: number;
         brightness: number;
         contrast: number;
-        inverted: boolean;
-        rotationDeg: number;
         flipHorizontal: boolean;
         panX: number;
         panY: number;
+        inverted: boolean;
+        rotationDeg: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction";
         preset: "implant" | "custom" | "teeth" | "bone" | "soft_tissue";
     }, {
         zoom?: number | undefined;
         brightness?: number | undefined;
         contrast?: number | undefined;
-        inverted?: boolean | undefined;
-        rotationDeg?: number | undefined;
         flipHorizontal?: boolean | undefined;
         panX?: number | undefined;
         panY?: number | undefined;
+        inverted?: boolean | undefined;
+        rotationDeg?: number | undefined;
         projection?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | undefined;
         preset?: "implant" | "custom" | "teeth" | "bone" | "soft_tissue" | undefined;
     }>;
@@ -110359,11 +110364,11 @@ export declare const imagingViewerSaveStateSchema: z.ZodObject<{
         zoom: number;
         brightness: number;
         contrast: number;
-        inverted: boolean;
-        rotationDeg: number;
         flipHorizontal: boolean;
         panX: number;
         panY: number;
+        inverted: boolean;
+        rotationDeg: number;
         projection: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction";
         preset: "implant" | "custom" | "teeth" | "bone" | "soft_tissue";
     };
@@ -110374,11 +110379,11 @@ export declare const imagingViewerSaveStateSchema: z.ZodObject<{
         zoom?: number | undefined;
         brightness?: number | undefined;
         contrast?: number | undefined;
-        inverted?: boolean | undefined;
-        rotationDeg?: number | undefined;
         flipHorizontal?: boolean | undefined;
         panX?: number | undefined;
         panY?: number | undefined;
+        inverted?: boolean | undefined;
+        rotationDeg?: number | undefined;
         projection?: "axial" | "coronal" | "sagittal" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip" | "panoramic" | "3d_reconstruction" | undefined;
         preset?: "implant" | "custom" | "teeth" | "bone" | "soft_tissue" | undefined;
     };
@@ -110537,8 +110542,8 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -110546,8 +110551,8 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
             detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
         }, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -110564,8 +110569,8 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -110592,8 +110597,8 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -110624,8 +110629,8 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -110657,8 +110662,8 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -111123,8 +111128,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -111132,8 +111137,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
             detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
         }, {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -111150,8 +111155,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -111178,8 +111183,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -111210,8 +111215,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -111243,8 +111248,8 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         treatmentPlan: string | null;
         quality?: {
             specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-            confidence: number;
             level: "ready" | "review" | "needs_more_dictation";
+            confidence: number;
             signals: string[];
             nextAction: string;
             detectedToothCodes: string[];
@@ -112077,8 +112082,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -112086,8 +112091,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
                 detectedToothStates?: Record<string, "done" | "missing" | "treatment" | "planned" | "idle" | "watch"> | undefined;
             }, {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -112104,8 +112109,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -112132,8 +112137,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -112164,8 +112169,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -112197,8 +112202,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -112600,8 +112605,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -112711,8 +112716,8 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             treatmentPlan: string | null;
             quality?: {
                 specialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
-                confidence: number;
                 level: "ready" | "review" | "needs_more_dictation";
+                confidence: number;
                 signals: string[];
                 nextAction: string;
                 detectedToothCodes: string[];
@@ -113850,7 +113855,7 @@ export declare const interactionConflictItemSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     id: string;
     title: string;
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     agentA: string;
     agentB: string;
     conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
@@ -113860,7 +113865,7 @@ export declare const interactionConflictItemSchema: z.ZodObject<{
 }, {
     id: string;
     title: string;
-    severity: "info" | "warning" | "blocker";
+    severity: "warning" | "info" | "blocker";
     agentA: string;
     agentB: string;
     conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
@@ -113887,7 +113892,7 @@ export declare const checkInteractionsResponseSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         id: string;
         title: string;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         agentA: string;
         agentB: string;
         conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
@@ -113897,7 +113902,7 @@ export declare const checkInteractionsResponseSchema: z.ZodObject<{
     }, {
         id: string;
         title: string;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         agentA: string;
         agentB: string;
         conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
@@ -113912,7 +113917,7 @@ export declare const checkInteractionsResponseSchema: z.ZodObject<{
     conflicts: {
         id: string;
         title: string;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         agentA: string;
         agentB: string;
         conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
@@ -113930,7 +113935,7 @@ export declare const checkInteractionsResponseSchema: z.ZodObject<{
     conflicts: {
         id: string;
         title: string;
-        severity: "info" | "warning" | "blocker";
+        severity: "warning" | "info" | "blocker";
         agentA: string;
         agentB: string;
         conflictCategory: "drug_drug" | "drug_allergy_cross" | "drug_disease" | "anesthetic_vasoconstrictor" | "pregnancy_lactation" | "age_contraindication";
