@@ -311,6 +311,7 @@ export function reconstructPanoramicView(
 		windowWidth?: number;
 		windowLevel?: number;
 		projectionMode?: string;
+		invert?: boolean;
 	} = {},
 ): PanoramicReconstructionResult {
 
@@ -321,7 +322,8 @@ export function reconstructPanoramicView(
 		windowWidth = 4400,
 		windowLevel = 1300,
 		projectionMode = "average",
-	} = options as { heightMm?: number; heightPx?: number; widthPx?: number; windowWidth?: number; windowLevel?: number; projectionMode?: string };
+		invert = false,
+	} = options as { heightMm?: number; heightPx?: number; widthPx?: number; windowWidth?: number; windowLevel?: number; projectionMode?: string; invert?: boolean };
 
 	const splinePoints = archCurve.splinePointsMm;
 	const vectorField = calculateArchTangentsAndNormals(splinePoints);
@@ -403,7 +405,7 @@ export function reconstructPanoramicView(
 			if (projectionMode === "minip") finalHU = minHU;
 			else if (projectionMode === "average") finalHU = sampleCount > 0 ? Math.round(sumHU / sampleCount) : maxHU;
 
-			const gray = huToGrayscale(finalHU, windowWidth, windowLevel);
+			const gray = huToGrayscale(finalHU, windowWidth, windowLevel, invert);
 			const idx = (row * outW + col) * 4;
 			pixelBuffer[idx] = gray;
 			pixelBuffer[idx + 1] = gray;
@@ -463,6 +465,7 @@ export function extractSingleCrossSectionSlice(
 		pixelSpacingMm?: number;
 		windowWidth?: number;
 		windowLevel?: number;
+		invert?: boolean;
 	} = {},
 ): CrossSectionSliceData {
 	const {
@@ -471,6 +474,7 @@ export function extractSingleCrossSectionSlice(
 		pixelSpacingMm = 0.25,
 		windowWidth = 4400,
 		windowLevel = 1300,
+		invert = false,
 	} = options;
 
 	const widthPx = Math.round(widthMm / pixelSpacingMm);
@@ -491,7 +495,7 @@ export function extractSingleCrossSectionSlice(
 
 			const vox = worldMmToVoxelContinuous({ x: sampleX, y: sampleY, z: sampleZ }, volume);
 			const hu = sampleVoxelTrilinearHU(vox.x, vox.y, vox.z, volume);
-			const gray = huToGrayscale(hu, windowWidth, windowLevel);
+			const gray = huToGrayscale(hu, windowWidth, windowLevel, invert);
 
 			const idx = (y * widthPx + x) * 4;
 			pixelData[idx] = gray;
@@ -550,6 +554,7 @@ export function generateCrossSectionSlices(
 		pixelSpacingMm?: number;
 		windowWidth?: number;
 		windowLevel?: number;
+		invert?: boolean;
 	} = {},
 ): CrossSectionSliceData[] {
 	const vectorField = calculateArchTangentsAndNormals(archCurve.splinePointsMm);

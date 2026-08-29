@@ -1571,6 +1571,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			heightPx: 220,
 			windowWidth,
 			windowLevel,
+			invert: invertColors,
 		});
 		setPanoramicData(pano);
 
@@ -1578,9 +1579,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const csList = generateCrossSectionSlices(volume, archCurve, 1.5, 0.0, {
 			windowWidth,
 			windowLevel,
+			invert: invertColors,
 		});
 		setCrossSections(csList);
-	}, [volume, isOpen, archCurve, windowWidth, windowLevel, slabMode]);
+	}, [volume, isOpen, archCurve, windowWidth, windowLevel, slabMode, invertColors]);
 
 	// ─── RENDER PANORAMIC VIEW WITH INTERACTIVE CROSS-SECTION FAN ─────────────
 	useEffect(() => {
