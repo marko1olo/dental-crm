@@ -209,6 +209,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// ─── DENTAL ARCH & PANORAMA STATE ─────────────────────────────────────────
 	const [jawType, setJawType] = useState<"mandible" | "maxilla">("mandible");
+	const [showDentalArch, setShowDentalArch] = useState<boolean>(false);
 	const [archCurve, setArchCurve] = useState<DentalArchCurve>(() =>
 		buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible"),
 	);
@@ -751,64 +752,33 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					showScaleBar: true,
 				});
 
-				// Draw Focal Trough Corridor on Axial (Purple dashed bounds)
-				if (archCurve.focalTroughThicknessMm > 0 && archCurve.splinePointsMm.length > 1) {
-					const { innerBoundary, outerBoundary } = getFocalTroughBoundaryCurves(
-						archCurve.splinePointsMm,
-						archCurve.focalTroughThicknessMm,
-					);
-
-					// Focal trough translucent fill corridor
+				// Draw Dental Arch Spline on Axial (Clean hairline when enabled)
+				if (showDentalArch) {
 					ctx.save();
-					ctx.fillStyle = ROMEXIS_COLORS.panoramicRgba(0.06);
+					ctx.strokeStyle = "rgba(168, 85, 247, 0.85)";
+					ctx.lineWidth = 1.5;
+					ctx.setLineDash([4, 2]);
 					ctx.beginPath();
-					for (let i = 0; i < outerBoundary.length; i++) {
-						const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
-						if (i === 0) ctx.moveTo(v.x, v.y);
-						else ctx.lineTo(v.x, v.y);
-					}
-					for (let i = innerBoundary.length - 1; i >= 0; i--) {
-						const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
-						ctx.lineTo(v.x, v.y);
-					}
-					ctx.closePath();
-					ctx.fill();
-
-					// Inner and outer dashed curves
-					ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.5);
-					ctx.lineWidth = 1.0;
-					ctx.setLineDash([4, 3]);
-
-					ctx.beginPath();
-					for (let i = 0; i < innerBoundary.length; i++) {
-						const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
+					const spline = archCurve.splinePointsMm;
+					for (let i = 0; i < spline.length; i++) {
+						const pt = spline[i]!;
+						const v = worldMmToVoxel({ x: pt.x, y: pt.y, z: crosshairMm.z }, volume);
 						if (i === 0) ctx.moveTo(v.x, v.y);
 						else ctx.lineTo(v.x, v.y);
 					}
 					ctx.stroke();
+					ctx.setLineDash([]);
 
-					ctx.beginPath();
-					for (let i = 0; i < outerBoundary.length; i++) {
-						const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
-						if (i === 0) ctx.moveTo(v.x, v.y);
-						else ctx.lineTo(v.x, v.y);
+					// Tooth anchor nodes
+					for (const anchor of archCurve.anchors) {
+						const v = worldMmToVoxel({ x: anchor.positionMm.x, y: anchor.positionMm.y, z: crosshairMm.z }, volume);
+						ctx.fillStyle = "rgba(168, 85, 247, 0.9)";
+						ctx.beginPath();
+						ctx.arc(v.x, v.y, 2.5, 0, Math.PI * 2);
+						ctx.fill();
 					}
-					ctx.stroke();
 					ctx.restore();
 				}
-
-				// Draw Dental Arch Spline on Axial (Purple #a855f7)
-				ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.95);
-				ctx.lineWidth = 2.0;
-				ctx.beginPath();
-				const spline = archCurve.splinePointsMm;
-				for (let i = 0; i < spline.length; i++) {
-					const pt = spline[i]!;
-					const v = worldMmToVoxel({ x: pt.x, y: pt.y, z: crosshairMm.z }, volume);
-					if (i === 0) ctx.moveTo(v.x, v.y);
-					else ctx.lineTo(v.x, v.y);
-				}
-				ctx.stroke();
 
 				// Draw Active Cross-Section Reslice Ray across Ridge (Yellow #eab308)
 				if (activeCrossSection) {
@@ -2078,6 +2048,23 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onToggleMaximize={() => handleToggleMaximize("axial")}
 					zoomFactor={transforms.axial?.zoom}
 				/>
+				{/* Dental Arch (OPG Spline) Toggle Button */}
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						setShowDentalArch((prev) => !prev);
+					}}
+					className={`absolute top-2 right-12 z-20 px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 border transition-all ${
+						showDentalArch
+							? "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs"
+							: "bg-[#14171e]/80 text-slate-400 hover:text-slate-200 border-[#242a35] hover:border-slate-500/40"
+					}`}
+					title="Отображение зубной дуги ОПТГ"
+					data-testid="cbct-toggle-dental-arch"
+				>
+					<span>🦷 Дуга ОПТГ</span>
+				</button>
 			</div>
 		</div>
 	);
