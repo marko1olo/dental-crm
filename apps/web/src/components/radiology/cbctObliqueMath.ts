@@ -368,6 +368,23 @@ export function extractObliqueMprSlice(
 			break;
 	}
 
+	const volCenterX = origin.x + (dim.width * sp.x) / 2.0;
+	const volCenterY = origin.y + (dim.height * sp.y) / 2.0;
+	const volCenterZ = origin.z + (dim.depth * sp.z) / 2.0;
+
+	let sliceCenterMm: Point3D;
+	switch (plane) {
+		case "axial":
+			sliceCenterMm = { x: volCenterX, y: volCenterY, z: crosshairMm.z };
+			break;
+		case "coronal":
+			sliceCenterMm = { x: volCenterX, y: crosshairMm.y, z: volCenterZ };
+			break;
+		case "sagittal":
+			sliceCenterMm = { x: crosshairMm.x, y: volCenterY, z: volCenterZ };
+			break;
+	}
+
 	const basis = computeObliquePlaneBasis(plane, crosshairMm, angles);
 	const totalPixels = widthPx * heightPx;
 	const pixelBuffer = new Uint8ClampedArray(totalPixels * 4);
@@ -400,9 +417,9 @@ export function extractObliqueMprSlice(
 	if (!isSlabActive) {
 		for (let row = 0; row < heightPx; row++) {
 			const offsetRow = row - halfH;
-			const baseRowWorldX = crosshairMm.x + offsetRow * vX;
-			const baseRowWorldY = crosshairMm.y + offsetRow * vY;
-			const baseRowWorldZ = crosshairMm.z + offsetRow * vZ;
+			const baseRowWorldX = sliceCenterMm.x + offsetRow * vX;
+			const baseRowWorldY = sliceCenterMm.y + offsetRow * vY;
+			const baseRowWorldZ = sliceCenterMm.z + offsetRow * vZ;
 
 			let pIdx = row * widthPx * 4;
 
@@ -435,9 +452,9 @@ export function extractObliqueMprSlice(
 	} else {
 		for (let row = 0; row < heightPx; row++) {
 			const offsetRow = row - halfH;
-			const baseRowWorldX = crosshairMm.x + offsetRow * vX;
-			const baseRowWorldY = crosshairMm.y + offsetRow * vY;
-			const baseRowWorldZ = crosshairMm.z + offsetRow * vZ;
+			const baseRowWorldX = sliceCenterMm.x + offsetRow * vX;
+			const baseRowWorldY = sliceCenterMm.y + offsetRow * vY;
+			const baseRowWorldZ = sliceCenterMm.z + offsetRow * vZ;
 
 			let pIdx = row * widthPx * 4;
 

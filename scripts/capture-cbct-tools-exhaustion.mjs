@@ -130,21 +130,23 @@ async function run() {
 
 	const page = await context.newPage();
 	page.setDefaultTimeout(40000);
+	page.on("console", (msg) => console.log(`[BROWSER LOG] ${msg.text()}`));
+	page.on("pageerror", (err) => console.error(`[BROWSER PAGEERROR] ${err.message}`));
 
-	console.log("[CBCT-E2E] Navigating to Clinical Modals Studio with modal=cbct...");
-	await page.goto("http://127.0.0.1:5173/?standalone=clinical-modals-studio&modal=cbct#clinical-modals-studio?modal=cbct", { waitUntil: "domcontentloaded" });
-	await sleep(1500);
+	console.log("[CBCT-E2E] Navigating to Clinical Modals Studio...");
+	await page.goto("http://127.0.0.1:5173/?standalone=clinical-modals-studio", { waitUntil: "domcontentloaded" });
+	await sleep(2000);
+	console.log(`[CBCT-E2E] Page loaded. URL: ${page.url()}, Title: ${await page.title()}`);
 
-	// Ensure 3D CBCT Studio Modal is open
-	console.log("[CBCT-E2E] Ensuring 3D CBCT Studio Modal is open...");
+	// Open 3D CBCT Studio Modal via button
+	console.log("[CBCT-E2E] Opening 3D CBCT Studio Modal...");
+	const openMprBtn = page.locator('[data-testid="open-cbct-mpr-3d-studio-modal-btn"]').first();
+	await openMprBtn.waitFor({ state: "visible", timeout: 20000 });
+	await openMprBtn.click();
+	await sleep(1000);
+
 	const modalContainer = page.locator('[data-testid="cbct-mpr-implant-studio-modal"]').first();
-	if (!await modalContainer.isVisible().catch(() => false)) {
-		const openCbctBtn = page.locator('[data-testid="open-cbct-mpr-3d-studio-modal-btn"]').first();
-		if (await openCbctBtn.isVisible().catch(() => false)) {
-			await openCbctBtn.click();
-		}
-	}
-	await modalContainer.waitFor({ state: "visible", timeout: 25000 });
+	await modalContainer.waitFor({ state: "visible", timeout: 20000 });
 	await sleep(1000);
 
 	// Upload real 300 DICOM slices to file input

@@ -268,7 +268,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [implantEntryDepthMm, setImplantEntryDepthMm] = useState<number>(2.0);
 	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0.0);
 	const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(true);
-	const [nervePoints, setNervePoints] = useState<Point3D[]>(() => [...DEFAULT_IAN_NERVE_POINTS]);
+	const [nervePoints, setNervePoints] = useState<Point3D[]>([]);
 
 	// Mandibular Canal position in cross-section (Relative to slice center)
 	const [canalXOffsetMm, setCanalXOffsetMm] = useState<number>(2.0);
@@ -999,10 +999,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				}
 
 				// Draw Mandibular Canal Nerve (IAN) on Axial with 2.0 mm Safety Halo
-				if (activeTool === "nerve" || nervePoints.length > 0) {
-					const pts = nervePoints.length > 0 ? nervePoints : DEFAULT_IAN_NERVE_POINTS;
-					if (pts.length > 1) {
-						ctx.save();
+				if (nervePoints.length > 1) {
+					const pts = nervePoints;
+					ctx.save();
 						// 2.0 mm Safety Halo Corridor (dashed amber)
 						ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
 						ctx.lineWidth = Math.max(10, 4.0 / (metadata.pixelSpacingX || 0.4));
@@ -1056,7 +1055,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						ctx.fillText(text, pMid.x, pMid.y - 8);
 						ctx.restore();
 					}
-				}
 
 				// Draw Oblique Crosshair with Rotation Handles & Clinical Rotation Badge
 				drawObliqueCrosshairWithRotationHandles(ctx, {
@@ -1262,10 +1260,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				}
 
 				// Draw Mandibular Canal Nerve (IAN) on Coronal with 2.0 mm Safety Halo
-				if (activeTool === "nerve" || nervePoints.length > 0) {
-					const pts = nervePoints.length > 0 ? nervePoints : DEFAULT_IAN_NERVE_POINTS;
-					if (pts.length > 1) {
-						ctx.save();
+				if (nervePoints.length > 1) {
+					const pts = nervePoints;
+					ctx.save();
 						// 2.0 mm Safety Halo Corridor (dashed amber)
 						ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
 						ctx.lineWidth = Math.max(10, 4.0 / (metadata.pixelSpacingX || 0.4));
@@ -1302,7 +1299,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						}
 						ctx.restore();
 					}
-				}
 
 				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
 				drawObliqueCrosshairWithRotationHandles(ctx, {
@@ -1508,10 +1504,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				}
 
 				// Draw Mandibular Canal Nerve (IAN) on Sagittal with 2.0 mm Safety Halo
-				if (activeTool === "nerve" || nervePoints.length > 0) {
-					const pts = nervePoints.length > 0 ? nervePoints : DEFAULT_IAN_NERVE_POINTS;
-					if (pts.length > 1) {
-						ctx.save();
+				if (nervePoints.length > 1) {
+					const pts = nervePoints;
+					ctx.save();
 						// 2.0 mm Safety Halo Corridor (dashed amber)
 						ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
 						ctx.lineWidth = Math.max(10, 4.0 / (metadata.pixelSpacingY || 0.4));
@@ -1548,7 +1543,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						}
 						ctx.restore();
 					}
-				}
 
 				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
 				drawObliqueCrosshairWithRotationHandles(ctx, {

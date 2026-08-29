@@ -189,20 +189,9 @@ export function findOcclusalZPlane(
 		return fallbackEntry ? fallbackEntry.zMm : 0.0;
 	}
 
-	// Sort peaks by Z ascending (Inferior/Caudal -> Superior/Cranial)
-	localPeaks.sort((a, b) => a.zIndex - b.zIndex);
-
-	if (localPeaks.length === 1) {
-		return localPeaks[0]!.zMm;
-	}
-
-	if (jawType === "mandible") {
-		// Mandibular teeth occupy the more inferior/caudal Z-planes (lower peak)
-		return localPeaks[0]!.zMm;
-	}
-
-	// Maxillary teeth occupy the more superior/cranial Z-planes (upper peak)
-	return localPeaks[localPeaks.length - 1]!.zMm;
+	// Primary peak with highest enamel density (true occlusal contact plane)
+	localPeaks.sort((a, b) => b.score - a.score);
+	return localPeaks[0]!.zMm;
 }
 
 // ─── 2. 2D AXIAL MAXIMUM INTENSITY PROJECTION (MIP) SLAB ENGINE ─────────────
@@ -360,20 +349,23 @@ export function detectDentalArchCentroids(
 
 	let jawCenterX = 0.0;
 	let jawCenterY = 0.0;
+	let hasEnamel = false;
 
 	if (totalWeight > 5000) {
 		jawCenterX = weightedX / totalWeight;
-		// Keep central symmetry constrained within plausible physiological limits [-12..12 mm]
-		jawCenterX = Math.max(-12.0, Math.min(12.0, jawCenterX));
-		// Posterior center for polar rays sits slightly posterior to high-density teeth region
-		jawCenterY = Math.min(10.0, posteriorYMax + 2.0);
+		// Allow real patient lateral translation up to scanner boundaries (+/- 45 mm)
+		jawCenterX = Math.max(-45.0, Math.min(45.0, jawCenterX));
+		// The ray origin sits in oral cavity / tongue center ~25 mm posterior to the high-density teeth centroid
+		const teethCenterY = weightedY / totalWeight;
+		jawCenterY = teethCenterY + 25.0;
+		hasEnamel = true;
 	}
 
 	// Standard FDI tooth angles in radians covering the full dental arch from Right Molar 3 to Left Molar 3
 	// Coordinate system: u_x = -cos(theta), u_y = -sin(theta)
-	// theta = -15 deg -> Right posterior quadrant (48/18)
+	// theta = -14 deg -> Right posterior quadrant (48/18)
 	// theta = +90 deg -> Direct anterior / central incisors (41, 31 / 11, 21)
-	// theta = +195 deg -> Left posterior quadrant (38/28)
+	// theta = +194 deg -> Left posterior quadrant (38/28)
 	const toothAngleSpecs = [
 		{ fdi: jawType === "mandible" ? "48" : "18", angleRad: (-14 * Math.PI) / 180, isRight: true },
 		{ fdi: jawType === "mandible" ? "47" : "17", angleRad: (0 * Math.PI) / 180, isRight: true },
@@ -403,8 +395,8 @@ export function detectDentalArchCentroids(
 		let peakWeightedSum = 0;
 		let peakWeight = 0;
 
-		const minRadius = Math.max(12.0, defaultRadiusMm - 16.0);
-		const maxRadius = Math.min(80.0, defaultRadiusMm + 16.0);
+		const minRadius = hasEnamel ? 5.0 : Math.max(12.0, defaultRadiusMm - 16.0);
+		const maxRadius = hasEnamel ? 65.0 : Math.min(80.0, defaultRadiusMm + 16.0);
 		const stepR = 0.5;
 
 		for (let r = minRadius; r <= maxRadius; r += stepR) {
@@ -413,8 +405,8 @@ export function detectDentalArchCentroids(
 
 			const hu = sampleMipHUContinuous(mip, sampleX, sampleY);
 
-			if (hu >= 700) {
-				const w = Math.pow(Math.min(hu, 3500) - 600, 1.5);
+			if (hu >= 800) {
+				const w = Math.pow(Math.min(hu, 4000) - 700, 1.5);
 				peakWeightedSum += w * r;
 				peakWeight += w;
 

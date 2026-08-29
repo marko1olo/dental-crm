@@ -186,23 +186,23 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 		>
 			{/* 1. TOP-LEFT CLINICAL HEADER BADGE */}
 			<div
-				className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-auto flex-wrap max-w-[calc(100%-140px)]"
+				className="absolute top-2 left-2 flex items-center gap-1 pointer-events-auto flex-nowrap min-w-0 max-w-[calc(100%-80px)] z-20"
 				onDoubleClick={(e) => {
 					e.stopPropagation();
 					onToggleMaximize?.();
 				}}
 			>
 				<div
-					className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#14171e]/90 backdrop-blur-sm border border-[#242a35] shadow-xs text-xs font-semibold"
+					className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#14171e]/90 backdrop-blur-sm border border-[#242a35] shadow-xs text-xs font-semibold whitespace-nowrap min-w-0 shrink"
 					style={{ borderLeftColor: labels.planeColor, borderLeftWidth: 3 }}
 				>
 					<span
-						className="w-1.5 h-1.5 rounded-full"
+						className="w-1.5 h-1.5 rounded-full shrink-0"
 						style={{ backgroundColor: labels.planeColor }}
 					/>
-					<span className="text-[#e2e8f0] tracking-wide font-medium">{labels.planeNameEn}</span>
+					<span className="text-[#e2e8f0] tracking-wide font-medium text-[11px] truncate">{labels.planeNameEn}</span>
 					{coordText && (
-						<span className="font-mono text-[#94a3b8] text-[10px] font-normal ml-0.5">
+						<span className="font-mono text-[#94a3b8] text-[9.5px] font-normal ml-0.5 whitespace-nowrap shrink-0">
 							({coordText})
 						</span>
 					)}
@@ -270,7 +270,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 
 			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (Calm, semi-transparent) */}
 			<div
-				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[#14171e]/80 backdrop-blur-xs text-[#94a3b8] border border-[#242a35]/60 font-mono font-bold text-[10px]"
+				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[#14171e]/80 backdrop-blur-xs text-[#94a3b8] border border-[#242a35]/60 font-mono font-bold text-[10px] pointer-events-none z-10"
 				title={labels.topTooltipRu}
 			>
 				{labels.top}
