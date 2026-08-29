@@ -775,27 +775,34 @@ export class TreatmentConsumablesService {
 			}
 
 			const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
-			if (!Number.isFinite(currentStock) || currentStock < requiredQty) {
-				throw new InsufficientStockError({
-					inventoryItemId: inv.id,
-					inventoryItemName: inv.name,
-					availableStock: Number.isFinite(currentStock) ? currentStock : 0,
-					requiredStock: requiredQty,
-				});
-			}
-
-			const newStock = Number((currentStock - requiredQty).toFixed(4));
+			const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+			const newStock = Number((baseStock - requiredQty).toFixed(4));
 			const quantityChanged = String(-requiredQty);
 			const threshold = Number(inv.criticalThreshold ?? inv.minQty ?? 0);
 
-			// Check low stock warning
-			if (newStock <= threshold) {
+			// Дефицит материалов: при нехватке остатка списываем в отрицательный остаток (дефицит),
+			// фиксируем предупреждение в результате списания, чтобы врач беспрепятственно завершил прием.
+			if (newStock < 0) {
+				console.warn(
+					`[treatmentConsumablesService] Списание в дефицит по материалу «${inv.name}» (ID: ${inv.id}) ` +
+						`для визита ${visitId} (клиника ${organizationId}): в наличии ${baseStock}, требовалось ${requiredQty}, итоговый дефицит: ${newStock}.`,
+				);
 				warnings.push({
-					type: newStock <= 0 ? "out_of_stock" : "low_stock",
+					type: "out_of_stock",
+					itemId: inv.id,
+					itemName: inv.name,
+					message: `Внимание: списание в дефицит по материалу «${inv.name}» (в наличии было ${baseStock}, списано ${requiredQty}, остаток: ${newStock} ${inv.unit ?? "шт"}).`,
+					currentStock: newStock,
+					criticalThreshold: threshold,
+					expirationDate: inv.expirationDate,
+				});
+			} else if (newStock <= threshold) {
+				warnings.push({
+					type: newStock === 0 ? "out_of_stock" : "low_stock",
 					itemId: inv.id,
 					itemName: inv.name,
 					message:
-						newStock <= 0
+						newStock === 0
 							? `Материал «${inv.name}» полностью израсходован на складе.`
 							: `Остаток материала «${inv.name}» снизился до критического порога (${newStock} ${inv.unit ?? "шт"}, порог: ${threshold}).`,
 					currentStock: newStock,
@@ -965,26 +972,32 @@ export class TreatmentConsumablesService {
 			if (!inv) continue;
 
 			const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
-			if (!Number.isFinite(currentStock) || currentStock < requiredQty) {
-				throw new InsufficientStockError({
-					inventoryItemId: inv.id,
-					inventoryItemName: inv.name,
-					availableStock: Number.isFinite(currentStock) ? currentStock : 0,
-					requiredStock: requiredQty,
-				});
-			}
-
-			const newStock = Number((currentStock - requiredQty).toFixed(4));
+			const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+			const newStock = Number((baseStock - requiredQty).toFixed(4));
 			const quantityChanged = String(-requiredQty);
 			const threshold = Number(inv.criticalThreshold ?? inv.minQty ?? 0);
 
-			if (newStock <= threshold) {
+			if (newStock < 0) {
+				console.warn(
+					`[treatmentConsumablesService] Списание в дефицит по материалу «${inv.name}» (ID: ${inv.id}) ` +
+						`по позиции лечения ${treatmentItemId}: в наличии ${baseStock}, требовалось ${requiredQty}, итоговый дефицит: ${newStock}.`,
+				);
 				warnings.push({
-					type: newStock <= 0 ? "out_of_stock" : "low_stock",
+					type: "out_of_stock",
+					itemId: inv.id,
+					itemName: inv.name,
+					message: `Внимание: списание в дефицит по материалу «${inv.name}» (в наличии было ${baseStock}, списано ${requiredQty}, остаток: ${newStock} ${inv.unit ?? "шт"}).`,
+					currentStock: newStock,
+					criticalThreshold: threshold,
+					expirationDate: inv.expirationDate,
+				});
+			} else if (newStock <= threshold) {
+				warnings.push({
+					type: newStock === 0 ? "out_of_stock" : "low_stock",
 					itemId: inv.id,
 					itemName: inv.name,
 					message:
-						newStock <= 0
+						newStock === 0
 							? `Материал «${inv.name}» полностью израсходован.`
 							: `Остаток материала «${inv.name}» ниже нормы (${newStock} ${inv.unit ?? "шт"}).`,
 					currentStock: newStock,

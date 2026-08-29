@@ -12,4 +12,5 @@ export * from "./PatientOnlineBookingModal";
 export * from "./patientPortalEngine";
 export * from "./patientPortalPresets";
 export * from "./patientPortalTypes";
+export { generateQrCodeSvg, generateSha256 } from "./patientCabinet";
 export { PatientPortalModal as default } from "./PatientPortalModal";

@@ -348,7 +348,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<select
 							value={discountPreset}
 							onChange={(e) => setDiscountPreset(e.target.value as LoyaltyDiscountPreset)}
-							className="h-9 px-3 py-1 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink)] focus:border-[var(--teal,#0d9488)] outline-none cursor-pointer transition-colors shadow-2xs"
+							className="h-9 px-3 py-1 rounded-xl text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] focus:border-[var(--teal,#0d9488)] outline-none cursor-pointer transition-colors shadow-2xs"
 							data-testid="select-loyalty-discount"
 						>
 							<option value="none">Без скидки</option>
@@ -370,7 +370,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									value={customDiscountPercent || ""}
 									onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
 									placeholder="0%"
-									className="h-9 w-20 px-2.5 py-1 text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none focus:border-[var(--teal,#0d9488)]"
+									className="h-9 w-20 px-2.5 py-1 text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none focus:border-[var(--teal,#0d9488)]"
 								/>
 								<span className="font-bold text-[var(--ink)]">%</span>
 							</div>
@@ -385,7 +385,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									value={customDiscountRub || ""}
 									onChange={(e) => setCustomDiscountRub(Math.max(0, parseFloat(e.target.value) || 0))}
 									placeholder="0 ₽"
-									className="h-9 w-24 px-2.5 py-1 text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none focus:border-[var(--teal,#0d9488)]"
+									className="h-9 w-24 px-2.5 py-1 text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none focus:border-[var(--teal,#0d9488)]"
 								/>
 								<span className="font-bold text-[var(--ink)]">₽</span>
 							</div>
@@ -401,7 +401,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				</div>
 
 				{/* Body Content */}
-				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 pb-24 space-y-4" style={{ paddingBottom: "96px" }}>
+				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
 					{activeTab === "friendly" ? (
 						<div className="space-y-4" data-testid="friendly-billing-view">
 							{/* Summary Header Card */}
@@ -765,7 +765,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				</div>
 
 				{/* Bottom Footer Actions (Fixed Sticky Bar) */}
-				<div className="px-4 sm:px-6 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 flex flex-col gap-2.5">
+				<div className="sticky bottom-0 z-50 px-4 sm:px-6 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 flex flex-col gap-2.5 shadow-lg">
 					{/* Mobile: Prominent Total Sum Row */}
 					<div className="flex items-center justify-between sm:hidden w-full pb-1">
 						<span className="text-xs text-[var(--muted)] font-bold">Итоговая сумма:</span>
@@ -787,7 +787,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={handlePrint}
-								className="h-10 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
+								className="h-10 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 								data-testid="btn-print-billing-act"
 							>
 								<Printer className="w-3.5 h-3.5 shrink-0" />
@@ -799,7 +799,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={() => (onFiscalize ? onFiscalize() : setIsFiscalOpen(true))}
-								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
+								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 								data-testid="btn-fiscalize-54fz"
 								title="Фискализировать чек по 54-ФЗ"
 							>
@@ -812,7 +812,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={handleSendWhatsApp}
-								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
+								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 								data-testid="btn-footer-send-whatsapp"
 							>
 								<MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -859,14 +859,14 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								totalRub={summary.totalNetRub}
 								contractNumber={actParams.contractNumber}
 								contractDate={actParams.contractDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]}
-								className="h-10 sm:h-9 px-3 font-bold justify-center"
+								className="h-10 sm:h-9 px-3 font-bold justify-center whitespace-nowrap"
 							/>
 
 							{/* 5. Desktop Close */}
 							<button
 								type="button"
 								onClick={onClose}
-								className="hidden sm:flex h-9 px-3.5 rounded-xl text-xs font-semibold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors items-center justify-center shrink-0"
+								className="hidden sm:flex h-9 px-3.5 rounded-xl text-xs font-semibold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors items-center justify-center shrink-0 whitespace-nowrap"
 							>
 								Закрыть
 							</button>
@@ -884,7 +884,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						data-testid="billing-phone-qr-modal"
 					>
 						<div
-							className="bg-white text-black p-6 rounded-3xl max-w-sm w-full shadow-2xl flex flex-col items-center text-center gap-4"
+							className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] p-6 rounded-3xl max-w-sm w-full shadow-2xl flex flex-col items-center text-center gap-4"
 							onClick={(e) => e.stopPropagation()}
 						>
 							<div className="flex items-center justify-between w-full">
@@ -913,13 +913,13 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							/>
 
 							<div>
-								<div className="text-xs text-slate-500 font-medium">Сумма к оплате:</div>
+								<div className="text-xs text-[var(--muted)] font-medium">Сумма к оплате:</div>
 								<div className="text-xl font-black text-[var(--teal,#0d9488)] font-mono">
 									{friendlyBreakdown.totalAmountRubFormatted}
 								</div>
 							</div>
 
-							<p className="text-xs text-slate-600 leading-snug m-0">
+							<p className="text-xs text-[var(--muted)] leading-snug m-0">
 								Наведите камеру смартфона для мгновенного сохранения детализации и оплаты через СБП без комиссии.
 							</p>
 

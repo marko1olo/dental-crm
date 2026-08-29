@@ -334,7 +334,7 @@ export function Billing1CExportModal({
 									<select
 										value={docType}
 										onChange={(e) => setDocType(e.target.value as OneCDocumentType)}
-										className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold outline-none focus:border-[var(--teal,#0d9488)]"
+										className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper)] dark:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] font-semibold outline-none focus:border-[var(--teal,#0d9488)]"
 									>
 										<option value="act">Акт выполненных работ</option>
 										<option value="order">Заказ покупателя / Счет</option>
@@ -349,7 +349,7 @@ export function Billing1CExportModal({
 										type="text"
 										value={actNumber}
 										onChange={(e) => setActNumber(e.target.value)}
-										className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold font-mono outline-none focus:border-[var(--teal,#0d9488)]"
+										className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper)] dark:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] font-semibold font-mono outline-none focus:border-[var(--teal,#0d9488)]"
 									/>
 								</div>
 
@@ -361,7 +361,7 @@ export function Billing1CExportModal({
 										type="date"
 										value={docDate}
 										onChange={(e) => setDocDate(e.target.value)}
-										className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold outline-none focus:border-[var(--teal,#0d9488)]"
+										className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper)] dark:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] font-semibold outline-none focus:border-[var(--teal,#0d9488)]"
 									/>
 								</div>
 
@@ -374,7 +374,7 @@ export function Billing1CExportModal({
 										value={customDoctorName}
 										onChange={(e) => setCustomDoctorName(e.target.value)}
 										placeholder="ФИО врача"
-										className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold outline-none focus:border-[var(--teal,#0d9488)]"
+										className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper)] dark:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] font-semibold outline-none focus:border-[var(--teal,#0d9488)]"
 									/>
 								</div>
 							</div>
@@ -382,18 +382,18 @@ export function Billing1CExportModal({
 					) : (
 						<div className="flex items-center justify-between gap-2 p-2.5 px-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs">
 							<div className="flex items-center gap-2 flex-wrap min-w-0 flex-1 text-[var(--ink,#0f172a)]">
-								<span className="font-semibold">
+								<span className="font-semibold whitespace-nowrap">
 									{docType === "act" ? "Акт" : "Заказ"} № <strong className="font-mono font-bold">{actNumber}</strong> от {docDate ? docDate.split("-").reverse().join(".") : todayIso.split("-").reverse().join(".")}
 								</span>
 								<span className="text-[var(--muted,#64748b)]/60">•</span>
-								<span className="text-[var(--muted,#64748b)]">
+								<span className="text-[var(--muted,#64748b)] whitespace-nowrap">
 									Врач: <strong className="text-[var(--ink,#0f172a)] font-semibold">{customDoctorName || "Не указан"}</strong>
 								</span>
 							</div>
 							<button
 								type="button"
 								onClick={() => setIsEditingRequisites(true)}
-								className="text-[11px] font-bold text-[var(--teal,#0d9488)] hover:underline cursor-pointer shrink-0 ml-2 px-2 py-0.5 rounded-lg hover:bg-[var(--paper,#ffffff)] transition-colors"
+								className="text-[11px] font-bold text-[var(--teal,#0d9488)] hover:underline cursor-pointer shrink-0 ml-2 px-2 py-0.5 rounded-lg hover:bg-[var(--paper)] dark:hover:bg-[var(--paper-soft)] transition-colors"
 							>
 								[Изменить]
 							</button>
@@ -589,7 +589,7 @@ export function Billing1CExportModal({
 											type="text"
 											value={selectedContract}
 											onChange={(e) => setSelectedContract(e.target.value)}
-											className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold font-mono"
+											className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper)] dark:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] font-semibold font-mono outline-none focus:border-[var(--teal,#0d9488)]"
 										/>
 									</div>
 									<div>
@@ -600,7 +600,7 @@ export function Billing1CExportModal({
 											type="date"
 											value={selectedContractDate}
 											onChange={(e) => setSelectedContractDate(e.target.value)}
-											className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold"
+											className="w-full h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper)] dark:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] font-semibold outline-none focus:border-[var(--teal,#0d9488)]"
 										/>
 									</div>
 								</div>
@@ -609,13 +609,13 @@ export function Billing1CExportModal({
 					)}
 				</div>
 
-				{/* Modal Footer: Compact on mobile, elegant on desktop */}
-				<div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-between gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-[var(--paper-soft,#f8fafc)] border-t border-[var(--border,#cbd5e1)] shrink-0">
+				{/* Modal Footer: Fixed Sticky Bar */}
+				<div className="sticky bottom-0 z-50 grid grid-cols-2 sm:flex sm:items-center sm:justify-between gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-[var(--paper-soft,#f8fafc)] border-t border-[var(--border,#cbd5e1)] shrink-0 shadow-lg">
 					<div className="contents sm:flex sm:items-center sm:gap-2">
 						<button
 							type="button"
 							onClick={handleCopyAccountantSummary}
-							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center"
+							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap"
 							title="Сводка для бухгалтерии"
 						>
 							<FileText size={13} className="shrink-0" />
@@ -624,7 +624,7 @@ export function Billing1CExportModal({
 						<button
 							type="button"
 							onClick={handleCopyXml}
-							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center"
+							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap"
 							title="Скопировать XML CommerceML"
 						>
 							<Copy size={13} className="shrink-0" />
@@ -636,7 +636,7 @@ export function Billing1CExportModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors flex items-center justify-center text-center"
+							className="min-h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-bold text-[11px] sm:text-xs bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors flex items-center justify-center text-center whitespace-nowrap"
 						>
 							Закрыть
 						</button>
@@ -658,7 +658,7 @@ export function Billing1CExportModal({
 							contractDate={selectedContractDate}
 							variant="primary"
 							label="Экспорт в 1С (XML)"
-							className="w-full sm:w-auto min-h-8 sm:h-9 px-2 sm:px-4 text-[11px] sm:text-xs font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white shrink-0 flex items-center justify-center text-center"
+							className="w-full sm:w-auto min-h-8 sm:h-9 px-2 sm:px-4 text-[11px] sm:text-xs font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white shrink-0 flex items-center justify-center text-center whitespace-nowrap"
 						/>
 					</div>
 				</div>

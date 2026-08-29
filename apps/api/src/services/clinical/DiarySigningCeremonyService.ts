@@ -503,15 +503,16 @@ export async function runDiarySigningCeremony(
 						if (!inv) continue;
 
 						const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
-						if (!Number.isFinite(currentStock) || currentStock < qtyNeeded) {
-							throw new DiarySigningError(
-								"InsufficientStock",
-								`Недостаточно материалов на складе: «${inv.name}» (требуется ${qtyNeeded}, в наличии ${Number.isFinite(currentStock) ? currentStock : 0}).`,
+						const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+						const newStock = baseStock - qtyNeeded;
+						const quantityChanged = String(-qtyNeeded);
+
+						if (newStock < 0) {
+							console.warn(
+								`[DiarySigningCeremonyService] Списание в дефицит по материалу «${inv.name}» (ID: ${inv.id}) ` +
+									`для визита ${diary.visitId}: в наличии ${baseStock}, требовалось ${qtyNeeded}, итоговый дефицит: ${newStock}.`,
 							);
 						}
-
-						const newStock = Math.max(0, currentStock - qtyNeeded);
-						const quantityChanged = String(-qtyNeeded);
 
 						await tx
 							.update(inventoryItems)
