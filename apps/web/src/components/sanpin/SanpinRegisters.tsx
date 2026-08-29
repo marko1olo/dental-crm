@@ -7,6 +7,8 @@ import {
 	Check,
 	CheckCircle2,
 	ChevronDown,
+	ChevronLeft,
+	ChevronRight,
 	Clock,
 	Download,
 	Droplets,
@@ -77,18 +79,18 @@ export const SANPIN_TABS: Array<{
 	label: string;
 	icon: React.ComponentType<{ size?: number; color?: string; className?: string }>;
 }> = [
-	{ id: "retroactive_batch", label: "Пакетный расчет", icon: Rocket },
+	{ id: "retroactive_batch", label: "Пакет", icon: Rocket },
 	{ id: "cabinet_readiness", label: "0. Готовность", icon: ShieldCheck },
-	{ id: "pso", label: "1. ПСО (№ 366/у)", icon: FlaskConical },
-	{ id: "autoclave", label: "2. Автоклавы (№ 257/у)", icon: Flame },
-	{ id: "bactericidal", label: "3. Рециркуляторы", icon: Wind },
+	{ id: "pso", label: "1. ПСО", icon: FlaskConical },
+	{ id: "autoclave", label: "2. Автоклавы", icon: Flame },
+	{ id: "bactericidal", label: "3. Дезар", icon: Wind },
 	{ id: "cleaning", label: "4. Генуборки", icon: Sparkles },
-	{ id: "waste", label: "5. Медотходы А, Б, В, Г", icon: Recycle },
-	{ id: "biohazard", label: "6. Аварии («Анти-ВИЧ»)", icon: ShieldAlert },
-	{ id: "temperature", label: "7. T° и влажность", icon: Thermometer },
+	{ id: "waste", label: "5. Медотходы", icon: Recycle },
+	{ id: "biohazard", label: "6. «Анти-ВИЧ»", icon: ShieldAlert },
+	{ id: "temperature", label: "7. T°/Влажность", icon: Thermometer },
 	{ id: "disinfectants", label: "8. Дезсредства", icon: Droplets },
 	{ id: "bac_lab", label: "9. Баклаборатория", icon: Activity },
-	{ id: "needle_disposal", label: "10. Утилизация игл", icon: Trash2 },
+	{ id: "needle_disposal", label: "10. Иглы/карпулы", icon: Trash2 },
 ];
 
 interface DisinfectantSolutionRecord {
@@ -525,6 +527,14 @@ export function SanpinRegisters() {
 	const [signingShift, setSigningShift] = useState(false);
 	const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 	const exportMenuRef = useRef<HTMLDivElement>(null);
+	const tabsNavRef = useRef<HTMLDivElement>(null);
+
+	const scrollTabs = (direction: "left" | "right") => {
+		if (tabsNavRef.current) {
+			const offset = direction === "left" ? -260 : 260;
+			tabsNavRef.current.scrollBy({ left: offset, behavior: "smooth" });
+		}
+	};
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -1328,56 +1338,79 @@ export function SanpinRegisters() {
 				</div>
 			)}
 
-			{/* Tab Switcher: 1-line horizontal scroll for all 12 statutory registers */}
-			<div
-				className="sanpin-tabs-nav flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 touch-pan-x min-w-0"
-				style={{
-					display: "flex",
-					gap: "0.375rem",
-					overflowX: "auto",
-					whiteSpace: "nowrap",
-					padding: "0 16px 0.5rem 16px",
-					WebkitOverflowScrolling: "touch",
-					scrollbarWidth: "none",
-					width: "100%",
-					boxSizing: "border-box",
-				}}
-				data-testid="sanpin-tabs-12-nav"
-			>
-				{SANPIN_TABS.map((tab) => {
-					const Icon = tab.icon;
-					const isActive = activeTab === tab.id;
-					return (
-						<button
-							key={tab.id}
-							type="button"
-							onClick={() => setActiveTab(tab.id)}
-							className={`sanpin-tab-btn ${isActive ? "active" : ""}`}
-							style={{
-								minHeight: "34px",
-								height: "34px",
-								padding: "0.35rem 0.65rem",
-								fontSize: "0.8125rem",
-								fontWeight: isActive ? 700 : 600,
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "0.35rem",
-								flexShrink: 0,
-								cursor: "pointer",
-								borderRadius: "0.375rem",
-								border: "1px solid",
-								borderColor: isActive ? "var(--teal-600, #0d9488)" : "transparent",
-								background: isActive ? "var(--teal-600, #0d9488)" : "transparent",
-								color: isActive ? "#ffffff" : "var(--muted, #64748b)",
-								transition: "all 0.15s ease",
-							}}
-							data-testid={`tab-${tab.id}-btn`}
-						>
-							<Icon size={15} color={isActive ? "#ffffff" : "currentColor"} />
-							<span>{tab.label}</span>
-						</button>
-					);
-				})}
+			{/* Tab Switcher: 1-line horizontal scroll for all 12 statutory registers with navigation chevrons */}
+			<div className="sanpin-tabs-wrapper">
+				<button
+					type="button"
+					onClick={() => scrollTabs("left")}
+					className="sanpin-tab-scroll-btn left"
+					aria-label="Влево"
+					title="Прокрутить вкладки влево"
+				>
+					<ChevronLeft size={15} />
+				</button>
+
+				<div
+					ref={tabsNavRef}
+					className="sanpin-tabs-nav flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 touch-pan-x min-w-0"
+					style={{
+						display: "flex",
+						gap: "0.25rem",
+						overflowX: "auto",
+						whiteSpace: "nowrap",
+						WebkitOverflowScrolling: "touch",
+						scrollbarWidth: "none",
+						flex: 1,
+						minWidth: 0,
+						padding: "2px 0",
+					}}
+					data-testid="sanpin-tabs-12-nav"
+				>
+					{SANPIN_TABS.map((tab) => {
+						const Icon = tab.icon;
+						const isActive = activeTab === tab.id;
+						return (
+							<button
+								key={tab.id}
+								type="button"
+								onClick={() => setActiveTab(tab.id)}
+								className={`sanpin-tab-btn ${isActive ? "active" : ""}`}
+								style={{
+									minHeight: "28px",
+									height: "28px",
+									padding: "0.2rem 0.5rem",
+									fontSize: "0.75rem",
+									fontWeight: isActive ? 700 : 600,
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "0.25rem",
+									flexShrink: 0,
+									cursor: "pointer",
+									borderRadius: "0.375rem",
+									border: "1px solid",
+									borderColor: isActive ? "var(--teal-600, #0d9488)" : "transparent",
+									background: isActive ? "var(--teal-600, #0d9488)" : "transparent",
+									color: isActive ? "#ffffff" : "var(--muted, #64748b)",
+									transition: "all 0.15s ease",
+								}}
+								data-testid={`tab-${tab.id}-btn`}
+							>
+								<Icon size={13} color={isActive ? "#ffffff" : "currentColor"} />
+								<span>{tab.label}</span>
+							</button>
+						);
+					})}
+				</div>
+
+				<button
+					type="button"
+					onClick={() => scrollTabs("right")}
+					className="sanpin-tab-scroll-btn right"
+					aria-label="Вправо"
+					title="Прокрутить вкладки вправо"
+				>
+					<ChevronRight size={15} />
+				</button>
 			</div>
 
 			{/* Tab Views: All 12 Statutory Registers */}
