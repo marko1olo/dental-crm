@@ -509,11 +509,11 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 				{/* Modal Header */}
 				<div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
 					<div className="flex items-center gap-3">
-						<div className="p-2.5 rounded-xl bg-blue-600/10 text-blue-600 dark:text-blue-400">
+						<div className="p-2.5 rounded-xl bg-teal-600/10 text-teal-600 dark:text-teal-400">
 							<Receipt className="w-6 h-6" />
 						</div>
 						<div>
-							<h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+							<h2 className="text-lg font-bold text-slate-900 dark:text-white break-words flex items-center gap-2 flex-wrap">
 								{activeTab === "act"
 									? "Акт сдачи-приемки работ (804н)"
 									: activeTab === "certificate"
@@ -734,7 +734,9 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 												className={`min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center text-center ${
 													discountPreset === preset.id
 														? "bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-400"
-														: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-400"
+														: preset.id === "none"
+															? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-300 dark:hover:bg-slate-600"
+															: "bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700"
 												}`}
 												title={preset.description}
 											>
@@ -817,7 +819,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 								{/* 1-Click Fast Actions */}
 								<div>
 									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-										1-Click Способ оплаты (100% чека)
+										1-Click Способ оплаты
 									</label>
 									<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
 										<button
@@ -826,7 +828,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 bg-white dark:bg-slate-800/80 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95"
 										>
 											<CreditCard className="w-5 h-5 text-blue-600" />
-											<span className="text-xs font-bold">100% Карта</span>
+											<span className="text-xs font-bold">Карта</span>
 										</button>
 										<button
 											type="button"
@@ -834,7 +836,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 bg-white dark:bg-slate-800/80 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95"
 										>
 											<Banknote className="w-5 h-5 text-emerald-600" />
-											<span className="text-xs font-bold">100% Наличные</span>
+											<span className="text-xs font-bold">Наличные</span>
 										</button>
 										<button
 											type="button"
@@ -842,7 +844,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-purple-500 bg-white dark:bg-slate-800/80 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95"
 										>
 											<QrCode className="w-5 h-5 text-purple-600" />
-											<span className="text-xs font-bold">100% СБП QR</span>
+											<span className="text-xs font-bold">СБП QR</span>
 										</button>
 										<button
 											type="button"
@@ -1647,9 +1649,9 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 					)}
 				</div>
 
-				{/* Modal Footer */}
-				<div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-					<div className="text-xs text-slate-500 dark:text-slate-400">
+				{/* Modal Footer: Sticky Bottom Bar (Fitts's Law) */}
+				<div className="sticky bottom-0 z-50 flex items-center justify-between sm:justify-end gap-3 px-4 sm:px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 shadow-lg">
+					<div className="text-xs text-slate-500 dark:text-slate-400 mr-auto hidden sm:block">
 						Федеральный закон № 54-ФЗ · Приказ ФНС № ЕД-7-20/662@
 					</div>
 
@@ -1657,7 +1659,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+							className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
 						>
 							Отмена
 						</button>
@@ -1669,7 +1671,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 							className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-lg transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ${
 								operationType === "income_return"
 									? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/25"
-									: "bg-blue-600 hover:bg-blue-700 shadow-blue-600/25"
+									: "bg-teal-600 hover:bg-teal-700 shadow-teal-600/25"
 							}`}
 						>
 							{isFiscalizing ? (

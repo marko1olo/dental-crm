@@ -23,6 +23,8 @@ import {
 	ShieldCheck,
 	Smartphone,
 	Sparkles,
+	Stethoscope,
+	Syringe,
 	X,
 } from "lucide-react";
 import {
@@ -68,6 +70,26 @@ export interface PatientBillingModalProps {
 	readonly contractNumber?: string | undefined;
 	readonly contractDateIso?: string | undefined;
 	readonly onFiscalize?: (() => void) | undefined;
+}
+
+function renderCategoryIcon(categoryGroup: string) {
+	switch (categoryGroup) {
+		case "caries":
+			return <Stethoscope className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
+		case "anesthesia":
+			return <Syringe className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
+		case "implant":
+		case "surgery":
+			return <ShieldCheck className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
+		case "xray":
+			return <FileText className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
+		case "hygiene":
+			return <Sparkles className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
+		case "crowns":
+			return <Layers className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
+		default:
+			return <Stethoscope className="w-5 h-5 text-[var(--teal,#0d9488)]" />;
+	}
 }
 
 export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
@@ -246,7 +268,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						</div>
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-								<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0 leading-tight truncate sm:break-normal">
+								<h3 className="text-lg font-bold text-slate-900 dark:text-white break-words m-0 leading-tight">
 									<span className="hidden sm:inline">Акт выполненных работ &amp; Гарантийный талон (А4)</span>
 									<span className="sm:hidden">Акт выполненных работ</span>
 								</h3>
@@ -280,42 +302,42 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={() => setActiveTab("friendly")}
-							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
+							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "friendly"
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
+									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
 							}`}
 							data-testid="btn-tab-friendly-bill"
 						>
-							<Sparkles className="w-3.5 h-3.5 shrink-0" />
+							<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span className="hidden sm:inline">Понятный счет (без латыни)</span>
 							<span className="sm:hidden">Понятный счет</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("preview")}
-							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
+							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "preview"
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
+									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
 							}`}
 							data-testid="btn-tab-preview-act"
 						>
-							<Eye className="w-3.5 h-3.5 shrink-0" />
+							<Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />
 							<span className="hidden sm:inline">Официальный бланк А4</span>
 							<span className="sm:hidden">Бланк А4</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("details")}
-							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
+							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "details"
-									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
+									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
 							}`}
 							data-testid="btn-tab-details-act"
 						>
-							<Layers className="w-3.5 h-3.5 shrink-0" />
+							<Layers className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />
 							<span className="hidden sm:inline whitespace-nowrap">Спецификация и гарантии ({summary.items.length} поз.)</span>
 							<span className="sm:hidden whitespace-nowrap">Спецификация</span>
 						</button>
@@ -405,7 +427,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				</div>
 
 				{/* Body Content */}
-				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
+				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 pb-24">
 					{activeTab === "friendly" ? (
 						<div className="space-y-4" data-testid="friendly-billing-view">
 							{/* Summary Header Card */}
@@ -452,16 +474,12 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											>
 												<div className="flex items-center justify-between gap-3 min-w-0 flex-1">
 													<div className="flex items-center gap-3 min-w-0 flex-1">
-														{grp.categoryGroup === "implant" ? (
-															<div
-																className="w-9 h-9 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0"
-																title="Дентальный титановый имплантат"
-															>
-																<ShieldCheck className="w-5 h-5 text-[var(--teal,#0d9488)]" />
-															</div>
-														) : (
-															<span className="text-2xl leading-none">{grp.groupIcon}</span>
-														)}
+														<div
+															className="w-9 h-9 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0"
+															title={grp.categoryGroupRu}
+														>
+															{renderCategoryIcon(grp.categoryGroup)}
+														</div>
 														<div className="min-w-0 flex-1">
 															<div className="flex items-center gap-2 flex-wrap">
 																<strong className="text-[var(--ink)] font-bold text-xs sm:text-sm">
@@ -500,16 +518,12 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										>
 											<div className="flex items-center justify-between flex-wrap gap-2 border-b border-[var(--line)] pb-2.5">
 												<div className="flex items-center gap-2.5">
-													{grp.categoryGroup === "implant" ? (
-														<div
-															className="w-9 h-9 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0"
-															title="Дентальный титановый имплантат"
-														>
-															<ShieldCheck className="w-5 h-5 text-[var(--teal,#0d9488)]" />
-														</div>
-													) : (
-														<span className="text-2xl leading-none">{grp.groupIcon}</span>
-													)}
+													<div
+														className="w-9 h-9 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0"
+														title={grp.categoryGroupRu}
+													>
+														{renderCategoryIcon(grp.categoryGroup)}
+													</div>
 													<div>
 														<div className="flex items-center gap-2">
 															<h4 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0">
@@ -738,7 +752,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											</div>
 											<div className="text-[var(--muted)]">Срок службы: {term.serviceLifeText}</div>
 											<div className="text-[11px] text-[var(--muted)] border-t border-[var(--line)] pt-1 mt-1">
-												💡 {term.conditionsText}
+												<span className="font-semibold text-[var(--teal,#0d9488)]">Условие:</span> {term.conditionsText}
 											</div>
 										</div>
 									))}
@@ -768,125 +782,120 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					)}
 				</div>
 
-				{/* Bottom Footer Actions (Fixed Sticky Bar) */}
-				<div className="sticky bottom-0 z-50 px-4 sm:px-6 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 flex flex-col gap-2.5 shadow-lg">
-					{/* Mobile: Prominent Total Sum Row */}
-					<div className="flex items-center justify-between sm:hidden w-full pb-1">
-						<span className="text-xs text-[var(--muted)] font-bold">Итоговая сумма:</span>
-						<span className="text-lg font-black text-[var(--teal,#0d9488)] font-mono">
-							{friendlyBreakdown.totalAmountRubFormatted}
-						</span>
+				{/* Bottom Footer Actions (Fixed Sticky Bar — Hick's & Fitts's Laws) */}
+				<div className="sticky bottom-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 sm:gap-3 shrink-0 shadow-lg max-w-full">
+					{/* Left Group: Secondary Actions (Print A4, 1C, WhatsApp, Refund) */}
+					<div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+						{/* Secondary: Print A4 (GOST) */}
+						<button
+							type="button"
+							onClick={handlePrint}
+							className="h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							data-testid="btn-print-billing-act"
+						>
+							<Printer className="w-3.5 h-3.5 shrink-0" />
+							<span className="hidden sm:inline whitespace-nowrap">Печать бланка А4 (ГОСТ)</span>
+							<span className="sm:hidden whitespace-nowrap">Печать А4</span>
+						</button>
+
+						{/* Secondary: 1C Export (XML) */}
+						<OneCExportButton
+							actNumber={summary.actNumber}
+							documentDate={new Date().toISOString().slice(0, 10)}
+							docType="act"
+							patientName={actParams.patient.fullName}
+							patientId={patient?.id || "pat-1"}
+							patientPhone={patient?.phone || ""}
+							patientAddress={patient?.address || ""}
+							doctorName={actParams.doctor.fullName}
+							clinicName={actParams.clinic.legalName}
+							clinicInn={actParams.clinic.inn}
+							clinicKpp={actParams.clinic.kpp || ""}
+							items={summary.items.map((it) => {
+								const itemObj: {
+									id: string;
+									code804n: string;
+									name: string;
+									quantity: number;
+									priceRub: number;
+									toothNumber?: number;
+									discountRub?: number;
+								} = {
+									id: it.id,
+									code804n: it.code804n || "A16.07.002",
+									name: it.name,
+									quantity: it.quantity,
+									priceRub: it.priceRub,
+								};
+								if (it.toothNumber) {
+									itemObj.toothNumber = Number(it.toothNumber);
+								}
+								if (it.discountRub !== undefined) {
+									itemObj.discountRub = it.discountRub;
+								}
+								return itemObj;
+							})}
+							totalRub={summary.totalNetRub}
+							contractNumber={actParams.contractNumber}
+							contractDate={actParams.contractDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]}
+							label="1С (XML)"
+							variant="secondary"
+							className="h-9 px-2.5 sm:px-3 text-xs font-bold justify-center whitespace-nowrap shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+						/>
+
+						{/* Secondary: Send WhatsApp */}
+						<button
+							type="button"
+							onClick={handleSendWhatsApp}
+							className="h-9 px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							data-testid="btn-footer-send-whatsapp"
+						>
+							<MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<span className="whitespace-nowrap shrink-0">В WhatsApp</span>
+						</button>
+
+						{/* Secondary: Partial Refund */}
+						<button
+							type="button"
+							onClick={() => setIsRefundOpen(true)}
+							className="h-9 px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							data-testid="btn-footer-partial-refund"
+						>
+							<RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+							<span className="whitespace-nowrap shrink-0">Возврат</span>
+						</button>
 					</div>
 
-					{/* Layout: 2x2 grid on mobile (<sm), horizontal flex on desktop (>=sm) */}
-					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 w-full">
-						{/* Desktop Total Sum */}
-						<div className="hidden sm:block text-xs text-[var(--muted)] font-medium shrink-0">
-							Итоговая сумма: <strong className="text-sm sm:text-base text-[var(--teal,#0d9488)] font-mono font-bold">{friendlyBreakdown.totalAmountRubFormatted}</strong>
+					{/* Right Group: Total Due & Primary Action */}
+					<div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-1.5 sm:gap-2 shrink-0">
+						{/* PROMINENT TOTAL DUE BLOCK strictly left of Primary button */}
+						<div className="col-span-2 sm:col-span-1 flex items-center justify-center sm:justify-start gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/50 border border-teal-500/30 text-slate-700 dark:text-slate-200 shrink-0 whitespace-nowrap shadow-2xs">
+							<span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">Итого к оплате:</span>
+							<strong className="text-sm sm:text-base font-black text-teal-700 dark:text-teal-300 font-mono">
+								{friendlyBreakdown.totalAmountRubFormatted}
+							</strong>
 						</div>
 
-						{/* Buttons Grid (2x2 on mobile, flex on desktop) */}
-						<div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-							{/* 1. Print A4 (GOST) Primary Action */}
-							<button
-								type="button"
-								onClick={handlePrint}
-								className="h-10 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
-								data-testid="btn-print-billing-act"
-							>
-								<Printer className="w-3.5 h-3.5 shrink-0" />
-								<span className="hidden sm:inline whitespace-nowrap">Печать бланка А4 (ГОСТ)</span>
-								<span className="sm:hidden whitespace-nowrap">Печать бланка А4</span>
-							</button>
+						{/* PRIMARY ACTION: Fiscalize 54-FZ (Strictly 1 Primary in footer per Hick's law) */}
+						<button
+							type="button"
+							onClick={() => (onFiscalize ? onFiscalize() : setIsFiscalOpen(true))}
+							className="col-span-2 sm:col-span-1 h-9 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							data-testid="btn-fiscalize-54fz"
+							title="Фискализировать чек по 54-ФЗ"
+						>
+							<Receipt className="w-3.5 h-3.5 text-white shrink-0" />
+							<span className="whitespace-nowrap">Фискализировать (54-ФЗ)</span>
+						</button>
 
-							{/* 2. Fiscalize 54-FZ (Secondary Soft Outline) */}
-							<button
-								type="button"
-								onClick={() => (onFiscalize ? onFiscalize() : setIsFiscalOpen(true))}
-								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
-								data-testid="btn-fiscalize-54fz"
-								title="Фискализировать чек по 54-ФЗ"
-							>
-								<Receipt className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
-								<span className="hidden sm:inline whitespace-nowrap">Фискализировать (54-ФЗ)</span>
-								<span className="sm:hidden whitespace-nowrap">Чек 54-ФЗ</span>
-							</button>
-
-							{/* 3. Send WhatsApp (Secondary Soft Outline) */}
-							<button
-								type="button"
-								onClick={handleSendWhatsApp}
-								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
-								data-testid="btn-footer-send-whatsapp"
-							>
-								<MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span className="whitespace-nowrap shrink-0">В WhatsApp</span>
-							</button>
-
-							{/* 4. Partial Refund Button (54-FZ) */}
-							<button
-								type="button"
-								onClick={() => setIsRefundOpen(true)}
-								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
-								data-testid="btn-footer-partial-refund"
-							>
-								<RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-								<span className="whitespace-nowrap shrink-0">Возврат</span>
-							</button>
-
-							{/* 5. 1C Export */}
-							<OneCExportButton
-								actNumber={summary.actNumber}
-								documentDate={new Date().toISOString().slice(0, 10)}
-								docType="act"
-								patientName={actParams.patient.fullName}
-								patientId={patient?.id || "pat-1"}
-								patientPhone={patient?.phone || ""}
-								patientAddress={patient?.address || ""}
-								doctorName={actParams.doctor.fullName}
-								clinicName={actParams.clinic.legalName}
-								clinicInn={actParams.clinic.inn}
-								clinicKpp={actParams.clinic.kpp || ""}
-								items={summary.items.map((it) => {
-									const itemObj: {
-										id: string;
-										code804n: string;
-										name: string;
-										quantity: number;
-										priceRub: number;
-										toothNumber?: number;
-										discountRub?: number;
-									} = {
-										id: it.id,
-										code804n: it.code804n || "A16.07.002",
-										name: it.name,
-										quantity: it.quantity,
-										priceRub: it.priceRub,
-									};
-									if (it.toothNumber) {
-										itemObj.toothNumber = Number(it.toothNumber);
-									}
-									if (it.discountRub !== undefined) {
-										itemObj.discountRub = it.discountRub;
-									}
-									return itemObj;
-								})}
-								totalRub={summary.totalNetRub}
-								contractNumber={actParams.contractNumber}
-								contractDate={actParams.contractDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]}
-								label="1С (XML)"
-								className="h-10 sm:h-9 px-2.5 sm:px-3 text-xs font-bold justify-center whitespace-nowrap shrink-0"
-							/>
-
-							{/* 6. Desktop Close */}
-							<button
-								type="button"
-								onClick={onClose}
-								className="hidden sm:flex h-9 px-3.5 rounded-xl text-xs font-semibold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-soft)] dark:hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors items-center justify-center shrink-0 whitespace-nowrap"
-							>
-								Закрыть
-							</button>
-						</div>
+						{/* Secondary: Desktop Close */}
+						<button
+							type="button"
+							onClick={onClose}
+							className="hidden sm:flex h-9 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors items-center justify-center shrink-0 whitespace-nowrap"
+						>
+							Закрыть
+						</button>
 					</div>
 				</div>
 

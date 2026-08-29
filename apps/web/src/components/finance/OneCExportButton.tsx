@@ -68,7 +68,7 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
   contractNumber = 'Д-2026/01',
   contractDate,
   className = '',
-  label = '📄 Экспорт в 1С (XML)',
+  label = 'Экспорт в 1С (XML)',
   variant = 'secondary',
 }) => {
   const [isExporting, setIsExporting] = useState(false);
@@ -164,7 +164,7 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
   };
 
   const variantStyles = {
-    primary: 'bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-xs font-semibold',
+    primary: 'bg-teal-600 hover:bg-teal-700 text-white shadow-xs font-bold',
     secondary: 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-700/50 font-semibold',
     outline: 'border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]',
     compact: 'p-1.5 text-xs rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300',
