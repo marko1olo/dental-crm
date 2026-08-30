@@ -17,9 +17,9 @@ import {
 	QrCode,
 	RefreshCw,
 	ShieldCheck,
-	Sparkles,
 	Unlock,
 	Wallet,
+	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { FiscalReceiptQueueManager } from "../../services/hardware/fiscalReceiptQueueManager";
@@ -365,8 +365,8 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						className="min-h-[44px] px-4 py-2 bg-gradient-to-r from-amber-600 to-teal-600 hover:from-amber-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
 						data-testid="btn-flush-offline-queue-1click"
 					>
-						<Sparkles size={16} className="animate-pulse" />
-						<span>⚡ Пробить всю очередь в 1 клик</span>
+						<Zap size={14} className="shrink-0" />
+						<span>Пробить всю очередь в 1 клик</span>
 					</button>
 				</div>
 			)}
@@ -390,7 +390,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] mb-1 font-semibold uppercase tracking-wider">
 						<span className="flex items-center gap-1.5">
 							<CreditCard size={16} className="text-blue-500" />
-							Эквайринг & Терминал
+							Эквайринг и Терминал
 						</span>
 						<span className="font-mono text-[10px]">Тег 1081</span>
 					</div>
@@ -445,7 +445,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					data-testid="btn-open-offline-fiscal-queue"
 				>
 					<Layers size={16} />
-					<span>Очередь чеков & Сверка {pendingOfflineCount > 0 ? `(${pendingOfflineCount})` : ""}</span>
+					<span>Очередь чеков и сверка {pendingOfflineCount > 0 ? `(${pendingOfflineCount})` : ""}</span>
 				</button>
 
 				<button
