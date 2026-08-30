@@ -312,6 +312,7 @@ export interface DisinfectantJournalRecord {
 	readonly batchOrExpirationDate?: string | undefined;
 	readonly solutionPreparedLiters?: number | undefined;
 	readonly concentrationPercent?: number | undefined;
+	readonly isConcentrationNormal?: boolean | undefined;
 	readonly resultingStockBalance: number;
 	readonly operatorStaffFullName: string;
 	readonly notes?: string | undefined;

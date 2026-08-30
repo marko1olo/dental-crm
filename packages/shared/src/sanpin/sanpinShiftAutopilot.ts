@@ -345,6 +345,7 @@ export function generateSanpinShiftAutopilotBundle(
 			batchOrExpirationDate: "ПАРТ-2026/08",
 			solutionPreparedLiters: 10.0,
 			concentrationPercent: 1.5,
+			isConcentrationNormal: true,
 			resultingStockBalance: 8.5,
 			operatorStaffFullName: operatorFullName,
 			notes: `Срок годности рабочего раствора — 10 суток. Дезиконт-Аламинол норма 1.5%. ${disMath.formulaRu}`,
