@@ -95,26 +95,6 @@ export function ShiftView({
 		return index;
 	}, [dashboard?.patients]);
 
-	/**
-	 * Пациент, который сейчас в кресле. Раньше карточка «Сейчас в работе»
-	 * показывала `activePatient`, а он подставляет первого пациента из списка,
-	 * когда открытого приёма нет вовсе. Клиника без единой записи видела
-	 * «прием идет» с именем случайного человека — рядом с надписью
-	 * «Приемов нет». Показываем только настоящий приём.
-	 */
-	const visitPatient = useMemo(() => {
-		const visit = dashboard?.activeVisit;
-		if (!visit?.id || visit.id === NIL_UUID) return null;
-		if (!visit.patientId || visit.patientId === NIL_UUID) return null;
-		if (visit.status !== "draft") return null;
-		return patientsById.get(visit.patientId) ?? null;
-	}, [dashboard?.activeVisit, patientsById]);
-
-	const visitPatientCallablePhone = (visitPatient?.phone ?? "")
-		.trim()
-		.replace(/[^\d+]/g, "");
-	const visitPatientHasCallablePhone = visitPatientCallablePhone.length >= 5;
-
 	const todayIso = dashboard?.todayIso || localCalendarDateString();
 
 	/**
@@ -142,6 +122,98 @@ export function ShiftView({
 		);
 	}, [dashboard?.appointments, todayIso]);
 
+	/**
+	 * Активная запись на прием: статус «in_chair» / «in_treatment» / «in_progress»
+	 * или текущий по времени прием.
+	 */
+	const inChairAppointment = useMemo(() => {
+		const inChairStatuses = ["in_chair", "in_treatment", "in_progress"];
+		// 1. Поиск записи с явным статусом нахождения в кресле / на приеме
+		const foundByStatus = todayAppointments.find((app: any) => {
+			const statusKey = String(
+				app.status || app.appointmentStatus || app.state || "",
+			).toLowerCase();
+			return inChairStatuses.includes(statusKey);
+		});
+		if (foundByStatus) return foundByStatus;
+
+		// 2. Поиск текущего приема по времени (если приём уже начался и ещё не завершён)
+		const now = Date.now();
+		return (
+			todayAppointments.find((app: any) => {
+				const statusKey = String(
+					app.status || app.appointmentStatus || app.state || "",
+				).toLowerCase();
+				if (
+					["cancelled", "no_show", "completed", "done"].includes(statusKey)
+				) {
+					return false;
+				}
+				const starts = new Date(app.startsAt).getTime();
+				const ends = new Date(app.endsAt ?? app.startsAt).getTime();
+				return (
+					Number.isFinite(starts) &&
+					Number.isFinite(ends) &&
+					starts <= now &&
+					now <= ends
+				);
+			}) ?? null
+		);
+	}, [todayAppointments]);
+
+	/**
+	 * Пациент, который сейчас в кресле (из активного визита или активной записи).
+	 */
+	const currentPatient = useMemo(() => {
+		const visit = dashboard?.activeVisit;
+		if (
+			visit?.id &&
+			visit.id !== NIL_UUID &&
+			visit.patientId &&
+			visit.patientId !== NIL_UUID &&
+			visit.status === "draft"
+		) {
+			const p = patientsById.get(visit.patientId);
+			if (p) return p;
+		}
+
+		if (
+			inChairAppointment?.patientId &&
+			inChairAppointment.patientId !== NIL_UUID
+		) {
+			const p = patientsById.get(inChairAppointment.patientId);
+			if (p) return p;
+			if (inChairAppointment.patient) return inChairAppointment.patient;
+			if (inChairAppointment.patientFullName) {
+				return {
+					id: inChairAppointment.patientId,
+					fullName: inChairAppointment.patientFullName,
+					phone: inChairAppointment.patientPhone ?? "",
+				};
+			}
+		}
+
+		return null;
+	}, [dashboard?.activeVisit, inChairAppointment, patientsById]);
+
+	const currentPatientCallablePhone = (currentPatient?.phone ?? "")
+		.trim()
+		.replace(/[^\d+]/g, "");
+	const currentPatientHasCallablePhone =
+		currentPatientCallablePhone.length >= 5;
+
+	const currentAppointmentReason = useMemo(() => {
+		if (!inChairAppointment) return "";
+		return (
+			inChairAppointment.reason ||
+			inChairAppointment.treatmentDescription ||
+			inChairAppointment.serviceTitle ||
+			inChairAppointment.complaint ||
+			inChairAppointment.complaints ||
+			""
+		);
+	}, [inChairAppointment]);
+
 	const staffById = useMemo(() => {
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const index = new Map<string, any>();
@@ -166,11 +238,28 @@ export function ShiftView({
 		return (
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			todayAppointments.find((app: any) => {
+				if (inChairAppointment && app.id === inChairAppointment.id) return false;
+				const statusKey = String(
+					app.status || app.appointmentStatus || app.state || "",
+				).toLowerCase();
+				if (
+					[
+						"in_chair",
+						"in_treatment",
+						"in_progress",
+						"completed",
+						"done",
+						"cancelled",
+						"no_show",
+					].includes(statusKey)
+				) {
+					return false;
+				}
 				const ends = new Date(app.endsAt ?? app.startsAt).getTime();
 				return Number.isFinite(ends) && ends >= now;
 			}) ?? null
 		);
-	}, [todayAppointments]);
+	}, [todayAppointments, inChairAppointment]);
 
 	const nextAppointmentPatient = nextAppointment
 		? (patientsById.get(nextAppointment.patientId) ?? null)
@@ -213,28 +302,29 @@ export function ShiftView({
 		window.location.hash = section;
 	}
 	return (
-		<>
+		<div className="shift-view-scroll-container pb-28 min-w-0">
 			<section className="shift-hero" id="shift">
 				<div className="now-card">
 					<div className="row-between">
-						<p className="eyebrow">
-							{visitPatient ? "Сейчас в кресле" : "Сейчас в работе"}
+						<p className="eyebrow" style={{ color: "var(--ink-2)" }}>
+							{currentPatient ? "Сейчас в кресле" : "Сейчас в работе"}
 						</p>
-						{visitPatient ? (
+						{currentPatient ? (
 							<span className="status-pill status-in_treatment">
 								<span className="pulse-dot" aria-hidden="true" />
-								прием идет
+								В кресле
 							</span>
 						) : null}
 					</div>
-					{visitPatient ? (
+					{currentPatient ? (
 						<>
 							<div className="patient-hero">
-								<PatientAvatar fullName={visitPatient.fullName} size={44} />
+								<PatientAvatar fullName={currentPatient.fullName} size={44} />
 								<div className="hero-info min-w-0">
-									<h2 className="break-words leading-tight">{visitPatient.fullName}</h2>
-									<p className="hero-phone break-words">
-										{visitPatient.phone ?? "телефон не указан"}
+									<h2 className="break-words leading-tight" style={{ color: "var(--ink)" }}>{currentPatient.fullName}</h2>
+									<p className="hero-phone break-words" style={{ color: "var(--muted)" }}>
+										{currentPatient.phone ?? "телефон не указан"}
+										{currentAppointmentReason ? ` · ${currentAppointmentReason}` : ""}
 									</p>
 								</div>
 							</div>
@@ -243,17 +333,17 @@ export function ShiftView({
 									className="primary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 									type="button"
 									onClick={() => {
-										setSelectedPatientId(visitPatient.id);
+										setSelectedPatientId(currentPatient.id);
 										window.location.hash = "visit";
 									}}
 								>
-									<ClipboardCheck aria-hidden="true" /> Открыть прием
+									<ClipboardCheck aria-hidden="true" /> Открыть карту / Прием
 								</button>
 								<button
 									className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 									type="button"
 									onClick={() => {
-										setSelectedPatientId(visitPatient.id);
+										setSelectedPatientId(currentPatient.id);
 										window.location.hash = "imaging";
 									}}
 								>
@@ -264,25 +354,25 @@ export function ShiftView({
 									type="button"
 									aria-label="Позвонить пациенту"
 									aria-describedby={
-										!visitPatientHasCallablePhone
+										!currentPatientHasCallablePhone
 											? "shift-call-guidance"
 											: undefined
 									}
-									aria-disabled={!visitPatientHasCallablePhone}
+									aria-disabled={!currentPatientHasCallablePhone}
 									title={
-										visitPatientHasCallablePhone
+										currentPatientHasCallablePhone
 											? "Позвонить пациенту"
 											: "В карточке пациента нет телефона"
 									}
-									style={{ opacity: !visitPatientHasCallablePhone ? 0.6 : 1 }}
+									style={{ opacity: !currentPatientHasCallablePhone ? 0.6 : 1 }}
 									onClick={() => {
-										if (!visitPatientHasCallablePhone) {
+										if (!currentPatientHasCallablePhone) {
 											setError(
 												"В карточке пациента нет телефона. Добавьте номер в разделе «Пациенты», чтобы позвонить.",
 											);
 											return;
 										}
-										window.location.href = `tel:${visitPatientCallablePhone}`;
+										window.location.href = `tel:${currentPatientCallablePhone}`;
 									}}
 								>
 									<Phone aria-hidden="true" /> Позвонить
@@ -305,7 +395,7 @@ export function ShiftView({
 								</div>
 							</div>
 
-							{!visitPatientHasCallablePhone ? (
+							{!currentPatientHasCallablePhone ? (
 								<ShiftCallout
 									id="shift-call-guidance"
 									role="status"
@@ -324,10 +414,10 @@ export function ShiftView({
 									size={44}
 								/>
 								<div className="hero-info min-w-0">
-									<h2 className="break-words leading-tight">
+									<h2 className="break-words leading-tight" style={{ color: "var(--ink)" }}>
 										{nextAppointmentPatient?.fullName ?? "Пациент не найден"}
 									</h2>
-									<p className="hero-phone break-words leading-tight">
+									<p className="hero-phone break-words leading-tight" style={{ color: "var(--muted)" }}>
 										Ближайший прием сегодня в{" "}
 										{formatClockTime(nextAppointment.startsAt)}
 										{nextAppointment.reason
@@ -364,36 +454,53 @@ export function ShiftView({
 							</ShiftCallout>
 						</>
 					) : (
-						<EmptyState
-							icon={<ClipboardCheck size={28} />}
-							title="Сейчас никого нет в кресле"
-							description={
-								todayAppointments.length > 0
-									? "Все приемы на сегодня уже прошли. Откройте расписание, чтобы записать пациента на другой день."
-									: "На сегодня записей нет. Нажмите «Записать пациента», чтобы поставить первую."
-							}
-							glass={false}
-							style={{ padding: "20px 16px" }}
-							action={
-								<button
-									className="primary-button min-h-[44px] px-3 py-2"
-									type="button"
-									onClick={() => {
-										window.location.hash = "schedule";
+						<div
+							className="compact-shift-empty-card"
+							style={{
+								display: "flex",
+								flexDirection: "column",
+								gap: "12px",
+								padding: "16px 14px",
+								borderRadius: "12px",
+								background: "var(--paper-soft, rgba(0,0,0,0.02))",
+								border: "1px solid var(--line)",
+							}}
+						>
+							<div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+								<div
+									style={{
+										width: "36px",
+										height: "36px",
+										borderRadius: "10px",
+										background: "var(--teal-surface)",
+										color: "var(--teal-dark)",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										flexShrink: 0,
 									}}
 								>
-									<CalendarPlus aria-hidden="true" size={16} /> Записать
-									пациента
-								</button>
-							}
-						/>
+									<ClipboardCheck size={18} aria-hidden="true" />
+								</div>
+								<div style={{ minWidth: 0 }}>
+									<h3 style={{ margin: 0, fontSize: "13.5px", fontWeight: 700, color: "var(--ink)", lineHeight: 1.25 }}>
+										Сейчас никого нет в кресле
+									</h3>
+									<p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)", lineHeight: 1.35 }}>
+										{todayAppointments.length > 0
+											? "Все приемы на сегодня уже прошли. Откройте расписание, чтобы записать пациента на другой день."
+											: "На сегодня записей нет. Используйте кнопку «Записать пациента» в шапке или откройте расписание."}
+									</p>
+								</div>
+							</div>
+						</div>
 					)}
 				</div>
 
 				{/* РАСПИСАНИЕ НА СЕГОДНЯ */}
 				<div className="today-schedule-box min-w-0">
 					<div className="today-schedule-header">
-						<h3>
+						<h3 style={{ color: "var(--ink)" }}>
 							<ClipboardCheck size={16} aria-hidden="true" /> Расписание приемов
 							на сегодня
 						</h3>
@@ -407,23 +514,30 @@ export function ShiftView({
 							{todayAppointments.map((app: any) => {
 								const patient = patientsById.get(app.patientId);
 								const isCurrent = Boolean(
-									visitPatient && visitPatient.id === app.patientId,
+									currentPatient &&
+										(currentPatient.id === app.patientId ||
+											(inChairAppointment && inChairAppointment.id === app.id)),
 								);
 								const doctor = staffById.get(app.doctorUserId);
 
 								const timeStart = formatClockTime(app.startsAt);
 								const timeEnd = formatClockTime(app.endsAt);
 
-								const statusKey = String(app.status || "").toLowerCase();
+								const statusRaw = app.status || app.appointmentStatus || app.state || "planned";
+								const statusKey = String(statusRaw).toLowerCase();
 								const statusLabels: Record<string, string> = {
-									planned: "запланирован",
-									confirmed: "подтвержден",
-									arrived: "ожидает",
-									in_treatment: "на приеме",
-									in_progress: "на приеме",
-									completed: "завершен",
-									cancelled: "отменен",
-									no_show: "не пришел",
+									planned: "Ожидает приема",
+									scheduled: "Ожидает приема",
+									pending: "Ожидает приема",
+									confirmed: "Подтвержден",
+									arrived: "Ожидает приема",
+									in_chair: "На приеме",
+									in_treatment: "На приеме",
+									in_progress: "На приеме",
+									completed: "Завершен",
+									done: "Завершен",
+									cancelled: "Отменен",
+									no_show: "Не пришел",
 								};
 
 								return (
@@ -451,7 +565,7 @@ export function ShiftView({
 											<span className="today-schedule-time shrink-0">
 												{timeStart} – {timeEnd}
 											</span>
-											<strong className="today-schedule-name break-words leading-tight">
+											<strong className="today-schedule-name break-words leading-tight" style={{ color: "var(--ink)" }}>
 												{patient ? patient.fullName : "Неизвестный пациент"}
 											</strong>
 											<span className="today-schedule-reason break-words leading-tight">
@@ -459,42 +573,69 @@ export function ShiftView({
 												{manyDoctors && doctor ? ` · ${doctor.fullName}` : ""}
 											</span>
 										</div>
-										{/* Резервным значением был сам app.status — ключ базы
-                            латиницей. Именно так на экран врача попали «Статус не
-                            загружены»: неизвестный ключ печатался как есть. */}
 										<span className={`status-pill status-${statusKey} shrink-0`}>
-											{statusLabels[statusKey] ?? "статус неизвестен"}
+											{statusLabels[statusKey] ?? "Ожидает приема"}
 										</span>
 									</button>
 								);
 							})}
 						</div>
 					) : (
-						<EmptyState
-							icon={<Calendar size={24} />}
-							title="На сегодня записей нет"
-							description="Свободный день. Запишите пациента — запись сразу появится здесь."
-							glass={false}
-							style={{ padding: "20px 16px" }}
-							action={
+						<div
+							className="compact-schedule-empty-card"
+							style={{
+								display: "flex",
+								flexDirection: "column",
+								gap: "10px",
+								padding: "14px",
+								borderRadius: "12px",
+								background: "var(--paper-soft, rgba(0,0,0,0.02))",
+								border: "1px solid var(--line)",
+							}}
+						>
+							<div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+								<div
+									style={{
+										width: "32px",
+										height: "32px",
+										borderRadius: "8px",
+										background: "var(--teal-surface)",
+										color: "var(--teal-dark)",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										flexShrink: 0,
+									}}
+								>
+									<Calendar size={16} aria-hidden="true" />
+								</div>
+								<div style={{ minWidth: 0 }}>
+									<strong style={{ display: "block", fontSize: "13px", fontWeight: 700, color: "var(--ink)", lineHeight: 1.25 }}>
+										На сегодня записей нет
+									</strong>
+									<span style={{ display: "block", fontSize: "11.5px", color: "var(--muted)", lineHeight: 1.35 }}>
+										Свободный день. Запишите пациента — запись сразу появится здесь.
+									</span>
+								</div>
+							</div>
+							<div>
 								<button
-									className="secondary-button min-h-[44px] px-3 py-2"
+									className="secondary-button min-h-[36px] px-3 py-1 text-xs"
 									type="button"
 									onClick={() => {
 										window.location.hash = "schedule";
 									}}
 								>
-									<CalendarPlus aria-hidden="true" size={16} /> Открыть
-									расписание
+									<CalendarPlus aria-hidden="true" size={14} /> Открыть расписание
 								</button>
-							}
-						/>
+							</div>
+						</div>
 					)}
 				</div>
 			</section>
 
 			<div
-				className="shift-dashboard-grid"
+				className="shift-dashboard-grid pb-28"
 				style={{
 					display: "flex",
 					flexDirection: "column",
@@ -504,7 +645,7 @@ export function ShiftView({
 			>
 				<section className="shift-todo" aria-label="Что сделать сейчас">
 					<div className="shift-todo-head">
-						<h2>Что сделать сейчас</h2>
+						<h2 style={{ color: "var(--ink)" }}>Что сделать сейчас</h2>
 						<span className="shift-todo-count">
 							{(visibleRecommendedActions ?? []).length > 0
 								? countLabel(
@@ -555,13 +696,42 @@ export function ShiftView({
 							})}
 						</ul>
 					) : (
-						<EmptyState
-							icon={<CheckCircle2 size={24} />}
-							title="Срочных дел нет"
-							description="Все приемы подписаны, снимки проверены, документы и оплаты закрыты. Новое дело появится здесь само."
-							glass={false}
-							style={{ padding: "18px 16px" }}
-						/>
+						<div
+							className="compact-todo-empty-card"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "12px",
+								padding: "12px 14px",
+								borderRadius: "12px",
+								background: "var(--paper-soft, rgba(0,0,0,0.02))",
+								border: "1px solid var(--line)",
+							}}
+						>
+							<div
+								style={{
+									width: "32px",
+									height: "32px",
+									borderRadius: "8px",
+									background: "var(--ok-bg, rgba(21, 128, 61, 0.1))",
+									color: "var(--ok-fg, #15803d)",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									flexShrink: 0,
+								}}
+							>
+								<CheckCircle2 size={16} aria-hidden="true" />
+							</div>
+							<div style={{ minWidth: 0 }}>
+								<strong style={{ display: "block", fontSize: "13px", fontWeight: 700, color: "var(--ink)", lineHeight: 1.25 }}>
+									Срочных дел нет
+								</strong>
+								<span style={{ display: "block", fontSize: "11.5px", color: "var(--muted)", lineHeight: 1.35, marginTop: "1px" }}>
+									Все приемы подписаны, снимки проверены, документы и оплаты закрыты.
+								</span>
+							</div>
+						</div>
 					)}
 				</section>
 
@@ -848,6 +1018,7 @@ export function ShiftView({
 										fontSize: "14px",
 										fontWeight: 700,
 										letterSpacing: "0.02em",
+										color: "var(--ink)",
 									}}
 								>
 									Задачи по ролям
@@ -1005,7 +1176,10 @@ export function ShiftView({
 					) : null}
 				</section>
 			</div>
-		</>
+
+			{/* FAB softphone clearance bottom spacer */}
+			<div className="h-28 w-full shrink-0 pointer-events-none pb-28" aria-hidden="true" />
+		</div>
 	);
 }
 
@@ -1485,7 +1659,7 @@ export function PatientCockpit({
 			</div>
 
 			{/* FAB softphone clearance bottom spacer */}
-			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
+			<div className="h-28 w-full shrink-0 pointer-events-none pb-28" aria-hidden="true" />
 		</section>
 	);
 }
