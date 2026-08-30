@@ -828,7 +828,10 @@ export function drawObliqueCrosshairWithRotationHandles(
 
 	const diag = Math.hypot(widthPx, heightPx);
 
-	// 1. Axis 1 (Primary horizontal axis when rotation = 0)
+	// 1. Axis 1 (Primary horizontal axis when rotation = 0) with dark halo underlay
+	ctx.save();
+	ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+	ctx.shadowBlur = 4;
 	ctx.strokeStyle = axisColor1;
 	ctx.lineWidth = 1.2;
 	ctx.beginPath();
@@ -836,13 +839,14 @@ export function drawObliqueCrosshairWithRotationHandles(
 	ctx.lineTo(centerPx.x + diag * cosA, centerPx.y + diag * sinA);
 	ctx.stroke();
 
-	// 2. Axis 2 (Secondary vertical axis when rotation = 0)
+	// 2. Axis 2 (Secondary vertical axis when rotation = 0) with dark halo underlay
 	ctx.strokeStyle = axisColor2;
 	ctx.lineWidth = 1.2;
 	ctx.beginPath();
 	ctx.moveTo(centerPx.x + diag * sinA, centerPx.y - diag * cosA);
 	ctx.lineTo(centerPx.x - diag * sinA, centerPx.y + diag * cosA);
 	ctx.stroke();
+	ctx.restore();
 
 	// 3. Central Reticle Target Ring (Double circle for precision navigation and 1-click reset hit target)
 	ctx.strokeStyle = "rgba(9, 9, 11, 0.95)";
@@ -880,7 +884,7 @@ export function drawObliqueCrosshairWithRotationHandles(
 			ctx.save();
 			ctx.strokeStyle = planeAccentColor;
 			ctx.lineWidth = 2.0;
-			ctx.shadowColor = planeAccentColor;
+			ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
 			ctx.shadowBlur = 4;
 			ctx.beginPath();
 			if (safeRotationDeg > 0) {

@@ -269,6 +269,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					pixelSpacingMmX: metadata.pixelSpacingX,
 					pixelSpacingMmY: metadata.pixelSpacingY,
 					showScaleBar: true,
+					invertColors,
 				});
 
 				// Draw Focal Trough Corridor on Axial (Purple dashed bounds)
@@ -437,6 +438,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					pixelSpacingMmX: metadata.pixelSpacingX,
 					pixelSpacingMmY: metadata.pixelSpacingY,
 					showScaleBar: true,
+					invertColors,
 				});
 
 				// Draw Oblique Crosshair with Rotation Handles
@@ -501,6 +503,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					pixelSpacingMmX: metadata.pixelSpacingX,
 					pixelSpacingMmY: metadata.pixelSpacingY,
 					showScaleBar: true,
+					invertColors,
 				});
 
 				// Draw Oblique Crosshair with Rotation Handles
@@ -946,6 +949,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					showXAxis: false,
 					showYAxis: true,
 					showScaleBar: true,
+					invertColors,
 				});
 
 				// Draw Axial Plane Intersection Line (Cyan #06b6d4)
@@ -1030,6 +1034,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					pixelSpacingMmY: activeCrossSection.pixelSpacingMm,
 					showGrid: true,
 					showScaleBar: true,
+					invertColors,
 				});
 
 				// Draw Axial Plane Reference Line (Cyan #06b6d4)

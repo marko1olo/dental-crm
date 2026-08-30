@@ -9,6 +9,7 @@ import {
 	Check,
 	ChevronLeft,
 	ChevronRight,
+	CircleDot,
 	Columns2,
 	Compass,
 	Copy,
@@ -2226,6 +2227,107 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.stroke();
 		}
 
+		// Project and render 3D Mandibular Canal Nerve (IAN) with 2.0 mm Safety Corridor onto Panorama
+		if (interpolatedNerve3D.length > 1) {
+			const panoW = panoramicData.widthPx;
+			const panoH = panoramicData.heightPx;
+			const panoHMm = 38.0;
+			const zTopMm = panoHMm / 2.0;
+			const spline = archCurve.splinePointsMm;
+
+			const project3DToPanoPx = (pt: Point3D): { x: number; y: number } => {
+				const yPx = Math.max(0, Math.min(panoH - 1, ((zTopMm - pt.z) / panoHMm) * panoH));
+				if (!spline || spline.length < 2) return { x: panoW / 2, y: yPx };
+
+				let accumulatedDist = 0;
+				let bestDistAlongArch = 0;
+				let bestDistanceToSplineSq = Infinity;
+
+				for (let i = 0; i < spline.length - 1; i++) {
+					const p1 = spline[i]!;
+					const p2 = spline[i + 1]!;
+					const segDx = p2.x - p1.x;
+					const segDy = p2.y - p1.y;
+					const segLenSq = segDx * segDx + segDy * segDy;
+					const segLen = Math.sqrt(segLenSq);
+
+					if (segLenSq > 0.00001) {
+						let t = ((pt.x - p1.x) * segDx + (pt.y - p1.y) * segDy) / segLenSq;
+						t = Math.max(0, Math.min(1, t));
+						const projX = p1.x + t * segDx;
+						const projY = p1.y + t * segDy;
+						const dSq = (pt.x - projX) ** 2 + (pt.y - projY) ** 2;
+						if (dSq < bestDistanceToSplineSq) {
+							bestDistanceToSplineSq = dSq;
+							bestDistAlongArch = accumulatedDist + t * segLen;
+						}
+					}
+					accumulatedDist += segLen;
+				}
+
+				const totalLengthMm = archCurve.totalArcLengthMm > 0 ? archCurve.totalArcLengthMm : accumulatedDist || 100.0;
+				const ratio = Math.max(0, Math.min(1, bestDistAlongArch / totalLengthMm));
+				const xPx = ratio * (panoW - 1);
+				return { x: xPx, y: yPx };
+			};
+
+			const projectedNerve = interpolatedNerve3D.map(project3DToPanoPx);
+			const pxPerMmY = panoH / panoHMm;
+			const safetyBufferWidthPx = Math.max(6, 2.0 * 2.0 * pxPerMmY); // 2.0 mm radius (4.0 mm corridor width)
+
+			ctx.save();
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+
+			// 1. 2.0 mm Cylindrical Safety Corridor (Dashed amber halo)
+			ctx.lineWidth = safetyBufferWidthPx;
+			ctx.setLineDash([5, 3]);
+			ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
+			ctx.beginPath();
+			ctx.moveTo(projectedNerve[0]!.x, projectedNerve[0]!.y);
+			for (let i = 1; i < projectedNerve.length; i++) {
+				ctx.lineTo(projectedNerve[i]!.x, projectedNerve[i]!.y);
+			}
+			ctx.stroke();
+
+			// 2. Central 3D Nerve Spline (Luminous solid amber line)
+			ctx.lineWidth = 2.5;
+			ctx.setLineDash([]);
+			ctx.strokeStyle = "#f59e0b";
+			ctx.beginPath();
+			ctx.moveTo(projectedNerve[0]!.x, projectedNerve[0]!.y);
+			for (let i = 1; i < projectedNerve.length; i++) {
+				ctx.lineTo(projectedNerve[i]!.x, projectedNerve[i]!.y);
+			}
+			ctx.stroke();
+
+			// 3. Control Nodes on Panorama
+			for (let i = 0; i < nervePoints.length; i++) {
+				const np = project3DToPanoPx(nervePoints[i]!);
+				const isSelected = selectedNerveNodeIdx === i;
+				if (isSelected) {
+					ctx.strokeStyle = "#38bdf8";
+					ctx.lineWidth = 2.0;
+					ctx.beginPath();
+					ctx.arc(np.x, np.y, 6, 0, Math.PI * 2);
+					ctx.stroke();
+					ctx.fillStyle = "#38bdf8";
+					ctx.beginPath();
+					ctx.arc(np.x, np.y, 3.5, 0, Math.PI * 2);
+					ctx.fill();
+				} else {
+					ctx.fillStyle = "#fbbf24";
+					ctx.strokeStyle = "#ffffff";
+					ctx.lineWidth = 1.0;
+					ctx.beginPath();
+					ctx.arc(np.x, np.y, 3.5, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.stroke();
+				}
+			}
+			ctx.restore();
+		}
+
 		// End of Pass 1 (Transformed World Space)
 		ctx.restore();
 
@@ -2357,7 +2459,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.fillText(`FDI #${implant3DWorld.targetToothFdi}`, panoXScreen, badgeY + 7);
 			ctx.restore();
 		}
-	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout]);
+	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout, interpolatedNerve3D, nervePoints, selectedNerveNodeIdx]);
 
 	// ─── RENDER ACTIVE CROSS-SECTION WITH IMPLANT & NERVE ─────────────────────
 	useEffect(() => {
@@ -2588,6 +2690,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			pixelSpacingMmY: pxSpacing,
 			showGrid: true,
 			showScaleBar: true,
+			invertColors,
 			transform,
 		});
 
@@ -2611,39 +2714,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
 			ctx.fillText(`${nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм`, midScreen.x, midScreen.y);
-			ctx.restore();
-		}
-
-		// 3. Floating CAD HUD Quick-Reset & Angulation Pill in Top-Right Corner
-		if (studioMode === "implant") {
-			ctx.save();
-			const pillX = canvas.width - 85;
-			const pillY = 10;
-			const pillW = 75;
-			const pillH = 20;
-
-			ctx.fillStyle = "rgba(9, 9, 11, 0.88)";
-			ctx.strokeStyle = selectedMeasurement?.type === "implant" ? "#f59e0b" : "rgba(113, 113, 122, 0.6)";
-			ctx.lineWidth = selectedMeasurement?.type === "implant" ? 1.5 : 1.0;
-			if (selectedMeasurement?.type === "implant") {
-				ctx.shadowColor = "rgba(245, 158, 11, 0.4)";
-				ctx.shadowBlur = 6;
-			}
-			ctx.beginPath();
-			if (typeof ctx.roundRect === "function") {
-				ctx.roundRect(pillX, pillY, pillW, pillH, 4);
-			} else {
-				ctx.rect(pillX, pillY, pillW, pillH);
-			}
-			ctx.fill();
-			ctx.stroke();
-
-			ctx.shadowBlur = 0;
-			ctx.fillStyle = selectedMeasurement?.type === "implant" ? "#fbbf24" : "#e4e4e7";
-			ctx.font = "bold 9px monospace";
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(`Сброс (${implantAngulationDeg}°)`, pillX + pillW / 2, pillY + pillH / 2);
 			ctx.restore();
 		}
 	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout, selectedMeasurement, hoveredImplantPart, dragImplantPart, implantAngulationDeg]);
@@ -3702,7 +3772,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				`Снимок КЛКТ (FDI #${targetTooth})`,
 				pixelSpacing,
 				{
-					patientName: patientDisplayName,
+					patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+					clinicName: "Стоматологический центр DENTE",
 					studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 					targetToothFdi: targetTooth,
 				},
@@ -3715,6 +3786,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			canal: currentCanal,
 			envelope: currentEnvelope,
 			huSampling: huSamplingResult,
+			patientName: patientDisplayName || study?.patientName || "Пациент клиники",
+			clinicName: "Стоматологический центр DENTE",
 		});
 
 		navigator.clipboard.writeText(diaryText).catch(() => {});
@@ -3742,17 +3815,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
 		const pixelSpacing = volume?.spacingMm.x ?? 0.4;
 
-		// Capture clean snapshots of all available viewports with Smart White Paper Inversion (Toner Saving)
+		// Capture clean snapshots of all available viewports with Smart White Paper Inversion (Toner Saving) and cleanForReport (no UI watermark/patient overlay redundancy)
 		const axialSnap = axialCanvasRef.current
 			? await exportCleanViewportSnapshot(
 					axialCanvasRef.current,
 					`Аксиальный срез (Z = ${crosshairMm.z.toFixed(1)} мм)`,
 					pixelSpacing,
 					{
-						patientName: patientDisplayName,
+						patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+						clinicName: "Стоматологический центр DENTE",
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
 						invertToner: true,
+						cleanForReport: true,
 					},
 				)
 			: undefined;
@@ -3763,10 +3838,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					"Панорамная реконструкция (ОПТГ)",
 					pixelSpacing,
 					{
-						patientName: patientDisplayName,
+						patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+						clinicName: "Стоматологический центр DENTE",
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
 						invertToner: true,
+						cleanForReport: true,
 					},
 				)
 			: undefined;
@@ -3777,10 +3854,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					`Кросс-секция ложа FDI #${targetTooth}`,
 					pixelSpacing,
 					{
-						patientName: patientDisplayName,
+						patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+						clinicName: "Стоматологический центр DENTE",
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
 						invertToner: true,
+						cleanForReport: true,
 					},
 				)
 			: undefined;
@@ -3791,10 +3870,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					`Сагиттальный срез (X = ${crosshairMm.x.toFixed(1)} мм)`,
 					pixelSpacing,
 					{
-						patientName: patientDisplayName,
+						patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+						clinicName: "Стоматологический центр DENTE",
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
 						invertToner: true,
+						cleanForReport: true,
 					},
 				)
 			: coronalCanvasRef.current
@@ -3803,10 +3884,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						`Фронтальный срез (Y = ${crosshairMm.y.toFixed(1)} мм)`,
 						pixelSpacing,
 						{
-							patientName: patientDisplayName,
+							patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+							clinicName: "Стоматологический центр DENTE",
 							studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 							targetToothFdi: targetTooth,
 							invertToner: true,
+							cleanForReport: true,
 						},
 					)
 				: undefined;
@@ -3817,10 +3900,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			canal: currentCanal,
 			envelope: currentEnvelope,
 			huSampling: huSamplingResult,
+			patientName: patientDisplayName || study?.patientName || "Пациент клиники",
+			clinicName: "Стоматологический центр DENTE",
 		});
 
 		const reportData = buildCbctReportData({
-			patientName: patientDisplayName || study?.patientName || "Пациент КЛКТ",
+			patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+			clinicName: "Стоматологический центр DENTE",
 			doctorName: "Врач-стоматолог-хирург-имплантолог",
 			studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 			targetToothFdi: targetTooth,
@@ -4038,6 +4124,23 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}`}
 			data-testid="cbct-viewport-container-cross-section"
 		>
+			{studioMode === "implant" && (
+				<div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-1.5">
+					<button
+						type="button"
+						onClick={() => {
+							setImplantAngulationDeg(0);
+							showToast("↺ Угол наклона имплантата сброшен в 0.0°", "info");
+						}}
+						className="px-2.5 py-1 rounded bg-[#09090b]/90 hover:bg-zinc-900 backdrop-blur-sm text-amber-300 hover:text-amber-200 border border-amber-500/60 font-mono text-[11px] font-bold flex items-center gap-1.5 transition-colors shadow-md cursor-pointer"
+						title="Сбросить наклон оси имплантата в 0.0°"
+						data-testid="cbct-cross-section-maximized-reset-angle-btn"
+					>
+						<RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+						<span>Сброс ({implantAngulationDeg}°)</span>
+					</button>
+				</div>
+			)}
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={crossSectionCanvasRef}
@@ -4168,7 +4271,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						data-testid="cbct-mode-implant-btn"
 						title="Планирование имплантации и контроль нерва"
 					>
-						<Compass className="w-3.5 h-3.5 text-cyan-400" />
+						<CircleDot className="w-3.5 h-3.5 text-amber-400" />
 						<span>Имплантация</span>
 					</button>
 					<button

@@ -149,8 +149,15 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 
 		const createMockCtx = () => {
 			const calls: MockCall[] = [];
+			const colorsUsed: string[] = [];
+			const shadowColorsUsed: string[] = [];
+			let _fillStyle = "";
+			let _strokeStyle = "";
+			let _shadowColor = "";
 			const mock = {
 				calls,
+				colorsUsed,
+				shadowColorsUsed,
 				beginPath: () => calls.push({ method: "beginPath", args: [] }),
 				moveTo: (x: number, y: number) => calls.push({ method: "moveTo", args: [x, y] }),
 				lineTo: (x: number, y: number) => calls.push({ method: "lineTo", args: [x, y] }),
@@ -173,13 +180,31 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 				save: () => calls.push({ method: "save", args: [] }),
 				restore: () => calls.push({ method: "restore", args: [] }),
 				setLineDash: (d: number[]) => calls.push({ method: "setLineDash", args: [d] }),
-				fillStyle: "",
-				strokeStyle: "",
+				get fillStyle() {
+					return _fillStyle;
+				},
+				set fillStyle(v: string) {
+					_fillStyle = v;
+					colorsUsed.push(v);
+				},
+				get strokeStyle() {
+					return _strokeStyle;
+				},
+				set strokeStyle(v: string) {
+					_strokeStyle = v;
+					colorsUsed.push(v);
+				},
+				get shadowColor() {
+					return _shadowColor;
+				},
+				set shadowColor(v: string) {
+					_shadowColor = v;
+					shadowColorsUsed.push(v);
+				},
 				lineWidth: 1,
 				font: "",
 				textAlign: "",
 				textBaseline: "",
-				shadowColor: "",
 				shadowBlur: 0,
 			};
 			return mock;
@@ -225,6 +250,14 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 			assert.ok(strokeCalls.length > 0, "Should generate stroke calls for negative LUT ticks");
 			assert.ok(fillTextCalls.length > 0, "Should generate fill text for numbers");
 			assert.ok(strokeTextCalls.length > 0, "Should generate stroke text calls for #ffffff halo underlay");
+			assert.ok(
+				mockCtx.colorsUsed.includes("#09090b"),
+				"Should use contrasting #09090b black color for negative mode ticks and labels",
+			);
+			assert.ok(
+				mockCtx.shadowColorsUsed.includes("#ffffff"),
+				"Should use #ffffff halo shadow for negative mode ticks and labels",
+			);
 		});
 
 		it("executes drawRomexisSlabCorridor and draws dashed bounds and fill", () => {
@@ -263,6 +296,10 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 			const arcCalls = mockCtx.calls.filter((c) => c.method === "arc");
 			assert.ok(strokeCalls.length > 0, "Should draw angle arms and arc");
 			assert.ok(arcCalls.length > 0, "Should draw circular arc sector and handles");
+			assert.ok(
+				mockCtx.shadowColorsUsed.includes("rgba(0, 0, 0, 0.85)"),
+				"Should use rgba(0, 0, 0, 0.85) dark halo underlay for angle manipulators",
+			);
 		});
 
 		it("executes drawObliqueCrosshairWithRotationHandles with dark halo underlay for axes", () => {
@@ -282,6 +319,10 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 
 			const strokeCalls = mockCtx.calls.filter((c) => c.method === "stroke");
 			assert.ok(strokeCalls.length > 0, "Should stroke crosshair axes and handles");
+			assert.ok(
+				mockCtx.shadowColorsUsed.includes("rgba(0, 0, 0, 0.85)"),
+				"Should use rgba(0, 0, 0, 0.85) dark halo underlay for crosshair axes",
+			);
 		});
 	});
 

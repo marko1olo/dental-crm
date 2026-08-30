@@ -142,6 +142,7 @@ export interface CbctReportData {
 
 export interface ViewportSnapshotOptions {
 	readonly patientName?: string | undefined;
+	readonly clinicName?: string | undefined;
 	readonly studyDate?: string | undefined;
 	readonly targetToothFdi?: number | undefined;
 	readonly sliceLocationMm?: number | undefined;
@@ -150,6 +151,14 @@ export interface ViewportSnapshotOptions {
 	readonly orientationBadgeText?: string | undefined;
 	readonly invertToner?: boolean | undefined;
 	readonly tonerSaving?: boolean | undefined;
+	readonly cleanForReport?: boolean | undefined;
+	readonly suppressUiOverlays?: boolean | undefined;
+	readonly hidePatientBadge?: boolean | undefined;
+	readonly hideWatermark?: boolean | undefined;
+	readonly hideScaleBar?: boolean | undefined;
+	readonly showPatientBadge?: boolean | undefined;
+	readonly showWatermark?: boolean | undefined;
+	readonly showScaleBar?: boolean | undefined;
 }
 
 export interface CbctReportRenderOptions {
@@ -161,9 +170,9 @@ export interface CbctReportRenderOptions {
 /**
  * Generates a clean clinical PNG snapshot from a viewport canvas:
  * 1. Strips out all interactive HTML UI buttons and overlays.
- * 2. Imprints calibrated 10 mm scale ruler bar (using physical scaleMm pixel spacing).
- * 3. Stamps patient metadata badge (Patient Name, Study Date, Viewport Title, FDI tooth).
- * 4. Imprints clean clinical orientation & medical branding.
+ * 2. Inscribes calibrated 10 mm scale ruler bar (using physical scaleMm pixel spacing).
+ * 3. Stamps patient metadata badge (optional for PDF protocol to avoid raster redundancy).
+ * 4. Imprints clean clinical orientation & medical branding (optional for PDF protocol).
  */
 export async function exportCleanViewportSnapshot(
 	canvas: HTMLCanvasElement,
@@ -204,6 +213,14 @@ export async function exportCleanViewportSnapshot(
 	}
 
 	const isInvertToner = Boolean(options.invertToner || options.tonerSaving);
+	const shouldShowPatientBadge =
+		options.showPatientBadge ??
+		!(options.cleanForReport || options.suppressUiOverlays || options.hidePatientBadge);
+	const shouldShowWatermark =
+		options.showWatermark ??
+		!(options.cleanForReport || options.suppressUiOverlays || options.hideWatermark);
+	const shouldShowScaleBar =
+		options.showScaleBar ?? !options.hideScaleBar;
 
 	// 1. Draw solid background (white for toner saving, black for dark screen snapshot)
 	ctx.fillStyle = isInvertToner ? "#ffffff" : "#000000";
@@ -238,107 +255,113 @@ export async function exportCleanViewportSnapshot(
 
 	const pad = 12;
 
-	// 3. Stamp Patient & Slice Metadata Badge (Top-Left)
-	ctx.save();
-	const titleText = viewportTitle;
-	const patientText = options.patientName ? `Пациент: ${options.patientName}` : "";
-	const dateText = options.studyDate ? `Дата: ${options.studyDate}` : "";
-	const toothText = options.targetToothFdi ? `FDI #${options.targetToothFdi}` : "";
-	const metaParts = [patientText, toothText, dateText].filter(Boolean).join(" • ");
+	// 3. Stamp Patient & Slice Metadata Badge (Top-Left) - suppressed in clean report export
+	if (shouldShowPatientBadge) {
+		ctx.save();
+		const titleText = viewportTitle;
+		const patientText = options.patientName ? `Пациент: ${options.patientName}` : "";
+		const dateText = options.studyDate ? `Дата: ${options.studyDate}` : "";
+		const toothText = options.targetToothFdi ? `FDI #${options.targetToothFdi}` : "";
+		const metaParts = [patientText, toothText, dateText].filter(Boolean).join(" • ");
 
-	ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
-	const titleWidth = ctx.measureText(titleText).width;
-	ctx.font = "10px system-ui, -apple-system, sans-serif";
-	const metaWidth = metaParts ? ctx.measureText(metaParts).width : 0;
-	const badgeWidth = Math.min(width - 24, Math.max(180, Math.max(titleWidth, metaWidth) + 20));
-	const badgeHeight = metaParts ? 42 : 26;
-
-	ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.92)" : "rgba(15, 23, 42, 0.85)";
-	ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "rgba(51, 65, 85, 0.8)";
-	ctx.lineWidth = 1;
-	ctx.beginPath();
-	if (typeof ctx.roundRect === "function") {
-		ctx.roundRect(pad, pad, badgeWidth, badgeHeight, 6);
-	} else {
-		ctx.rect(pad, pad, badgeWidth, badgeHeight);
-	}
-	ctx.fill();
-	ctx.stroke();
-
-	// Title
-	ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
-	ctx.fillStyle = isInvertToner ? "#0369a1" : "#38bdf8";
-	ctx.fillText(titleText, pad + 10, pad + 16);
-
-	// Subtitle
-	if (metaParts) {
+		ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
+		const titleWidth = ctx.measureText(titleText).width;
 		ctx.font = "10px system-ui, -apple-system, sans-serif";
-		ctx.fillStyle = isInvertToner ? "#475569" : "#94a3b8";
-		ctx.fillText(metaParts, pad + 10, pad + 33);
+		const metaWidth = metaParts ? ctx.measureText(metaParts).width : 0;
+		const badgeWidth = Math.min(width - 24, Math.max(180, Math.max(titleWidth, metaWidth) + 20));
+		const badgeHeight = metaParts ? 42 : 26;
+
+		ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.92)" : "rgba(15, 23, 42, 0.85)";
+		ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "rgba(51, 65, 85, 0.8)";
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		if (typeof ctx.roundRect === "function") {
+			ctx.roundRect(pad, pad, badgeWidth, badgeHeight, 6);
+		} else {
+			ctx.rect(pad, pad, badgeWidth, badgeHeight);
+		}
+		ctx.fill();
+		ctx.stroke();
+
+		// Title
+		ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
+		ctx.fillStyle = isInvertToner ? "#0369a1" : "#38bdf8";
+		ctx.fillText(titleText, pad + 10, pad + 16);
+
+		// Subtitle
+		if (metaParts) {
+			ctx.font = "10px system-ui, -apple-system, sans-serif";
+			ctx.fillStyle = isInvertToner ? "#475569" : "#94a3b8";
+			ctx.fillText(metaParts, pad + 10, pad + 33);
+		}
+		ctx.restore();
 	}
-	ctx.restore();
 
 	// 4. Inscribe Calibrated 10 mm Scale Ruler Bar (Bottom-Left)
-	ctx.save();
-	const safeScaleMm = scaleMm > 0 ? scaleMm : 0.4;
-	const pxPerMm = 1.0 / safeScaleMm;
-	const scaleBarLengthMm = options.customScaleBarLengthMm ?? 10.0;
-	const rawScaleBarPx = scaleBarLengthMm * pxPerMm;
-	const scaleBarPx = Math.min(width * 0.45, Math.max(24, rawScaleBarPx));
+	if (shouldShowScaleBar) {
+		ctx.save();
+		const safeScaleMm = scaleMm > 0 ? scaleMm : 0.4;
+		const pxPerMm = 1.0 / safeScaleMm;
+		const scaleBarLengthMm = options.customScaleBarLengthMm ?? 10.0;
+		const rawScaleBarPx = scaleBarLengthMm * pxPerMm;
+		const scaleBarPx = Math.min(width * 0.45, Math.max(24, rawScaleBarPx));
 
-	const sbX = pad;
-	const sbY = height - pad - 24;
-	const sbHeight = 24;
-	const sbWidth = scaleBarPx + 24;
+		const sbX = pad;
+		const sbY = height - pad - 24;
+		const sbHeight = 24;
+		const sbWidth = scaleBarPx + 24;
 
-	ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.92)" : "rgba(15, 23, 42, 0.85)";
-	ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "rgba(51, 65, 85, 0.8)";
-	ctx.lineWidth = 1;
-	ctx.beginPath();
-	if (typeof ctx.roundRect === "function") {
-		ctx.roundRect(sbX, sbY, sbWidth, sbHeight, 4);
-	} else {
-		ctx.rect(sbX, sbY, sbWidth, sbHeight);
+		ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.92)" : "rgba(15, 23, 42, 0.85)";
+		ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "rgba(51, 65, 85, 0.8)";
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		if (typeof ctx.roundRect === "function") {
+			ctx.roundRect(sbX, sbY, sbWidth, sbHeight, 4);
+		} else {
+			ctx.rect(sbX, sbY, sbWidth, sbHeight);
+		}
+		ctx.fill();
+		ctx.stroke();
+
+		const lineStartX = sbX + 12;
+		const lineEndX = lineStartX + scaleBarPx;
+		const lineY = sbY + 15;
+
+		ctx.strokeStyle = isInvertToner ? "#0284c7" : "#38bdf8";
+		ctx.lineWidth = 1.5;
+		ctx.beginPath();
+		// Left bracket tick
+		ctx.moveTo(lineStartX, lineY - 6);
+		ctx.lineTo(lineStartX, lineY + 2);
+		// Horizontal bar
+		ctx.moveTo(lineStartX, lineY);
+		ctx.lineTo(lineEndX, lineY);
+		// Right bracket tick
+		ctx.moveTo(lineEndX, lineY - 6);
+		ctx.lineTo(lineEndX, lineY + 2);
+		// Center tick
+		const midX = lineStartX + scaleBarPx / 2;
+		ctx.moveTo(midX, lineY - 3);
+		ctx.lineTo(midX, lineY);
+		ctx.stroke();
+
+		// Label
+		ctx.font = "bold 9px monospace";
+		ctx.fillStyle = isInvertToner ? "#0f172a" : "#f1f5f9";
+		ctx.textAlign = "center";
+		ctx.fillText(`${scaleBarLengthMm} мм`, midX, lineY - 7);
+		ctx.restore();
 	}
-	ctx.fill();
-	ctx.stroke();
 
-	const lineStartX = sbX + 12;
-	const lineEndX = lineStartX + scaleBarPx;
-	const lineY = sbY + 15;
-
-	ctx.strokeStyle = isInvertToner ? "#0284c7" : "#38bdf8";
-	ctx.lineWidth = 1.5;
-	ctx.beginPath();
-	// Left bracket tick
-	ctx.moveTo(lineStartX, lineY - 6);
-	ctx.lineTo(lineStartX, lineY + 2);
-	// Horizontal bar
-	ctx.moveTo(lineStartX, lineY);
-	ctx.lineTo(lineEndX, lineY);
-	// Right bracket tick
-	ctx.moveTo(lineEndX, lineY - 6);
-	ctx.lineTo(lineEndX, lineY + 2);
-	// Center tick
-	const midX = lineStartX + scaleBarPx / 2;
-	ctx.moveTo(midX, lineY - 3);
-	ctx.lineTo(midX, lineY);
-	ctx.stroke();
-
-	// Label
-	ctx.font = "bold 9px monospace";
-	ctx.fillStyle = isInvertToner ? "#0f172a" : "#f1f5f9";
-	ctx.textAlign = "center";
-	ctx.fillText(`${scaleBarLengthMm} мм`, midX, lineY - 7);
-	ctx.restore();
-
-	// 5. Watermark / Branding (Bottom-Right)
-	ctx.save();
-	ctx.font = "9px system-ui, -apple-system, sans-serif";
-	ctx.fillStyle = isInvertToner ? "rgba(71, 85, 105, 0.85)" : "rgba(148, 163, 184, 0.75)";
-	ctx.textAlign = "right";
-	ctx.fillText("DENTE 3D CBCT Studio • 16-bit DICOM", width - pad, height - pad);
-	ctx.restore();
+	// 5. Watermark / Branding (Bottom-Right) - suppressed in clean report export
+	if (shouldShowWatermark) {
+		ctx.save();
+		ctx.font = "9px system-ui, -apple-system, sans-serif";
+		ctx.fillStyle = isInvertToner ? "rgba(71, 85, 105, 0.85)" : "rgba(148, 163, 184, 0.75)";
+		ctx.textAlign = "right";
+		ctx.fillText("DENTE 3D CBCT Studio • 16-bit DICOM", width - pad, height - pad);
+		ctx.restore();
+	}
 
 	try {
 		return exportCanvas.toDataURL("image/png");
@@ -352,6 +375,7 @@ export async function exportCleanViewportSnapshot(
  */
 export function buildCbctReportData(params: {
 	readonly patientName?: string | undefined;
+	readonly clinicName?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly studyDate?: string | undefined;
 	readonly targetToothFdi: number;
@@ -373,6 +397,7 @@ export function buildCbctReportData(params: {
 }): CbctReportData {
 	const {
 		patientName = "Барабаш С.В.",
+		clinicName = "Стоматологический центр DENTE",
 		doctorName = "Врач-хирург-имплантолог",
 		studyDate = new Date().toLocaleDateString("ru-RU"),
 		targetToothFdi,
@@ -422,7 +447,7 @@ export function buildCbctReportData(params: {
 			doctorName,
 			studyDate,
 			reportDate: new Date().toLocaleDateString("ru-RU"),
-			clinicName: "Стоматологический центр DENTE",
+			clinicName: clinicName || "Стоматологический центр DENTE",
 			cardRecordNumber: `043/у-${targetToothFdi}`,
 		},
 		targetToothFdi,
@@ -482,6 +507,56 @@ export function buildCbctReportData(params: {
 		diary043Text,
 		tonerSavingEnabled: tonerSaving,
 	};
+}
+
+function escapeHtml(text: string): string {
+	return text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+}
+
+function renderStructuredDiary043(text: string): string {
+	const lines = text.split("\n");
+	const output: string[] = [];
+
+	for (const rawLine of lines) {
+		const line = rawLine.trim();
+		if (!line) {
+			continue;
+		}
+		// Skip purely decorative ASCII borders
+		if (/^={4,}$/.test(line) || /^-{4,}$/.test(line)) {
+			continue;
+		}
+		// Document Title
+		if (line.includes("ПРОТОКОЛ ОПЕРАЦИИ") || line.includes("ФОРМА 043/У")) {
+			output.push(`<div style="font-weight:800; color:#0f172a; margin-bottom:2px; font-size:9.5px;">${escapeHtml(line)}</div>`);
+			continue;
+		}
+		// Patient / Clinic meta line
+		if (line.startsWith("Пациент:")) {
+			output.push(`<div class="diary-meta-row">${escapeHtml(line)}</div>`);
+			continue;
+		}
+		// Numbered section titles (e.g. "1. ВЫБОР...", "2. АНАТОМИЧЕСКАЯ...", "3. Зуб...", "4. ЗАКЛЮЧЕНИЕ...")
+		if (/^\d+\.\s/.test(line)) {
+			output.push(`<div class="diary-section-header">${escapeHtml(line)}</div>`);
+			continue;
+		}
+		// Bullet items (e.g. "   - Система: ...", "- Класс: ...", "• ...")
+		if (line.startsWith("- ") || line.startsWith("• ") || line.startsWith("– ")) {
+			const cleanItem = line.replace(/^[-•–]\s*/, "");
+			output.push(`<div class="diary-item">${escapeHtml(cleanItem)}</div>`);
+			continue;
+		}
+		// Default paragraph line
+		output.push(`<div style="margin-bottom: 1.5px;">${escapeHtml(line)}</div>`);
+	}
+
+	return output.join("");
 }
 
 /**
@@ -806,6 +881,75 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     color: #334155;
   }
 
+  /* Form 043/u Proportional Medical Typography */
+  .diary-card {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 9px;
+    line-height: 1.45;
+    color: #334155;
+  }
+  .diary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+  }
+  .diary-title {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .diary-badge {
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 0.5px solid #bae6fd;
+    text-transform: uppercase;
+  }
+  .diary-content {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 9px;
+    line-height: 1.45;
+    color: #334155;
+  }
+  .diary-section-header {
+    font-weight: 700;
+    color: #0369a1;
+    margin-top: 5px;
+    margin-bottom: 2px;
+    font-size: 9px;
+  }
+  .diary-item {
+    padding-left: 12px;
+    position: relative;
+    margin-bottom: 1.5px;
+  }
+  .diary-item::before {
+    content: "•";
+    position: absolute;
+    left: 2px;
+    color: #0284c7;
+    font-weight: bold;
+  }
+  .diary-meta-row {
+    font-size: 8.5px;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+
   /* Signatures */
   .sig-grid {
     display: grid;
@@ -1028,9 +1172,17 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   ${
 		diary043Text
 			? `
-  <div class="notes-box">
-    <h4>Запись для амбулаторной карты 043/у:</h4>
-    <div style="white-space: pre-wrap; font-family: monospace; font-size: 8px; color: #475569;">${escapeHtml(diary043Text)}</div>
+  <div class="diary-card">
+    <div class="diary-header">
+      <div class="diary-title">
+        <span>Запись для амбулаторной карты 043/у:</span>
+        <span class="diary-badge">Приказ МЗ РФ № 804н / 043-у</span>
+      </div>
+      <div style="font-size: 8.5px; color: #64748b;">Медицинский протокол</div>
+    </div>
+    <div class="diary-content">
+      ${renderStructuredDiary043(diary043Text)}
+    </div>
   </div>
   `
 			: ""
@@ -1126,11 +1278,3 @@ export function downloadCbctReportFile(
 	}, 1000);
 }
 
-function escapeHtml(text: string): string {
-	return text
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}

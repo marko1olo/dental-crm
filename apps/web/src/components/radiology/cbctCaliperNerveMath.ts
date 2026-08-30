@@ -836,13 +836,21 @@ export function hitTestMeasurementObject(
 		const badgeX = r.badgePx?.x ?? midX;
 		const badgeY = r.badgePx?.y ?? midY;
 
+		// Hitbox check for fast delete [×] trigger with invisible padding (>= 24x24 px)
+		const deleteTargetX = badgeX + badgeW / 2 - 6;
+		const deleteTargetY = badgeY;
+		const isDeleteHitbox =
+			Math.abs(pointerPx.x - deleteTargetX) <= 12 &&
+			Math.abs(pointerPx.y - deleteTargetY) <= 12;
+
 		// Check if click is on badge
 		const isInsideBadge =
-			Math.abs(pointerPx.x - badgeX) <= badgeW / 2 + 4 &&
-			Math.abs(pointerPx.y - badgeY) <= badgeH / 2 + 4;
+			Math.abs(pointerPx.x - badgeX) <= badgeW / 2 + 6 &&
+			Math.abs(pointerPx.y - badgeY) <= badgeH / 2 + 6;
 
-		if (isInsideBadge) {
-			const isDeleteHit = pointerPx.x >= badgeX + badgeW / 2 - 18;
+		if (isDeleteHitbox || isInsideBadge) {
+			const isDeleteHit =
+				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 18;
 			return {
 				type: "ruler",
 				id: r.id,
@@ -867,6 +875,62 @@ export function hitTestMeasurementObject(
 
 	// 2. Check Angles (Arms or Badge)
 	for (const a of angles) {
+		let badgeX = a.vertexPx.x;
+		let badgeY = a.vertexPx.y;
+		let badgeW = a.badgePx?.width ?? 60;
+		let badgeH = a.badgePx?.height ?? 18;
+
+		if (a.badgePx) {
+			badgeX = a.badgePx.x;
+			badgeY = a.badgePx.y;
+		} else {
+			const dx1 = a.startPx.x - a.vertexPx.x;
+			const dy1 = a.startPx.y - a.vertexPx.y;
+			const dx2 = a.endPx.x - a.vertexPx.x;
+			const dy2 = a.endPx.y - a.vertexPx.y;
+			const len1 = Math.hypot(dx1, dy1);
+			const len2 = Math.hypot(dx2, dy2);
+			if (len1 >= 5 && len2 >= 5) {
+				const angle1 = Math.atan2(dy1, dx1);
+				const angle2 = Math.atan2(dy2, dx2);
+				let diff = angle2 - angle1;
+				while (diff > Math.PI) diff -= Math.PI * 2;
+				while (diff < -Math.PI) diff += Math.PI * 2;
+				const bisectorAngle = angle1 + diff / 2;
+				const badgeDist = Math.min(48, Math.max(26, Math.min(len1, len2) * 0.4 + 14));
+				badgeX = a.vertexPx.x + Math.cos(bisectorAngle) * badgeDist;
+				badgeY = a.vertexPx.y + Math.sin(bisectorAngle) * badgeDist;
+			} else if (len1 >= 5) {
+				badgeX = (a.vertexPx.x + a.startPx.x) / 2;
+				badgeY = (a.vertexPx.y + a.startPx.y) / 2 - 12;
+			} else {
+				badgeY -= 16;
+			}
+		}
+
+		// Hitbox check for fast delete [×] trigger with invisible padding (>= 24x24 px)
+		const deleteTargetX = badgeX + badgeW / 2 - 6;
+		const deleteTargetY = badgeY;
+		const isDeleteHitbox =
+			Math.abs(pointerPx.x - deleteTargetX) <= 12 &&
+			Math.abs(pointerPx.y - deleteTargetY) <= 12;
+
+		const isInsideBadge =
+			Math.abs(pointerPx.x - badgeX) <= badgeW / 2 + 6 &&
+			Math.abs(pointerPx.y - badgeY) <= badgeH / 2 + 6;
+
+		if (isDeleteHitbox || isInsideBadge) {
+			const isDeleteHit =
+				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 18;
+			return {
+				type: "angle",
+				id: a.id,
+				plane: a.plane,
+				isDeleteButtonHit: isDeleteHit,
+				distancePx: 0,
+			};
+		}
+
 		const dArm1 = distPointToSegPx(pointerPx, a.vertexPx, a.startPx);
 		const dArm2 = distPointToSegPx(pointerPx, a.vertexPx, a.endPx);
 		const minArmDist = Math.min(dArm1, dArm2);
@@ -1230,4 +1294,11 @@ export function buildMandibularNerve3DSpline(
 		safetyMarginMm,
 	};
 }
+
+export {
+	project3DNerveToPanorama,
+	type Projected3DNervePoint,
+	type Projected3DNerveResult,
+	type Project3DNerveOptions,
+} from "./dentalCurveEngine";
 

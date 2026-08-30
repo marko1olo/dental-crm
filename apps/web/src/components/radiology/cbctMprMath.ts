@@ -299,6 +299,7 @@ export interface RulerDrawingOptions {
 	readonly showYAxis?: boolean | undefined;
 	readonly showGrid?: boolean | undefined;
 	readonly showScaleBar?: boolean | undefined;
+	readonly invertColors?: boolean | undefined;
 	readonly transform?: {
 		readonly panX?: number | undefined;
 		readonly panY?: number | undefined;
@@ -309,6 +310,7 @@ export interface RulerDrawingOptions {
 /**
  * Draws precision calibrated millimeter rulers (1 mm minor ticks, 5 mm medium ticks, 10 mm major ticks + labels)
  * and a 10 mm scale reference bar onto the 2D canvas in 1:1 screen vector space (Zero-aliasing under zoom).
+ * Supports WCAG AAA contrast inverting (Negative LUT X-Ray mode).
  */
 export function drawCalibratedMillimeterRulers(
 	ctx: CanvasRenderingContext2D,
@@ -323,6 +325,7 @@ export function drawCalibratedMillimeterRulers(
 		showYAxis = true,
 		showGrid = false,
 		showScaleBar = true,
+		invertColors = false,
 		transform,
 	} = options;
 
@@ -339,9 +342,17 @@ export function drawCalibratedMillimeterRulers(
 	ctx.font = "bold 9px monospace";
 	ctx.textBaseline = "top";
 
+	// WCAG AAA palette resolution for negative vs positive X-Ray LUT
+	const majorColor = invertColors ? "#09090b" : ROMEXIS_COLORS.rulerMajor;
+	const minorColor = invertColors ? "rgba(9, 9, 11, 0.85)" : ROMEXIS_COLORS.rulerMinor;
+	const textColor = invertColors ? "#09090b" : ROMEXIS_COLORS.rulerText;
+	const gridColor = invertColors ? "rgba(9, 9, 11, 0.2)" : ROMEXIS_COLORS.rulerGrid;
+	const scaleBarBg = invertColors ? "rgba(255, 255, 255, 0.92)" : "rgba(9, 9, 11, 0.85)";
+	const haloColor = invertColors ? "#ffffff" : "rgba(0, 0, 0, 0.85)";
+
 	// 1. Optional background grid (every 5mm aligned with slice coordinate space)
 	if (showGrid) {
-		ctx.strokeStyle = ROMEXIS_COLORS.rulerGrid;
+		ctx.strokeStyle = gridColor;
 		ctx.lineWidth = 0.5;
 		const gridStepX = 5.0 * pxPerMmX;
 		const gridStepY = 5.0 * pxPerMmY;
@@ -377,28 +388,40 @@ export function drawCalibratedMillimeterRulers(
 			const isMajor = mm % 10 === 0;
 			const isMedium = mm % 5 === 0 && !isMajor;
 
+			ctx.save();
+			if (invertColors) {
+				ctx.shadowColor = haloColor;
+				ctx.shadowBlur = 2;
+			}
+
 			ctx.beginPath();
 			ctx.moveTo(x, 0);
 			if (isMajor) {
-				ctx.strokeStyle = ROMEXIS_COLORS.rulerMajor;
+				ctx.strokeStyle = majorColor;
 				ctx.lineWidth = 1.0;
 				ctx.lineTo(x, 8);
 				ctx.stroke();
 				if (mm > 0 && x + 14 < widthPx) {
-					ctx.fillStyle = ROMEXIS_COLORS.rulerText;
+					if (invertColors && typeof ctx.strokeText === "function") {
+						ctx.strokeStyle = haloColor;
+						ctx.lineWidth = 2.0;
+						ctx.strokeText(`${mm}`, x + 2, 2);
+					}
+					ctx.fillStyle = textColor;
 					ctx.fillText(`${mm}`, x + 2, 2);
 				}
 			} else if (isMedium) {
-				ctx.strokeStyle = ROMEXIS_COLORS.rulerMinor;
+				ctx.strokeStyle = minorColor;
 				ctx.lineWidth = 0.75;
 				ctx.lineTo(x, 5);
 				ctx.stroke();
 			} else {
-				ctx.strokeStyle = ROMEXIS_COLORS.rulerMinor;
+				ctx.strokeStyle = minorColor;
 				ctx.lineWidth = 0.5;
 				ctx.lineTo(x, 3);
 				ctx.stroke();
 			}
+			ctx.restore();
 		}
 	}
 
@@ -417,28 +440,40 @@ export function drawCalibratedMillimeterRulers(
 			const isMajor = mm % 10 === 0;
 			const isMedium = mm % 5 === 0 && !isMajor;
 
+			ctx.save();
+			if (invertColors) {
+				ctx.shadowColor = haloColor;
+				ctx.shadowBlur = 2;
+			}
+
 			ctx.beginPath();
 			ctx.moveTo(0, y);
 			if (isMajor) {
-				ctx.strokeStyle = ROMEXIS_COLORS.rulerMajor;
+				ctx.strokeStyle = majorColor;
 				ctx.lineWidth = 1.0;
 				ctx.lineTo(8, y);
 				ctx.stroke();
 				if (mm > 0 && y + 10 < heightPx) {
-					ctx.fillStyle = ROMEXIS_COLORS.rulerText;
+					if (invertColors && typeof ctx.strokeText === "function") {
+						ctx.strokeStyle = haloColor;
+						ctx.lineWidth = 2.0;
+						ctx.strokeText(`${mm}`, 2, y + 2);
+					}
+					ctx.fillStyle = textColor;
 					ctx.fillText(`${mm}`, 2, y + 2);
 				}
 			} else if (isMedium) {
-				ctx.strokeStyle = ROMEXIS_COLORS.rulerMinor;
+				ctx.strokeStyle = minorColor;
 				ctx.lineWidth = 0.75;
 				ctx.lineTo(5, y);
 				ctx.stroke();
 			} else {
-				ctx.strokeStyle = ROMEXIS_COLORS.rulerMinor;
+				ctx.strokeStyle = minorColor;
 				ctx.lineWidth = 0.5;
 				ctx.lineTo(3, y);
 				ctx.stroke();
 			}
+			ctx.restore();
 		}
 	}
 
@@ -448,10 +483,19 @@ export function drawCalibratedMillimeterRulers(
 		const barX = 14;
 		const barY = heightPx - 14;
 
-		ctx.fillStyle = "rgba(9, 9, 11, 0.85)";
+		ctx.save();
+		ctx.fillStyle = scaleBarBg;
 		ctx.fillRect(barX - 4, barY - 12, barWidthPx + 8, 16);
 
-		ctx.strokeStyle = ROMEXIS_COLORS.rulerMajor;
+		if (invertColors) {
+			ctx.strokeStyle = "rgba(9, 9, 11, 0.25)";
+			ctx.lineWidth = 0.5;
+			ctx.strokeRect(barX - 4, barY - 12, barWidthPx + 8, 16);
+			ctx.shadowColor = haloColor;
+			ctx.shadowBlur = 2;
+		}
+
+		ctx.strokeStyle = majorColor;
 		ctx.lineWidth = 1.5;
 		ctx.beginPath();
 		ctx.moveTo(barX, barY - 4);
@@ -460,9 +504,17 @@ export function drawCalibratedMillimeterRulers(
 		ctx.lineTo(barX + barWidthPx, barY - 4);
 		ctx.stroke();
 
-		ctx.fillStyle = ROMEXIS_COLORS.rulerText;
+		if (invertColors && typeof ctx.strokeText === "function") {
+			ctx.strokeStyle = haloColor;
+			ctx.lineWidth = 2.0;
+			ctx.textAlign = "center";
+			ctx.strokeText("10 mm", barX + barWidthPx / 2, barY - 11);
+		}
+
+		ctx.fillStyle = textColor;
 		ctx.textAlign = "center";
 		ctx.fillText("10 mm", barX + barWidthPx / 2, barY - 11);
+		ctx.restore();
 	}
 
 	ctx.restore();
@@ -766,6 +818,11 @@ export function drawCbctAngleMeasurement(
 		ctx.restore();
 	}
 
+	// Dark halo underlay (shadowColor = rgba(0,0,0,0.85), shadowBlur = 4)
+	// ensures angle measurement lines and arc manipulators are never lost against hyperdense white bone or enamel
+	ctx.save();
+	ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+	ctx.shadowBlur = 4;
 	ctx.strokeStyle = primaryColor;
 	ctx.lineWidth = isActive ? 2.0 : 1.5;
 
@@ -811,6 +868,7 @@ export function drawCbctAngleMeasurement(
 		ctx.fillStyle = isActive ? "rgba(245, 158, 11, 0.2)" : "rgba(34, 211, 238, 0.15)";
 		ctx.fill();
 	}
+	ctx.restore();
 
 	// 4. Draw control handles (0 = arm 1, 1 = vertex, 2 = arm 2) — 6-8px Luminous Glowing Points
 	const handles = [
