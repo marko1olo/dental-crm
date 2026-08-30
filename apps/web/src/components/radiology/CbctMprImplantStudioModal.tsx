@@ -129,6 +129,9 @@ import {
 	project3DNerveToPanorama,
 	reconstructPanoramicOpg,
 	reconstructPanoramicView,
+	updateDentalArchAnchorPosition,
+	hitTestDentalArchControlPoint,
+	drawDentalArchControlPointManipulators,
 } from "./dentalCurveEngine";
 import { autoDetectDentalArch, findOcclusalZPlane } from "./cbctAutoArchEngine";
 import { CbctViewportHud } from "./CbctViewportHud";
@@ -299,6 +302,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [panoramicData, setPanoramicData] = useState<PanoramicReconstructionResult | null>(null);
 	const [crossSections, setCrossSections] = useState<CrossSectionSliceData[]>([]);
 	const [activeCrossSectionIdx, setActiveCrossSectionIdx] = useState<number>(0);
+	const [selectedArchAnchorIdx, setSelectedArchAnchorIdx] = useState<number | null>(null);
+	const [isDraggingArchAnchor, setIsDraggingArchAnchor] = useState<number | null>(null);
+	const [hoveredArchAnchorIdx, setHoveredArchAnchorIdx] = useState<number | null>(null);
+	const pendingArchAnchorMmRef = useRef<{ index: number; positionMm: Point2D } | null>(null);
+	const rafArchAnchorIdRef = useRef<number | null>(null);
 
 	const handleAutoDetectArch = useCallback(() => {
 		if (!volume) {
@@ -1366,6 +1374,21 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					showAngleBadge: false,
 					invertColors,
 				});
+
+				// 7. Interactive Dental Arch Spline Control Points (24x24px Manipulators with Drag & Drop)
+				if (showDentalArch) {
+					drawDentalArchControlPointManipulators(ctx, {
+						archCurve,
+						volume,
+						transform,
+						crosshairZMm: crosshairMm.z,
+						selectedAnchorIdx: selectedArchAnchorIdx,
+						hoveredAnchorIdx: hoveredArchAnchorIdx,
+						draggingAnchorIdx: isDraggingArchAnchor,
+						activeToothFdi: activeCrossSection?.nearestToothFdi ?? null,
+						invertColors,
+					});
+				}
 			}
 		}
 
@@ -2024,43 +2047,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					rotationDeg: obliqueAngles.sagittalTiltDeg,
 					activeHandle: activeRotationHandle?.plane === "sagittal" ? activeRotationHandle.handle : null,
 					hoveredHandle: hoveredHandle?.plane === "sagittal" ? hoveredHandle.handle : null,
-					showHandles: true,
-					showAngleBadge: false,
-					invertColors,
-				});
-			}
+						// ─── LAYER 1: RENDER PANORAMIC BASE RADIOGRAPH (OFFSCREEN RASTER) ─────────
+	useEffect(() => {
+		if (!panoramicData || !panoBaseCanvasRef.current) return;
+
+		const canvas = panoBaseCanvasRef.current;
+		if (canvas.width !== panoramicData.widthPx || canvas.height !== panoramicData.heightPx) {
+			canvas.width = panoramicData.widthPx;
+			canvas.height = panoramicData.heightPx;
 		}
-	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, angles, activeAngle, selectedMeasurement, draggingMeasurementHandle, hoveredMeasurementHandle, probeMarkers, activeProbe, activeTool, maximizedViewport, viewLayout, nervePoints, interpolatedNerve3D, selectedNerveNodeIdx, nerveTotalLengthMm]);
-
-	// ─── RECONSTRUCT PANORAMIC & CROSS SECTIONS ───────────────────────────────
-	useEffect(() => {
-		if (!volume || !isOpen) return;
-
-		// Reconstruct Panorama
-		const pano = reconstructPanoramicView(volume, archCurve, {
-			heightPx: 220,
-			windowWidth,
-			windowLevel,
-			invert: invertColors,
-		});
-		setPanoramicData(pano);
-
-		// Reconstruct Cross-Sections
-		const csList = generateCrossSectionSlices(volume, archCurve, 1.5, 0.0, {
-			windowWidth,
-			windowLevel,
-			invert: invertColors,
-		});
-		setCrossSections(csList);
-	}, [volume, isOpen, archCurve, windowWidth, windowLevel, slabMode, invertColors]);
-
-	// ─── RENDER PANORAMIC VIEW WITH INTERACTIVE CROSS-SECTION FAN ─────────────
-	useEffect(() => {
-		if (!panoramicData || !panoCanvasRef.current) return;
-
-		const canvas = panoCanvasRef.current;
-		canvas.width = panoramicData.widthPx;
-		canvas.height = panoramicData.heightPx;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
@@ -2082,13 +2077,34 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			offCtx.putImageData(panoImgDataRef.current, 0, 0);
 		}
 
-		// ─── PASS 1: TRANSFORMED WORLD SPACE (RADIOGRAPH & ANATOMICAL OVERLAYS) ───
 		ctx.save();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		const transform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
 		ctx.translate(transform.panX, transform.panY);
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
+		ctx.restore();
+	}, [panoramicData, transforms.panoramic]);
+
+	// ─── LAYER 2: RENDER PANORAMIC OVERLAY UI (INTERACTIVE FAN, NERVE, IMPLANTS) ───
+	useEffect(() => {
+		if (!panoramicData || !panoOverlayCanvasRef.current) return;
+
+		const canvas = panoOverlayCanvasRef.current;
+		if (canvas.width !== panoramicData.widthPx || canvas.height !== panoramicData.heightPx) {
+			canvas.width = panoramicData.widthPx;
+			canvas.height = panoramicData.heightPx;
+		}
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		// ─── PASS 1: TRANSFORMED WORLD SPACE (ANATOMICAL OVERLAYS) ───
+		ctx.save();
+		const transform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+		ctx.translate(transform.panX, transform.panY);
+		ctx.scale(transform.zoom, transform.zoom);
 
 		// Draw Axial Plane Intersection Line (Cyan #06b6d4)
 		if (volume) {
@@ -2127,8 +2143,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			);
 
 			if (projectedNerve.projectedPoints.length > 1) {
-				// 1. Draw 2.0 mm Safety Corridor Tube Polygon (semi-transparent filled + dashed outline)
 				ctx.save();
+				ctx.lineCap = "round";
+				ctx.lineJoin = "round";
+
+				// 1. Draw 2.0 mm Safety Corridor Tube Polygon
 				ctx.strokeStyle = "rgba(239, 68, 68, 0.55)";
 				ctx.fillStyle = "rgba(239, 68, 68, 0.14)";
 				ctx.lineWidth = 1.2;
@@ -2242,112 +2261,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.stroke();
 		}
 
-		// Project and render 3D Mandibular Canal Nerve (IAN) with 2.0 mm Safety Corridor onto Panorama
-		if (interpolatedNerve3D.length > 1) {
-			const panoW = panoramicData.widthPx;
-			const panoH = panoramicData.heightPx;
-			const panoHMm = 38.0;
-			const zTopMm = panoHMm / 2.0;
-			const spline = archCurve.splinePointsMm;
-
-			const project3DToPanoPx = (pt: Point3D): { x: number; y: number } => {
-				const yPx = Math.max(0, Math.min(panoH - 1, ((zTopMm - pt.z) / panoHMm) * panoH));
-				if (!spline || spline.length < 2) return { x: panoW / 2, y: yPx };
-
-				let accumulatedDist = 0;
-				let bestDistAlongArch = 0;
-				let bestDistanceToSplineSq = Infinity;
-
-				for (let i = 0; i < spline.length - 1; i++) {
-					const p1 = spline[i]!;
-					const p2 = spline[i + 1]!;
-					const segDx = p2.x - p1.x;
-					const segDy = p2.y - p1.y;
-					const segLenSq = segDx * segDx + segDy * segDy;
-					const segLen = Math.sqrt(segLenSq);
-
-					if (segLenSq > 0.00001) {
-						let t = ((pt.x - p1.x) * segDx + (pt.y - p1.y) * segDy) / segLenSq;
-						t = Math.max(0, Math.min(1, t));
-						const projX = p1.x + t * segDx;
-						const projY = p1.y + t * segDy;
-						const dSq = (pt.x - projX) ** 2 + (pt.y - projY) ** 2;
-						if (dSq < bestDistanceToSplineSq) {
-							bestDistanceToSplineSq = dSq;
-							bestDistAlongArch = accumulatedDist + t * segLen;
-						}
-					}
-					accumulatedDist += segLen;
-				}
-
-				const totalLengthMm = archCurve.totalArcLengthMm > 0 ? archCurve.totalArcLengthMm : accumulatedDist || 100.0;
-				const ratio = Math.max(0, Math.min(1, bestDistAlongArch / totalLengthMm));
-				const xPx = ratio * (panoW - 1);
-				return { x: xPx, y: yPx };
-			};
-
-			const projectedNerve = interpolatedNerve3D.map(project3DToPanoPx);
-			const pxPerMmY = panoH / panoHMm;
-			const safetyBufferWidthPx = Math.max(6, 2.0 * 2.0 * pxPerMmY); // 2.0 mm radius (4.0 mm corridor width)
-
-			ctx.save();
-			ctx.lineCap = "round";
-			ctx.lineJoin = "round";
-
-			// 1. 2.0 mm Cylindrical Safety Corridor (Dashed amber halo)
-			ctx.lineWidth = safetyBufferWidthPx;
-			ctx.setLineDash([5, 3]);
-			ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
-			ctx.beginPath();
-			ctx.moveTo(projectedNerve[0]!.x, projectedNerve[0]!.y);
-			for (let i = 1; i < projectedNerve.length; i++) {
-				ctx.lineTo(projectedNerve[i]!.x, projectedNerve[i]!.y);
-			}
-			ctx.stroke();
-
-			// 2. Central 3D Nerve Spline (Luminous solid amber line)
-			ctx.lineWidth = 2.5;
-			ctx.setLineDash([]);
-			ctx.strokeStyle = "#f59e0b";
-			ctx.beginPath();
-			ctx.moveTo(projectedNerve[0]!.x, projectedNerve[0]!.y);
-			for (let i = 1; i < projectedNerve.length; i++) {
-				ctx.lineTo(projectedNerve[i]!.x, projectedNerve[i]!.y);
-			}
-			ctx.stroke();
-
-			// 3. Control Nodes on Panorama
-			for (let i = 0; i < nervePoints.length; i++) {
-				const np = project3DToPanoPx(nervePoints[i]!);
-				const isSelected = selectedNerveNodeIdx === i;
-				if (isSelected) {
-					ctx.strokeStyle = "#38bdf8";
-					ctx.lineWidth = 2.0;
-					ctx.beginPath();
-					ctx.arc(np.x, np.y, 6, 0, Math.PI * 2);
-					ctx.stroke();
-					ctx.fillStyle = "#38bdf8";
-					ctx.beginPath();
-					ctx.arc(np.x, np.y, 3.5, 0, Math.PI * 2);
-					ctx.fill();
-				} else {
-					ctx.fillStyle = "#fbbf24";
-					ctx.strokeStyle = "#ffffff";
-					ctx.lineWidth = 1.0;
-					ctx.beginPath();
-					ctx.arc(np.x, np.y, 3.5, 0, Math.PI * 2);
-					ctx.fill();
-					ctx.stroke();
-				}
-			}
-			ctx.restore();
-		}
-
 		// End of Pass 1 (Transformed World Space)
 		ctx.restore();
 
 		// ─── PASS 2: SCREEN-SPACE 1:1 VECTOR SPACE (RULERS, TICKS, FDI BADGES) ───
-		// 1. Calibrated Millimeter Rulers on Panorama (Y-axis vertical depth only; X-axis disabled to prevent conflict with FDI tooth markers)
+		// 1. Calibrated Millimeter Rulers on Panorama
 		drawCalibratedMillimeterRulers(ctx, {
 			widthPx: canvas.width,
 			heightPx: canvas.height,
@@ -2375,7 +2293,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.stroke();
 			ctx.setLineDash([]);
 
-			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+			ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
 			ctx.beginPath();
 			if (typeof ctx.roundRect === "function") {
 				ctx.roundRect(xScreen - 10, 2, 20, 14, 3);
@@ -2394,14 +2312,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const fanTicks = getPanoramicSliceFanTicks(crossSections, panoramicData.widthPx, archCurve.totalArcLengthMm);
 		let lastDrawnMajorTickX = -999;
 
-		// 3a. Draw Tick Marks along the Bottom Edge (Separated from Active Badge)
 		for (let i = 0; i < fanTicks.length; i++) {
 			const tick = fanTicks[i]!;
 			const tickXScreen = tick.panoX * transform.zoom + transform.panX;
 			if (tickXScreen < -20 || tickXScreen > canvas.width + 20) continue;
 
 			if (tick.isMajor) {
-				// Major slice tick line strictly at bottom edge (canvas.height - 6 .. -2)
 				ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
 				ctx.lineWidth = 1.0;
 				ctx.beginPath();
@@ -2409,7 +2325,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.lineTo(tickXScreen, canvas.height - 2);
 				ctx.stroke();
 
-				// Major tick label (numeric labels at canvas.height - 12; always show 1, 5, 10, 60 or spaced >= 18px)
 				const isKeySlice = tick.sliceIndex === 1 || tick.sliceIndex === 5 || tick.sliceIndex === 10 || tick.sliceIndex === 60;
 				if (isKeySlice || Math.abs(tickXScreen - lastDrawnMajorTickX) >= 18) {
 					ctx.fillStyle = "rgba(148, 163, 184, 0.85)";
@@ -2420,7 +2335,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					lastDrawnMajorTickX = tickXScreen;
 				}
 			} else {
-				// Minor slice tick mark strictly at bottom edge
 				ctx.strokeStyle = "rgba(100, 116, 139, 0.3)";
 				ctx.lineWidth = 1.0;
 				ctx.beginPath();
@@ -2435,7 +2349,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const activeTick = fanTicks[activeCrossSectionIdx]!;
 			const activeXScreen = activeTick.panoX * transform.zoom + transform.panX;
 
-			// Highlighted active slice vertical indicator line across the full canvas
 			ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
 			ctx.lineWidth = 2.0;
 			ctx.beginPath();
@@ -2443,14 +2356,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.lineTo(activeXScreen, canvas.height);
 			ctx.stroke();
 
-			// Active slice badge elevated above the tick marks (y = canvas.height - 36, height = 16px)
-			// Ensures active badge #1 never obscures ticks 5, 10 or scale bar (y = canvas.height - 58)
 			const activeBadgeY = canvas.height - 36;
 			const activeBadgeH = 16;
 			const activeBadgeW = Math.max(30, 16 + String(activeTick.sliceIndex).length * 8);
 			const activeBadgeX = Math.max(2, Math.min(canvas.width - activeBadgeW - 2, activeXScreen - activeBadgeW / 2));
 
-			ctx.fillStyle = "rgba(9, 9, 11, 0.95)";
+			ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
 			ctx.beginPath();
 			if (typeof ctx.roundRect === "function") {
 				ctx.roundRect(activeBadgeX, activeBadgeY, activeBadgeW, activeBadgeH, 3);
@@ -2476,7 +2387,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const yEntryScreen = panoImplantYEntry * transform.zoom + transform.panY;
 			const badgeY = Math.max(2, yEntryScreen - 18);
 			ctx.save();
-			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+			ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
 			ctx.strokeStyle = panoImplantStatusColor;
 			ctx.lineWidth = 1;
 			ctx.beginPath();
@@ -2494,15 +2405,17 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.fillText(`FDI #${implant3DWorld.targetToothFdi}`, panoXScreen, badgeY + 7);
 			ctx.restore();
 		}
-	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout, interpolatedNerve3D, nervePoints, selectedNerveNodeIdx]);
+	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout, interpolatedNerve3D, nervePoints, selectedNerveNodeIdx, invertColors]);
 
-	// ─── RENDER ACTIVE CROSS-SECTION WITH IMPLANT & NERVE ─────────────────────
+	// ─── LAYER 1: RENDER ACTIVE CROSS-SECTION BASE BONE SLICE (OFFSCREEN RASTER) ─
 	useEffect(() => {
-		if (!activeCrossSection || !crossSectionCanvasRef.current) return;
+		if (!activeCrossSection || !crossSectionBaseCanvasRef.current) return;
 
-		const canvas = crossSectionCanvasRef.current;
-		canvas.width = activeCrossSection.widthPx;
-		canvas.height = activeCrossSection.heightPx;
+		const canvas = crossSectionBaseCanvasRef.current;
+		if (canvas.width !== activeCrossSection.widthPx || canvas.height !== activeCrossSection.heightPx) {
+			canvas.width = activeCrossSection.widthPx;
+			canvas.height = activeCrossSection.heightPx;
+		}
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
@@ -2524,13 +2437,34 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			offCtx.putImageData(crossSectionImgDataRef.current, 0, 0);
 		}
 
-		// ─── PASS 1: TRANSFORMED WORLD SPACE (RESLICED BONE & CAD SHAPES) ───
 		ctx.save();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		const transform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
 		ctx.translate(transform.panX, transform.panY);
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
+		ctx.restore();
+	}, [activeCrossSection, transforms.cross_section]);
+
+	// ─── LAYER 2: RENDER ACTIVE CROSS-SECTION OVERLAY UI (CAD IMPLANT, NERVE, GRID) ───
+	useEffect(() => {
+		if (!activeCrossSection || !crossSectionOverlayCanvasRef.current) return;
+
+		const canvas = crossSectionOverlayCanvasRef.current;
+		if (canvas.width !== activeCrossSection.widthPx || canvas.height !== activeCrossSection.heightPx) {
+			canvas.width = activeCrossSection.widthPx;
+			canvas.height = activeCrossSection.heightPx;
+		}
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		// ─── PASS 1: TRANSFORMED WORLD SPACE (CAD SHAPES & NERVE) ───
+		ctx.save();
+		const transform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
+		ctx.translate(transform.panX, transform.panY);
+		ctx.scale(transform.zoom, transform.zoom);
 
 		const pxSpacing = activeCrossSection.pixelSpacingMm;
 		const centerX = canvas.width / 2;
@@ -2710,6 +2644,48 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			crossSectionClearanceMidPoint = {
 				x: (apexPxX + canalCenterX) / 2,
 				y: (apexPxY + canalCenterY) / 2,
+			};
+		}
+
+		// End of Pass 1 (Transformed World Space)
+		ctx.restore();
+
+		// ─── PASS 2: SCREEN-SPACE 1:1 VECTOR SPACE (RULERS, CALIBRATED GRID, BADGES) ───
+		// 1. Calibrated Millimeter Rulers and Grid
+		drawCalibratedMillimeterRulers(ctx, {
+			widthPx: canvas.width,
+			heightPx: canvas.height,
+			pixelSpacingMmX: pxSpacing,
+			pixelSpacingMmY: pxSpacing,
+			showGrid: true,
+			showScaleBar: true,
+			invertColors,
+			transform,
+		});
+
+		// 2. Clearance label badge along distance vector in Screen Space
+		if (crossSectionClearanceMidPoint) {
+			const midScreen = slicePxToScreenPx(crossSectionClearanceMidPoint, transform);
+			ctx.save();
+			ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+			ctx.strokeStyle = crossSectionStatusStroke;
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(midScreen.x - 22, midScreen.y - 8, 44, 16, 3);
+			} else {
+				ctx.rect(midScreen.x - 22, midScreen.y - 8, 44, 16);
+			}
+			ctx.fill();
+			ctx.stroke();
+			ctx.fillStyle = "#ffffff";
+			ctx.font = "bold 9px monospace";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(`${nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм`, midScreen.x, midScreen.y);
+			ctx.restore();
+		}
+	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout, selectedMeasurement, hoveredImplantPart, dragImplantPart, implantAngulationDeg, invertColors]); + canalCenterY) / 2,
 			};
 		}
 
