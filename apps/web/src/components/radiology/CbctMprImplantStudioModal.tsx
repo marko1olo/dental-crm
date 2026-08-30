@@ -5,6 +5,7 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	Box,
+	Camera,
 	Check,
 	ChevronLeft,
 	ChevronRight,
@@ -26,6 +27,8 @@ import {
 	Minimize2,
 	Play,
 	Plus,
+	Printer,
+	RotateCcw,
 	RotateCw,
 	Ruler,
 	Save,
@@ -58,7 +61,9 @@ import {
 	type ViewportTransform,
 	type CbctActiveMouseTool,
 	type CbctMeasurementRuler,
+	type CbctAngleMeasurement,
 	type CbctProbeMarker,
+	type MeasurementHandleHit,
 	DEFAULT_OBLIQUE_ROTATION,
 	DEFAULT_VIEWPORT_TRANSFORM,
 	applyCursorZoom,
@@ -70,7 +75,10 @@ import {
 	drawRomexisSlabCorridor,
 	drawObliqueCrosshairWithRotationHandles,
 	drawCbctMeasurementRuler,
+	drawCbctAngleMeasurement,
 	drawCbctProbeMarker,
+	calculateAngleBetween3Points3D,
+	hitTestMeasurementHandle,
 	getCbctToolCursor,
 	worldMmToSlicePx,
 	slicePxToWorldMm,
@@ -91,7 +99,7 @@ import {
 	voxelToWorldMm,
 	worldMmToVoxel,
 } from "./cbctMprMath";
-import { useCbctKeyboardShortcuts, applyStepZoom } from "./useCbctKeyboardShortcuts";
+import { useCbctKeyboardShortcuts, applyStepZoom, isEditableElement } from "./useCbctKeyboardShortcuts";
 import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
 import {
 	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
@@ -148,6 +156,25 @@ import type { RadiologyStudy } from "./types";
 import { showToast } from "../GlobalToast";
 import type { CbctViewportType } from "./cbctMprMath";
 import { CbctLeftToolDock, type CbctToolMode } from "./CbctLeftToolDock";
+import {
+	buildCbctReportData,
+	exportCleanViewportSnapshot,
+	generateCbctPlanningPdfReport,
+	openCbctReportPrintWindow,
+	type CbctReportData,
+} from "./cbctExportEngine";
+import {
+	interpolateNerveSpline3D,
+	calculateSplineLength3DMm,
+	calculateNerveDistanceGating,
+	getGatedNerveSegments,
+	hitTestNerveNode3D,
+	hitTestNerveNodeOnAxialSlice,
+	buildMandibularNerve3DSpline,
+	type MandibularNerve3DSpline,
+	type NerveDistanceGatingResult,
+	type GatedNerveSegment3D,
+} from "./cbctCaliperNerveMath";
 
 export type StudioMode = "diagnostic" | "implant" | "endo" | "tmj";
 export type ViewLayoutMode = "quad_view" | "layout_1_plus_3";
@@ -272,6 +299,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0.0);
 	const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(true);
 	const [nervePoints, setNervePoints] = useState<Point3D[]>([]);
+	const [selectedNerveNodeIdx, setSelectedNerveNodeIdx] = useState<number | null>(null);
+	const [isDraggingNerveNode, setIsDraggingNerveNode] = useState<number | null>(null);
+
+	const interpolatedNerve3D = useMemo(() => {
+		if (nervePoints.length < 2) return nervePoints;
+		return interpolateNerveSpline3D(nervePoints, 12);
+	}, [nervePoints]);
+
+	const nerveTotalLengthMm = useMemo(() => {
+		if (interpolatedNerve3D.length < 2) return 0;
+		return calculateSplineLength3DMm(interpolatedNerve3D);
+	}, [interpolatedNerve3D]);
 
 	// Interactive Cross-Section Drag & Drop State
 	const [dragImplantPart, setDragImplantPart] = useState<"entry" | "apex" | "body" | null>(null);
@@ -347,12 +386,36 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		startPanY: number;
 	} | null>(null);
 
-	// Measurement rulers and HU probe markers
+	// Measurement rulers, angles, and HU probe markers
 	const [rulers, setRulers] = useState<CbctMeasurementRuler[]>([]);
 	const [activeRuler, setActiveRuler] = useState<{
 		plane: CbctViewportType;
 		startMm: Point3D;
 		currentMm: Point3D;
+	} | null>(null);
+	const [angles, setAngles] = useState<CbctAngleMeasurement[]>([]);
+	const [activeAngle, setActiveAngle] = useState<{
+		plane: CbctViewportType;
+		step: 1 | 2;
+		startMm: Point3D;
+		vertexMm?: Point3D;
+		currentMm: Point3D;
+	} | null>(null);
+	const [selectedMeasurement, setSelectedMeasurement] = useState<{
+		type: "ruler" | "angle" | "probe";
+		id: string;
+	} | null>(null);
+	const [draggingMeasurementHandle, setDraggingMeasurementHandle] = useState<{
+		type: "ruler" | "angle";
+		id: string;
+		handleIndex: number;
+		plane: CbctViewportType;
+	} | null>(null);
+	const [hoveredMeasurementHandle, setHoveredMeasurementHandle] = useState<{
+		type: "ruler" | "angle";
+		id: string;
+		handleIndex: number;
+		plane: CbctViewportType;
 	} | null>(null);
 	const [probeMarkers, setProbeMarkers] = useState<CbctProbeMarker[]>([]);
 	const [activeProbe, setActiveProbe] = useState<CbctProbeMarker | null>(null);
@@ -445,6 +508,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setCrosshairMm({ x: 0, y: 0, z: 0 });
 		setRulers([]);
 		setActiveRuler(null);
+		setAngles([]);
+		setActiveAngle(null);
+		setSelectedMeasurement(null);
+		setDraggingMeasurementHandle(null);
+		setHoveredMeasurementHandle(null);
 		setProbeMarkers([]);
 		setActiveProbe(null);
 	}, []);
@@ -490,6 +558,72 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		onToggleMode: handleToggleStudioMode,
 		onSelectPreset: handleSelectPresetShortcut,
 	});
+
+	// CAD Measurement Key Handling: Hotkey 'A' for Angle, Delete / Backspace to remove active measurement
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (isEditableElement(e.target)) return;
+
+			// 1. Hotkey 'A' or 'a' or 'ф' for Angle Tool
+			if ((e.key === "a" || e.key === "A" || e.key === "ф" || e.key === "Ф") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+				e.preventDefault();
+				setActiveTool("angle");
+				showToast("Инструмент: Угломер (°)", "info");
+				return;
+			}
+
+			// 2. Delete or Backspace -> remove selected or active measurement
+			if (e.key === "Delete" || e.key === "Backspace") {
+				if (selectedMeasurement) {
+					e.preventDefault();
+					if (selectedMeasurement.type === "ruler") {
+						setRulers((prev) => prev.filter((r) => r.id !== selectedMeasurement.id));
+						setSelectedMeasurement(null);
+						showToast("Измерение линейки удалено", "info");
+					} else if (selectedMeasurement.type === "angle") {
+						setAngles((prev) => prev.filter((a) => a.id !== selectedMeasurement.id));
+						setSelectedMeasurement(null);
+						showToast("Измерение угла удалено", "info");
+					} else if (selectedMeasurement.type === "probe") {
+						setProbeMarkers((prev) => prev.filter((p) => p.id !== selectedMeasurement.id));
+						setSelectedMeasurement(null);
+						showToast("Метка плотности удалена", "info");
+					}
+					return;
+				}
+
+				if (activeAngle) {
+					e.preventDefault();
+					setActiveAngle(null);
+					showToast("Измерение угла отменено", "info");
+					return;
+				}
+				if (activeRuler) {
+					e.preventDefault();
+					setActiveRuler(null);
+					showToast("Измерение линейки отменено", "info");
+					return;
+				}
+			}
+
+			// Escape -> cancel active drawing
+			if (e.key === "Escape") {
+				if (activeAngle || activeRuler || selectedMeasurement) {
+					e.preventDefault();
+					setActiveAngle(null);
+					setActiveRuler(null);
+					setSelectedMeasurement(null);
+				}
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isOpen, selectedMeasurement, activeAngle, activeRuler]);
 
 	// Initialize Volume on Open
 	useEffect(() => {
@@ -984,7 +1118,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					if (r.plane === "axial") {
 						const p1 = worldMmToSlicePx(r.startMm, "axial", volume);
 						const p2 = worldMmToSlicePx(r.endMm, "axial", volume);
-						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, false);
+						const isSelected = selectedMeasurement?.id === r.id;
+						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
 					}
 				}
 				if (activeRuler && activeRuler.plane === "axial") {
@@ -995,67 +1131,131 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						activeRuler.currentMm.y - activeRuler.startMm.y,
 						activeRuler.currentMm.z - activeRuler.startMm.z,
 					);
-					drawCbctMeasurementRuler(ctx, p1, p2, dist, true);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
+				}
+
+				// Draw Angles on Axial
+				for (const a of angles) {
+					if (a.plane === "axial") {
+						const p1 = worldMmToSlicePx(a.startMm, "axial", volume);
+						const pv = worldMmToSlicePx(a.vertexMm, "axial", volume);
+						const p2 = worldMmToSlicePx(a.endMm, "axial", volume);
+						const isSelected = selectedMeasurement?.id === a.id;
+						const activeH = hoveredMeasurementHandle?.id === a.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === a.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctAngleMeasurement(ctx, p1, pv, p2, a.angleDeg, isSelected, activeH);
+					}
+				}
+				if (activeAngle && activeAngle.plane === "axial") {
+					const p1 = worldMmToSlicePx(activeAngle.startMm, "axial", volume);
+					const pv = activeAngle.vertexMm
+						? worldMmToSlicePx(activeAngle.vertexMm, "axial", volume)
+						: worldMmToSlicePx(activeAngle.currentMm, "axial", volume);
+					const p2 = worldMmToSlicePx(activeAngle.currentMm, "axial", volume);
+					const angleDeg = activeAngle.vertexMm
+						? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm)
+						: 0;
+					drawCbctAngleMeasurement(ctx, p1, pv, p2, angleDeg, true, null);
 				}
 
 				// Draw Probes on Axial
 				for (const pm of probeMarkers) {
 					if (pm.plane === "axial") {
 						const p = worldMmToSlicePx(pm.worldMm, "axial", volume);
-						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName);
+						const isSelected = selectedMeasurement?.id === pm.id;
+						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName, isSelected);
 					}
 				}
 				if (activeProbe && activeProbe.plane === "axial" && activeTool === "probe") {
 					const p = worldMmToSlicePx(activeProbe.worldMm, "axial", volume);
-					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName);
+					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName, true);
 				}
 
-				// Draw Mandibular Canal Nerve (IAN) on Axial with 2.0 mm Safety Halo
-				if (nervePoints.length > 1) {
-					const pts = nervePoints;
+				// Draw Mandibular Canal Nerve (IAN) on Axial with 3D Catmull-Rom Spline & Distance Gating
+				if (interpolatedNerve3D.length > 1) {
 					ctx.save();
-						// 2.0 mm Safety Halo Corridor (dashed amber)
-						ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
-						ctx.lineWidth = Math.max(10, 4.0 / (metadata.pixelSpacingX || 0.4));
-						ctx.lineCap = "round";
-						ctx.lineJoin = "round";
+					ctx.lineCap = "round";
+					ctx.lineJoin = "round";
+
+					// 1. Draw 2.0 mm Cylindrical Safety Corridor & Central Nerve Spline with Continuous Distance Gating
+					for (let i = 0; i < interpolatedNerve3D.length - 1; i++) {
+						const p1 = interpolatedNerve3D[i]!;
+						const p2 = interpolatedNerve3D[i + 1]!;
+						const midZ = (p1.z + p2.z) / 2.0;
+						const deltaZ = Math.abs(midZ - crosshairMm.z);
+						const gating = calculateNerveDistanceGating(deltaZ);
+
+						if (!gating.isVisible) continue;
+
+						const p1Px = worldMmToSlicePx(p1, "axial", volume);
+						const p2Px = worldMmToSlicePx(p2, "axial", volume);
+
+						// 2.0 mm Cylindrical Safety Corridor (Dashed amber halo)
+						const haloWidthPx = Math.max(8, 4.0 / (metadata.pixelSpacingX || 0.4));
+						ctx.lineWidth = haloWidthPx;
 						ctx.setLineDash([5, 3]);
+						ctx.strokeStyle = `rgba(245, 158, 11, ${Number((gating.alpha * 0.45).toFixed(3))})`;
 						ctx.beginPath();
-						for (let i = 0; i < pts.length; i++) {
-							const p = worldMmToSlicePx(pts[i]!, "axial", volume);
-							if (i === 0) ctx.moveTo(p.x, p.y);
-							else ctx.lineTo(p.x, p.y);
-						}
+						ctx.moveTo(p1Px.x, p1Px.y);
+						ctx.lineTo(p2Px.x, p2Px.y);
 						ctx.stroke();
-						ctx.setLineDash([]);
 
-						// Central Nerve Line (Solid gold)
-						ctx.strokeStyle = "#f59e0b";
+						// Central 3D Nerve Spline
 						ctx.lineWidth = 2.5;
-						ctx.beginPath();
-						for (let i = 0; i < pts.length; i++) {
-							const p = worldMmToSlicePx(pts[i]!, "axial", volume);
-							if (i === 0) ctx.moveTo(p.x, p.y);
-							else ctx.lineTo(p.x, p.y);
+						if (gating.isDashed) {
+							ctx.setLineDash([4, 4]);
+						} else {
+							ctx.setLineDash([]);
 						}
+						ctx.strokeStyle = `rgba(245, 158, 11, ${Number(gating.alpha.toFixed(3))})`;
+						ctx.beginPath();
+						ctx.moveTo(p1Px.x, p1Px.y);
+						ctx.lineTo(p2Px.x, p2Px.y);
 						ctx.stroke();
+					}
 
-						// Waypoint nodes
-						for (const pt of pts) {
-							const p = worldMmToSlicePx(pt, "axial", volume);
-							ctx.fillStyle = "#fbbf24";
+					// 2. Waypoint nodes with Distance Gating and Selection Ring
+					ctx.setLineDash([]);
+					for (let i = 0; i < nervePoints.length; i++) {
+						const pt = nervePoints[i]!;
+						const deltaZ = Math.abs(pt.z - crosshairMm.z);
+						const gating = calculateNerveDistanceGating(deltaZ);
+
+						if (!gating.isVisible) continue;
+
+						const p = worldMmToSlicePx(pt, "axial", volume);
+						const isSelected = selectedNerveNodeIdx === i;
+
+						if (isSelected) {
+							// Highlighted ring for interactive selection
+							ctx.strokeStyle = "#38bdf8";
+							ctx.lineWidth = 2.0;
 							ctx.beginPath();
-							ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+							ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+							ctx.stroke();
+
+							ctx.fillStyle = "#38bdf8";
+							ctx.beginPath();
+							ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+							ctx.fill();
+						} else {
+							ctx.fillStyle = `rgba(251, 191, 36, ${Number(gating.alpha.toFixed(3))})`;
+							ctx.beginPath();
+							ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
 							ctx.fill();
 						}
+					}
 
-						// Badge
-						const midPt = pts[Math.floor(pts.length / 2)]!;
+					// 3. Floating 3D Badge on visible segment
+					const visibleNodes = nervePoints.filter(
+						(pt) => Math.abs(pt.z - crosshairMm.z) <= 3.5,
+					);
+					if (visibleNodes.length > 0) {
+						const midPt = visibleNodes[Math.floor(visibleNodes.length / 2)]!;
 						const pMid = worldMmToSlicePx(midPt, "axial", volume);
-						ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+						ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
 						ctx.strokeStyle = "#f59e0b";
 						ctx.lineWidth = 1;
-						const text = "Канал IAN (2.0 мм буфер)";
+						const text = `Канал IAN (3D ${nerveTotalLengthMm.toFixed(1)} мм · 2.0 мм буфер)`;
 						ctx.font = "bold 9px monospace";
 						const tw = ctx.measureText(text).width;
 						ctx.beginPath();
@@ -1065,8 +1265,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						ctx.fillStyle = "#fbbf24";
 						ctx.textAlign = "center";
 						ctx.fillText(text, pMid.x, pMid.y - 8);
-						ctx.restore();
 					}
+
+					ctx.restore();
+				}
 
 				// Draw Oblique Crosshair with Rotation Handles & Clinical Rotation Badge
 				drawObliqueCrosshairWithRotationHandles(ctx, {
@@ -1208,7 +1410,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 						// Semi-transparent compact Tooth FDI badge with pointer arrow
 						const badgeY = Math.max(2, pEntry.y - 18);
-						ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+						ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
 						ctx.strokeStyle = statusColor;
 						ctx.lineWidth = 1;
 						ctx.beginPath();
@@ -1251,7 +1453,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					if (r.plane === "coronal") {
 						const p1 = worldMmToSlicePx(r.startMm, "coronal", volume);
 						const p2 = worldMmToSlicePx(r.endMm, "coronal", volume);
-						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, false);
+						const isSelected = selectedMeasurement?.id === r.id;
+						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
 					}
 				}
 				if (activeRuler && activeRuler.plane === "coronal") {
@@ -1262,61 +1466,119 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						activeRuler.currentMm.y - activeRuler.startMm.y,
 						activeRuler.currentMm.z - activeRuler.startMm.z,
 					);
-					drawCbctMeasurementRuler(ctx, p1, p2, dist, true);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
+				}
+
+				// Draw Angles on Coronal
+				for (const a of angles) {
+					if (a.plane === "coronal") {
+						const p1 = worldMmToSlicePx(a.startMm, "coronal", volume);
+						const pv = worldMmToSlicePx(a.vertexMm, "coronal", volume);
+						const p2 = worldMmToSlicePx(a.endMm, "coronal", volume);
+						const isSelected = selectedMeasurement?.id === a.id;
+						const activeH = hoveredMeasurementHandle?.id === a.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === a.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctAngleMeasurement(ctx, p1, pv, p2, a.angleDeg, isSelected, activeH);
+					}
+				}
+				if (activeAngle && activeAngle.plane === "coronal") {
+					const p1 = worldMmToSlicePx(activeAngle.startMm, "coronal", volume);
+					const pv = activeAngle.vertexMm
+						? worldMmToSlicePx(activeAngle.vertexMm, "coronal", volume)
+						: worldMmToSlicePx(activeAngle.currentMm, "coronal", volume);
+					const p2 = worldMmToSlicePx(activeAngle.currentMm, "coronal", volume);
+					const angleDeg = activeAngle.vertexMm
+						? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm)
+						: 0;
+					drawCbctAngleMeasurement(ctx, p1, pv, p2, angleDeg, true, null);
 				}
 
 				// Draw Probes on Coronal
 				for (const pm of probeMarkers) {
 					if (pm.plane === "coronal") {
 						const p = worldMmToSlicePx(pm.worldMm, "coronal", volume);
-						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName);
+						const isSelected = selectedMeasurement?.id === pm.id;
+						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName, isSelected);
 					}
 				}
 				if (activeProbe && activeProbe.plane === "coronal" && activeTool === "probe") {
 					const p = worldMmToSlicePx(activeProbe.worldMm, "coronal", volume);
-					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName);
+					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName, true);
 				}
 
-				// Draw Mandibular Canal Nerve (IAN) on Coronal with 2.0 mm Safety Halo
-				if (nervePoints.length > 1) {
-					const pts = nervePoints;
+				// Draw Mandibular Canal Nerve (IAN) on Coronal with 3D Catmull-Rom Spline & Distance Gating
+				if (interpolatedNerve3D.length > 1) {
 					ctx.save();
-						// 2.0 mm Safety Halo Corridor (dashed amber)
-						ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
-						ctx.lineWidth = Math.max(10, 4.0 / (metadata.pixelSpacingX || 0.4));
-						ctx.lineCap = "round";
-						ctx.lineJoin = "round";
+					ctx.lineCap = "round";
+					ctx.lineJoin = "round";
+
+					for (let i = 0; i < interpolatedNerve3D.length - 1; i++) {
+						const p1 = interpolatedNerve3D[i]!;
+						const p2 = interpolatedNerve3D[i + 1]!;
+						const midY = (p1.y + p2.y) / 2.0;
+						const deltaY = Math.abs(midY - crosshairMm.y);
+						const gating = calculateNerveDistanceGating(deltaY);
+
+						if (!gating.isVisible) continue;
+
+						const p1Px = worldMmToSlicePx(p1, "coronal", volume);
+						const p2Px = worldMmToSlicePx(p2, "coronal", volume);
+
+						// 2.0 mm Safety Corridor (Dashed amber halo)
+						const haloWidthPx = Math.max(8, 4.0 / (metadata.pixelSpacingX || 0.4));
+						ctx.lineWidth = haloWidthPx;
 						ctx.setLineDash([5, 3]);
+						ctx.strokeStyle = `rgba(245, 158, 11, ${Number((gating.alpha * 0.45).toFixed(3))})`;
 						ctx.beginPath();
-						for (let i = 0; i < pts.length; i++) {
-							const p = worldMmToSlicePx(pts[i]!, "coronal", volume);
-							if (i === 0) ctx.moveTo(p.x, p.y);
-							else ctx.lineTo(p.x, p.y);
-						}
+						ctx.moveTo(p1Px.x, p1Px.y);
+						ctx.lineTo(p2Px.x, p2Px.y);
 						ctx.stroke();
-						ctx.setLineDash([]);
 
-						// Central Nerve Line (Solid gold)
-						ctx.strokeStyle = "#f59e0b";
+						// Central 3D line
 						ctx.lineWidth = 2.5;
-						ctx.beginPath();
-						for (let i = 0; i < pts.length; i++) {
-							const p = worldMmToSlicePx(pts[i]!, "coronal", volume);
-							if (i === 0) ctx.moveTo(p.x, p.y);
-							else ctx.lineTo(p.x, p.y);
+						if (gating.isDashed) {
+							ctx.setLineDash([4, 4]);
+						} else {
+							ctx.setLineDash([]);
 						}
+						ctx.strokeStyle = `rgba(245, 158, 11, ${Number(gating.alpha.toFixed(3))})`;
+						ctx.beginPath();
+						ctx.moveTo(p1Px.x, p1Px.y);
+						ctx.lineTo(p2Px.x, p2Px.y);
 						ctx.stroke();
+					}
 
-						// Waypoint nodes
-						for (const pt of pts) {
-							const p = worldMmToSlicePx(pt, "coronal", volume);
-							ctx.fillStyle = "#fbbf24";
+					// Waypoint nodes with Distance Gating and Selection Ring
+					ctx.setLineDash([]);
+					for (let i = 0; i < nervePoints.length; i++) {
+						const pt = nervePoints[i]!;
+						const deltaY = Math.abs(pt.y - crosshairMm.y);
+						const gating = calculateNerveDistanceGating(deltaY);
+
+						if (!gating.isVisible) continue;
+
+						const p = worldMmToSlicePx(pt, "coronal", volume);
+						const isSelected = selectedNerveNodeIdx === i;
+
+						if (isSelected) {
+							ctx.strokeStyle = "#38bdf8";
+							ctx.lineWidth = 2.0;
 							ctx.beginPath();
-							ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+							ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+							ctx.stroke();
+
+							ctx.fillStyle = "#38bdf8";
+							ctx.beginPath();
+							ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+							ctx.fill();
+						} else {
+							ctx.fillStyle = `rgba(251, 191, 36, ${Number(gating.alpha.toFixed(3))})`;
+							ctx.beginPath();
+							ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
 							ctx.fill();
 						}
-						ctx.restore();
 					}
+					ctx.restore();
+				}
 
 				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
 				drawObliqueCrosshairWithRotationHandles(ctx, {
@@ -1458,7 +1720,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 						// Semi-transparent compact Tooth FDI badge with pointer arrow
 						const badgeY = Math.max(2, pEntry.y - 18);
-						ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+						ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
 						ctx.strokeStyle = statusColor;
 						ctx.lineWidth = 1;
 						ctx.beginPath();
@@ -1501,7 +1763,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					if (r.plane === "sagittal") {
 						const p1 = worldMmToSlicePx(r.startMm, "sagittal", volume);
 						const p2 = worldMmToSlicePx(r.endMm, "sagittal", volume);
-						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, false);
+						const isSelected = selectedMeasurement?.id === r.id;
+						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
 					}
 				}
 				if (activeRuler && activeRuler.plane === "sagittal") {
@@ -1512,61 +1776,119 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						activeRuler.currentMm.y - activeRuler.startMm.y,
 						activeRuler.currentMm.z - activeRuler.startMm.z,
 					);
-					drawCbctMeasurementRuler(ctx, p1, p2, dist, true);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
+				}
+
+				// Draw Angles on Sagittal
+				for (const a of angles) {
+					if (a.plane === "sagittal") {
+						const p1 = worldMmToSlicePx(a.startMm, "sagittal", volume);
+						const pv = worldMmToSlicePx(a.vertexMm, "sagittal", volume);
+						const p2 = worldMmToSlicePx(a.endMm, "sagittal", volume);
+						const isSelected = selectedMeasurement?.id === a.id;
+						const activeH = hoveredMeasurementHandle?.id === a.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === a.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctAngleMeasurement(ctx, p1, pv, p2, a.angleDeg, isSelected, activeH);
+					}
+				}
+				if (activeAngle && activeAngle.plane === "sagittal") {
+					const p1 = worldMmToSlicePx(activeAngle.startMm, "sagittal", volume);
+					const pv = activeAngle.vertexMm
+						? worldMmToSlicePx(activeAngle.vertexMm, "sagittal", volume)
+						: worldMmToSlicePx(activeAngle.currentMm, "sagittal", volume);
+					const p2 = worldMmToSlicePx(activeAngle.currentMm, "sagittal", volume);
+					const angleDeg = activeAngle.vertexMm
+						? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm)
+						: 0;
+					drawCbctAngleMeasurement(ctx, p1, pv, p2, angleDeg, true, null);
 				}
 
 				// Draw Probes on Sagittal
 				for (const pm of probeMarkers) {
 					if (pm.plane === "sagittal") {
 						const p = worldMmToSlicePx(pm.worldMm, "sagittal", volume);
-						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName);
+						const isSelected = selectedMeasurement?.id === pm.id;
+						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName, isSelected);
 					}
 				}
 				if (activeProbe && activeProbe.plane === "sagittal" && activeTool === "probe") {
 					const p = worldMmToSlicePx(activeProbe.worldMm, "sagittal", volume);
-					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName);
+					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName, true);
 				}
 
-				// Draw Mandibular Canal Nerve (IAN) on Sagittal with 2.0 mm Safety Halo
-				if (nervePoints.length > 1) {
-					const pts = nervePoints;
+				// Draw Mandibular Canal Nerve (IAN) on Sagittal with 3D Catmull-Rom Spline & Distance Gating
+				if (interpolatedNerve3D.length > 1) {
 					ctx.save();
-						// 2.0 mm Safety Halo Corridor (dashed amber)
-						ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
-						ctx.lineWidth = Math.max(10, 4.0 / (metadata.pixelSpacingY || 0.4));
-						ctx.lineCap = "round";
-						ctx.lineJoin = "round";
+					ctx.lineCap = "round";
+					ctx.lineJoin = "round";
+
+					for (let i = 0; i < interpolatedNerve3D.length - 1; i++) {
+						const p1 = interpolatedNerve3D[i]!;
+						const p2 = interpolatedNerve3D[i + 1]!;
+						const midX = (p1.x + p2.x) / 2.0;
+						const deltaX = Math.abs(midX - crosshairMm.x);
+						const gating = calculateNerveDistanceGating(deltaX);
+
+						if (!gating.isVisible) continue;
+
+						const p1Px = worldMmToSlicePx(p1, "sagittal", volume);
+						const p2Px = worldMmToSlicePx(p2, "sagittal", volume);
+
+						// 2.0 mm Safety Corridor (Dashed amber halo)
+						const haloWidthPx = Math.max(8, 4.0 / (metadata.pixelSpacingY || 0.4));
+						ctx.lineWidth = haloWidthPx;
 						ctx.setLineDash([5, 3]);
+						ctx.strokeStyle = `rgba(245, 158, 11, ${Number((gating.alpha * 0.45).toFixed(3))})`;
 						ctx.beginPath();
-						for (let i = 0; i < pts.length; i++) {
-							const p = worldMmToSlicePx(pts[i]!, "sagittal", volume);
-							if (i === 0) ctx.moveTo(p.x, p.y);
-							else ctx.lineTo(p.x, p.y);
-						}
+						ctx.moveTo(p1Px.x, p1Px.y);
+						ctx.lineTo(p2Px.x, p2Px.y);
 						ctx.stroke();
-						ctx.setLineDash([]);
 
-						// Central Nerve Line (Solid gold)
-						ctx.strokeStyle = "#f59e0b";
+						// Central 3D line
 						ctx.lineWidth = 2.5;
-						ctx.beginPath();
-						for (let i = 0; i < pts.length; i++) {
-							const p = worldMmToSlicePx(pts[i]!, "sagittal", volume);
-							if (i === 0) ctx.moveTo(p.x, p.y);
-							else ctx.lineTo(p.x, p.y);
+						if (gating.isDashed) {
+							ctx.setLineDash([4, 4]);
+						} else {
+							ctx.setLineDash([]);
 						}
+						ctx.strokeStyle = `rgba(245, 158, 11, ${Number(gating.alpha.toFixed(3))})`;
+						ctx.beginPath();
+						ctx.moveTo(p1Px.x, p1Px.y);
+						ctx.lineTo(p2Px.x, p2Px.y);
 						ctx.stroke();
+					}
 
-						// Waypoint nodes
-						for (const pt of pts) {
-							const p = worldMmToSlicePx(pt, "sagittal", volume);
-							ctx.fillStyle = "#fbbf24";
+					// Waypoint nodes with Distance Gating and Selection Ring
+					ctx.setLineDash([]);
+					for (let i = 0; i < nervePoints.length; i++) {
+						const pt = nervePoints[i]!;
+						const deltaX = Math.abs(pt.x - crosshairMm.x);
+						const gating = calculateNerveDistanceGating(deltaX);
+
+						if (!gating.isVisible) continue;
+
+						const p = worldMmToSlicePx(pt, "sagittal", volume);
+						const isSelected = selectedNerveNodeIdx === i;
+
+						if (isSelected) {
+							ctx.strokeStyle = "#38bdf8";
+							ctx.lineWidth = 2.0;
 							ctx.beginPath();
-							ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+							ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+							ctx.stroke();
+
+							ctx.fillStyle = "#38bdf8";
+							ctx.beginPath();
+							ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+							ctx.fill();
+						} else {
+							ctx.fillStyle = `rgba(251, 191, 36, ${Number(gating.alpha.toFixed(3))})`;
+							ctx.beginPath();
+							ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
 							ctx.fill();
 						}
-						ctx.restore();
 					}
+					ctx.restore();
+				}
 
 				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
 				drawObliqueCrosshairWithRotationHandles(ctx, {
@@ -1584,7 +1906,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.restore();
 			}
 		}
-	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, probeMarkers, activeProbe, activeTool, maximizedViewport, viewLayout]);
+	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, angles, activeAngle, selectedMeasurement, draggingMeasurementHandle, hoveredMeasurementHandle, probeMarkers, activeProbe, activeTool, maximizedViewport, viewLayout, nervePoints, interpolatedNerve3D, selectedNerveNodeIdx, nerveTotalLengthMm]);
 
 	// ─── RECONSTRUCT PANORAMIC & CROSS SECTIONS ───────────────────────────────
 	useEffect(() => {
@@ -1692,7 +2014,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.stroke();
 			ctx.setLineDash([]);
 
-			ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
 			ctx.beginPath();
 			ctx.roundRect(tm.xPx - 10, 2, 20, 14, 3);
 			ctx.fill();
@@ -1719,7 +2041,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.stroke();
 
 				// Active slice top/bottom badge (Dark matte with subtle yellow border & text)
-				ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+				ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
 				ctx.beginPath();
 				ctx.roundRect(Math.max(2, tick.panoX - 16), canvas.height - 18, 32, 16, 4);
 				ctx.fill();
@@ -1818,7 +2140,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.stroke();
 
 			// Tooth FDI Tag above implant
-			ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
 			ctx.strokeStyle = statusColor;
 			ctx.lineWidth = 1;
 			ctx.beginPath();
@@ -2024,7 +2346,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			// Clearance label badge along distance vector
 			const midLineX = (apexPxX + canalCenterX) / 2;
 			const midLineY = (apexPxY + canalCenterY) / 2;
-			ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
 			ctx.strokeStyle = statusStroke;
 			ctx.lineWidth = 1;
 			ctx.beginPath();
@@ -2200,22 +2522,56 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const { x, y, normX, normY } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
 		const pointerPx = { x, y };
 
-		const vox = worldMmToVoxel(crosshairMm, volume);
-		const zPx = volume.dimensions.depth - 1 - vox.z;
-		const centerPx = plane === "axial"
-			? { x: vox.x, y: vox.y }
-			: plane === "coronal"
-			? { x: vox.x, y: zPx }
-			: { x: vox.y, y: zPx };
+		// CAD Handle Hit Testing: Check if user clicked on any Ruler or Angle handle on this plane
+		const projectedRulers = rulers
+			.filter((r) => r.plane === plane)
+			.map((r) => ({
+				id: r.id,
+				plane: r.plane,
+				startPx: worldMmToSlicePx(r.startMm, plane, volume),
+				endPx: worldMmToSlicePx(r.endMm, plane, volume),
+			}));
 
-		const rotDeg = plane === "axial"
-			? obliqueAngles.axialAngleDeg
-			: plane === "coronal"
-			? obliqueAngles.coronalTiltDeg
-			: obliqueAngles.sagittalTiltDeg;
+		const projectedAngles = angles
+			.filter((a) => a.plane === plane)
+			.map((a) => ({
+				id: a.id,
+				plane: a.plane,
+				startPx: worldMmToSlicePx(a.startMm, plane, volume),
+				vertexPx: worldMmToSlicePx(a.vertexMm, plane, volume),
+				endPx: worldMmToSlicePx(a.endMm, plane, volume),
+			}));
+
+		const handleHit = hitTestMeasurementHandle(pointerPx, projectedRulers, projectedAngles, 10);
+		if (handleHit) {
+			setDraggingMeasurementHandle({
+				type: handleHit.type,
+				id: handleHit.id,
+				handleIndex: handleHit.handleIndex,
+				plane,
+			});
+			setSelectedMeasurement({
+				type: handleHit.type,
+				id: handleHit.id,
+			});
+			return;
+		}
 
 		// 1. Shift + Left Click or Rotate tool -> In-plane Oblique Rotation
 		if (e.shiftKey || activeTool === "rotate") {
+			const vox = worldMmToVoxel(crosshairMm, volume);
+			const zPx = volume.dimensions.depth - 1 - vox.z;
+			const centerPx = plane === "axial"
+				? { x: vox.x, y: vox.y }
+				: plane === "coronal"
+				? { x: vox.x, y: zPx }
+				: { x: vox.y, y: zPx };
+			const rotDeg = plane === "axial"
+				? obliqueAngles.axialAngleDeg
+				: plane === "coronal"
+				? obliqueAngles.coronalTiltDeg
+				: obliqueAngles.sagittalTiltDeg;
+
 			setIsShiftRotating({
 				plane,
 				centerPx,
@@ -2275,7 +2631,62 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				volume,
 			);
 			setActiveRuler({ plane, startMm, currentMm: startMm });
+			setSelectedMeasurement(null);
 			return;
+		}
+
+		// 1e-angle. Angle / Protractor CAD Tool (3-click creation: Start -> Vertex -> End)
+		if (activeTool === "angle") {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+
+			if (!activeAngle) {
+				// Step 1: Place first arm endpoint
+				setActiveAngle({ plane, step: 1, startMm: pointMm, currentMm: pointMm });
+				setSelectedMeasurement(null);
+				showToast("Угломер: укажите вершину угла (точка перегиба)", "info");
+				return;
+			}
+
+			if (activeAngle.plane === plane && activeAngle.step === 1) {
+				// Step 2: Fix vertex point
+				setActiveAngle({
+					plane,
+					step: 2,
+					startMm: activeAngle.startMm,
+					vertexMm: pointMm,
+					currentMm: pointMm,
+				});
+				showToast("Угломер: укажите конец второго плеча угла", "info");
+				return;
+			}
+
+			if (activeAngle.plane === plane && activeAngle.step === 2) {
+				// Step 3: Complete angle measurement
+				const vertex = activeAngle.vertexMm ?? pointMm;
+				const angleDeg = calculateAngleBetween3Points3D(activeAngle.startMm, vertex, pointMm);
+				const newAngle: CbctAngleMeasurement = {
+					id: `angle-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+					plane,
+					startMm: activeAngle.startMm,
+					vertexMm: vertex,
+					endMm: pointMm,
+					angleDeg,
+				};
+				setAngles((prev) => [...prev, newAngle]);
+				setSelectedMeasurement({ type: "angle", id: newAngle.id });
+				setActiveAngle(null);
+				showToast(`Угол зафиксирован: ${angleDeg.toFixed(1)}°`, "success");
+				return;
+			}
 		}
 
 		// 1f. HU Tissue Density Probe Tool
@@ -2308,6 +2719,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
+		// Check hit on existing nerve nodes (allows selecting & dragging in 'nerve' or 'crosshair' tools)
+		if (nervePoints.length > 0 && (activeTool === "nerve" || activeTool === "crosshair")) {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			const hitIdx = hitTestNerveNode3D(pointMm, nervePoints, 3.5);
+			if (hitIdx >= 0) {
+				setSelectedNerveNodeIdx(hitIdx);
+				setIsDraggingNerveNode(hitIdx);
+				showToast(`Выбран 3D-узел нерва #${hitIdx + 1} (перетащите для коррекции трассы)`, "info");
+				return;
+			}
+		}
+
 		// 1g. Mandibular Canal / Nerve Tracer Tool (IAN with 2.0 mm Safety Margin)
 		if (activeTool === "nerve") {
 			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
@@ -2321,11 +2753,25 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				volume,
 			);
 			setNervePoints((prev) => [...prev, pointMm]);
-			showToast("Добавлена точка нерва IAN (буфер безопасности 2.0 мм)", "success");
+			setSelectedNerveNodeIdx(nervePoints.length);
+			showToast(`Добавлен 3D-узел нерва #${nervePoints.length + 1} (Z = ${pointMm.z.toFixed(1)} мм)`, "success");
 			return;
 		}
 
 		// 2. Click on rotation handle knobs
+		const vox = worldMmToVoxel(crosshairMm, volume);
+		const zPx = volume.dimensions.depth - 1 - vox.z;
+		const centerPx = plane === "axial"
+			? { x: vox.x, y: vox.y }
+			: plane === "coronal"
+			? { x: vox.x, y: zPx }
+			: { x: vox.y, y: zPx };
+		const rotDeg = plane === "axial"
+			? obliqueAngles.axialAngleDeg
+			: plane === "coronal"
+			? obliqueAngles.coronalTiltDeg
+			: obliqueAngles.sagittalTiltDeg;
+
 		const handles = getRotationHandles(plane, canvas.width, canvas.height, centerPx, 65, rotDeg);
 		const hitHandle = hitTestRotationHandle(pointerPx, handles, 14);
 		if (hitHandle) {
@@ -2353,13 +2799,74 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const vz = Math.round((1 - normY) * (dims.depth - 1));
 			return voxelToWorldMm({ x: v.x, y: vy, z: vz }, volume);
 		});
-	}, [volume, crosshairMm, obliqueAngles, activeTool, windowWidth, windowLevel, transforms]);
+	}, [volume, crosshairMm, obliqueAngles, activeTool, windowWidth, windowLevel, transforms, nervePoints, rulers, angles, activeAngle]);
 
 	const handleCanvasMouseMove = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
 		const canvas = e.currentTarget;
 		const { x, y, normX, normY } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
 		const pointerPx = { x, y };
+
+		// 0-cad. Measurement Handle Drag
+		if (draggingMeasurementHandle && draggingMeasurementHandle.plane === plane) {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const currentMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			if (draggingMeasurementHandle.type === "ruler") {
+				setRulers((prev) =>
+					prev.map((r) => {
+						if (r.id !== draggingMeasurementHandle.id) return r;
+						const newStart = draggingMeasurementHandle.handleIndex === 0 ? currentMm : r.startMm;
+						const newEnd = draggingMeasurementHandle.handleIndex === 1 ? currentMm : r.endMm;
+						const newDist = Math.hypot(newEnd.x - newStart.x, newEnd.y - newStart.y, newEnd.z - newStart.z);
+						return { ...r, startMm: newStart, endMm: newEnd, distanceMm: Number(newDist.toFixed(1)) };
+					}),
+				);
+				return;
+			}
+			if (draggingMeasurementHandle.type === "angle") {
+				setAngles((prev) =>
+					prev.map((a) => {
+						if (a.id !== draggingMeasurementHandle.id) return a;
+						const newStart = draggingMeasurementHandle.handleIndex === 0 ? currentMm : a.startMm;
+						const newVertex = draggingMeasurementHandle.handleIndex === 1 ? currentMm : a.vertexMm;
+						const newEnd = draggingMeasurementHandle.handleIndex === 2 ? currentMm : a.endMm;
+						const newAngleDeg = calculateAngleBetween3Points3D(newStart, newVertex, newEnd);
+						return { ...a, startMm: newStart, vertexMm: newVertex, endMm: newEnd, angleDeg: newAngleDeg };
+					}),
+				);
+				return;
+			}
+		}
+
+		// 0. Nerve Node Drag
+		if (isDraggingNerveNode !== null && isDraggingNerveNode >= 0 && isDraggingNerveNode < nervePoints.length) {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			setNervePoints((prev) => {
+				const next = [...prev];
+				if (isDraggingNerveNode >= 0 && isDraggingNerveNode < next.length) {
+					next[isDraggingNerveNode] = pointMm;
+				}
+				return next;
+			});
+			return;
+		}
 
 		// 0a. Window/Level Drag
 		if (isDraggingWL) {
@@ -2398,6 +2905,22 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				volume,
 			);
 			setActiveRuler((prev) => (prev ? { ...prev, currentMm } : null));
+			return;
+		}
+
+		// 0c-angle. Active Angle Drawing
+		if (activeAngle && activeAngle.plane === plane) {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const currentMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			setActiveAngle((prev) => (prev ? { ...prev, currentMm } : null));
 			return;
 		}
 
@@ -2461,7 +2984,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		}
 
 		// 4. Hover Detection for Rotation Handles
-		if (!isShiftRotating && !activeRotationHandle && !isDraggingCrosshair) {
+		if (!isShiftRotating && !activeRotationHandle && !isDraggingCrosshair && isDraggingNerveNode === null && !draggingMeasurementHandle) {
 			const vox = worldMmToVoxel(crosshairMm, volume);
 			const zPx = volume.dimensions.depth - 1 - vox.z;
 			const centerPx = plane === "axial"
@@ -2483,10 +3006,43 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			} else if (hoveredHandle?.plane === plane) {
 				setHoveredHandle(null);
 			}
+
+			// 5. Hover Detection for Measurement Handles
+			const projectedRulers = rulers
+				.filter((r) => r.plane === plane)
+				.map((r) => ({
+					id: r.id,
+					plane: r.plane,
+					startPx: worldMmToSlicePx(r.startMm, plane, volume),
+					endPx: worldMmToSlicePx(r.endMm, plane, volume),
+				}));
+			const projectedAngles = angles
+				.filter((a) => a.plane === plane)
+				.map((a) => ({
+					id: a.id,
+					plane: a.plane,
+					startPx: worldMmToSlicePx(a.startMm, plane, volume),
+					vertexPx: worldMmToSlicePx(a.vertexMm, plane, volume),
+					endPx: worldMmToSlicePx(a.endMm, plane, volume),
+				}));
+			const mHandleHit = hitTestMeasurementHandle(pointerPx, projectedRulers, projectedAngles, 10);
+			if (mHandleHit) {
+				setHoveredMeasurementHandle({
+					type: mHandleHit.type,
+					id: mHandleHit.id,
+					handleIndex: mHandleHit.handleIndex,
+					plane,
+				});
+			} else if (hoveredMeasurementHandle?.plane === plane) {
+				setHoveredMeasurementHandle(null);
+			}
 		}
-	}, [volume, isDraggingWL, isPanning, isShiftRotating, activeRotationHandle, isDraggingCrosshair, crosshairMm, obliqueAngles, hoveredHandle]);
+	}, [volume, isDraggingWL, isPanning, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, draggingMeasurementHandle, activeAngle, activeRuler, crosshairMm, obliqueAngles, hoveredHandle, hoveredMeasurementHandle, transforms, nervePoints, rulers, angles]);
 
 	const handleCanvasMouseUp = useCallback(() => {
+		if (draggingMeasurementHandle) {
+			setDraggingMeasurementHandle(null);
+		}
 		if (activeRuler) {
 			const dist = Math.hypot(
 				activeRuler.currentMm.x - activeRuler.startMm.x,
@@ -2494,16 +3050,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				activeRuler.currentMm.z - activeRuler.startMm.z,
 			);
 			if (dist > 0.3) {
-				setRulers((prev) => [
-					...prev,
-					{
-						id: `ruler-${Date.now()}`,
-						plane: activeRuler.plane,
-						startMm: activeRuler.startMm,
-						endMm: activeRuler.currentMm,
-						distanceMm: dist,
-					},
-				]);
+				const newRuler: CbctMeasurementRuler = {
+					id: `ruler-${Date.now()}`,
+					plane: activeRuler.plane,
+					startMm: activeRuler.startMm,
+					endMm: activeRuler.currentMm,
+					distanceMm: Number(dist.toFixed(1)),
+				};
+				setRulers((prev) => [...prev, newRuler]);
+				setSelectedMeasurement({ type: "ruler", id: newRuler.id });
 			}
 			setActiveRuler(null);
 		}
@@ -2512,7 +3067,46 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setIsShiftRotating(null);
 		setIsPanning(null);
 		setIsDraggingWL(null);
-	}, [activeRuler]);
+		setIsDraggingNerveNode(null);
+	}, [activeRuler, draggingMeasurementHandle]);
+
+	// ─── KEYBOARD SHORTCUTS FOR NERVE TRACE & NODE EDITING ───────────────────
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (
+				target &&
+				(target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.tagName === "SELECT" ||
+					target.isContentEditable)
+			) {
+				return;
+			}
+
+			if (e.key === "Backspace" || e.key === "Delete") {
+				if (selectedNerveNodeIdx !== null && selectedNerveNodeIdx >= 0 && selectedNerveNodeIdx < nervePoints.length) {
+					e.preventDefault();
+					setNervePoints((prev) => prev.filter((_, idx) => idx !== selectedNerveNodeIdx));
+					setSelectedNerveNodeIdx(null);
+					showToast("Удален выбранный 3D-узел нерва", "info");
+				} else if (nervePoints.length > 0 && activeTool === "nerve") {
+					e.preventDefault();
+					setNervePoints((prev) => prev.slice(0, -1));
+					showToast("Удалена последняя точка нерва (Backspace)", "info");
+				}
+			} else if (e.key === "Escape") {
+				if (selectedNerveNodeIdx !== null) {
+					setSelectedNerveNodeIdx(null);
+				}
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, selectedNerveNodeIdx, nervePoints.length, activeTool]);
 
 	const handleCanvasDoubleClick = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
@@ -2534,27 +3128,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, plane));
 			return;
 		}
-
-		const dims = volume.dimensions;
-		setCrosshairMm((prev) => {
-			const v = worldMmToVoxel(prev, volume);
-			if (plane === "axial") {
-				const vx = Math.round(normX * (dims.width - 1));
-				const vy = Math.round(normY * (dims.height - 1));
-				return voxelToWorldMm({ x: vx, y: vy, z: v.z }, volume);
-			}
-			if (plane === "coronal") {
-				const vx = Math.round(normX * (dims.width - 1));
-				const vz = Math.round((1 - normY) * (dims.depth - 1));
-				return voxelToWorldMm({ x: vx, y: v.y, z: vz }, volume);
-			}
-			const vy = Math.round(normX * (dims.height - 1));
-			const vz = Math.round((1 - normY) * (dims.depth - 1));
-			return voxelToWorldMm({ x: v.x, y: vy, z: vz }, volume);
-		});
-	}, [volume, crosshairMm, obliqueAngles]);
+	}, [volume, crosshairMm]);
 
 	const getCanvasCursor = useCallback((plane: MprPlane) => {
+		if (draggingMeasurementHandle) return "grabbing";
+		if (hoveredMeasurementHandle?.plane === plane) return "grab";
 		if (isShiftRotating?.plane === plane || activeRotationHandle?.plane === plane) return "grabbing";
 		if (hoveredHandle?.plane === plane) return "grab";
 		if (activeTool === "pan") return "grab";
@@ -2562,9 +3140,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (activeTool === "window_level") return "col-resize";
 		if (activeTool === "rotate") return "crosshair";
 		if (activeTool === "ruler") return "crosshair";
+		if (activeTool === "angle") return "crosshair";
 		if (activeTool === "probe") return "help";
 		return "crosshair";
-	}, [isShiftRotating, activeRotationHandle, hoveredHandle, activeTool]);
+	}, [isShiftRotating, activeRotationHandle, hoveredHandle, activeTool, draggingMeasurementHandle, hoveredMeasurementHandle]);
 
 	// Mouse Wheel -> Cursor-anchored Zoom (0.5x - 5.0x) or Shift+Wheel for Slices
 	const handleCanvasWheel = useCallback((viewport: CbctViewportType, e: React.WheelEvent<HTMLCanvasElement>) => {
@@ -2605,9 +3184,36 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		}));
 	}, [volume, crossSections.length]);
 
-	// ─── 1-CLICK CLINICAL EXPORT TO FORM 043/U ─────────────────────────────────
-	const handleExportForm043Diary = useCallback(() => {
+	// ─── 1-CLICK CLINICAL EXPORT TO FORM 043/U & EMR SNAPSHOT ──────────────────
+	const handleExportToEmr = useCallback(async () => {
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
+		const pixelSpacing = volume?.spacingMm.x ?? 0.4;
+
+		// Clean viewport snapshot
+		const activeCanvas =
+			activeViewport === "cross_section"
+				? crossSectionCanvasRef.current
+				: activeViewport === "panoramic"
+					? panoCanvasRef.current
+					: activeViewport === "coronal"
+						? coronalCanvasRef.current
+						: activeViewport === "sagittal"
+							? sagittalCanvasRef.current
+							: axialCanvasRef.current;
+
+		if (activeCanvas) {
+			await exportCleanViewportSnapshot(
+				activeCanvas,
+				`Снимок КЛКТ (FDI #${targetTooth})`,
+				pixelSpacing,
+				{
+					patientName: patientDisplayName,
+					studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
+					targetToothFdi: targetTooth,
+				},
+			);
+		}
+
 		const diaryText = generateForm043CbctDiary({
 			toothFdi: targetTooth,
 			implantPose: currentImplantPose,
@@ -2620,8 +3226,139 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (onApplyToDiary043) {
 			onApplyToDiary043(diaryText);
 		}
-		showToast(`Протокол КЛКТ-планирования для зуба FDI ${targetTooth} перенесен в Форму 043/у.`, "success");
-	}, [activeCrossSection, currentImplantPose, currentCanal, currentEnvelope, huSamplingResult, onApplyToDiary043]);
+		showToast(`📷 Снимок и протокол КЛКТ-планирования (FDI #${targetTooth}) перенесены в карту 043/у`, "success");
+	}, [
+		activeCrossSection,
+		activeViewport,
+		volume,
+		patientDisplayName,
+		study,
+		currentImplantPose,
+		currentCanal,
+		currentEnvelope,
+		huSamplingResult,
+		onApplyToDiary043,
+	]);
+
+	const handleExportForm043Diary = handleExportToEmr;
+
+	// ─── 1-CLICK A4 PRINTABLE PDF PLANNING PROTOCOL EXPORT ────────────────────
+	const handleExportPdfReport = useCallback(async () => {
+		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
+		const pixelSpacing = volume?.spacingMm.x ?? 0.4;
+
+		// Capture clean snapshots of all available viewports
+		const axialSnap = axialCanvasRef.current
+			? await exportCleanViewportSnapshot(
+					axialCanvasRef.current,
+					`Аксиальный срез (Z = ${crosshairMm.z.toFixed(1)} мм)`,
+					pixelSpacing,
+					{
+						patientName: patientDisplayName,
+						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
+						targetToothFdi: targetTooth,
+					},
+				)
+			: undefined;
+
+		const panoSnap = panoCanvasRef.current
+			? await exportCleanViewportSnapshot(
+					panoCanvasRef.current,
+					"Панорамная реконструкция (ОПТГ)",
+					pixelSpacing,
+					{
+						patientName: patientDisplayName,
+						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
+						targetToothFdi: targetTooth,
+					},
+				)
+			: undefined;
+
+		const crossSectionSnap = crossSectionCanvasRef.current
+			? await exportCleanViewportSnapshot(
+					crossSectionCanvasRef.current,
+					`Кросс-секция ложа FDI #${targetTooth}`,
+					pixelSpacing,
+					{
+						patientName: patientDisplayName,
+						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
+						targetToothFdi: targetTooth,
+					},
+				)
+			: undefined;
+
+		const sagittalSnap = sagittalCanvasRef.current
+			? await exportCleanViewportSnapshot(
+					sagittalCanvasRef.current,
+					`Сагиттальный срез (X = ${crosshairMm.x.toFixed(1)} мм)`,
+					pixelSpacing,
+					{
+						patientName: patientDisplayName,
+						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
+						targetToothFdi: targetTooth,
+					},
+				)
+			: coronalCanvasRef.current
+				? await exportCleanViewportSnapshot(
+						coronalCanvasRef.current,
+						`Фронтальный срез (Y = ${crosshairMm.y.toFixed(1)} мм)`,
+						pixelSpacing,
+						{
+							patientName: patientDisplayName,
+							studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
+							targetToothFdi: targetTooth,
+						},
+					)
+				: undefined;
+
+		const diaryText = generateForm043CbctDiary({
+			toothFdi: targetTooth,
+			implantPose: currentImplantPose,
+			canal: currentCanal,
+			envelope: currentEnvelope,
+			huSampling: huSamplingResult,
+		});
+
+		const reportData = buildCbctReportData({
+			patientName: patientDisplayName || study?.patientName || "Пациент КЛКТ",
+			doctorName: "Врач-стоматолог-хирург-имплантолог",
+			studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
+			targetToothFdi: targetTooth,
+			implantPose: currentImplantPose,
+			mischResult: mischClassification,
+			huSampling: huSamplingResult,
+			containment: boneContainmentResult,
+			nerveSafety: nerveAuditResult,
+			snapshots: {
+				axial: axialSnap ? { title: "Аксиальный срез (Z)", dataUrl: axialSnap } : undefined,
+				panoramic: panoSnap ? { title: "Панорамная реконструкция (ОПТГ)", dataUrl: panoSnap } : undefined,
+				crossSection: crossSectionSnap
+					? { title: `Кросс-секция ложа FDI #${targetTooth}`, dataUrl: crossSectionSnap }
+					: undefined,
+				sagittal: sagittalSnap ? { title: "Сагиттальный срез", dataUrl: sagittalSnap } : undefined,
+			},
+			diary043Text: diaryText,
+		});
+
+		openCbctReportPrintWindow(reportData);
+		showToast(
+			`📄 Протокол КЛКТ-планирования для зуба FDI #${targetTooth} сформирован для печати / PDF (A4)`,
+			"success",
+		);
+	}, [
+		activeCrossSection,
+		volume,
+		crosshairMm,
+		patientDisplayName,
+		study,
+		currentImplantPose,
+		currentCanal,
+		currentEnvelope,
+		huSamplingResult,
+		mischClassification,
+		boneContainmentResult,
+		nerveAuditResult,
+	]);
 
 	if (!isOpen) return null;
 
@@ -2633,7 +3370,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "axial"
 					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
-					: "border border-[#242a35]"
+					: "border border-zinc-800"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-axial"
 		>
@@ -2668,7 +3405,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							e.stopPropagation();
 							handleAutoDetectArch();
 						}}
-						className="px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 bg-[#14171e]/90 hover:bg-[#1e2430] text-purple-300 hover:text-purple-200 border border-purple-500/50 shadow-xs transition-all cursor-pointer"
+						className="px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 bg-[#09090b]/90 hover:bg-zinc-900 text-purple-300 hover:text-purple-200 border border-purple-500/50 shadow-xs transition-all cursor-pointer"
 						title="Авто-поиск зубной дуги ОПТГ по плотности эмали"
 						data-testid="cbct-btn-auto-arch"
 						id="cbct-auto-arch-btn"
@@ -2684,7 +3421,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						className={`px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 border transition-all ${
 							showDentalArch
 								? "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs"
-								: "bg-[#14171e]/80 text-slate-400 hover:text-slate-200 border-[#242a35] hover:border-slate-500/40"
+								: "bg-[#09090b]/80 text-zinc-400 hover:text-zinc-200 border-zinc-800 hover:border-zinc-700"
 						}`}
 						title="Отображение зубной дуги ОПТГ"
 						data-testid="cbct-toggle-dental-arch"
@@ -2702,8 +3439,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			onPointerDownCapture={() => setActiveViewport("coronal")}
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "coronal"
-					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
-					: "border border-[#242a35]"
+					? "ring-1 ring-orange-500/50 border border-orange-500/80 shadow-orange-950/30"
+					: "border border-zinc-800"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-coronal"
 		>
@@ -2740,8 +3477,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			onPointerDownCapture={() => setActiveViewport("sagittal")}
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "sagittal"
-					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
-					: "border border-[#242a35]"
+					? "ring-1 ring-emerald-500/50 border border-emerald-500/80 shadow-emerald-950/30"
+					: "border border-zinc-800"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-sagittal"
 		>
@@ -2778,8 +3515,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			onPointerDownCapture={() => setActiveViewport("panoramic")}
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "panoramic"
-					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
-					: "border border-[#242a35]"
+					? "ring-1 ring-purple-500/50 border border-purple-500/80 shadow-purple-950/30"
+					: "border border-zinc-800"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-panoramic"
 		>
@@ -2814,8 +3551,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			onPointerDownCapture={() => setActiveViewport("cross_section")}
 			className={`relative bg-black rounded-md overflow-hidden transition-all flex-1 flex flex-col min-h-0 w-full h-full ${
 				activeViewport === "cross_section"
-					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
-					: "border border-[#242a35]"
+					? "ring-1 ring-yellow-500/50 border border-yellow-500/80 shadow-yellow-950/30"
+					: "border border-zinc-800"
 			}`}
 			data-testid="cbct-viewport-container-cross-section"
 		>
@@ -2852,8 +3589,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			aria-modal="true"
 			aria-labelledby={`cbct-studio-title-${modalId}`}
 			data-theme="dark"
-			className="fixed inset-0 z-[100] flex flex-col bg-[#0c0e12] text-[#e2e8f0] font-sans select-none overflow-hidden w-full max-w-full h-full min-w-0"
-			style={{ color: "#e2e8f0", backgroundColor: "#0c0e12" }}
+			className="fixed inset-0 z-[100] flex flex-col bg-[#09090b] text-zinc-100 font-sans select-none overflow-hidden w-full max-w-full h-full min-w-0"
+			style={{ color: "#f4f4f5", backgroundColor: "#09090b" }}
 		>
 			{/* Real DICOM Ingestion Controls (Hidden file inputs for Left Tool Dock) */}
 			<input
@@ -2878,35 +3615,35 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			{/* ─── HEADER BAR (TIER 1 CLEAN STATUS & WORKSPACE SWITCHER — TRUE DARK MANDATE) ─── */}
 			<header
 				data-theme="dark"
-				className="min-h-14 px-2 sm:px-4 py-1.5 bg-[#14171e] border-b border-[#242a35] flex items-center justify-between shrink-0 gap-2 sm:gap-3 text-slate-200 overflow-x-auto min-w-0 w-full max-w-full"
-				style={{ color: "#e2e8f0", backgroundColor: "#14171e" }}
+				className="min-h-14 px-2 sm:px-4 py-1.5 bg-[#09090b] border-b border-zinc-800 flex items-center justify-between shrink-0 gap-2 sm:gap-3 text-zinc-200 overflow-x-auto min-w-0 w-full max-w-full"
+				style={{ color: "#f4f4f5", backgroundColor: "#09090b" }}
 			>
 				{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
 				<div className="flex items-center gap-2.5 shrink-0 min-w-max">
-					<div className="w-8 h-8 rounded-lg bg-[#1e2430] border border-[#242a35] flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
+					<div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
 						<Box className="w-4 h-4" />
 					</div>
 					<div className="flex flex-col min-w-0">
 						<div className="flex items-center gap-2">
 							<h2
 								id={`cbct-studio-title-${modalId}`}
-								className="text-xs font-bold text-[#f1f5f9] tracking-wide flex items-center gap-1.5 whitespace-nowrap"
-								style={{ color: "#f1f5f9" }}
+								className="text-xs font-bold text-zinc-100 tracking-wide flex items-center gap-1.5 whitespace-nowrap"
+								style={{ color: "#f4f4f5" }}
 							>
 								3D CBCT Studio
 								<span
-									className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e2430] text-[#cbd5e1] font-mono border border-[#242a35]"
-									style={{ color: "#cbd5e1" }}
+									className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-300 font-mono border border-zinc-800"
+									style={{ color: "#d4d4d8" }}
 								>
 									Romexis 6 / Ez3D-i
 								</span>
 							</h2>
 						</div>
 						<p
-							className="text-[10px] text-[#94a3b8] whitespace-nowrap"
+							className="text-[10px] text-zinc-400 whitespace-nowrap"
 							data-testid="cbct-patient-metadata-badge"
 							id="cbct-patient-metadata-badge"
-							style={{ color: "#94a3b8" }}
+							style={{ color: "#a1a1aa" }}
 						>
 							{patientDisplayName || "Барабаш С.В."} • {loadedSliceCount > 0 ? loadedSliceCount : 400} срезов • {volume ? volume.spacingMm.x.toFixed(1) : "0.2"} мм изотропный воксель
 						</p>
@@ -2914,14 +3651,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				</div>
 
 				{/* Center: 4 Clean Workspace Modes (Romexis Segmented Switcher) */}
-				<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
+				<div className="flex items-center bg-[#000000] p-1 rounded-lg border border-zinc-800 shrink-0 gap-1">
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("diagnostic")}
 						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 							studioMode === "diagnostic"
-								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs"
-								: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
+								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
 						}`}
 						data-testid="cbct-mode-diagnostic-btn"
 						title="Режим общей 3D диагностики (панель свернута)"
@@ -2934,8 +3671,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						onClick={() => handleSelectStudioMode("implant")}
 						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 							studioMode === "implant"
-								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs"
-								: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
+								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
 						}`}
 						data-testid="cbct-mode-implant-btn"
 						title="Планирование имплантации и контроль нерва"
@@ -2948,8 +3685,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						onClick={() => handleSelectStudioMode("endo")}
 						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 							studioMode === "endo"
-								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs"
-								: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
+								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
 						}`}
 						data-testid="cbct-mode-endo-btn"
 						title="Эндодонтия: корневые каналы и апексы"
@@ -2962,8 +3699,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						onClick={() => handleSelectStudioMode("tmj")}
 						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 							studioMode === "tmj"
-								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs"
-								: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
+								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
 						}`}
 						data-testid="cbct-mode-tmj-btn"
 						title="ВНЧС: суставные головки и ямки"
@@ -2979,20 +3716,44 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={handleAutoDetectArch}
-						className="px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-[#1e2430] hover:bg-[#252c3b] text-purple-300 hover:text-purple-200 border border-purple-500/50 hover:border-purple-400 shadow-xs transition-colors cursor-pointer"
+						className="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-purple-300 hover:text-purple-200 border border-purple-500/50 hover:border-purple-400 shadow-xs transition-colors cursor-pointer"
 						data-testid="cbct-btn-auto-arch"
 						title="Авто-поиск зубной дуги ОПТГ по плотности эмали"
 					>
 						<span>⚙️ Авто-дуга</span>
 					</button>
 
+					{/* 1-Click Clinical EMR Snapshot Export Button */}
+					<button
+						type="button"
+						onClick={handleExportToEmr}
+						className="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 hover:text-cyan-300 border border-cyan-500/50 hover:border-cyan-400 shadow-xs transition-colors cursor-pointer"
+						data-testid="cbct-btn-export-emr"
+						title="Сохранить снимок и протокол планирования в карту 043/у"
+					>
+						<Camera className="w-3.5 h-3.5" />
+						<span>📷 В ЭМК</span>
+					</button>
+
+					{/* 1-Click Printable PDF Report Export Button */}
+					<button
+						type="button"
+						onClick={handleExportPdfReport}
+						className="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 shadow-xs transition-colors cursor-pointer"
+						data-testid="cbct-btn-export-pdf"
+						title="Сформировать печатный A4 протокол планирования / PDF"
+					>
+						<FileText className="w-3.5 h-3.5" />
+						<span>📄 PDF Отчет</span>
+					</button>
+
 					{/* Layout Switcher */}
-					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
+					<div className="flex items-center bg-[#000000] p-1 rounded-lg border border-zinc-800 shrink-0 gap-1">
 						{maximizedViewport !== null ? (
 							<button
 								type="button"
 								onClick={() => setMaximizedViewport(null)}
-								className="px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 bg-[#1e2430] hover:bg-[#252c3b] text-cyan-400 border border-cyan-500/60 shadow-xs transition-colors"
+								className="px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs transition-colors"
 								data-testid="cbct-restore-grid-btn"
 								title="Восстановить сетку окон"
 							>
@@ -3006,8 +3767,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									onClick={() => setViewLayout("quad_view")}
 									className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 										viewLayout === "quad_view"
-											? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs"
-											: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+											? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
+											: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
 									}`}
 									data-testid="cbct-layout-quad-btn"
 									title="Сетка 4 окна (2x2)"
@@ -3020,8 +3781,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									onClick={() => setViewLayout("layout_1_plus_3")}
 									className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 										viewLayout === "layout_1_plus_3"
-											? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs"
-											: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+											? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
+											: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
 									}`}
 									data-testid="cbct-layout-1plus3-btn"
 									title="Раскладка 1+3 (Доминантный аксиал)"
@@ -3039,27 +3800,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						onClick={() => setIsSidebarOpen((prev) => !prev)}
 						className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors border shadow-xs ${
 							isSidebarOpen
-								? "bg-[#1e2430] text-cyan-400 border-cyan-500/60"
-								: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:text-[#e2e8f0] hover:bg-[#1e2430]"
+								? "bg-zinc-900 text-cyan-400 border-cyan-500/60"
+								: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900"
 						}`}
 						title={isSidebarOpen ? "Скрыть боковую панель" : "Показать боковую панель"}
 						data-testid="cbct-toggle-sidebar-btn"
 					>
-						<span className={`w-2 h-2 rounded-full transition-colors ${isSidebarOpen ? "bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" : "bg-[#64748b]"}`} />
+						<span className={`w-2 h-2 rounded-full transition-colors ${isSidebarOpen ? "bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" : "bg-zinc-500"}`} />
 						<Columns2 className="w-4 h-4" />
 						<span>Панель</span>
 					</button>
 
 					{/* Window Control Actions: Maximize & Close with comfortable spacing */}
-					<div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[#242a35] shrink-0">
+					<div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-zinc-800 shrink-0">
 						{/* Modal Maximize / Fullscreen Button */}
 						<button
 							type="button"
 							onClick={handleToggleFullscreenModal}
 							className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-md flex items-center justify-center border transition-colors ${
 								isFullscreen
-									? "bg-[#1e2430] text-cyan-400 border-cyan-500/60 shadow-xs"
-									: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border-[#242a35]"
+									? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
+									: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border-zinc-800"
 							}`}
 							title={isFullscreen ? "Свернуть из полноэкранного режима" : "Развернуть на весь экран"}
 							aria-label="Полноэкранный режим"
@@ -3072,7 +3833,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-md bg-[#14171e] hover:bg-[#1e2430] text-[#94a3b8] hover:text-white flex items-center justify-center border border-[#242a35] transition-colors"
+							className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center border border-zinc-800 transition-colors"
 							aria-label="Закрыть КЛКТ студию"
 							data-testid="close-cbct-mpr-3d-studio-btn"
 						>
@@ -3083,15 +3844,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			</header>
 
 			{/* ─── MOBILE VIEWPORT TABS (VISIBLE ONLY ON < LG SCREENS) ─────────── */}
-			<div className="lg:hidden flex items-center bg-[#14171e] border-b border-[#242a35] p-1.5 shrink-0 gap-1.5 overflow-x-auto min-w-0 w-full max-w-full">
+			<div className="lg:hidden flex items-center bg-[#09090b] border-b border-zinc-800 p-1.5 shrink-0 gap-1.5 overflow-x-auto min-w-0 w-full max-w-full">
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("axial")}
 					data-testid="cbct-mobile-tab-axial"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "axial"
-							? "bg-[#1e2430] text-cyan-400 border-cyan-500/60 shadow-xs"
-							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
+							? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
+							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-cyan-400" />
@@ -3103,11 +3864,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					data-testid="cbct-mobile-tab-coronal"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "coronal"
-							? "bg-[#1e2430] text-cyan-400 border-cyan-500/60 shadow-xs"
-							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
+							? "bg-zinc-900 text-orange-400 border-orange-500/60 shadow-xs"
+							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
 					}`}
 				>
-					<span className="w-2 h-2 rounded-full bg-amber-400" />
+					<span className="w-2 h-2 rounded-full bg-orange-500" />
 					Фронтальный (Y)
 				</button>
 				<button
@@ -3116,11 +3877,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					data-testid="cbct-mobile-tab-sagittal"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "sagittal"
-							? "bg-[#1e2430] text-cyan-400 border-cyan-500/60 shadow-xs"
-							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
+							? "bg-zinc-900 text-emerald-400 border-emerald-500/60 shadow-xs"
+							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
 					}`}
 				>
-					<span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+					<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
 					<span className="whitespace-nowrap">• Сагитт. (X)</span>
 				</button>
 				<button
@@ -3129,11 +3890,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					data-testid="cbct-mobile-tab-panoramic"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "panoramic"
-							? "bg-[#1e2430] text-cyan-400 border-cyan-500/60 shadow-xs"
-							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
+							? "bg-zinc-900 text-purple-400 border-purple-500/60 shadow-xs"
+							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
 					}`}
 				>
-					<span className="w-2 h-2 rounded-full bg-purple-400" />
+					<span className="w-2 h-2 rounded-full bg-purple-500" />
 					ОПТГ
 				</button>
 				<button
@@ -3145,8 +3906,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					data-testid="cbct-mobile-tab-planner"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "planner"
-							? "bg-[#1e2430] text-cyan-400 border-cyan-500/60 shadow-xs"
-							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
+							? "bg-zinc-900 text-yellow-400 border-yellow-500/60 shadow-xs"
+							: "bg-[#09090b] text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-yellow-400" />
@@ -3173,7 +3934,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				/>
 
 				{/* ─── VIEWPORTS & SIDEBAR GRID (COLS 1..12) ───────────────────── */}
-				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[#0c0e12] min-h-0 min-w-0 w-full max-w-full overflow-hidden">
+				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[#000000] min-h-0 min-w-0 w-full max-w-full overflow-hidden">
 				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP OR 1..12 WHEN SIDEBAR COLLAPSED) ─── */}
 				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all`}>
 					{maximizedViewport !== null ? (
@@ -3207,14 +3968,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 				{/* ─── RIGHT SIDEBAR: DIAGNOSTIC INSPECTOR & IMPLANT PLANNER (COLS 9..12) ─── */}
 				{(isSidebarOpen || mobileActiveTab === "planner") && (
-					<aside className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0 w-full min-w-0 h-full" : "hidden lg:flex lg:flex-col"} bg-[#14171e] rounded-md border border-[#242a35] min-h-0 min-w-0 w-full overflow-y-auto p-3 flex flex-col gap-3`}>
+					<aside className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0 w-full min-w-0 h-full" : "hidden lg:flex lg:flex-col"} bg-[#09090b] rounded-md border border-zinc-800 min-h-0 min-w-0 w-full overflow-y-auto p-3 flex flex-col gap-3`}>
 						{/* Active Cross-Section Carousel Header */}
-						<div className="flex items-center justify-between pb-2 border-b border-[#242a35]">
+						<div className="flex items-center justify-between pb-2 border-b border-zinc-800">
 							<div className="flex items-center gap-2">
 								<span className="text-xs font-bold text-cyan-400">
 									Срез #{activeCrossSection?.sliceIndex ?? 1} из {crossSections.length}
 								</span>
-								<span className="px-2.5 py-1 rounded bg-[#1e2430] text-[#e2e8f0] font-bold text-xs border border-[#242a35]">
+								<span className="px-2.5 py-1 rounded bg-zinc-900 text-zinc-100 font-bold text-xs border border-zinc-800">
 									Зуб FDI: #{activeCrossSection?.nearestToothFdi ?? "46"}
 								</span>
 							</div>
@@ -3222,7 +3983,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								<button
 									type="button"
 									onClick={() => setActiveCrossSectionIdx((prev) => Math.max(0, prev - 1))}
-									className="p-2.5 rounded-md bg-[#14171e] hover:bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs"
+									className="p-2.5 rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
 									title="Предыдущий срез"
 								>
 									<ChevronLeft className="w-5 h-5" />
@@ -3230,7 +3991,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								<button
 									type="button"
 									onClick={() => setActiveCrossSectionIdx((prev) => Math.min(crossSections.length - 1, prev + 1))}
-									className="p-2.5 rounded-md bg-[#14171e] hover:bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs"
+									className="p-2.5 rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
 									title="Следующий срез"
 								>
 									<ChevronRight className="w-5 h-5" />
@@ -3238,7 +3999,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								<button
 									type="button"
 									onClick={() => setIsSidebarOpen(false)}
-									className="p-2.5 rounded-md bg-[#14171e] hover:bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs ml-1"
+									className="p-2.5 rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs ml-1"
 									title="Скрыть панель"
 									data-testid="cbct-close-sidebar-btn"
 								>
@@ -3250,7 +4011,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					{/* Cross-Section Viewport Canvas */}
 					<div
 						onDoubleClick={() => handleToggleMaximize("cross_section")}
-						className="relative h-56 bg-black rounded-md overflow-hidden border border-[#242a35] flex items-center justify-center shrink-0 w-full"
+						className="relative h-56 bg-black rounded-md overflow-hidden border border-zinc-800 flex items-center justify-center shrink-0 w-full"
 					>
 						<canvas
 							ref={crossSectionCanvasRef}
@@ -3272,7 +4033,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						/>
 
 						{/* Quick Ridge Measurements Badge (compact matte HUD) */}
-						<div className="absolute top-1.5 right-10 px-2 py-0.5 rounded bg-[#14171e]/90 backdrop-blur-sm text-[10px] text-[#94a3b8] border border-[#242a35] font-mono shadow-xs flex items-center gap-2">
+						<div className="absolute top-1.5 right-10 px-2 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm text-[10px] text-zinc-400 border border-zinc-800 font-mono shadow-xs flex items-center gap-2">
 							<span>H: <strong className="text-cyan-400">{activeCrossSection?.corticalCrestHeightMm ?? 14.2} мм</strong></span>
 							<span>W: <strong className="text-cyan-400">{activeCrossSection?.alveolarRidgeWidthMm ?? 7.8} мм</strong></span>
 						</div>
@@ -3282,27 +4043,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					{studioMode !== "implant" ? (
 						<div className="flex flex-col gap-3">
 							{/* Diagnostic HU & Tissue Structure Inspector */}
-							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
+							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2">
 								<div className="flex items-center justify-between text-xs">
-									<span className="font-bold text-[#e2e8f0]">Плотность в курсоре:</span>
-									<span className="px-2.5 py-1 rounded bg-[#1e2430] text-cyan-400 font-mono font-bold border border-cyan-500/60">
+									<span className="font-bold text-zinc-100">Плотность в курсоре:</span>
+									<span className="px-2.5 py-1 rounded bg-zinc-900 text-cyan-400 font-mono font-bold border border-cyan-500/60">
 										{sampledVoxelHU} HU
 									</span>
 								</div>
-								<div className="text-[11px] text-[#94a3b8]">
-									Структура: <strong className="text-[#e2e8f0]">{getTissueNameFromHU(sampledVoxelHU)}</strong>
+								<div className="text-[11px] text-zinc-400">
+									Структура: <strong className="text-zinc-100">{getTissueNameFromHU(sampledVoxelHU)}</strong>
 								</div>
-								<div className="grid grid-cols-2 gap-1.5 text-[10px] text-[#94a3b8] pt-1.5 border-t border-[#242a35]">
-									<div>Эмаль: <span className="font-mono text-[#e2e8f0]">+2000..+3000</span></div>
-									<div>Кортекс: <span className="font-mono text-[#e2e8f0]">+1000..+1800</span></div>
-									<div>Спонгиоза: <span className="font-mono text-[#e2e8f0]">+300..+800</span></div>
-									<div>Пазухи: <span className="font-mono text-[#e2e8f0]">-1000..-500</span></div>
+								<div className="grid grid-cols-2 gap-1.5 text-[10px] text-zinc-400 pt-1.5 border-t border-zinc-800">
+									<div>Эмаль: <span className="font-mono text-zinc-100">+2000..+3000</span></div>
+									<div>Кортекс: <span className="font-mono text-zinc-100">+1000..+1800</span></div>
+									<div>Спонгиоза: <span className="font-mono text-zinc-100">+300..+800</span></div>
+									<div>Пазухи: <span className="font-mono text-zinc-100">-1000..-500</span></div>
 								</div>
 							</div>
 
 							{/* Radiological Anatomical Inspection Checklist */}
-							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
-								<div className="text-xs font-bold text-[#e2e8f0] flex items-center gap-1.5">
+							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+								<div className="text-xs font-bold text-zinc-100 flex items-center gap-1.5">
 									<Search className="w-4 h-4 text-cyan-400" />
 									<span>
 										{studioMode === "endo"
@@ -3312,18 +4073,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											: `Анатомический осмотр зоны #${activeCrossSection?.nearestToothFdi ?? "46"}:`}
 									</span>
 								</div>
-								<div className="flex flex-col gap-1.5 text-[11px] text-[#94a3b8]">
-									<div className="flex items-center gap-2.5 p-2 rounded bg-[#14171e] border border-[#242a35]">
+								<div className="flex flex-col gap-1.5 text-[11px] text-zinc-400">
+									<div className="flex items-center gap-2.5 p-2 rounded bg-[#09090b] border border-zinc-800">
 										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
-										<span className="text-[#e2e8f0]">Кортикальные пластинки & гребень сохранны</span>
+										<span className="text-zinc-100">Кортикальные пластинки & гребень сохранны</span>
 									</div>
-									<div className="flex items-center gap-2.5 p-2 rounded bg-[#14171e] border border-[#242a35]">
+									<div className="flex items-center gap-2.5 p-2 rounded bg-[#09090b] border border-zinc-800">
 										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
-										<span className="text-[#e2e8f0]">Периодонтальная щель & апексы корней</span>
+										<span className="text-zinc-100">Периодонтальная щель & апексы корней</span>
 									</div>
-									<div className="flex items-center gap-2.5 p-2 rounded bg-[#14171e] border border-[#242a35]">
+									<div className="flex items-center gap-2.5 p-2 rounded bg-[#09090b] border border-zinc-800">
 										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
-										<span className="text-[#e2e8f0]">Пневматизация синуса / канал IAN</span>
+										<span className="text-zinc-100">Пневматизация синуса / канал IAN</span>
 									</div>
 								</div>
 							</div>
@@ -3335,7 +4096,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									setStudioMode("implant");
 									setIsSidebarOpen(true);
 								}}
-								className="w-full py-2.5 px-4 rounded-md bg-[#1e2430] hover:bg-[#252c3b] text-[#e2e8f0] hover:text-cyan-300 border border-[#242a35] hover:border-cyan-500/60 text-xs font-bold flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-xs"
+								className="w-full py-2.5 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 hover:text-cyan-300 border border-zinc-800 hover:border-cyan-500/60 text-xs font-bold flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-xs"
 								data-testid="cbct-switch-to-implant-mode-btn"
 							>
 								<Compass className="w-4 h-4 text-cyan-400" />
@@ -3345,8 +4106,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					) : (
 						<div className="flex flex-col gap-3">
 							{/* ─── 1-CLICK TOOTH FORMULA SELECTOR ───────────────────────── */}
-							<div className="p-2.5 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-1.5">
-								<div className="text-[11px] font-bold text-[#94a3b8] flex items-center justify-between">
+							<div className="p-2.5 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-1.5">
+								<div className="text-[11px] font-bold text-zinc-400 flex items-center justify-between">
 									<span>Выбор позиции зуба (FDI):</span>
 									<span className="text-cyan-400 font-mono">#{activeCrossSection?.nearestToothFdi ?? "46"}</span>
 								</div>
@@ -3363,7 +4124,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 													className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
 														isTarget
 															? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
-															: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35]"
+															: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
 													}`}
 												>
 													{fdi}
@@ -3383,7 +4144,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 													className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
 														isTarget
 															? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
-															: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35]"
+															: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
 													}`}
 												>
 													{fdi}
@@ -3435,44 +4196,112 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							})()}
 
 							{/* ─── MISCH BONE DENSITY (HU) & DRILLING PROTOCOL ────────────── */}
-							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
+							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2">
 								<div className="flex items-center justify-between text-xs">
-									<span className="font-bold text-[#94a3b8]">Плотность кости (Misch):</span>
-									<span className="px-2 py-1 rounded bg-[#1e2430] text-cyan-400 font-bold border border-cyan-500/60">
+									<span className="font-bold text-zinc-400">Плотность кости (Misch):</span>
+									<span className="px-2 py-1 rounded bg-zinc-900 text-cyan-400 font-bold border border-cyan-500/60">
 										Класс {mischClassification.mischClass} ({huSamplingResult.overallMeanHU} HU)
 									</span>
 								</div>
-								<div className="grid grid-cols-3 gap-1.5 text-center text-[10px] bg-[#14171e] p-2 rounded border border-[#242a35]">
+								<div className="grid grid-cols-3 gap-1.5 text-center text-[10px] bg-[#09090b] p-2 rounded border border-zinc-800">
 									<div>
-										<div className="text-[#94a3b8]">Кортекс</div>
+										<div className="text-zinc-400">Кортекс</div>
 										<div className="font-mono font-bold text-cyan-400 text-xs">{huSamplingResult.coronalCrestalHU} HU</div>
 									</div>
 									<div>
-										<div className="text-[#94a3b8]">Спонгиоза</div>
+										<div className="text-zinc-400">Спонгиоза</div>
 										<div className="font-mono font-bold text-cyan-400 text-xs">{huSamplingResult.trabecularCoreHU} HU</div>
 									</div>
 									<div>
-										<div className="text-[#94a3b8]">Апекс</div>
+										<div className="text-zinc-400">Апекс</div>
 										<div className="font-mono font-bold text-cyan-400 text-xs">{huSamplingResult.apicalBaseHU} HU</div>
 									</div>
 								</div>
-								<div className="text-[11px] text-[#94a3b8] flex flex-col gap-0.5">
+								<div className="text-[11px] text-zinc-400 flex flex-col gap-0.5">
 									<div>
-										Протокол: <strong className="text-[#e2e8f0]">{mischClassification.recommendedDrillingRpm}</strong>.
+										Протокол: <strong className="text-zinc-100">{mischClassification.recommendedDrillingRpm}</strong>.
 										{mischClassification.underdrillingRecommended && (
 											<span className="text-amber-400 font-semibold ml-1">Недопрепарирование (Underdrilling).</span>
 										)}
 									</div>
-									<div className="text-[10px] text-[#64748b] flex items-center justify-between pt-1 border-t border-[#242a35]">
-										<span>Торк: <strong className="text-[#94a3b8]">{mischClassification.estimatedInsertionTorqueNcm.expectedNcm} Н·см</strong></span>
-										<span>ISQ: <strong className="text-[#94a3b8]">{mischClassification.estimatedIsqScore.expectedIsq}</strong></span>
+									<div className="text-[10px] text-zinc-500 flex items-center justify-between pt-1 border-t border-zinc-800">
+										<span>Торк: <strong className="text-zinc-400">{mischClassification.estimatedInsertionTorqueNcm.expectedNcm} Н·см</strong></span>
+										<span>ISQ: <strong className="text-zinc-400">{mischClassification.estimatedIsqScore.expectedIsq}</strong></span>
 									</div>
 								</div>
 							</div>
 
+							{/* ─── 3D MANDIBULAR NERVE TRACER PANEL (IAN 3D SPLINE) ────────── */}
+							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+								<div className="flex items-center justify-between text-xs">
+									<span className="font-bold text-zinc-400 flex items-center gap-1.5">
+										<Activity className="w-3.5 h-3.5 text-amber-400" />
+										3D Трассировка нерва (IAN)
+									</span>
+									<span className="px-2 py-0.5 rounded bg-zinc-900 text-amber-400 font-mono text-[11px] font-bold border border-amber-500/50">
+										{nervePoints.length} узлов • {nerveTotalLengthMm.toFixed(1)} мм
+									</span>
+								</div>
+
+								<div className="text-[11px] text-zinc-400 bg-[#09090b] p-2 rounded border border-zinc-800 flex flex-col gap-1">
+									<div className="flex justify-between items-center">
+										<span>Выбранный узел:</span>
+										<span className="font-bold font-mono text-zinc-100">
+											{selectedNerveNodeIdx !== null ? `Узел #${selectedNerveNodeIdx + 1}` : "—"}
+										</span>
+									</div>
+									<div className="flex justify-between items-center">
+										<span>Буфер безопасности:</span>
+										<span className="font-bold text-amber-400 font-mono">2.0 мм цилиндр</span>
+									</div>
+								</div>
+
+								<div className="grid grid-cols-2 gap-1.5">
+									<button
+										type="button"
+										onClick={() => {
+											if (selectedNerveNodeIdx !== null && selectedNerveNodeIdx >= 0 && selectedNerveNodeIdx < nervePoints.length) {
+												setNervePoints((prev) => prev.filter((_, idx) => idx !== selectedNerveNodeIdx));
+												setSelectedNerveNodeIdx(null);
+												showToast("Удален выбранный 3D-узел нерва", "info");
+											} else if (nervePoints.length > 0) {
+												setNervePoints((prev) => prev.slice(0, -1));
+												showToast("Удален последний узел нерва", "info");
+											}
+										}}
+										disabled={nervePoints.length === 0}
+										className="py-1.5 px-2 rounded-md bg-[#09090b] hover:bg-zinc-900 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+										data-testid="cbct-delete-nerve-node-btn"
+										title="Удалить выбранный или последний узел (Backspace)"
+									>
+										<Trash2 className="w-3.5 h-3.5 text-rose-400" />
+										<span>Удалить узел</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											setNervePoints([]);
+											setSelectedNerveNodeIdx(null);
+											showToast("Трасса канала IAN сброшена", "info");
+										}}
+										disabled={nervePoints.length === 0}
+										className="py-1.5 px-2 rounded-md bg-[#09090b] hover:bg-zinc-900 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+										data-testid="cbct-reset-nerve-trace-btn"
+										title="Очистить все точки канала нерва"
+									>
+										<RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+										<span>Сброс трассы</span>
+									</button>
+								</div>
+								<div className="text-[10px] text-zinc-500 leading-tight">
+									💡 ЛКМ для добавления узлов • Перетаскивание для смещения • Delete для удаления
+								</div>
+							</div>
+
 							{/* ─── VIRTUAL IMPLANT CALIPER SELECTION ───────────────────────── */}
-							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2.5">
-								<div className="text-xs font-bold text-[#94a3b8]">Выбор имплантата (Библиотека):</div>
+							<div className="p-3 rounded-md bg-[#000000] border border-zinc-800 flex flex-col gap-2.5">
+								<div className="text-xs font-bold text-zinc-400">Выбор имплантата (Библиотека):</div>
 
 								{/* Brand selector */}
 								<div className="grid grid-cols-4 gap-1.5">
@@ -3483,8 +4312,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											onClick={() => setSelectedBrand(b)}
 											className={`py-2 px-1 rounded-md text-xs font-bold capitalize min-h-[44px] transition-colors border flex items-center justify-center ${
 												selectedBrand === b
-													? "bg-[#1e2430] text-cyan-400 border-cyan-500/60 shadow-xs"
-													: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] border-[#242a35] hover:bg-[#1e2430]"
+													? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
+													: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 border-zinc-800 hover:bg-zinc-900"
 											}`}
 										>
 											{b === "straumann" ? "Straumann" : b === "nobel_biocare" ? "Nobel" : b === "osstem" ? "Osstem" : "Dentium"}
@@ -3495,11 +4324,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								{/* Diameter & Length Selectors */}
 								<div className="grid grid-cols-2 gap-2 text-xs">
 									<div>
-										<label className="text-[11px] text-[#94a3b8] block mb-1 font-semibold">Диаметр (мм):</label>
+										<label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Диаметр (мм):</label>
 										<select
 											value={selectedDiameterMm}
 											onChange={(e) => setSelectedDiameterMm(Number.parseFloat(e.target.value))}
-											className="w-full bg-[#14171e] border border-[#242a35] rounded-md px-3 py-2 text-xs text-[#e2e8f0] min-h-[44px] focus:border-cyan-500 focus:outline-none"
+											className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 min-h-[44px] focus:border-cyan-500 focus:outline-none"
 										>
 											<option value={3.5}>Ø 3.5 мм (Узкий)</option>
 											<option value={4.0}>Ø 4.0 мм (Стандарт)</option>
@@ -3510,11 +4339,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									</div>
 
 									<div>
-										<label className="text-[11px] text-[#94a3b8] block mb-1 font-semibold">Длина (мм):</label>
+										<label className="text-[11px] text-zinc-400 block mb-1 font-semibold">Длина (мм):</label>
 										<select
 											value={selectedLengthMm}
 											onChange={(e) => setSelectedLengthMm(Number.parseFloat(e.target.value))}
-											className="w-full bg-[#14171e] border border-[#242a35] rounded-md px-3 py-2 text-xs text-[#e2e8f0] min-h-[44px] focus:border-cyan-500 focus:outline-none"
+											className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 min-h-[44px] focus:border-cyan-500 focus:outline-none"
 										>
 											<option value={8.0}>L 8.0 мм</option>
 											<option value={10.0}>L 10.0 мм</option>
@@ -3526,9 +4355,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 								{/* Angulation Slider */}
 								<div className="flex flex-col gap-1 text-xs">
-									<div className="flex items-center justify-between text-[11px] text-[#94a3b8]">
+									<div className="flex items-center justify-between text-[11px] text-zinc-400">
 										<span>Наклон оси (Tilt):</span>
-										<span className="font-mono font-bold text-[#e2e8f0]">{implantAngulationDeg}°</span>
+										<span className="font-mono font-bold text-zinc-100">{implantAngulationDeg}°</span>
 									</div>
 									<input
 										type="range"
@@ -3543,9 +4372,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 								{/* Horizontal Entry Offset Slider */}
 								<div className="flex flex-col gap-1 text-xs">
-									<div className="flex items-center justify-between text-[11px] text-[#94a3b8]">
+									<div className="flex items-center justify-between text-[11px] text-zinc-400">
 										<span>Смещение X на гребне:</span>
-										<span className="font-mono font-bold text-[#e2e8f0]">{implantEntryXOffsetMm.toFixed(1)} мм</span>
+										<span className="font-mono font-bold text-zinc-100">{implantEntryXOffsetMm.toFixed(1)} мм</span>
 									</div>
 									<input
 										type="range"
@@ -3559,7 +4388,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								</div>
 
 								{/* ─── 1-CLICK CLINICAL ACTION BUTTONS (TIER 1 HOT PATH) ── */}
-								<div className="flex flex-col gap-2 pt-2 border-t border-[#242a35]">
+								<div className="flex flex-col gap-2 pt-2 border-t border-zinc-800">
 									<button
 										type="button"
 										onClick={() => {
@@ -3572,16 +4401,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 										<span>Добавить в план лечения (18 500 ₽)</span>
 									</button>
 
-									<div className="grid grid-cols-2 gap-1.5">
+									<div className="grid grid-cols-3 gap-1.5">
 										<button
 											type="button"
-											onClick={handleExportForm043Diary}
-											className="py-2 px-2 rounded-md bg-[#1e2430] hover:bg-[#252c3b] text-[#e2e8f0] border border-[#242a35] hover:border-cyan-500/60 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
-											data-testid="copy-diary-btn"
-											title="Копировать клинический протокол в карту 043/у"
+											onClick={handleExportToEmr}
+											className="py-2 px-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px]"
+											data-testid="cbct-btn-export-emr"
+											data-testid-legacy="copy-diary-btn"
+											title="Копировать снимок и протокол в карту 043/у"
 										>
-											<FileText className="w-3.5 h-3.5 text-cyan-400" />
-											<span>В Форму 043/у</span>
+											<Camera className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+											<span>В ЭМК</span>
+										</button>
+										<button
+											type="button"
+											onClick={handleExportPdfReport}
+											className="py-2 px-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-zinc-800 hover:border-amber-500/60 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px]"
+											data-testid="cbct-btn-export-pdf"
+											title="Сформировать печатный A4 протокол / PDF"
+										>
+											<FileText className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+											<span>PDF Отчет</span>
 										</button>
 										<button
 											type="button"
@@ -3591,12 +4431,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 												setImplantAngulationDeg(0);
 												showToast("Положение имплантата центрировано на гребне", "info");
 											}}
-											className="py-2 px-2 rounded-md bg-[#14171e] hover:bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] border border-[#242a35] text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
+											className="py-2 px-1.5 rounded-md bg-[#09090b] hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px]"
 											data-testid="reset-center-btn"
 											title="Центрировать имплантат на гребне"
 										>
-											<Compass className="w-3.5 h-3.5 text-[#94a3b8]" />
-											<span>Центрировать</span>
+											<Compass className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+											<span>Центр</span>
 										</button>
 									</div>
 								</div>
