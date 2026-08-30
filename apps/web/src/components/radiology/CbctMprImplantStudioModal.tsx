@@ -82,6 +82,8 @@ import {
 	getCbctToolCursor,
 	worldMmToSlicePx,
 	slicePxToWorldMm,
+	slicePxToScreenPx,
+	worldMmToScreenPx,
 	extractMprSlice,
 	extractObliqueMprSlice,
 	getRotationHandles,
@@ -963,21 +965,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					canvas.height = metadata.heightPx;
 				}
 
+				// ─── PASS 1: TRANSFORMED WORLD SPACE (CT SLICE & ANATOMICAL GEOMETRY) ───
 				ctx.save();
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 				const transform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
 				ctx.translate(transform.panX, transform.panY);
 				ctx.scale(transform.zoom, transform.zoom);
 				ctx.drawImage(off, 0, 0);
-
-				// Draw Calibrated Millimeter Rulers (1mm, 5mm, 10mm + scale bar)
-				drawCalibratedMillimeterRulers(ctx, {
-					widthPx: metadata.widthPx,
-					heightPx: metadata.heightPx,
-					pixelSpacingMmX: metadata.pixelSpacingX,
-					pixelSpacingMmY: metadata.pixelSpacingY,
-					showScaleBar: true,
-				});
 
 				// Draw Dental Arch Spline on Axial (Clean hairline when enabled)
 				if (showDentalArch) {
@@ -1113,64 +1107,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					});
 				}
 
-				// Draw Rulers on Axial
-				for (const r of rulers) {
-					if (r.plane === "axial") {
-						const p1 = worldMmToSlicePx(r.startMm, "axial", volume);
-						const p2 = worldMmToSlicePx(r.endMm, "axial", volume);
-						const isSelected = selectedMeasurement?.id === r.id;
-						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
-						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
-					}
-				}
-				if (activeRuler && activeRuler.plane === "axial") {
-					const p1 = worldMmToSlicePx(activeRuler.startMm, "axial", volume);
-					const p2 = worldMmToSlicePx(activeRuler.currentMm, "axial", volume);
-					const dist = Math.hypot(
-						activeRuler.currentMm.x - activeRuler.startMm.x,
-						activeRuler.currentMm.y - activeRuler.startMm.y,
-						activeRuler.currentMm.z - activeRuler.startMm.z,
-					);
-					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
-				}
-
-				// Draw Angles on Axial
-				for (const a of angles) {
-					if (a.plane === "axial") {
-						const p1 = worldMmToSlicePx(a.startMm, "axial", volume);
-						const pv = worldMmToSlicePx(a.vertexMm, "axial", volume);
-						const p2 = worldMmToSlicePx(a.endMm, "axial", volume);
-						const isSelected = selectedMeasurement?.id === a.id;
-						const activeH = hoveredMeasurementHandle?.id === a.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === a.id ? draggingMeasurementHandle.handleIndex : null);
-						drawCbctAngleMeasurement(ctx, p1, pv, p2, a.angleDeg, isSelected, activeH);
-					}
-				}
-				if (activeAngle && activeAngle.plane === "axial") {
-					const p1 = worldMmToSlicePx(activeAngle.startMm, "axial", volume);
-					const pv = activeAngle.vertexMm
-						? worldMmToSlicePx(activeAngle.vertexMm, "axial", volume)
-						: worldMmToSlicePx(activeAngle.currentMm, "axial", volume);
-					const p2 = worldMmToSlicePx(activeAngle.currentMm, "axial", volume);
-					const angleDeg = activeAngle.vertexMm
-						? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm)
-						: 0;
-					drawCbctAngleMeasurement(ctx, p1, pv, p2, angleDeg, true, null);
-				}
-
-				// Draw Probes on Axial
-				for (const pm of probeMarkers) {
-					if (pm.plane === "axial") {
-						const p = worldMmToSlicePx(pm.worldMm, "axial", volume);
-						const isSelected = selectedMeasurement?.id === pm.id;
-						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName, isSelected);
-					}
-				}
-				if (activeProbe && activeProbe.plane === "axial" && activeTool === "probe") {
-					const p = worldMmToSlicePx(activeProbe.worldMm, "axial", volume);
-					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName, true);
-				}
-
-				// Draw Mandibular Canal Nerve (IAN) on Axial with 3D Catmull-Rom Spline & Distance Gating
+				// Mandibular Canal Nerve (IAN) on Axial with 3D Catmull-Rom Spline & Distance Gating
 				if (interpolatedNerve3D.length > 1) {
 					ctx.save();
 					ctx.lineCap = "round";
@@ -1245,13 +1182,32 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						}
 					}
 
-					// 3. Floating 3D Badge on visible segment
+					ctx.restore();
+				}
+
+				// End of Pass 1 (Transformed World Space)
+				ctx.restore();
+
+				// ─── PASS 2: SCREEN-SPACE 1:1 VECTOR SPACE (RULERS, BADGES, MEASUREMENTS) ───
+				// 1. Calibrated Millimeter Rulers (Screen-Space 1:1 Matrix)
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: metadata.widthPx,
+					heightPx: metadata.heightPx,
+					pixelSpacingMmX: metadata.pixelSpacingX,
+					pixelSpacingMmY: metadata.pixelSpacingY,
+					showScaleBar: true,
+					transform,
+				});
+
+				// 2. Floating 3D Badge on visible IAN segment in Screen Space
+				if (interpolatedNerve3D.length > 1) {
 					const visibleNodes = nervePoints.filter(
 						(pt) => Math.abs(pt.z - crosshairMm.z) <= 3.5,
 					);
 					if (visibleNodes.length > 0) {
 						const midPt = visibleNodes[Math.floor(visibleNodes.length / 2)]!;
-						const pMid = worldMmToSlicePx(midPt, "axial", volume);
+						const pMid = slicePxToScreenPx(worldMmToSlicePx(midPt, "axial", volume), transform);
+						ctx.save();
 						ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
 						ctx.strokeStyle = "#f59e0b";
 						ctx.lineWidth = 1;
@@ -1259,31 +1215,91 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						ctx.font = "bold 9px monospace";
 						const tw = ctx.measureText(text).width;
 						ctx.beginPath();
-						ctx.roundRect(pMid.x - tw / 2 - 4, pMid.y - 18, tw + 8, 14, 3);
+						if (typeof ctx.roundRect === "function") {
+							ctx.roundRect(pMid.x - tw / 2 - 4, pMid.y - 18, tw + 8, 14, 3);
+						} else {
+							ctx.rect(pMid.x - tw / 2 - 4, pMid.y - 18, tw + 8, 14);
+						}
 						ctx.fill();
 						ctx.stroke();
 						ctx.fillStyle = "#fbbf24";
 						ctx.textAlign = "center";
-						ctx.fillText(text, pMid.x, pMid.y - 8);
+						ctx.textBaseline = "middle";
+						ctx.fillText(text, pMid.x, pMid.y - 11);
+						ctx.restore();
 					}
-
-					ctx.restore();
 				}
 
-				// Draw Oblique Crosshair with Rotation Handles & Clinical Rotation Badge
+				// 3. Draw Rulers on Axial in Screen Space
+				for (const r of rulers) {
+					if (r.plane === "axial") {
+						const p1 = slicePxToScreenPx(worldMmToSlicePx(r.startMm, "axial", volume), transform);
+						const p2 = slicePxToScreenPx(worldMmToSlicePx(r.endMm, "axial", volume), transform);
+						const isSelected = selectedMeasurement?.id === r.id;
+						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
+					}
+				}
+				if (activeRuler && activeRuler.plane === "axial") {
+					const p1 = slicePxToScreenPx(worldMmToSlicePx(activeRuler.startMm, "axial", volume), transform);
+					const p2 = slicePxToScreenPx(worldMmToSlicePx(activeRuler.currentMm, "axial", volume), transform);
+					const dist = Math.hypot(
+						activeRuler.currentMm.x - activeRuler.startMm.x,
+						activeRuler.currentMm.y - activeRuler.startMm.y,
+						activeRuler.currentMm.z - activeRuler.startMm.z,
+					);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
+				}
+
+				// 4. Draw Angles on Axial in Screen Space
+				for (const a of angles) {
+					if (a.plane === "axial") {
+						const p1 = slicePxToScreenPx(worldMmToSlicePx(a.startMm, "axial", volume), transform);
+						const pv = slicePxToScreenPx(worldMmToSlicePx(a.vertexMm, "axial", volume), transform);
+						const p2 = slicePxToScreenPx(worldMmToSlicePx(a.endMm, "axial", volume), transform);
+						const isSelected = selectedMeasurement?.id === a.id;
+						const activeH = hoveredMeasurementHandle?.id === a.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === a.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctAngleMeasurement(ctx, p1, pv, p2, a.angleDeg, isSelected, activeH);
+					}
+				}
+				if (activeAngle && activeAngle.plane === "axial") {
+					const p1 = slicePxToScreenPx(worldMmToSlicePx(activeAngle.startMm, "axial", volume), transform);
+					const pv = activeAngle.vertexMm
+						? slicePxToScreenPx(worldMmToSlicePx(activeAngle.vertexMm, "axial", volume), transform)
+						: slicePxToScreenPx(worldMmToSlicePx(activeAngle.currentMm, "axial", volume), transform);
+					const p2 = slicePxToScreenPx(worldMmToSlicePx(activeAngle.currentMm, "axial", volume), transform);
+					const angleDeg = activeAngle.vertexMm
+						? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm)
+						: 0;
+					drawCbctAngleMeasurement(ctx, p1, pv, p2, angleDeg, true, null);
+				}
+
+				// 5. Draw Probes on Axial in Screen Space
+				for (const pm of probeMarkers) {
+					if (pm.plane === "axial") {
+						const p = slicePxToScreenPx(worldMmToSlicePx(pm.worldMm, "axial", volume), transform);
+						const isSelected = selectedMeasurement?.id === pm.id;
+						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName, isSelected);
+					}
+				}
+				if (activeProbe && activeProbe.plane === "axial" && activeTool === "probe") {
+					const p = slicePxToScreenPx(worldMmToSlicePx(activeProbe.worldMm, "axial", volume), transform);
+					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName, true);
+				}
+
+				// 6. Draw Oblique Crosshair with Rotation Handles in Screen Space
+				const centerScreen = slicePxToScreenPx({ x: vox.x, y: vox.y }, transform);
 				drawObliqueCrosshairWithRotationHandles(ctx, {
 					widthPx: metadata.widthPx,
 					heightPx: metadata.heightPx,
-					centerPx: { x: vox.x, y: vox.y },
+					centerPx: centerScreen,
 					plane: "axial",
 					rotationDeg: obliqueAngles.axialAngleDeg,
 					activeHandle: activeRotationHandle?.plane === "axial" ? activeRotationHandle.handle : null,
 					hoveredHandle: hoveredHandle?.plane === "axial" ? hoveredHandle.handle : null,
 					showHandles: true,
-					showAngleBadge: true,
+					showAngleBadge: false,
 				});
-
-				ctx.restore();
 			}
 		}
 
@@ -1322,6 +1338,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					canvas.height = metadata.heightPx;
 				}
 
+				// ─── PASS 1: TRANSFORMED WORLD SPACE (CT SLICE & ANATOMICAL GEOMETRY) ───
 				ctx.save();
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 				const transform = transforms.coronal ?? DEFAULT_VIEWPORT_TRANSFORM;
@@ -1329,14 +1346,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.scale(transform.zoom, transform.zoom);
 				ctx.drawImage(off, 0, 0);
 
-				// Draw Calibrated Millimeter Rulers
-				drawCalibratedMillimeterRulers(ctx, {
-					widthPx: metadata.widthPx,
-					heightPx: metadata.heightPx,
-					pixelSpacingMmX: metadata.pixelSpacingX,
-					pixelSpacingMmY: metadata.pixelSpacingY,
-					showScaleBar: true,
-				});
+				const zPx = metadata.heightPx - 1 - vox.z;
+				let coronalImplantPEntry: { x: number; y: number } | null = null;
+				let coronalImplantStatusColor = "#10b981";
 
 				// Synchronized Virtual Implant 3D Projection on Coronal (Y) with Distance Gating
 				if (studioMode === "implant" && implant3DWorld) {
@@ -1350,6 +1362,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 						const pEntry = { x: vEntry.x, y: depthMax - vEntry.z };
 						const pApex = { x: vApex.x, y: depthMax - vApex.z };
+						coronalImplantPEntry = pEntry;
 
 						const spX = volume.spacingMm.x || 0.4;
 						const rPlatPx = (implant3DWorld.platformDiameterMm / 2.0) / spX;
@@ -1368,6 +1381,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							: nerveAuditResult.isWarning
 								? "#f59e0b"
 								: "#10b981";
+						coronalImplantStatusColor = statusColor;
 						const statusFill = nerveAuditResult.isDangerous
 							? "rgba(239, 68, 68, 0.45)"
 							: nerveAuditResult.isWarning
@@ -1407,33 +1421,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						ctx.moveTo(pEntry.x, pEntry.y);
 						ctx.lineTo(pApex.x, pApex.y);
 						ctx.stroke();
-
-						// Semi-transparent compact Tooth FDI badge with pointer arrow
-						const badgeY = Math.max(2, pEntry.y - 18);
-						ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-						ctx.strokeStyle = statusColor;
-						ctx.lineWidth = 1;
-						ctx.beginPath();
-						ctx.roundRect(pEntry.x - 13, badgeY, 26, 12, 3);
-						ctx.fill();
-						ctx.stroke();
-						// Pointer arrow
-						ctx.beginPath();
-						ctx.moveTo(pEntry.x - 3, badgeY + 12);
-						ctx.lineTo(pEntry.x, badgeY + 15);
-						ctx.lineTo(pEntry.x + 3, badgeY + 12);
-						ctx.closePath();
-						ctx.fillStyle = statusColor;
-						ctx.fill();
-						ctx.fillStyle = "#ffffff";
-						ctx.font = "bold 8.5px monospace";
-						ctx.textAlign = "center";
-						ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, badgeY + 9);
 						ctx.restore();
 					}
 				}
-
-				const zPx = metadata.heightPx - 1 - vox.z;
 
 				// Axial Slab MIP Bounding Corridor (Cyan #06b6d4)
 				if (slabMode !== "single" && slabThicknessMm > 1.0) {
@@ -1448,64 +1438,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					});
 				}
 
-				// Draw Rulers on Coronal
-				for (const r of rulers) {
-					if (r.plane === "coronal") {
-						const p1 = worldMmToSlicePx(r.startMm, "coronal", volume);
-						const p2 = worldMmToSlicePx(r.endMm, "coronal", volume);
-						const isSelected = selectedMeasurement?.id === r.id;
-						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
-						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
-					}
-				}
-				if (activeRuler && activeRuler.plane === "coronal") {
-					const p1 = worldMmToSlicePx(activeRuler.startMm, "coronal", volume);
-					const p2 = worldMmToSlicePx(activeRuler.currentMm, "coronal", volume);
-					const dist = Math.hypot(
-						activeRuler.currentMm.x - activeRuler.startMm.x,
-						activeRuler.currentMm.y - activeRuler.startMm.y,
-						activeRuler.currentMm.z - activeRuler.startMm.z,
-					);
-					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
-				}
-
-				// Draw Angles on Coronal
-				for (const a of angles) {
-					if (a.plane === "coronal") {
-						const p1 = worldMmToSlicePx(a.startMm, "coronal", volume);
-						const pv = worldMmToSlicePx(a.vertexMm, "coronal", volume);
-						const p2 = worldMmToSlicePx(a.endMm, "coronal", volume);
-						const isSelected = selectedMeasurement?.id === a.id;
-						const activeH = hoveredMeasurementHandle?.id === a.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === a.id ? draggingMeasurementHandle.handleIndex : null);
-						drawCbctAngleMeasurement(ctx, p1, pv, p2, a.angleDeg, isSelected, activeH);
-					}
-				}
-				if (activeAngle && activeAngle.plane === "coronal") {
-					const p1 = worldMmToSlicePx(activeAngle.startMm, "coronal", volume);
-					const pv = activeAngle.vertexMm
-						? worldMmToSlicePx(activeAngle.vertexMm, "coronal", volume)
-						: worldMmToSlicePx(activeAngle.currentMm, "coronal", volume);
-					const p2 = worldMmToSlicePx(activeAngle.currentMm, "coronal", volume);
-					const angleDeg = activeAngle.vertexMm
-						? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm)
-						: 0;
-					drawCbctAngleMeasurement(ctx, p1, pv, p2, angleDeg, true, null);
-				}
-
-				// Draw Probes on Coronal
-				for (const pm of probeMarkers) {
-					if (pm.plane === "coronal") {
-						const p = worldMmToSlicePx(pm.worldMm, "coronal", volume);
-						const isSelected = selectedMeasurement?.id === pm.id;
-						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName, isSelected);
-					}
-				}
-				if (activeProbe && activeProbe.plane === "coronal" && activeTool === "probe") {
-					const p = worldMmToSlicePx(activeProbe.worldMm, "coronal", volume);
-					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName, true);
-				}
-
-				// Draw Mandibular Canal Nerve (IAN) on Coronal with 3D Catmull-Rom Spline & Distance Gating
+				// Mandibular Canal Nerve (IAN) on Coronal with 3D Catmull-Rom Spline & Distance Gating
 				if (interpolatedNerve3D.length > 1) {
 					ctx.save();
 					ctx.lineCap = "round";
@@ -1580,20 +1513,122 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					ctx.restore();
 				}
 
-				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
+				// End of Pass 1 (Transformed World Space)
+				ctx.restore();
+
+				// ─── PASS 2: SCREEN-SPACE 1:1 VECTOR SPACE (RULERS, BADGES, MEASUREMENTS) ───
+				// 1. Calibrated Millimeter Rulers
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: metadata.widthPx,
+					heightPx: metadata.heightPx,
+					pixelSpacingMmX: metadata.pixelSpacingX,
+					pixelSpacingMmY: metadata.pixelSpacingY,
+					showScaleBar: true,
+					transform,
+				});
+
+				// 2. Tooth FDI badge on Coronal in Screen Space
+				if (coronalImplantPEntry && implant3DWorld) {
+					const pEntryScreen = slicePxToScreenPx(coronalImplantPEntry, transform);
+					const badgeY = Math.max(2, pEntryScreen.y - 18);
+					ctx.save();
+					ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+					ctx.strokeStyle = coronalImplantStatusColor;
+					ctx.lineWidth = 1;
+					ctx.beginPath();
+					if (typeof ctx.roundRect === "function") {
+						ctx.roundRect(pEntryScreen.x - 13, badgeY, 26, 12, 3);
+					} else {
+						ctx.rect(pEntryScreen.x - 13, badgeY, 26, 12);
+					}
+					ctx.fill();
+					ctx.stroke();
+					// Pointer arrow
+					ctx.beginPath();
+					ctx.moveTo(pEntryScreen.x - 3, badgeY + 12);
+					ctx.lineTo(pEntryScreen.x, badgeY + 15);
+					ctx.lineTo(pEntryScreen.x + 3, badgeY + 12);
+					ctx.closePath();
+					ctx.fillStyle = coronalImplantStatusColor;
+					ctx.fill();
+					ctx.fillStyle = "#ffffff";
+					ctx.font = "bold 8.5px monospace";
+					ctx.textAlign = "center";
+					ctx.textBaseline = "middle";
+					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntryScreen.x, badgeY + 6);
+					ctx.restore();
+				}
+
+				// 3. Draw Rulers on Coronal in Screen Space
+				for (const r of rulers) {
+					if (r.plane === "coronal") {
+						const p1 = slicePxToScreenPx(worldMmToSlicePx(r.startMm, "coronal", volume), transform);
+						const p2 = slicePxToScreenPx(worldMmToSlicePx(r.endMm, "coronal", volume), transform);
+						const isSelected = selectedMeasurement?.id === r.id;
+						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
+					}
+				}
+				if (activeRuler && activeRuler.plane === "coronal") {
+					const p1 = slicePxToScreenPx(worldMmToSlicePx(activeRuler.startMm, "coronal", volume), transform);
+					const p2 = slicePxToScreenPx(worldMmToSlicePx(activeRuler.currentMm, "coronal", volume), transform);
+					const dist = Math.hypot(
+						activeRuler.currentMm.x - activeRuler.startMm.x,
+						activeRuler.currentMm.y - activeRuler.startMm.y,
+						activeRuler.currentMm.z - activeRuler.startMm.z,
+					);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
+				}
+
+				// 4. Draw Angles on Coronal in Screen Space
+				for (const a of angles) {
+					if (a.plane === "coronal") {
+						const p1 = slicePxToScreenPx(worldMmToSlicePx(a.startMm, "coronal", volume), transform);
+						const pv = slicePxToScreenPx(worldMmToSlicePx(a.vertexMm, "coronal", volume), transform);
+						const p2 = slicePxToScreenPx(worldMmToSlicePx(a.endMm, "coronal", volume), transform);
+						const isSelected = selectedMeasurement?.id === a.id;
+						const activeH = hoveredMeasurementHandle?.id === a.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === a.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctAngleMeasurement(ctx, p1, pv, p2, a.angleDeg, isSelected, activeH);
+					}
+				}
+				if (activeAngle && activeAngle.plane === "coronal") {
+					const p1 = slicePxToScreenPx(worldMmToSlicePx(activeAngle.startMm, "coronal", volume), transform);
+					const pv = activeAngle.vertexMm
+						? slicePxToScreenPx(worldMmToSlicePx(activeAngle.vertexMm, "coronal", volume), transform)
+						: slicePxToScreenPx(worldMmToSlicePx(activeAngle.currentMm, "coronal", volume), transform);
+					const p2 = slicePxToScreenPx(worldMmToSlicePx(activeAngle.currentMm, "coronal", volume), transform);
+					const angleDeg = activeAngle.vertexMm
+						? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm)
+						: 0;
+					drawCbctAngleMeasurement(ctx, p1, pv, p2, angleDeg, true, null);
+				}
+
+				// 5. Draw Probes on Coronal in Screen Space
+				for (const pm of probeMarkers) {
+					if (pm.plane === "coronal") {
+						const p = slicePxToScreenPx(worldMmToSlicePx(pm.worldMm, "coronal", volume), transform);
+						const isSelected = selectedMeasurement?.id === pm.id;
+						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName, isSelected);
+					}
+				}
+				if (activeProbe && activeProbe.plane === "coronal" && activeTool === "probe") {
+					const p = slicePxToScreenPx(worldMmToSlicePx(activeProbe.worldMm, "coronal", volume), transform);
+					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName, true);
+				}
+
+				// 6. Draw Oblique Crosshair with Rotation Handles in Screen Space
+				const centerScreen = slicePxToScreenPx({ x: vox.x, y: zPx }, transform);
 				drawObliqueCrosshairWithRotationHandles(ctx, {
 					widthPx: metadata.widthPx,
 					heightPx: metadata.heightPx,
-					centerPx: { x: vox.x, y: zPx },
+					centerPx: centerScreen,
 					plane: "coronal",
 					rotationDeg: obliqueAngles.coronalTiltDeg,
 					activeHandle: activeRotationHandle?.plane === "coronal" ? activeRotationHandle.handle : null,
 					hoveredHandle: hoveredHandle?.plane === "coronal" ? hoveredHandle.handle : null,
 					showHandles: true,
-					showAngleBadge: true,
+					showAngleBadge: false,
 				});
-
-				ctx.restore();
 			}
 		}
 
@@ -1632,6 +1667,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					canvas.height = metadata.heightPx;
 				}
 
+				// ─── PASS 1: TRANSFORMED WORLD SPACE (CT SLICE & ANATOMICAL GEOMETRY) ───
 				ctx.save();
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 				const transform = transforms.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM;
@@ -1639,14 +1675,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.scale(transform.zoom, transform.zoom);
 				ctx.drawImage(off, 0, 0);
 
-				// Draw Calibrated Millimeter Rulers
-				drawCalibratedMillimeterRulers(ctx, {
-					widthPx: metadata.widthPx,
-					heightPx: metadata.heightPx,
-					pixelSpacingMmX: metadata.pixelSpacingX,
-					pixelSpacingMmY: metadata.pixelSpacingY,
-					showScaleBar: true,
-				});
+				const zPx = metadata.heightPx - 1 - vox.z;
+				let sagittalImplantPEntry: { x: number; y: number } | null = null;
+				let sagittalImplantStatusColor = "#10b981";
 
 				// Synchronized Virtual Implant 3D Projection on Sagittal (X) with Distance Gating
 				if (studioMode === "implant" && implant3DWorld) {
@@ -1660,6 +1691,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 						const pEntry = { x: vEntry.y, y: depthMax - vEntry.z };
 						const pApex = { x: vApex.y, y: depthMax - vApex.z };
+						sagittalImplantPEntry = pEntry;
 
 						const spY = volume.spacingMm.y || 0.4;
 						const rPlatPx = (implant3DWorld.platformDiameterMm / 2.0) / spY;
@@ -1678,6 +1710,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							: nerveAuditResult.isWarning
 								? "#f59e0b"
 								: "#10b981";
+						sagittalImplantStatusColor = statusColor;
 						const statusFill = nerveAuditResult.isDangerous
 							? "rgba(239, 68, 68, 0.45)"
 							: nerveAuditResult.isWarning
@@ -1717,33 +1750,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						ctx.moveTo(pEntry.x, pEntry.y);
 						ctx.lineTo(pApex.x, pApex.y);
 						ctx.stroke();
-
-						// Semi-transparent compact Tooth FDI badge with pointer arrow
-						const badgeY = Math.max(2, pEntry.y - 18);
-						ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-						ctx.strokeStyle = statusColor;
-						ctx.lineWidth = 1;
-						ctx.beginPath();
-						ctx.roundRect(pEntry.x - 13, badgeY, 26, 12, 3);
-						ctx.fill();
-						ctx.stroke();
-						// Pointer arrow
-						ctx.beginPath();
-						ctx.moveTo(pEntry.x - 3, badgeY + 12);
-						ctx.lineTo(pEntry.x, badgeY + 15);
-						ctx.lineTo(pEntry.x + 3, badgeY + 12);
-						ctx.closePath();
-						ctx.fillStyle = statusColor;
-						ctx.fill();
-						ctx.fillStyle = "#ffffff";
-						ctx.font = "bold 8.5px monospace";
-						ctx.textAlign = "center";
-						ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, badgeY + 9);
 						ctx.restore();
 					}
 				}
-
-				const zPx = metadata.heightPx - 1 - vox.z;
 
 				// Axial Slab MIP Bounding Corridor (Cyan #06b6d4)
 				if (slabMode !== "single" && slabThicknessMm > 1.0) {
@@ -1758,64 +1767,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					});
 				}
 
-				// Draw Rulers on Sagittal
-				for (const r of rulers) {
-					if (r.plane === "sagittal") {
-						const p1 = worldMmToSlicePx(r.startMm, "sagittal", volume);
-						const p2 = worldMmToSlicePx(r.endMm, "sagittal", volume);
-						const isSelected = selectedMeasurement?.id === r.id;
-						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
-						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
-					}
-				}
-				if (activeRuler && activeRuler.plane === "sagittal") {
-					const p1 = worldMmToSlicePx(activeRuler.startMm, "sagittal", volume);
-					const p2 = worldMmToSlicePx(activeRuler.currentMm, "sagittal", volume);
-					const dist = Math.hypot(
-						activeRuler.currentMm.x - activeRuler.startMm.x,
-						activeRuler.currentMm.y - activeRuler.startMm.y,
-						activeRuler.currentMm.z - activeRuler.startMm.z,
-					);
-					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
-				}
-
-				// Draw Angles on Sagittal
-				for (const a of angles) {
-					if (a.plane === "sagittal") {
-						const p1 = worldMmToSlicePx(a.startMm, "sagittal", volume);
-						const pv = worldMmToSlicePx(a.vertexMm, "sagittal", volume);
-						const p2 = worldMmToSlicePx(a.endMm, "sagittal", volume);
-						const isSelected = selectedMeasurement?.id === a.id;
-						const activeH = hoveredMeasurementHandle?.id === a.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === a.id ? draggingMeasurementHandle.handleIndex : null);
-						drawCbctAngleMeasurement(ctx, p1, pv, p2, a.angleDeg, isSelected, activeH);
-					}
-				}
-				if (activeAngle && activeAngle.plane === "sagittal") {
-					const p1 = worldMmToSlicePx(activeAngle.startMm, "sagittal", volume);
-					const pv = activeAngle.vertexMm
-						? worldMmToSlicePx(activeAngle.vertexMm, "sagittal", volume)
-						: worldMmToSlicePx(activeAngle.currentMm, "sagittal", volume);
-					const p2 = worldMmToSlicePx(activeAngle.currentMm, "sagittal", volume);
-					const angleDeg = activeAngle.vertexMm
-						? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm)
-						: 0;
-					drawCbctAngleMeasurement(ctx, p1, pv, p2, angleDeg, true, null);
-				}
-
-				// Draw Probes on Sagittal
-				for (const pm of probeMarkers) {
-					if (pm.plane === "sagittal") {
-						const p = worldMmToSlicePx(pm.worldMm, "sagittal", volume);
-						const isSelected = selectedMeasurement?.id === pm.id;
-						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName, isSelected);
-					}
-				}
-				if (activeProbe && activeProbe.plane === "sagittal" && activeTool === "probe") {
-					const p = worldMmToSlicePx(activeProbe.worldMm, "sagittal", volume);
-					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName, true);
-				}
-
-				// Draw Mandibular Canal Nerve (IAN) on Sagittal with 3D Catmull-Rom Spline & Distance Gating
+				// Mandibular Canal Nerve (IAN) on Sagittal with 3D Catmull-Rom Spline & Distance Gating
 				if (interpolatedNerve3D.length > 1) {
 					ctx.save();
 					ctx.lineCap = "round";
@@ -1890,20 +1842,122 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					ctx.restore();
 				}
 
-				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
+				// End of Pass 1 (Transformed World Space)
+				ctx.restore();
+
+				// ─── PASS 2: SCREEN-SPACE 1:1 VECTOR SPACE (RULERS, BADGES, MEASUREMENTS) ───
+				// 1. Calibrated Millimeter Rulers
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: metadata.widthPx,
+					heightPx: metadata.heightPx,
+					pixelSpacingMmX: metadata.pixelSpacingX,
+					pixelSpacingMmY: metadata.pixelSpacingY,
+					showScaleBar: true,
+					transform,
+				});
+
+				// 2. Tooth FDI badge on Sagittal in Screen Space
+				if (sagittalImplantPEntry && implant3DWorld) {
+					const pEntryScreen = slicePxToScreenPx(sagittalImplantPEntry, transform);
+					const badgeY = Math.max(2, pEntryScreen.y - 18);
+					ctx.save();
+					ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+					ctx.strokeStyle = sagittalImplantStatusColor;
+					ctx.lineWidth = 1;
+					ctx.beginPath();
+					if (typeof ctx.roundRect === "function") {
+						ctx.roundRect(pEntryScreen.x - 13, badgeY, 26, 12, 3);
+					} else {
+						ctx.rect(pEntryScreen.x - 13, badgeY, 26, 12);
+					}
+					ctx.fill();
+					ctx.stroke();
+					// Pointer arrow
+					ctx.beginPath();
+					ctx.moveTo(pEntryScreen.x - 3, badgeY + 12);
+					ctx.lineTo(pEntryScreen.x, badgeY + 15);
+					ctx.lineTo(pEntryScreen.x + 3, badgeY + 12);
+					ctx.closePath();
+					ctx.fillStyle = sagittalImplantStatusColor;
+					ctx.fill();
+					ctx.fillStyle = "#ffffff";
+					ctx.font = "bold 8.5px monospace";
+					ctx.textAlign = "center";
+					ctx.textBaseline = "middle";
+					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntryScreen.x, badgeY + 6);
+					ctx.restore();
+				}
+
+				// 3. Draw Rulers on Sagittal in Screen Space
+				for (const r of rulers) {
+					if (r.plane === "sagittal") {
+						const p1 = slicePxToScreenPx(worldMmToSlicePx(r.startMm, "sagittal", volume), transform);
+						const p2 = slicePxToScreenPx(worldMmToSlicePx(r.endMm, "sagittal", volume), transform);
+						const isSelected = selectedMeasurement?.id === r.id;
+						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
+					}
+				}
+				if (activeRuler && activeRuler.plane === "sagittal") {
+					const p1 = slicePxToScreenPx(worldMmToSlicePx(activeRuler.startMm, "sagittal", volume), transform);
+					const p2 = slicePxToScreenPx(worldMmToSlicePx(activeRuler.currentMm, "sagittal", volume), transform);
+					const dist = Math.hypot(
+						activeRuler.currentMm.x - activeRuler.startMm.x,
+						activeRuler.currentMm.y - activeRuler.startMm.y,
+						activeRuler.currentMm.z - activeRuler.startMm.z,
+					);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
+				}
+
+				// 4. Draw Angles on Sagittal in Screen Space
+				for (const a of angles) {
+					if (a.plane === "sagittal") {
+						const p1 = slicePxToScreenPx(worldMmToSlicePx(a.startMm, "sagittal", volume), transform);
+						const pv = slicePxToScreenPx(worldMmToSlicePx(a.vertexMm, "sagittal", volume), transform);
+						const p2 = slicePxToScreenPx(worldMmToSlicePx(a.endMm, "sagittal", volume), transform);
+						const isSelected = selectedMeasurement?.id === a.id;
+						const activeH = hoveredMeasurementHandle?.id === a.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === a.id ? draggingMeasurementHandle.handleIndex : null);
+						drawCbctAngleMeasurement(ctx, p1, pv, p2, a.angleDeg, isSelected, activeH);
+					}
+				}
+				if (activeAngle && activeAngle.plane === "sagittal") {
+					const p1 = slicePxToScreenPx(worldMmToSlicePx(activeAngle.startMm, "sagittal", volume), transform);
+					const pv = activeAngle.vertexMm
+						? slicePxToScreenPx(worldMmToSlicePx(activeAngle.vertexMm, "sagittal", volume), transform)
+						: slicePxToScreenPx(worldMmToSlicePx(activeAngle.currentMm, "sagittal", volume), transform);
+					const p2 = slicePxToScreenPx(worldMmToSlicePx(activeAngle.currentMm, "sagittal", volume), transform);
+					const angleDeg = activeAngle.vertexMm
+						? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm)
+						: 0;
+					drawCbctAngleMeasurement(ctx, p1, pv, p2, angleDeg, true, null);
+				}
+
+				// 5. Draw Probes on Sagittal in Screen Space
+				for (const pm of probeMarkers) {
+					if (pm.plane === "sagittal") {
+						const p = slicePxToScreenPx(worldMmToSlicePx(pm.worldMm, "sagittal", volume), transform);
+						const isSelected = selectedMeasurement?.id === pm.id;
+						drawCbctProbeMarker(ctx, p, pm.hu, pm.tissueName, isSelected);
+					}
+				}
+				if (activeProbe && activeProbe.plane === "sagittal" && activeTool === "probe") {
+					const p = slicePxToScreenPx(worldMmToSlicePx(activeProbe.worldMm, "sagittal", volume), transform);
+					drawCbctProbeMarker(ctx, p, activeProbe.hu, activeProbe.tissueName, true);
+				}
+
+				// 6. Draw Oblique Crosshair with Rotation Handles in Screen Space
+				const centerScreen = slicePxToScreenPx({ x: vox.y, y: zPx }, transform);
 				drawObliqueCrosshairWithRotationHandles(ctx, {
 					widthPx: metadata.widthPx,
 					heightPx: metadata.heightPx,
-					centerPx: { x: vox.y, y: zPx },
+					centerPx: centerScreen,
 					plane: "sagittal",
 					rotationDeg: obliqueAngles.sagittalTiltDeg,
 					activeHandle: activeRotationHandle?.plane === "sagittal" ? activeRotationHandle.handle : null,
 					hoveredHandle: hoveredHandle?.plane === "sagittal" ? hoveredHandle.handle : null,
 					showHandles: true,
-					showAngleBadge: true,
+					showAngleBadge: false,
 				});
-
-				ctx.restore();
 			}
 		}
 	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, angles, activeAngle, selectedMeasurement, draggingMeasurementHandle, hoveredMeasurementHandle, probeMarkers, activeProbe, activeTool, maximizedViewport, viewLayout, nervePoints, interpolatedNerve3D, selectedNerveNodeIdx, nerveTotalLengthMm]);
@@ -1958,23 +2012,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			offCtx.putImageData(panoImgDataRef.current, 0, 0);
 		}
 
+		// ─── PASS 1: TRANSFORMED WORLD SPACE (RADIOGRAPH & ANATOMICAL OVERLAYS) ───
 		ctx.save();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		const transform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
 		ctx.translate(transform.panX, transform.panY);
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
-
-		// Draw Calibrated Millimeter Rulers on Panorama (Y-axis vertical depth only; X-axis disabled to prevent conflict with FDI tooth markers)
-		drawCalibratedMillimeterRulers(ctx, {
-			widthPx: canvas.width,
-			heightPx: canvas.height,
-			pixelSpacingMmX: volume?.spacingMm.x ?? 0.4,
-			pixelSpacingMmY: volume?.spacingMm.z ?? 0.4,
-			showXAxis: false,
-			showYAxis: true,
-			showScaleBar: true,
-		});
 
 		// Draw Axial Plane Intersection Line (Cyan #06b6d4)
 		if (volume) {
@@ -2003,82 +2047,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.stroke();
 		}
 
-		// 2. Draw Tooth Markers on Panorama
-		for (const tm of panoramicData.toothMarkersOnPano) {
-			ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.4);
-			ctx.lineWidth = 1;
-			ctx.setLineDash([2, 3]);
-			ctx.beginPath();
-			ctx.moveTo(tm.xPx, 18);
-			ctx.lineTo(tm.xPx, canvas.height - 18);
-			ctx.stroke();
-			ctx.setLineDash([]);
+		let panoImplantX: number | null = null;
+		let panoImplantYEntry: number | null = null;
+		let panoImplantStatusColor = "#10b981";
 
-			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-			ctx.beginPath();
-			ctx.roundRect(tm.xPx - 10, 2, 20, 14, 3);
-			ctx.fill();
-			ctx.fillStyle = "#38bdf8";
-			ctx.font = "bold 9px monospace";
-			ctx.textAlign = "center";
-			ctx.fillText(tm.toothFdi, tm.xPx, 12);
-		}
-
-		// 3. Draw Numbered Cross-Section Slice Fan Ticks (#1..#N)
-		const fanTicks = getPanoramicSliceFanTicks(crossSections, panoramicData.widthPx, archCurve.totalArcLengthMm);
-		let lastDrawnTickX = -999;
-		for (let i = 0; i < fanTicks.length; i++) {
-			const tick = fanTicks[i]!;
-			const isActive = i === activeCrossSectionIdx;
-
-			if (isActive) {
-				// Highlighted active slice line with vibrant Romexis Yellow
-				ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
-				ctx.lineWidth = 2.0;
-				ctx.beginPath();
-				ctx.moveTo(tick.panoX, 0);
-				ctx.lineTo(tick.panoX, canvas.height);
-				ctx.stroke();
-
-				// Active slice top/bottom badge (Dark matte with subtle yellow border & text)
-				ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-				ctx.beginPath();
-				ctx.roundRect(Math.max(2, tick.panoX - 16), canvas.height - 18, 32, 16, 4);
-				ctx.fill();
-				ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
-				ctx.lineWidth = 1;
-				ctx.stroke();
-				ctx.fillStyle = ROMEXIS_COLORS.crossSection;
-				ctx.font = "bold 9px monospace";
-				ctx.textAlign = "center";
-				ctx.fillText(`#${tick.sliceIndex}`, Math.max(18, tick.panoX), canvas.height - 6);
-				lastDrawnTickX = tick.panoX;
-			} else if (tick.isMajor && Math.abs(tick.panoX - lastDrawnTickX) >= 28) {
-				// Major slice tick mark
-				ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
-				ctx.lineWidth = 1.0;
-				ctx.beginPath();
-				ctx.moveTo(tick.panoX, canvas.height - 10);
-				ctx.lineTo(tick.panoX, canvas.height);
-				ctx.stroke();
-
-				ctx.fillStyle = "rgba(148, 163, 184, 0.8)";
-				ctx.font = "8px monospace";
-				ctx.textAlign = "center";
-				ctx.fillText(`${tick.sliceIndex}`, tick.panoX, canvas.height - 12);
-				lastDrawnTickX = tick.panoX;
-			} else {
-				// Minor slice tick mark
-				ctx.strokeStyle = "rgba(100, 116, 139, 0.3)";
-				ctx.lineWidth = 1.0;
-				ctx.beginPath();
-				ctx.moveTo(tick.panoX, canvas.height - 4);
-				ctx.lineTo(tick.panoX, canvas.height);
-				ctx.stroke();
-			}
-		}
-
-		// 4. Synchronized Virtual Implant 3D Projection on Panorama
+		// Synchronized Virtual Implant 3D Projection Geometry on Panorama
 		if (studioMode === "implant" && activeCrossSection && implant3DWorld) {
 			const panoX = mapSliceToPanoramicX(activeCrossSection, panoramicData.widthPx, archCurve.totalArcLengthMm);
 			const panoH = panoramicData.heightPx;
@@ -2087,6 +2060,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 			const yEntryPx = Math.max(0, Math.min(panoH - 1, ((zTopMm - implant3DWorld.entry3D.z) / panoHMm) * panoH));
 			const yApexPx = Math.max(0, Math.min(panoH - 1, ((zTopMm - implant3DWorld.apex3D.z) / panoHMm) * panoH));
+			panoImplantX = panoX;
+			panoImplantYEntry = yEntryPx;
 
 			const pxPerMmY = panoH / panoHMm;
 			const rPlatPx = (implant3DWorld.platformDiameterMm / 2.0) * pxPerMmY;
@@ -2099,6 +2074,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				: nerveAuditResult.isWarning
 					? "#f59e0b"
 					: "#10b981";
+			panoImplantStatusColor = statusColor;
 			const statusFill = nerveAuditResult.isDangerous
 				? "rgba(239, 68, 68, 0.55)"
 				: nerveAuditResult.isWarning
@@ -2138,22 +2114,138 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.moveTo(panoX, yEntryPx);
 			ctx.lineTo(panoX, yApexPx);
 			ctx.stroke();
+		}
 
-			// Tooth FDI Tag above implant
+		// End of Pass 1 (Transformed World Space)
+		ctx.restore();
+
+		// ─── PASS 2: SCREEN-SPACE 1:1 VECTOR SPACE (RULERS, TICKS, FDI BADGES) ───
+		// 1. Calibrated Millimeter Rulers on Panorama (Y-axis vertical depth only; X-axis disabled to prevent conflict with FDI tooth markers)
+		drawCalibratedMillimeterRulers(ctx, {
+			widthPx: canvas.width,
+			heightPx: canvas.height,
+			pixelSpacingMmX: volume?.spacingMm.x ?? 0.4,
+			pixelSpacingMmY: volume?.spacingMm.z ?? 0.4,
+			showXAxis: false,
+			showYAxis: true,
+			showScaleBar: true,
+			transform,
+		});
+
+		// 2. Draw Tooth Markers on Panorama in Screen Space
+		for (const tm of panoramicData.toothMarkersOnPano) {
+			const xScreen = tm.xPx * transform.zoom + transform.panX;
+			if (xScreen < -20 || xScreen > canvas.width + 20) continue;
+
+			ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.4);
+			ctx.lineWidth = 1;
+			ctx.setLineDash([2, 3]);
+			ctx.beginPath();
+			ctx.moveTo(xScreen, 18);
+			ctx.lineTo(xScreen, canvas.height - 18);
+			ctx.stroke();
+			ctx.setLineDash([]);
+
 			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-			ctx.strokeStyle = statusColor;
+			ctx.beginPath();
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(xScreen - 10, 2, 20, 14, 3);
+			} else {
+				ctx.rect(xScreen - 10, 2, 20, 14);
+			}
+			ctx.fill();
+			ctx.fillStyle = "#38bdf8";
+			ctx.font = "bold 9px monospace";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(tm.toothFdi, xScreen, 9);
+		}
+
+		// 3. Draw Numbered Cross-Section Slice Fan Ticks (#1..#N) in Screen Space
+		const fanTicks = getPanoramicSliceFanTicks(crossSections, panoramicData.widthPx, archCurve.totalArcLengthMm);
+		let lastDrawnTickX = -999;
+		for (let i = 0; i < fanTicks.length; i++) {
+			const tick = fanTicks[i]!;
+			const isActive = i === activeCrossSectionIdx;
+			const tickXScreen = tick.panoX * transform.zoom + transform.panX;
+
+			if (isActive) {
+				// Highlighted active slice line with vibrant Romexis Yellow
+				ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
+				ctx.lineWidth = 2.0;
+				ctx.beginPath();
+				ctx.moveTo(tickXScreen, 0);
+				ctx.lineTo(tickXScreen, canvas.height);
+				ctx.stroke();
+
+				// Active slice top/bottom badge
+				ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+				ctx.beginPath();
+				if (typeof ctx.roundRect === "function") {
+					ctx.roundRect(Math.max(2, tickXScreen - 16), canvas.height - 18, 32, 16, 4);
+				} else {
+					ctx.rect(Math.max(2, tickXScreen - 16), canvas.height - 18, 32, 16);
+				}
+				ctx.fill();
+				ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
+				ctx.lineWidth = 1;
+				ctx.stroke();
+				ctx.fillStyle = ROMEXIS_COLORS.crossSection;
+				ctx.font = "bold 9px monospace";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(`#${tick.sliceIndex}`, Math.max(18, tickXScreen), canvas.height - 10);
+				lastDrawnTickX = tickXScreen;
+			} else if (tick.isMajor && Math.abs(tickXScreen - lastDrawnTickX) >= 28) {
+				// Major slice tick mark
+				ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
+				ctx.lineWidth = 1.0;
+				ctx.beginPath();
+				ctx.moveTo(tickXScreen, canvas.height - 10);
+				ctx.lineTo(tickXScreen, canvas.height);
+				ctx.stroke();
+
+				ctx.fillStyle = "rgba(148, 163, 184, 0.8)";
+				ctx.font = "8px monospace";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(`${tick.sliceIndex}`, tickXScreen, canvas.height - 14);
+				lastDrawnTickX = tickXScreen;
+			} else {
+				// Minor slice tick mark
+				ctx.strokeStyle = "rgba(100, 116, 139, 0.3)";
+				ctx.lineWidth = 1.0;
+				ctx.beginPath();
+				ctx.moveTo(tickXScreen, canvas.height - 4);
+				ctx.lineTo(tickXScreen, canvas.height);
+				ctx.stroke();
+			}
+		}
+
+		// 4. Tooth FDI Tag above implant in Screen Space
+		if (panoImplantX !== null && panoImplantYEntry !== null && implant3DWorld) {
+			const panoXScreen = panoImplantX * transform.zoom + transform.panX;
+			const yEntryScreen = panoImplantYEntry * transform.zoom + transform.panY;
+			const badgeY = Math.max(2, yEntryScreen - 18);
+			ctx.save();
+			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+			ctx.strokeStyle = panoImplantStatusColor;
 			ctx.lineWidth = 1;
 			ctx.beginPath();
-			ctx.roundRect(panoX - 18, Math.max(2, yEntryPx - 18), 36, 14, 3);
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(panoXScreen - 18, badgeY, 36, 14, 3);
+			} else {
+				ctx.rect(panoXScreen - 18, badgeY, 36, 14);
+			}
 			ctx.fill();
 			ctx.stroke();
 			ctx.fillStyle = "#ffffff";
 			ctx.font = "bold 9px monospace";
 			ctx.textAlign = "center";
-			ctx.fillText(`FDI #${implant3DWorld.targetToothFdi}`, panoX, Math.max(2, yEntryPx - 18) + 10);
+			ctx.textBaseline = "middle";
+			ctx.fillText(`FDI #${implant3DWorld.targetToothFdi}`, panoXScreen, badgeY + 7);
+			ctx.restore();
 		}
-
-		ctx.restore();
 	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout]);
 
 	// ─── RENDER ACTIVE CROSS-SECTION WITH IMPLANT & NERVE ─────────────────────
@@ -2184,6 +2276,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			offCtx.putImageData(crossSectionImgDataRef.current, 0, 0);
 		}
 
+		// ─── PASS 1: TRANSFORMED WORLD SPACE (RESLICED BONE & CAD SHAPES) ───
 		ctx.save();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		const transform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
@@ -2195,16 +2288,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const centerX = canvas.width / 2;
 		const topY = 20; // Alveolar crest baseline in pixels
 
-		// 2. Draw Calibrated Millimeter Rulers and Grid
-		drawCalibratedMillimeterRulers(ctx, {
-			widthPx: canvas.width,
-			heightPx: canvas.height,
-			pixelSpacingMmX: pxSpacing,
-			pixelSpacingMmY: pxSpacing,
-			showGrid: true,
-			showScaleBar: true,
-		});
-
 		// Draw Axial Reference Plane Line (Cyan #06b6d4)
 		const centerY = canvas.height / 2;
 		ctx.strokeStyle = ROMEXIS_COLORS.axialRgba(0.75);
@@ -2215,6 +2298,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		ctx.lineTo(canvas.width, centerY);
 		ctx.stroke();
 		ctx.setLineDash([]);
+
+		let crossSectionClearanceMidPoint: { x: number; y: number } | null = null;
+		let crossSectionStatusStroke = "#10b981";
 
 		// 3. Draw Mandibular Canal & Virtual Implant (Only in Implant Mode)
 		if (studioMode === "implant") {
@@ -2263,6 +2349,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				: nerveAuditResult.isWarning
 					? "#f59e0b"
 					: "#10b981";
+			crossSectionStatusStroke = statusStroke;
 			const statusFill = nerveAuditResult.isDangerous
 				? "rgba(239, 68, 68, 0.45)"
 				: nerveAuditResult.isWarning
@@ -2342,25 +2429,51 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.lineTo(canalCenterX, canalCenterY);
 			ctx.stroke();
 			ctx.setLineDash([]);
+			ctx.restore();
 
-			// Clearance label badge along distance vector
-			const midLineX = (apexPxX + canalCenterX) / 2;
-			const midLineY = (apexPxY + canalCenterY) / 2;
+			crossSectionClearanceMidPoint = {
+				x: (apexPxX + canalCenterX) / 2,
+				y: (apexPxY + canalCenterY) / 2,
+			};
+		}
+
+		// End of Pass 1 (Transformed World Space)
+		ctx.restore();
+
+		// ─── PASS 2: SCREEN-SPACE 1:1 VECTOR SPACE (RULERS, CALIBRATED GRID, BADGES) ───
+		// 1. Calibrated Millimeter Rulers and Grid
+		drawCalibratedMillimeterRulers(ctx, {
+			widthPx: canvas.width,
+			heightPx: canvas.height,
+			pixelSpacingMmX: pxSpacing,
+			pixelSpacingMmY: pxSpacing,
+			showGrid: true,
+			showScaleBar: true,
+			transform,
+		});
+
+		// 2. Clearance label badge along distance vector in Screen Space
+		if (crossSectionClearanceMidPoint) {
+			const midScreen = slicePxToScreenPx(crossSectionClearanceMidPoint, transform);
+			ctx.save();
 			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-			ctx.strokeStyle = statusStroke;
+			ctx.strokeStyle = crossSectionStatusStroke;
 			ctx.lineWidth = 1;
 			ctx.beginPath();
-			ctx.roundRect(midLineX - 22, midLineY - 8, 44, 16, 3);
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(midScreen.x - 22, midScreen.y - 8, 44, 16, 3);
+			} else {
+				ctx.rect(midScreen.x - 22, midScreen.y - 8, 44, 16);
+			}
 			ctx.fill();
 			ctx.stroke();
 			ctx.fillStyle = "#ffffff";
 			ctx.font = "bold 9px monospace";
 			ctx.textAlign = "center";
-			ctx.fillText(`${nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм`, midLineX, midLineY + 3.5);
+			ctx.textBaseline = "middle";
+			ctx.fillText(`${nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм`, midScreen.x, midScreen.y);
 			ctx.restore();
 		}
-
-		ctx.restore();
 	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout]);
 
 	// ─── INTERACTIVE PANORAMA CLICK & SCRUB TO JUMP TO CROSS-SECTION ──────────
@@ -3397,38 +3510,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onToggleMaximize={() => handleToggleMaximize("axial")}
 					zoomFactor={transforms.axial?.zoom}
 				/>
-				{/* Dental Arch Auto-Detect & Toggle Buttons */}
-				<div className="absolute top-2 right-12 z-20 flex items-center gap-1.5">
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							handleAutoDetectArch();
-						}}
-						className="px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 bg-[#09090b]/90 hover:bg-zinc-900 text-purple-300 hover:text-purple-200 border border-purple-500/50 shadow-xs transition-all cursor-pointer"
-						title="Авто-поиск зубной дуги ОПТГ по плотности эмали"
-						data-testid="cbct-btn-auto-arch"
-						id="cbct-auto-arch-btn"
-					>
-						<span>⚙️ Авто-дуга</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							setShowDentalArch((prev) => !prev);
-						}}
-						className={`px-2 py-1 rounded text-[10px] font-mono flex items-center gap-1 border transition-all ${
-							showDentalArch
-								? "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs"
-								: "bg-[#09090b]/80 text-zinc-400 hover:text-zinc-200 border-zinc-800 hover:border-zinc-700"
-						}`}
-						title="Отображение зубной дуги ОПТГ"
-						data-testid="cbct-toggle-dental-arch"
-					>
-						<span>🦷 Дуга ОПТГ</span>
-					</button>
-				</div>
 			</div>
 		</div>
 	);
@@ -3723,6 +3804,21 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<span>⚙️ Авто-дуга</span>
 					</button>
 
+					{/* 1-Click Toggle Dental Arch Spline on All Viewports */}
+					<button
+						type="button"
+						onClick={() => setShowDentalArch((prev) => !prev)}
+						className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 border shadow-xs transition-colors cursor-pointer ${
+							showDentalArch
+								? "bg-purple-950/60 text-purple-200 border-purple-500/80 shadow-purple-950/40"
+								: "bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border-zinc-800"
+						}`}
+						data-testid="cbct-toggle-dental-arch"
+						title="Показать / скрыть анатомическую дугу ОПТГ"
+					>
+						<span>🦷 Дуга ОПТГ</span>
+					</button>
+
 					{/* 1-Click Clinical EMR Snapshot Export Button */}
 					<button
 						type="button"
@@ -3931,6 +4027,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onToggleInvertColors={() => setInvertColors((prev) => !prev)}
 					onOpenDicomFolder={() => folderInputRef.current?.click()}
 					onOpenDicomZip={() => zipInputRef.current?.click()}
+					showDentalArch={showDentalArch}
+					onToggleDentalArch={() => setShowDentalArch((prev) => !prev)}
+					onAutoDetectArch={handleAutoDetectArch}
 				/>
 
 				{/* ─── VIEWPORTS & SIDEBAR GRID (COLS 1..12) ───────────────────── */}

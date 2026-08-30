@@ -281,17 +281,22 @@ export interface RulerDrawingOptions {
 	readonly heightPx: number;
 	readonly pixelSpacingMmX: number;
 	readonly pixelSpacingMmY: number;
-	readonly originMmX?: number;
-	readonly originMmY?: number;
-	readonly showXAxis?: boolean;
-	readonly showYAxis?: boolean;
-	readonly showGrid?: boolean;
-	readonly showScaleBar?: boolean;
+	readonly originMmX?: number | undefined;
+	readonly originMmY?: number | undefined;
+	readonly showXAxis?: boolean | undefined;
+	readonly showYAxis?: boolean | undefined;
+	readonly showGrid?: boolean | undefined;
+	readonly showScaleBar?: boolean | undefined;
+	readonly transform?: {
+		readonly panX?: number | undefined;
+		readonly panY?: number | undefined;
+		readonly zoom?: number | undefined;
+	} | undefined;
 }
 
 /**
  * Draws precision calibrated millimeter rulers (1 mm minor ticks, 5 mm medium ticks, 10 mm major ticks + labels)
- * and a 10 mm scale reference bar onto the 2D canvas.
+ * and a 10 mm scale reference bar onto the 2D canvas in 1:1 screen vector space (Zero-aliasing under zoom).
  */
 export function drawCalibratedMillimeterRulers(
 	ctx: CanvasRenderingContext2D,
@@ -306,42 +311,55 @@ export function drawCalibratedMillimeterRulers(
 		showYAxis = true,
 		showGrid = false,
 		showScaleBar = true,
+		transform,
 	} = options;
 
 	if (pixelSpacingMmX <= 0 || pixelSpacingMmY <= 0) return;
 
-	const pxPerMmX = 1.0 / pixelSpacingMmX;
-	const pxPerMmY = 1.0 / pixelSpacingMmY;
+	const zoom = transform?.zoom ?? 1.0;
+	const panX = transform?.panX ?? 0.0;
+	const panY = transform?.panY ?? 0.0;
+
+	const pxPerMmX = (1.0 / pixelSpacingMmX) * zoom;
+	const pxPerMmY = (1.0 / pixelSpacingMmY) * zoom;
 
 	ctx.save();
 	ctx.font = "bold 9px monospace";
 	ctx.textBaseline = "top";
 
-	// 1. Optional background grid (every 5mm)
+	// 1. Optional background grid (every 5mm aligned with slice coordinate space)
 	if (showGrid) {
 		ctx.strokeStyle = ROMEXIS_COLORS.rulerGrid;
 		ctx.lineWidth = 0.5;
 		const gridStepX = 5.0 * pxPerMmX;
 		const gridStepY = 5.0 * pxPerMmY;
-		for (let x = gridStepX; x < widthPx; x += gridStepX) {
+
+		const startX = ((panX % gridStepX) + gridStepX) % gridStepX;
+		for (let x = startX; x < widthPx; x += gridStepX) {
 			ctx.beginPath();
-			ctx.moveTo(x, 0);
-			ctx.lineTo(x, heightPx);
+			ctx.moveTo(Math.round(x), 0);
+			ctx.lineTo(Math.round(x), heightPx);
 			ctx.stroke();
 		}
-		for (let y = gridStepY; y < heightPx; y += gridStepY) {
+		const startY = ((panY % gridStepY) + gridStepY) % gridStepY;
+		for (let y = startY; y < heightPx; y += gridStepY) {
 			ctx.beginPath();
-			ctx.moveTo(0, y);
-			ctx.lineTo(widthPx, y);
+			ctx.moveTo(0, Math.round(y));
+			ctx.lineTo(widthPx, Math.round(y));
 			ctx.stroke();
 		}
 	}
 
 	// 2. Horizontal (X-axis) ruler along top border
 	if (showXAxis) {
-		const totalMmX = widthPx * pixelSpacingMmX;
-		for (let mm = 0; mm <= totalMmX; mm += 1) {
-			const x = Math.round(mm * pxPerMmX);
+		const minMm = Math.floor(-panX / pxPerMmX);
+		const maxMm = Math.ceil((widthPx - panX) / pxPerMmX);
+		const startMm = Math.max(0, minMm);
+		const endMm = Math.max(0, maxMm);
+
+		for (let mm = startMm; mm <= endMm; mm += 1) {
+			const x = Math.round(panX + mm * pxPerMmX);
+			if (x < 0) continue;
 			if (x > widthPx - 2) break;
 
 			const isMajor = mm % 10 === 0;
@@ -374,9 +392,14 @@ export function drawCalibratedMillimeterRulers(
 
 	// 3. Vertical (Y-axis) ruler along left border
 	if (showYAxis) {
-		const totalMmY = heightPx * pixelSpacingMmY;
-		for (let mm = 0; mm <= totalMmY; mm += 1) {
-			const y = Math.round(mm * pxPerMmY);
+		const minMm = Math.floor(-panY / pxPerMmY);
+		const maxMm = Math.ceil((heightPx - panY) / pxPerMmY);
+		const startMm = Math.max(0, minMm);
+		const endMm = Math.max(0, maxMm);
+
+		for (let mm = startMm; mm <= endMm; mm += 1) {
+			const y = Math.round(panY + mm * pxPerMmY);
+			if (y < 0) continue;
 			if (y > heightPx - 2) break;
 
 			const isMajor = mm % 10 === 0;
@@ -522,7 +545,7 @@ export function getTissueNameFromHU(hu: number): string {
  */
 export function getCbctToolCursor(
 	tool: CbctActiveMouseTool,
-	isDragging: boolean,
+	isDragging = false,
 	hoveredHandle?: boolean,
 ): string {
 	if (hoveredHandle) return "grab";
@@ -870,6 +893,35 @@ export function worldMmToSlicePx(
 		default:
 			return { x: vox.x, y: vox.y };
 	}
+}
+
+/**
+ * Maps 2D slice pixel coordinates to 2D screen canvas pixels using the viewport pan/zoom transform.
+ */
+export function slicePxToScreenPx(
+	slicePx: { readonly x: number; readonly y: number },
+	transform?: { readonly panX?: number | undefined; readonly panY?: number | undefined; readonly zoom?: number | undefined } | undefined,
+): { x: number; y: number } {
+	const zoom = transform?.zoom ?? 1.0;
+	const panX = transform?.panX ?? 0.0;
+	const panY = transform?.panY ?? 0.0;
+	return {
+		x: slicePx.x * zoom + panX,
+		y: slicePx.y * zoom + panY,
+	};
+}
+
+/**
+ * Maps 3D world millimeter coordinates to 2D screen canvas pixels using slice projection and viewport transform.
+ */
+export function worldMmToScreenPx(
+	worldMm: Point3D,
+	plane: CbctViewportType,
+	volume: CbctVoxelVolume,
+	transform?: { readonly panX?: number | undefined; readonly panY?: number | undefined; readonly zoom?: number | undefined } | undefined,
+): { x: number; y: number } {
+	const slicePx = worldMmToSlicePx(worldMm, plane, volume);
+	return slicePxToScreenPx(slicePx, transform);
 }
 
 /**

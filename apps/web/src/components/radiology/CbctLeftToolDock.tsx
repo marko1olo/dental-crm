@@ -80,6 +80,13 @@ export interface CbctLeftToolDockProps {
 	/** Callback to toggle LUT inversion */
 	readonly onToggleInvertColors?: (() => void) | undefined;
 
+	/** Show / Hide Dental Arch (OPTT Spline) */
+	readonly showDentalArch?: boolean | undefined;
+	/** Callback to toggle Dental Arch visibility */
+	readonly onToggleDentalArch?: (() => void) | undefined;
+	/** Callback to trigger automatic dental arch detection */
+	readonly onAutoDetectArch?: (() => void) | undefined;
+
 	/** Trigger loading real DICOM folder */
 	readonly onOpenDicomFolder?: (() => void) | undefined;
 	/** Trigger loading real DICOM ZIP archive */
@@ -103,6 +110,9 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 	onResetAll,
 	invertColors = false,
 	onToggleInvertColors,
+	showDentalArch = true,
+	onToggleDentalArch,
+	onAutoDetectArch,
 	onOpenDicomFolder,
 	onOpenDicomZip,
 	className = "",
@@ -464,6 +474,33 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						</kbd>
 					</div>
 				</div>
+
+				{/* 8b. Dental Arch Toggle (Optional shortcut) */}
+				{onToggleDentalArch && (
+					<div className="relative group flex items-center justify-center">
+						<button
+							type="button"
+							onClick={onToggleDentalArch}
+							className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+								showDentalArch
+									? "bg-purple-500/20 text-purple-300 border border-purple-500/60 shadow-xs shadow-purple-950/40"
+									: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-purple-500/40"
+							}`}
+							title="Дуга ОПТГ (Отображение зубной дуги)"
+							aria-label="Дуга ОПТГ"
+							data-testid="cbct-left-dock-toggle-arch"
+						>
+							<span className="text-sm">🦷</span>
+						</button>
+						<div
+							role="tooltip"
+							className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						>
+							<span className="font-semibold">Дуга ОПТГ</span>
+							<span className="text-zinc-400 text-[11px]">{showDentalArch ? "Включена" : "Выключена"}</span>
+						</div>
+					</div>
+				)}
 			</div>
 
 			{/* ─── DIVIDER ─────────────────────────────────────────────────── */}
