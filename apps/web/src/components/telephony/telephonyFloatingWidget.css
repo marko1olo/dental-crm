@@ -4,7 +4,7 @@
 
 .dnt-telephony-floating {
 	position: fixed;
-	bottom: calc(var(--bottom-nav-height, 64px) + 16px);
+	bottom: calc(var(--bottom-nav-height, 64px) + 24px + env(safe-area-inset-bottom, 0px));
 	right: 16px;
 	z-index: 35;
 	display: flex;
@@ -13,11 +13,13 @@
 	gap: 8px;
 	font-family: inherit;
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	pointer-events: none;
+	pointer-events: none !important;
 }
 
-.dnt-telephony-floating > * {
-	pointer-events: auto;
+.dnt-telephony-floating > *,
+.dnt-telephony-floating .dnt-telephony-launcher,
+.dnt-telephony-floating .dnt-telephony-card {
+	pointer-events: auto !important;
 }
 
 /* Auto-hide telephony floating launcher when any modal, drawer, bottom sheet, or incoming call popup is active */
@@ -87,14 +89,14 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 
 @media (max-width: 640px) {
 	.dnt-telephony-floating {
-		bottom: calc(var(--bottom-nav-height, 64px) + 16px + env(safe-area-inset-bottom, 0px));
+		bottom: calc(var(--bottom-nav-height, 64px) + 24px + env(safe-area-inset-bottom, 0px));
 		right: 16px;
 		z-index: 35;
-		pointer-events: none;
+		pointer-events: none !important;
 	}
 	.dnt-telephony-floating .dnt-telephony-launcher,
 	.dnt-telephony-floating .dnt-telephony-card {
-		pointer-events: auto;
+		pointer-events: auto !important;
 	}
 }
 
@@ -103,7 +105,11 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 		bottom: 84px;
 		right: 24px;
 		z-index: 40;
-		pointer-events: none;
+		pointer-events: none !important;
+	}
+	.dnt-telephony-floating .dnt-telephony-launcher,
+	.dnt-telephony-floating .dnt-telephony-card {
+		pointer-events: auto !important;
 	}
 }
 
@@ -233,15 +239,12 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 	position: relative;
 	width: 100%;
 	max-width: calc(100vw - 24px);
-	max-height: 88vh;
-	overflow-y: auto;
-	overscroll-behavior: contain;
+	max-height: 90dvh;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
 	border-radius: 16px;
 	padding: 16px;
-	padding-bottom: 24px;
 	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.35), 0 0 24px 2px rgba(15, 118, 110, 0.2);
 	backdrop-filter: blur(16px);
 	-webkit-backdrop-filter: blur(16px);
@@ -250,15 +253,15 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
+	overflow: hidden;
 }
 
 @media (min-width: 640px) {
 	.dnt-incoming-call-popup {
 		width: 460px;
 		max-width: 460px;
-		max-height: 88vh;
+		max-height: 90dvh;
 		padding: 20px;
-		padding-bottom: 24px;
 	}
 }
 

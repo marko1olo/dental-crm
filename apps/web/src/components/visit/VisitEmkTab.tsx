@@ -1147,7 +1147,7 @@ export function VisitEmkTab() {
 	return (
 		<section
 			data-testid="visit-emk-tab"
-			className="visit-note-panel bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4"
+			className="visit-note-panel bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4 pb-32 sm:pb-8"
 			aria-label="Черновик электронной медицинской карты"
 		>
 			<div className="visit-note-head flex items-center justify-between gap-3 flex-wrap">

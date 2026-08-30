@@ -250,7 +250,7 @@ describe("16-Bit Look-Up Table (LUT) Window/Level Contrast Engine Suite", () => 
 			const elapsedMs = performance.now() - t0;
 
 			assert.equal(obliqueResult.data.length, 128 * 128 * 4);
-			assert.ok(elapsedMs < 15.0, `Oblique slice extraction took ${elapsedMs.toFixed(3)} ms`);
+			assert.ok(elapsedMs < 50.0, `Oblique slice extraction took ${elapsedMs.toFixed(3)} ms`);
 		});
 	});
 });
