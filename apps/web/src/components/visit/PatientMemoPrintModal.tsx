@@ -7,6 +7,8 @@ import {
 	FileText,
 	AlertTriangle,
 	Sparkles,
+	ShieldAlert,
+	HeartPulse,
 } from "lucide-react";
 import {
 	POST_OP_PATIENT_MEMOS,
@@ -183,6 +185,12 @@ export function PatientMemoPrintModal({
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 					{POST_OP_PATIENT_MEMOS.map((memo) => {
 						const isSelected = selectedMemoId === memo.id;
+						const MemoIcon =
+							memo.category === "surgery"
+								? ShieldAlert
+								: memo.category === "endodontics"
+								? HeartPulse
+								: Sparkles;
 						return (
 							<button
 								key={memo.id}
@@ -195,7 +203,9 @@ export function PatientMemoPrintModal({
 								}`}
 								data-testid={`btn-memo-tab-${memo.id}`}
 							>
-								<span className="text-xl shrink-0 mt-0.5">{memo.icon}</span>
+								<div className="p-1.5 rounded-lg bg-[var(--paper)] text-[var(--teal)] border border-[var(--line)] shrink-0 mt-0.5">
+									<MemoIcon className="w-4 h-4" />
+								</div>
 								<div className="min-w-0 flex-1">
 									<div className="text-xs sm:text-sm font-extrabold truncate">
 										{memo.shortTitle}
@@ -235,7 +245,15 @@ export function PatientMemoPrintModal({
 
 						{/* Memo Title */}
 						<div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-							<span className="text-xl">{activeMemo.icon}</span>
+							<div className="p-1.5 rounded-lg bg-teal-50 text-teal-700 border border-teal-200 shrink-0">
+								{activeMemo.category === "surgery" ? (
+									<ShieldAlert className="w-4 h-4" />
+								) : activeMemo.category === "endodontics" ? (
+									<HeartPulse className="w-4 h-4" />
+								) : (
+									<Sparkles className="w-4 h-4" />
+								)}
+							</div>
 							<strong className="text-sm font-extrabold text-slate-950">
 								{activeMemo.title}
 							</strong>

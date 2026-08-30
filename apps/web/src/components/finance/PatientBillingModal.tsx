@@ -275,7 +275,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
 								<h3 className="text-lg font-bold text-slate-900 dark:text-white break-words m-0 leading-tight">
-									<span className="hidden sm:inline">Акт выполненных работ &amp; Гарантийный талон (А4)</span>
+									<span className="hidden sm:inline">Акт выполненных работ и Гарантийный талон (А4)</span>
 									<span className="sm:hidden">Акт выполненных работ</span>
 								</h3>
 								<span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0 whitespace-nowrap">
@@ -283,11 +283,11 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								</span>
 							</div>
 							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-tight flex items-center gap-x-1.5 truncate">
-								<span className="whitespace-nowrap shrink-0">Лицензия № {clinicLicenseNumber}</span>
+								<span className="whitespace-nowrap shrink-0">Лицензия&nbsp;№&nbsp;{clinicLicenseNumber}</span>
 								<span className="hidden sm:inline text-[var(--muted)]/50">•</span>
-								<span className="hidden sm:inline whitespace-nowrap">Приказ МЗ РФ № 804н</span>
+								<span className="hidden sm:inline whitespace-nowrap">Приказ МЗ&nbsp;РФ №&nbsp;804н</span>
 								<span className="hidden sm:inline text-[var(--muted)]/50">•</span>
-								<span className="hidden sm:inline whitespace-nowrap">Закон РФ № 2300-1</span>
+								<span className="hidden sm:inline whitespace-nowrap">Закон&nbsp;РФ №&nbsp;2300-1</span>
 							</p>
 						</div>
 					</div>
@@ -677,7 +677,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								<div className="border border-[var(--line)] p-2.5 rounded-lg bg-[var(--paper-soft)] space-y-1.5">
 									<div className="font-sans font-bold text-xs uppercase flex items-center gap-1.5 text-[var(--ok-fg,#059669)]">
 										<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)] inline" />
-										<span>2. Гарантийный талон и обязательства клиники (СтАР & <span className="whitespace-nowrap">Закон РФ № 2300-1</span>):</span>
+										<span>2. Гарантийный талон и обязательства клиники (СтАР и <span className="whitespace-nowrap">Закон&nbsp;РФ №&nbsp;2300-1</span>):</span>
 									</div>
 									<table className="w-full border-collapse border border-[var(--line)] text-[10px] bg-[var(--paper)]">
 										<thead>

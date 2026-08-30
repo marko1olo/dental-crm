@@ -378,8 +378,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 						<div>
 							<h2 id="cash-shift-modal-title" className="cash-shift-heading">
 								Кассовая смена №{reconciliation.shiftNumber}
-								<span className="cash-shift-status-pill">
-									54-ФЗ • ФФД 1.2
+								<span className="cash-shift-status-pill" title="Фискальный регламент по 54-ФЗ и ФФД 1.2">
+									Фискализация
 								</span>
 								{reconciliation.isShiftDurationExceeded24h ? (
 									<span className="cash-shift-status-pill critical">

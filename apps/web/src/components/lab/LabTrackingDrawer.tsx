@@ -111,10 +111,10 @@ export function LabTrackingDrawer({
 		const stageToSet = targetStage || nextStage?.id;
 		if (!stageToSet || !order.id) return;
 
-		// Проверка финансового шлюза при отправке в лабораторию или фрезеровании каркаса
+		// Проверка финансового шлюза при отправке в лабораторию
 		if (
 			!forceOverride &&
-			(stageToSet === "sent_to_lab" || stageToSet === "model_cad_design" || stageToSet === "framework_wax_milling") &&
+			(stageToSet === "in_progress" || stageToSet === "sent_to_lab") &&
 			!financialGateResult.isGatePassed
 		) {
 			setPendingTargetStage(stageToSet);
@@ -236,14 +236,14 @@ export function LabTrackingDrawer({
 						</div>
 					</div>
 
-					{/* ─── 7-STAGE MANUFACTURING PROGRESS STEPPER ─────────────────── */}
+					{/* ─── 4 КЛИНИЧЕСКИХ СТАТУСА НАКАЗ-ЗАКАЗА ЗТЛ ─────────────────── */}
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
 							<label className="text-sm font-bold text-[var(--ink)]">
-								Технологические этапы изготовления в лаборатории
+								Клинические статусы наряда ЗТЛ
 							</label>
 							<span className="text-xs text-[var(--muted)]">
-								Этап {currentStageIndex + 1} из {LAB_ORDER_STAGES.length}
+								{currentStageIndex >= 0 ? `Этап ${currentStageIndex + 1} из ${LAB_ORDER_STAGES.length}` : "Выберите статус"}
 							</span>
 						</div>
 

@@ -348,7 +348,7 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 						}`}
 					>
 						<FileText size={16} />
-						<span>Реквизиты & Бланк А4</span>
+						<span>Реквизиты и Бланк А4</span>
 					</button>
 					<button
 						type="button"
@@ -360,7 +360,7 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 						}`}
 					>
 						<Coins size={16} />
-						<span>Расчет вычета 13% / 15%</span>
+						<span>Расчет вычета 13&nbsp;% / 15&nbsp;%</span>
 					</button>
 					<button
 						type="button"

@@ -68,16 +68,16 @@ export interface InformedConsentModalProps {
 	}) => void;
 }
 
-const PRESET_BUTTONS: { key: ConsentPresetKey; label: string; icon: string }[] = [
-	{ key: "base_inspection", label: "📋 Первичный осмотр и рентген (1051н)", icon: "📋" },
-	{ key: "therapy_endo_restoration", label: "🦷 Терапия / Эндодонтия", icon: "🦷" },
-	{ key: "local_anesthesia", label: "💉 Местная анестезия", icon: "💉" },
-	{ key: "surgery_extraction", label: "🔪 Хирургия / Имплантация", icon: "🔪" },
-	{ key: "implantation_bone_graft", label: "🔩 Остеопластика / Синус-лифт", icon: "🔩" },
-	{ key: "prosthetics", label: "👑 Ортопедия (коронки, виниры)", icon: "👑" },
-	{ key: "orthodontics", label: "📐 Ортодонтия (брекеты, элайнеры)", icon: "📐" },
-	{ key: "hygiene_whitening", label: "🪥 Профгигиена и отбеливание", icon: "🪥" },
-	{ key: "periodontology", label: "🩸 Пародонтология", icon: "🩸" },
+const PRESET_BUTTONS: { key: ConsentPresetKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+	{ key: "base_inspection", label: "Первичный осмотр и рентген (1051н)", icon: FileText },
+	{ key: "therapy_endo_restoration", label: "Терапия / Эндодонтия", icon: Sparkles },
+	{ key: "local_anesthesia", label: "Местная анестезия", icon: Syringe },
+	{ key: "surgery_extraction", label: "Хирургия / Имплантация", icon: ShieldCheck },
+	{ key: "implantation_bone_graft", label: "Остеопластика / Синус-лифт", icon: ShieldCheck },
+	{ key: "prosthetics", label: "Ортопедия (коронки, виниры)", icon: Sparkles },
+	{ key: "orthodontics", label: "Ортодонтия (брекеты, элайнеры)", icon: Sparkles },
+	{ key: "hygiene_whitening", label: "Профгигиена и отбеливание", icon: Sparkles },
+	{ key: "periodontology", label: "Пародонтология", icon: ShieldCheck },
 ];
 
 export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
@@ -517,11 +517,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 									Информированное добровольное согласие (ИДС)
 								</h2>
 								<span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))]">
-									Приказ Минздрава № 1051н · ст. 20 323-ФЗ
+									Приказ Минздрава №&nbsp;1051н · ст.&nbsp;20 323-ФЗ
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)] line-clamp-1">
-								{patientName} · Карта: {patientCard} · Зона: {toothOrArea || "Полость рта"}
+								{patientName} · Карта:&nbsp;{patientCard} · Зона:&nbsp;{toothOrArea || "Полость рта"}
 							</p>
 						</div>
 					</div>
@@ -541,20 +541,24 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] shrink-0 hidden sm:inline">
 						КЛИНИЧЕСКИЙ ПРОФИЛЬ (1 КЛИК):
 					</span>
-					{PRESET_BUTTONS.map((p) => (
-						<button
-							key={p.key}
-							type="button"
-							onClick={() => applyPreset(p.key)}
-							className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 flex-shrink-0 select-none ${
-								activePreset === p.key
-									? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] border-[var(--teal)] shadow-sm font-bold"
-									: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-							}`}
-						>
-							<span>{p.label}</span>
-						</button>
-					))}
+					{PRESET_BUTTONS.map((p) => {
+						const Icon = p.icon;
+						return (
+							<button
+								key={p.key}
+								type="button"
+								onClick={() => applyPreset(p.key)}
+								className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 flex-shrink-0 select-none ${
+									activePreset === p.key
+										? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] border-[var(--teal)] shadow-sm font-bold"
+										: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+								}`}
+							>
+								<Icon className="w-3.5 h-3.5 shrink-0" />
+								<span>{p.label}</span>
+							</button>
+						);
+					})}
 				</div>
 
 				{/* ── Modal Split Body ── */}

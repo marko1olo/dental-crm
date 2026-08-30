@@ -326,17 +326,22 @@ export const TRANSLUCENCY_LEVELS: TranslucencyLevelOption[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// 4. Statutory 7-Stage Workflow
+// 4. Canonical 4-Status Clinical Workflow (В работе / Примерка / Сдано / Коррекция)
 // ---------------------------------------------------------------------------
 
 export type LabWorkflowStageId =
-	| 'impression_sent'    // Слепки / скан отправлены в лабораторию
-	| 'cad_design'          // 3D CAD моделирование каркаса / анатомии
-	| 'milling_wax_up'      // CAM фрезерование / 3D печать / восковка
-	| 'try_in_fitting'      // Примерка каркаса / прикусного валика
-	| 'glaze_finish'        // Нанесение керамики / индивидуализация / глазурование
-	| 'delivered_to_clinic' // Готовая работа доставлена курьером в клинику
-	| 'installed_in_mouth'; // Работа зафиксирована в полости рта у пациента
+	| 'in_progress'          // 1. В работе
+	| 'fitting_scheduled'    // 2. Примерка назначена
+	| 'delivered_completed'  // 3. Сдано
+	| 'correction_remake'    // 4. Коррекция
+	// Backward compatibility aliases
+	| 'impression_sent'
+	| 'cad_design'
+	| 'milling_wax_up'
+	| 'try_in_fitting'
+	| 'glaze_finish'
+	| 'delivered_to_clinic'
+	| 'installed_in_mouth';
 
 export interface LabStageDefinition {
 	id: LabWorkflowStageId;
@@ -349,77 +354,112 @@ export interface LabStageDefinition {
 }
 
 export const LAB_WORKFLOW_STAGES: Record<LabWorkflowStageId, LabStageDefinition> = {
-	impression_sent: {
-		id: 'impression_sent',
+	in_progress: {
+		id: 'in_progress',
 		orderIndex: 1,
-		nameRu: 'Слепки / скан отправлены',
-		shortTitleRu: 'Отправлен',
-		icon: '📤',
-		descriptionRu: 'Аналоговые слепки (А-силикон) или цифровой интраоральный STL/PLY скан переданы курьеру лаборатории.',
+		nameRu: '1. В работе',
+		shortTitleRu: 'В работе',
+		icon: '⚙️',
+		descriptionRu: 'Заказ передан в лабораторию и находится в процессе моделирования и фрезерования.',
+		colorToken: 'var(--brand-500, #3b82f6)'
+	},
+	fitting_scheduled: {
+		id: 'fitting_scheduled',
+		orderIndex: 2,
+		nameRu: '2. Примерка назначена',
+		shortTitleRu: 'Примерка',
+		icon: '🔍',
+		descriptionRu: 'Работа изготовлена ЗТЛ, назначена дата клинической примерки каркаса или реставрации в расписании.',
+		colorToken: 'var(--warn, #f59e0b)'
+	},
+	delivered_completed: {
+		id: 'delivered_completed',
+		orderIndex: 3,
+		nameRu: '3. Сдано',
+		shortTitleRu: 'Сдано',
+		icon: '✅',
+		descriptionRu: 'Ортопедическая конструкция окончательно зафиксирована в полости рта у пациента. Заказ выполнен.',
+		colorToken: 'var(--ok, #10b981)'
+	},
+	correction_remake: {
+		id: 'correction_remake',
+		orderIndex: 4,
+		nameRu: '4. Коррекция',
+		shortTitleRu: 'Коррекция',
+		icon: '🔄',
+		descriptionRu: 'Возврат в ЗТЛ на коррекцию окклюзии, цвета, аппроксимальных контактов или переделку.',
+		colorToken: 'var(--bad, #ef4444)'
+	},
+
+	// Aliases for backward compatibility with existing saved records
+	impression_sent: {
+		id: 'in_progress',
+		orderIndex: 1,
+		nameRu: '1. В работе',
+		shortTitleRu: 'В работе',
+		icon: '⚙️',
+		descriptionRu: 'Заказ в лаборатории',
 		colorToken: 'var(--brand-500, #3b82f6)'
 	},
 	cad_design: {
-		id: 'cad_design',
-		orderIndex: 2,
-		nameRu: '3D CAD моделирование',
-		shortTitleRu: 'CAD дизайн',
-		icon: '💻',
-		descriptionRu: 'Зубной техник выполняет виртуальное моделирование реставрации в exocad / 3Shape Dental System.',
-		colorToken: '#8b5cf6'
+		id: 'in_progress',
+		orderIndex: 1,
+		nameRu: '1. В работе',
+		shortTitleRu: 'В работе',
+		icon: '⚙️',
+		descriptionRu: 'Заказ в лаборатории',
+		colorToken: 'var(--brand-500, #3b82f6)'
 	},
 	milling_wax_up: {
-		id: 'milling_wax_up',
-		orderIndex: 3,
-		nameRu: 'CAM фрезерование / Печать',
-		shortTitleRu: 'Фрезеровка',
+		id: 'in_progress',
+		orderIndex: 1,
+		nameRu: '1. В работе',
+		shortTitleRu: 'В работе',
 		icon: '⚙️',
-		descriptionRu: 'Станок с ЧПУ фрезерует диоксид циркония / PMMA или 3D-принтер печатает хирургический шаблон / каркас.',
-		colorToken: '#6366f1'
+		descriptionRu: 'Заказ в лаборатории',
+		colorToken: 'var(--brand-500, #3b82f6)'
 	},
 	try_in_fitting: {
-		id: 'try_in_fitting',
-		orderIndex: 4,
-		nameRu: 'Примерка каркаса / восковки',
+		id: 'fitting_scheduled',
+		orderIndex: 2,
+		nameRu: '2. Примерка назначена',
 		shortTitleRu: 'Примерка',
 		icon: '🔍',
-		descriptionRu: 'Врач примеряет каркас в полости рта: проверка краевого прилегания, окклюзии и контактов.',
+		descriptionRu: 'Примерка назначена',
 		colorToken: 'var(--warn, #f59e0b)'
 	},
 	glaze_finish: {
-		id: 'glaze_finish',
-		orderIndex: 5,
-		nameRu: 'Облицовка и глазурование',
-		shortTitleRu: 'Глазурь',
-		icon: '🎨',
-		descriptionRu: 'Послойное нанесение керамической массы, индивидуальные красители (stains), обжиг и финишная глазурь.',
-		colorToken: 'var(--teal, #0d9488)'
+		id: 'in_progress',
+		orderIndex: 1,
+		nameRu: '1. В работе',
+		shortTitleRu: 'В работе',
+		icon: '⚙️',
+		descriptionRu: 'Заказ в лаборатории',
+		colorToken: 'var(--brand-500, #3b82f6)'
 	},
 	delivered_to_clinic: {
-		id: 'delivered_to_clinic',
-		orderIndex: 6,
-		nameRu: 'Доставлено в клинику',
-		shortTitleRu: 'В клинике',
-		icon: '📦',
-		descriptionRu: 'Работа принята администратором/ассистентом клиники, продезинфицирована и готова к фиксации.',
-		colorToken: 'var(--ok, #10b981)'
+		id: 'fitting_scheduled',
+		orderIndex: 2,
+		nameRu: '2. Примерка назначена',
+		shortTitleRu: 'Примерка',
+		icon: '🔍',
+		descriptionRu: 'В клинике / на примерке',
+		colorToken: 'var(--warn, #f59e0b)'
 	},
 	installed_in_mouth: {
-		id: 'installed_in_mouth',
-		orderIndex: 7,
-		nameRu: 'Зафиксировано пациенту',
-		shortTitleRu: 'Зафиксировано',
+		id: 'delivered_completed',
+		orderIndex: 3,
+		nameRu: '3. Сдано',
+		shortTitleRu: 'Сдано',
 		icon: '✅',
-		descriptionRu: 'Окончательная адгезивная или винтовая фиксация работы в полости рта. Заказ успешно завершен.',
+		descriptionRu: 'Зафиксировано',
 		colorToken: 'var(--ok, #10b981)'
 	}
 };
 
 export const LAB_STAGE_ORDER: LabWorkflowStageId[] = [
-	'impression_sent',
-	'cad_design',
-	'milling_wax_up',
-	'try_in_fitting',
-	'glaze_finish',
-	'delivered_to_clinic',
-	'installed_in_mouth'
+	'in_progress',
+	'fitting_scheduled',
+	'delivered_completed',
+	'correction_remake'
 ];

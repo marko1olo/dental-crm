@@ -162,7 +162,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 										setRefusalUrgentWarningSigns(p.urgentWarningSigns.join("\n"));
 									}}
 								>
-									🔪 Отказ от удаления/хирургии
+									Отказ от удаления/хирургии
 								</button>
 								<button
 									type="button"
@@ -177,7 +177,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 										setRefusalUrgentWarningSigns(p.urgentWarningSigns.join("\n"));
 									}}
 								>
-									👑 Отказ от протезирования/имплантации
+									Отказ от протезирования/имплантации
 								</button>
 								<button
 									type="button"
@@ -192,7 +192,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 										setRefusalUrgentWarningSigns(p.urgentWarningSigns.join("\n"));
 									}}
 								>
-									💉 Отказ от анестезии
+									Отказ от анестезии
 								</button>
 							</div>
 						</div>

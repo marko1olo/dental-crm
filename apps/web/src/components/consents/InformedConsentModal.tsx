@@ -104,11 +104,11 @@ export interface SignedConsentPayload {
 }
 
 const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
-	CONSENT_THERAPY: "Терапия & Эндодонтия",
+	CONSENT_THERAPY: "Терапия и Эндодонтия",
 	CONSENT_SURGERY_IMPLANT: "Хирургия / Имплантация",
 	CONSENT_ORTHODONTICS: "Ортодонтия (Брекеты)",
 	CONSENT_ORTHOPEDICS: "Ортопедия (Коронки)",
-	CONSENT_HYGIENE_BLEACHING: "Профгигиена & Отбеливание",
+	CONSENT_HYGIENE_BLEACHING: "Профгигиена и отбеливание",
 	CONSENT_ANESTHESIA: "Местная анестезия",
 	CONSENT_PERSONAL_DATA: "Персональные данные (152-ФЗ)",
 };

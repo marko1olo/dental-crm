@@ -11,6 +11,7 @@ import {
 	PlusCircle,
 	ShieldCheck,
 	Zap,
+	Scissors,
 } from "lucide-react";
 import { formatShortDate } from "../../AppHelpers";
 
@@ -120,7 +121,7 @@ export function SurgicalPackageModal({
 			<div className="document-package-modal-content">
 				<div className="document-package-modal-header">
 					<h3 className="document-package-modal-title" id="surgical-package-modal-title">
-						<span>🔪</span>
+						<Scissors className="w-5 h-5 text-rose-600 inline" />
 						<span>Хирургический пакет приёма и операций</span>
 					</h3>
 					<button

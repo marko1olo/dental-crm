@@ -4,7 +4,9 @@ import {
 	createDefaultPaidContract,
 	formatKopecksToRubAndKop,
 	generatePaidContractHtml,
+	generatePaidContractIntegrityHash,
 	generatePaidContractText,
+	generateSha256,
 	generateSmsSignOtp,
 	numberToWordsRu,
 	pluralizeRu,
@@ -225,6 +227,27 @@ describe("Paid Contract Engine (Постановление Правительс�
 			const res = verifySmsSignOtp("", otp);
 			assert.strictEqual(res.success, false);
 			assert.ok(res.error?.includes("Введите 4-значный код"));
+		});
+
+		test("generateSha256 produces deterministic 64-char hex string for Cyrillic and ASCII", () => {
+			const h1 = generateSha256("ДОГОВОР_736_ТЕСТ");
+			const h2 = generateSha256("ДОГОВОР_736_ТЕСТ");
+			assert.strictEqual(h1.length, 64);
+			assert.strictEqual(h1, h2);
+		});
+
+		test("generatePaidContractIntegrityHash generates unique hash based on contract and OTP digest", () => {
+			const contract = createDefaultPaidContract({
+				patientFullName: "Иванов Иван Иванович",
+				totalAmountKopecks: 500000,
+			});
+			const hash1 = generatePaidContractIntegrityHash(contract, "1234", "2026-08-29T10:00:00.000Z");
+			const hash2 = generatePaidContractIntegrityHash(contract, "1234", "2026-08-29T10:00:00.000Z");
+			const hashDiffOtp = generatePaidContractIntegrityHash(contract, "9999", "2026-08-29T10:00:00.000Z");
+
+			assert.strictEqual(hash1.length, 64);
+			assert.strictEqual(hash1, hash2);
+			assert.notStrictEqual(hash1, hashDiffOtp);
 		});
 	});
 });

@@ -141,18 +141,15 @@ describe("DentalLabOrderModal — Occlusion, Contact Points & Texture Specs", ()
 	});
 });
 
-describe("DentalLabOrderModal — 7-Step Lab Manufacturing Stages Tracker", () => {
-	test("Трекер этапов ЗТЛ содержит строгую технологическую последовательность 1..7", () => {
-		assert.equal(LAB_ORDER_STAGES.length, 7);
+describe("DentalLabOrderModal — 4-Step Clinical Lab Stages Tracker", () => {
+	test("Трекер этапов ЗТЛ содержит 4 клинических статуса: В работе, Примерка, Сдано, Коррекция", () => {
+		assert.equal(LAB_ORDER_STAGES.length, 4);
 		const stageIds = LAB_ORDER_STAGES.map((s) => s.id);
 		assert.deepEqual(stageIds, [
-			"sent_to_lab",
-			"model_cad_design",
-			"framework_wax_milling",
-			"sintering_ceramic_layering",
-			"fitting_in_mouth",
-			"final_glaze",
-			"delivered_to_clinic",
+			"in_progress",
+			"fitting_scheduled",
+			"delivered_completed",
+			"correction_remake",
 		]);
 
 		for (let i = 0; i < LAB_ORDER_STAGES.length; i++) {

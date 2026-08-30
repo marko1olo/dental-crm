@@ -30,7 +30,7 @@ export function DocumentQuickRoleScenarios({
 			>
 				<div className="document-scenario-card-header">
 					<div className="document-scenario-icon-title">
-						<span className="document-scenario-icon">🚀</span>
+						<span className="document-scenario-icon"><FileCheck className="w-5 h-5 text-teal-600" /></span>
 						<span>Первичный пациент</span>
 					</div>
 					<span className="document-scenario-badge">4 документа</span>
@@ -54,7 +54,7 @@ export function DocumentQuickRoleScenarios({
 				>
 					<div className="document-scenario-card-header">
 						<div className="document-scenario-icon-title">
-							<span className="document-scenario-icon">🔪</span>
+							<span className="document-scenario-icon"><Scissors className="w-5 h-5 text-rose-600" /></span>
 							<span>Хирургический пакет</span>
 						</div>
 						<span className="document-scenario-badge">6 документов</span>
@@ -78,7 +78,7 @@ export function DocumentQuickRoleScenarios({
 			>
 				<div className="document-scenario-card-header">
 					<div className="document-scenario-icon-title">
-						<span className="document-scenario-icon">🩺</span>
+						<span className="document-scenario-icon"><Stethoscope className="w-5 h-5 text-teal-600" /></span>
 						<span>Приём терапевта</span>
 					</div>
 					<span className="document-scenario-badge">5 документов</span>
@@ -101,7 +101,7 @@ export function DocumentQuickRoleScenarios({
 			>
 				<div className="document-scenario-card-header">
 					<div className="document-scenario-icon-title">
-						<span className="document-scenario-icon">🏛️</span>
+						<span className="document-scenario-icon"><Building className="w-5 h-5 text-indigo-600" /></span>
 						<span>Налоговый вычет</span>
 					</div>
 					<span className="document-scenario-badge">3 документа</span>
@@ -124,7 +124,7 @@ export function DocumentQuickRoleScenarios({
 			>
 				<div className="document-scenario-card-header">
 					<div className="document-scenario-icon-title">
-						<span className="document-scenario-icon">🏥</span>
+						<span className="document-scenario-icon"><ShieldPlus className="w-5 h-5 text-emerald-600" /></span>
 						<span>СанПиН и Экспертиза</span>
 					</div>
 					<span className="document-scenario-badge">4 бланка</span>

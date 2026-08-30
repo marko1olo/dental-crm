@@ -129,16 +129,16 @@ export const WarrantyServiceMemoForm = React.memo(
 			>
 				<div style={{ marginBottom: "12px" }}>
 					<span style={{ fontSize: "12px", color: "var(--muted, #64748b)", display: "block", marginBottom: "6px" }}>
-						⚡ Клинические пресеты гарантийных сроков (1 клик):
+						Клинические пресеты гарантийных сроков (1 клик):
 					</span>
-					<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+					<div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "12px" }}>
 						<button
 							type="button"
 							className="secondary-button"
 							style={{ fontSize: "11.5px", padding: "3px 8px" }}
-							onClick={() => applyWarrantyPreset("composite_fillings")}
+							onClick={() => applyWarrantyPreset("light_cured_fillings")}
 						>
-							🦷 Композитные пломбы (12 мес)
+							Композитные пломбы (12&nbsp;мес)
 						</button>
 						<button
 							type="button"
@@ -146,7 +146,7 @@ export const WarrantyServiceMemoForm = React.memo(
 							style={{ fontSize: "11.5px", padding: "3px 8px" }}
 							onClick={() => applyWarrantyPreset("zirconia_emax_crowns")}
 						>
-							👑 Цирконий / E-max (24–36 мес)
+							Цирконий / E-max (24–36&nbsp;мес)
 						</button>
 						<button
 							type="button"
@@ -154,7 +154,7 @@ export const WarrantyServiceMemoForm = React.memo(
 							style={{ fontSize: "11.5px", padding: "3px 8px" }}
 							onClick={() => applyWarrantyPreset("metal_ceramic_crowns")}
 						>
-							⚙️ Металлокерамика (12 мес)
+							Металлокерамика (12&nbsp;мес)
 						</button>
 						<button
 							type="button"
@@ -162,7 +162,7 @@ export const WarrantyServiceMemoForm = React.memo(
 							style={{ fontSize: "11.5px", padding: "3px 8px" }}
 							onClick={() => applyWarrantyPreset("dental_implants")}
 						>
-							🔩 Имплантаты (24 мес / пожизненно)
+							Имплантаты (24&nbsp;мес / пожизненно)
 						</button>
 						<button
 							type="button"
@@ -170,7 +170,7 @@ export const WarrantyServiceMemoForm = React.memo(
 							style={{ fontSize: "11.5px", padding: "3px 8px" }}
 							onClick={() => applyWarrantyPreset("clasp_dentures")}
 						>
-							🦷 Бюгельные протезы (12 мес)
+							Бюгельные протезы (12&nbsp;мес)
 						</button>
 					</div>
 				</div>

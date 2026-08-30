@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, ChevronDown, Layers, Palette } from "lucide-react";
+import { CheckCircle2, ChevronDown, Layers, Palette, Crown, Sparkles, ShieldCheck, Shield, Compass, Scissors, FileText } from "lucide-react";
 import {
 	CONSTRUCTION_TYPES,
 	LAB_MATERIALS,
@@ -306,6 +306,19 @@ export function DentalLabRestorationTab({
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 					{CONSTRUCTION_TYPES.map((c) => {
 						const isSelected = constructionType === c.id;
+						const IconComp =
+							c.category === "Несъемное"
+								? Crown
+								: c.category === "Эстетика"
+								? Sparkles
+								: c.category === "Имплантология"
+								? ShieldCheck
+								: c.category === "Съемное"
+								? Layers
+								: c.category === "Каппы"
+								? Compass
+								: FileText;
+
 						return (
 							<button
 								key={c.id}
@@ -313,7 +326,9 @@ export function DentalLabRestorationTab({
 								onClick={() => setConstructionType(c.id)}
 								className={`lab-construct-card ${isSelected ? "is-active" : ""}`}
 							>
-								<span className="text-3xl flex-shrink-0">{c.icon}</span>
+								<div className="p-2 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-[var(--teal)] border border-teal-200 dark:border-teal-800 flex-shrink-0">
+									<IconComp className="w-5 h-5" />
+								</div>
 								<div className="space-y-1 flex-1">
 									<div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center justify-between">
 										<span>{c.name}</span>
@@ -337,7 +352,7 @@ export function DentalLabRestorationTab({
 			{/* Material Selection with >= 44px touch targets */}
 			<div className="space-y-3">
 				<label className="block text-sm font-bold text-slate-900 dark:text-slate-100">
-					Материал изготовления (CAD/CAM & Керамика)
+					Материал изготовления (CAD/CAM и Керамика)
 				</label>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 					{LAB_MATERIALS.map((m) => {
@@ -456,7 +471,7 @@ export function DentalLabRestorationTab({
 				<summary className="flex items-center justify-between p-4 cursor-pointer font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 select-none hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
 					<div className="flex items-center gap-2">
 						<Layers className="w-4 h-4 text-[var(--teal)]" />
-						<span>⚙️ Вторичные параметры: Окклюзия, контакты, текстура и цементный зазор</span>
+						<span>Вторичные параметры: Окклюзия, контакты, текстура и цементный зазор</span>
 					</div>
 					<span className="text-xs text-slate-400 font-normal group-open:rotate-180 transition-transform">
 						▼
@@ -466,7 +481,7 @@ export function DentalLabRestorationTab({
 					{/* Occlusal Scheme */}
 					<div className="space-y-2">
 						<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-							Окклюзионная концепция & Биомеханика
+							Окклюзионная концепция и Биомеханика
 						</label>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 							{OCCLUSAL_SCHEMES.map((scheme) => {
@@ -527,7 +542,7 @@ export function DentalLabRestorationTab({
 					{/* Surface Texture */}
 					<div className="space-y-2">
 						<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-							Текстура поверхности & Финишная обработка
+							Текстура поверхности и Финишная обработка
 						</label>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
 							{SURFACE_TEXTURE_OPTIONS.map((t) => {

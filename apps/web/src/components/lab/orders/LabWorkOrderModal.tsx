@@ -323,7 +323,8 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 									</div>
 								</div>
 
-								<div className="lab-odontogram-grid">
+								{/* Desktop 2-arch layout */}
+								<div className="lab-odontogram-grid hidden md:flex">
 									{/* Upper Jaw */}
 									<div className="lab-tooth-row">
 										{upperRightTeeth.map((num) => (
@@ -372,6 +373,73 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 												<span>{num}</span>
 											</button>
 										))}
+									</div>
+								</div>
+
+								{/* Mobile 4-row quadrant layout (18-11, 21-28, 48-41, 31-38) */}
+								<div className="flex md:hidden flex-col gap-2 w-full">
+									<div className="space-y-1">
+										<span className="text-[10px] font-bold text-[var(--muted,#64748b)]">Q1 (18–11) • Верхний правый</span>
+										<div className="grid grid-cols-8 gap-1">
+											{upperRightTeeth.map((num) => (
+												<button
+													key={num}
+													type="button"
+													className={`lab-tooth-btn !w-full !min-w-0 !h-9 text-xs font-bold ${selectedTeeth.includes(num) ? 'selected' : ''}`}
+													onClick={() => handleToothToggle(num)}
+												>
+													<span>{num}</span>
+												</button>
+											))}
+										</div>
+									</div>
+
+									<div className="space-y-1">
+										<span className="text-[10px] font-bold text-[var(--muted,#64748b)]">Q2 (21–28) • Верхний левый</span>
+										<div className="grid grid-cols-8 gap-1">
+											{upperLeftTeeth.map((num) => (
+												<button
+													key={num}
+													type="button"
+													className={`lab-tooth-btn !w-full !min-w-0 !h-9 text-xs font-bold ${selectedTeeth.includes(num) ? 'selected' : ''}`}
+													onClick={() => handleToothToggle(num)}
+												>
+													<span>{num}</span>
+												</button>
+											))}
+										</div>
+									</div>
+
+									<div className="space-y-1">
+										<span className="text-[10px] font-bold text-[var(--muted,#64748b)]">Q4 (48–41) • Нижний правый</span>
+										<div className="grid grid-cols-8 gap-1">
+											{lowerRightTeeth.map((num) => (
+												<button
+													key={num}
+													type="button"
+													className={`lab-tooth-btn !w-full !min-w-0 !h-9 text-xs font-bold ${selectedTeeth.includes(num) ? 'selected' : ''}`}
+													onClick={() => handleToothToggle(num)}
+												>
+													<span>{num}</span>
+												</button>
+											))}
+										</div>
+									</div>
+
+									<div className="space-y-1">
+										<span className="text-[10px] font-bold text-[var(--muted,#64748b)]">Q3 (31–38) • Нижний левый</span>
+										<div className="grid grid-cols-8 gap-1">
+											{lowerLeftTeeth.map((num) => (
+												<button
+													key={num}
+													type="button"
+													className={`lab-tooth-btn !w-full !min-w-0 !h-9 text-xs font-bold ${selectedTeeth.includes(num) ? 'selected' : ''}`}
+													onClick={() => handleToothToggle(num)}
+												>
+													<span>{num}</span>
+												</button>
+											))}
+										</div>
 									</div>
 								</div>
 							</div>
@@ -583,7 +651,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 							{/* 7-Stage Pipeline */}
 							<div>
 								<div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: '0.75rem' }}>
-									Технологический цикл изготовления (7 этапов ГОСТ)
+									Клинический статус наряда ЗТЛ (4 статуса)
 								</div>
 								<div className="lab-pipeline-container">
 									{LAB_STAGE_ORDER.map((stageKey) => {

@@ -83,77 +83,77 @@ export const CONSTRUCTION_TYPES = [
 		id: "single_crown",
 		name: "Одиночная коронка",
 		desc: "Анатомическая коронка (полная или с редукцией)",
-		icon: "👑",
+		icon: "crown",
 		category: "Несъемное",
 	},
 	{
 		id: "bridge",
 		name: "Мостовидный протез",
 		desc: "Конструкция с опорными коронками и промежутком",
-		icon: "🌉",
+		icon: "bridge",
 		category: "Несъемное",
 	},
 	{
 		id: "veneer",
 		name: "Керамический винир",
 		desc: "Ультратонкая эстетическая накладка E.max / Feldspar",
-		icon: "✨",
+		icon: "veneer",
 		category: "Эстетика",
 	},
 	{
 		id: "inlay_onlay",
 		name: "Вкладка / Накладка (Inlay/Onlay/Overlay)",
 		desc: "Керамическая или композитная микропротезная реставрация",
-		icon: "💎",
+		icon: "inlay",
 		category: "Микропротезирование",
 	},
 	{
 		id: "all_on_4_6",
 		name: "Тотальный протез All-on-4 / All-on-6",
 		desc: "Балочный или винтовой условно-съемный протез на имплантатах",
-		icon: "🛡️",
+		icon: "implant",
 		category: "Имплантология",
 	},
 	{
 		id: "all_on_arch",
 		name: "Тотальный протез на всю челюсть",
 		desc: "Условно-съемный балочный/винтовой протез челюсти",
-		icon: "🏛️",
+		icon: "arch",
 		category: "Имплантология",
 	},
 	{
 		id: "implant_abutment",
 		name: "Индивидуальный абатмент + коронка",
 		desc: "Титановый / циркониевый абатмент на винтовой фиксации",
-		icon: "🔩",
+		icon: "abutment",
 		category: "Имплантология",
 	},
 	{
 		id: "clasp_denture",
 		name: "Бюгельный / Частично-съемный протез",
 		desc: "Протез на замках (аттачменах) или кламмерах",
-		icon: "🦷",
+		icon: "denture",
 		category: "Съемное",
 	},
 	{
 		id: "aligner_nightguard",
 		name: "Элайнер / Окклюзионная сплинт-каппа",
 		desc: "Ортодонтический или миорелаксирующий прозрачный сплинт",
-		icon: "🎯",
+		icon: "aligner",
 		category: "Каппы",
 	},
 	{
 		id: "aligners_nightguard",
 		name: "Элайнеры / Сплинт-шина",
 		desc: "Окклюзионная защитная капа / ортодонтические элайнеры",
-		icon: "🛡️",
+		icon: "guard",
 		category: "Каппы",
 	},
 	{
 		id: "endocrown",
 		name: "Эндокоронка",
 		desc: "Монолитная коронка с фиксацией в пульповой камере",
-		icon: "👑",
+		icon: "endocrown",
 		category: "Микропротезирование",
 	},
 ] as const;
@@ -421,64 +421,49 @@ export const SURFACE_TEXTURE_OPTIONS = [
 
 export const LAB_ORDER_STAGES = [
 	{
-		id: "sent_to_lab",
-		name: "1. Отправлен в ЗТЛ",
-		desc: "Слепки/сканы и наряд переданы курьеру или загружены в лабораторию",
+		id: "in_progress" as const,
+		name: "1. В работе",
+		desc: "Заказ передан в лабораторию и находится в процессе изготовления",
 		step: 1,
 		color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300",
 		badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300",
 	},
 	{
-		id: "model_cad_design",
-		name: "2. Сканирование & CAD-дизайн",
-		desc: "Создание цифровой 3D-модели, виртуальное моделирование реставрации",
+		id: "fitting_scheduled" as const,
+		name: "2. Примерка назначена",
+		desc: "Работа изготовлена ЗТЛ, назначена дата клинической примерки в расписании",
 		step: 2,
-		color: "text-[var(--info-fg,#0284c7)] bg-[var(--info-bg,rgba(2,132,199,0.1))] border-[var(--info-fg,rgba(2,132,199,0.3))]",
-		badgeColor: "bg-[var(--info-bg,rgba(2,132,199,0.15))] text-[var(--info-fg,#0284c7)]",
-	},
-	{
-		id: "framework_wax_milling",
-		name: "3. CAM Фрезеровка / Воск",
-		desc: "Фрезеровка каркаса на 5-осевом станке или восковая репродукция",
-		step: 3,
 		color: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300",
 		badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
 	},
 	{
-		id: "sintering_ceramic_layering",
-		name: "4. Синтеризация & Облицовка",
-		desc: "Высокотемпературное спекание циркония / послойное нанесение керамики",
-		step: 4,
-		color: "text-purple-600 bg-purple-50 border-purple-200 dark:bg-purple-900/30 dark:border-purple-700 dark:text-purple-300",
-		badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300",
-	},
-	{
-		id: "fitting_in_mouth",
-		name: "5. Клиническая примерка",
-		desc: "Примерка каркаса или реставрации в полости рта у пациента",
-		step: 5,
-		color: "text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-300",
-		badgeColor: "bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300",
-	},
-	{
-		id: "final_glaze",
-		name: "6. Финальная глазурь & ОТК",
-		desc: "Индивидуализация красителями, глазурование, контроль посадки",
-		step: 6,
-		color: "text-[var(--teal)] bg-[var(--teal-surface)] border-[var(--teal-soft)]",
-		badgeColor: "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]",
-	},
-	{
-		id: "delivered_to_clinic",
-		name: "7. Доставлен в клинику / Готов",
-		desc: "Работа проверена и готова к постоянной фиксации на приеме",
-		step: 7,
+		id: "delivered_completed" as const,
+		name: "3. Сдано",
+		desc: "Ортопедическая конструкция окончательно зафиксирована в полости рта",
+		step: 3,
 		color: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300",
 		badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
 	},
+	{
+		id: "correction_remake" as const,
+		name: "4. Коррекция",
+		desc: "Возврат в ЗТЛ на коррекцию окклюзии, цвета или переделку",
+		step: 4,
+		color: "text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-900/30 dark:border-rose-700 dark:text-rose-300",
+		badgeColor: "bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300",
+	},
 ] as const;
 
-export type LabOrderStageKey = (typeof LAB_ORDER_STAGES)[number]["id"];
+export type LabOrderStageKey =
+	| (typeof LAB_ORDER_STAGES)[number]["id"]
+	| "sent_to_lab"
+	| "model_cad_design"
+	| "framework_wax_milling"
+	| "sintering_ceramic_layering"
+	| "fitting_in_mouth"
+	| "final_glaze"
+	| "delivered_to_clinic"
+	| "completed";
 
 // ─── CANONICAL 4-STATUS DENTAL LAB WORKFLOW ───────────────────────────────────
 

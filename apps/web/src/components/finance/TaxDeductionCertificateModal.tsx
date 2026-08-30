@@ -523,7 +523,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 						}`}
 					>
 						<ListOrdered size={16} />
-						<span>Чеки 54-ФЗ & 804н ({yearPayments.length})</span>
+						<span>Чеки 54-ФЗ и 804н ({yearPayments.length})</span>
 					</button>
 					<button
 						type="button"

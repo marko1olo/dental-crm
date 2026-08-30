@@ -152,7 +152,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 			>
 				<div style={{ marginBottom: "14px" }}>
 					<span style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block", marginBottom: "8px" }}>
-						⚡ Быстрое заполнение по клиническому профилю (1 клик):
+						Быстрое заполнение по клиническому профилю (1 клик):
 					</span>
 					<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
 						<button
@@ -161,7 +161,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("therapy_endo_restoration")}
 						>
-							🦷 Терапия / Эндодонтия
+							Терапия / Эндодонтия
 						</button>
 						<button
 							type="button"
@@ -169,7 +169,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("local_anesthesia")}
 						>
-							💉 Местная анестезия
+							Местная анестезия
 						</button>
 						<button
 							type="button"
@@ -177,7 +177,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("sedation")}
 						>
-							💨 Седация (ЗАКС / в/в)
+							Седация (ЗАКС / в/в)
 						</button>
 						<button
 							type="button"
@@ -185,7 +185,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("surgery_extraction")}
 						>
-							🔪 Хирургия / Удаление
+							Хирургия / Удаление
 						</button>
 						<button
 							type="button"
@@ -193,7 +193,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("implantation_bone_graft")}
 						>
-							🔩 Имплантация / Костная пластика
+							Имплантация / Костная пластика
 						</button>
 						<button
 							type="button"
@@ -201,7 +201,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("prosthetics")}
 						>
-							👑 Ортопедия (коронки, виниры)
+							Ортопедия (коронки, виниры)
 						</button>
 						<button
 							type="button"
@@ -209,7 +209,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("orthodontics")}
 						>
-							📐 Ортодонтия (брекеты, элайнеры)
+							Ортодонтия (брекеты, элайнеры)
 						</button>
 						<button
 							type="button"
@@ -217,7 +217,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("hygiene_whitening")}
 						>
-							🪥 Гигиена и отбеливание
+							Гигиена и отбеливание
 						</button>
 						<button
 							type="button"
@@ -225,7 +225,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("periodontology")}
 						>
-							🩸 Пародонтология
+							Пародонтология
 						</button>
 					</div>
 				</div>

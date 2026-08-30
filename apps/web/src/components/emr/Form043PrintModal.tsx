@@ -615,7 +615,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 										</div>
 										<div>
 											<div style={{ fontWeight: 700, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-												<span>Экспертиза качества медицинской карты (Приказ № 203н)</span>
+												<span>Экспертиза качества медицинской карты (Приказ&nbsp;№&nbsp;203н)</span>
 												{cmoResolution ? (
 													<span className={`emr043-status-badge ${cmoResolution.decision}`}>
 														{cmoResolution.decision === "approved" ? "✓ Утверждено ВК / Начмед" : "⚠ Замечания КЭР"}
@@ -627,11 +627,11 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginTop: "2px" }}>
 												{cmoResolution ? (
 													<span>
-														Эксперт: <strong>{cmoResolution.auditorFullName}</strong> ({cmoResolution.auditorRole}) • Оценка: {cmoResolution.finalQualityScore}%
+														Эксперт: <strong>{cmoResolution.auditorFullName}</strong> ({cmoResolution.auditorRole}) • Оценка:&nbsp;{cmoResolution.finalQualityScore}&nbsp;%
 													</span>
 												) : (
 													<span>
-														Автоматический скоринг Росздравнадзора: <strong>{auditCheckSummary.score} / 100 баллов</strong> ({auditCheckSummary.defects.length === 0 ? "Дефектов не выявлено" : `Выявлено дефектов: ${auditCheckSummary.defects.length}`})
+														Автоматический скоринг Росздравнадзора: <strong>{auditCheckSummary.score} / 100&nbsp;баллов</strong> ({auditCheckSummary.defects.length === 0 ? "Дефектов не выявлено" : `Выявлено дефектов: ${auditCheckSummary.defects.length}`})
 													</span>
 												)}
 											</div>

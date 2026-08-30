@@ -508,14 +508,14 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								style={{ backgroundColor: palette.primaryDark }}
 							>
 								<FileText className="w-3.5 h-3.5" />
-								<span>АКТ № {actData.actNumber}</span>
+								<span>АКТ&nbsp;№&nbsp;{actData.actNumber}</span>
 							</span>
 							<span className="text-xs font-bold text-slate-800">
-								к Договору на оказание платных медицинских услуг № {actData.contractNumber} от {contractDateFormatted} г.
+								к&nbsp;Договору на оказание платных медицинских услуг №&nbsp;{actData.contractNumber} от {contractDateFormatted}&nbsp;г.
 							</span>
 						</div>
 						<div className="text-xs font-semibold text-slate-600">
-							Дата составления: <strong className="text-slate-900 font-mono">{actData.actDate} г.</strong> (г. Москва)
+							Дата составления: <strong className="text-slate-900 font-mono">{actData.actDate}&nbsp;г.</strong> (г.&nbsp;Москва)
 						</div>
 					</div>
 
@@ -525,10 +525,10 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							АКТ СДАЧИ-ПРИЕМКИ ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ
 						</h1>
 						<div className="doc-form-sub text-xs font-bold text-slate-600 uppercase tracking-wide mt-1">
-							И НАКЛАДНАЯ НА СПИСАНИЕ МАТЕРИАЛОВ И МЕДИКАМЕНТОВ (ТМЦ) • ЭТАП № {actData.stageNumber} («{actData.stageTitle}»)
+							И НАКЛАДНАЯ НА СПИСАНИЕ МАТЕРИАЛОВ И МЕДИКАМЕНТОВ (ТМЦ) • ЭТАП&nbsp;№&nbsp;{actData.stageNumber} («{actData.stageTitle}»)
 						</div>
 						<p className="text-[10px] text-slate-500 mt-0.5">
-							Составлен во исполнение ст. 779–783 ГК РФ, ст. 20, 79 323-ФЗ и Постановления Правительства РФ от 11.05.2023 № 736
+							Составлен во исполнение ст.&nbsp;779–783 ГК&nbsp;РФ, ст.&nbsp;20, 79 323-ФЗ и Постановления Правительства РФ от 11.05.2023 №&nbsp;736
 						</p>
 					</div>
 
@@ -541,9 +541,9 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 										Исполнитель (Клиника):
 									</td>
 									<td className="w-1/4 p-2.5 bg-white text-slate-900 border-r border-slate-300 leading-snug">
-										<strong className="block text-slate-950">{legalName}</strong>
+										<strong className="block text-slate-950 min-w-0 break-words">{legalName}</strong>
 										<span className="text-[11px] text-slate-600 block mt-0.5">
-											ИНН: {inn} / КПП: {kpp} • ОГРН: {ogrn}
+											ИНН:&nbsp;{inn} / КПП:&nbsp;{kpp} • ОГРН:&nbsp;{ogrn}
 										</span>
 									</td>
 									<td className="w-1/4 p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">

@@ -115,7 +115,7 @@ export function TaxAccountingPackageModal({
 			<div className="document-package-modal-content">
 				<div className="document-package-modal-header">
 					<h3 className="document-package-modal-title" id="tax-package-modal-title">
-						<span>🏛️</span>
+						<Building className="w-5 h-5 text-indigo-600 inline" />
 						<span>Налоговый вычет и бухгалтерия</span>
 					</h3>
 					<button

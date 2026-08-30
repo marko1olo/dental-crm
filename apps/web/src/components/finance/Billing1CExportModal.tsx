@@ -199,7 +199,7 @@ export function Billing1CExportModal({
 			items.length
 		}\nИтого: ${formatMoney(
 			calculatedTotalRub,
-		)} (Без НДС - пп. 2 п. 2 ст. 149 НК РФ)`;
+		)} (Без НДС - пп.\u00A02 п.\u00A02 ст.\u00A0149 НК\u00A0РФ)`;
 
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			void navigator.clipboard.writeText(summaryText);
@@ -228,7 +228,7 @@ export function Billing1CExportModal({
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h3 className="text-lg font-bold text-slate-900 dark:text-white break-words m-0 leading-tight">
-									1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 &amp; 54-ФЗ
+									1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ
 								</h3>
 								<div className="flex items-center gap-1.5 shrink-0">
 									<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-800 dark:text-teal-200 border border-teal-500/25 font-bold whitespace-nowrap">
@@ -547,7 +547,7 @@ export function Billing1CExportModal({
 										Освобождение от НДС:
 									</label>
 									<p className="text-emerald-700 dark:text-emerald-300 font-semibold mt-0.5">
-										Освобождено по пп. 2 п. 2 ст. 149 НК РФ (Медицинские услуги)
+										Освобождено по пп.&nbsp;2 п.&nbsp;2 ст.&nbsp;149 НК&nbsp;РФ (Медицинские услуги)
 									</p>
 								</div>
 							</div>
