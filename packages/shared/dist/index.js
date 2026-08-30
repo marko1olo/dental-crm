@@ -35,6 +35,7 @@ export * from "./insurance/index.js";
 export * from "./messaging/index.js";
 export * from "./portal/index.js";
 export * from "./doctor-portal/index.js";
+export * from "./doctor/index.js";
 export * from "./treatment-plans/index.js";
 export * from "./diagnostics/index.js";
 export * from "./branches/index.js";

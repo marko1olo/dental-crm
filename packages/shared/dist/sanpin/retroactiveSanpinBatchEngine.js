@@ -626,11 +626,11 @@ export function exportBatchToSanpinSummary(batch) {
 
 | Санитарный журнал | Нормативный документ | Записей | Ключевые показатели | Статус СанПиН |
 | :--- | :--- | :---: | :--- | :---: |
-| **ПСО (Форма № 366/у)** | СанПиН 3.3686-21 п. 3584 | ${batch.psoRecords.length} | ${stats.totalPsoItemsProcessed} изд. обработано, ${stats.totalPsoSamplesTested} проб (1%) | 🟢 100% норма |
-| **Автоклавы (Форма № 257/у)** | СанПиН 3.3686-21 п. 3624 | ${batch.autoclaveRecords.length} | ${stats.totalAutoclaveCycles} циклов B-класса (134°C/2.1 атм), ${stats.totalAutoclavePacksSterilized} пакетов | 🟢 100% стерильно |
-| **Дезар / Рециркуляторы** | Руководство Р 3.5.1904-04 | ${batch.bactericidalSessions.length} | +${stats.totalBactericidalHoursAdded} ч наработки (ресурс до 8000 ч в норме) | 🟢 100% норма |
-| **Генеральные уборки** | СанПиН 3.3686-21 разд. IV | ${batch.generalCleaningRecords.length} | ${stats.totalGeneralCleaningsConducted} уборок (интервал строго <= 7 дней) | 🟢 100% соблюдено |
-| **Холодильник (+2..+8°C)** | Приказы Минздрава 706н/646н | ${batch.refrigeratorRecords.length} | ${stats.totalTemperatureMeasurements} замеров (утро +3.5..+4.8°C / вечер +4.0..+5.2°C) | 🟢 100% в ГОСТ |
+| **ПСО (Форма № 366/у)** | СанПиН 3.3686-21 п. 3584 | ${batch.psoRecords.length} | ${stats.totalPsoItemsProcessed} изд. обработано, ${stats.totalPsoSamplesTested} проб (1%) | 100% норма |
+| **Автоклавы (Форма № 257/у)** | СанПиН 3.3686-21 п. 3624 | ${batch.autoclaveRecords.length} | ${stats.totalAutoclaveCycles} циклов B-класса (134°C/2.1 атм), ${stats.totalAutoclavePacksSterilized} пакетов | 100% стерильно |
+| **Дезар / Рециркуляторы** | Руководство Р 3.5.1904-04 | ${batch.bactericidalSessions.length} | +${stats.totalBactericidalHoursAdded} ч наработки (ресурс до 8000 ч в норме) | 100% норма |
+| **Генеральные уборки** | СанПиН 3.3686-21 разд. IV | ${batch.generalCleaningRecords.length} | ${stats.totalGeneralCleaningsConducted} уборок (интервал строго <= 7 дней) | 100% соблюдено |
+| **Холодильник (+2..+8°C)** | Приказы Минздрава 706н/646н | ${batch.refrigeratorRecords.length} | ${stats.totalTemperatureMeasurements} замеров (утро +3.5..+4.8°C / вечер +4.0..+5.2°C) | 100% в ГОСТ |
 
 ---
 
@@ -643,7 +643,7 @@ export function exportBatchToSanpinSummary(batch) {
 - [x] **График генеральных уборок**: кратность 1 раз в 7 дней выдержана без просрочек.
 - [x] **Термометрия холодильников**: утро и вечер зафиксированы для каждого календарного дня без пропусков.
 
-**ИТОГОВЫЙ СТАТУС**: ${isValid ? "🟢 ПАКЕТ ПОЛНОСТЬЮ ВАЛИДЕН И ГОТОВ К ПРОВЕРКЕ РОСПОТРЕБНАДЗОРА" : "🔴 ОБНАРУЖЕНЫ НАРУШЕНИЯ"}
+**ИТОГОВЫЙ СТАТУС**: ${isValid ? "ПАКЕТ ПОЛНОСТЬЮ ВАЛИДЕН И ГОТОВ К ПРОВЕРКЕ РОСПОТРЕБНАДЗОРА" : "ОБНАРУЖЕНЫ НАРУШЕНИЯ"}
 `.trim();
     return {
         isValid,

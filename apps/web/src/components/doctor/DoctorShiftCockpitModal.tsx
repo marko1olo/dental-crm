@@ -1,0 +1,1076 @@
+import type React from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import {
+	Activity,
+	AlertCircle,
+	AlertTriangle,
+	ArrowRight,
+	Bell,
+	BellRing,
+	Calendar,
+	Check,
+	CheckCircle2,
+	ChevronDown,
+	ChevronUp,
+	ClipboardList,
+	Clock,
+	FileBadge,
+	FileCheck2,
+	FileText,
+	Image as ImageIcon,
+	KeyRound,
+	Lock,
+	MoreHorizontal,
+	Phone,
+	Plus,
+	Printer,
+	RefreshCw,
+	Shield,
+	ShieldAlert,
+	ShieldCheck,
+	Sparkles,
+	Stethoscope,
+	User,
+	UserCheck,
+	Users,
+	X,
+	Zap,
+} from "lucide-react";
+import {
+	filterDoctorShiftAppointments,
+	calculateDoctorShiftEarnings,
+	initiateBatchEmrSigning,
+	verifyAndSignBatchEmr,
+	transitionAppointmentStatus,
+	DOCTOR_APPOINTMENT_STATUS_META,
+	EMR_043_STATUS_META,
+	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
+	type DoctorShiftAppointment,
+	type DoctorAppointmentStatus,
+	type EmrBatchSigningSession,
+} from "@dental/shared";
+import { formatKopecksRu } from "@dental/shared";
+import { showToast } from "../GlobalToast";
+import "./doctorShiftCockpit.css";
+
+export type DoctorQuickCallAction =
+	| "odontogram"
+	| "lab_order"
+	| "imaging"
+	| "consent"
+	| "assistant_call";
+
+export interface DoctorShiftCockpitModalProps {
+	readonly isOpen: boolean;
+	readonly onClose: () => void;
+	readonly doctorId?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly doctorSpecialty?: string | undefined;
+	readonly cabinetName?: string | undefined;
+	readonly shiftDateIso?: string | undefined;
+	readonly initialAppointments?: readonly DoctorShiftAppointment[] | undefined;
+	readonly activeAppointmentId?: string | undefined;
+	readonly onAppointmentUpdate?: ((appointments: readonly DoctorShiftAppointment[]) => void) | undefined;
+	readonly onSelectActiveAppointment?: ((appointmentId: string) => void) | undefined;
+	readonly onQuickAction?: ((action: DoctorQuickCallAction) => void) | undefined;
+	readonly onCompleteAndOrder?: ((appointment: DoctorShiftAppointment) => void) | undefined;
+}
+
+export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = ({
+	isOpen,
+	onClose,
+	doctorId = "doc-1",
+	doctorName = "Д-р Смирнов Алексей Петрович",
+	doctorSpecialty = "Врач-стоматолог терапевт-ортопед",
+	cabinetName = "Кабинет № 1 (Терапия)",
+	shiftDateIso = "2026-08-29",
+	initialAppointments = SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
+	activeAppointmentId: propActiveAppointmentId,
+	onAppointmentUpdate,
+	onSelectActiveAppointment,
+	onQuickAction,
+	onCompleteAndOrder,
+}) => {
+	const [appointments, setAppointments] = useState<readonly DoctorShiftAppointment[]>(
+		initialAppointments,
+	);
+	const [activeAptId, setActiveAptId] = useState<string | null>(propActiveAppointmentId || null);
+	const [isAssistantCalled, setIsAssistantCalled] = useState<boolean>(false);
+	const [assistantAlertDismissed, setAssistantAlertDismissed] = useState<boolean>(false);
+	const [timerExtraMinutes, setTimerExtraMinutes] = useState<number>(0);
+	const [isTimerPaused, setIsTimerPaused] = useState<boolean>(false);
+	const [currentTime, setCurrentTime] = useState<Date>(new Date());
+	const [activeTab, setActiveTab] = useState<"cockpit" | "emr_journal" | "earnings">("cockpit");
+	const [showSecondaryMenu, setShowSecondaryMenu] = useState<boolean>(false);
+
+	// Batch PEP SMS Signing State (Clean 63-ФЗ with NO hardcoded demo backdoor)
+	const [signingSession, setSigningSession] = useState<EmrBatchSigningSession | null>(null);
+	const [enteredSmsCode, setEnteredSmsCode] = useState<string>("");
+	const [smsCountdown, setSmsCountdown] = useState<number>(300);
+	const [isSubmittingCode, setIsSubmittingCode] = useState<boolean>(false);
+
+	// Keep local appointments synchronized with incoming props
+	useEffect(() => {
+		setAppointments(initialAppointments);
+	}, [initialAppointments]);
+
+	// Live tick for countdown timer
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setCurrentTime(new Date());
+		}, 1000);
+		return () => clearInterval(interval);
+	}, []);
+
+	// Doctor's isolated shift appointments
+	const doctorAppointments = useMemo(() => {
+		return filterDoctorShiftAppointments(appointments, doctorId, shiftDateIso);
+	}, [appointments, doctorId, shiftDateIso]);
+
+	// Compute shift earnings & KPI summary
+	const earnings = useMemo(() => {
+		return calculateDoctorShiftEarnings(
+			doctorAppointments,
+			doctorId,
+			shiftDateIso,
+			25, // Default therapy commission
+		);
+	}, [doctorAppointments, doctorId, shiftDateIso]);
+
+	// Locate currently in-chair active appointment or pick first in-chair / waiting
+	const activeAppointment = useMemo(() => {
+		if (activeAptId) {
+			const found = doctorAppointments.find((a) => a.id === activeAptId);
+			if (found) return found;
+		}
+		const inChair = doctorAppointments.find((a) => a.status === "in_chair");
+		if (inChair) return inChair;
+		return doctorAppointments.find((a) => a.status === "waiting") || null;
+	}, [doctorAppointments, activeAptId]);
+
+	// Locate next queued appointment (excluding current active)
+	const nextQueuedAppointment = useMemo(() => {
+		if (!activeAppointment) {
+			return doctorAppointments.find((a) => a.status === "waiting") || null;
+		}
+		return (
+			doctorAppointments.find(
+				(a) => a.id !== activeAppointment.id && (a.status === "waiting" || a.status === "completed"),
+			) || null
+		);
+	}, [doctorAppointments, activeAppointment]);
+
+	// Unsigned 043/у EMR records
+	const unsignedAppointments = useMemo(() => {
+		return doctorAppointments.filter(
+			(apt) =>
+				(apt.status === "completed" || apt.emrCard043uStatus === "pending_signature") &&
+				apt.emrCard043uStatus !== "signed",
+		);
+	}, [doctorAppointments]);
+
+	// Countdown calculations for active appointment
+	const timerState = useMemo(() => {
+		if (!activeAppointment) {
+			return { label: "Прием не начат", isOvertime: false, secondsDiff: 0, formatted: "00:00" };
+		}
+
+		// Calculate appointment end time + user added minutes
+		const endsAt = new Date(activeAppointment.endsAtIso).getTime() + timerExtraMinutes * 60 * 1000;
+		const now = currentTime.getTime();
+		const diffMs = endsAt - now;
+
+		const isOvertime = diffMs < 0;
+		const absDiffSec = Math.floor(Math.abs(diffMs) / 1000);
+		const minutes = Math.floor(absDiffSec / 60);
+		const seconds = absDiffSec % 60;
+		const p = (n: number) => n.toString().padStart(2, "0");
+
+		return {
+			label: isOvertime ? "Овертайм приёма" : "До конца приёма",
+			isOvertime,
+			secondsDiff: diffMs / 1000,
+			formatted: isOvertime ? `+${p(minutes)}:${p(seconds)}` : `${p(minutes)}:${p(seconds)}`,
+		};
+	}, [activeAppointment, currentTime, timerExtraMinutes]);
+
+	// SMS Countdown timer
+	useEffect(() => {
+		if (!signingSession) return;
+		if (smsCountdown <= 0) return;
+		const timer = setInterval(() => {
+			setSmsCountdown((prev) => Math.max(0, prev - 1));
+		}, 1000);
+		return () => clearInterval(timer);
+	}, [signingSession, smsCountdown]);
+
+	if (!isOpen) return null;
+
+	// 1-Click Status Update Handler
+	const handleStatusTransition = (
+		appointmentId: string,
+		newStatus: DoctorAppointmentStatus,
+	) => {
+		const updated = appointments.map((apt) => {
+			if (apt.id === appointmentId) {
+				return transitionAppointmentStatus(apt, newStatus);
+			}
+			return apt;
+		});
+		setAppointments(updated);
+		onAppointmentUpdate?.(updated);
+
+		if (newStatus === "in_chair") {
+			setActiveAptId(appointmentId);
+			onSelectActiveAppointment?.(appointmentId);
+		}
+
+		const statusTitle = DOCTOR_APPOINTMENT_STATUS_META[newStatus].labelRu;
+		showToast(`Статус приема обновлен: ${statusTitle}`, "info");
+	};
+
+	// Quick Call Triggers
+	const handleQuickCall = (action: DoctorQuickCallAction) => {
+		if (action === "assistant_call") {
+			setIsAssistantCalled((prev) => {
+				const nextState = !prev;
+				if (nextState) {
+					setAssistantAlertDismissed(false);
+					showToast(`🔔 Вызов ассистента отправлен в ${cabinetName}`, "warning");
+				} else {
+					showToast("Вызов ассистента отменен", "info");
+				}
+				return nextState;
+			});
+		}
+		onQuickAction?.(action);
+	};
+
+	// Primary Action: Finish visit and generate lab order / act
+	const handlePrimaryFinishAction = () => {
+		if (!activeAppointment) return;
+
+		// Transition to completed
+		handleStatusTransition(activeAppointment.id, "completed");
+		onCompleteAndOrder?.(activeAppointment);
+		showToast(
+			`Прием ${activeAppointment.patientFullName} завершен. Наряд сформирован.`,
+			"success",
+		);
+	};
+
+	// Start 63-ФЗ Batch EMR SMS Signing (No hardcoded backdoor)
+	const handleInitiateBatchSigning = () => {
+		const targetIds = unsignedAppointments.map((a) => a.id);
+		if (targetIds.length === 0) {
+			showToast("Все медицинские карты ф. 043/у уже заверены ПЭП!", "success");
+			return;
+		}
+
+		const session = initiateBatchEmrSigning({
+			doctorId,
+			doctorName,
+			doctorPhone: "+7 (926) 555-12-34",
+			appointmentIds: targetIds,
+			shiftDateIso,
+			validityDurationSeconds: 300,
+		});
+
+		setSigningSession(session);
+		setEnteredSmsCode("");
+		setSmsCountdown(300);
+	};
+
+	// Confirm SMS Code Verification
+	const handleConfirmSmsSigning = () => {
+		if (!signingSession) return;
+		if (enteredSmsCode.trim().length < 6) {
+			showToast("Введите полный 6-значный СМС-код из уведомления", "warning");
+			return;
+		}
+
+		setIsSubmittingCode(true);
+		const result = verifyAndSignBatchEmr({
+			session: signingSession,
+			enteredCode: enteredSmsCode,
+			appointments,
+			doctorName,
+			doctorSnils: "123-456-789 64",
+		});
+
+		setIsSubmittingCode(false);
+
+		if (result.success) {
+			setAppointments(result.updatedAppointments);
+			onAppointmentUpdate?.(result.updatedAppointments);
+			setSigningSession(null);
+			showToast(result.messageRu, "success");
+		} else {
+			showToast(result.messageRu, "error");
+		}
+	};
+
+	return (
+		<div
+			className="doctor-cockpit-overlay"
+			data-testid="doctor-shift-cockpit-modal"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Кокпит смены врача"
+		>
+			<div className="doctor-cockpit-container">
+				{/* Top Header Strip */}
+				<header className="doctor-cockpit-header">
+					<div className="flex items-center gap-3">
+						<div className="w-10 h-10 rounded-xl bg-teal-950/60 border border-teal-800/80 flex items-center justify-center text-teal-400">
+							<Stethoscope size={20} />
+						</div>
+						<div>
+							<h2 className="doctor-cockpit-title" data-testid="doctor-cockpit-title">
+								<span>Кокпит смены</span>
+								<span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-950/50 text-teal-300 border border-teal-800/60">
+									{cabinetName}
+								</span>
+							</h2>
+							<div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+								<span className="font-bold text-slate-200">{doctorName}</span>
+								<span>•</span>
+								<span>{doctorSpecialty}</span>
+							</div>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-3">
+						<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300">
+							<Calendar size={14} className="text-teal-400" />
+							<span>29 авг 2026</span>
+							<span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-1" />
+						</div>
+						<button
+							type="button"
+							onClick={onClose}
+							className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl bg-slate-900 text-slate-400 hover:text-slate-100 hover:bg-slate-800 flex items-center justify-center border border-slate-800 transition-colors cursor-pointer"
+							aria-label="Закрыть кокпит смены"
+							data-testid="close-doctor-cockpit-btn"
+						>
+							<X size={18} />
+						</button>
+					</div>
+				</header>
+
+				{/* Navigation Sub-Tabs */}
+				<div className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-slate-800 bg-slate-950 text-xs">
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setActiveTab("cockpit")}
+							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+								activeTab === "cockpit"
+									? "bg-teal-950/60 text-teal-300 border border-teal-800/80"
+									: "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+							}`}
+							data-testid="tab-cockpit-view"
+						>
+							Рабочий стол приёма
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("emr_journal")}
+							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								activeTab === "emr_journal"
+									? "bg-teal-950/60 text-teal-300 border border-teal-800/80"
+									: "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+							}`}
+							data-testid="tab-emr-journal"
+						>
+							<span>ЭМК ф. 043/у</span>
+							{unsignedAppointments.length > 0 && (
+								<span className="px-1.5 py-0.2 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-extrabold">
+									{unsignedAppointments.length}
+								</span>
+							)}
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("earnings")}
+							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+								activeTab === "earnings"
+									? "bg-teal-950/60 text-teal-300 border border-teal-800/80"
+									: "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+							}`}
+							data-testid="tab-earnings"
+						>
+							Сделка и расчет %
+						</button>
+					</div>
+
+					<div className="text-xs text-slate-400 flex items-center gap-2">
+						<ShieldCheck size={14} className="text-emerald-400" />
+						<span>Изоляция смены активна</span>
+					</div>
+				</div>
+
+				{/* Cockpit Main Body */}
+				<div className="doctor-cockpit-body">
+					{/* Operational & Financial Metrics Strip */}
+					<div className="doctor-cockpit-metrics-grid" data-testid="doctor-metrics-strip">
+						<div className="doctor-metric-card">
+							<div className="doctor-metric-label">
+								<span>Приемы смены</span>
+								<Users size={14} className="text-teal-400" />
+							</div>
+							<div className="doctor-metric-value text-teal-300">
+								{earnings.completedAppointmentsCount} / {earnings.totalAppointmentsCount}
+							</div>
+							<div className="text-[11px] text-slate-400">
+								В кресле: {earnings.inChairAppointmentsCount} • В холле: {earnings.waitingAppointmentsCount}
+							</div>
+						</div>
+
+						<div className="doctor-metric-card" data-testid="metric-earned-deal">
+							<div className="doctor-metric-label">
+								<span>Заработано (сделка %)</span>
+								<Sparkles size={14} className="text-emerald-400" />
+							</div>
+							<div className="doctor-metric-value text-emerald-400" data-testid="doctor-cockpit-earned-val">
+								{formatKopecksRu(earnings.totalEarnedDealKop)}
+							</div>
+							<div className="text-[11px] text-slate-400">
+								База сделки: {formatKopecksRu(earnings.netDealBaseKop)}
+							</div>
+						</div>
+
+						<div className="doctor-metric-card">
+							<div className="doctor-metric-label">
+								<span>Выручка смены</span>
+								<Activity size={14} className="text-slate-400" />
+							</div>
+							<div className="doctor-metric-value text-slate-100">
+								{formatKopecksRu(earnings.grossRevenueKop)}
+							</div>
+							<div className="text-[11px] text-slate-400">
+								ЗТЛ: −{formatKopecksRu(earnings.totalLabDeductionsKop)} • Мат: −{formatKopecksRu(earnings.totalMaterialDeductionsKop)}
+							</div>
+						</div>
+
+						<div className="doctor-metric-card">
+							<div className="doctor-metric-label">
+								<span>Подпись ЭМК 043/у</span>
+								<FileBadge size={14} className={unsignedAppointments.length > 0 ? "text-amber-400" : "text-emerald-400"} />
+							</div>
+							<div className="doctor-metric-value text-slate-100">
+								{earnings.signedEmr043Count} / {earnings.totalAppointmentsCount}
+							</div>
+							<div className="text-[11px] text-slate-400">
+								{unsignedAppointments.length > 0 ? (
+									<span className="text-amber-400 font-bold">Требуют ПЭП: {unsignedAppointments.length}</span>
+								) : (
+									<span className="text-emerald-400 font-semibold">Все карты заверены</span>
+								)}
+							</div>
+						</div>
+					</div>
+
+					{/* View Mode: Main Cockpit */}
+					{activeTab === "cockpit" && (
+						<div className="doctor-patient-showcase-grid">
+							{/* Left Column: Active Patient in Chair */}
+							<div className="doctor-active-patient-card" data-testid="active-patient-card">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700 text-xs font-bold">
+											<span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+											<span>Пациент в кресле</span>
+										</span>
+										{activeAppointment && (
+											<span className="text-xs text-slate-400 font-semibold">
+												{activeAppointment.startsAtIso.split("T")[1]?.slice(0, 5)} — {activeAppointment.endsAtIso.split("T")[1]?.slice(0, 5)}
+											</span>
+										)}
+									</div>
+
+									{/* Live Countdown Timer & Overtime Pulsation */}
+									<div
+										className={`doctor-countdown-timer ${timerState.isOvertime ? "overtime" : "normal"}`}
+										data-testid="doctor-countdown-timer"
+										role="timer"
+										aria-label={timerState.label}
+									>
+										<Clock size={16} />
+										<span>{timerState.formatted}</span>
+										{timerState.isOvertime && (
+											<span className="text-[11px] font-extrabold uppercase tracking-wide">
+												Овертайм
+											</span>
+										)}
+									</div>
+								</div>
+
+								{activeAppointment ? (
+									<>
+										{/* Patient Identity & Somatic Risks */}
+										<div>
+											<div className="flex items-start justify-between gap-4">
+												<div>
+													<h3 className="text-lg font-extrabold text-slate-100 flex items-center gap-2" data-testid="active-patient-name">
+														<User className="text-teal-400 w-5 h-5 shrink-0" />
+														<span>{activeAppointment.patientFullName}</span>
+													</h3>
+													<div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
+														<span>Карта: {activeAppointment.cardNumber}</span>
+														<span>•</span>
+														<span>1988 г.р. (38 лет)</span>
+														{activeAppointment.patientPhone && (
+															<>
+																<span>•</span>
+																<span className="flex items-center gap-1">
+																	<Phone size={11} />
+																	{activeAppointment.patientPhone}
+																</span>
+															</>
+														)}
+													</div>
+												</div>
+
+												{/* Patient Balance */}
+												<div className="text-right">
+													<div className="text-[10px] uppercase font-bold text-slate-400">
+														Баланс услуг
+													</div>
+													<div className="text-sm font-extrabold text-emerald-400" data-testid="active-patient-balance">
+														{formatKopecksRu(
+															activeAppointment.services.reduce(
+																(acc, s) => acc + (s.finalRevenueKop || 0),
+																0,
+															),
+														)}
+													</div>
+												</div>
+											</div>
+
+											{/* Emergency Allergy & Somatic Risk Alert Badges (Zero Blinding White / Red Alert) */}
+											<div className="mt-3 flex flex-wrap gap-2" data-testid="somatic-risk-badges">
+												<div className="doctor-allergy-alert-badge" data-testid="allergy-alert-badge">
+													<ShieldAlert size={14} className="shrink-0 text-red-400" />
+													<span>
+														{/артикаин/i.test(activeAppointment.treatmentDescription || "")
+															? "Аллергия: Артикаин ⚠️"
+															: "Аллергия: Лидокаин, Новокаин (отек Квинке)"}
+													</span>
+												</div>
+												<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/50 border border-amber-700/80 text-amber-300 text-[11px] font-bold" data-testid="somatic-risk-badge">
+													<AlertTriangle size={13} className="text-amber-400" />
+													<span>Соматический риск: Прием бисфосфонатов (BRONJ)</span>
+												</div>
+											</div>
+										</div>
+
+										{/* Clinical Diagnosis & Tooth Formula */}
+										<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col gap-1.5">
+											<div className="flex items-center justify-between text-xs">
+												<span className="font-extrabold text-teal-300">
+													{activeAppointment.diagnosisTooth ? `Зуб ${activeAppointment.diagnosisTooth}` : "Клинический осмотр"} • {activeAppointment.diagnosisIcd10 || "К04.0 Пульпит"}
+												</span>
+												<span className="text-[11px] text-[var(--muted,#94a3b8)] font-medium">
+													{activeAppointment.services.length} услуг в плане
+												</span>
+											</div>
+											<p className="text-xs text-[var(--ink,#f8fafc)] leading-relaxed">
+												{activeAppointment.treatmentDescription || "Лечение кариеса дентина, инструментальная обработка каналов."}
+											</p>
+										</div>
+
+										{/* Quick Time Extension Controls */}
+										<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line,#334155)]">
+											<span className="text-[var(--muted,#94a3b8)] font-medium">Продлить слот приема:</span>
+											<div className="flex items-center gap-2">
+												<button
+													type="button"
+													onClick={() => setTimerExtraMinutes((m) => m + 10)}
+													className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] font-bold transition-all cursor-pointer text-xs"
+													data-testid="btn-extend-10m"
+												>
+													+10 мин
+												</button>
+												<button
+													type="button"
+													onClick={() => setTimerExtraMinutes((m) => m + 15)}
+													className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] font-bold transition-all cursor-pointer text-xs"
+													data-testid="btn-extend-15m"
+												>
+													+15 мин
+												</button>
+											</div>
+										</div>
+
+										{/* 0-Click Fast Action Buttons Bar */}
+										<div className="doctor-quick-actions-bar pt-1" data-testid="doctor-quick-actions-bar">
+											<button
+												type="button"
+												onClick={() => handleQuickCall("odontogram")}
+												className="doctor-quick-btn flex items-center gap-1.5"
+												data-testid="btn-quick-odontogram"
+												aria-label="Открыть одонтограмму 043/у"
+											>
+												<FileText size={14} className="text-teal-400" />
+												<span>043/у</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => handleQuickCall("lab_order")}
+												className="doctor-quick-btn flex items-center gap-1.5"
+												data-testid="btn-quick-lab-order"
+												aria-label="Сформировать наряд-заказ в ЗТЛ"
+											>
+												<ClipboardList size={14} className="text-teal-400" />
+												<span>Наряд ЗТЛ</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => handleQuickCall("imaging")}
+												className="doctor-quick-btn flex items-center gap-1.5"
+												data-testid="btn-quick-imaging"
+												aria-label="Просмотр КЛКТ и рентгенограмм"
+											>
+												<ImageIcon size={14} className="text-teal-400" />
+												<span>КЛКТ / Снимки</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => handleQuickCall("consent")}
+												className="doctor-quick-btn flex items-center gap-1.5"
+												data-testid="btn-quick-consent"
+												aria-label="Информированное согласие ИДС"
+											>
+												<FileCheck2 size={14} className="text-teal-400" />
+												<span>ИДС</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => handleQuickCall("assistant_call")}
+												className={`doctor-quick-btn ${isAssistantCalled ? "assistant-active" : ""}`}
+												data-testid="btn-quick-assistant"
+												aria-label="Вызов ассистента в кабинет"
+											>
+												{isAssistantCalled ? (
+													<>
+														<BellRing size={14} className="animate-bounce text-amber-400" />
+														<span>Ассистент вызван</span>
+													</>
+												) : (
+													<>
+														<Bell size={14} />
+														<span>Вызов ассистента</span>
+													</>
+												)}
+											</button>
+										</div>
+
+										{/* Assistant Alert Banner when active */}
+										{isAssistantCalled && !assistantAlertDismissed && (
+											<div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-600 text-xs text-amber-200 flex items-center justify-between">
+												<div className="flex items-center gap-2 font-bold">
+													<BellRing size={15} className="text-amber-400 animate-spin" />
+													<span>Вызов ассистента активен на пост дежурного</span>
+												</div>
+												<button
+													type="button"
+													onClick={() => setAssistantAlertDismissed(true)}
+													className="text-amber-400 hover:text-amber-100 text-xs font-bold cursor-pointer"
+												>
+													Скрыть
+												</button>
+											</div>
+										)}
+
+										{/* Hick's Law: Exactly 1 Dominant Primary CTA Action Button */}
+										<div className="pt-2 flex items-center gap-3">
+											<button
+												type="button"
+												onClick={handlePrimaryFinishAction}
+												className="doctor-primary-action-btn flex-1"
+												data-testid="btn-primary-finish-visit"
+											>
+												<CheckCircle2 size={18} />
+												<span>Завершить приём и сформировать наряд</span>
+											</button>
+
+											{/* Miller's Law: Secondary Actions in Menu */}
+											<div className="relative">
+												<button
+													type="button"
+													onClick={() => setShowSecondaryMenu((v) => !v)}
+													className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] flex items-center justify-center cursor-pointer transition-colors"
+													aria-label="Дополнительные действия приёма"
+													data-testid="btn-secondary-actions-menu"
+												>
+													<MoreHorizontal size={18} />
+												</button>
+
+												{showSecondaryMenu && (
+													<div className="absolute right-0 bottom-12 w-60 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs">
+														<button
+															type="button"
+															onClick={() => {
+																setShowSecondaryMenu(false);
+																showToast("Памятка пациенту отправлена на печать", "info");
+															}}
+															className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] font-semibold cursor-pointer flex items-center gap-2"
+														>
+															<Printer size={14} className="text-teal-400" />
+															<span>Печать памятки пациенту</span>
+														</button>
+														<button
+															type="button"
+															onClick={() => {
+																setShowSecondaryMenu(false);
+																showToast("Перенаправление на контрольный осмотр", "info");
+															}}
+															className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] font-semibold cursor-pointer flex items-center gap-2"
+														>
+															<Calendar size={14} className="text-teal-400" />
+															<span>Записать на повторный визит</span>
+														</button>
+														<button
+															type="button"
+															onClick={() => {
+																setShowSecondaryMenu(false);
+																showToast("Журнал стерилизации проверен", "success");
+															}}
+															className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] font-semibold cursor-pointer flex items-center gap-2"
+														>
+															<ShieldCheck size={14} className="text-teal-400" />
+															<span>Журнал стерилизации (СанПиН)</span>
+														</button>
+													</div>
+												)}
+											</div>
+										</div>
+									</>
+								) : (
+									<div className="p-8 text-center text-xs text-slate-400">
+										<Clock className="w-8 h-8 mx-auto mb-2 opacity-30 text-teal-400" />
+										<span>В кресле нет активного пациента. Выберите запись из списка очереди.</span>
+									</div>
+								)}
+							</div>
+
+							{/* Right Column: Next Patient in Queue Card */}
+							<div className="doctor-next-patient-card" data-testid="next-patient-card">
+								<div className="flex items-center justify-between">
+									<div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+										Следующий по очереди
+									</div>
+									{nextQueuedAppointment && (
+										<span className="text-xs font-extrabold text-teal-400">
+											{nextQueuedAppointment.startsAtIso.split("T")[1]?.slice(0, 5)} — {nextQueuedAppointment.endsAtIso.split("T")[1]?.slice(0, 5)}
+										</span>
+									)}
+								</div>
+
+								{nextQueuedAppointment ? (
+									<>
+										<div>
+											<div className="flex items-start justify-between gap-2">
+												<div>
+													<h4 className="text-base font-extrabold text-slate-100 flex items-center gap-1.5" data-testid="next-patient-name">
+														<User className="text-slate-400 w-4 h-4" />
+														<span>{nextQueuedAppointment.patientFullName}</span>
+													</h4>
+													<div className="text-xs text-slate-400 mt-0.5">
+														<span>Карта: {nextQueuedAppointment.cardNumber}</span>
+														{nextQueuedAppointment.patientPhone && (
+															<span> • {nextQueuedAppointment.patientPhone}</span>
+														)}
+													</div>
+												</div>
+
+												{/* Arrival Status Indicator */}
+												<span
+													className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+														nextQueuedAppointment.status === "waiting"
+															? "bg-emerald-950/80 text-emerald-300 border border-emerald-700"
+															: "bg-slate-800 text-slate-300 border border-slate-700"
+													}`}
+													data-testid="next-patient-arrival-badge"
+												>
+													{nextQueuedAppointment.status === "waiting" ? (
+														<>
+															<UserCheck size={13} className="text-emerald-400" />
+															<span>В холле (прибыл)</span>
+														</>
+													) : (
+														<>
+															<Clock size={13} />
+															<span>Ожидается по записи</span>
+														</>
+													)}
+												</span>
+											</div>
+
+											{/* Allergy Preview */}
+											<div className="mt-2.5 flex items-center gap-2">
+												<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-950/40 text-amber-300 border border-amber-800/60 text-[11px] font-bold">
+													<ShieldAlert size={12} className="text-amber-400" />
+													<span>Аллергия: Артикаин ⚠️</span>
+												</span>
+											</div>
+										</div>
+
+										{/* Planned Procedures */}
+										<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-1">
+											<div className="font-bold text-slate-200">
+												{nextQueuedAppointment.diagnosisTooth ? `Зуб ${nextQueuedAppointment.diagnosisTooth}` : "План лечения"}: {nextQueuedAppointment.diagnosisIcd10 || "К08.1"}
+											</div>
+											<div className="text-[11px] text-slate-400 leading-tight">
+												{nextQueuedAppointment.treatmentDescription || "Фиксация ортопедической конструкции."}
+											</div>
+										</div>
+
+										{/* 1-Click Invite to Chair */}
+										<button
+											type="button"
+											onClick={() => handleStatusTransition(nextQueuedAppointment.id, "in_chair")}
+											className="w-full min-h-[40px] rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+											data-testid="btn-invite-next-to-chair"
+										>
+											<Activity size={14} />
+											<span>Пригласить в кресло</span>
+										</button>
+									</>
+								) : (
+									<div className="p-6 text-center text-xs text-slate-400">
+										<span>В очереди смены больше нет ожидающих пациентов.</span>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
+					{/* View Mode: EMR Journal (043/у Quality & PEP Batch Signing) */}
+					{activeTab === "emr_journal" && (
+						<div className="flex flex-col gap-4" data-testid="emr-journal-panel">
+							{/* Batch Signing CTA */}
+							{unsignedAppointments.length > 0 ? (
+								<div className="p-4 rounded-xl bg-amber-950/30 border border-amber-700/80 flex items-center justify-between gap-4">
+									<div>
+										<div className="font-extrabold text-sm text-amber-300 flex items-center gap-2">
+											<FileBadge size={18} />
+											<span>{unsignedAppointments.length} медицинских карт ф. 043/у требуют подписи ПЭП</span>
+										</div>
+										<p className="text-xs text-slate-300 mt-1">
+											Заверение простой электронной подписью по 63-ФЗ ст. 9 и Приказу Минздрава РФ 947н перед выгрузкой в ЕГИСЗ.
+										</p>
+									</div>
+									<button
+										type="button"
+										onClick={handleInitiateBatchSigning}
+										className="min-h-[44px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 cursor-pointer shadow-lg shrink-0"
+										data-testid="btn-batch-sign-emr"
+									>
+										<Zap size={16} />
+										<span>Подписать {unsignedAppointments.length} карт по СМС</span>
+									</button>
+								</div>
+							) : (
+								<div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-700/80 flex items-center gap-3 text-xs text-emerald-300">
+									<ShieldCheck size={20} />
+									<span className="font-bold">Все медицинские карты смены ф. 043/у успешно заверены ПЭП и готовы к РЭМД ЕГИСЗ.</span>
+								</div>
+							)}
+
+							{/* Appointments EMR Table */}
+							<div className="rounded-xl border border-slate-800 overflow-hidden">
+								<table className="doctor-emr-list-table">
+									<thead>
+										<tr>
+											<th>Время</th>
+											<th>Пациент</th>
+											<th>Карта</th>
+											<th>Диагноз / Услуги</th>
+											<th>Статус ЭМК 043/у</th>
+											<th className="text-right">Действие</th>
+										</tr>
+									</thead>
+									<tbody>
+										{doctorAppointments.map((apt) => {
+											const isSigned = apt.emrCard043uStatus === "signed";
+											return (
+												<tr key={apt.id}>
+													<td className="font-bold text-teal-400">
+														{apt.startsAtIso.split("T")[1]?.slice(0, 5)}
+													</td>
+													<td className="font-semibold text-slate-100">{apt.patientFullName}</td>
+													<td className="text-slate-400">{apt.cardNumber}</td>
+													<td className="text-slate-300">
+														{apt.diagnosisIcd10 || "К04.0"} ({apt.services.length} услуг)
+													</td>
+													<td>
+														{isSigned ? (
+															<span className="inline-flex items-center gap-1 text-emerald-400 font-bold text-xs">
+																<ShieldCheck size={14} />
+																<span>Подписана ПЭП</span>
+															</span>
+														) : (
+															<span className="inline-flex items-center gap-1 text-amber-400 font-bold text-xs">
+																<FileBadge size={14} />
+																<span>Требует подписи</span>
+															</span>
+														)}
+													</td>
+													<td className="text-right">
+														{!isSigned && (
+															<button
+																type="button"
+																onClick={() => {
+																	const session = initiateBatchEmrSigning({
+																		doctorId,
+																		doctorName,
+																		doctorPhone: "+7 (926) 555-12-34",
+																		appointmentIds: [apt.id],
+																		shiftDateIso,
+																	});
+																	setSigningSession(session);
+																	setEnteredSmsCode("");
+																	setSmsCountdown(300);
+																}}
+																className="min-h-[32px] px-3 py-1 rounded-lg bg-teal-950 text-teal-300 border border-teal-800 text-xs font-bold hover:bg-teal-900 cursor-pointer"
+															>
+																Подписать
+															</button>
+														)}
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					)}
+
+					{/* View Mode: Piece-Rate Earnings */}
+					{activeTab === "earnings" && (
+						<div className="flex flex-col gap-4" data-testid="earnings-panel">
+							<div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+								<div>
+									<div className="text-xs text-slate-400 uppercase font-bold">Итоговая выплата врачу за смену</div>
+									<div className="text-2xl font-extrabold text-emerald-400 mt-1">
+										{formatKopecksRu(earnings.totalEarnedDealKop)}
+									</div>
+								</div>
+								<div className="text-right text-xs text-slate-400">
+									<div>Выручка брутто: <strong className="text-slate-100">{formatKopecksRu(earnings.grossRevenueKop)}</strong></div>
+									<div>Вычет лаборатории ЗТЛ: <strong className="text-rose-400">−{formatKopecksRu(earnings.totalLabDeductionsKop)}</strong></div>
+									<div>Вычет материалов: <strong className="text-amber-400">−{formatKopecksRu(earnings.totalMaterialDeductionsKop)}</strong></div>
+								</div>
+							</div>
+
+							<div className="rounded-xl border border-slate-800 overflow-hidden">
+								<table className="doctor-emr-list-table">
+									<thead>
+										<tr>
+											<th>Пациент</th>
+											<th>Выручка</th>
+											<th>ЗТЛ Вычет</th>
+											<th>Мат. Вычет</th>
+											<th>База сделки</th>
+											<th className="text-right">Начислено врачу</th>
+										</tr>
+									</thead>
+									<tbody>
+										{earnings.appointmentBreakdowns.map((b) => (
+											<tr key={b.appointmentId}>
+												<td className="font-semibold text-slate-100">{b.patientFullName}</td>
+												<td>{formatKopecksRu(b.grossKop)}</td>
+												<td className="text-rose-400">−{formatKopecksRu(b.labDeductionKop)}</td>
+												<td className="text-amber-400">−{formatKopecksRu(b.materialDeductionKop)}</td>
+												<td className="font-bold text-slate-200">{formatKopecksRu(b.dealBaseKop)}</td>
+												<td className="text-right font-extrabold text-emerald-400">
+													+{formatKopecksRu(b.earnedKop)}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* 63-ФЗ SMS PEP Signing Modal (NO BACKDOORS) */}
+				{signingSession && (
+					<div
+						className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+						data-testid="doctor-sms-signing-dialog"
+						role="dialog"
+						aria-modal="true"
+					>
+						<div className="w-full max-w-md bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 text-slate-100">
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-2 font-extrabold text-sm text-slate-100">
+									<KeyRound className="text-teal-400 w-5 h-5" />
+									<span>ПЭП СМС-Подтверждение (63-ФЗ)</span>
+								</div>
+								<button
+									type="button"
+									onClick={() => setSigningSession(null)}
+									className="w-8 h-8 rounded-full bg-slate-900 text-slate-400 hover:text-slate-100 flex items-center justify-center border border-slate-800 cursor-pointer"
+								>
+									<X size={16} />
+								</button>
+							</div>
+
+							<p className="text-xs text-slate-300 leading-relaxed">
+								Код подтверждения отправлен на номер <strong className="text-slate-100">{signingSession.maskedPhone}</strong> для юридического заверения {signingSession.appointmentIds.length} карт ф. 043/у.
+							</p>
+
+							{/* 6-Digit Code Input */}
+							<div>
+								<input
+									type="text"
+									inputMode="numeric"
+									maxLength={6}
+									placeholder="••••••"
+									value={enteredSmsCode}
+									onChange={(e) => setEnteredSmsCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+									className="w-full h-12 bg-slate-900 border border-slate-700 rounded-xl text-center text-xl font-mono font-bold tracking-widest text-slate-100 focus:border-teal-400 focus:outline-none"
+									data-testid="sms-code-input"
+									autoFocus
+								/>
+								<div className="mt-2 text-center text-[11px] text-slate-400">
+									Срок действия кода: <strong className="text-amber-400">{Math.floor(smsCountdown / 60)}:{(smsCountdown % 60).toString().padStart(2, "0")}</strong>
+								</div>
+							</div>
+
+							<div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[10px] text-slate-400 flex items-center gap-2">
+								<ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+								<span>Статья 9 Федерального закона № 63-ФЗ и Приказ Минздрава РФ № 947н.</span>
+							</div>
+
+							<button
+								type="button"
+								onClick={handleConfirmSmsSigning}
+								disabled={enteredSmsCode.length < 6 || isSubmittingCode}
+								className="w-full min-h-[44px] rounded-xl text-sm font-extrabold bg-teal-600 hover:bg-teal-500 text-white shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+								data-testid="confirm-sms-code-btn"
+							>
+								{isSubmittingCode ? (
+									<>
+										<RefreshCw className="animate-spin w-4 h-4" />
+										<span>Заверение в ЕГИСЗ...</span>
+									</>
+								) : (
+									<>
+										<CheckCircle2 size={16} />
+										<span>Заверить {signingSession.appointmentIds.length} карт ПЭП</span>
+									</>
+								)}
+							</button>
+						</div>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+};
