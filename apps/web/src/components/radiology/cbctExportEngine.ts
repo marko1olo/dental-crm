@@ -60,6 +60,28 @@ export interface CbctReportImplantData {
 	readonly priceKopecks?: number | undefined;
 }
 
+export interface CbctReportImplantRow {
+	readonly toothFdi: number;
+	readonly brandName: string;
+	readonly lineName: string;
+	readonly diameterMm: number;
+	readonly lengthMm: number;
+	readonly platformDiameterMm?: number | undefined;
+	readonly apexDiameterMm?: number | undefined;
+	readonly articleNumber?: string | undefined;
+	readonly angulationDeg?: number | undefined;
+	readonly entryDepthMm?: number | undefined;
+	readonly mischClass: MischBoneClass;
+	readonly boneDensityHU: number;
+	readonly expectedTorqueNcm: number;
+	readonly minTorqueNcm?: number | undefined;
+	readonly maxTorqueNcm?: number | undefined;
+	readonly distanceToIanMm?: number | undefined;
+	readonly ianSafetyStatus?: "safe" | "warning" | "danger" | "na" | undefined;
+	readonly ianMessageRu?: string | undefined;
+	readonly immediateLoading?: boolean | undefined;
+}
+
 export interface CbctReportBoneData {
 	readonly mischClass: MischBoneClass;
 	readonly classNameRu: string;
@@ -112,8 +134,10 @@ export interface CbctReportData {
 	readonly bone: CbctReportBoneData;
 	readonly stability: CbctReportStabilityData;
 	readonly nerve?: CbctReportNerveData | undefined;
+	readonly implantsTable?: readonly CbctReportImplantRow[] | undefined;
 	readonly clinicalRecommendations?: readonly string[] | undefined;
 	readonly diary043Text?: string | undefined;
+	readonly tonerSavingEnabled?: boolean | undefined;
 }
 
 export interface ViewportSnapshotOptions {
@@ -124,6 +148,14 @@ export interface ViewportSnapshotOptions {
 	readonly customScaleBarLengthMm?: number | undefined;
 	readonly showOrientationBadge?: boolean | undefined;
 	readonly orientationBadgeText?: string | undefined;
+	readonly invertToner?: boolean | undefined;
+	readonly tonerSaving?: boolean | undefined;
+}
+
+export interface CbctReportRenderOptions {
+	readonly tonerSaving?: boolean | undefined;
+	readonly includeForm043Diary?: boolean | undefined;
+	readonly customClinicTitle?: string | undefined;
 }
 
 /**
@@ -171,14 +203,34 @@ export async function exportCleanViewportSnapshot(
 		}
 	}
 
-	// 1. Draw solid dark background
-	ctx.fillStyle = "#000000";
+	const isInvertToner = Boolean(options.invertToner || options.tonerSaving);
+
+	// 1. Draw solid background (white for toner saving, black for dark screen snapshot)
+	ctx.fillStyle = isInvertToner ? "#ffffff" : "#000000";
 	ctx.fillRect(0, 0, width, height);
 
-	// 2. Draw source slice image from canvas
+	// 2. Draw source slice image from canvas (with LUT pixel inversion if toner saving is active)
 	try {
 		if (canvas.width > 0 && canvas.height > 0) {
 			ctx.drawImage(canvas, 0, 0, width, height);
+
+			if (isInvertToner && typeof ctx.getImageData === "function" && typeof ctx.putImageData === "function") {
+				try {
+					const imgData = ctx.getImageData(0, 0, width, height);
+					if (imgData && imgData.data) {
+						const d = imgData.data;
+						for (let i = 0; i < d.length; i += 4) {
+							d[i] = 255 - d[i]!; // R
+							d[i + 1] = 255 - d[i + 1]!; // G
+							d[i + 2] = 255 - d[i + 2]!; // B
+							// Alpha channel is preserved
+						}
+						ctx.putImageData(imgData, 0, 0);
+					}
+				} catch {
+					// Fallback for tainted canvas or limited context
+				}
+			}
 		}
 	} catch {
 		// Ignore draw errors in headless/test environments
@@ -201,8 +253,8 @@ export async function exportCleanViewportSnapshot(
 	const badgeWidth = Math.min(width - 24, Math.max(180, Math.max(titleWidth, metaWidth) + 20));
 	const badgeHeight = metaParts ? 42 : 26;
 
-	ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-	ctx.strokeStyle = "rgba(51, 65, 85, 0.8)";
+	ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.92)" : "rgba(15, 23, 42, 0.85)";
+	ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "rgba(51, 65, 85, 0.8)";
 	ctx.lineWidth = 1;
 	ctx.beginPath();
 	if (typeof ctx.roundRect === "function") {
@@ -213,15 +265,15 @@ export async function exportCleanViewportSnapshot(
 	ctx.fill();
 	ctx.stroke();
 
-	// Title in cyan
+	// Title
 	ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
-	ctx.fillStyle = "#38bdf8";
+	ctx.fillStyle = isInvertToner ? "#0369a1" : "#38bdf8";
 	ctx.fillText(titleText, pad + 10, pad + 16);
 
-	// Subtitle in slate
+	// Subtitle
 	if (metaParts) {
 		ctx.font = "10px system-ui, -apple-system, sans-serif";
-		ctx.fillStyle = "#94a3b8";
+		ctx.fillStyle = isInvertToner ? "#475569" : "#94a3b8";
 		ctx.fillText(metaParts, pad + 10, pad + 33);
 	}
 	ctx.restore();
@@ -239,8 +291,8 @@ export async function exportCleanViewportSnapshot(
 	const sbHeight = 24;
 	const sbWidth = scaleBarPx + 24;
 
-	ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-	ctx.strokeStyle = "rgba(51, 65, 85, 0.8)";
+	ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.92)" : "rgba(15, 23, 42, 0.85)";
+	ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "rgba(51, 65, 85, 0.8)";
 	ctx.lineWidth = 1;
 	ctx.beginPath();
 	if (typeof ctx.roundRect === "function") {
@@ -255,7 +307,7 @@ export async function exportCleanViewportSnapshot(
 	const lineEndX = lineStartX + scaleBarPx;
 	const lineY = sbY + 15;
 
-	ctx.strokeStyle = "#38bdf8";
+	ctx.strokeStyle = isInvertToner ? "#0284c7" : "#38bdf8";
 	ctx.lineWidth = 1.5;
 	ctx.beginPath();
 	// Left bracket tick
@@ -275,7 +327,7 @@ export async function exportCleanViewportSnapshot(
 
 	// Label
 	ctx.font = "bold 9px monospace";
-	ctx.fillStyle = "#f1f5f9";
+	ctx.fillStyle = isInvertToner ? "#0f172a" : "#f1f5f9";
 	ctx.textAlign = "center";
 	ctx.fillText(`${scaleBarLengthMm} мм`, midX, lineY - 7);
 	ctx.restore();
@@ -283,7 +335,7 @@ export async function exportCleanViewportSnapshot(
 	// 5. Watermark / Branding (Bottom-Right)
 	ctx.save();
 	ctx.font = "9px system-ui, -apple-system, sans-serif";
-	ctx.fillStyle = "rgba(148, 163, 184, 0.75)";
+	ctx.fillStyle = isInvertToner ? "rgba(71, 85, 105, 0.85)" : "rgba(148, 163, 184, 0.75)";
 	ctx.textAlign = "right";
 	ctx.fillText("DENTE 3D CBCT Studio • 16-bit DICOM", width - pad, height - pad);
 	ctx.restore();
@@ -308,6 +360,7 @@ export function buildCbctReportData(params: {
 	readonly huSampling: HUZoneSampling;
 	readonly containment: AlveolarContainmentResult;
 	readonly nerveSafety?: NerveSafetyAuditResult | undefined;
+	readonly additionalImplants?: readonly CbctReportImplantRow[] | undefined;
 	readonly snapshots?: {
 		readonly axial?: CbctReportSliceSnapshot | undefined;
 		readonly coronal?: CbctReportSliceSnapshot | undefined;
@@ -316,6 +369,7 @@ export function buildCbctReportData(params: {
 		readonly crossSection?: CbctReportSliceSnapshot | undefined;
 	} | undefined;
 	readonly diary043Text?: string | undefined;
+	readonly tonerSaving?: boolean | undefined;
 }): CbctReportData {
 	const {
 		patientName = "Барабаш С.В.",
@@ -327,11 +381,40 @@ export function buildCbctReportData(params: {
 		huSampling,
 		containment,
 		nerveSafety,
+		additionalImplants,
 		snapshots = {},
 		diary043Text,
+		tonerSaving = true,
 	} = params;
 
 	const spec = implantPose.implantSpec;
+
+	const primaryImplantRow: CbctReportImplantRow = {
+		toothFdi: targetToothFdi,
+		brandName: spec.brandName,
+		lineName: spec.lineName,
+		diameterMm: spec.diameterMm,
+		lengthMm: spec.lengthMm,
+		platformDiameterMm: spec.platformDiameterMm,
+		apexDiameterMm: spec.apexDiameterMm,
+		articleNumber: spec.articleNumber,
+		angulationDeg: implantPose.angulationDeg,
+		entryDepthMm: implantPose.entryPoint.y,
+		mischClass: mischResult.mischClass,
+		boneDensityHU: huSampling.overallMeanHU,
+		expectedTorqueNcm: mischResult.estimatedInsertionTorqueNcm.expectedNcm,
+		minTorqueNcm: mischResult.estimatedInsertionTorqueNcm.minNcm,
+		maxTorqueNcm: mischResult.estimatedInsertionTorqueNcm.maxNcm,
+		distanceToIanMm: nerveSafety ? nerveSafety.netClearanceToCanalWallMm : undefined,
+		ianSafetyStatus: nerveSafety ? nerveSafety.safetyStatus : "na",
+		ianMessageRu: nerveSafety?.clinicalMessageRu,
+		immediateLoading: mischResult.isImmediateLoadingEligible,
+	};
+
+	const implantsTable =
+		additionalImplants && additionalImplants.length > 0
+			? [primaryImplantRow, ...additionalImplants.filter((r) => r.toothFdi !== targetToothFdi)]
+			: [primaryImplantRow];
 
 	return {
 		patient: {
@@ -394,21 +477,51 @@ export function buildCbctReportData(params: {
 					clinicalMessageRu: nerveSafety.clinicalMessageRu,
 				}
 			: undefined,
+		implantsTable,
 		clinicalRecommendations: mischResult.clinicalAdvice,
 		diary043Text,
+		tonerSavingEnabled: tonerSaving,
 	};
 }
 
 /**
  * Generates responsive, high-grade HTML/CSS print protocol for A4 output.
  */
-export function renderCbctReportHtml(data: CbctReportData): string {
-	const { patient, targetToothFdi, snapshots, implant, bone, stability, nerve, clinicalRecommendations, diary043Text } = data;
+export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRenderOptions = {}): string {
+	const { patient, targetToothFdi, snapshots, implant, bone, stability, nerve, clinicalRecommendations, diary043Text, implantsTable } = data;
 
+	const isTonerSaving = options.tonerSaving ?? (data.tonerSavingEnabled ?? true);
 	const axialImg = snapshots.axial?.dataUrl;
 	const panoImg = snapshots.panoramic?.dataUrl;
 	const crossSectionImg = snapshots.crossSection?.dataUrl;
 	const sagittalImg = snapshots.sagittal?.dataUrl || snapshots.coronal?.dataUrl;
+
+	const effectiveImplantsTable: readonly CbctReportImplantRow[] =
+		implantsTable && implantsTable.length > 0
+			? implantsTable
+			: [
+					{
+						toothFdi: targetToothFdi,
+						brandName: implant.brandName,
+						lineName: implant.lineName,
+						diameterMm: implant.diameterMm,
+						lengthMm: implant.lengthMm,
+						platformDiameterMm: implant.platformDiameterMm,
+						apexDiameterMm: implant.apexDiameterMm,
+						articleNumber: implant.articleNumber,
+						angulationDeg: implant.angulationDeg,
+						entryDepthMm: implant.entryDepthMm,
+						mischClass: bone.mischClass,
+						boneDensityHU: bone.overallMeanHU,
+						expectedTorqueNcm: stability.expectedTorqueNcm,
+						minTorqueNcm: stability.minTorqueNcm,
+						maxTorqueNcm: stability.maxTorqueNcm,
+						distanceToIanMm: nerve?.netClearanceToCanalWallMm,
+						ianSafetyStatus: nerve?.safetyStatus ?? "na",
+						ianMessageRu: nerve?.clinicalMessageRu,
+						immediateLoading: stability.isImmediateLoadingEligible,
+					},
+				];
 
 	const mischBadgeColor =
 		bone.mischClass === "D1"
@@ -499,12 +612,27 @@ export function renderCbctReportHtml(data: CbctReportData): string {
   .info-group {
     display: flex;
     gap: 12px;
+    align-items: center;
   }
   .info-item {
     font-size: 10px;
   }
   .info-item b {
     color: #0f172a;
+  }
+  .right-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toner-badge {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 8.5px;
+    font-weight: 700;
   }
   .tooth-pill {
     background: #0284c7;
@@ -524,7 +652,7 @@ export function renderCbctReportHtml(data: CbctReportData): string {
     margin-bottom: 8px;
   }
   .mpr-card {
-    background: #000000;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
     border-radius: 4px;
     overflow: hidden;
@@ -544,19 +672,53 @@ export function renderCbctReportHtml(data: CbctReportData): string {
     position: absolute;
     top: 4px;
     left: 4px;
-    background: rgba(15, 23, 42, 0.85);
-    color: #38bdf8;
+    background: rgba(248, 250, 252, 0.95);
+    color: #0369a1;
     font-size: 8px;
     font-weight: 700;
     padding: 2px 5px;
     border-radius: 3px;
-    border: 0.5px solid rgba(51, 65, 85, 0.8);
+    border: 0.5px solid #cbd5e1;
   }
   .mpr-empty {
     color: #64748b;
     font-size: 9px;
     text-align: center;
     padding: 20px;
+  }
+
+  /* Structured Implants Table */
+  .table-implants {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5px;
+  }
+  .table-implants th {
+    background: #f1f5f9;
+    color: #334155;
+    font-weight: 700;
+    text-align: left;
+    padding: 5px 6px;
+    border-bottom: 1px solid #cbd5e1;
+    font-size: 8.5px;
+    text-transform: uppercase;
+  }
+  .table-implants td {
+    padding: 5px 6px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+  .table-implants tr:nth-child(even) {
+    background: #f8fafc;
+  }
+  .misch-pill {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 800;
+    font-size: 8px;
+    color: #ffffff;
+    margin-right: 4px;
   }
 
   /* Two Column Data Tables */
@@ -673,7 +835,7 @@ export function renderCbctReportHtml(data: CbctReportData): string {
   <table class="header-table">
     <tr>
       <td>
-        <div class="clinic-title">${escapeHtml(patient.clinicName || "Стоматологический центр DENTE")}</div>
+        <div class="clinic-title">${escapeHtml(options.customClinicTitle || patient.clinicName || "Стоматологический центр DENTE")}</div>
         <div class="clinic-sub">Отделение цифровой имплантологии и челюстно-лицевой рентгенодиагностики</div>
       </td>
       <td>
@@ -690,7 +852,10 @@ export function renderCbctReportHtml(data: CbctReportData): string {
       <div class="info-item">Карта: <b>${escapeHtml(patient.cardRecordNumber || "043/у")}</b></div>
       <div class="info-item">Врач: <b>${escapeHtml(patient.doctorName || "Хирург-имплантолог")}</b></div>
     </div>
-    <div class="tooth-pill">ЗУБ FDI #${targetToothFdi}</div>
+    <div class="right-badges">
+      ${isTonerSaving ? `<div class="toner-badge">🌱 Экономия тонера (Smart White Paper Inversion)</div>` : ""}
+      <div class="tooth-pill">ЗУБ FDI #${targetToothFdi}</div>
+    </div>
   </div>
 
   <!-- 4-Slice MPR Visual Matrix -->
@@ -711,6 +876,77 @@ export function renderCbctReportHtml(data: CbctReportData): string {
       <div class="mpr-label">4. Косой сагиттальный срез</div>
       ${sagittalImg ? `<img src="${sagittalImg}" alt="Sagittal MPR" />` : `<div class="mpr-empty">Сагиттальный срез</div>`}
     </div>
+  </div>
+
+  <!-- Structured Implants Registry Table -->
+  <div class="section-box" style="margin-bottom: 8px;">
+    <div class="section-header">
+      <span>Структурированная таблица установленных имплантатов</span>
+      <span style="font-size: 8.5px; color: #64748b;">Всего запланировано: ${effectiveImplantsTable.length} шт.</span>
+    </div>
+    <table class="table-implants">
+      <thead>
+        <tr>
+          <th style="width: 11%; text-align: center;">Зуб FDI</th>
+          <th style="width: 22%;">Система / Бренд</th>
+          <th style="width: 17%;">Размер (Ø × L)</th>
+          <th style="width: 16%;">Плотность HU (Misch)</th>
+          <th style="width: 16%;">Первичный торк</th>
+          <th style="width: 10%;">Дистанция IAN</th>
+          <th style="width: 8%; text-align: center;">Безопасность</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${effectiveImplantsTable
+					.map((row) => {
+						const rowMischColor =
+							row.mischClass === "D1"
+								? "#3b82f6"
+								: row.mischClass === "D2"
+									? "#10b981"
+									: row.mischClass === "D3"
+										? "#f59e0b"
+										: "#ef4444";
+						const ianColor =
+							row.ianSafetyStatus === "safe"
+								? "#10b981"
+								: row.ianSafetyStatus === "warning"
+									? "#f59e0b"
+									: row.ianSafetyStatus === "danger"
+										? "#ef4444"
+										: "#64748b";
+						const ianLabel =
+							row.ianSafetyStatus === "safe"
+								? "Безопасно"
+								: row.ianSafetyStatus === "warning"
+									? "Внимание"
+									: row.ianSafetyStatus === "danger"
+										? "Опасно"
+										: "N/A";
+						return `
+        <tr>
+          <td style="font-weight: 800; color: #0284c7; text-align: center;">FDI #${row.toothFdi}</td>
+          <td><b>${escapeHtml(row.brandName)}</b> <span style="color:#64748b;">(${escapeHtml(row.lineName || "")})</span></td>
+          <td><b>Ø${row.diameterMm.toFixed(1)} × ${row.lengthMm.toFixed(1)} мм</b></td>
+          <td>
+            <span class="misch-pill" style="background:${rowMischColor};">${row.mischClass}</span>
+            <span>${row.boneDensityHU} HU</span>
+          </td>
+          <td>
+            <b>${row.expectedTorqueNcm} Н·см</b>
+            ${row.minTorqueNcm !== undefined && row.maxTorqueNcm !== undefined ? `<span style="color:#64748b; font-size:8.5px;">(${row.minTorqueNcm}–${row.maxTorqueNcm})</span>` : ""}
+          </td>
+          <td>
+            ${row.distanceToIanMm !== undefined ? `<b>${row.distanceToIanMm.toFixed(1)} мм</b>` : `<span style="color:#94a3b8;">N/A (В/Ч)</span>`}
+          </td>
+          <td style="text-align: center;">
+            <span style="font-weight: 700; color: ${ianColor};">${ianLabel}</span>
+          </td>
+        </tr>`;
+					})
+					.join("")}
+      </tbody>
+    </table>
   </div>
 
   <!-- Clinical Data Tables (2 Columns) -->
@@ -827,8 +1063,11 @@ export function renderCbctReportHtml(data: CbctReportData): string {
 /**
  * Generates an A4 PDF / Printable document Blob.
  */
-export async function generateCbctPlanningPdfReport(data: CbctReportData): Promise<Blob> {
-	const html = renderCbctReportHtml(data);
+export async function generateCbctPlanningPdfReport(
+	data: CbctReportData,
+	options: CbctReportRenderOptions = {},
+): Promise<Blob> {
+	const html = renderCbctReportHtml(data, options);
 	// We create an HTML/PDF printable document blob
 	return new Blob([html], { type: "text/html;charset=utf-8" });
 }
@@ -836,12 +1075,15 @@ export async function generateCbctPlanningPdfReport(data: CbctReportData): Promi
 /**
  * Opens printable preview window and triggers browser print dialog.
  */
-export function openCbctReportPrintWindow(data: CbctReportData): Window | null {
+export function openCbctReportPrintWindow(
+	data: CbctReportData,
+	options: CbctReportRenderOptions = {},
+): Window | null {
 	if (typeof window === "undefined" || !window.open) {
 		return null;
 	}
 
-	const html = renderCbctReportHtml(data);
+	const html = renderCbctReportHtml(data, options);
 	const printWindow = window.open("", "_blank");
 	if (printWindow) {
 		printWindow.document.open();
@@ -857,14 +1099,18 @@ export function openCbctReportPrintWindow(data: CbctReportData): Window | null {
 /**
  * Initiates automatic download of the CBCT Report file.
  */
-export function downloadCbctReportFile(data: CbctReportData, filename?: string): void {
+export function downloadCbctReportFile(
+	data: CbctReportData,
+	filename?: string,
+	options: CbctReportRenderOptions = {},
+): void {
 	if (typeof window === "undefined" || typeof document === "undefined") {
 		return;
 	}
 
 	const safeFilename =
 		filename || `CBCT_Implant_Protocol_FDI_${data.targetToothFdi}_${data.patient.patientName.replace(/\s+/g, "_")}.html`;
-	const html = renderCbctReportHtml(data);
+	const html = renderCbctReportHtml(data, options);
 	const blob = new Blob([html], { type: "text/html;charset=utf-8" });
 	const url = URL.createObjectURL(blob);
 
