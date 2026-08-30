@@ -68,6 +68,7 @@ import {
 	DEFAULT_VIEWPORT_TRANSFORM,
 	applyCursorZoom,
 	applyWindowLevelDrag,
+	calculateCrosshairDragWorldMm,
 	ROMEXIS_COLORS,
 	createEmptyCbctVolume,
 	disposeCbctVolume,
@@ -79,6 +80,7 @@ import {
 	drawCbctProbeMarker,
 	calculateAngleBetween3Points3D,
 	hitTestMeasurementHandle,
+	hitTestMeasurementObject,
 	getCbctToolCursor,
 	worldMmToSlicePx,
 	slicePxToWorldMm,
@@ -111,13 +113,17 @@ import {
 	type DentalArchCurve,
 	type PanoramicReconstructionResult,
 	type PanoramicSliceFanTick,
+	type PanoClickSyncResult,
 	buildDentalArchCurve,
 	createDentalArchCurve,
 	findNearestCrossSectionIndexByPanoX,
+	findCrossSectionAndPositionByFdi,
+	hitTestPanoramicToothMarker,
 	generateCrossSectionSlices,
 	generateCrossSectionsAlongArch,
 	getFocalTroughBoundaryCurves,
 	getPanoramicSliceFanTicks,
+	mapPanoPointerToCrosshairAndSlice,
 	mapSliceToPanoramicX,
 	reconstructPanoramicOpg,
 	reconstructPanoramicView,
@@ -404,9 +410,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		currentMm: Point3D;
 	} | null>(null);
 	const [selectedMeasurement, setSelectedMeasurement] = useState<{
-		type: "ruler" | "angle" | "probe";
+		type: "ruler" | "angle" | "probe" | "implant";
 		id: string;
 	} | null>(null);
+	const [hoveredImplantPart, setHoveredImplantPart] = useState<"entry" | "apex" | "body" | null>(null);
 	const [draggingMeasurementHandle, setDraggingMeasurementHandle] = useState<{
 		type: "ruler" | "angle";
 		id: string;
@@ -428,6 +435,25 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		startY: number;
 		startZoom: number;
 	} | null>(null);
+
+	// Real-Time Crosshair & Panorama Synchronization (rAF Coalescing)
+	const pendingCrosshairMmRef = useRef<Point3D | null>(null);
+	const rafCrosshairIdRef = useRef<number | null>(null);
+	const pendingPanoSyncRef = useRef<PanoClickSyncResult | null>(null);
+	const rafPanoIdRef = useRef<number | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (rafCrosshairIdRef.current !== null) {
+				cancelAnimationFrame(rafCrosshairIdRef.current);
+				rafCrosshairIdRef.current = null;
+			}
+			if (rafPanoIdRef.current !== null) {
+				cancelAnimationFrame(rafPanoIdRef.current);
+				rafPanoIdRef.current = null;
+			}
+		};
+	}, []);
 
 	// Modal Fullscreen State & Handler
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -508,6 +534,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		});
 		setObliqueAngles(DEFAULT_OBLIQUE_ROTATION);
 		setCrosshairMm({ x: 0, y: 0, z: 0 });
+		setActivePreset("bone_dense");
+		const bonePreset = CBCT_HOUNSFIELD_PRESETS.find((p) => p.id === "bone_dense");
+		if (bonePreset) {
+			setWindowWidth(bonePreset.windowWidth);
+			setWindowLevel(bonePreset.windowLevel);
+		} else {
+			setWindowWidth(4400);
+			setWindowLevel(1300);
+		}
+		setInvertColors(false);
 		setRulers([]);
 		setActiveRuler(null);
 		setAngles([]);
@@ -517,6 +553,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setHoveredMeasurementHandle(null);
 		setProbeMarkers([]);
 		setActiveProbe(null);
+		showToast("↺ Вид сброшен: масштаб 100%, оси 0°, контраст «Кость»", "info");
 	}, []);
 
 	const handleSelectTool = useCallback((tool: CbctToolMode) => {
@@ -599,6 +636,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						setProbeMarkers((prev) => prev.filter((p) => p.id !== selectedMeasurement.id));
 						setSelectedMeasurement(null);
 						showToast("Метка плотности удалена", "info");
+					} else if (selectedMeasurement.type === "implant") {
+						setImplantEntryXOffsetMm(0);
+						setImplantEntryDepthMm(2);
+						setImplantAngulationDeg(0);
+						setSelectedMeasurement(null);
+						showToast("Положение имплантата сброшено (Delete)", "info");
 					}
 					return;
 				}
@@ -2376,14 +2419,32 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.stroke();
 			ctx.setLineDash([]);
 
+			// Active Amber Selection Ring & Halo when implant is selected or hovered
+			const isImplantActive = selectedMeasurement?.type === "implant" || hoveredImplantPart !== null || dragImplantPart !== null;
+			if (isImplantActive) {
+				ctx.save();
+				ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
+				ctx.lineWidth = 4.5;
+				ctx.shadowColor = "#f59e0b";
+				ctx.shadowBlur = 8;
+				ctx.beginPath();
+				ctx.moveTo(-radiusPx - 1, -2);
+				ctx.lineTo(radiusPx + 1, -2);
+				ctx.lineTo(radiusPx * 0.7 + 1, lengthPx + 1);
+				ctx.lineTo(-radiusPx * 0.7 - 1, lengthPx + 1);
+				ctx.closePath();
+				ctx.stroke();
+				ctx.restore();
+			}
+
 			// Implant Platform Cap Bar
 			ctx.fillStyle = "#94a3b8";
 			ctx.fillRect(-radiusPx - 1, -2, (radiusPx + 1) * 2, 3);
 
 			// Tapered Implant Body
 			ctx.fillStyle = statusFill;
-			ctx.strokeStyle = statusStroke;
-			ctx.lineWidth = 2.0;
+			ctx.strokeStyle = isImplantActive ? "#f59e0b" : statusStroke;
+			ctx.lineWidth = isImplantActive ? 2.5 : 2.0;
 
 			ctx.beginPath();
 			ctx.moveTo(-radiusPx, 0);
@@ -2402,24 +2463,34 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.lineTo(0, lengthPx);
 			ctx.stroke();
 
-			// Interactive CAD Handles (Entry Point / Apex)
-			// Platform entry handle (Blue circle)
-			ctx.fillStyle = "#38bdf8";
+			// Interactive CAD Handles (Entry Point / Apex) — 6-8px Luminous Glowing Points (#22d3ee / #f59e0b)
+			// Platform entry handle (6-8px glowing point)
+			const isEntryActive = dragImplantPart === "entry" || hoveredImplantPart === "entry";
+			ctx.save();
+			ctx.shadowColor = isEntryActive ? "#f59e0b" : "#22d3ee";
+			ctx.shadowBlur = isEntryActive ? 8 : 6;
+			ctx.fillStyle = isEntryActive ? "#f59e0b" : "#22d3ee";
+			ctx.beginPath();
+			ctx.arc(0, 0, isEntryActive ? 4.2 : 3.5, 0, Math.PI * 2);
+			ctx.fill();
 			ctx.strokeStyle = "#ffffff";
 			ctx.lineWidth = 1.5;
-			ctx.beginPath();
-			ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
-			ctx.fill();
 			ctx.stroke();
+			ctx.restore();
 
-			// Apex angulation handle (White circle with status stroke)
-			ctx.fillStyle = "#ffffff";
+			// Apex angulation handle (6-8px glowing point)
+			const isApexActive = dragImplantPart === "apex" || hoveredImplantPart === "apex";
+			ctx.save();
+			ctx.shadowColor = isApexActive ? "#f59e0b" : "#f59e0b";
+			ctx.shadowBlur = isApexActive ? 8 : 6;
+			ctx.fillStyle = isApexActive ? "#f59e0b" : "#ffffff";
+			ctx.beginPath();
+			ctx.arc(0, lengthPx, isApexActive ? 4.2 : 3.5, 0, Math.PI * 2);
+			ctx.fill();
 			ctx.strokeStyle = statusStroke;
 			ctx.lineWidth = 1.5;
-			ctx.beginPath();
-			ctx.arc(0, lengthPx, 4.0, 0, Math.PI * 2);
-			ctx.fill();
 			ctx.stroke();
+			ctx.restore();
 
 			ctx.restore();
 
@@ -2481,45 +2552,121 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.fillText(`${nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм`, midScreen.x, midScreen.y);
 			ctx.restore();
 		}
-	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout]);
+
+		// 3. Floating CAD HUD Quick-Reset & Angulation Pill in Top-Right Corner
+		if (studioMode === "implant") {
+			ctx.save();
+			const pillX = canvas.width - 85;
+			const pillY = 10;
+			const pillW = 75;
+			const pillH = 20;
+
+			ctx.fillStyle = "rgba(9, 9, 11, 0.88)";
+			ctx.strokeStyle = selectedMeasurement?.type === "implant" ? "#f59e0b" : "rgba(113, 113, 122, 0.6)";
+			ctx.lineWidth = selectedMeasurement?.type === "implant" ? 1.5 : 1.0;
+			if (selectedMeasurement?.type === "implant") {
+				ctx.shadowColor = "rgba(245, 158, 11, 0.4)";
+				ctx.shadowBlur = 6;
+			}
+			ctx.beginPath();
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(pillX, pillY, pillW, pillH, 4);
+			} else {
+				ctx.rect(pillX, pillY, pillW, pillH);
+			}
+			ctx.fill();
+			ctx.stroke();
+
+			ctx.shadowBlur = 0;
+			ctx.fillStyle = selectedMeasurement?.type === "implant" ? "#fbbf24" : "#e4e4e7";
+			ctx.font = "bold 9px monospace";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(`Сброс (${implantAngulationDeg}°)`, pillX + pillW / 2, pillY + pillH / 2);
+			ctx.restore();
+		}
+	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout, selectedMeasurement, hoveredImplantPart, dragImplantPart, implantAngulationDeg]);
 
 	// ─── INTERACTIVE PANORAMA CLICK & SCRUB TO JUMP TO CROSS-SECTION ──────────
+	const handleSelectTooth = useCallback((toothFdi: number | string) => {
+		const res = findCrossSectionAndPositionByFdi(toothFdi, crossSections, archCurve, crosshairMm.z);
+		if (res.found) {
+			setActiveCrossSectionIdx(res.crossSectionIdx);
+			setCrosshairMm(res.positionMm);
+			showToast(`🎯 Навигация к зубу FDI #${res.nearestToothFdi} (Срез #${res.crossSectionIdx + 1})`, "info");
+		}
+	}, [crossSections, archCurve, crosshairMm.z]);
+
 	const handlePanoMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (crossSections.length === 0 || !panoCanvasRef.current) return;
 		setIsDraggingPano(true);
-		const { normX } = getCanvasPointerPos(e.currentTarget, e.clientX, e.clientY);
-		const panoX = normX * (panoCanvasRef.current.width - 1);
-		const closestIdx = findNearestCrossSectionIndexByPanoX(
-			panoX,
-			panoCanvasRef.current.width,
-			crossSections,
-			archCurve.totalArcLengthMm,
-		);
-		setActiveCrossSectionIdx(closestIdx);
-		const targetSlice = crossSections[closestIdx];
-		if (targetSlice) {
-			setCrosshairMm(targetSlice.centerPointMm);
+		const canvas = panoCanvasRef.current;
+		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const pointerPx = { x, y };
+
+		// 1. Check if click was directly on an FDI tooth marker badge on the panorama
+		if (panoramicData?.toothMarkersOnPano) {
+			const hitMarker = hitTestPanoramicToothMarker(
+				pointerPx,
+				panoramicData.toothMarkersOnPano,
+				transforms.panoramic,
+			);
+			if (hitMarker) {
+				handleSelectTooth(hitMarker.toothFdi);
+				return;
+			}
 		}
-	}, [crossSections, archCurve.totalArcLengthMm]);
+
+		// 2. Synchronize 3D crosshair and active cross-section index
+		const syncRes = mapPanoPointerToCrosshairAndSlice(
+			pointerPx,
+			{ width: canvas.width, height: canvas.height },
+			archCurve,
+			crossSections,
+			crosshairMm,
+			transforms.panoramic,
+		);
+		setActiveCrossSectionIdx(syncRes.crossSectionIdx);
+		setCrosshairMm(syncRes.worldMm);
+	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData?.toothMarkersOnPano, handleSelectTooth]);
 
 	const handlePanoMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!isDraggingPano || crossSections.length === 0 || !panoCanvasRef.current) return;
-		const { normX } = getCanvasPointerPos(e.currentTarget, e.clientX, e.clientY);
-		const panoX = normX * (panoCanvasRef.current.width - 1);
-		const closestIdx = findNearestCrossSectionIndexByPanoX(
-			panoX,
-			panoCanvasRef.current.width,
+		const canvas = panoCanvasRef.current;
+		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const pointerPx = { x, y };
+
+		const syncRes = mapPanoPointerToCrosshairAndSlice(
+			pointerPx,
+			{ width: canvas.width, height: canvas.height },
+			archCurve,
 			crossSections,
-			archCurve.totalArcLengthMm,
+			crosshairMm,
+			transforms.panoramic,
 		);
-		setActiveCrossSectionIdx(closestIdx);
-		const targetSlice = crossSections[closestIdx];
-		if (targetSlice) {
-			setCrosshairMm(targetSlice.centerPointMm);
+
+		pendingPanoSyncRef.current = syncRes;
+		if (rafPanoIdRef.current === null) {
+			rafPanoIdRef.current = requestAnimationFrame(() => {
+				if (pendingPanoSyncRef.current) {
+					setActiveCrossSectionIdx(pendingPanoSyncRef.current.crossSectionIdx);
+					setCrosshairMm(pendingPanoSyncRef.current.worldMm);
+				}
+				rafPanoIdRef.current = null;
+			});
 		}
-	}, [isDraggingPano, crossSections, archCurve.totalArcLengthMm]);
+	}, [isDraggingPano, crossSections, archCurve, crosshairMm, transforms.panoramic]);
 
 	const handlePanoMouseUp = useCallback(() => {
+		if (rafPanoIdRef.current !== null) {
+			cancelAnimationFrame(rafPanoIdRef.current);
+			rafPanoIdRef.current = null;
+		}
+		if (pendingPanoSyncRef.current) {
+			setActiveCrossSectionIdx(pendingPanoSyncRef.current.crossSectionIdx);
+			setCrosshairMm(pendingPanoSyncRef.current.worldMm);
+			pendingPanoSyncRef.current = null;
+		}
 		setIsDraggingPano(false);
 	}, []);
 
@@ -2532,6 +2679,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const centerX = canvas.width / 2;
 		const topY = 20;
 
+		// 1. Check click on top-right floating CAD Quick-Reset pill
+		if (x >= canvas.width - 85 && x <= canvas.width - 10 && y >= 8 && y <= 30) {
+			setImplantEntryXOffsetMm(0);
+			setImplantEntryDepthMm(2);
+			setImplantAngulationDeg(0);
+			setSelectedMeasurement(null);
+			showToast("Положение имплантата сброшено по умолчанию", "info");
+			return;
+		}
+
 		const entryPxX = centerX + (implantEntryXOffsetMm / pxSpacing);
 		const entryPxY = topY + (implantEntryDepthMm / pxSpacing);
 		const angRad = (implantAngulationDeg * Math.PI) / 180;
@@ -2542,19 +2699,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const distToEntry = Math.hypot(x - entryPxX, y - entryPxY);
 		const distToApex = Math.hypot(x - apexPxX, y - apexPxY);
 
-		if (distToEntry <= 14) {
+		// 2. 24x24px invisible hit-box for entry handle (platform)
+		if (distToEntry <= 12) {
 			setDragImplantPart("entry");
-			setCrossSectionDragStart({
-				clientX: e.clientX,
-				clientY: e.clientY,
-				startX: implantEntryXOffsetMm,
-				startY: implantEntryDepthMm,
-				startAng: implantAngulationDeg,
-			});
-			return;
-		}
-		if (distToApex <= 14) {
-			setDragImplantPart("apex");
+			setSelectedMeasurement({ type: "implant", id: "active" });
 			setCrossSectionDragStart({
 				clientX: e.clientX,
 				clientY: e.clientY,
@@ -2565,10 +2713,26 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
+		// 3. 24x24px invisible hit-box for apex handle (angulation)
+		if (distToApex <= 12) {
+			setDragImplantPart("apex");
+			setSelectedMeasurement({ type: "implant", id: "active" });
+			setCrossSectionDragStart({
+				clientX: e.clientX,
+				clientY: e.clientY,
+				startX: implantEntryXOffsetMm,
+				startY: implantEntryDepthMm,
+				startAng: implantAngulationDeg,
+			});
+			return;
+		}
+
+		// 4. Implant body hit-test
 		const seg = pointToSegmentDistance2D({ x, y }, { x: entryPxX, y: entryPxY }, { x: apexPxX, y: apexPxY });
 		const radiusPx = (currentImplantSpec.diameterMm / 2.0) / pxSpacing;
-		if (seg.distance <= radiusPx + 8) {
+		if (seg.distance <= radiusPx + 10) {
 			setDragImplantPart("body");
+			setSelectedMeasurement({ type: "implant", id: "active" });
 			setCrossSectionDragStart({
 				clientX: e.clientX,
 				clientY: e.clientY,
@@ -2580,9 +2744,40 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec]);
 
 	const handleCrossSectionMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-		if (!dragImplantPart || !crossSectionDragStart || !activeCrossSection || !crossSectionCanvasRef.current) return;
+		if (!activeCrossSection || !crossSectionCanvasRef.current) return;
 		const canvas = crossSectionCanvasRef.current;
 		const pxSpacing = activeCrossSection.pixelSpacingMm || 0.25;
+
+		if (!dragImplantPart || !crossSectionDragStart) {
+			if (studioMode === "implant") {
+				const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+				const centerX = canvas.width / 2;
+				const topY = 20;
+				const entryPxX = centerX + (implantEntryXOffsetMm / pxSpacing);
+				const entryPxY = topY + (implantEntryDepthMm / pxSpacing);
+				const angRad = (implantAngulationDeg * Math.PI) / 180;
+				const lengthPx = currentImplantSpec.lengthMm / pxSpacing;
+				const apexPxX = entryPxX + lengthPx * Math.sin(angRad);
+				const apexPxY = entryPxY + lengthPx * Math.cos(angRad);
+
+				const distToEntry = Math.hypot(x - entryPxX, y - entryPxY);
+				const distToApex = Math.hypot(x - apexPxX, y - apexPxY);
+				const seg = pointToSegmentDistance2D({ x, y }, { x: entryPxX, y: entryPxY }, { x: apexPxX, y: apexPxY });
+				const radiusPx = (currentImplantSpec.diameterMm / 2.0) / pxSpacing;
+
+				if (distToEntry <= 12) {
+					setHoveredImplantPart("entry");
+				} else if (distToApex <= 12) {
+					setHoveredImplantPart("apex");
+				} else if (seg.distance <= radiusPx + 10) {
+					setHoveredImplantPart("body");
+				} else if (hoveredImplantPart !== null) {
+					setHoveredImplantPart(null);
+				}
+			}
+			return;
+		}
+
 		const dxPx = e.clientX - crossSectionDragStart.clientX;
 		const dyPx = e.clientY - crossSectionDragStart.clientY;
 
@@ -2607,39 +2802,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				setImplantAngulationDeg(clampedAngle);
 			}
 		}
-	}, [dragImplantPart, crossSectionDragStart, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm]);
+	}, [dragImplantPart, crossSectionDragStart, activeCrossSection, studioMode, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, hoveredImplantPart]);
 
 	const handleCrossSectionMouseUp = useCallback(() => {
 		setDragImplantPart(null);
 		setCrossSectionDragStart(null);
 	}, []);
 
-	// ─── 1-CLICK TOOTH SELECTION & AUTO-CENTERING ──────────────────────────────
-	const handleSelectTooth = useCallback((toothFdi: number) => {
-		if (crossSections.length > 0) {
-			const idx = crossSections.findIndex(
-				(s) => Number.parseInt(s.nearestToothFdi, 10) === toothFdi,
-			);
-			if (idx >= 0) {
-				setActiveCrossSectionIdx(idx);
-				const targetSlice = crossSections[idx];
-				if (targetSlice) {
-					setCrosshairMm(targetSlice.centerPointMm);
-				}
-				return;
-			}
-		}
-		const anchor = archCurve.anchors.find((a) => Number.parseInt(a.toothFdi, 10) === toothFdi);
-		if (anchor) {
-			setCrosshairMm((prev) => ({ x: anchor.positionMm.x, y: anchor.positionMm.y, z: prev.z }));
-		}
-	}, [crossSections, archCurve.anchors]);
-
 	// ─── INTERACTIVE CROSSHAIR DRAGGING & WHEEL NAVIGATION ────────────────────
 	const handleCanvasMouseDown = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
 		const canvas = e.currentTarget;
-		const { x, y, normX, normY } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
 		const pointerPx = { x, y };
 
 		// CAD Handle Hit Testing: Check if user clicked on any Ruler or Angle handle on this plane
@@ -2662,7 +2836,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				endPx: worldMmToSlicePx(a.endMm, plane, volume),
 			}));
 
-		const handleHit = hitTestMeasurementHandle(pointerPx, projectedRulers, projectedAngles, 10);
+		const projectedProbes = probeMarkers
+			.filter((p) => p.plane === plane)
+			.map((p) => ({
+				id: p.id,
+				plane: p.plane,
+				posPx: worldMmToSlicePx(p.worldMm, plane, volume),
+			}));
+
+		// 1. 24x24px invisible hit-box for Drag Handles
+		const handleHit = hitTestMeasurementHandle(pointerPx, projectedRulers, projectedAngles, 12);
 		if (handleHit) {
 			setDraggingMeasurementHandle({
 				type: handleHit.type,
@@ -2673,6 +2856,32 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setSelectedMeasurement({
 				type: handleHit.type,
 				id: handleHit.id,
+			});
+			return;
+		}
+
+		// 2. Hit-testing for measurement object body / badge / fast delete button
+		const objectHit = hitTestMeasurementObject(pointerPx, projectedRulers, projectedAngles, projectedProbes, 10);
+		if (objectHit) {
+			if (objectHit.isDeleteButtonHit) {
+				if (objectHit.type === "ruler") {
+					setRulers((prev) => prev.filter((r) => r.id !== objectHit.id));
+					setSelectedMeasurement(null);
+					showToast("Измерение линейки удалено", "info");
+				} else if (objectHit.type === "angle") {
+					setAngles((prev) => prev.filter((a) => a.id !== objectHit.id));
+					setSelectedMeasurement(null);
+					showToast("Измерение угла удалено", "info");
+				} else if (objectHit.type === "probe") {
+					setProbeMarkers((prev) => prev.filter((p) => p.id !== objectHit.id));
+					setSelectedMeasurement(null);
+					showToast("Метка плотности удалена", "info");
+				}
+				return;
+			}
+			setSelectedMeasurement({
+				type: objectHit.type,
+				id: objectHit.id,
 			});
 			return;
 		}
@@ -2769,7 +2978,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			);
 
 			if (!activeAngle) {
-				// Step 1: Place first arm endpoint
 				setActiveAngle({ plane, step: 1, startMm: pointMm, currentMm: pointMm });
 				setSelectedMeasurement(null);
 				showToast("Угломер: укажите вершину угла (точка перегиба)", "info");
@@ -2777,7 +2985,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}
 
 			if (activeAngle.plane === plane && activeAngle.step === 1) {
-				// Step 2: Fix vertex point
 				setActiveAngle({
 					plane,
 					step: 2,
@@ -2790,7 +2997,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}
 
 			if (activeAngle.plane === plane && activeAngle.step === 2) {
-				// Step 3: Complete angle measurement
 				const vertex = activeAngle.vertexMm ?? pointMm;
 				const angleDeg = calculateAngleBetween3Points3D(activeAngle.startMm, vertex, pointMm);
 				const newAngle: CbctAngleMeasurement = {
@@ -2878,6 +3084,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
+		// 1h. Click on dental arch tooth anchors when clicking on Axial plane
+		if (plane === "axial" && showDentalArch) {
+			const currentTransform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
+			for (const anchor of archCurve.anchors) {
+				const anchorSlicePx = worldMmToSlicePx({ x: anchor.positionMm.x, y: anchor.positionMm.y, z: crosshairMm.z }, "axial", volume);
+				const anchorScreenPx = slicePxToScreenPx(anchorSlicePx, currentTransform);
+				if (Math.hypot(pointerPx.x - anchorScreenPx.x, pointerPx.y - anchorScreenPx.y) <= 12) {
+					handleSelectTooth(anchor.toothFdi);
+					return;
+				}
+			}
+		}
+
 		// 2. Click on rotation handle knobs
 		const vox = worldMmToVoxel(crosshairMm, volume);
 		const zPx = volume.dimensions.depth - 1 - vox.z;
@@ -2899,32 +3118,25 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
-		// 3. Normal Crosshair Translation Drag
+		// 3. Normal Crosshair Translation Drag (Instant update + rAF coalesced tracking)
 		setIsDraggingCrosshair(plane);
-		const dims = volume.dimensions;
-		setCrosshairMm((prev) => {
-			const v = worldMmToVoxel(prev, volume);
-			if (plane === "axial") {
-				const vx = Math.round(normX * (dims.width - 1));
-				const vy = Math.round(normY * (dims.height - 1));
-				return voxelToWorldMm({ x: vx, y: vy, z: v.z }, volume);
-			}
-			if (plane === "coronal") {
-				const vx = Math.round(normX * (dims.width - 1));
-				const vz = Math.round((1 - normY) * (dims.depth - 1));
-				return voxelToWorldMm({ x: vx, y: v.y, z: vz }, volume);
-			}
-			// Sagittal
-			const vy = Math.round(normX * (dims.height - 1));
-			const vz = Math.round((1 - normY) * (dims.depth - 1));
-			return voxelToWorldMm({ x: v.x, y: vy, z: vz }, volume);
-		});
-	}, [volume, crosshairMm, obliqueAngles, activeTool, windowWidth, windowLevel, transforms, nervePoints, rulers, angles, activeAngle]);
+		const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+		const newWorldMm = calculateCrosshairDragWorldMm(
+			pointerPx,
+			{ width: canvas.width, height: canvas.height },
+			plane,
+			crosshairMm,
+			obliqueAngles,
+			currentTransform,
+			volume,
+		);
+		setCrosshairMm(newWorldMm);
+	}, [volume, crosshairMm, obliqueAngles, activeTool, windowWidth, windowLevel, transforms, nervePoints, rulers, angles, activeAngle, showDentalArch, archCurve.anchors, handleSelectTooth]);
 
 	const handleCanvasMouseMove = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
 		const canvas = e.currentTarget;
-		const { x, y, normX, normY } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
 		const pointerPx = { x, y };
 
 		// 0-cad. Measurement Handle Drag
@@ -3081,25 +3293,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
-		// 3. Normal Crosshair Drag
+		// 3. Normal Crosshair Drag with requestAnimationFrame coalescing
 		if (isDraggingCrosshair === plane) {
-			const dims = volume.dimensions;
-			setCrosshairMm((prev) => {
-				const v = worldMmToVoxel(prev, volume);
-				if (plane === "axial") {
-					const vx = Math.round(normX * (dims.width - 1));
-					const vy = Math.round(normY * (dims.height - 1));
-					return voxelToWorldMm({ x: vx, y: vy, z: v.z }, volume);
-				}
-				if (plane === "coronal") {
-					const vx = Math.round(normX * (dims.width - 1));
-					const vz = Math.round((1 - normY) * (dims.depth - 1));
-					return voxelToWorldMm({ x: vx, y: v.y, z: vz }, volume);
-				}
-				const vy = Math.round(normX * (dims.height - 1));
-				const vz = Math.round((1 - normY) * (dims.depth - 1));
-				return voxelToWorldMm({ x: v.x, y: vy, z: vz }, volume);
-			});
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const newWorldMm = calculateCrosshairDragWorldMm(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			pendingCrosshairMmRef.current = newWorldMm;
+			if (rafCrosshairIdRef.current === null) {
+				rafCrosshairIdRef.current = requestAnimationFrame(() => {
+					if (pendingCrosshairMmRef.current) {
+						setCrosshairMm(pendingCrosshairMmRef.current);
+					}
+					rafCrosshairIdRef.current = null;
+				});
+			}
 			return;
 		}
 
@@ -3145,7 +3359,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					vertexPx: worldMmToSlicePx(a.vertexMm, plane, volume),
 					endPx: worldMmToSlicePx(a.endMm, plane, volume),
 				}));
-			const mHandleHit = hitTestMeasurementHandle(pointerPx, projectedRulers, projectedAngles, 10);
+			const mHandleHit = hitTestMeasurementHandle(pointerPx, projectedRulers, projectedAngles, 12);
 			if (mHandleHit) {
 				setHoveredMeasurementHandle({
 					type: mHandleHit.type,
@@ -3160,6 +3374,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	}, [volume, isDraggingWL, isPanning, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, draggingMeasurementHandle, activeAngle, activeRuler, crosshairMm, obliqueAngles, hoveredHandle, hoveredMeasurementHandle, transforms, nervePoints, rulers, angles]);
 
 	const handleCanvasMouseUp = useCallback(() => {
+		if (rafCrosshairIdRef.current !== null) {
+			cancelAnimationFrame(rafCrosshairIdRef.current);
+			rafCrosshairIdRef.current = null;
+		}
+		if (pendingCrosshairMmRef.current !== null) {
+			setCrosshairMm(pendingCrosshairMmRef.current);
+			pendingCrosshairMmRef.current = null;
+		}
 		if (draggingMeasurementHandle) {
 			setDraggingMeasurementHandle(null);
 		}
@@ -3189,6 +3411,92 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setIsDraggingWL(null);
 		setIsDraggingNerveNode(null);
 	}, [activeRuler, draggingMeasurementHandle]);
+
+	// ─── WINDOW-LEVEL DRAG TRACKING (ZERO-STALL SMOOTH PAN/CROSSHAIR) ─────────
+	useEffect(() => {
+		if (!isDraggingCrosshair && !isDraggingPano) return;
+
+		const handleGlobalMouseMove = (e: MouseEvent) => {
+			if (isDraggingCrosshair && volume) {
+				const canvas =
+					isDraggingCrosshair === "axial"
+						? axialCanvasRef.current
+						: isDraggingCrosshair === "coronal"
+							? coronalCanvasRef.current
+							: sagittalCanvasRef.current;
+				if (canvas) {
+					const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+					const currentTransform = transforms[isDraggingCrosshair] ?? DEFAULT_VIEWPORT_TRANSFORM;
+					const newWorldMm = calculateCrosshairDragWorldMm(
+						{ x, y },
+						{ width: canvas.width, height: canvas.height },
+						isDraggingCrosshair,
+						crosshairMm,
+						obliqueAngles,
+						currentTransform,
+						volume,
+					);
+					pendingCrosshairMmRef.current = newWorldMm;
+					if (rafCrosshairIdRef.current === null) {
+						rafCrosshairIdRef.current = requestAnimationFrame(() => {
+							if (pendingCrosshairMmRef.current) {
+								setCrosshairMm(pendingCrosshairMmRef.current);
+							}
+							rafCrosshairIdRef.current = null;
+						});
+					}
+				}
+			} else if (isDraggingPano && panoCanvasRef.current && crossSections.length > 0) {
+				const canvas = panoCanvasRef.current;
+				const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+				const syncRes = mapPanoPointerToCrosshairAndSlice(
+					{ x, y },
+					{ width: canvas.width, height: canvas.height },
+					archCurve,
+					crossSections,
+					crosshairMm,
+					transforms.panoramic,
+				);
+				pendingPanoSyncRef.current = syncRes;
+				if (rafPanoIdRef.current === null) {
+					rafPanoIdRef.current = requestAnimationFrame(() => {
+						if (pendingPanoSyncRef.current) {
+							setActiveCrossSectionIdx(pendingPanoSyncRef.current.crossSectionIdx);
+							setCrosshairMm(pendingPanoSyncRef.current.worldMm);
+						}
+						rafPanoIdRef.current = null;
+					});
+				}
+			}
+		};
+
+		const handleGlobalMouseUp = () => {
+			if (isDraggingCrosshair) {
+				handleCanvasMouseUp();
+			}
+			if (isDraggingPano) {
+				handlePanoMouseUp();
+			}
+		};
+
+		window.addEventListener("mousemove", handleGlobalMouseMove);
+		window.addEventListener("mouseup", handleGlobalMouseUp);
+		return () => {
+			window.removeEventListener("mousemove", handleGlobalMouseMove);
+			window.removeEventListener("mouseup", handleGlobalMouseUp);
+		};
+	}, [
+		isDraggingCrosshair,
+		isDraggingPano,
+		volume,
+		crosshairMm,
+		obliqueAngles,
+		transforms,
+		archCurve,
+		crossSections,
+		handleCanvasMouseUp,
+		handlePanoMouseUp,
+	]);
 
 	// ─── KEYBOARD SHORTCUTS FOR NERVE TRACE & NODE EDITING ───────────────────
 	useEffect(() => {
@@ -3231,9 +3539,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const handleCanvasDoubleClick = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
-		if (!volume) return;
+		if (!volume) {
+			handleToggleMaximize(plane);
+			return;
+		}
 		const canvas = e.currentTarget;
-		const { x, y, normX, normY } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
 		const pointerPx = { x, y };
 		const vox = worldMmToVoxel(crosshairMm, volume);
 		const zPx = volume.dimensions.depth - 1 - vox.z;
@@ -3248,7 +3559,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, plane));
 			return;
 		}
-	}, [volume, crosshairMm]);
+
+		// Double-click on viewport canvas toggles maximize / restore grid
+		handleToggleMaximize(plane);
+	}, [volume, crosshairMm, handleToggleMaximize]);
 
 	const getCanvasCursor = useCallback((plane: MprPlane) => {
 		if (draggingMeasurementHandle) return "grabbing";
@@ -3367,7 +3681,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
 		const pixelSpacing = volume?.spacingMm.x ?? 0.4;
 
-		// Capture clean snapshots of all available viewports
+		// Capture clean snapshots of all available viewports with Smart White Paper Inversion (Toner Saving)
 		const axialSnap = axialCanvasRef.current
 			? await exportCleanViewportSnapshot(
 					axialCanvasRef.current,
@@ -3377,6 +3691,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						patientName: patientDisplayName,
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
+						invertToner: true,
 					},
 				)
 			: undefined;
@@ -3390,6 +3705,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						patientName: patientDisplayName,
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
+						invertToner: true,
 					},
 				)
 			: undefined;
@@ -3403,6 +3719,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						patientName: patientDisplayName,
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
+						invertToner: true,
 					},
 				)
 			: undefined;
@@ -3416,6 +3733,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						patientName: patientDisplayName,
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
+						invertToner: true,
 					},
 				)
 			: coronalCanvasRef.current
@@ -3427,6 +3745,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							patientName: patientDisplayName,
 							studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 							targetToothFdi: targetTooth,
+							invertToner: true,
 						},
 					)
 				: undefined;
@@ -3458,11 +3777,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				sagittal: sagittalSnap ? { title: "Сагиттальный срез", dataUrl: sagittalSnap } : undefined,
 			},
 			diary043Text: diaryText,
+			tonerSaving: true,
 		});
 
-		openCbctReportPrintWindow(reportData);
+		openCbctReportPrintWindow(reportData, { tonerSaving: true });
 		showToast(
-			`📄 Протокол КЛКТ-планирования для зуба FDI #${targetTooth} сформирован для печати / PDF (A4)`,
+			`📄 Протокол КЛКТ-планирования для зуба FDI #${targetTooth} сформирован для печати / PDF (A4) с экономией тонера`,
 			"success",
 		);
 	}, [
@@ -3611,6 +3931,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={panoCanvasRef}
+					onDoubleClick={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						handleToggleMaximize("panoramic");
+					}}
 					onMouseDown={handlePanoMouseDown}
 					onMouseMove={handlePanoMouseMove}
 					onMouseUp={handlePanoMouseUp}
@@ -3647,12 +3972,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={crossSectionCanvasRef}
+					onDoubleClick={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						handleToggleMaximize("cross_section");
+					}}
 					onMouseDown={handleCrossSectionMouseDown}
 					onMouseMove={handleCrossSectionMouseMove}
 					onMouseUp={handleCrossSectionMouseUp}
 					onMouseLeave={handleCrossSectionMouseUp}
 					onWheel={(e) => handleCanvasWheel("cross_section", e)}
-					className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
+					className={`w-full h-full object-contain ${
+						dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
+					}`}
 					data-testid="cbct-cross-section-canvas"
 				/>
 				<CbctViewportHud
@@ -3800,6 +4132,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 				{/* Right: Layout Switcher, Sidebar Toggle with Indicator, Maximize, Close */}
 				<div className="flex items-center gap-2 shrink-0">
+					{/* 1-Click Reset View (Zoom 100%, Pan center, Oblique 0°, Contrast Bone, clear rulers) */}
+					<button
+						type="button"
+						onClick={handleResetAll}
+						className="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 shadow-xs transition-colors cursor-pointer"
+						data-testid="cbct-btn-reset-view"
+						title="Сбросить масштаб (100%), панораму (центр), наклон осей (0°) и контраст"
+					>
+						<RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+						<span>Сброс вида</span>
+					</button>
+
 					{/* 1-Click Auto Dental Arch Extraction Button */}
 					<button
 						type="button"
@@ -4123,11 +4467,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					>
 						<canvas
 							ref={crossSectionCanvasRef}
+							onDoubleClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								handleToggleMaximize("cross_section");
+							}}
 							onMouseDown={handleCrossSectionMouseDown}
 							onMouseMove={handleCrossSectionMouseMove}
 							onMouseUp={handleCrossSectionMouseUp}
 							onMouseLeave={handleCrossSectionMouseUp}
-							className="w-full h-full object-contain cursor-grab active:cursor-grabbing"
+							className={`w-full h-full object-contain ${
+								dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
+							}`}
 							data-testid="cbct-cross-section-sidebar-canvas"
 						/>
 						<CbctViewportHud

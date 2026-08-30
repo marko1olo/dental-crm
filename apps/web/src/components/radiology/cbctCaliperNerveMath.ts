@@ -679,7 +679,8 @@ export interface MeasurementHandleHit {
 }
 
 /**
- * Интерактивный CAD Hit-testing для перемещения (drag-and-drop) опорных точек линеек и угломеров
+ * Интерактивный CAD Hit-testing для перемещения (drag-and-drop) опорных точек линеек и угломеров.
+ * hitRadiusPx = 12 обеспечивает невидимый хитбокс захвата мыши 24x24px (Hit-Area).
  */
 export function hitTestMeasurementHandle(
 	pointerPx: { readonly x: number; readonly y: number },
@@ -696,7 +697,7 @@ export function hitTestMeasurementHandle(
 		readonly vertexPx: { readonly x: number; readonly y: number };
 		readonly endPx: { readonly x: number; readonly y: number };
 	}[],
-	hitRadiusPx = 10,
+	hitRadiusPx = 12,
 ): MeasurementHandleHit | null {
 	let closestHit: MeasurementHandleHit | null = null;
 	let minDistance = hitRadiusPx;
@@ -760,6 +761,139 @@ export function hitTestMeasurementHandle(
 				handleIndex: 2,
 				plane: a.plane,
 				distancePx: Number(dEnd.toFixed(1)),
+			};
+		}
+	}
+
+	return closestHit;
+}
+
+/**
+ * Результат проверки клика на тело измерения (линейку, угломер, пробник) или кнопку быстрого удаления
+ */
+export interface MeasurementObjectHit {
+	readonly type: "ruler" | "angle" | "probe";
+	readonly id: string;
+	readonly plane: string;
+	readonly isDeleteButtonHit: boolean;
+	readonly distancePx: number;
+}
+
+/**
+ * Интерактивный CAD Hit-testing для выбора (selection) или быстрого удаления (1-click delete) объектов измерений
+ */
+export function hitTestMeasurementObject(
+	pointerPx: { readonly x: number; readonly y: number },
+	rulers: readonly {
+		readonly id: string;
+		readonly plane: string;
+		readonly startPx: { readonly x: number; readonly y: number };
+		readonly endPx: { readonly x: number; readonly y: number };
+		readonly badgePx?: { readonly x: number; readonly y: number; readonly width?: number; readonly height?: number };
+	}[],
+	angles: readonly {
+		readonly id: string;
+		readonly plane: string;
+		readonly startPx: { readonly x: number; readonly y: number };
+		readonly vertexPx: { readonly x: number; readonly y: number };
+		readonly endPx: { readonly x: number; readonly y: number };
+		readonly badgePx?: { readonly x: number; readonly y: number; readonly width?: number; readonly height?: number };
+	}[],
+	probes: readonly {
+		readonly id: string;
+		readonly plane: string;
+		readonly posPx: { readonly x: number; readonly y: number };
+		readonly badgePx?: { readonly x: number; readonly y: number; readonly width?: number; readonly height?: number };
+	}[] = [],
+	lineHitTolerancePx = 10,
+): MeasurementObjectHit | null {
+	let closestHit: MeasurementObjectHit | null = null;
+	let minDistance = lineHitTolerancePx;
+
+	// Helper for point to segment distance in 2D pixels
+	const distPointToSegPx = (
+		pt: { x: number; y: number },
+		p1: { x: number; y: number },
+		p2: { x: number; y: number },
+	): number => {
+		const dx = p2.x - p1.x;
+		const dy = p2.y - p1.y;
+		const l2 = dx * dx + dy * dy;
+		if (l2 === 0) return Math.hypot(pt.x - p1.x, pt.y - p1.y);
+		let t = ((pt.x - p1.x) * dx + (pt.y - p1.y) * dy) / l2;
+		t = Math.max(0, Math.min(1, t));
+		const projX = p1.x + t * dx;
+		const projY = p1.y + t * dy;
+		return Math.hypot(pt.x - projX, pt.y - projY);
+	};
+
+	// 1. Check Rulers (Badge, Delete Button, or Line Body)
+	for (const r of rulers) {
+		const midX = (r.startPx.x + r.endPx.x) / 2;
+		const midY = (r.startPx.y + r.endPx.y) / 2;
+		const badgeW = r.badgePx?.width ?? 64;
+		const badgeH = r.badgePx?.height ?? 18;
+		const badgeX = r.badgePx?.x ?? midX;
+		const badgeY = r.badgePx?.y ?? midY;
+
+		// Check if click is on badge
+		const isInsideBadge =
+			Math.abs(pointerPx.x - badgeX) <= badgeW / 2 + 4 &&
+			Math.abs(pointerPx.y - badgeY) <= badgeH / 2 + 4;
+
+		if (isInsideBadge) {
+			const isDeleteHit = pointerPx.x >= badgeX + badgeW / 2 - 18;
+			return {
+				type: "ruler",
+				id: r.id,
+				plane: r.plane,
+				isDeleteButtonHit: isDeleteHit,
+				distancePx: 0,
+			};
+		}
+
+		const dLine = distPointToSegPx(pointerPx, r.startPx, r.endPx);
+		if (dLine <= minDistance) {
+			minDistance = dLine;
+			closestHit = {
+				type: "ruler",
+				id: r.id,
+				plane: r.plane,
+				isDeleteButtonHit: false,
+				distancePx: Number(dLine.toFixed(1)),
+			};
+		}
+	}
+
+	// 2. Check Angles (Arms or Badge)
+	for (const a of angles) {
+		const dArm1 = distPointToSegPx(pointerPx, a.vertexPx, a.startPx);
+		const dArm2 = distPointToSegPx(pointerPx, a.vertexPx, a.endPx);
+		const minArmDist = Math.min(dArm1, dArm2);
+
+		if (minArmDist <= minDistance) {
+			minDistance = minArmDist;
+			closestHit = {
+				type: "angle",
+				id: a.id,
+				plane: a.plane,
+				isDeleteButtonHit: false,
+				distancePx: Number(minArmDist.toFixed(1)),
+			};
+		}
+	}
+
+	// 3. Check Probes
+	for (const p of probes) {
+		const dProbe = Math.hypot(pointerPx.x - p.posPx.x, pointerPx.y - p.posPx.y);
+		if (dProbe <= minDistance + 4) {
+			minDistance = dProbe;
+			closestHit = {
+				type: "probe",
+				id: p.id,
+				plane: p.plane,
+				isDeleteButtonHit: false,
+				distancePx: Number(dProbe.toFixed(1)),
 			};
 		}
 	}

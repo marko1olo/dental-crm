@@ -16,15 +16,27 @@ import {
 	type Point3D,
 	type CbctAngleMeasurement,
 	type MeasurementHandleHit,
+	type MeasurementObjectHit,
 	calculateAngleBetween3Points2D,
 	calculateAngleBetween3Points3D,
 	hitTestMeasurementHandle,
+	hitTestMeasurementObject,
 } from "./cbctCaliperNerveMath";
+import {
+	type ObliqueRotationAngles,
+	type ViewportTransform,
+	mapCanvasPointerToWorldMmWithTransform,
+} from "./cbctObliqueMath";
 
 export type MprPlane = "axial" | "coronal" | "sagittal";
 export type SlabProjectionMode = "single" | "mip" | "minip" | "average";
-export type { Point2D, Point3D, CbctAngleMeasurement, MeasurementHandleHit };
-export { calculateAngleBetween3Points2D, calculateAngleBetween3Points3D, hitTestMeasurementHandle };
+export type { Point2D, Point3D, CbctAngleMeasurement, MeasurementHandleHit, MeasurementObjectHit };
+export {
+	calculateAngleBetween3Points2D,
+	calculateAngleBetween3Points3D,
+	hitTestMeasurementHandle,
+	hitTestMeasurementObject,
+};
 
 export interface VolumeDimensions {
 	readonly width: number; // X size (voxels along Sagittal axis)
@@ -574,7 +586,8 @@ export function getCbctToolCursor(
 
 /**
  * Draws precision calibrated measurement ruler between two points on the slice canvas.
- * Features high-contrast dark badge (rgba(0, 0, 0, 0.85)) and bright border for maximum readability.
+ * Features 6-8px luminous glowing handles (#22d3ee / #f59e0b), active amber selection ring,
+ * and high-contrast dark badge (rgba(0, 0, 0, 0.85)) with fast delete [×] trigger.
  */
 export function drawCbctMeasurementRuler(
 	ctx: CanvasRenderingContext2D,
@@ -594,82 +607,122 @@ export function drawCbctMeasurementRuler(
 	const tickHalfLen = 5;
 
 	ctx.save();
-	const primaryColor = isActive ? "#38bdf8" : "#22d3ee";
+	const primaryColor = isActive ? "#f59e0b" : "#22d3ee";
+
+	// 1. Active Amber Halo / Selection Glow when active
+	if (isActive) {
+		ctx.save();
+		ctx.strokeStyle = "rgba(245, 158, 11, 0.35)";
+		ctx.lineWidth = 4.5;
+		ctx.shadowColor = "#f59e0b";
+		ctx.shadowBlur = 8;
+		ctx.beginPath();
+		ctx.moveTo(startPx.x, startPx.y);
+		ctx.lineTo(endPx.x, endPx.y);
+		ctx.stroke();
+		ctx.restore();
+	}
+
+	// 2. Main connecting line
 	ctx.strokeStyle = primaryColor;
 	ctx.lineWidth = isActive ? 2.0 : 1.5;
-
-	// Main connecting line
 	ctx.beginPath();
 	ctx.moveTo(startPx.x, startPx.y);
 	ctx.lineTo(endPx.x, endPx.y);
 	ctx.stroke();
 
-	// Perpendicular tick at start point
+	// 3. Perpendicular tick at start point
 	ctx.beginPath();
 	ctx.moveTo(startPx.x + nx * tickHalfLen, startPx.y + ny * tickHalfLen);
 	ctx.lineTo(startPx.x - nx * tickHalfLen, startPx.y - ny * tickHalfLen);
 	ctx.stroke();
 
-	// Perpendicular tick at end point
+	// 4. Perpendicular tick at end point
 	ctx.beginPath();
 	ctx.moveTo(endPx.x + nx * tickHalfLen, endPx.y + ny * tickHalfLen);
 	ctx.lineTo(endPx.x - nx * tickHalfLen, endPx.y - ny * tickHalfLen);
 	ctx.stroke();
 
-	// End anchor handles (start = 0, end = 1)
+	// 5. End anchor handles (start = 0, end = 1) — 6-8px Luminous Glowing Points (#22d3ee / #f59e0b)
 	const isStartActive = selectedHandleIndex === 0;
-	ctx.fillStyle = isStartActive ? "#f59e0b" : "#38bdf8";
-	ctx.strokeStyle = isStartActive ? "#ffffff" : "rgba(0, 0, 0, 0.85)";
-	ctx.lineWidth = 1.2;
+	ctx.save();
+	ctx.shadowColor = isStartActive ? "#f59e0b" : isActive ? "#f59e0b" : "#22d3ee";
+	ctx.shadowBlur = isStartActive ? 8 : 6;
+	ctx.fillStyle = isStartActive ? "#f59e0b" : isActive ? "#f59e0b" : "#22d3ee";
 	ctx.beginPath();
-	ctx.arc(startPx.x, startPx.y, isStartActive ? 4.5 : 3.0, 0, Math.PI * 2);
+	ctx.arc(startPx.x, startPx.y, isStartActive ? 4.2 : 3.5, 0, Math.PI * 2);
 	ctx.fill();
+	ctx.strokeStyle = "#ffffff";
+	ctx.lineWidth = 1.5;
 	ctx.stroke();
+	ctx.restore();
 
 	const isEndActive = selectedHandleIndex === 1;
-	ctx.fillStyle = isEndActive ? "#f59e0b" : "#38bdf8";
-	ctx.strokeStyle = isEndActive ? "#ffffff" : "rgba(0, 0, 0, 0.85)";
-	ctx.lineWidth = 1.2;
+	ctx.save();
+	ctx.shadowColor = isEndActive ? "#f59e0b" : isActive ? "#f59e0b" : "#22d3ee";
+	ctx.shadowBlur = isEndActive ? 8 : 6;
+	ctx.fillStyle = isEndActive ? "#f59e0b" : isActive ? "#f59e0b" : "#22d3ee";
 	ctx.beginPath();
-	ctx.arc(endPx.x, endPx.y, isEndActive ? 4.5 : 3.0, 0, Math.PI * 2);
+	ctx.arc(endPx.x, endPx.y, isEndActive ? 4.2 : 3.5, 0, Math.PI * 2);
 	ctx.fill();
+	ctx.strokeStyle = "#ffffff";
+	ctx.lineWidth = 1.5;
 	ctx.stroke();
+	ctx.restore();
 
-	// Floating distance pill badge at midpoint with high-contrast background
+	// 6. Floating distance pill badge at midpoint with high-contrast background and fast delete trigger
 	const midX = (startPx.x + endPx.x) / 2;
 	const midY = (startPx.y + endPx.y) / 2;
-	const text = `${distanceMm.toFixed(1)} мм`;
+	const distText = `${distanceMm.toFixed(1)} мм`;
 
 	ctx.font = "bold 10px monospace";
-	const textWidth = ctx.measureText(text).width;
-	const padX = 5;
-	const badgeW = textWidth + padX * 2;
-	const badgeH = 16;
+	const textWidth = ctx.measureText(distText).width;
+	const badgeW = isActive ? textWidth + 26 : textWidth + 12;
+	const badgeH = 18;
 
 	// Contrast semi-transparent background (rgba(0, 0, 0, 0.85)) and bright cyan/amber border
-	ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
-	ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
-	ctx.lineWidth = 1.2;
+	ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
+	ctx.strokeStyle = isActive ? "#f59e0b" : "#22d3ee";
+	ctx.lineWidth = isActive ? 1.5 : 1.0;
+	if (isActive) {
+		ctx.shadowColor = "rgba(245, 158, 11, 0.5)";
+		ctx.shadowBlur = 6;
+	}
 	ctx.beginPath();
 	if (typeof ctx.roundRect === "function") {
-		ctx.roundRect(midX - badgeW / 2, midY - badgeH / 2, badgeW, badgeH, 3);
+		ctx.roundRect(midX - badgeW / 2, midY - badgeH / 2, badgeW, badgeH, 4);
 	} else {
 		ctx.rect(midX - badgeW / 2, midY - badgeH / 2, badgeW, badgeH);
 	}
 	ctx.fill();
 	ctx.stroke();
 
-	ctx.fillStyle = "#ffffff";
-	ctx.textAlign = "center";
-	ctx.textBaseline = "middle";
-	ctx.fillText(text, midX, midY);
+	if (isActive) {
+		ctx.shadowBlur = 0;
+		// Distance label
+		ctx.fillStyle = "#ffffff";
+		ctx.textAlign = "left";
+		ctx.textBaseline = "middle";
+		ctx.fillText(distText, midX - badgeW / 2 + 5, midY);
+
+		// Fast Delete [×] Button Trigger
+		ctx.fillStyle = "#f87171";
+		ctx.font = "bold 11px sans-serif";
+		ctx.textAlign = "right";
+		ctx.fillText("×", midX + badgeW / 2 - 5, midY);
+	} else {
+		ctx.fillStyle = "#ffffff";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(distText, midX, midY);
+	}
 
 	ctx.restore();
 }
 
 /**
  * Draws precision protractor / angle measurement on the slice canvas.
- * Renders two arms, circular vertex arc, control handles, and high-contrast degree badge.
+ * Renders two arms, circular vertex arc, 6-8px luminous control handles, and high-contrast degree badge with delete trigger.
  */
 export function drawCbctAngleMeasurement(
 	ctx: CanvasRenderingContext2D,
@@ -691,7 +744,28 @@ export function drawCbctAngleMeasurement(
 	if (len1 < 1 && len2 < 1) return;
 
 	ctx.save();
-	const primaryColor = isActive ? "#38bdf8" : "#22d3ee";
+	const primaryColor = isActive ? "#f59e0b" : "#22d3ee";
+
+	// 1. Active Amber Halo when selected
+	if (isActive) {
+		ctx.save();
+		ctx.strokeStyle = "rgba(245, 158, 11, 0.35)";
+		ctx.lineWidth = 4.5;
+		ctx.shadowColor = "#f59e0b";
+		ctx.shadowBlur = 8;
+		ctx.beginPath();
+		if (len1 >= 1) {
+			ctx.moveTo(vertexPx.x, vertexPx.y);
+			ctx.lineTo(p1Px.x, p1Px.y);
+		}
+		if (len2 >= 1) {
+			ctx.moveTo(vertexPx.x, vertexPx.y);
+			ctx.lineTo(p2Px.x, p2Px.y);
+		}
+		ctx.stroke();
+		ctx.restore();
+	}
+
 	ctx.strokeStyle = primaryColor;
 	ctx.lineWidth = isActive ? 2.0 : 1.5;
 
@@ -724,7 +798,7 @@ export function drawCbctAngleMeasurement(
 		const anticlockwise = diff < 0;
 
 		ctx.beginPath();
-		ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
+		ctx.strokeStyle = isActive ? "#f59e0b" : "#22d3ee";
 		ctx.lineWidth = 1.5;
 		ctx.arc(vertexPx.x, vertexPx.y, arcRadius, angle1, angle1 + diff, anticlockwise);
 		ctx.stroke();
@@ -734,11 +808,11 @@ export function drawCbctAngleMeasurement(
 		ctx.moveTo(vertexPx.x, vertexPx.y);
 		ctx.arc(vertexPx.x, vertexPx.y, arcRadius, angle1, angle1 + diff, anticlockwise);
 		ctx.closePath();
-		ctx.fillStyle = isActive ? "rgba(245, 158, 11, 0.15)" : "rgba(56, 189, 248, 0.12)";
+		ctx.fillStyle = isActive ? "rgba(245, 158, 11, 0.2)" : "rgba(34, 211, 238, 0.15)";
 		ctx.fill();
 	}
 
-	// 4. Draw control handles (0 = arm 1, 1 = vertex, 2 = arm 2)
+	// 4. Draw control handles (0 = arm 1, 1 = vertex, 2 = arm 2) — 6-8px Luminous Glowing Points
 	const handles = [
 		{ pt: p1Px, idx: 0 },
 		{ pt: vertexPx, idx: 1 },
@@ -747,16 +821,20 @@ export function drawCbctAngleMeasurement(
 
 	for (const h of handles) {
 		const isHandleActive = selectedHandleIndex === h.idx;
-		ctx.fillStyle = isHandleActive ? "#f59e0b" : primaryColor;
-		ctx.strokeStyle = isHandleActive ? "#ffffff" : "rgba(0, 0, 0, 0.85)";
-		ctx.lineWidth = 1.2;
+		ctx.save();
+		ctx.shadowColor = isHandleActive ? "#f59e0b" : isActive ? "#f59e0b" : "#22d3ee";
+		ctx.shadowBlur = isHandleActive ? 8 : 6;
+		ctx.fillStyle = isHandleActive ? "#f59e0b" : (isActive ? "#f59e0b" : "#22d3ee");
 		ctx.beginPath();
-		ctx.arc(h.pt.x, h.pt.y, isHandleActive ? 4.5 : 3.0, 0, Math.PI * 2);
+		ctx.arc(h.pt.x, h.pt.y, isHandleActive ? 4.2 : (h.idx === 1 ? 4.0 : 3.5), 0, Math.PI * 2);
 		ctx.fill();
+		ctx.strokeStyle = "#ffffff";
+		ctx.lineWidth = 1.5;
 		ctx.stroke();
+		ctx.restore();
 	}
 
-	// 5. Floating angle degree badge with high contrast background
+	// 5. Floating angle degree badge with high contrast background and delete trigger
 	let badgeX = vertexPx.x;
 	let badgeY = vertexPx.y;
 
@@ -777,30 +855,46 @@ export function drawCbctAngleMeasurement(
 		badgeY -= 16;
 	}
 
-	const text = `${angleDeg.toFixed(1)}°`;
+	const angleText = `${angleDeg.toFixed(1)}°`;
 	ctx.font = "bold 10px monospace";
-	const textWidth = ctx.measureText(text).width;
-	const padX = 5;
-	const badgeW = textWidth + padX * 2;
-	const badgeH = 16;
+	const textWidth = ctx.measureText(angleText).width;
+	const badgeW = isActive ? textWidth + 24 : textWidth + 12;
+	const badgeH = 18;
 
 	// Contrast semi-transparent background (rgba(0, 0, 0, 0.85)) and bright cyan/amber border
-	ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
-	ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
-	ctx.lineWidth = 1.2;
+	ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
+	ctx.strokeStyle = isActive ? "#f59e0b" : "#22d3ee";
+	ctx.lineWidth = isActive ? 1.5 : 1.0;
+	if (isActive) {
+		ctx.shadowColor = "rgba(245, 158, 11, 0.5)";
+		ctx.shadowBlur = 6;
+	}
 	ctx.beginPath();
 	if (typeof ctx.roundRect === "function") {
-		ctx.roundRect(badgeX - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 3);
+		ctx.roundRect(badgeX - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 4);
 	} else {
 		ctx.rect(badgeX - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH);
 	}
 	ctx.fill();
 	ctx.stroke();
 
-	ctx.fillStyle = "#ffffff";
-	ctx.textAlign = "center";
-	ctx.textBaseline = "middle";
-	ctx.fillText(text, badgeX, badgeY);
+	if (isActive) {
+		ctx.shadowBlur = 0;
+		ctx.fillStyle = "#ffffff";
+		ctx.textAlign = "left";
+		ctx.textBaseline = "middle";
+		ctx.fillText(angleText, badgeX - badgeW / 2 + 5, badgeY);
+
+		ctx.fillStyle = "#f87171";
+		ctx.font = "bold 11px sans-serif";
+		ctx.textAlign = "right";
+		ctx.fillText("×", badgeX + badgeW / 2 - 5, badgeY);
+	} else {
+		ctx.fillStyle = "#ffffff";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(angleText, badgeX, badgeY);
+	}
 
 	ctx.restore();
 }
@@ -820,19 +914,29 @@ export function drawCbctProbeMarker(
 
 	// Target reticle
 	ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
-	ctx.lineWidth = 1.5;
+	ctx.lineWidth = isActive ? 2.0 : 1.5;
+	if (isActive) {
+		ctx.shadowColor = "#f59e0b";
+		ctx.shadowBlur = 6;
+	}
 	ctx.beginPath();
 	ctx.arc(posPx.x, posPx.y, 6, 0, Math.PI * 2);
 	ctx.stroke();
 
-	// Center dot
-	ctx.fillStyle = "#f59e0b";
+	// Center dot — 6px Luminous dot
+	ctx.fillStyle = isActive ? "#f59e0b" : "#22d3ee";
+	ctx.shadowColor = isActive ? "#f59e0b" : "#22d3ee";
+	ctx.shadowBlur = 6;
 	ctx.beginPath();
-	ctx.arc(posPx.x, posPx.y, 2, 0, Math.PI * 2);
+	ctx.arc(posPx.x, posPx.y, 3, 0, Math.PI * 2);
 	ctx.fill();
+	ctx.strokeStyle = "#ffffff";
+	ctx.lineWidth = 1.0;
+	ctx.stroke();
 
 	// Crosshair ticks
-	ctx.strokeStyle = "rgba(56, 189, 248, 0.75)";
+	ctx.shadowBlur = 0;
+	ctx.strokeStyle = isActive ? "#f59e0b" : "rgba(56, 189, 248, 0.85)";
 	ctx.lineWidth = 1.0;
 	ctx.beginPath();
 	ctx.moveTo(posPx.x - 10, posPx.y);
@@ -849,27 +953,44 @@ export function drawCbctProbeMarker(
 	const label = tissueName ? `${hu} HU · ${tissueName}` : `${hu} HU`;
 	ctx.font = "bold 9px monospace";
 	const textWidth = ctx.measureText(label).width;
-	const badgeW = textWidth + 8;
-	const badgeH = 16;
+	const badgeW = isActive ? textWidth + 24 : textWidth + 8;
+	const badgeH = 18;
 	const badgeX = posPx.x + 10;
 	const badgeY = posPx.y - 18;
 
-	ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+	ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
 	ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
-	ctx.lineWidth = 1.2;
+	ctx.lineWidth = isActive ? 1.5 : 1.0;
+	if (isActive) {
+		ctx.shadowColor = "rgba(245, 158, 11, 0.5)";
+		ctx.shadowBlur = 6;
+	}
 	ctx.beginPath();
 	if (typeof ctx.roundRect === "function") {
-		ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3);
+		ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
 	} else {
 		ctx.rect(badgeX, badgeY, badgeW, badgeH);
 	}
 	ctx.fill();
 	ctx.stroke();
 
-	ctx.fillStyle = isActive ? "#fef08a" : "#38bdf8";
-	ctx.textAlign = "left";
-	ctx.textBaseline = "middle";
-	ctx.fillText(label, badgeX + 4, badgeY + badgeH / 2);
+	ctx.shadowBlur = 0;
+	if (isActive) {
+		ctx.fillStyle = "#fef08a";
+		ctx.textAlign = "left";
+		ctx.textBaseline = "middle";
+		ctx.fillText(label, badgeX + 4, badgeY + badgeH / 2);
+
+		ctx.fillStyle = "#f87171";
+		ctx.font = "bold 11px sans-serif";
+		ctx.textAlign = "right";
+		ctx.fillText("×", badgeX + badgeW - 4, badgeY + badgeH / 2);
+	} else {
+		ctx.fillStyle = "#38bdf8";
+		ctx.textAlign = "left";
+		ctx.textBaseline = "middle";
+		ctx.fillText(label, badgeX + 4, badgeY + badgeH / 2);
+	}
 
 	ctx.restore();
 }
@@ -1558,6 +1679,32 @@ export function getCanvasPointerPos(
 		normX,
 		normY,
 	};
+}
+
+/**
+ * Calculates updated 3D world millimeter coordinates during real-time crosshair translation dragging.
+ * Correctly updates the two free spatial axes of the active plane while preserving the fixed slice axis.
+ * Supports zoom & pan viewport transforms.
+ */
+export function calculateCrosshairDragWorldMm(
+	pointerPx: { readonly x: number; readonly y: number },
+	canvasSize: { readonly width: number; readonly height: number },
+	plane: MprPlane,
+	currentCrosshairMm: Point3D,
+	angles: ObliqueRotationAngles,
+	transform: ViewportTransform,
+	volume?: CbctVoxelVolume | null | undefined,
+): Point3D {
+	if (!volume) return { ...currentCrosshairMm };
+	return mapCanvasPointerToWorldMmWithTransform(
+		pointerPx,
+		canvasSize,
+		plane,
+		currentCrosshairMm,
+		angles,
+		transform,
+		volume,
+	);
 }
 
 // ─── 5. FORWARDING RE-EXPORTS FOR OBLIQUE MPR ENGINE ────────────────────────

@@ -59,7 +59,7 @@ export function getObliqueRotationLabel(plane: MprPlane, angleDeg: number): stri
 /**
  * Resets all 3 oblique rotation angles back to 0.0°.
  */
-export function resetObliqueRotationAngles(): ObliqueRotationAngles {
+export function resetObliqueRotationAngles(_angles?: ObliqueRotationAngles): ObliqueRotationAngles {
 	return { ...DEFAULT_OBLIQUE_ROTATION };
 }
 

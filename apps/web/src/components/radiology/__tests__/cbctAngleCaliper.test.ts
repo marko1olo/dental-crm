@@ -9,6 +9,7 @@ import {
 	calculateAngleBetween3Points2D,
 	calculateAngleBetween3Points3D,
 	hitTestMeasurementHandle,
+	hitTestMeasurementObject,
 } from "../cbctCaliperNerveMath";
 import {
 	drawCbctMeasurementRuler,
@@ -84,9 +85,6 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			const vertex = { x: 0, y: 0, z: 0 };
 			const p2 = { x: 0, y: 10, z: 10 };
 			const angle = calculateAngleBetween3Points3D(p1, vertex, p2);
-			// Dot product: 10*0 + 10*10 + 0*10 = 100
-			// Lengths: sqrt(200) * sqrt(200) = 200
-			// cos(theta) = 100/200 = 0.5 -> 60.0°
 			assert.equal(angle, 60);
 		});
 
@@ -99,7 +97,7 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 		});
 	});
 
-	describe("hitTestMeasurementHandle", () => {
+	describe("hitTestMeasurementHandle (24x24px Hit-Area)", () => {
 		const rulers = [
 			{
 				id: "ruler-1",
@@ -119,55 +117,122 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			},
 		];
 
-		it("detects hit on ruler start handle (index 0)", () => {
-			const hit = hitTestMeasurementHandle({ x: 52, y: 51 }, rulers, angles, 10);
+		it("detects hit on ruler start handle within 12px (24x24px hit area)", () => {
+			const hit = hitTestMeasurementHandle({ x: 50 + 11, y: 50 - 4 }, rulers, angles, 12);
 			assert.ok(hit !== null);
 			assert.equal(hit.type, "ruler");
 			assert.equal(hit.id, "ruler-1");
 			assert.equal(hit.handleIndex, 0);
 		});
 
-		it("detects hit on ruler end handle (index 1)", () => {
-			const hit = hitTestMeasurementHandle({ x: 148, y: 49 }, rulers, angles, 10);
+		it("detects hit on ruler end handle within 12px (24x24px hit area)", () => {
+			const hit = hitTestMeasurementHandle({ x: 150 - 10, y: 50 + 5 }, rulers, angles, 12);
 			assert.ok(hit !== null);
 			assert.equal(hit.type, "ruler");
 			assert.equal(hit.id, "ruler-1");
 			assert.equal(hit.handleIndex, 1);
 		});
 
-		it("detects hit on angle vertex handle (index 1)", () => {
-			const hit = hitTestMeasurementHandle({ x: 102, y: 198 }, rulers, angles, 10);
+		it("detects hit on angle vertex handle within 12px (24x24px hit area)", () => {
+			const hit = hitTestMeasurementHandle({ x: 100 + 8, y: 200 - 8 }, rulers, angles, 12);
 			assert.ok(hit !== null);
 			assert.equal(hit.type, "angle");
 			assert.equal(hit.id, "angle-1");
 			assert.equal(hit.handleIndex, 1);
 		});
 
-		it("detects hit on angle start (index 0) and end (index 2) handles", () => {
-			const hitStart = hitTestMeasurementHandle({ x: 101, y: 102 }, rulers, angles, 10);
+		it("detects hit on angle start and end handles within 12px tolerance", () => {
+			const hitStart = hitTestMeasurementHandle({ x: 100 - 6, y: 100 + 8 }, rulers, angles, 12);
 			assert.ok(hitStart !== null);
 			assert.equal(hitStart.type, "angle");
 			assert.equal(hitStart.handleIndex, 0);
 
-			const hitEnd = hitTestMeasurementHandle({ x: 199, y: 201 }, rulers, angles, 10);
+			const hitEnd = hitTestMeasurementHandle({ x: 200 - 11, y: 200 - 4 }, rulers, angles, 12);
 			assert.ok(hitEnd !== null);
 			assert.equal(hitEnd.type, "angle");
 			assert.equal(hitEnd.handleIndex, 2);
 		});
 
-		it("returns null when pointer is outside radius tolerance", () => {
-			const hit = hitTestMeasurementHandle({ x: 300, y: 300 }, rulers, angles, 10);
+		it("returns null when pointer is outside 12px hit radius", () => {
+			const hit = hitTestMeasurementHandle({ x: 50 + 20, y: 50 + 20 }, rulers, angles, 12);
 			assert.equal(hit, null);
 		});
 	});
 
-	describe("Canvas Rendering & Cursors", () => {
-		it("returns correct cursor for angle tool", () => {
-			const cursor = getCbctToolCursor("angle", false);
-			assert.equal(cursor, "crosshair");
+	describe("hitTestMeasurementObject (Selection & Fast Delete)", () => {
+		const rulers = [
+			{
+				id: "ruler-101",
+				plane: "axial" as const,
+				startPx: { x: 50, y: 100 },
+				endPx: { x: 250, y: 100 },
+				badgePx: { x: 150, y: 100, width: 64, height: 18 },
+			},
+		];
+
+		const angles = [
+			{
+				id: "angle-202",
+				plane: "axial" as const,
+				startPx: { x: 100, y: 50 },
+				vertexPx: { x: 100, y: 150 },
+				endPx: { x: 200, y: 150 },
+			},
+		];
+
+		const probes = [
+			{
+				id: "probe-303",
+				plane: "axial" as const,
+				posPx: { x: 80, y: 80 },
+			},
+		];
+
+		it("detects selection click on ruler line body", () => {
+			const hit = hitTestMeasurementObject({ x: 120, y: 103 }, rulers, angles, probes, 8);
+			assert.ok(hit !== null);
+			assert.equal(hit.type, "ruler");
+			assert.equal(hit.id, "ruler-101");
+			assert.equal(hit.isDeleteButtonHit, false);
 		});
 
-		it("draws ruler with contrast background and badge text without throwing", () => {
+		it("detects fast delete click on ruler badge [×] trigger", () => {
+			const hit = hitTestMeasurementObject({ x: 150 + 32 - 4, y: 100 }, rulers, angles, probes, 8);
+			assert.ok(hit !== null);
+			assert.equal(hit.type, "ruler");
+			assert.equal(hit.id, "ruler-101");
+			assert.equal(hit.isDeleteButtonHit, true);
+		});
+
+		it("detects selection click on angle arm", () => {
+			const hit = hitTestMeasurementObject({ x: 102, y: 110 }, rulers, angles, probes, 8);
+			assert.ok(hit !== null);
+			assert.equal(hit.type, "angle");
+			assert.equal(hit.id, "angle-202");
+			assert.equal(hit.isDeleteButtonHit, false);
+		});
+
+		it("detects selection click on probe marker", () => {
+			const hit = hitTestMeasurementObject({ x: 82, y: 81 }, rulers, angles, probes, 8);
+			assert.ok(hit !== null);
+			assert.equal(hit.type, "probe");
+			assert.equal(hit.id, "probe-303");
+		});
+	});
+
+	describe("Canvas Rendering & Cursors", () => {
+		it("returns correct cursor for tool and hover states", () => {
+			const cursorDefault = getCbctToolCursor("angle", false);
+			assert.equal(cursorDefault, "crosshair");
+
+			const cursorGrab = getCbctToolCursor("ruler", false, true);
+			assert.equal(cursorGrab, "grab");
+
+			const cursorGrabbing = getCbctToolCursor("pan", true, false);
+			assert.equal(cursorGrabbing, "grabbing");
+		});
+
+		it("draws ruler with amber halo, 6-8px handles, and fast delete [×] badge without throwing", () => {
 			const calls: string[] = [];
 			const mockCtx = {
 				save: () => calls.push("save"),
@@ -178,7 +243,7 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				lineTo: (x: number, y: number) => calls.push(`lineTo(${x},${y})`),
 				stroke: () => calls.push("stroke"),
 				fill: () => calls.push("fill"),
-				arc: () => calls.push("arc"),
+				arc: (x: number, y: number, r: number) => calls.push(`arc(${x},${y},${r})`),
 				rect: () => calls.push("rect"),
 				roundRect: () => calls.push("roundRect"),
 				fillText: (text: string) => calls.push(`fillText(${text})`),
@@ -190,6 +255,8 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				font: "",
 				textAlign: "",
 				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
 			} as unknown as CanvasRenderingContext2D;
 
 			drawCbctMeasurementRuler(
@@ -204,6 +271,8 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			assert.ok(calls.includes("save"));
 			assert.ok(calls.includes("restore"));
 			assert.ok(calls.some((c) => c.includes("fillText(12.5 мм)")));
+			assert.ok(calls.some((c) => c.includes("fillText(×)")));
+			assert.ok(calls.some((c) => c.includes("arc(10,10,4.2)")));
 		});
 
 		it("draws angle measurement with arc, fill, and degree badge without throwing", () => {
@@ -217,7 +286,7 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				lineTo: (x: number, y: number) => calls.push(`lineTo(${x},${y})`),
 				stroke: () => calls.push("stroke"),
 				fill: () => calls.push("fill"),
-				arc: () => calls.push("arc"),
+				arc: (x: number, y: number, r: number) => calls.push(`arc(${x},${y},${r})`),
 				rect: () => calls.push("rect"),
 				roundRect: () => calls.push("roundRect"),
 				fillText: (text: string) => calls.push(`fillText(${text})`),
@@ -229,6 +298,8 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				font: "",
 				textAlign: "",
 				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
 			} as unknown as CanvasRenderingContext2D;
 
 			drawCbctAngleMeasurement(
@@ -244,6 +315,7 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			assert.ok(calls.includes("save"));
 			assert.ok(calls.includes("restore"));
 			assert.ok(calls.some((c) => c.includes("fillText(90.0°)")));
+			assert.ok(calls.some((c) => c.includes("fillText(×)")));
 		});
 
 		it("draws probe marker with HU density badge without throwing", () => {
@@ -268,10 +340,13 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				font: "",
 				textAlign: "",
 				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
 			} as unknown as CanvasRenderingContext2D;
 
-			drawCbctProbeMarker(mockCtx, { x: 75, y: 75 }, 950, "+950 HU (D2 • Кортикальная кость)");
+			drawCbctProbeMarker(mockCtx, { x: 75, y: 75 }, 950, "+950 HU (D2 • Кортикальная кость)", true);
 			assert.ok(calls.some((c) => c.includes("+950 HU (D2 • Кортикальная кость)")));
+			assert.ok(calls.some((c) => c.includes("fillText(×)")));
 		});
 	});
 });
