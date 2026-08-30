@@ -6,6 +6,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+	CRISP_OVERLAY_PAD_BG,
+	CRISP_OVERLAY_BORDER_GOLD,
+	CRISP_OVERLAY_BORDER_CYAN,
 	calculateAngleBetween3Points2D,
 	calculateAngleBetween3Points3D,
 	drawMeasurementDeleteButton,
@@ -575,9 +578,9 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			// 2. Background fill must be dense slate rgba(15, 23, 42, 0.92)
 			assert.ok(fills.includes("rgba(15, 23, 42, 0.92)"), "Must use rgba(15, 23, 42, 0.92) background fill");
 
-			// 3. Border stroke must be #f59e0b with lineWidth 1.5
+			// 3. Border stroke must be #f59e0b with lineWidth 1.0
 			assert.ok(strokes.includes("#f59e0b"), "Must use #f59e0b border stroke");
-			assert.equal(currentLineWidth, 1.5, "Border lineWidth must be 1.5px");
+			assert.equal(currentLineWidth, 1.0, "Border lineWidth must be 1.0px");
 
 			// 4. Text must include channel length and buffer
 			assert.ok(
@@ -644,6 +647,158 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			const gapPx = btnLeftEdge - textRightEdge;
 
 			assert.equal(gapPx, 6, `Gap between text right edge and delete button must be exactly 6px (actual: ${gapPx}px)`);
+		});
+	});
+
+	describe("Squad 5: Crisp Overlays & High-Contrast Typography Suite (WCAG AAA)", () => {
+		it("ensures CRISP_OVERLAY_PAD_BG is rgba(15, 23, 42, 0.92) with gold and cyan borders", () => {
+			assert.equal(CRISP_OVERLAY_PAD_BG, "rgba(15, 23, 42, 0.92)");
+			assert.equal(CRISP_OVERLAY_BORDER_GOLD, "#f59e0b");
+			assert.equal(CRISP_OVERLAY_BORDER_CYAN, "#06b6d4");
+		});
+
+		it("drawMandibularNerveBadge uses CRISP_OVERLAY_PAD_BG underlay pad and 1px gold border", () => {
+			const fills: string[] = [];
+			const strokes: string[] = [];
+			const lineThicknesses: number[] = [];
+			const mockCtx = {
+				save: () => {},
+				restore: () => {},
+				beginPath: () => {},
+				roundRect: () => {},
+				rect: () => {},
+				fill: () => fills.push(String(mockCtx.fillStyle)),
+				stroke: () => {
+					strokes.push(String(mockCtx.strokeStyle));
+					lineThicknesses.push(mockCtx.lineWidth);
+				},
+				fillText: () => {},
+				measureText: (text: string) => ({ width: text.length * 8 }),
+				fillStyle: "",
+				strokeStyle: "",
+				lineWidth: 1,
+				font: "",
+				textAlign: "",
+				textBaseline: "",
+			} as unknown as CanvasRenderingContext2D;
+
+			drawMandibularNerveBadge(mockCtx, { x: 100, y: 100 }, 42.5, 2.0);
+
+			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Nerve badge must use rgba(15, 23, 42, 0.92) underlay pad");
+			assert.ok(strokes.includes(CRISP_OVERLAY_BORDER_GOLD), "Nerve badge must use #f59e0b gold border");
+			assert.ok(lineThicknesses.includes(1.0), "Nerve badge border width must be 1.0px");
+		});
+
+		it("drawCbctMeasurementRuler uses CRISP_OVERLAY_PAD_BG underlay pad with 1px border", () => {
+			const fills: string[] = [];
+			const strokes: string[] = [];
+			const lineThicknesses: number[] = [];
+			const mockCtx = {
+				save: () => {},
+				restore: () => {},
+				beginPath: () => {},
+				moveTo: () => {},
+				lineTo: () => {},
+				arc: () => {},
+				roundRect: () => {},
+				rect: () => {},
+				fill: () => fills.push(String(mockCtx.fillStyle)),
+				stroke: () => {
+					strokes.push(String(mockCtx.strokeStyle));
+					lineThicknesses.push(mockCtx.lineWidth);
+				},
+				fillText: () => {},
+				measureText: (text: string) => ({ width: text.length * 8 }),
+				fillStyle: "",
+				strokeStyle: "",
+				lineWidth: 1,
+				font: "",
+				textAlign: "",
+				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
+			} as unknown as CanvasRenderingContext2D;
+
+			drawCbctMeasurementRuler(mockCtx, { x: 10, y: 10 }, { x: 110, y: 10 }, 15.0, false, null, false);
+
+			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Measurement ruler badge must use rgba(15, 23, 42, 0.92) underlay pad");
+			assert.ok(strokes.includes(CRISP_OVERLAY_BORDER_CYAN), "Measurement ruler badge must use cyan border in non-active mode");
+			assert.ok(lineThicknesses.includes(1.0), "Ruler badge border width must be 1.0px");
+		});
+
+		it("drawCbctAngleMeasurement uses CRISP_OVERLAY_PAD_BG underlay pad with 1px border", () => {
+			const fills: string[] = [];
+			const strokes: string[] = [];
+			const lineThicknesses: number[] = [];
+			const mockCtx = {
+				save: () => {},
+				restore: () => {},
+				beginPath: () => {},
+				moveTo: () => {},
+				lineTo: () => {},
+				arc: () => {},
+				closePath: () => {},
+				roundRect: () => {},
+				rect: () => {},
+				fill: () => fills.push(String(mockCtx.fillStyle)),
+				stroke: () => {
+					strokes.push(String(mockCtx.strokeStyle));
+					lineThicknesses.push(mockCtx.lineWidth);
+				},
+				fillText: () => {},
+				measureText: (text: string) => ({ width: text.length * 8 }),
+				fillStyle: "",
+				strokeStyle: "",
+				lineWidth: 1,
+				font: "",
+				textAlign: "",
+				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
+			} as unknown as CanvasRenderingContext2D;
+
+			drawCbctAngleMeasurement(mockCtx, { x: 50, y: 20 }, { x: 50, y: 80 }, { x: 120, y: 80 }, 90.0, false, null);
+
+			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Angle badge must use rgba(15, 23, 42, 0.92) underlay pad");
+			assert.ok(strokes.includes(CRISP_OVERLAY_BORDER_CYAN), "Angle badge must use cyan border in non-active mode");
+			assert.ok(lineThicknesses.includes(1.0), "Angle badge border width must be 1.0px");
+		});
+
+		it("drawCbctProbeMarker uses CRISP_OVERLAY_PAD_BG underlay pad with 1px border", () => {
+			const fills: string[] = [];
+			const strokes: string[] = [];
+			const lineThicknesses: number[] = [];
+			const mockCtx = {
+				save: () => {},
+				restore: () => {},
+				beginPath: () => {},
+				moveTo: () => {},
+				lineTo: () => {},
+				arc: () => {},
+				roundRect: () => {},
+				rect: () => {},
+				fill: () => fills.push(String(mockCtx.fillStyle)),
+				stroke: () => {
+					strokes.push(String(mockCtx.strokeStyle));
+					lineThicknesses.push(mockCtx.lineWidth);
+				},
+				fillText: () => {},
+				measureText: (text: string) => ({ width: text.length * 8 }),
+				fillStyle: "",
+				strokeStyle: "",
+				lineWidth: 1,
+				font: "",
+				textAlign: "",
+				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
+			} as unknown as CanvasRenderingContext2D;
+
+			drawCbctProbeMarker(mockCtx, { x: 50, y: 50 }, 1250, "Кортикальная кость", false);
+
+			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Probe marker badge must use rgba(15, 23, 42, 0.92) underlay pad");
+			assert.ok(strokes.includes("#38bdf8"), "Probe marker badge must use sky border in non-active mode");
+			assert.ok(lineThicknesses.includes(1.0), "Probe marker badge border width must be 1.0px");
 		});
 	});
 });

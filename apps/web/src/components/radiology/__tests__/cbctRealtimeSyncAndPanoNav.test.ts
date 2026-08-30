@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import {
 	createEmptyCbctVolume,
 	calculateCrosshairDragWorldMm,
+	computeSynchronizedCrosshairProjections,
 	DEFAULT_OBLIQUE_ROTATION,
 	DEFAULT_VIEWPORT_TRANSFORM,
 	type CbctVoxelVolume,
@@ -242,8 +243,42 @@ describe("Wave 27 Domain 1 — Real-Time Cross-Referencing & Panorama Navigation
 				totalArcLengthMm: 0,
 				focalTroughThicknessMm: 12,
 			};
-			const nav = findCrossSectionAndPositionByFdi("99", [], emptyCurve, 0);
-			assert.equal(nav.found, false, "Must return found=false for nonexistent tooth");
+			const res = findCrossSectionAndPositionByFdi("99", [], emptyCurve, 0);
+			assert.equal(res.found, false);
+			assert.equal(res.nearestToothFdi, "99");
+		});
+	});
+
+	describe("4. Synchronized Multi-Plane Crosshair Projections (computeSynchronizedCrosshairProjections)", () => {
+		it("calculates accurate slice and screen projections across Axial, Coronal, Sagittal, Pano, and CrossSection", () => {
+			const worldPt: Point3D = { x: 10.0, y: -5.0, z: 12.0 };
+			const proj = computeSynchronizedCrosshairProjections(
+				worldPt,
+				mockVolume,
+				DEFAULT_OBLIQUE_ROTATION,
+				{
+					axial: DEFAULT_VIEWPORT_TRANSFORM,
+					coronal: DEFAULT_VIEWPORT_TRANSFORM,
+					sagittal: DEFAULT_VIEWPORT_TRANSFORM,
+				},
+				{ widthPx: 800, heightPx: 220, totalArcLengthMm: 120.0 },
+				crossSections[0],
+			);
+
+			assert.ok(proj.axial.centerSlicePx.x >= 0, "Axial slice X must be valid");
+			assert.ok(proj.axial.centerSlicePx.y >= 0, "Axial slice Y must be valid");
+			assert.ok(proj.coronal.centerSlicePx.x >= 0, "Coronal slice X must be valid");
+			assert.ok(proj.coronal.centerSlicePx.y >= 0, "Coronal slice Y must be valid");
+			assert.ok(proj.sagittal.centerSlicePx.x >= 0, "Sagittal slice X must be valid");
+			assert.ok(proj.sagittal.centerSlicePx.y >= 0, "Sagittal slice Y must be valid");
+
+			assert.equal(proj.axial.rotationDeg, DEFAULT_OBLIQUE_ROTATION.axialAngleDeg);
+			assert.equal(proj.coronal.rotationDeg, DEFAULT_OBLIQUE_ROTATION.coronalTiltDeg);
+			assert.equal(proj.sagittal.rotationDeg, DEFAULT_OBLIQUE_ROTATION.sagittalTiltDeg);
+
+			assert.ok(proj.panoramic.axialLineY >= 0, "Pano axial line Y must be >= 0");
+			assert.ok(proj.crossSection.axialLineY > 0, "CrossSection axial line Y must be positive");
 		});
 	});
 });
+

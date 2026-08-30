@@ -271,8 +271,8 @@ export async function exportCleanViewportSnapshot(
 		const badgeWidth = Math.min(width - 24, Math.max(180, Math.max(titleWidth, metaWidth) + 20));
 		const badgeHeight = metaParts ? 42 : 26;
 
-		ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.92)" : "rgba(15, 23, 42, 0.85)";
-		ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "rgba(51, 65, 85, 0.8)";
+		ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.95)" : "rgba(15, 23, 42, 0.92)";
+		ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "#0284c7";
 		ctx.lineWidth = 1;
 		ctx.beginPath();
 		if (typeof ctx.roundRect === "function") {
@@ -311,8 +311,8 @@ export async function exportCleanViewportSnapshot(
 		const sbHeight = 24;
 		const sbWidth = scaleBarPx + 24;
 
-		ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.92)" : "rgba(15, 23, 42, 0.85)";
-		ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "rgba(51, 65, 85, 0.8)";
+		ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.95)" : "rgba(15, 23, 42, 0.92)";
+		ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "#0284c7";
 		ctx.lineWidth = 1;
 		ctx.beginPath();
 		if (typeof ctx.roundRect === "function") {
@@ -345,9 +345,9 @@ export async function exportCleanViewportSnapshot(
 		ctx.lineTo(midX, lineY);
 		ctx.stroke();
 
-		// Label
+		// Label (High contrast text on dark underlay pad: WCAG AAA >= 7:1)
 		ctx.font = "bold 9px monospace";
-		ctx.fillStyle = isInvertToner ? "#0f172a" : "#f1f5f9";
+		ctx.fillStyle = isInvertToner ? "#0f172a" : "#f8fafc";
 		ctx.textAlign = "center";
 		ctx.fillText(`${scaleBarLengthMm} мм`, midX, lineY - 7);
 		ctx.restore();
@@ -357,7 +357,7 @@ export async function exportCleanViewportSnapshot(
 	if (shouldShowWatermark) {
 		ctx.save();
 		ctx.font = "9px system-ui, -apple-system, sans-serif";
-		ctx.fillStyle = isInvertToner ? "rgba(71, 85, 105, 0.85)" : "rgba(148, 163, 184, 0.75)";
+		ctx.fillStyle = isInvertToner ? "rgba(71, 85, 105, 0.85)" : "rgba(148, 163, 184, 0.9)";
 		ctx.textAlign = "right";
 		ctx.fillText("DENTE 3D CBCT Studio • 16-bit DICOM", width - pad, height - pad);
 		ctx.restore();

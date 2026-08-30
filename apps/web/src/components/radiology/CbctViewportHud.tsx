@@ -54,7 +54,7 @@ const OrientationCube3D: React.FC<OrientationCube3DProps> = ({ viewportType, siz
 
 	return (
 		<div
-			className="relative flex flex-col items-center justify-center p-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm border border-zinc-800 select-none pointer-events-auto shadow-xs"
+			className="relative flex flex-col items-center justify-center p-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm border border-slate-800 select-none pointer-events-auto shadow-md"
 			title={`3D Ориентационный компас: ${labels.planeNameRu}`}
 			data-testid={`cbct-orientation-cube-${viewportType}`}
 		>
@@ -194,16 +194,16 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				}}
 			>
 				<div
-					className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm border border-zinc-800 shadow-xs text-xs font-semibold whitespace-nowrap min-w-0 shrink"
+					className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm border border-slate-800 shadow-md text-xs font-semibold whitespace-nowrap min-w-0 shrink"
 					style={{ borderLeftColor: labels.planeColor, borderLeftWidth: 3 }}
 				>
 					<span
 						className="w-1.5 h-1.5 rounded-full shrink-0"
 						style={{ backgroundColor: labels.planeColor }}
 					/>
-					<span className="text-zinc-100 tracking-wide font-medium text-[11px] truncate">{labels.planeNameEn}</span>
+					<span className="text-slate-100 tracking-wide font-medium text-[11px] truncate">{labels.planeNameEn}</span>
 					{coordText && (
-						<span className="font-mono text-zinc-400 text-[9.5px] font-normal ml-0.5 whitespace-nowrap shrink-0">
+						<span className="font-mono text-slate-400 text-[9.5px] font-normal ml-0.5 whitespace-nowrap shrink-0">
 							({coordText})
 						</span>
 					)}
@@ -211,7 +211,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 
 				{zoomFactor !== undefined && Math.abs(zoomFactor - 1.0) > 0.01 && (
 					<span
-						className="px-1.5 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm text-cyan-400 text-[10px] font-mono font-semibold border border-zinc-800 shadow-xs"
+						className="px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm text-cyan-400 text-[10px] font-mono font-semibold border border-slate-800 shadow-xs"
 						title={`Масштаб зума: ${(zoomFactor * 100).toFixed(0)}%`}
 					>
 						{zoomFactor.toFixed(1)}x
@@ -220,7 +220,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 
 				{viewportType !== "panoramic" && slabMode !== "single" && slabThicknessMm > 1 && (
 					<span
-						className="px-1.5 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm text-[10px] font-mono font-semibold border border-zinc-800 shadow-xs"
+						className="px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm text-[10px] font-mono font-semibold border border-slate-800 shadow-xs"
 						style={{ color: labels.planeColor }}
 					>
 						MIP {slabThicknessMm} мм
@@ -228,7 +228,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				)}
 
 				{sliceIndex !== undefined && totalSlices !== undefined && (
-					<span className="px-1.5 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm text-zinc-400 text-[10px] font-mono border border-zinc-800 shadow-xs">
+					<span className="px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm text-slate-400 text-[10px] font-mono border border-slate-800 shadow-xs">
 						{sliceIndex + 1}/{totalSlices}
 					</span>
 				)}
@@ -243,12 +243,12 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 							e.stopPropagation();
 							onResetAngle?.();
 						}}
-						className="px-2 py-0.5 rounded bg-[#09090b]/95 hover:bg-zinc-900 backdrop-blur-sm text-[10px] font-mono font-bold border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-200 shadow-md flex items-center gap-1 cursor-pointer transition-all"
+						className="px-2 py-0.5 rounded bg-[#0f172a]/95 hover:bg-slate-900 backdrop-blur-sm text-[10px] font-mono font-bold border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-cyan-200 shadow-md flex items-center gap-1 cursor-pointer transition-all"
 						title={`Угол наклона: ${obliqueAngleDeg > 0 ? "+" : ""}${obliqueAngleDeg.toFixed(1)}° (Нажмите для сброса в 0.0°)`}
 						data-testid={`cbct-reset-angle-badge-${viewportType}`}
 					>
 						<span>∡ {obliqueAngleDeg > 0 ? "+" : ""}{obliqueAngleDeg.toFixed(1)}°</span>
-						<span className="text-[9px] text-zinc-400 hover:text-white font-bold ml-0.5">↺ 0°</span>
+						<span className="text-[9px] text-slate-400 hover:text-white font-bold ml-0.5">↺ 0°</span>
 					</button>
 				)}
 
@@ -259,7 +259,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 							e.stopPropagation();
 							onToggleMaximize();
 						}}
-						className="w-6 h-6 rounded bg-[#09090b]/90 backdrop-blur-sm hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100 border border-zinc-800 shadow-xs transition-colors flex items-center justify-center cursor-pointer"
+						className="w-6 h-6 rounded bg-[#0f172a]/92 backdrop-blur-sm hover:bg-slate-900 text-slate-400 hover:text-slate-100 border border-slate-800 shadow-xs transition-colors flex items-center justify-center cursor-pointer"
 						title={isMaximized ? "Свернуть в сетку (двойной клик)" : "Развернуть на 100% (двойной клик)"}
 						data-testid={`cbct-maximize-${viewportType}-btn`}
 						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
@@ -269,30 +269,30 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				)}
 			</div>
 
-			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (Unified high-contrast badge) */}
+			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (High-contrast dark underlay pad with 1px border) */}
 			<div
-				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-100 border border-zinc-600 font-mono font-bold text-xs shadow pointer-events-none z-10"
+				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[#0f172a]/92 text-slate-100 border border-slate-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10"
 				title={labels.topTooltipRu}
 			>
 				{labels.top}
 			</div>
 
 			<div
-				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-100 border border-zinc-600 font-mono font-bold text-xs shadow pointer-events-none z-10"
+				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[#0f172a]/92 text-slate-100 border border-slate-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10"
 				title={labels.bottomTooltipRu}
 			>
 				{labels.bottom}
 			</div>
 
 			<div
-				className={`absolute ${viewportType === "panoramic" ? "left-8" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-100 border border-zinc-600 font-mono font-bold text-xs shadow pointer-events-none z-10`}
+				className={`absolute ${viewportType === "panoramic" ? "left-8" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[#0f172a]/92 text-slate-100 border border-slate-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10`}
 				title={labels.leftTooltipRu}
 			>
 				{labels.left}
 			</div>
 
 			<div
-				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-100 border border-zinc-600 font-mono font-bold text-xs shadow pointer-events-none z-10"
+				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[#0f172a]/92 text-slate-100 border border-slate-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10"
 				title={labels.rightTooltipRu}
 			>
 				{labels.right}
@@ -301,12 +301,12 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 			{/* 4. BOTTOM-LEFT DICOM WW/WL BADGE (DICOM PS3.3 Standard) */}
 			<div className="absolute bottom-1.5 left-1.5 pointer-events-auto flex items-center gap-1.5 z-20">
 				<div
-					className="px-1.5 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm border border-zinc-800 shadow-xs text-[9px] font-mono text-zinc-400 select-none"
+					className="px-1.5 py-0.5 rounded bg-[#0f172a]/92 backdrop-blur-sm border border-slate-800 shadow-xs text-[9px] font-mono text-slate-400 select-none"
 					title={`DICOM WW/WL: W=${windowWidth ?? 4400}, L=${windowLevel ?? 1300}`}
 					data-testid={`cbct-hud-wl-${viewportType}`}
 				>
-					W: <span className="text-zinc-100 font-bold">{windowWidth ?? 4400}</span> L:{" "}
-					<span className="text-zinc-100 font-bold">{windowLevel ?? 1300}</span>
+					W: <span className="text-slate-100 font-bold">{windowWidth ?? 4400}</span> L:{" "}
+					<span className="text-slate-100 font-bold">{windowLevel ?? 1300}</span>
 				</div>
 			</div>
 

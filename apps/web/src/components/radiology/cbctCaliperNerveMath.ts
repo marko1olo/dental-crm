@@ -1042,7 +1042,7 @@ export function drawMandibularNerveBadge(
 	ctx.save();
 	ctx.fillStyle = CRISP_OVERLAY_PAD_BG;
 	ctx.strokeStyle = CRISP_OVERLAY_BORDER_GOLD;
-	ctx.lineWidth = 1.5;
+	ctx.lineWidth = 1.0;
 	const text = `Канал IAN (3D ${totalLengthMm.toFixed(1)} мм · ${safetyMarginMm.toFixed(1)} мм буфер)`;
 	ctx.font = "bold 12px monospace";
 	const tw = ctx.measureText(text).width;
