@@ -534,7 +534,8 @@ export function drawRomexisSlabCorridor(
 export function getTissueNameFromHU(hu: number): string {
 	if (hu >= 2000) return "Эмаль / Пломбировочный материал";
 	if (hu >= 1000) return "Кортикальная кость / Дентин";
-	if (hu >= 300) return "Трабекулярная губчатая кость";
+	if (hu >= 350) return "Трабекулярная губчатая кость";
+	if (hu >= 150) return "Мягкая губчатая кость (D4)";
 	if (hu >= 0) return "Мягкие ткани / Пульпа / Десна";
 	if (hu >= -400) return "Жировая клетчатка / Экссудат";
 	return "Воздух / Синус / Дыхательные пути";

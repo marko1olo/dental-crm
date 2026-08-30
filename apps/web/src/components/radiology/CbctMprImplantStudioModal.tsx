@@ -519,6 +519,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setActiveProbe(null);
 	}, []);
 
+	const handleSelectTool = useCallback((tool: CbctToolMode) => {
+		setActiveTool(tool);
+		if (tool !== "probe") {
+			setActiveProbe(null);
+		}
+	}, []);
+
 	const handleToggleMaximizeActive = useCallback(() => {
 		setMaximizedViewport((prev) => (prev === activeViewport ? null : activeViewport));
 	}, [activeViewport]);
@@ -2817,8 +2824,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const v = worldMmToVoxel(pointMm, volume);
 			const hu = sampleVoxelHU(v.x, v.y, v.z, volume);
 			const tissue = getTissueNameFromHU(hu);
-			const misch = hu >= 1250 ? "D1" : hu >= 850 ? "D2" : hu >= 350 ? "D3" : hu >= 150 ? "D4" : "D5";
-			const label = `${hu > 0 ? "+" : ""}${hu} HU (${misch} • ${tissue})`;
+			const misch = hu >= 1250 ? "D1" : hu >= 850 ? "D2" : hu >= 350 ? "D3" : hu >= 150 ? "D4" : null;
+			const label = misch ? `${hu > 0 ? "+" : ""}${hu} HU (${misch} • ${tissue})` : `${hu > 0 ? "+" : ""}${hu} HU (${tissue})`;
 			const newProbe: CbctProbeMarker = {
 				id: `probe-${Date.now()}`,
 				plane,
@@ -3801,7 +3808,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						data-testid="cbct-btn-auto-arch"
 						title="Авто-поиск зубной дуги ОПТГ по плотности эмали"
 					>
-						<span>⚙️ Авто-дуга</span>
+						<Sliders className="w-3.5 h-3.5 text-purple-400" />
+						<span>Авто-дуга</span>
 					</button>
 
 					{/* 1-Click Toggle Dental Arch Spline on All Viewports */}
@@ -3816,7 +3824,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						data-testid="cbct-toggle-dental-arch"
 						title="Показать / скрыть анатомическую дугу ОПТГ"
 					>
-						<span>🦷 Дуга ОПТГ</span>
+						<Spline className="w-3.5 h-3.5 text-purple-400" />
+						<span>Дуга ОПТГ</span>
 					</button>
 
 					{/* 1-Click Clinical EMR Snapshot Export Button */}
@@ -3828,7 +3837,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						title="Сохранить снимок и протокол планирования в карту 043/у"
 					>
 						<Camera className="w-3.5 h-3.5" />
-						<span>📷 В ЭМК</span>
+						<span>В ЭМК</span>
 					</button>
 
 					{/* 1-Click Printable PDF Report Export Button */}
@@ -3840,7 +3849,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						title="Сформировать печатный A4 протокол планирования / PDF"
 					>
 						<FileText className="w-3.5 h-3.5" />
-						<span>📄 PDF Отчет</span>
+						<span>PDF Отчет</span>
 					</button>
 
 					{/* Layout Switcher */}
@@ -4015,7 +4024,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			<div className="flex-1 flex flex-row min-h-0 min-w-0 w-full max-w-full overflow-hidden relative">
 				<CbctLeftToolDock
 					activeTool={activeTool}
-					onSelectTool={setActiveTool}
+					onSelectTool={handleSelectTool}
 					slabMode={slabMode}
 					onSelectSlabMode={setSlabMode}
 					slabThicknessMm={slabThicknessMm}
@@ -4393,8 +4402,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 										<span>Сброс трассы</span>
 									</button>
 								</div>
-								<div className="text-[10px] text-zinc-500 leading-tight">
-									💡 ЛКМ для добавления узлов • Перетаскивание для смещения • Delete для удаления
+								<div className="text-[10px] text-zinc-500 leading-tight flex items-center gap-1">
+									<Info className="w-3 h-3 text-zinc-400 shrink-0" />
+									<span>ЛКМ для добавления узлов • Перетаскивание для смещения • Delete для удаления</span>
 								</div>
 							</div>
 

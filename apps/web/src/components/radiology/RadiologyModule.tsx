@@ -67,15 +67,14 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 		teethFdi: ["16", "26", "36", "46"],
 		effectiveDoseMicrosv: 55.0,
 		effectiveDoseMsv: 0.055,
-		imageUrl:
-			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='900' viewBox='0 0 1200 900'><rect width='1200' height='900' fill='%23050811'/><circle cx='600' cy='450' r='350' fill='none' stroke='%2306b6d4' stroke-width='2' stroke-dasharray='8 4'/><path d='M300 450 Q600 200 900 450 Q600 700 300 450' fill='none' stroke='%2338bdf8' stroke-width='3'/><text x='600' y='440' fill='%2338bdf8' font-size='28' font-family='sans-serif' font-weight='bold' text-anchor='middle'>3D КЛКТ: ОБЗОРНЫЙ ТОМОГРАФИЧЕСКИЙ СРЕЗ</text><text x='600' y='480' fill='%2394a3b8' font-size='18' font-family='sans-serif' text-anchor='middle'>Костная плотность D2 · Пазухи интактны · Каналы визуализированы</text></svg>",
+		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		doctorName: "Др. Смирнов А.В.",
 		doctorSpecialty: "Врач-рентгенолог / Хирург",
 		clinicName: 'ООО "Денте Клиник"',
 		status: "completed",
 		diagnosisIcd10: "K08.1",
 		diagnosticNotes:
-			"Томограмма челюстей выполнена для планирования дентальной имплантации в области отсутствующих зубов 16, 26, 46. В области альвеолярного отростка верхней челюсти высота кости 12.4 мм, ширина 7.8 мм. Дно гайморовой пазухи интактно. Нижнечелюстной канал справа на расстоянии 14.2 мм от вершины гребня.",
+			"Томограмма челюстей выполнена для планирования дентальной имплантации в области отсутствующих зубов 16, 26, 46. В области альвеолярного отростка верхней челюсти высота кости 12.4 мм, ширина 7.8 мм. Дно гайморовой пазухи интактно, субантральный зазор достаточен. Нижнечелюстной канал справа на расстоянии 14.2 мм от вершины гребня.",
 		aiFindings: {
 			boneLossPercentage: 12,
 			summary: "Костное предложение достаточно для установки имплантатов 4.0x10.0 мм без синус-лифтинга.",
@@ -129,8 +128,7 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 		teethFdi: ["11", "21", "36", "37"],
 		effectiveDoseMicrosv: 18.0,
 		effectiveDoseMsv: 0.018,
-		imageUrl:
-			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='700' viewBox='0 0 1200 700'><rect width='1200' height='700' fill='%23050811'/><path d='M150 450 Q600 150 1050 450' fill='none' stroke='%2306b6d4' stroke-width='4'/><text x='600' y='330' fill='%2338bdf8' font-size='26' font-family='sans-serif' font-weight='bold' text-anchor='middle'>ЦИФРОВАЯ ПАНОРАМНАЯ ОРТОПАНТОМОГРАММА (ОПТГ)</text><text x='600' y='370' fill='%2394a3b8' font-size='16' font-family='sans-serif' text-anchor='middle'>Зубная дуга симметрична · ВНЧС суставные щели равномерны</text></svg>",
+		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		doctorName: "Др. Смирнов А.В.",
 		doctorSpecialty: "Врач-стоматолог терапевт",
 		clinicName: 'ООО "Денте Клиник"',

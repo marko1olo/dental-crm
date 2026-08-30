@@ -163,7 +163,7 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 
 	describe("Canvas Rendering & Cursors", () => {
 		it("returns correct cursor for angle tool", () => {
-			const cursor = getCbctToolCursor("angle");
+			const cursor = getCbctToolCursor("angle", false);
 			assert.equal(cursor, "crosshair");
 		});
 

@@ -795,7 +795,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				{/* ── TOOLBAR (Floating Cyber Dock: 5 Key Essential Tools + Filters Menu) ── */}
 				<nav
 					aria-label="Инструменты управления просмотрщиком"
-					className={`absolute left-2 sm:left-3 top-14 sm:top-4 z-40 w-11 flex flex-col gap-1 p-1 rounded-xl bg-slate-900/95 border border-slate-700/70 shadow-2xl backdrop-blur-md ${
+					className={`absolute left-2 sm:left-3 top-14 sm:top-4 z-40 w-11 flex flex-col items-center gap-1 p-1 rounded-xl bg-slate-900/95 border border-slate-700/70 shadow-2xl backdrop-blur-md ${
 						!activeImageUrl || isDropzoneOpen
 							? "hidden md:flex"
 							: isMobileToolbarExpanded
@@ -804,7 +804,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					}`}
 				>
 					{/* 1. [Зум/Панорама] (P) */}
-					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
+					<div className={`flex flex-col items-center gap-1 pb-1 border-b border-slate-700/70 w-full ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
@@ -814,7 +814,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveCaliperStart(null);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "pan"
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -823,12 +823,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							aria-label="Зум и панорама"
 							data-testid="tool-pan-btn"
 						>
-							<Move className="w-[18px] h-[18px]" />
+							<Move className="w-4 h-4" />
 						</button>
 					</div>
 
 					{/* 2. [Яркость/Контраст (WW/WL)] */}
-					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
+					<div className={`flex flex-col items-center gap-1 pb-1 border-b border-slate-700/70 w-full ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
@@ -836,7 +836,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setIsControlsExpanded((prev) => !prev);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								isControlsExpanded
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -845,12 +845,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							aria-label="Яркость и контраст (WW/WL)"
 							data-testid="tool-brightness-contrast-btn"
 						>
-							<Sliders className="w-[18px] h-[18px]" />
+							<Sliders className="w-4 h-4" />
 						</button>
 					</div>
 
 					{/* 3. [Линейка/Калибровка] (M) */}
-					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
+					<div className={`flex flex-col items-center gap-1 pb-1 border-b border-slate-700/70 w-full ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
@@ -860,7 +860,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setPendingLandmarkPos(null);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "ruler"
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -869,17 +869,17 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							aria-label="Линейка и калибровка"
 							data-testid="tool-ruler-btn"
 						>
-							<Ruler className="w-[18px] h-[18px]" />
+							<Ruler className="w-4 h-4" />
 						</button>
 					</div>
 
 					{/* 4. [Инверсия] (I) */}
-					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
+					<div className={`flex flex-col items-center gap-1 pb-1 border-b border-slate-700/70 w-full ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={() => setInvert((prev) => !prev)}
-							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								invert
 									? "bg-amber-950/70 border-2 border-amber-400 text-amber-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -888,27 +888,27 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							aria-label="Инверсия негатив / позитив"
 							data-testid="tool-invert-btn"
 						>
-							<Sun className="w-[18px] h-[18px]" />
+							<Sun className="w-4 h-4" />
 						</button>
 					</div>
 
 					{/* 5. [Сброс] (0) */}
-					<div className={`flex flex-col gap-1 pb-1 border-b border-slate-700/70 ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
+					<div className={`flex flex-col items-center gap-1 pb-1 border-b border-slate-700/70 w-full ${!isImageLoaded ? "opacity-40 pointer-events-none" : ""}`}>
 						<button
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={handleResetAll}
-							className="w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1.5 rounded-lg flex items-center justify-center bg-rose-950/40 border border-rose-800/50 text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+							className="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-950/40 border border-rose-800/50 text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
 							title="[Сброс] — Сбросить все настройки снимка и положение (0)"
 							aria-label="Сброс всех настроек снимка"
 							data-testid="tool-reset-all-btn"
 						>
-							<RefreshCcw className="w-[18px] h-[18px]" />
+							<RefreshCcw className="w-4 h-4" />
 						</button>
 					</div>
 
 					{/* 6. «Фильтры ▾» — Второстепенные фильтры и инструменты */}
-					<div className="flex flex-col gap-1">
+					<div className="flex flex-col items-center gap-1 w-full">
 						<button
 							type="button"
 							disabled={!isImageLoaded}
@@ -916,7 +916,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setIsFiltersMenuOpen((prev) => !prev);
 								setIsControlsExpanded(false);
 							}}
-							className={`w-[34px] h-[34px] min-h-[34px] min-w-[34px] p-1 rounded-lg flex flex-col items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-8 h-8 rounded-lg flex flex-col items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								isFiltersMenuOpen ||
 								activeTool === "caliper" ||
 								activeTool === "nerve_tracer" ||
@@ -1328,7 +1328,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					onMouseMove={handleMouseMove}
 					onMouseUp={handleMouseUp}
 					onWheel={handleWheel}
-					className={`relative flex-1 h-full flex items-center justify-center overflow-hidden ${
+					className={`relative flex-1 h-full flex items-center justify-center overflow-hidden bg-slate-900 ${
 						activeTool === "pan"
 							? isDragging
 								? "cursor-grabbing"
@@ -1526,7 +1526,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 												style={{ transform: "translate(-50%, -50%)" }}
 											>
 												<div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-950/90 border border-amber-500 text-amber-300 text-[10px] font-bold shadow-lg whitespace-nowrap">
-													<span>Нерв ({nerve.side === "left" ? "Лев." : "Прав."}): {nerve.lengthMm} мм</span>
+													<span>
+														{isUpperJaw ? "Гайморова пазуха" : "Нерв"} ({nerve.side === "left" ? "Лев." : "Прав."}): {nerve.lengthMm} мм
+													</span>
 													<button
 														type="button"
 														onClick={(e) => {
@@ -1534,7 +1536,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 															handleDeleteNerve(nerve.id);
 														}}
 														className="text-rose-400 hover:text-rose-200 ml-0.5"
-														title="Удалить трассировку нерва"
+														title={isUpperJaw ? "Удалить трассировку гайморовой пазухи" : "Удалить трассировку нерва"}
 													>
 														×
 													</button>
@@ -1719,34 +1721,26 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									}}
 								>
 									<div className="flex flex-col items-center cursor-pointer relative">
-										{/* Dark compact badge */}
-										<div
-											className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono shadow-lg whitespace-nowrap group-hover:scale-105 transition-all"
-											style={{
-												backgroundColor: "rgba(15, 23, 42, 0.95)",
-												color: "#5eead4",
-												border: "1px solid rgba(20, 184, 166, 0.6)",
-												boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
-											}}
-										>
+										{/* Translucent compact badge */}
+										<div className="px-2 py-1 bg-slate-900/90 text-teal-400 text-xs font-mono rounded border border-teal-500/50 backdrop-blur-sm shadow-xl flex items-center gap-1.5 group-hover:scale-105 transition-all">
 											<span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-											<span className="font-bold">FDI {pin.toothFdi}</span>
+											<span className="font-bold">FDI: {pin.toothFdi}</span>
 											<button
 												type="button"
 												onClick={(e) => {
 													e.stopPropagation();
 													handleDeleteLandmark(pin.id);
 												}}
-												className="text-rose-300 hover:text-white bg-rose-950/60 px-1.5 py-0.5 rounded text-xs font-bold ml-1 cursor-pointer transition-colors leading-none"
+												className="text-rose-300 hover:text-white bg-rose-950/60 px-1 py-0.5 rounded text-[10px] font-bold ml-1 cursor-pointer transition-colors leading-none"
 												title="Удалить метку"
 											>
 												×
 											</button>
 										</div>
-										{/* Fine leader line connecting badge to exact anatomical target point */}
-										<div className="w-[1px] h-8 bg-teal-400 shadow-xs" style={{ backgroundColor: "#2dd4bf" }} />
+										{/* Vertical leader line */}
+										<div className="w-[1px] h-10 bg-teal-400 shadow-sm" />
 										{/* Non-occluding delicate anatomical target needle */}
-										<div className="w-2 h-2 rounded-full border border-teal-300 bg-teal-400/60 shadow-sm flex items-center justify-center" style={{ borderColor: "#5eead4", backgroundColor: "rgba(45, 212, 191, 0.6)" }}>
+										<div className="w-2 h-2 rounded-full border border-teal-300 bg-teal-400/80 shadow-sm flex items-center justify-center -mt-0.5">
 											<div className="w-1 h-1 rounded-full bg-white shadow-xs" />
 										</div>
 									</div>

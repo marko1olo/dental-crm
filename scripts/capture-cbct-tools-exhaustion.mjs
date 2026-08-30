@@ -253,6 +253,8 @@ async function run() {
 
 	// ─── 11: VIRTUAL IMPLANT MODE ─────────────────────────────────────────────
 	console.log("[CBCT-E2E] 11: Virtual Implant Mode...");
+	// Wait for any previous nerve node toasts to fade
+	await sleep(2500);
 	const implantModeBtn = page.locator('[data-testid="cbct-mode-implant-btn"]').first();
 	await implantModeBtn.click();
 	await flushCanvasRender(page, 1000);
@@ -273,7 +275,7 @@ async function run() {
 	await axialCanvas.evaluate((canvas) => {
 		const rect = canvas.getBoundingClientRect();
 		const x = rect.left + rect.width * 0.5;
-		const y = rect.top + rect.height * 0.3;
+		const y = rect.top + rect.height * 0.35;
 		canvas.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 }));
 		window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 }));
 	});
@@ -285,9 +287,10 @@ async function run() {
 	const slabToolBtn = page.locator('[data-testid="cbct-tool-slab"]').first();
 	await slabToolBtn.click();
 	await sleep(300);
-	const mip15Btn = page.locator('button:has-text("15мм")').first();
-	if (await mip15Btn.isVisible().catch(() => false)) {
-		await mip15Btn.click().catch(() => {});
+
+	const slab15Btn = page.locator('[data-testid="cbct-slab-thickness-15"]').first();
+	if (await slab15Btn.isVisible().catch(() => false)) {
+		await slab15Btn.click().catch(() => {});
 	}
 	// Close slab popup by clicking outside
 	const modalHeader = modalContainer.locator("header").first();
@@ -312,9 +315,9 @@ async function run() {
 	await implantModeBtn2.click();
 	await sleep(400);
 
-	const copyDiaryBtn = page.locator('[data-testid="copy-diary-btn"]').first();
-	if (await copyDiaryBtn.isVisible().catch(() => false)) {
-		await copyDiaryBtn.click().catch(() => {});
+	const exportEmrBtn = page.locator('[data-testid="cbct-btn-export-emr"]').first();
+	if (await exportEmrBtn.isVisible().catch(() => false)) {
+		await exportEmrBtn.click().catch(() => {});
 	}
 	await flushCanvasRender(page, 1000);
 	await saveShot("15_export_emk_pdf_report.png", "1-Click clinical export to EMR / Form 043/u diary and treatment plan with audit confirmation toast");

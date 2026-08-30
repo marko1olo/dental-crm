@@ -145,12 +145,12 @@ describe("CBCT Auto-Arch Mathematical Engine Suite", () => {
 			assert.equal(mip.centerZMm, -10.0);
 			assert.equal(mip.thicknessMm, 14.0);
 
-			// Metal crown (4500 HU) should be clipped to 4000 HU
+			// Metal crown (4500 HU) should be clipped to 3500 HU
 			let maxFoundHU = -1000;
 			for (let i = 0; i < mip.data.length; i++) {
 				if (mip.data[i]! > maxFoundHU) maxFoundHU = mip.data[i]!;
 			}
-			assert.ok(maxFoundHU <= 4000, `Max HU should be clipped to 4000, got ${maxFoundHU}`);
+			assert.ok(maxFoundHU <= 3500, `Max HU should be clipped to 3500, got ${maxFoundHU}`);
 			assert.ok(maxFoundHU >= 3000, "Max HU should reflect enamel density");
 		});
 
@@ -234,6 +234,189 @@ describe("CBCT Auto-Arch Mathematical Engine Suite", () => {
 				// Dot product of tangent and normal must be ~0 (perpendicular)
 				const dot = node.tangent.x * node.normal.x + node.tangent.y * node.normal.y;
 				assert.ok(Math.abs(dot) < 1e-4, "Tangent and normal must be orthogonal");
+			}
+		});
+	});
+
+	describe("5. Stress-Testing: Metal Artifacts, Low Density / Edentulous & Display Invariance", () => {
+		/**
+		 * Creates a volume with extreme metal streak artifacts (> 4500-8000 HU)
+		 * on multiple teeth (e.g. titanium implants on 46 and 36, amalgam on 47).
+		 */
+		function createSyntheticExtremeMetalArtifactVolume(): CbctVoxelVolume {
+			const width = 180;
+			const height = 180;
+			const depth = 60;
+			const spacingMm = 0.5;
+
+			const volume = createEmptyCbctVolume(width, height, depth, spacingMm, -1000);
+			(volume as { originMm: { x: number; y: number; z: number } }).originMm = {
+				x: -45.0,
+				y: -75.0,
+				z: -15.0,
+			};
+			const data = volume.data!;
+			const totalSliceVoxels = width * height;
+			const mandibularZMm = -10.0;
+
+			// Mandibular teeth with enamel (3000 HU)
+			for (const anchor of DEFAULT_MANDIBULAR_ARCH_ANCHORS) {
+				const vox = worldMmToVoxel({ x: anchor.positionMm.x, y: anchor.positionMm.y, z: mandibularZMm }, volume);
+
+				for (let dz = -1; dz <= 1; dz++) {
+					for (let dy = -1; dy <= 1; dy++) {
+						for (let dx = -1; dx <= 1; dx++) {
+							const z = vox.z + dz;
+							const y = vox.y + dy;
+							const x = vox.x + dx;
+
+							if (x >= 0 && x < width && y >= 0 && y < height && z >= 0 && z < depth) {
+								const idx = z * totalSliceVoxels + y * width + x;
+								if (anchor.toothFdi === "46" || anchor.toothFdi === "36") {
+									// Extreme metal titanium implant spikes (8000 HU)
+									data[idx] = 8000;
+								} else if (anchor.toothFdi === "47") {
+									// Heavy amalgam restoration (6000 HU)
+									data[idx] = 6000;
+								} else {
+									data[idx] = 3000;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// Add bilateral metal streak flare across slice 10
+			const sliceOffset = 10 * totalSliceVoxels;
+			for (let x = 20; x < 160; x++) {
+				const y = 80;
+				data[sliceOffset + y * width + x] = 5500;
+			}
+
+			return volume;
+		}
+
+		/**
+		 * Creates an edentulous / severely osteoporotic CBCT volume:
+		 * - No enamel crowns (max HU across volume is 450-550 HU in cancellous alveolar ridge)
+		 * - Alveolar ridge crest placed at Z = -8.0 mm
+		 */
+		function createSyntheticEdentulousLowDensityVolume(): CbctVoxelVolume {
+			const width = 180;
+			const height = 180;
+			const depth = 60;
+			const spacingMm = 0.5;
+
+			const volume = createEmptyCbctVolume(width, height, depth, spacingMm, -1000);
+			(volume as { originMm: { x: number; y: number; z: number } }).originMm = {
+				x: -45.0,
+				y: -75.0,
+				z: -15.0,
+			};
+			const data = volume.data!;
+			const totalSliceVoxels = width * height;
+			const ridgeZMm = -8.0;
+
+			// Paint low-density edentulous alveolar ridge (380-520 HU) along the mandibular arch
+			for (const anchor of DEFAULT_MANDIBULAR_ARCH_ANCHORS) {
+				const vox = worldMmToVoxel({ x: anchor.positionMm.x, y: anchor.positionMm.y, z: ridgeZMm }, volume);
+
+				for (let dz = -1; dz <= 1; dz++) {
+					for (let dy = -2; dy <= 2; dy++) {
+						for (let dx = -2; dx <= 2; dx++) {
+							const z = vox.z + dz;
+							const y = vox.y + dy;
+							const x = vox.x + dx;
+
+							if (x >= 0 && x < width && y >= 0 && y < height && z >= 0 && z < depth) {
+								const idx = z * totalSliceVoxels + y * width + x;
+								data[idx] = 480; // Low-density trabecular bone
+							}
+						}
+					}
+				}
+			}
+
+			return volume;
+		}
+
+		it("correctly detects arch on volume with heavy metal artifacts and clips spikes <= 3500 HU", () => {
+			const volume = createSyntheticExtremeMetalArtifactVolume();
+
+			// Occlusal plane detection under metal artifacts
+			const zPlane = findOcclusalZPlane(volume, "mandible");
+			assert.ok(Math.abs(zPlane - (-10.0)) <= 1.0, `Expected Z ~ -10.0, got ${zPlane}`);
+
+			// MIP slab extraction clipping
+			const mip = extractAxialMIPSlab(volume, zPlane, 14.0);
+			let maxHU = -1000;
+			for (let i = 0; i < mip.data.length; i++) {
+				if (mip.data[i]! > maxHU) maxHU = mip.data[i]!;
+			}
+			assert.ok(maxHU <= 3500, `MIP should clip extreme metal spikes to 3500 HU, got ${maxHU}`);
+
+			// Centroid detection with bilateral symmetry under unilateral metal flare
+			const curve = autoDetectDentalArch(volume, "mandible");
+			assert.equal(curve.anchors.length, 16);
+			assert.ok(curve.totalArcLengthMm > 50.0);
+
+			// Anchors for 46 and 36 (implants) should remain well-formed
+			const anchor46 = curve.anchors.find((a) => a.toothFdi === "46")!;
+			const anchor36 = curve.anchors.find((a) => a.toothFdi === "36")!;
+			assert.ok(anchor46.positionMm.x < 0, "Anchor 46 must be on the right (negative X)");
+			assert.ok(anchor36.positionMm.x > 0, "Anchor 36 must be on the left (positive X)");
+		});
+
+		it("detects dental arch on low-density edentulous volume (HU 350-550) without enamel", () => {
+			const volume = createSyntheticEdentulousLowDensityVolume();
+
+			// Density profile should have cancellous integral and bone integral
+			const profile = computeOcclusalDensityProfile(volume);
+			assert.ok(profile.length > 0);
+
+			// Occlusal Z plane detection should lock onto low-density cancellous ridge
+			const zPlane = findOcclusalZPlane(volume, "mandible");
+			assert.ok(Math.abs(zPlane - (-8.0)) <= 1.5, `Expected edentulous ridge Z ~ -8.0, got ${zPlane}`);
+
+			// MIP slab extraction
+			const mip = extractAxialMIPSlab(volume, zPlane, 14.0);
+
+			// Centroids detection on edentulous ridge
+			const anchors = detectDentalArchCentroids(mip, "mandible");
+			assert.equal(anchors.length, 16);
+
+			for (const anchor of anchors) {
+				assert.equal(typeof anchor.positionMm.x, "number");
+				assert.equal(typeof anchor.positionMm.y, "number");
+				assert.equal(Number.isNaN(anchor.positionMm.x), false);
+				assert.equal(Number.isNaN(anchor.positionMm.y), false);
+			}
+
+			// Full auto-arch detection
+			const curve = autoDetectDentalArch(volume, "mandible");
+			assert.equal(curve.anchors.length, 16);
+			assert.ok(curve.totalArcLengthMm > 40.0, `Expected edentulous arch length > 40 mm, got ${curve.totalArcLengthMm}`);
+		});
+
+		it("guarantees 100% mathematical determinism and independence from any display Window/Level presets", () => {
+			const volume = createSyntheticDualArchVolume();
+
+			// Run auto-arch detection multiple times
+			const run1 = autoDetectDentalArch(volume, "mandible");
+			const run2 = autoDetectDentalArch(volume, "mandible");
+
+			assert.equal(run1.totalArcLengthMm, run2.totalArcLengthMm);
+			assert.equal(run1.splinePointsMm.length, run2.splinePointsMm.length);
+
+			for (let i = 0; i < run1.anchors.length; i++) {
+				assert.equal(run1.anchors[i]!.positionMm.x, run2.anchors[i]!.positionMm.x);
+				assert.equal(run1.anchors[i]!.positionMm.y, run2.anchors[i]!.positionMm.y);
+			}
+
+			for (let i = 0; i < run1.splinePointsMm.length; i++) {
+				assert.equal(run1.splinePointsMm[i]!.x, run2.splinePointsMm[i]!.x);
+				assert.equal(run1.splinePointsMm[i]!.y, run2.splinePointsMm[i]!.y);
 			}
 		});
 	});

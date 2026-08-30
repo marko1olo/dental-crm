@@ -37,7 +37,10 @@ export interface OcclusalDensitySliceProfile {
 	readonly zMm: number;
 	readonly enamelIntegral: number;
 	readonly boneIntegral: number;
+	readonly cancellousIntegral: number;
 	readonly smoothedEnamel: number;
+	readonly smoothedBone: number;
+	readonly smoothedCancellous: number;
 }
 
 export interface PolarRidgeRayResult {
@@ -50,8 +53,12 @@ export interface PolarRidgeRayResult {
 // ─── 1. OCCLUSAL Z-PLANE DETECTION ENGINE ───────────────────────────────────
 
 /**
- * Computes Z-axis enamel and cortical bone density profiles across the CBCT volume.
- * Analyzes enamel integral (HU >= 2200) and cortical bone integral (HU >= 1200) with metal artifact clipping (> 4000 HU).
+ * Computes Z-axis enamel, cortical bone, and cancellous ridge density profiles across the CBCT volume.
+ * Multi-tier thresholds:
+ * - Enamel integral (HU >= 2000) for dentate crowns
+ * - Cortical bone integral (HU >= 800) for alveolar bone crest
+ * - Cancellous/trabecular ridge integral (HU >= 350) for edentulous and osteoporotic jaws
+ * Metal artifact clipping (<= 3500 HU) prevents streak distortions.
  */
 export function computeOcclusalDensityProfile(
 	volume: CbctVoxelVolume,
@@ -73,6 +80,7 @@ export function computeOcclusalDensityProfile(
 		zMm: number;
 		enamelIntegral: number;
 		boneIntegral: number;
+		cancellousIntegral: number;
 	}> = new Array(depth);
 
 	for (let z = 0; z < depth; z++) {
@@ -80,20 +88,27 @@ export function computeOcclusalDensityProfile(
 		const zMm = Number((originZ + z * spacingZ).toFixed(2));
 		let enamelSum = 0;
 		let boneSum = 0;
+		let cancellousSum = 0;
 
 		for (let y = 0; y < height; y += sampleStepY) {
 			const yOffset = zOffset + y * width;
 			for (let x = 0; x < width; x += sampleStepX) {
-				const hu = data[yOffset + x] ?? -1000;
+				const rawHu = data[yOffset + x] ?? -1000;
+				// Metal artifact clipping to 3500 HU
+				const hu = Math.min(rawHu, 3500);
 
-				if (hu >= 2200) {
-					// Enamel threshold: clip metal streak artifacts to 4000 HU to avoid distorted weights
-					const effectiveHU = Math.min(hu, 4000);
-					enamelSum += effectiveHU - 2200;
-				} else if (hu >= 1200) {
-					// Cortical bone threshold
-					const effectiveHU = Math.min(hu, 4000);
-					boneSum += effectiveHU - 1200;
+				if (hu >= 2000) {
+					// Enamel threshold (dentate crowns)
+					enamelSum += hu - 2000;
+					boneSum += hu - 800;
+					cancellousSum += hu - 350;
+				} else if (hu >= 800) {
+					// Cortical bone threshold (alveolar ridge)
+					boneSum += hu - 800;
+					cancellousSum += hu - 350;
+				} else if (hu >= 350) {
+					// Cancellous bone / edentulous ridge threshold
+					cancellousSum += hu - 350;
 				}
 			}
 		}
@@ -103,41 +118,54 @@ export function computeOcclusalDensityProfile(
 			zMm,
 			enamelIntegral: enamelSum,
 			boneIntegral: boneSum,
+			cancellousIntegral: cancellousSum,
 		};
 	}
 
-	// 1D Gaussian kernel smoothing (sigma = 1.5 slices, radius = 3)
+	// 1D Gaussian kernel smoothing (sigma = 1.5 slices, radius = 2)
 	const kernel = [0.06136, 0.24477, 0.38774, 0.24477, 0.06136];
 	const kRadius = 2;
 
 	return rawProfiles.map((p, idx) => {
-		let smoothVal = 0;
+		let smoothEnamel = 0;
+		let smoothBone = 0;
+		let smoothCancellous = 0;
 		let weightSum = 0;
 
 		for (let k = -kRadius; k <= kRadius; k++) {
 			const neighborIdx = idx + k;
 			if (neighborIdx >= 0 && neighborIdx < depth) {
 				const w = kernel[k + kRadius] ?? 0;
-				smoothVal += (rawProfiles[neighborIdx]?.enamelIntegral ?? 0) * w;
+				smoothEnamel += (rawProfiles[neighborIdx]?.enamelIntegral ?? 0) * w;
+				smoothBone += (rawProfiles[neighborIdx]?.boneIntegral ?? 0) * w;
+				smoothCancellous += (rawProfiles[neighborIdx]?.cancellousIntegral ?? 0) * w;
 				weightSum += w;
 			}
 		}
 
-		const smoothedEnamel = weightSum > 0 ? smoothVal / weightSum : p.enamelIntegral;
+		const smoothedEnamel = weightSum > 0 ? smoothEnamel / weightSum : p.enamelIntegral;
+		const smoothedBone = weightSum > 0 ? smoothBone / weightSum : p.boneIntegral;
+		const smoothedCancellous = weightSum > 0 ? smoothCancellous / weightSum : p.cancellousIntegral;
 
 		return {
 			zIndex: p.zIndex,
 			zMm: p.zMm,
 			enamelIntegral: p.enamelIntegral,
 			boneIntegral: p.boneIntegral,
+			cancellousIntegral: p.cancellousIntegral,
 			smoothedEnamel,
+			smoothedBone,
+			smoothedCancellous,
 		};
 	});
 }
 
 /**
  * Finds the optimal Z occlusal plane (in physical millimeters) for the specified jaw.
- * Evaluates the enamel density peak: mandibular crowns (lower peak) vs maxillary crowns (upper peak).
+ * Multi-tier evaluation:
+ * 1. Enamel density peaks (dentate crowns)
+ * 2. Cortical bone density peaks (alveolar crest)
+ * 3. Cancellous/edentulous ridge peaks (osteoporotic/edentulous jaws)
  */
 export function findOcclusalZPlane(
 	volume: CbctVoxelVolume,
@@ -150,62 +178,70 @@ export function findOcclusalZPlane(
 	const profile = computeOcclusalDensityProfile(volume);
 	if (profile.length === 0) return 0.0;
 
-	// Find local maxima in the smoothed enamel profile
-	let maxEnamel = 0;
-	for (const p of profile) {
-		if (p.smoothedEnamel > maxEnamel) maxEnamel = p.smoothedEnamel;
-	}
-
-	const significantThreshold = maxEnamel * 0.25;
-	const localPeaks: Array<{ zIndex: number; zMm: number; score: number }> = [];
-
-	for (let i = 1; i < profile.length - 1; i++) {
-		const prev = profile[i - 1]?.smoothedEnamel ?? 0;
-		const cur = profile[i]?.smoothedEnamel ?? 0;
-		const next = profile[i + 1]?.smoothedEnamel ?? 0;
-
-		if (cur >= prev && cur >= next && cur >= significantThreshold) {
-			localPeaks.push({
-				zIndex: profile[i]!.zIndex,
-				zMm: profile[i]!.zMm,
-				score: cur,
-			});
-		}
-	}
-
-	// Fallback to bone profile if no significant enamel peak exists (e.g. edentulous patient)
-	if (localPeaks.length === 0) {
-		let maxBone = 0;
-		let bestZIdx = Math.floor(profile.length / 2);
-
+	// Helper to find local maxima in a 1D smoothed density signal
+	const findPeaks = (signalExtractor: (p: OcclusalDensitySliceProfile) => number, minRelativeThreshold = 0.25) => {
+		let maxVal = 0;
 		for (const p of profile) {
-			if (p.boneIntegral > maxBone) {
-				maxBone = p.boneIntegral;
-				bestZIdx = p.zIndex;
+			const val = signalExtractor(p);
+			if (val > maxVal) maxVal = val;
+		}
+
+		if (maxVal < 10) return [];
+
+		const threshold = maxVal * minRelativeThreshold;
+		const peaks: Array<{ zIndex: number; zMm: number; score: number }> = [];
+
+		for (let i = 1; i < profile.length - 1; i++) {
+			const prev = signalExtractor(profile[i - 1]!);
+			const cur = signalExtractor(profile[i]!);
+			const next = signalExtractor(profile[i + 1]!);
+
+			if (cur >= prev && cur >= next && cur >= threshold) {
+				peaks.push({
+					zIndex: profile[i]!.zIndex,
+					zMm: profile[i]!.zMm,
+					score: cur,
+				});
 			}
 		}
 
-		const fallbackEntry = profile[bestZIdx];
-		return fallbackEntry ? fallbackEntry.zMm : 0.0;
+		return peaks;
+	};
+
+	// 1. Primary: Enamel peaks (Dentate patients)
+	const enamelPeaks = findPeaks((p) => p.smoothedEnamel, 0.2);
+	if (enamelPeaks.length > 0) {
+		enamelPeaks.sort((a, b) => a.zMm - b.zMm);
+		if (enamelPeaks.length === 1) return enamelPeaks[0]!.zMm;
+		return jawType === "mandible" ? enamelPeaks[0]!.zMm : enamelPeaks[enamelPeaks.length - 1]!.zMm;
 	}
 
-	if (localPeaks.length > 1) {
-		// Sort peaks by physical Z (inferior/mandible -> superior/maxilla)
-		localPeaks.sort((a, b) => a.zMm - b.zMm);
-		if (jawType === "mandible") {
-			return localPeaks[0]!.zMm;
-		}
-		return localPeaks[localPeaks.length - 1]!.zMm;
+	// 2. Secondary: Cortical bone peaks (Edentulous with preserved ridge)
+	const bonePeaks = findPeaks((p) => p.smoothedBone, 0.25);
+	if (bonePeaks.length > 0) {
+		bonePeaks.sort((a, b) => a.zMm - b.zMm);
+		if (bonePeaks.length === 1) return bonePeaks[0]!.zMm;
+		return jawType === "mandible" ? bonePeaks[0]!.zMm : bonePeaks[bonePeaks.length - 1]!.zMm;
 	}
 
-	return localPeaks[0]!.zMm;
+	// 3. Tertiary: Cancellous / Trabecular ridge peaks (Severe bone atrophy / Osteoporosis)
+	const cancellousPeaks = findPeaks((p) => p.smoothedCancellous, 0.3);
+	if (cancellousPeaks.length > 0) {
+		cancellousPeaks.sort((a, b) => a.zMm - b.zMm);
+		if (cancellousPeaks.length === 1) return cancellousPeaks[0]!.zMm;
+		return jawType === "mandible" ? cancellousPeaks[0]!.zMm : cancellousPeaks[cancellousPeaks.length - 1]!.zMm;
+	}
+
+	// Fallback to volume Z midpoint
+	const midIdx = Math.floor(profile.length / 2);
+	return profile[midIdx]?.zMm ?? 0.0;
 }
 
 // ─── 2. 2D AXIAL MAXIMUM INTENSITY PROJECTION (MIP) SLAB ENGINE ─────────────
 
 /**
  * Extracts a 2D Axial MIP slab centered around `centerZMm` with the specified physical thickness (typically 12–15 mm).
- * Clips high-density metal artifacts (> 4000 HU) to preserve fine anatomical ridge boundaries.
+ * Clips high-density metal artifacts (<= 3500 HU) to preserve fine anatomical ridge boundaries.
  */
 export function extractAxialMIPSlab(
 	volume: CbctVoxelVolume,
@@ -259,8 +295,8 @@ export function extractAxialMIPSlab(
 				}
 			}
 
-			// Filter/clip extreme metal spikes > 4000 HU
-			const finalHU = maxHU > 4000 ? 4000 : maxHU < -1000 ? -1000 : maxHU;
+			// Filter/clip extreme metal spikes <= 3500 HU
+			const finalHU = maxHU > 3500 ? 3500 : maxHU < -1000 ? -1000 : maxHU;
 			mipBuffer[rowOffset + x] = finalHU;
 		}
 	}
@@ -316,8 +352,10 @@ export function sampleMipHUContinuous(
 }
 
 /**
- * Detects the anatomical dental arch ridge centroids via polar ray casting (-pi/6 to 7pi/6),
- * applies outlier filtering, and fits 16 standard FDI dental anchors (18..48 / 11..28).
+ * Detects the anatomical dental arch ridge centroids via polar ray casting (-14 deg to +194 deg),
+ * applies multi-tier density analysis (enamel >= 2000 HU, cortical bone >= 800 HU, cancellous ridge >= 350 HU),
+ * metal artifact clipping (<= 3500 HU), 1D median ray filtering, bilateral symmetry harmonization,
+ * and fits 16 standard FDI dental anchors (18..48 / 11..28).
  */
 export function detectDentalArchCentroids(
 	mip: AxialMIPSlab | { data: Float32Array; width: number; height: number; originMm: Point2D; spacingMm: Point2D },
@@ -326,46 +364,70 @@ export function detectDentalArchCentroids(
 	const defaultAnchors =
 		jawType === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS;
 
-	// Compute high-density center of mass on the MIP slab
+	const { width, height, originMm, spacingMm } = mip;
+
+	// 1. Scan MIP slab to assess peak density tier across the slab
+	let maxMIPHU = -1000;
+	for (let i = 0; i < mip.data.length; i++) {
+		const hu = mip.data[i] ?? -1000;
+		if (hu > maxMIPHU) maxMIPHU = hu;
+	}
+
+	// 2. Multi-tier center of mass calculation
+	let threshold = 800;
+	let baseline = 700;
+	let weightPow = 1.5;
+
+	if (maxMIPHU >= 1800) {
+		// Tier 1: Enamel dominant
+		threshold = 800;
+		baseline = 700;
+		weightPow = 1.5;
+	} else if (maxMIPHU >= 750) {
+		// Tier 2: Cortical bone dominant
+		threshold = 550;
+		baseline = 450;
+		weightPow = 1.2;
+	} else if (maxMIPHU >= 350) {
+		// Tier 3: Edentulous / cancellous ridge dominant
+		threshold = 350;
+		baseline = 250;
+		weightPow = 1.0;
+	}
+
 	let totalWeight = 0;
 	let weightedX = 0;
 	let weightedY = 0;
-	let posteriorYMax = -Infinity;
-
-	const { width, height, originMm, spacingMm } = mip;
 
 	for (let y = 0; y < height; y++) {
 		const worldY = originMm.y + y * spacingMm.y;
 		const rowOffset = y * width;
 
 		for (let x = 0; x < width; x++) {
-			const hu = mip.data[rowOffset + x] ?? -1000;
-			if (hu >= 800) {
-				const w = Math.min(hu, 3500) - 700;
+			const rawHu = mip.data[rowOffset + x] ?? -1000;
+			const hu = Math.min(rawHu, 3500);
+
+			if (hu >= threshold) {
+				const w = Math.pow(hu - baseline, weightPow);
 				totalWeight += w;
 				const worldX = originMm.x + x * spacingMm.x;
 				weightedX += w * worldX;
 				weightedY += w * worldY;
-
-				if (worldY > posteriorYMax) {
-					posteriorYMax = worldY;
-				}
 			}
 		}
 	}
 
 	let jawCenterX = 0.0;
 	let jawCenterY = 0.0;
-	let hasEnamel = false;
+	let hasSignal = false;
 
-	if (totalWeight > 5000) {
-		jawCenterX = weightedX / totalWeight;
-		// Allow real patient lateral translation up to scanner boundaries (+/- 45 mm)
-		jawCenterX = Math.max(-45.0, Math.min(45.0, jawCenterX));
-		// The ray origin sits in oral cavity / tongue center ~25 mm posterior to the high-density teeth centroid
+	if (totalWeight > 100) {
+		const teethCenterX = weightedX / totalWeight;
 		const teethCenterY = weightedY / totalWeight;
+		jawCenterX = Math.max(-45.0, Math.min(45.0, teethCenterX));
+		// The ray origin sits in oral cavity / tongue center ~25 mm posterior to the arch centroid
 		jawCenterY = teethCenterY + 25.0;
-		hasEnamel = true;
+		hasSignal = true;
 	}
 
 	// Standard FDI tooth angles in radians covering the full dental arch from Right Molar 3 to Left Molar 3
@@ -392,45 +454,78 @@ export function detectDentalArchCentroids(
 		{ fdi: jawType === "mandible" ? "38" : "28", angleRad: (194 * Math.PI) / 180, isRight: false },
 	];
 
-	// Polar ray tracing density sampler
+	// Polar ray tracing density sampler with multi-tier peak centroid detection
 	const rayTraceRidge = (theta: number, defaultRadiusMm: number): number => {
 		const dirX = -Math.cos(theta);
 		const dirY = -Math.sin(theta);
 
-		let maxIntensity = -1000;
-		let optimalRadius = defaultRadiusMm;
-		let peakWeightedSum = 0;
-		let peakWeight = 0;
-
-		const minRadius = hasEnamel ? 5.0 : Math.max(12.0, defaultRadiusMm - 16.0);
-		const maxRadius = hasEnamel ? 65.0 : Math.min(80.0, defaultRadiusMm + 16.0);
+		const minRadius = hasSignal ? 5.0 : Math.max(12.0, defaultRadiusMm - 16.0);
+		const maxRadius = hasSignal ? 68.0 : Math.min(80.0, defaultRadiusMm + 16.0);
 		const stepR = 0.5;
+
+		const samples: Array<{ r: number; hu: number }> = [];
+		let rayMaxHU = -1000;
+		let peakR = defaultRadiusMm;
 
 		for (let r = minRadius; r <= maxRadius; r += stepR) {
 			const sampleX = jawCenterX + r * dirX;
 			const sampleY = jawCenterY + r * dirY;
 
-			const hu = sampleMipHUContinuous(mip, sampleX, sampleY);
+			const rawHu = sampleMipHUContinuous(mip, sampleX, sampleY);
+			const hu = Math.min(rawHu, 3500);
+			samples.push({ r, hu });
 
-			if (hu >= 800) {
-				const w = Math.pow(Math.min(hu, 4000) - 700, 1.5);
-				peakWeightedSum += w * r;
-				peakWeight += w;
-
-				if (hu > maxIntensity) {
-					maxIntensity = hu;
-				}
+			if (hu > rayMaxHU) {
+				rayMaxHU = hu;
+				peakR = r;
 			}
 		}
 
-		if (peakWeight > 0 && maxIntensity >= 1000) {
-			optimalRadius = peakWeightedSum / peakWeight;
+		// Determine ray density tier threshold
+		let rayThreshold = 1000;
+		let rayBase = 700;
+		let rayPower = 1.5;
+
+		if (rayMaxHU >= 1800) {
+			// Enamel tier (crowns)
+			rayThreshold = 1000;
+			rayBase = 700;
+			rayPower = 1.5;
+		} else if (rayMaxHU >= 750) {
+			// Cortical bone tier (ridge)
+			rayThreshold = 550;
+			rayBase = 400;
+			rayPower = 1.2;
+		} else if (rayMaxHU >= 350) {
+			// Cancellous / edentulous ridge tier
+			rayThreshold = 320;
+			rayBase = 200;
+			rayPower = 1.0;
+		} else {
+			// No significant ridge signal -> fallback to default
+			return defaultRadiusMm;
 		}
 
-		return optimalRadius;
+		// Centroid around peak location (window: peakR +/- 6 mm)
+		let sumW = 0;
+		let sumWR = 0;
+
+		for (const s of samples) {
+			if (Math.abs(s.r - peakR) <= 6.0 && s.hu >= rayThreshold) {
+				const w = Math.pow(s.hu - rayBase, rayPower);
+				sumW += w;
+				sumWR += w * s.r;
+			}
+		}
+
+		if (sumW > 0) {
+			return sumWR / sumW;
+		}
+
+		return peakR;
 	};
 
-	// Detect radii for each anchor
+	// 3. Detect radii for each anchor
 	const detectedRadii: number[] = new Array(toothAngleSpecs.length);
 	for (let i = 0; i < toothAngleSpecs.length; i++) {
 		const spec = toothAngleSpecs[i]!;
@@ -442,21 +537,63 @@ export function detectDentalArchCentroids(
 		detectedRadii[i] = rayTraceRidge(spec.angleRad, defaultR);
 	}
 
-	// Apply 1D 3-point median filter followed by gentle smoothing to eliminate outlier spikes
-	const smoothedRadii: number[] = new Array(detectedRadii.length);
+	// 4. Robust 1D 3-point Median Filter to eliminate outlier ray spikes
+	const medRadii: number[] = new Array(detectedRadii.length);
 	for (let i = 0; i < detectedRadii.length; i++) {
 		const rPrev = detectedRadii[Math.max(0, i - 1)] ?? detectedRadii[i]!;
 		const rCur = detectedRadii[i]!;
 		const rNext = detectedRadii[Math.min(detectedRadii.length - 1, i + 1)] ?? detectedRadii[i]!;
 
-		// Median of 3
 		const sorted = [rPrev, rCur, rNext].sort((a, b) => a - b);
-		const med = sorted[1]!;
-
-		smoothedRadii[i] = 0.25 * rPrev + 0.5 * med + 0.25 * rNext;
+		medRadii[i] = sorted[1]!;
 	}
 
-	// Construct the final 16 FDI dental arch anchors
+	// 5. Anatomical step clamping: limit radius delta between adjacent teeth to <= 8 mm
+	for (let i = 1; i < medRadii.length; i++) {
+		const diff = medRadii[i]! - medRadii[i - 1]!;
+		if (Math.abs(diff) > 8.0) {
+			medRadii[i] = medRadii[i - 1]! + Math.sign(diff) * 8.0;
+		}
+	}
+	for (let i = medRadii.length - 2; i >= 0; i--) {
+		const diff = medRadii[i]! - medRadii[i + 1]!;
+		if (Math.abs(diff) > 8.0) {
+			medRadii[i] = medRadii[i + 1]! + Math.sign(diff) * 8.0;
+		}
+	}
+
+	// 6. Bilateral Symmetry Harmonization (Pairing tooth i with tooth 15 - i)
+	// Balances natural individual asymmetry while preventing unilateral metal artifact flare
+	const symRadii: number[] = new Array(medRadii.length);
+	for (let i = 0; i < 8; i++) {
+		const rightIdx = i;
+		const leftIdx = 15 - i;
+		const rR = medRadii[rightIdx]!;
+		const rL = medRadii[leftIdx]!;
+		const rMean = 0.5 * (rR + rL);
+		const asymDiff = Math.abs(rR - rL);
+
+		if (asymDiff > 12.0) {
+			// Severe unilateral asymmetry (metal artifact or major loss) -> strong symmetry pull
+			symRadii[rightIdx] = 0.3 * rR + 0.7 * rMean;
+			symRadii[leftIdx] = 0.3 * rL + 0.7 * rMean;
+		} else {
+			// Natural anatomical variance -> gentle cross-regularization
+			symRadii[rightIdx] = 0.85 * rR + 0.15 * rMean;
+			symRadii[leftIdx] = 0.85 * rL + 0.15 * rMean;
+		}
+	}
+
+	// 7. 1D Gaussian smoothing ([0.2, 0.6, 0.2]) across the final radii
+	const smoothedRadii: number[] = new Array(symRadii.length);
+	for (let i = 0; i < symRadii.length; i++) {
+		const rPrev = symRadii[Math.max(0, i - 1)] ?? symRadii[i]!;
+		const rCur = symRadii[i]!;
+		const rNext = symRadii[Math.min(symRadii.length - 1, i + 1)] ?? symRadii[i]!;
+		smoothedRadii[i] = 0.2 * rPrev + 0.6 * rCur + 0.2 * rNext;
+	}
+
+	// 8. Construct the final 16 FDI dental arch anchors
 	const resultAnchors: DentalArchAnchor[] = [];
 
 	for (let i = 0; i < toothAngleSpecs.length; i++) {
@@ -486,6 +623,7 @@ export function detectDentalArchCentroids(
 
 /**
  * Fully automated end-to-end analytical dental arch curve detection pipeline.
+ * Independent of any visual Window/Level/Invert display parameters.
  * Computes the optimal Z occlusal plane, extracts the 2D Axial MIP slab, traces polar dental ridge centroids,
  * and builds a calibrated DentalArchCurve with Catmull-Rom spline, normal/tangent vectors, and arc length.
  */
@@ -505,3 +643,4 @@ export function autoDetectDentalArch(
 	// 4. Construct smooth Catmull-Rom spline dental arch curve
 	return buildDentalArchCurve(anchors, jawType, 12.0);
 }
+

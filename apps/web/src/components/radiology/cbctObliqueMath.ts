@@ -845,7 +845,7 @@ export function drawObliqueCrosshairWithRotationHandles(
 	ctx.stroke();
 
 	// 3. Central Reticle Target Ring (Double circle for precision navigation and 1-click reset hit target)
-	ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
+	ctx.strokeStyle = "rgba(9, 9, 11, 0.95)";
 	ctx.lineWidth = 3.0;
 	ctx.beginPath();
 	ctx.arc(centerPx.x, centerPx.y, 4.5, 0, Math.PI * 2);
@@ -867,7 +867,7 @@ export function drawObliqueCrosshairWithRotationHandles(
 		const handles = getRotationHandles(plane, widthPx, heightPx, centerPx, handleDistancePx, safeRotationDeg);
 
 		// Circular guide track (Dashed background ring)
-		ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+		ctx.strokeStyle = "rgba(113, 113, 122, 0.25)";
 		ctx.lineWidth = 1.0;
 		ctx.setLineDash([2, 3]);
 		ctx.beginPath();
@@ -933,8 +933,8 @@ export function drawObliqueCrosshairWithRotationHandles(
 		const badgeX = widthPx - 10;
 		const badgeY = 10;
 
-		ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
-		ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+		ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+		ctx.strokeStyle = "rgba(6, 182, 212, 0.5)";
 		ctx.lineWidth = 1.0;
 
 		const textW = ctx.measureText(badgeText).width;

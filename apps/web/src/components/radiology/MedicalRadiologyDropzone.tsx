@@ -153,8 +153,8 @@ export const MedicalRadiologyDropzone: React.FC<
 		<div
 			className={`flex flex-col items-center justify-center p-6 md:p-10 rounded-2xl border-2 border-dashed transition-all duration-200 text-center select-none shadow-2xl ${
 				isDragOver
-					? "scale-[1.01] bg-teal-50 dark:bg-teal-950/80 border-teal-500 text-teal-950 dark:text-teal-50"
-					: "bg-slate-100 dark:bg-slate-900/95 border-slate-300 dark:border-slate-700/80 hover:border-teal-500/60 text-slate-800 dark:text-slate-100"
+					? "scale-[1.01] bg-teal-950/80 border-teal-500 text-teal-50"
+					: "bg-slate-900/95 border-slate-700/80 hover:border-teal-500/60 text-slate-100"
 			} ${className}`}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
@@ -173,7 +173,7 @@ export const MedicalRadiologyDropzone: React.FC<
 			{/* Medical Sensor Icon Badge */}
 			<div className="relative mb-5">
 				<div
-					className="flex items-center justify-center w-20 h-20 rounded-2xl shadow-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-teal-600 dark:text-teal-400"
+					className="flex items-center justify-center w-20 h-20 rounded-2xl shadow-xl bg-slate-800 border border-slate-700 text-teal-400"
 				>
 					<Scan className="w-10 h-10 animate-pulse" />
 				</div>
@@ -183,32 +183,32 @@ export const MedicalRadiologyDropzone: React.FC<
 			</div>
 
 			{/* Title & Subtitle */}
-			<h3 className="text-base sm:text-lg md:text-xl font-bold tracking-tight mb-2 text-slate-900 dark:text-slate-100">
+			<h3 className="text-base sm:text-lg md:text-xl font-bold tracking-tight mb-2 text-white">
 				{title}
 			</h3>
-			<p className="text-xs sm:text-sm max-w-md leading-relaxed mb-6 font-medium text-slate-600 dark:text-slate-400">
+			<p className="text-xs sm:text-sm max-w-md leading-relaxed mb-6 font-medium text-slate-300">
 				{subtitle}
 			</p>
 
 			{/* Supported Formats Tags */}
 			<div className="flex flex-wrap items-center justify-center gap-2 mb-6 max-w-lg">
 				<span
-					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs"
+					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-200 shadow-2xs"
 				>
 					DICOM 3.0 (.dcm)
 				</span>
 				<span
-					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs"
+					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-200 shadow-2xs"
 				>
 					16-bit Grayscale TIFF
 				</span>
 				<span
-					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs"
+					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-200 shadow-2xs"
 				>
 					PNG / JPG высокой четкости
 				</span>
 				<span
-					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-700/60 text-teal-700 dark:text-teal-300 font-bold shadow-2xs"
+					className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-teal-950/80 border border-teal-700/60 text-teal-300 font-bold shadow-2xs"
 				>
 					Vatech / KaVo / Planmeca / Gendex
 				</span>
