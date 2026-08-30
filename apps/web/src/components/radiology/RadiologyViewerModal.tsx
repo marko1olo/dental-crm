@@ -43,8 +43,7 @@ import {
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	ADULT_FDI_TEETH,
@@ -109,6 +108,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [rotation, setRotation] = useState<number>(0);
 	const [flipH, setFlipH] = useState<boolean>(false);
+	const [flipV, setFlipV] = useState<boolean>(false);
 
 	// Active Tool
 	const [activeTool, setActiveTool] = useState<RadiologyViewerTool>("pan");
@@ -224,6 +224,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		setPan({ x: 0, y: 0 });
 		setRotation(0);
 		setFlipH(false);
+		setFlipV(false);
 		setActivePresetId("standard");
 		setBrightness(100);
 		setContrast(100);
@@ -298,6 +299,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		setPan({ x: 0, y: 0 });
 		setRotation(0);
 		setFlipH(false);
+		setFlipV(false);
 		setActivePresetId("standard");
 		setBrightness(100);
 		setContrast(100);
@@ -1073,6 +1075,29 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							{flipH && <Check className="w-3.5 h-3.5 text-teal-400" />}
 						</button>
 
+						{/* 6. Flip Vertical (DEF-C03: Anatomical vertical orientation) */}
+						<button
+							type="button"
+							onClick={() => setFlipV((prev) => !prev)}
+							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+								flipV
+									? "bg-teal-950/80 border border-teal-400 text-teal-300 font-bold"
+									: "hover:bg-slate-800 text-slate-200"
+							}`}
+							title={
+								isUpperJaw
+									? "Отразить по вертикали — Верхняя челюсть (корни вверх / коронка вниз)"
+									: "Отразить по вертикали — Нижняя челюсть (коронка вверх / корни вниз)"
+							}
+							data-testid="tool-flip-v-btn"
+						>
+							<div className="flex items-center gap-2">
+								<RotateCcw className="w-4 h-4 text-slate-300" />
+								<span>Отразить по вертикали</span>
+							</div>
+							{flipV && <Check className="w-3.5 h-3.5 text-teal-400" />}
+						</button>
+
 						{/* 6. Upload / Dropzone */}
 						<button
 							type="button"
@@ -1365,7 +1390,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							style={{
 								transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${
 									flipH ? -1 : 1
-								})`,
+								}) scaleY(${flipV ? -1 : 1})`,
 							}}
 						>
 							<img

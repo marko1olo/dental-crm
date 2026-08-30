@@ -19,6 +19,8 @@ import {
 	Compass,
 	Contrast,
 	Crosshair,
+	Eye,
+	EyeOff,
 	FileArchive,
 	FolderOpen,
 	Hand,
@@ -33,8 +35,7 @@ import {
 	Zap,
 	ZoomIn,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
 	CBCT_HOUNSFIELD_PRESETS,
 	type HounsfieldPreset,
@@ -98,6 +99,10 @@ export interface CbctLeftToolDockProps {
 	readonly onOpenDicomFolder?: (() => void) | undefined;
 	/** Trigger loading real DICOM ZIP archive */
 	readonly onOpenDicomZip?: (() => void) | undefined;
+	/** Clear View mode: temporarily hide all overlays and grids for fine bone crack inspection */
+	readonly isClearView?: boolean | undefined;
+	/** Callback to toggle Clear View mode */
+	readonly onToggleClearView?: (() => void) | undefined;
 
 	/** Optional container class name */
 	readonly className?: string | undefined;
@@ -124,6 +129,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 	onSelectStudioMode,
 	onOpenDicomFolder,
 	onOpenDicomZip,
+	isClearView = false,
+	onToggleClearView,
 	className = "",
 }) => {
 	const [openMenu, setOpenMenu] = useState<FlyoutMenuType>("none");
@@ -807,6 +814,36 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			{/* ─── BOTTOM ACTIONS (PINNED TO BOTTOM) ───────────────────────── */}
 			<div className="mt-auto flex flex-col items-center gap-1.5 w-full shrink-0">
 				<div className="w-7 h-px bg-zinc-800 my-1 shrink-0" role="separator" />
+
+				{/* 10. Clear View (Hide Overlays for Fracture Inspection) */}
+				{onToggleClearView && (
+					<div className="relative group flex items-center justify-center">
+						<button
+							type="button"
+							onClick={onToggleClearView}
+							className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+								isClearView
+									? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
+									: "bg-[#09090b] text-zinc-400 hover:text-white hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
+							}`}
+							title="Режим «Clear View» (Скрыть все оверлеи) [H]"
+							aria-label="Режим Clear View"
+							data-testid="cbct-tool-clear-view"
+						>
+							{isClearView ? <EyeOff className="w-5 h-5 text-amber-400" /> : <Eye className="w-5 h-5" />}
+						</button>
+						<div
+							role="tooltip"
+							className="pointer-events-none absolute left-[48px] bottom-20 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						>
+							<span className="font-semibold">Clear View</span>
+							<span className="text-zinc-400 text-[11px]">{isClearView ? "Оверлеи скрыты" : "Осмотр трещин"}</span>
+							<kbd className="text-[10px] bg-zinc-900 text-cyan-300 px-1.5 py-0.5 rounded border border-zinc-800 font-mono">
+								H
+							</kbd>
+						</div>
+					</div>
+				)}
 
 				{/* 11. Invert LUT (Negative/Positive toggle) */}
 				<div className="relative group flex items-center justify-center">

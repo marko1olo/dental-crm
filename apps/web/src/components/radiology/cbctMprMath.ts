@@ -83,6 +83,8 @@ export interface CbctVoxelVolume {
 	data: Int16Array | null; // Calibrated HU data in 1D contiguous buffer: index = z * (W * H) + y * W + x
 	readonly minHU: number;
 	readonly maxHU: number;
+	readonly rescaleSlope?: number;
+	readonly rescaleIntercept?: number;
 	readonly defaultWindowWidth?: number;
 	readonly defaultWindowLevel?: number;
 	readonly isDisposed: boolean;
@@ -407,7 +409,9 @@ export function drawCalibratedMillimeterRulers(
 				ctx.lineWidth = 1.0;
 				ctx.lineTo(x, 8);
 				ctx.stroke();
-				if (mm > 0 && x + 14 < widthPx) {
+				// Avoid collision with center anatomical orientation badge 'A'/'S' at x ~ widthPx / 2
+				const isNearCenter = Math.abs(x - widthPx / 2) < 18;
+				if (mm > 0 && x + 14 < widthPx && !isNearCenter) {
 					if (invertColors && typeof ctx.strokeText === "function") {
 						ctx.strokeStyle = haloColor;
 						ctx.lineWidth = 2.0;
@@ -623,13 +627,26 @@ export function getTissueNameFromHU(hu: number): string {
 }
 
 /**
+ * Calibrates raw 12/16-bit CT voxel data using Rescale Slope & Rescale Intercept (DICOM Part 3 PS 3.3).
+ * Strictly clamps output to physical radiological CT bounds [-1000 .. +3071] HU.
+ */
+export function calibrateRawToHU(
+	rawVoxel: number,
+	rescaleSlope = 1.0,
+	rescaleIntercept = 0.0,
+): number {
+	const hu = rawVoxel * rescaleSlope + rescaleIntercept;
+	return Math.max(-1000, Math.min(3071, Math.round(hu)));
+}
+
+/**
  * Formats a point HU probe measurement with anatomical tissue description.
  * Adheres to DEF-17.1: Strictly formatted as `${huValue > 0 ? '+' : ''}${huValue} HU (${tissueName})`.
- * Prevents any double HU repetition or dot insertion.
+ * Prevents any double HU repetition or dot insertion, with physical clamping [-1000..3071].
  */
 export function formatHuProbe(hu: number, tissueName?: string): string {
-	const roundedHu = Math.round(hu);
-	const sign = roundedHu > 0 ? "+" : "";
+	const clampedHu = Math.max(-1000, Math.min(3071, Math.round(hu)));
+	const sign = clampedHu > 0 ? "+" : "";
 	let cleanTissue = tissueName;
 	if (cleanTissue) {
 		// Strip outer HU prefix if already formatted like "+950 HU (tissue)" or "950 HU · tissue" or "+950 HU • tissue"
@@ -643,8 +660,8 @@ export function formatHuProbe(hu: number, tissueName?: string): string {
 			}
 		}
 	}
-	const tissue = cleanTissue || getTissueNameFromHU(roundedHu);
-	return `${sign}${roundedHu} HU (${tissue})`;
+	const tissue = cleanTissue || getTissueNameFromHU(clampedHu);
+	return `${sign}${clampedHu} HU (${tissue})`;
 }
 
 /**
@@ -1267,14 +1284,26 @@ export function voxelToWorldMm(
  * Clamps real-world millimeter coordinates strictly inside the 3D volume bounding box.
  */
 export function clampCoordinateToVolume(worldMm: Point3D, volume: CbctVoxelVolume): Point3D {
+	if (!volume) return { ...worldMm };
 	const halfX = volume.physicalSizeMm.x / 2;
 	const halfY = volume.physicalSizeMm.y / 2;
 	const halfZ = volume.physicalSizeMm.z / 2;
 
+	const minX = Math.min(volume.originMm.x, -halfX);
+	const maxX = Math.max(volume.originMm.x + volume.physicalSizeMm.x, halfX);
+	const minY = Math.min(volume.originMm.y, -halfY);
+	const maxY = Math.max(volume.originMm.y + volume.physicalSizeMm.y, halfY);
+	const minZ = Math.min(volume.originMm.z, -halfZ);
+	const maxZ = Math.max(volume.originMm.z + volume.physicalSizeMm.z, halfZ);
+
+	const safeX = Number.isFinite(worldMm.x) ? Math.max(minX, Math.min(maxX, worldMm.x)) : 0;
+	const safeY = Number.isFinite(worldMm.y) ? Math.max(minY, Math.min(maxY, worldMm.y)) : 0;
+	const safeZ = Number.isFinite(worldMm.z) ? Math.max(minZ, Math.min(maxZ, worldMm.z)) : 0;
+
 	return {
-		x: Math.max(-halfX, Math.min(halfX, worldMm.x)),
-		y: Math.max(-halfY, Math.min(halfY, worldMm.y)),
-		z: Math.max(-halfZ, Math.min(halfZ, worldMm.z)),
+		x: Number(safeX.toFixed(2)),
+		y: Number(safeY.toFixed(2)),
+		z: Number(safeZ.toFixed(2)),
 	};
 }
 
@@ -1282,7 +1311,8 @@ export function clampCoordinateToVolume(worldMm: Point3D, volume: CbctVoxelVolum
  * Calculates current slice index for a specific plane from world millimeters.
  */
 export function calculateMprSliceIndex(worldMm: Point3D, plane: MprPlane, volume: CbctVoxelVolume): number {
-	const vox = worldMmToVoxel(worldMm, volume);
+	const clamped = clampCoordinateToVolume(worldMm, volume);
+	const vox = worldMmToVoxel(clamped, volume);
 	switch (plane) {
 		case "axial":
 			return vox.z;
@@ -1296,7 +1326,7 @@ export function calculateMprSliceIndex(worldMm: Point3D, plane: MprPlane, volume
 // ─── 2. VOXEL SAMPLING & HOUNSFIELD WINDOWING ────────────────────────────────
 
 /**
- * Safely samples Hounsfield Unit (HU) from volume buffer with boundary checking.
+ * Safely samples Hounsfield Unit (HU) from volume buffer with boundary checking and RescaleSlope/Intercept calibration.
  * Overloaded: supports (x, y, z, volume) and (volume, x, y, z).
  */
 export function sampleVoxelHU(
@@ -1337,11 +1367,15 @@ export function sampleVoxelHU(
 	}
 
 	const index = z * (volume.dimensions.width * volume.dimensions.height) + y * volume.dimensions.width + x;
-	return volume.data[index] ?? -1000;
+	const raw = volume.data[index] ?? -1000;
+	const slope = volume.rescaleSlope ?? 1.0;
+	const intercept = volume.rescaleIntercept ?? 0.0;
+	const hu = (slope !== 1.0 || intercept !== 0.0) ? raw * slope + intercept : raw;
+	return Math.max(-1000, Math.min(3071, Math.round(hu)));
 }
 
 /**
- * Trilinear continuous sub-voxel interpolation of Hounsfield Unit (HU).
+ * Trilinear continuous sub-voxel interpolation of Hounsfield Unit (HU) with RescaleSlope/Intercept calibration.
  * Guarantees smooth, anti-aliased reslicing without nearest-neighbor jagged comb artifacts.
  */
 export function sampleVoxelTrilinearHU(
@@ -1396,7 +1430,11 @@ export function sampleVoxelTrilinearHU(
 	const c0 = c00 + dy * (c10 - c00);
 	const c1 = c01 + dy * (c11 - c01);
 
-	return c0 + dz * (c1 - c0);
+	const rawHu = c0 + dz * (c1 - c0);
+	const slope = volume.rescaleSlope ?? 1.0;
+	const intercept = volume.rescaleIntercept ?? 0.0;
+	const hu = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
+	return Math.max(-1000, Math.min(3071, Math.round(hu)));
 }
 
 /**
@@ -1424,6 +1462,7 @@ export function worldMmToVoxelContinuous(
  * Supports:
  * - Sub-millisecond window width / window level contrast calculations.
  * - Negative / Inverted X-ray LUT (White Paper mode) via `invert = true`.
+ * - Anti-blinding dark background: Air voxels (HU < -600) remain deep dark (#090d16 -> 10) on inversion.
  * - Non-linear gamma VOI transfer curve via `gamma`.
  */
 export function generate16BitLut(
@@ -1440,6 +1479,11 @@ export function generate16BitLut(
 
 	const lowIdx = Math.max(0, Math.min(65536, Math.floor(low + 32768)));
 	const highIdx = Math.max(0, Math.min(65536, Math.ceil(high + 32768)));
+
+	// Air threshold for anti-blinding in inverted LUT: HU < -600 keeps deep dark background (#090d16 -> 10)
+	const airThresholdHU = -600;
+	const airThresholdIdx = Math.max(0, Math.min(65536, Math.floor(airThresholdHU + 32768)));
+	const darkAirVal = 10; // #090d16 deep dark background
 
 	const bottomVal = invert ? 255 : 0;
 	const topVal = invert ? 0 : 255;
@@ -1463,6 +1507,13 @@ export function generate16BitLut(
 			const corrected = isGamma ? Math.pow(normalized, gamma) : normalized;
 			const val = Math.round(corrected * 255);
 			lut[i] = invert ? 255 - val : val;
+		}
+	}
+
+	// Invert LUT: keep ambient air voxels (HU < -600) deep dark (#090d16) to eliminate white background blinding
+	if (invert) {
+		for (let i = 0; i < airThresholdIdx; i++) {
+			lut[i] = darkAirVal;
 		}
 	}
 
@@ -1783,6 +1834,205 @@ export function mapCanvasPointerToWorldMm(
 // ─── 4. CBCT VOXEL VOLUME UTILITIES ──────────────────────────────────────────
 
 /**
+ * Generates an anatomically authentic 3D dental CBCT volume with true Hounsfield Unit (HU) voxels:
+ * - Mandibular parabolic arch with cortical plate (1450 HU), trabecular marrow (450 HU), and mandibular canals (IAN).
+ * - Maxillary bone, hard palate, and bilateral air-filled maxillary sinuses (-1000 HU).
+ * - Maxillary teeth (18..28) with crowns occlusal (z=0..3mm) and roots pointing UP/cranially (z=3..11mm) towards the sinus floor.
+ * - Mandibular teeth (48..38) with crowns occlusal (z=-3..0mm) and roots pointing DOWN/apically (z=-11..-3mm), safely >= 4.5mm above the IAN canal.
+ * - Soft tissue facial envelope (+40 HU) and ambient air (-1000 HU).
+ * Eliminates pitch black screens (#000000) in all MPR viewports (DEF-C01).
+ */
+export function createSyntheticDentalCbctVolume(
+	width = 160,
+	height = 160,
+	depth = 100,
+	voxelSpacingMm = 0.4,
+): CbctVoxelVolume {
+	const totalVoxels = width * height * depth;
+	const buffer = new Int16Array(totalVoxels).fill(-1000); // Ambient air outside
+
+	const physW = width * voxelSpacingMm;
+	const physH = height * voxelSpacingMm;
+	const physD = depth * voxelSpacingMm;
+
+	const originX = -physW / 2;
+	const originY = -physH / 2;
+	const originZ = -physD / 2;
+
+	let minHU = 3071;
+	let maxHU = -1000;
+
+	for (let k = 0; k < depth; k++) {
+		const zMm = originZ + (k + 0.5) * voxelSpacingMm;
+		const sliceOffset = k * width * height;
+
+		for (let j = 0; j < height; j++) {
+			const yMm = originY + (j + 0.5) * voxelSpacingMm;
+			const rowOffset = sliceOffset + j * width;
+
+			for (let i = 0; i < width; i++) {
+				const xMm = originX + (i + 0.5) * voxelSpacingMm;
+				const idx = rowOffset + i;
+
+				// Parabolic dental arch: y = -18 + 0.038 * x^2
+				const archY = -18 + 0.038 * (xMm * xMm);
+				const distToArchY = yMm - archY;
+				const absDistToArch = Math.abs(distToArchY);
+				const absX = Math.abs(xMm);
+
+				let hu = -1000;
+
+				// 1. Soft tissue facial envelope
+				const facialRadius = Math.hypot(xMm, yMm + 6);
+				if (facialRadius < 30 && zMm > -18 && zMm < 18) {
+					hu = 40;
+				}
+
+				// 2. Mandibular bone arch (zMm: -18 to -2, absX <= 26)
+				if (zMm >= -18 && zMm <= -2 && absX <= 26) {
+					const mandibleWidth = 8.5;
+					if (absDistToArch <= mandibleWidth / 2) {
+						const distFromSurface = (mandibleWidth / 2) - absDistToArch;
+						const distFromBase = zMm - (-18);
+
+						if (distFromSurface < 1.4 || distFromBase < 1.6 || absDistToArch > 3.0) {
+							hu = 1450 + Math.round((Math.sin(xMm * 3) + Math.cos(zMm * 2)) * 80);
+						} else {
+							hu = 450 + Math.round((Math.sin(xMm * 7) * Math.cos(yMm * 5 + zMm * 4)) * 120);
+						}
+
+						// Mandibular Canal (IAN) at z = -15.5mm..-17mm
+						if (absX >= 12 && absX <= 24) {
+							const canalZ = -15.5 + (absX - 12) * 0.1;
+							const canalDist = Math.hypot(distToArchY + 0.3, zMm - canalZ);
+							if (canalDist < 1.4) {
+								hu = -30; // Soft tissue / nerve bundle inside canal
+							} else if (canalDist < 1.9) {
+								hu = 950; // Cortical wall of mandibular canal
+							}
+						}
+					}
+				}
+
+				// 3. Mandibular teeth (48..38: zMm between -12 and +1)
+				if (zMm >= -12 && zMm <= +1 && absX <= 24) {
+					if (absDistToArch <= 4.0) {
+						const toothPeriod = Math.sin(absX * 0.85);
+						if (toothPeriod > -0.4) {
+							const toothCenterDist = Math.hypot(distToArchY, (absX % 4.5) - 2.25);
+							if (zMm >= -3) {
+								if (toothCenterDist < 3.2) {
+									if (toothCenterDist > 2.2) {
+										hu = 2650; // Enamel
+									} else if (toothCenterDist > 0.8) {
+										hu = 1350; // Dentin
+									} else {
+										hu = 50; // Pulp
+									}
+								}
+							} else if (zMm >= -11) {
+								const rootRadius = 2.4 * (1.0 - ((-3 - zMm) / 9.0) * 0.55);
+								if (toothCenterDist < rootRadius) {
+									if (toothCenterDist > 0.6) {
+										hu = 1250; // Dentin of root
+									} else {
+										hu = 40; // Root canal
+									}
+								}
+							}
+						}
+					}
+				}
+
+				// 4. Maxillary bone & sinuses (zMm between +1 and +18)
+				if (zMm >= +1 && zMm <= +18 && absX <= 26) {
+					const maxillaWidth = 8.0;
+					if (absDistToArch <= maxillaWidth / 2 && zMm <= +8) {
+						const distFromSurface = (maxillaWidth / 2) - absDistToArch;
+						if (distFromSurface < 1.3 || zMm <= +2.5) {
+							hu = 1250;
+						} else {
+							hu = 400;
+						}
+					}
+
+					if (zMm >= +6 && zMm <= +8.5 && yMm > -14 && yMm < 14 && absX < 18) {
+						hu = 1100;
+					}
+
+					// Maxillary Sinuses
+					if (absX >= 9 && absX <= 25 && yMm >= -8 && yMm <= 16 && zMm >= +6 && zMm <= +18) {
+						const sinusDist = Math.hypot(absX - 17, (yMm - 4) * 0.8, (zMm - 12) * 0.9);
+						if (sinusDist < 7.5) {
+							hu = -1000;
+						} else if (sinusDist < 8.8) {
+							hu = 1200;
+						}
+					}
+
+					// Nasal cavity
+					if (absX < 7 && yMm >= -16 && yMm <= 10 && zMm >= +6 && zMm <= +18) {
+						if (absX < 0.9) {
+							hu = 950;
+						} else {
+							hu = -1000;
+						}
+					}
+				}
+
+				// 5. Maxillary teeth (18..28: zMm between 0 and +12)
+				if (zMm >= 0 && zMm <= +12 && absX <= 24) {
+					if (absDistToArch <= 3.8) {
+						const toothPeriod = Math.sin(absX * 0.85);
+						if (toothPeriod > -0.4) {
+							const toothCenterDist = Math.hypot(distToArchY, (absX % 4.5) - 2.25);
+							if (zMm <= +3) {
+								if (toothCenterDist < 3.2) {
+									if (toothCenterDist > 2.2) {
+										hu = 2650;
+									} else if (toothCenterDist > 0.8) {
+										hu = 1350;
+									} else {
+										hu = 50;
+									}
+								}
+							} else if (zMm <= +11) {
+								const rootRadius = 2.3 * (1.0 - ((zMm - 3) / 9.0) * 0.55);
+								if (toothCenterDist < rootRadius) {
+									if (toothCenterDist > 0.6) {
+										hu = 1250;
+									} else {
+										hu = 40;
+									}
+								}
+							}
+						}
+					}
+				}
+
+				buffer[idx] = hu;
+				if (hu < minHU) minHU = hu;
+				if (hu > maxHU) maxHU = hu;
+			}
+		}
+	}
+
+	return {
+		id: `synthetic-dental-cbct-${Date.now()}`,
+		dimensions: { width, height, depth },
+		spacingMm: { x: voxelSpacingMm, y: voxelSpacingMm, z: voxelSpacingMm },
+		originMm: { x: originX, y: originY, z: originZ },
+		physicalSizeMm: { x: physW, y: physH, z: physD },
+		data: buffer,
+		minHU: Math.max(-1000, minHU),
+		maxHU: Math.min(3071, maxHU),
+		defaultWindowWidth: 4400,
+		defaultWindowLevel: 1300,
+		isDisposed: false,
+	};
+}
+
+/**
  * Creates an empty or flat-field CBCT voxel volume for mathematical coordinate calculations and tests.
  */
 export function createEmptyCbctVolume(
@@ -1817,8 +2067,6 @@ export function createEmptyCbctVolume(
 		isDisposed: false,
 	};
 }
-
-export const createSyntheticDentalCbctVolume = createEmptyCbctVolume;
 
 /**
  * Explicitly releases TypedArray buffers to prevent GPU/RAM memory leaks.

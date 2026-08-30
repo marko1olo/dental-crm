@@ -31,6 +31,11 @@
 			"import": "./dist/imaging/index.js",
 			"default": "./dist/imaging/index.js"
 		},
+		"./dicom": {
+			"types": "./dist/dicom/index.d.ts",
+			"import": "./dist/dicom/index.js",
+			"default": "./dist/dicom/index.js"
+		},
 		"./radiology": {
 			"types": "./dist/radiology/index.d.ts",
 			"import": "./dist/radiology/index.js",
@@ -95,6 +100,11 @@
 			"types": "./dist/doctor-portal/index.d.ts",
 			"import": "./dist/doctor-portal/index.js",
 			"default": "./dist/doctor-portal/index.js"
+		},
+		"./doctor": {
+			"types": "./dist/doctor/index.d.ts",
+			"import": "./dist/doctor/index.js",
+			"default": "./dist/doctor/index.js"
 		},
 		"./branches": {
 			"types": "./dist/branches/index.d.ts",

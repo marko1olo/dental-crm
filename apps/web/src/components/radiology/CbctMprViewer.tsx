@@ -54,6 +54,7 @@ import {
 	calculateMprSliceIndex,
 	clampCoordinateToVolume,
 	createEmptyCbctVolume,
+	createSyntheticDentalCbctVolume,
 	disposeCbctVolume,
 	drawCalibratedMillimeterRulers,
 	drawRomexisSlabCorridor,
@@ -142,10 +143,21 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		cross_section: DEFAULT_VIEWPORT_TRANSFORM,
 	});
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null);
+	const [isClearView, setIsClearView] = useState<boolean>(false);
+
+	const handleToggleClearView = useCallback(() => {
+		setIsClearView((prev) => !prev);
+	}, []);
 
 	const handleToggleMaximize = useCallback((type: CbctViewportType) => {
-		setMaximizedViewport((prev) => (prev === type ? null : type));
-	}, []);
+		setMaximizedViewport((prev) => {
+			const next = prev === type ? null : type;
+			if (volume) {
+				setCrosshairMm((cur) => clampCoordinateToVolume(cur, volume));
+			}
+			return next;
+		});
+	}, [volume]);
 
 	// Interactive drag states
 	const [activeDraggingPlane, setActiveDraggingPlane] = useState<MprPlane | null>(null);
@@ -259,8 +271,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			if (propVolume.defaultWindowWidth) setWindowWidth(propVolume.defaultWindowWidth);
 			if (propVolume.defaultWindowLevel) setWindowLevel(propVolume.defaultWindowLevel);
 		} else {
-			const emptyVol = createEmptyCbctVolume(160, 160, 100, 0.4);
-			setVolume(emptyVol);
+			const synVol = createSyntheticDentalCbctVolume(160, 160, 100, 0.4);
+			setVolume(synVol);
+			if (synVol.defaultWindowWidth) setWindowWidth(synVol.defaultWindowWidth);
+			if (synVol.defaultWindowLevel) setWindowLevel(synVol.defaultWindowLevel);
 		}
 
 		return () => {
@@ -579,7 +593,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 	// Render crisp DOM HTML/CSS overlays (anti-pixelation badges)
 	const renderViewportOverlays = useCallback((plane: MprPlane) => {
-		if (!volume) return null;
+		if (!volume || isClearView) return null;
 		const transform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
 
 		return (
@@ -788,136 +802,138 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 				ctx.drawImage(off, 0, 0);
 
-				// Draw Calibrated Millimeter Rulers (1mm, 5mm, 10mm + scale bar)
-				drawCalibratedMillimeterRulers(ctx, {
-					widthPx: w,
-					heightPx: h,
-					pixelSpacingMmX: metadata.pixelSpacingX,
-					pixelSpacingMmY: metadata.pixelSpacingY,
-					showScaleBar: true,
-					invertColors,
-				});
-
-				// Draw Focal Trough Corridor on Axial (Purple dashed bounds)
-				if (archCurve.focalTroughThicknessMm > 0 && archCurve.splinePointsMm.length > 1) {
-					const { innerBoundary, outerBoundary } = getFocalTroughBoundaryCurves(
-						archCurve.splinePointsMm,
-						archCurve.focalTroughThicknessMm,
-					);
-
-					// Focal trough translucent fill corridor
-					ctx.save();
-					ctx.fillStyle = ROMEXIS_COLORS.panoramicRgba(0.06);
-					ctx.beginPath();
-					for (let i = 0; i < outerBoundary.length; i++) {
-						const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
-						if (i === 0) ctx.moveTo(v.x, v.y);
-						else ctx.lineTo(v.x, v.y);
-					}
-					for (let i = innerBoundary.length - 1; i >= 0; i--) {
-						const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
-						ctx.lineTo(v.x, v.y);
-					}
-					ctx.closePath();
-					ctx.fill();
-
-					// Inner and outer dashed curves
-					ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.5);
-					ctx.lineWidth = 1.0;
-					ctx.setLineDash([4, 3]);
-
-					ctx.beginPath();
-					for (let i = 0; i < innerBoundary.length; i++) {
-						const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
-						if (i === 0) ctx.moveTo(v.x, v.y);
-						else ctx.lineTo(v.x, v.y);
-					}
-					ctx.stroke();
-
-					ctx.beginPath();
-					for (let i = 0; i < outerBoundary.length; i++) {
-						const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
-						if (i === 0) ctx.moveTo(v.x, v.y);
-						else ctx.lineTo(v.x, v.y);
-					}
-					ctx.stroke();
-					ctx.restore();
-				}
-
-				// Draw Dental Arch Spline & Interactive Manipulators (Purple #a855f7 & Teal #2dd4bf)
-				if (showDentalArch) {
-					ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.95);
-					ctx.lineWidth = 2.0;
-					ctx.beginPath();
-					const spline = archCurve.splinePointsMm;
-					for (let i = 0; i < spline.length; i++) {
-						const pt = spline[i]!;
-						const v = worldMmToVoxel({ x: pt.x, y: pt.y, z: crosshairMm.z }, volume);
-						if (i === 0) ctx.moveTo(v.x, v.y);
-						else ctx.lineTo(v.x, v.y);
-					}
-					ctx.stroke();
-
-					// Draw Interactive 24x24px Control Point Manipulators with 6px Teal-400 core
-					drawDentalArchControlPointManipulators(ctx, {
-						archCurve,
-						volume,
-						transform: transforms.axial,
-						crosshairZMm: crosshairMm.z,
-						selectedAnchorIdx: selectedArchAnchorIdx,
-						hoveredAnchorIdx: hoveredArchAnchorIdx,
-						draggingAnchorIdx: isDraggingArchAnchor,
-						activeToothFdi: crossSections[selectedCrossSectionIndex]?.nearestToothFdi ?? null,
+				if (!isClearView) {
+					// Draw Calibrated Millimeter Rulers (1mm, 5mm, 10mm + scale bar)
+					drawCalibratedMillimeterRulers(ctx, {
+						widthPx: w,
+						heightPx: h,
+						pixelSpacingMmX: metadata.pixelSpacingX,
+						pixelSpacingMmY: metadata.pixelSpacingY,
+						showScaleBar: true,
 						invertColors,
 					});
-				}
 
-				// Active Cross-Section Slice indicator line on Axial (Yellow #eab308)
-				if (crossSections.length > 0) {
-					const activeCS = crossSections[selectedCrossSectionIndex];
-					if (activeCS) {
-						const norm = activeCS.normalVector2D;
-						const centerV = worldMmToVoxel(activeCS.centerPointMm, volume);
-						const halfLenMm = 10.0;
-						const p1 = worldMmToVoxel({
-							x: activeCS.centerPointMm.x - norm.x * halfLenMm,
-							y: activeCS.centerPointMm.y - norm.y * halfLenMm,
-							z: crosshairMm.z,
-						}, volume);
-						const p2 = worldMmToVoxel({
-							x: activeCS.centerPointMm.x + norm.x * halfLenMm,
-							y: activeCS.centerPointMm.y + norm.y * halfLenMm,
-							z: crosshairMm.z,
-						}, volume);
+					// Draw Focal Trough Corridor on Axial (Purple dashed bounds)
+					if (archCurve.focalTroughThicknessMm > 0 && archCurve.splinePointsMm.length > 1) {
+						const { innerBoundary, outerBoundary } = getFocalTroughBoundaryCurves(
+							archCurve.splinePointsMm,
+							archCurve.focalTroughThicknessMm,
+						);
 
-						ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
-						ctx.lineWidth = 2.0;
+						// Focal trough translucent fill corridor
+						ctx.save();
+						ctx.fillStyle = ROMEXIS_COLORS.panoramicRgba(0.06);
 						ctx.beginPath();
-						ctx.moveTo(p1.x, p1.y);
-						ctx.lineTo(p2.x, p2.y);
+						for (let i = 0; i < outerBoundary.length; i++) {
+							const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
+							if (i === 0) ctx.moveTo(v.x, v.y);
+							else ctx.lineTo(v.x, v.y);
+						}
+						for (let i = innerBoundary.length - 1; i >= 0; i--) {
+							const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
+							ctx.lineTo(v.x, v.y);
+						}
+						ctx.closePath();
+						ctx.fill();
+
+						// Inner and outer dashed curves
+						ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.5);
+						ctx.lineWidth = 1.0;
+						ctx.setLineDash([4, 3]);
+
+						ctx.beginPath();
+						for (let i = 0; i < innerBoundary.length; i++) {
+							const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
+							if (i === 0) ctx.moveTo(v.x, v.y);
+							else ctx.lineTo(v.x, v.y);
+						}
 						ctx.stroke();
 
-						ctx.fillStyle = ROMEXIS_COLORS.crossSection;
 						ctx.beginPath();
-						ctx.arc(centerV.x, centerV.y, 4.0, 0, Math.PI * 2);
-						ctx.fill();
+						for (let i = 0; i < outerBoundary.length; i++) {
+							const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
+							if (i === 0) ctx.moveTo(v.x, v.y);
+							else ctx.lineTo(v.x, v.y);
+						}
+						ctx.stroke();
+						ctx.restore();
 					}
+
+					// Draw Dental Arch Spline & Interactive Manipulators (Purple #a855f7 & Teal #2dd4bf)
+					if (showDentalArch) {
+						ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.95);
+						ctx.lineWidth = 2.0;
+						ctx.beginPath();
+						const spline = archCurve.splinePointsMm;
+						for (let i = 0; i < spline.length; i++) {
+							const pt = spline[i]!;
+							const v = worldMmToVoxel({ x: pt.x, y: pt.y, z: crosshairMm.z }, volume);
+							if (i === 0) ctx.moveTo(v.x, v.y);
+							else ctx.lineTo(v.x, v.y);
+						}
+						ctx.stroke();
+
+						// Draw Interactive 24x24px Control Point Manipulators with 6px Teal-400 core
+						drawDentalArchControlPointManipulators(ctx, {
+							archCurve,
+							volume,
+							transform: transforms.axial,
+							crosshairZMm: crosshairMm.z,
+							selectedAnchorIdx: selectedArchAnchorIdx,
+							hoveredAnchorIdx: hoveredArchAnchorIdx,
+							draggingAnchorIdx: isDraggingArchAnchor,
+							activeToothFdi: crossSections[selectedCrossSectionIndex]?.nearestToothFdi ?? null,
+							invertColors,
+						});
+					}
+
+					// Active Cross-Section Slice indicator line on Axial (Yellow #eab308)
+					if (crossSections.length > 0) {
+						const activeCS = crossSections[selectedCrossSectionIndex];
+						if (activeCS) {
+							const norm = activeCS.normalVector2D;
+							const centerV = worldMmToVoxel(activeCS.centerPointMm, volume);
+							const halfLenMm = 10.0;
+							const p1 = worldMmToVoxel({
+								x: activeCS.centerPointMm.x - norm.x * halfLenMm,
+								y: activeCS.centerPointMm.y - norm.y * halfLenMm,
+								z: crosshairMm.z,
+							}, volume);
+							const p2 = worldMmToVoxel({
+								x: activeCS.centerPointMm.x + norm.x * halfLenMm,
+								y: activeCS.centerPointMm.y + norm.y * halfLenMm,
+								z: crosshairMm.z,
+							}, volume);
+
+							ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
+							ctx.lineWidth = 2.0;
+							ctx.beginPath();
+							ctx.moveTo(p1.x, p1.y);
+							ctx.lineTo(p2.x, p2.y);
+							ctx.stroke();
+
+							ctx.fillStyle = ROMEXIS_COLORS.crossSection;
+							ctx.beginPath();
+							ctx.arc(centerV.x, centerV.y, 4.0, 0, Math.PI * 2);
+							ctx.fill();
+						}
+					}
+
+					// Draw Oblique Crosshair with Rotation Handles
+					drawObliqueCrosshairWithRotationHandles(ctx, {
+						widthPx: w,
+						heightPx: h,
+						centerPx: { x: vox.x, y: vox.y },
+						plane: "axial",
+						rotationDeg: obliqueAngles.axialAngleDeg,
+						showHandles: true,
+						showAngleBadge: true,
+						invertColors,
+					});
+
+					// Draw Measurements, HU Probes and 3D Nerve with Distance Gating
+					drawPlaneVectorOverlays(ctx, "axial", volume);
 				}
-
-				// Draw Oblique Crosshair with Rotation Handles
-				drawObliqueCrosshairWithRotationHandles(ctx, {
-					widthPx: w,
-					heightPx: h,
-					centerPx: { x: vox.x, y: vox.y },
-					plane: "axial",
-					rotationDeg: obliqueAngles.axialAngleDeg,
-					showHandles: true,
-					showAngleBadge: true,
-					invertColors,
-				});
-
-				// Draw Measurements, HU Probes and 3D Nerve with Distance Gating
-				drawPlaneVectorOverlays(ctx, "axial", volume);
 
 				ctx.restore();
 			}
@@ -961,34 +977,36 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 				ctx.drawImage(off, 0, 0);
 
-				// Draw Calibrated Millimeter Rulers
-				drawCalibratedMillimeterRulers(ctx, {
-					widthPx: w,
-					heightPx: h,
-					pixelSpacingMmX: metadata.pixelSpacingX,
-					pixelSpacingMmY: metadata.pixelSpacingY,
-					showScaleBar: true,
-					invertColors,
-				});
+				if (!isClearView) {
+					// Draw Calibrated Millimeter Rulers
+					drawCalibratedMillimeterRulers(ctx, {
+						widthPx: w,
+						heightPx: h,
+						pixelSpacingMmX: metadata.pixelSpacingX,
+						pixelSpacingMmY: metadata.pixelSpacingY,
+						showScaleBar: true,
+						invertColors,
+					});
 
-				// Draw Oblique Crosshair with Rotation Handles
-				const depthMax = Math.max(1, volume.dimensions.depth - 1);
-				const coronalCenterSlice = { x: vox.x, y: depthMax - vox.z };
-				drawObliqueCrosshairWithRotationHandles(ctx, {
-					widthPx: w,
-					heightPx: h,
-					centerPx: coronalCenterSlice,
-					plane: "coronal",
-					rotationDeg: obliqueAngles.coronalTiltDeg,
-					activeHandle: activeRotationHandle?.plane === "coronal" ? activeRotationHandle.handle : null,
-					hoveredHandle: hoveredHandle?.plane === "coronal" ? hoveredHandle.handle : null,
-					showHandles: true,
-					showAngleBadge: true,
-					invertColors,
-				});
+					// Draw Oblique Crosshair with Rotation Handles
+					const depthMax = Math.max(1, volume.dimensions.depth - 1);
+					const coronalCenterSlice = { x: vox.x, y: depthMax - vox.z };
+					drawObliqueCrosshairWithRotationHandles(ctx, {
+						widthPx: w,
+						heightPx: h,
+						centerPx: coronalCenterSlice,
+						plane: "coronal",
+						rotationDeg: obliqueAngles.coronalTiltDeg,
+						activeHandle: activeRotationHandle?.plane === "coronal" ? activeRotationHandle.handle : null,
+						hoveredHandle: hoveredHandle?.plane === "coronal" ? hoveredHandle.handle : null,
+						showHandles: true,
+						showAngleBadge: true,
+						invertColors,
+					});
 
-				// Draw Measurements, HU Probes and 3D Nerve with Distance Gating
-				drawPlaneVectorOverlays(ctx, "coronal", volume);
+					// Draw Measurements, HU Probes and 3D Nerve with Distance Gating
+					drawPlaneVectorOverlays(ctx, "coronal", volume);
+				}
 
 				ctx.restore();
 			}
@@ -1032,39 +1050,41 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 				ctx.drawImage(off, 0, 0);
 
-				// Draw Calibrated Millimeter Rulers
-				drawCalibratedMillimeterRulers(ctx, {
-					widthPx: w,
-					heightPx: h,
-					pixelSpacingMmX: metadata.pixelSpacingX,
-					pixelSpacingMmY: metadata.pixelSpacingY,
-					showScaleBar: true,
-					invertColors,
-				});
+				if (!isClearView) {
+					// Draw Calibrated Millimeter Rulers
+					drawCalibratedMillimeterRulers(ctx, {
+						widthPx: w,
+						heightPx: h,
+						pixelSpacingMmX: metadata.pixelSpacingX,
+						pixelSpacingMmY: metadata.pixelSpacingY,
+						showScaleBar: true,
+						invertColors,
+					});
 
-				// Draw Oblique Crosshair with Rotation Handles
-				const depthMax = Math.max(1, volume.dimensions.depth - 1);
-				const sagittalCenterSlice = { x: vox.y, y: depthMax - vox.z };
-				drawObliqueCrosshairWithRotationHandles(ctx, {
-					widthPx: w,
-					heightPx: h,
-					centerPx: sagittalCenterSlice,
-					plane: "sagittal",
-					rotationDeg: obliqueAngles.sagittalTiltDeg,
-					activeHandle: activeRotationHandle?.plane === "sagittal" ? activeRotationHandle.handle : null,
-					hoveredHandle: hoveredHandle?.plane === "sagittal" ? hoveredHandle.handle : null,
-					showHandles: true,
-					showAngleBadge: true,
-					invertColors,
-				});
+					// Draw Oblique Crosshair with Rotation Handles
+					const depthMax = Math.max(1, volume.dimensions.depth - 1);
+					const sagittalCenterSlice = { x: vox.y, y: depthMax - vox.z };
+					drawObliqueCrosshairWithRotationHandles(ctx, {
+						widthPx: w,
+						heightPx: h,
+						centerPx: sagittalCenterSlice,
+						plane: "sagittal",
+						rotationDeg: obliqueAngles.sagittalTiltDeg,
+						activeHandle: activeRotationHandle?.plane === "sagittal" ? activeRotationHandle.handle : null,
+						hoveredHandle: hoveredHandle?.plane === "sagittal" ? hoveredHandle.handle : null,
+						showHandles: true,
+						showAngleBadge: true,
+						invertColors,
+					});
 
-				// Draw Measurements, HU Probes and 3D Nerve with Distance Gating
-				drawPlaneVectorOverlays(ctx, "sagittal", volume);
+					// Draw Measurements, HU Probes and 3D Nerve with Distance Gating
+					drawPlaneVectorOverlays(ctx, "sagittal", volume);
+				}
 
 				ctx.restore();
 			}
 		}
-	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle, invertColors, showDentalArch, selectedArchAnchorIdx, hoveredArchAnchorIdx, isDraggingArchAnchor, drawPlaneVectorOverlays]);
+	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle, invertColors, showDentalArch, selectedArchAnchorIdx, hoveredArchAnchorIdx, isDraggingArchAnchor, drawPlaneVectorOverlays, isClearView]);
 
 	useEffect(() => {
 		renderMprPlanes();
@@ -1644,8 +1664,14 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	}, [activeViewport]);
 
 	const handleToggleMaximizeActive = useCallback(() => {
-		setMaximizedViewport((prev) => (prev === activeViewport ? null : activeViewport));
-	}, [activeViewport]);
+		setMaximizedViewport((prev) => {
+			const next = prev === activeViewport ? null : activeViewport;
+			if (volume) {
+				setCrosshairMm((cur) => clampCoordinateToVolume(cur, volume));
+			}
+			return next;
+		});
+	}, [activeViewport, volume]);
 
 	const handleSelectPreset = useCallback((preset: { id: string; windowWidth: number; windowLevel: number }) => {
 		setActivePresetId(preset.id);
@@ -1673,6 +1699,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		onZoom: handleKeyboardZoom,
 		onResetTransform: handleResetTransform,
 		onToggleMaximize: handleToggleMaximizeActive,
+		onToggleClearView: handleToggleClearView,
 		onSelectPreset: handleSelectPresetShortcut,
 	});
 
@@ -2066,6 +2093,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					showDentalArch={showDentalArch}
 					onToggleDentalArch={() => setShowDentalArch((prev) => !prev)}
 					onAutoDetectArch={handleAutoDetectArch}
+					isClearView={isClearView}
+					onToggleClearView={handleToggleClearView}
 				/>
 
 				<main className="flex-1 min-h-0 relative bg-black flex flex-col overflow-hidden">
@@ -2476,6 +2505,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				isHelpOpen={isHelpOpen}
 				onToggleMaximize={handleToggleMaximizeActive}
 				isMaximized={maximizedViewport !== null}
+				isClearView={isClearView}
+				onToggleClearView={handleToggleClearView}
 			/>
 		</div>
 	);
