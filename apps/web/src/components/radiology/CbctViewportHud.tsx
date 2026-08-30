@@ -41,6 +41,7 @@ export interface CbctViewportHudProps {
 	readonly zoomFactor?: number | undefined;
 	readonly windowWidth?: number | undefined;
 	readonly windowLevel?: number | undefined;
+	readonly children?: React.ReactNode | undefined;
 }
 
 interface OrientationCube3DProps {
@@ -158,6 +159,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 	zoomFactor,
 	windowWidth,
 	windowLevel,
+	children,
 }) => {
 	const labels = useMemo(() => getViewportOrientationLabels(viewportType), [viewportType]);
 
@@ -185,6 +187,9 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 			className={`absolute inset-0 pointer-events-none overflow-hidden z-20 select-none ${className}`}
 			data-testid={`cbct-viewport-hud-${viewportType}`}
 		>
+			{/* Custom HTML/CSS Overlays (e.g. Calipers, Angles, Probes, Nerve Badges) */}
+			{children}
+
 			{/* 1. TOP-LEFT CLINICAL HEADER BADGE */}
 			<div
 				className="absolute top-2 left-2 flex items-center gap-1 pointer-events-auto flex-nowrap min-w-0 max-w-[calc(100%-80px)] z-20"

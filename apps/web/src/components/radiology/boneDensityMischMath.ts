@@ -335,4 +335,111 @@ export function formatMischProtocolToDiaryText(
 	return lines.join("\n");
 }
 
+/**
+ * Maps any raw Hounsfield Unit (HU) measurement to clinical tissue classification and Misch bone category.
+ */
+export function getMischTissueDescription(hu: number): {
+	readonly nameRu: string;
+	readonly boneClass?: MischBoneClass | undefined;
+	readonly badgeColor: string;
+	readonly textColor: string;
+	readonly isHighRisk: boolean;
+} {
+	if (hu > 1500) {
+		return {
+			nameRu: "Эмаль / Дентин / Кортикал",
+			boneClass: "D1",
+			badgeColor: "#10b981",
+			textColor: "text-emerald-300",
+			isHighRisk: false,
+		};
+	}
+	if (hu >= 1250) {
+		return {
+			nameRu: "Плотная кость D1",
+			boneClass: "D1",
+			badgeColor: "#06b6d4",
+			textColor: "text-cyan-300",
+			isHighRisk: false,
+		};
+	}
+	if (hu >= 850) {
+		return {
+			nameRu: "Губчатая кость D2",
+			boneClass: "D2",
+			badgeColor: "#14b8a6",
+			textColor: "text-teal-300",
+			isHighRisk: false,
+		};
+	}
+	if (hu >= 350) {
+		return {
+			nameRu: "Пористая кость D3",
+			boneClass: "D3",
+			badgeColor: "#38bdf8",
+			textColor: "text-sky-300",
+			isHighRisk: false,
+		};
+	}
+	if (hu >= 150) {
+		return {
+			nameRu: "Мягкая кость D4",
+			boneClass: "D4",
+			badgeColor: "#f59e0b",
+			textColor: "text-amber-300",
+			isHighRisk: true,
+		};
+	}
+	if (hu >= 0) {
+		return {
+			nameRu: "Экстремально мягкая кость D5",
+			boneClass: "D5",
+			badgeColor: "#ef4444",
+			textColor: "text-rose-300",
+			isHighRisk: true,
+		};
+	}
+	if (hu >= -400) {
+		return {
+			nameRu: "Мягкие ткани / Жир",
+			badgeColor: "#a855f7",
+			textColor: "text-purple-300",
+			isHighRisk: false,
+		};
+	}
+	return {
+		nameRu: "Воздух / Верхнечелюстной синус",
+		badgeColor: "#64748b",
+		textColor: "text-slate-300",
+		isHighRisk: false,
+	};
+}
+
+/**
+ * Returns high-contrast CSS class tokens for HTML/DOM measurement badges over bone backgrounds.
+ */
+export function getMischBadgeCssClasses(hu: number): {
+	readonly bg: string;
+	readonly text: string;
+	readonly border: string;
+} {
+	const tissue = getMischTissueDescription(hu);
+	return {
+		bg: "bg-slate-900/80 backdrop-blur",
+		text: tissue.textColor || "text-teal-300",
+		border: tissue.isHighRisk ? "border-amber-500/60" : "border-slate-700/80",
+	};
+}
+
+/**
+ * Formats a short diagnostic tooltip for HU density probe badge.
+ */
+export function formatMischTooltip(hu: number): string {
+	const tissue = getMischTissueDescription(hu);
+	if (tissue.boneClass) {
+		return `${hu} HU — ${tissue.nameRu} (Класс ${tissue.boneClass})`;
+	}
+	return `${hu} HU — ${tissue.nameRu}`;
+}
+
 

@@ -109,6 +109,19 @@ export function calculatePhysicalDistanceMm(
 }
 
 /**
+ * Calculates Euclidean physical 3D distance between two spatial points in millimeters.
+ */
+export function calculatePhysicalDistance3DMm(
+	p1: Point3D,
+	p2: Point3D,
+): number {
+	const dx = p2.x - p1.x;
+	const dy = p2.y - p1.y;
+	const dz = p2.z - p1.z;
+	return Number(Math.hypot(dx, dy, dz).toFixed(2));
+}
+
+/**
  * Оценка анатомической пригодности альвеолярного гребня для дентальной имплантации
  */
 export function evaluateAlveolarRidgeFeasibility(
@@ -1407,4 +1420,117 @@ export {
 	type Projected3DNerveResult,
 	type Project3DNerveOptions,
 } from "./dentalCurveEngine";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. MEASUREMENT INTERFACES & HTML/CSS DOM OVERLAY HELPERS (WCAG AAA CONTRAST)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Измерение линейкой (Caliper Ruler) в физических миллиметрах
+ */
+export interface CbctMeasurementRuler {
+	readonly id: string;
+	readonly plane: "axial" | "coronal" | "sagittal" | "panoramic" | "cross_section";
+	readonly startMm: Point3D;
+	readonly endMm: Point3D;
+	readonly distanceMm: number;
+	readonly fdiTooth?: string | null | undefined;
+	readonly label?: string | undefined;
+}
+
+/**
+ * Точечный маркер замера плотности HU (Probe Marker)
+ */
+export interface CbctProbeMarker {
+	readonly id: string;
+	readonly plane: "axial" | "coronal" | "sagittal" | "panoramic" | "cross_section";
+	readonly worldMm: Point3D;
+	readonly hu: number;
+	readonly tissueName: string;
+	readonly mischClass?: string | undefined;
+}
+
+/**
+ * Данные для рендеринга HTML/CSS оверлея бейджа линейки
+ */
+export interface RulerHtmlOverlayData {
+	readonly id: string;
+	readonly plane: string;
+	readonly text: string;
+	readonly xPx: number;
+	readonly yPx: number;
+	readonly distanceMm: number;
+	readonly isSelected: boolean;
+}
+
+/**
+ * Данные для рендеринга HTML/CSS оверлея бейджа угла
+ */
+export interface AngleHtmlOverlayData {
+	readonly id: string;
+	readonly plane: string;
+	readonly text: string;
+	readonly xPx: number;
+	readonly yPx: number;
+	readonly angleDeg: number;
+	readonly isSelected: boolean;
+}
+
+/**
+ * Данные для рендеринга HTML/CSS оверлея бейджа плотности HU
+ */
+export interface ProbeHtmlOverlayData {
+	readonly id: string;
+	readonly plane: string;
+	readonly text: string;
+	readonly tooltip: string;
+	readonly xPx: number;
+	readonly yPx: number;
+	readonly hu: number;
+	readonly tissueName: string;
+	readonly isSelected: boolean;
+}
+
+/**
+ * Данные для рендеринга HTML/CSS оверлея бейджа 3D-нерва
+ */
+export interface NerveHtmlOverlayData {
+	readonly text: string;
+	readonly xPx: number;
+	readonly yPx: number;
+	readonly totalLengthMm: number;
+	readonly safetyMarginMm: number;
+	readonly visibleNodeCount: number;
+}
+
+/**
+ * Форматирование текста длины линейки (мм)
+ */
+export function formatRulerBadgeText(distanceMm: number): string {
+	return `${distanceMm.toFixed(1)} мм`;
+}
+
+/**
+ * Форматирование текста угла (градусы)
+ */
+export function formatAngleBadgeText(angleDeg: number): string {
+	return `${angleDeg.toFixed(1)}°`;
+}
+
+/**
+ * Форматирование текста плотности HU
+ */
+export function formatProbeBadgeText(hu: number, tissueName?: string): string {
+	return tissueName ? `${hu} HU · ${tissueName}` : `${hu} HU`;
+}
+
+/**
+ * Форматирование текста бейджа хода нижнечелюстного канала (IAN)
+ */
+export function formatNerveBadgeText(
+	totalLengthMm: number,
+	safetyMarginMm = MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
+): string {
+	return `Канал IAN (3D ${totalLengthMm.toFixed(1)} мм · ${safetyMarginMm.toFixed(1)} мм буфер)`;
+}
 
