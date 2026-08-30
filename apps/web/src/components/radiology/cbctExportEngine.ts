@@ -222,8 +222,8 @@ export async function exportCleanViewportSnapshot(
 	const shouldShowScaleBar =
 		options.showScaleBar ?? !options.hideScaleBar;
 
-	// 1. Draw solid background (white for toner saving, black for dark screen snapshot)
-	ctx.fillStyle = isInvertToner ? "#ffffff" : "#000000";
+	// 1. Draw solid background (always black base for standard DICOM slices)
+	ctx.fillStyle = "#000000";
 	ctx.fillRect(0, 0, width, height);
 
 	// 2. Draw source slice image from canvas (with LUT pixel inversion if toner saving is active)
@@ -240,7 +240,7 @@ export async function exportCleanViewportSnapshot(
 							d[i] = 255 - d[i]!; // R
 							d[i + 1] = 255 - d[i + 1]!; // G
 							d[i + 2] = 255 - d[i + 2]!; // B
-							// Alpha channel is preserved
+							d[i + 3] = 255; // Ensure solid alpha
 						}
 						ctx.putImageData(imgData, 0, 0);
 					}
@@ -670,10 +670,10 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
       print-color-adjust: exact;
     }
     .cbct-report-page {
-      max-height: 260mm !important;
-      overflow: hidden !important;
+      width: 100% !important;
+      max-height: 275mm !important;
       page-break-inside: avoid !important;
-      page-break-after: avoid !important;
+      page-break-after: auto !important;
     }
   }
   * {
@@ -693,8 +693,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .cbct-report-page {
     width: 100%;
     max-width: 194mm;
-    max-height: 260mm;
-    overflow: hidden;
+    max-height: 275mm;
     page-break-inside: avoid;
     margin: 0 auto;
   }

@@ -620,7 +620,7 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 
 		// Single-page containment CSS
 		assert.ok(html.includes(".cbct-report-page"));
-		assert.ok(html.includes("max-height: 260mm"));
+		assert.ok(html.includes("max-height: 275mm"));
 		assert.ok(html.includes("page-break-inside: avoid"));
 
 		// @media print block

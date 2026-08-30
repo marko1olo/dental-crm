@@ -459,14 +459,14 @@ export function drawDentalArchControlPointManipulators(
 		);
 		const screen = slicePxToScreenPx(slicePx, activeTransform);
 
-		// 1. Dark underlay halo (prevents contrast loss over bright cortical bone or metal)
-		ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
-		ctx.beginPath();
-		ctx.arc(screen.x, screen.y, 9, 0, Math.PI * 2);
-		ctx.fill();
-
-		// 2. Interactive hitbox ring (24x24px touch/drag boundary = 12px radius)
+		// 1. Interactive hitbox ring (24x24px touch/drag boundary = 12px radius)
 		if (isDragging) {
+			// Dark underlay halo only on active interaction to prevent contrast loss
+			ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 14, 0, Math.PI * 2);
+			ctx.fill();
+
 			// Dragging state: Vibrant Cyan Glow (24px touch circle)
 			ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
 			ctx.strokeStyle = "#38bdf8";
@@ -479,11 +479,17 @@ export function drawDentalArchControlPointManipulators(
 			// Center core
 			ctx.fillStyle = "#ffffff";
 			ctx.beginPath();
-			ctx.arc(screen.x, screen.y, 5, 0, Math.PI * 2);
+			ctx.arc(screen.x, screen.y, 4, 0, Math.PI * 2);
 			ctx.fill();
 		} else if (isHovered) {
-			// Hovered state: Bright Gold/Cyan Active Hitbox Ring (24px diameter)
-			ctx.fillStyle = "rgba(168, 85, 247, 0.3)";
+			// Dark underlay halo
+			ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 14, 0, Math.PI * 2);
+			ctx.fill();
+
+			// Hovered state: Bright Gold Active Hitbox Ring (24px diameter)
+			ctx.fillStyle = "rgba(234, 179, 8, 0.25)";
 			ctx.strokeStyle = "#eab308";
 			ctx.lineWidth = 2.0;
 			ctx.beginPath();
@@ -494,7 +500,7 @@ export function drawDentalArchControlPointManipulators(
 			// Center core
 			ctx.fillStyle = "#ffffff";
 			ctx.beginPath();
-			ctx.arc(screen.x, screen.y, 4.5, 0, Math.PI * 2);
+			ctx.arc(screen.x, screen.y, 4, 0, Math.PI * 2);
 			ctx.fill();
 		} else if (isSelected) {
 			// Selected state: Highlighted Violet Ring
@@ -502,21 +508,21 @@ export function drawDentalArchControlPointManipulators(
 			ctx.strokeStyle = "#c084fc";
 			ctx.lineWidth = 1.5;
 			ctx.beginPath();
-			ctx.arc(screen.x, screen.y, 9, 0, Math.PI * 2);
+			ctx.arc(screen.x, screen.y, 8, 0, Math.PI * 2);
 			ctx.fill();
 			ctx.stroke();
 
 			ctx.fillStyle = "#ffffff";
 			ctx.beginPath();
-			ctx.arc(screen.x, screen.y, 4, 0, Math.PI * 2);
+			ctx.arc(screen.x, screen.y, 3.5, 0, Math.PI * 2);
 			ctx.fill();
 		} else {
-			// Default state: Purple control point with crisp white core
-			ctx.fillStyle = "rgba(168, 85, 247, 0.9)";
-			ctx.strokeStyle = "#ffffff";
-			ctx.lineWidth = 1.5;
+			// Idle state: Delicate hairline anchor point (3.0px) - ZERO occlusion of root apices and bone
+			ctx.fillStyle = invertColors ? "rgba(124, 58, 237, 0.9)" : "rgba(192, 132, 252, 0.9)";
+			ctx.strokeStyle = invertColors ? "#000000" : "#ffffff";
+			ctx.lineWidth = 1.0;
 			ctx.beginPath();
-			ctx.arc(screen.x, screen.y, 5.5, 0, Math.PI * 2);
+			ctx.arc(screen.x, screen.y, 3.0, 0, Math.PI * 2);
 			ctx.fill();
 			ctx.stroke();
 		}

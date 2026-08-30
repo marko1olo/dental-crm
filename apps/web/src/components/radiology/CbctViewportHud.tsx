@@ -201,9 +201,9 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 						className="w-1.5 h-1.5 rounded-full shrink-0"
 						style={{ backgroundColor: labels.planeColor }}
 					/>
-					<span className="text-slate-100 tracking-wide font-medium text-[11px] truncate">{labels.planeNameEn}</span>
+					<span className="text-slate-100 tracking-wide font-semibold text-[11.5px] truncate">{labels.planeNameRu}</span>
 					{coordText && (
-						<span className="font-mono text-slate-400 text-[9.5px] font-normal ml-0.5 whitespace-nowrap shrink-0">
+						<span className="font-mono text-slate-300 text-[10px] font-medium ml-1 whitespace-nowrap shrink-0">
 							({coordText})
 						</span>
 					)}
@@ -310,12 +310,10 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				</div>
 			</div>
 
-			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE (Rendered in maximized/fullscreen mode to eliminate 4x visual clutter in 2x2 grid) */}
-			{isMaximized && (
-				<div className="absolute bottom-1.5 right-1.5 pointer-events-auto z-20">
-					<OrientationCube3D viewportType={viewportType} size={36} />
-				</div>
-			)}
+			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE (Compact 28px in 2x2 grid, 40px in maximized mode) */}
+			<div className="absolute bottom-1.5 right-1.5 pointer-events-auto z-20">
+				<OrientationCube3D viewportType={viewportType} size={isMaximized ? 40 : 28} />
+			</div>
 		</div>
 	);
 };

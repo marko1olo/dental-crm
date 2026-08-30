@@ -105,6 +105,7 @@ import {
 	sampleVoxelHU,
 	voxelToWorldMm,
 	worldMmToVoxel,
+	getCompositeViewportCanvas,
 } from "./cbctMprMath";
 import { useCbctKeyboardShortcuts, applyStepZoom, isEditableElement } from "./useCbctKeyboardShortcuts";
 import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
@@ -4138,21 +4139,21 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
 		const pixelSpacing = volume?.spacingMm.x ?? 0.4;
 
-		// Clean viewport snapshot
-		const activeCanvas =
+		// Clean viewport snapshot using composite of base slice raster and overlay vector UI
+		const activeCompositeCanvas =
 			activeViewport === "cross_section"
-				? crossSectionCanvasRef.current
+				? getCompositeViewportCanvas(crossSectionBaseCanvasRef.current, crossSectionOverlayCanvasRef.current)
 				: activeViewport === "panoramic"
-					? panoCanvasRef.current
+					? getCompositeViewportCanvas(panoBaseCanvasRef.current, panoOverlayCanvasRef.current)
 					: activeViewport === "coronal"
-						? coronalCanvasRef.current
+						? getCompositeViewportCanvas(coronalBaseCanvasRef.current, coronalOverlayCanvasRef.current)
 						: activeViewport === "sagittal"
-							? sagittalCanvasRef.current
-							: axialCanvasRef.current;
+							? getCompositeViewportCanvas(sagittalBaseCanvasRef.current, sagittalOverlayCanvasRef.current)
+							: getCompositeViewportCanvas(axialBaseCanvasRef.current, axialOverlayCanvasRef.current);
 
-		if (activeCanvas) {
+		if (activeCompositeCanvas) {
 			await exportCleanViewportSnapshot(
-				activeCanvas,
+				activeCompositeCanvas,
 				`Снимок КЛКТ (FDI #${targetTooth})`,
 				pixelSpacing,
 				{
@@ -4199,10 +4200,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
 		const pixelSpacing = volume?.spacingMm.x ?? 0.4;
 
-		// Capture clean snapshots of all available viewports with Smart White Paper Inversion (Toner Saving) and cleanForReport (no UI watermark/patient overlay redundancy)
-		const axialSnap = axialCanvasRef.current
+		// Composite Base Canvas (DICOM grayscale slice) and Overlay Canvas (CAD vectors & calipers)
+		const compositeAxial = getCompositeViewportCanvas(axialBaseCanvasRef.current, axialOverlayCanvasRef.current);
+		const compositePano = getCompositeViewportCanvas(panoBaseCanvasRef.current, panoOverlayCanvasRef.current);
+		const compositeCrossSection = getCompositeViewportCanvas(crossSectionBaseCanvasRef.current, crossSectionOverlayCanvasRef.current);
+		const compositeSagittal = getCompositeViewportCanvas(sagittalBaseCanvasRef.current, sagittalOverlayCanvasRef.current);
+		const compositeCoronal = getCompositeViewportCanvas(coronalBaseCanvasRef.current, coronalOverlayCanvasRef.current);
+
+		const axialSnap = compositeAxial
 			? await exportCleanViewportSnapshot(
-					axialCanvasRef.current,
+					compositeAxial,
 					`Аксиальный срез (Z = ${crosshairMm.z.toFixed(1)} мм)`,
 					pixelSpacing,
 					{
@@ -4216,9 +4223,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				)
 			: undefined;
 
-		const panoSnap = panoCanvasRef.current
+		const panoSnap = compositePano
 			? await exportCleanViewportSnapshot(
-					panoCanvasRef.current,
+					compositePano,
 					"Панорамная реконструкция (ОПТГ)",
 					pixelSpacing,
 					{
@@ -4232,9 +4239,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				)
 			: undefined;
 
-		const crossSectionSnap = crossSectionCanvasRef.current
+		const crossSectionSnap = compositeCrossSection
 			? await exportCleanViewportSnapshot(
-					crossSectionCanvasRef.current,
+					compositeCrossSection,
 					`Кросс-секция ложа FDI #${targetTooth}`,
 					pixelSpacing,
 					{
@@ -4248,9 +4255,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				)
 			: undefined;
 
-		const sagittalSnap = sagittalCanvasRef.current
+		const sagittalSnap = compositeSagittal
 			? await exportCleanViewportSnapshot(
-					sagittalCanvasRef.current,
+					compositeSagittal,
 					`Сагиттальный срез (X = ${crosshairMm.x.toFixed(1)} мм)`,
 					pixelSpacing,
 					{
@@ -4262,9 +4269,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						cleanForReport: true,
 					},
 				)
-			: coronalCanvasRef.current
+			: compositeCoronal
 				? await exportCleanViewportSnapshot(
-						coronalCanvasRef.current,
+						compositeCoronal,
 						`Фронтальный срез (Y = ${crosshairMm.y.toFixed(1)} мм)`,
 						pixelSpacing,
 						{
@@ -4341,20 +4348,24 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "axial"
 					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
-					: "border border-zinc-800"
+					: "border border-cyan-500/30 hover:border-cyan-500/60"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-axial"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
-					ref={axialCanvasRef}
+					ref={axialBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={axialOverlayCanvasRef}
 					onDoubleClick={(e) => handleCanvasDoubleClick("axial", e)}
 					onMouseDown={(e) => handleCanvasMouseDown("axial", e)}
 					onMouseMove={(e) => handleCanvasMouseMove("axial", e)}
 					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("axial", e)}
 					style={{ cursor: getCanvasCursor("axial") }}
-					className="w-full h-full object-contain"
+					className="absolute inset-0 w-full h-full object-contain z-10"
 				/>
 				<CbctViewportHud
 					viewportType="axial"
@@ -4381,20 +4392,24 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "coronal"
 					? "ring-1 ring-orange-500/50 border border-orange-500/80 shadow-orange-950/30"
-					: "border border-zinc-800"
+					: "border border-orange-500/30 hover:border-orange-500/60"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-coronal"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
-					ref={coronalCanvasRef}
+					ref={coronalBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={coronalOverlayCanvasRef}
 					onDoubleClick={(e) => handleCanvasDoubleClick("coronal", e)}
 					onMouseDown={(e) => handleCanvasMouseDown("coronal", e)}
 					onMouseMove={(e) => handleCanvasMouseMove("coronal", e)}
 					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("coronal", e)}
 					style={{ cursor: getCanvasCursor("coronal") }}
-					className="w-full h-full object-contain"
+					className="absolute inset-0 w-full h-full object-contain z-10"
 				/>
 				<CbctViewportHud
 					viewportType="coronal"
@@ -4421,20 +4436,24 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "sagittal"
 					? "ring-1 ring-emerald-500/50 border border-emerald-500/80 shadow-emerald-950/30"
-					: "border border-zinc-800"
+					: "border border-emerald-500/30 hover:border-emerald-500/60"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-sagittal"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
-					ref={sagittalCanvasRef}
+					ref={sagittalBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={sagittalOverlayCanvasRef}
 					onDoubleClick={(e) => handleCanvasDoubleClick("sagittal", e)}
 					onMouseDown={(e) => handleCanvasMouseDown("sagittal", e)}
 					onMouseMove={(e) => handleCanvasMouseMove("sagittal", e)}
 					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("sagittal", e)}
 					style={{ cursor: getCanvasCursor("sagittal") }}
-					className="w-full h-full object-contain"
+					className="absolute inset-0 w-full h-full object-contain z-10"
 				/>
 				<CbctViewportHud
 					viewportType="sagittal"
@@ -4461,13 +4480,17 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "panoramic"
 					? "ring-1 ring-purple-500/50 border border-purple-500/80 shadow-purple-950/30"
-					: "border border-zinc-800"
+					: "border border-purple-500/30 hover:border-purple-500/60"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-panoramic"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
-					ref={panoCanvasRef}
+					ref={panoBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={panoOverlayCanvasRef}
 					onDoubleClick={(e) => {
 						e.preventDefault();
 						e.stopPropagation();
@@ -4478,7 +4501,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseUp={handlePanoMouseUp}
 					onMouseLeave={handlePanoMouseUp}
 					onWheel={(e) => handleCanvasWheel("panoramic", e)}
-					className="w-full h-full object-contain cursor-pointer"
+					className="absolute inset-0 w-full h-full object-contain cursor-pointer z-10"
 					data-testid="cbct-panorama-canvas"
 				/>
 				<CbctViewportHud
@@ -4504,13 +4527,17 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			className={`relative bg-black rounded-md overflow-hidden transition-all flex-1 flex flex-col min-h-0 w-full h-full ${
 				activeViewport === "cross_section"
 					? "ring-1 ring-yellow-500/50 border border-yellow-500/80 shadow-yellow-950/30"
-					: "border border-zinc-800"
+					: "border border-yellow-500/30 hover:border-yellow-500/60"
 			}`}
 			data-testid="cbct-viewport-container-cross-section"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
-					ref={crossSectionCanvasRef}
+					ref={crossSectionBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={crossSectionOverlayCanvasRef}
 					onDoubleClick={(e) => {
 						e.preventDefault();
 						e.stopPropagation();
@@ -4521,7 +4548,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseUp={handleCrossSectionMouseUp}
 					onMouseLeave={handleCrossSectionMouseUp}
 					onWheel={(e) => handleCanvasWheel("cross_section", e)}
-					className={`w-full h-full object-contain ${
+					className={`absolute inset-0 w-full h-full object-contain z-10 ${
 						dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
 					}`}
 					data-testid="cbct-cross-section-canvas"
@@ -5021,10 +5048,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					{/* Cross-Section Viewport Canvas */}
 					<div
 						onDoubleClick={() => handleToggleMaximize("cross_section")}
-						className="relative h-56 bg-black rounded-md overflow-hidden border border-zinc-800 flex items-center justify-center shrink-0 w-full"
+						className="relative h-56 bg-black rounded-md overflow-hidden border border-yellow-500/40 flex items-center justify-center shrink-0 w-full"
 					>
 						<canvas
-							ref={crossSectionCanvasRef}
+							ref={crossSectionBaseCanvasRef}
+							className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+						/>
+						<canvas
+							ref={crossSectionOverlayCanvasRef}
 							onDoubleClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
@@ -5034,7 +5065,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							onMouseMove={handleCrossSectionMouseMove}
 							onMouseUp={handleCrossSectionMouseUp}
 							onMouseLeave={handleCrossSectionMouseUp}
-							className={`w-full h-full object-contain ${
+							className={`absolute inset-0 w-full h-full object-contain z-10 ${
 								dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
 							}`}
 							data-testid="cbct-cross-section-sidebar-canvas"
