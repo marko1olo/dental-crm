@@ -1632,11 +1632,11 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 			{/* Responsive Mobile & Desktop Quadrant Adapter Bar (Compact Space-Efficient) */}
 			{!hideQuadrantSwitcher && (
 				<div className="odontogram-quadrant-bar mb-2 select-none" data-testid="odontogram-quadrant-bar">
-					<div className="flex items-center gap-1.5 flex-wrap w-full">
+					<div className="flex items-center gap-2 flex-wrap w-full">
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant("all")}
-							className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
 								currentQuadrant === "all"
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -1647,15 +1647,15 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 							Все зубы ({pediatricMode ? "20" : showWisdomTeeth ? "32" : "28"})
 						</button>
 
-						<div className="h-4 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
+						<div className="h-5 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
 
-						{/* Quadrant buttons in a sleek inline strip */}
-						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-1.5 flex-1 min-w-0">
+						{/* Quadrant buttons in a sleek inline strip (>= 44px touch targets) */}
+						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 flex-1 min-w-0">
 							{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(pediatricMode ? "Q5" : "Q1")}
-								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (pediatricMode ? "Q5" : "Q1")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -1664,14 +1664,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 								data-testid={pediatricMode ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q5 55–51" : "Q1 18–11"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·П</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·П</span>
 							</button>
 
 							{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(pediatricMode ? "Q6" : "Q2")}
-								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (pediatricMode ? "Q6" : "Q2")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -1680,14 +1680,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 								data-testid={pediatricMode ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q6 61–65" : "Q2 21–28"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·Л</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·Л</span>
 							</button>
 
 							{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(pediatricMode ? "Q8" : "Q4")}
-								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (pediatricMode ? "Q8" : "Q4")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -1696,14 +1696,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 								data-testid={pediatricMode ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q8 85–81" : "Q4 48–41"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·П</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·П</span>
 							</button>
 
 							{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(pediatricMode ? "Q7" : "Q3")}
-								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (pediatricMode ? "Q7" : "Q3")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -1712,7 +1712,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 								data-testid={pediatricMode ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q7 71–75" : "Q3 31–38"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·Л</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·Л</span>
 							</button>
 						</div>
 					</div>

@@ -12,7 +12,6 @@ import {
 	type ResorptionVisualProps,
 	type DentitionMode,
 } from "./pediatricDentitionEngine";
-import "./odontogram.css";
 
 export { getNextFocusedTooth, getToothStateFromHotkey };
 export type { DentitionMode };
@@ -319,9 +318,9 @@ export const MIXED_TOP_TEETH = [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26];
 export const MIXED_BOTTOM_TEETH = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36];
 
 /**
- * Нижняя граница масштаба. Дуга масштабируется под экран мобильного устройства (375px–414px).
+ * Нижняя граница масштаба. Дуга масштабируется под экран мобильного устройства (360px–414px).
  */
-const MIN_ARCH_SCALE = 0.35;
+const MIN_ARCH_SCALE = 0.28; // Adaptive mobile scaling down to 0.28 (MIN_ARCH_SCALE = 0.35 baseline)
 
 /** "56px" × 0.68 → "38.08px". Нечисловое значение возвращается как есть. */
 function scaleCssPx(value: string, factor: number): string {
@@ -985,8 +984,8 @@ const ToothSVG = ({
 	const cfg = getToothConfig(number);
 	const colors = getToothColors(state, material);
 
-	const scaledWidth = scaleCssPx(cfg.width, scale);
-	const scaledHeight = scaleCssPx(cfg.height, scale);
+	const scaledWidth = scaleCssPx(cfg.width, scale * 1.3);
+	const scaledHeight = scaleCssPx(cfg.height, scale * 1.3);
 
 	const isRightSide =
 		(number >= 21 && number <= 28) ||
@@ -2482,8 +2481,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		const recalculate = () => {
 			const element = archContainerRef.current;
 			if (!element) return;
-			// 16px safety buffer for container inner padding
-			const available = Math.max(0, element.clientWidth - 16);
+			// 8px safety buffer for container inner padding
+			const available = Math.max(0, element.clientWidth - 8);
 			const row = element.querySelector<HTMLElement>(".teeth-row");
 			if (!available || !row) return;
 
@@ -2494,8 +2493,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			const isQuadrantView = currentQuadrant !== "all";
 			const minScale = isQuadrantView ? 0.75 : MIN_ARCH_SCALE;
 			const next = Math.min(
-				1.75,
-				Math.max(minScale, available / naturalWidth),
+				2.2,
+				Math.max(minScale, (available / naturalWidth) * 1.3),
 			);
 			if (Math.abs(applied - next) < 0.005) return;
 			appliedArchScaleRef.current = next;
@@ -2753,11 +2752,11 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			{/* Responsive Mobile & Desktop Quadrant Adapter Bar (Compact Space-Efficient) */}
 			{!hideQuadrantSwitcher && (
 				<div className="odontogram-quadrant-bar mb-2 select-none" data-testid="odontogram-quadrant-bar">
-					<div className="flex items-center gap-1.5 flex-wrap w-full">
+					<div className="flex items-center gap-2 flex-wrap w-full">
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant("all")}
-							className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
 								currentQuadrant === "all"
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -2768,15 +2767,15 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							Все зубы ({isMixedEffective ? "24" : isPediatricEffective ? "20" : "32"})
 						</button>
 
-						<div className="h-4 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
+						<div className="h-5 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
 
-						{/* Quadrant buttons in a sleek inline strip */}
-						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-1.5 flex-1 min-w-0">
+						{/* Quadrant buttons in a sleek inline strip (>= 44px touch targets) */}
+						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 flex-1 min-w-0">
 							{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q5" : "Q1")}
-								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (isPediatricEffective ? "Q5" : "Q1")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -2784,15 +2783,15 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 								title={isPediatricEffective ? "Q5 55–51 (Верхняя челюсть, Правый)" : "Q1 18–11 (Верхняя челюсть, Правый)"}
 								data-testid={isPediatricEffective ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
 							>
-								<span className="font-extrabold truncate">{isPediatricEffective ? "Q5 55–51" : "Q1 18–11"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">ВЧ·П</span>
+								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q5 55–51" : "Q1 18–11"}</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·П</span>
 							</button>
 
 							{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q6" : "Q2")}
-								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (isPediatricEffective ? "Q6" : "Q2")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -2800,15 +2799,15 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 								title={isPediatricEffective ? "Q6 61–65 (Верхняя челюсть, Левый)" : "Q2 21–28 (Верхняя челюсть, Левый)"}
 								data-testid={isPediatricEffective ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
 							>
-								<span className="font-extrabold truncate">{isPediatricEffective ? "Q6 61–65" : "Q2 21–28"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">ВЧ·Л</span>
+								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q6 61–65" : "Q2 21–28"}</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·Л</span>
 							</button>
 
 							{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q8" : "Q4")}
-								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (isPediatricEffective ? "Q8" : "Q4")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -2816,15 +2815,15 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 								title={isPediatricEffective ? "Q8 85–81 (Нижняя челюсть, Правый)" : "Q4 48–41 (Нижняя челюсть, Правый)"}
 								data-testid={isPediatricEffective ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
 							>
-								<span className="font-extrabold truncate">{isPediatricEffective ? "Q8 85–81" : "Q4 48–41"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">НЧ·П</span>
+								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q8 85–81" : "Q4 48–41"}</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·П</span>
 							</button>
 
 							{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q7" : "Q3")}
-								className={`quadrant-btn min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (isPediatricEffective ? "Q7" : "Q3")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -2832,8 +2831,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 								title={isPediatricEffective ? "Q7 71–75 (Нижняя челюсть, Левый)" : "Q3 31–38 (Нижняя челюсть, Левый)"}
 								data-testid={isPediatricEffective ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
 							>
-								<span className="font-extrabold truncate">{isPediatricEffective ? "Q7 71–75" : "Q3 31–38"}</span>
-								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase">НЧ·Л</span>
+								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q7 71–75" : "Q3 31–38"}</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·Л</span>
 							</button>
 						</div>
 					</div>

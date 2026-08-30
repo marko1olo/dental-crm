@@ -244,7 +244,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 			)}
 
 			<div
-				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm"
+				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm pb-28 pr-4 sm:pr-96 touch-pan-x"
 				data-testid="schedule-grid-view"
 				role="region"
 				aria-label="Сетка расписания по креслам и времени"

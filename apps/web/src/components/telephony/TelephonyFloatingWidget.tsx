@@ -132,6 +132,44 @@ export function TelephonyFloatingWidget({
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const waveformRef = useRef<HTMLDivElement | null>(null);
 
+	// Auto-detect open modals/dialogs/drawers to hide softphone FAB and prevent covering table/action buttons
+	const [hasActiveModal, setHasActiveModal] = useState(false);
+
+	useEffect(() => {
+		if (typeof document === "undefined") return;
+
+		const checkModals = () => {
+			const activeModalEl = document.querySelector(
+				'[role="dialog"], [aria-modal="true"], dialog[open], .modal-overlay, .modal-backdrop, .fixed.inset-0, .sanpin-modal-overlay, .treatment-plan-modal, [data-modal-open="true"], [data-drawer-open="true"], [data-sheet-open="true"], [data-studio-open="true"]',
+			);
+			setHasActiveModal(Boolean(activeModalEl));
+		};
+
+		checkModals();
+
+		const observer = new MutationObserver(() => {
+			checkModals();
+		});
+
+		observer.observe(document.body, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			attributeFilter: [
+				"class",
+				"open",
+				"data-modal-open",
+				"data-drawer-open",
+				"data-sheet-open",
+				"data-studio-open",
+				"role",
+				"aria-modal",
+			],
+		});
+
+		return () => observer.disconnect();
+	}, []);
+
 	// Expand automatically when an incoming call arrives
 	useEffect(() => {
 		if (activeCall) {
@@ -430,7 +468,7 @@ export function TelephonyFloatingWidget({
 
 	return createPortal(
 		<div
-			className={`dnt-telephony-floating ${className}`}
+			className={`dnt-telephony-floating ${hasActiveModal && !activeCall ? "dnt-telephony-floating--hidden" : ""} ${className}`}
 			data-testid="telephony-floating-widget"
 		>
 			{/* Collapsed Floating Launcher (44px compact badge on desktop/mobile) */}
@@ -526,41 +564,41 @@ export function TelephonyFloatingWidget({
 						</div>
 
 						<div className="flex items-center gap-1">
-							{/* Simulator launcher - 32px */}
+							{/* Simulator launcher - >= 44x44px */}
 							<button
 								type="button"
 								onClick={openSimulator}
-								className="min-h-[32px] min-w-[32px] h-8 w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
+								className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
 								title="Симулятор SIP телефонии"
 								aria-label="Симулятор SIP телефонии"
 							>
-								<Sliders size={15} />
+								<Sliders size={16} />
 							</button>
 
-							{/* Mute toggle - 32px */}
+							{/* Mute toggle - >= 44x44px */}
 							<button
 								type="button"
 								onClick={toggleMute}
-								className="min-h-[32px] min-w-[32px] h-8 w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
+								className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
 								title={isMuted ? "Включить звук звонка" : "Выключить звук звонка"}
 								aria-label={isMuted ? "Включить звук звонка" : "Выключить звук звонка"}
 							>
 								{isMuted ? (
-									<VolumeX size={15} className="text-rose-500" />
+									<VolumeX size={16} className="text-rose-500" />
 								) : (
-									<Volume2 size={15} />
+									<Volume2 size={16} />
 								)}
 							</button>
 
-							{/* Minimize/Collapse - 32px */}
+							{/* Minimize/Collapse - >= 44x44px */}
 							<button
 								type="button"
 								onClick={() => setIsExpanded(false)}
-								className="min-h-[32px] min-w-[32px] h-8 w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
+								className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
 								title="Свернуть софтфон"
 								aria-label="Свернуть софтфон"
 							>
-								<ChevronDown size={16} />
+								<ChevronDown size={18} />
 							</button>
 						</div>
 					</div>
@@ -632,44 +670,44 @@ export function TelephonyFloatingWidget({
 						</div>
 					</div>
 
-					{/* Navigation Tabs (Dense 32px Segmented Control) */}
+					{/* Navigation Tabs (Dense Segmented Control >= 44px touch targets) */}
 					<div className="p-1 bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] border-b border-[var(--line,#e2e8f0)] flex items-center gap-1">
 						<button
 							type="button"
 							onClick={() => setActiveTab("call")}
-							className={`flex-1 min-h-[32px] h-8 px-2 py-1 rounded-lg text-[11px] font-bold transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 min-w-max ${
+							className={`flex-1 min-h-[44px] px-2 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 min-w-max ${
 								activeTab === "call"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--teal)] shadow-xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.04))] border border-transparent"
 							}`}
 						>
-							<PhoneIncoming size={13} className="flex-shrink-0" />
+							<PhoneIncoming size={14} className="flex-shrink-0" />
 							<span className="whitespace-nowrap flex-shrink-0 min-w-max">{activeCall ? "Вызов" : "Вызов"}</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setActiveTab("dialer")}
-							className={`flex-1 min-h-[32px] h-8 px-2 py-1 rounded-lg text-[11px] font-bold transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 min-w-max ${
+							className={`flex-1 min-h-[44px] px-2 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 min-w-max ${
 								activeTab === "dialer"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--teal)] shadow-xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.04))] border border-transparent"
 							}`}
 						>
-							<PhoneOutgoing size={13} className="flex-shrink-0" />
+							<PhoneOutgoing size={14} className="flex-shrink-0" />
 							<span className="whitespace-nowrap flex-shrink-0 min-w-max">Набор</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setActiveTab("history")}
-							className={`flex-1 min-h-[32px] h-8 px-2 py-1 rounded-lg text-[11px] font-bold transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 min-w-max ${
+							className={`flex-1 min-h-[44px] px-2 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 min-w-max ${
 								activeTab === "history"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--teal)] shadow-xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.04))] border border-transparent"
 							}`}
 						>
-							<History size={13} className="flex-shrink-0" />
+							<History size={14} className="flex-shrink-0" />
 							<span className="whitespace-nowrap flex-shrink-0 min-w-max">Журнал{callHistory.length > 0 ? ` (${callHistory.length})` : ""}</span>
 						</button>
 					</div>
