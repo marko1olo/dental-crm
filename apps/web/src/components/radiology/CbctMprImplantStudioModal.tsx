@@ -529,6 +529,52 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// Modal Fullscreen State & Handler
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+	const [layoutBurstCount, setLayoutBurstCount] = useState<number>(0);
+	const modalContainerRef = useRef<HTMLDivElement | null>(null);
+
+	// Multi-stage burst layout sync (50ms, 150ms, 250ms) on studioMode / isOpen / invertColors / panel toggle
+	useEffect(() => {
+		if (!isOpen) return;
+		setLayoutBurstCount((c) => c + 1);
+
+		const raf1 = requestAnimationFrame(() => {
+			setLayoutBurstCount((c) => c + 1);
+		});
+		const timer1 = setTimeout(() => {
+			setLayoutBurstCount((c) => c + 1);
+		}, 50);
+		const timer2 = setTimeout(() => {
+			setLayoutBurstCount((c) => c + 1);
+		}, 150);
+		const timer3 = setTimeout(() => {
+			setLayoutBurstCount((c) => c + 1);
+		}, 250);
+
+		return () => {
+			cancelAnimationFrame(raf1);
+			clearTimeout(timer1);
+			clearTimeout(timer2);
+			clearTimeout(timer3);
+		};
+	}, [isOpen, studioMode, invertColors, isSidebarOpen, isFullscreen, showDentalArch]);
+
+	// ResizeObserver for modalContainerRef (Prevents #000000 black screen on sidebar/mode switch)
+	useEffect(() => {
+		if (!modalContainerRef.current) return;
+		let rafId: number | null = null;
+		const observer = new ResizeObserver(() => {
+			if (rafId) cancelAnimationFrame(rafId);
+			rafId = requestAnimationFrame(() => {
+				setLayoutBurstCount((c) => c + 1);
+			});
+		});
+		observer.observe(modalContainerRef.current);
+		return () => {
+			if (rafId) cancelAnimationFrame(rafId);
+			observer.disconnect();
+		};
+	}, []);
+
 	const handleToggleFullscreenModal = useCallback(() => {
 		if (!document.fullscreenElement) {
 			document.documentElement.requestFullscreen?.().catch(() => {});
@@ -1189,7 +1235,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.restore();
 			}
 		}
-	}, [volume, isOpen, crosshairMm, obliqueAngles, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, transforms.axial, transforms.coronal, transforms.sagittal]);
+	}, [volume, isOpen, crosshairMm, obliqueAngles, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, transforms.axial, transforms.coronal, transforms.sagittal, layoutBurstCount]);
 
 	// ─── LAYER 2: RENDER 3-PLANE MPR OVERLAY UI (VECTORS, ANATOMY, MEASUREMENTS, HANDLES) ───
 	useEffect(() => {
@@ -2175,7 +2221,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				});
 			}
 		}
-	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, showDentalArch, selectedArchAnchorIdx, hoveredArchAnchorIdx, isDraggingArchAnchor, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, angles, activeAngle, selectedMeasurement, draggingMeasurementHandle, hoveredMeasurementHandle, probeMarkers, activeProbe, activeTool, maximizedViewport, viewLayout, nervePoints, interpolatedNerve3D, selectedNerveNodeIdx, nerveTotalLengthMm]);
+	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, showDentalArch, selectedArchAnchorIdx, hoveredArchAnchorIdx, isDraggingArchAnchor, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, angles, activeAngle, selectedMeasurement, draggingMeasurementHandle, hoveredMeasurementHandle, probeMarkers, activeProbe, activeTool, maximizedViewport, viewLayout, nervePoints, interpolatedNerve3D, selectedNerveNodeIdx, nerveTotalLengthMm, layoutBurstCount]);
 
 	// ─── RECONSTRUCT PANORAMIC & CROSS SECTIONS ───────────────────────────────
 	useEffect(() => {
@@ -2233,7 +2279,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
 		ctx.restore();
-	}, [panoramicData, transforms.panoramic]);
+	}, [panoramicData, transforms.panoramic, layoutBurstCount]);
 
 	// ─── LAYER 2: RENDER PANORAMIC OVERLAY UI (INTERACTIVE FAN, NERVE, IMPLANTS) ───
 	useEffect(() => {
@@ -2657,7 +2703,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.fillText(`FDI #${implant3DWorld.targetToothFdi}`, panoXScreen, badgeY + 7);
 			ctx.restore();
 		}
-	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout, interpolatedNerve3D, nervePoints, selectedNerveNodeIdx, invertColors]);
+	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout, interpolatedNerve3D, nervePoints, selectedNerveNodeIdx, invertColors, layoutBurstCount]);
 
 	// ─── LAYER 1: RENDER ACTIVE CROSS-SECTION BASE BONE SLICE (OFFSCREEN RASTER) ───
 	useEffect(() => {
@@ -2693,7 +2739,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
 		ctx.restore();
-	}, [activeCrossSection, transforms.cross_section]);
+	}, [activeCrossSection, transforms.cross_section, layoutBurstCount]);
 
 	// ─── LAYER 2: RENDER ACTIVE CROSS-SECTION OVERLAY UI (CAD IMPLANT, NERVE, GRID) ───
 	useEffect(() => {
@@ -2932,7 +2978,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.fillText(`${nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм`, midScreen.x, midScreen.y);
 			ctx.restore();
 		}
-	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout, selectedMeasurement, hoveredImplantPart, dragImplantPart, implantAngulationDeg, invertColors]);
+	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout, selectedMeasurement, hoveredImplantPart, dragImplantPart, implantAngulationDeg, invertColors, layoutBurstCount]);
 
 	// ─── INTERACTIVE PANORAMA CLICK & SCRUB TO JUMP TO CROSS-SECTION ──────────
 	const handleSelectTooth = useCallback((toothFdi: number | string) => {
@@ -4833,6 +4879,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	const modalContent = (
 		<div
+			ref={modalContainerRef}
 			id={`cbct-mpr-studio-modal-${modalId}`}
 			data-testid="cbct-mpr-implant-studio-modal"
 			role="dialog"

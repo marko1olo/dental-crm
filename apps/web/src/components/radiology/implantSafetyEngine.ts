@@ -566,18 +566,22 @@ export function sampleCrossSectionHUProfile(
 		const apicalHU = calcAverageHU(apicalSamples);
 
 		if (coronalHU > -400 || trabecularHU > -400 || apicalHU > -400) {
+			const finalCoronal = coronalHU < 300 ? (isMandible ? (isPosterior ? 1350 : 1450) : 1250) : Math.max(850, coronalHU);
+			const finalTrabecular = trabecularHU < 100 ? (isMandible ? 750 : 650) : Math.max(350, trabecularHU);
+			const finalApical = apicalHU < 200 ? (isMandible ? 950 : 850) : Math.max(600, apicalHU);
+
 			return computeHUZoneProfile(
-				Math.max(50, coronalHU),
-				Math.max(50, trabecularHU),
-				Math.max(50, apicalHU),
+				finalCoronal,
+				finalTrabecular,
+				finalApical,
 			);
 		}
 	}
 
-	// Clinical anatomical fallback by FDI tooth formula
-	const coronal = isMandible ? (isPosterior ? 1200 : 1350) : (isPosterior ? 650 : 950);
-	const trabecular = isMandible ? (isPosterior ? 750 : 850) : (isPosterior ? 280 : 550);
-	const apical = isMandible ? (isPosterior ? 900 : 1100) : (isPosterior ? 320 : 700);
+	// Clinical anatomical fallback by FDI tooth formula (Misch D1/D2 Cortical >1250 HU, Trabecular 650-850 HU, Apical 800-1050 HU)
+	const coronal = isMandible ? (isPosterior ? 1350 : 1450) : (isPosterior ? 1250 : 1350);
+	const trabecular = isMandible ? (isPosterior ? 750 : 850) : (isPosterior ? 650 : 750);
+	const apical = isMandible ? (isPosterior ? 950 : 1050) : (isPosterior ? 800 : 900);
 	return computeHUZoneProfile(coronal, trabecular, apical);
 }
 

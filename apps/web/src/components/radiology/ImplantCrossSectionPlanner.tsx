@@ -89,8 +89,8 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   const [entryY, setEntryY] = useState<number>(5.0);
   const [angulationDeg, setAngulationDeg] = useState<number>(0);
 
-  const [coronalHU, setCoronalHU] = useState<number>(1150);
-  const [trabecularHU, setTrabecularHU] = useState<number>(850);
+  const [coronalHU, setCoronalHU] = useState<number>(1350);
+  const [trabecularHU, setTrabecularHU] = useState<number>(750);
   const [apicalHU, setApicalHU] = useState<number>(950);
 
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(true);

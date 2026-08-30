@@ -195,7 +195,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			type: "image/jpeg",
 		});
 		setSelectedFdiTooth("16");
-		setFlipV(true); // Tooth 16 is maxillary molar: roots point UP (towards sinus), crown DOWN
+		setFlipV(false);
 	};
 
 	// Dragging state
@@ -221,17 +221,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		if (typeof window !== "undefined") {
 			setIsSideDrawerOpen(window.innerWidth >= 768);
 		}
-		// Reset view state with anatomical orientation for dental periapical X-rays:
-		// Upper jaw teeth (11..28, 51..65) naturally have roots pointing UP (towards maxillary sinus) and crowns facing DOWN.
-		// Lower jaw teeth (31..48, 71..85) naturally have roots pointing DOWN and crowns facing UP.
-		const toothStr = (study?.teethFdi && study.teethFdi[0]) || selectedFdiTooth || "16";
-		const toothNum = Number.parseInt(toothStr, 10);
-		const upper = (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
+		// Reset view state with standard anatomical orientation (DICOM standard):
 		setZoom(1.0);
 		setPan({ x: 0, y: 0 });
 		setRotation(0);
 		setFlipH(false);
-		setFlipV(upper);
+		setFlipV(false);
 		setActivePresetId("standard");
 		setBrightness(100);
 		setContrast(100);
@@ -302,14 +297,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 	// Reset All Adjustments
 	const handleResetAll = () => {
-		const toothStr = selectedFdiTooth || (study?.teethFdi && study.teethFdi[0]) || "16";
-		const toothNum = Number.parseInt(toothStr, 10);
-		const upper = (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
 		setZoom(1.0);
 		setPan({ x: 0, y: 0 });
 		setRotation(0);
 		setFlipH(false);
-		setFlipV(upper);
+		setFlipV(false);
 		setActivePresetId("standard");
 		setBrightness(100);
 		setContrast(100);
@@ -320,12 +312,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		setIsFiltersMenuOpen(false);
 	};
 
-	// Select FDI Tooth with Anatomical Orientation (Upper Jaw: roots UP / crown DOWN; Lower Jaw: roots DOWN / crown UP)
+	// Select FDI Tooth
 	const handleSelectTooth = (tooth: string) => {
 		setSelectedFdiTooth(tooth);
-		const toothNum = Number.parseInt(tooth, 10);
-		const upper = (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
-		setFlipV(upper);
 	};
 
 	// Get click coordinates in % of image
