@@ -57,14 +57,6 @@ async function flushCanvasRender(page, delayMs = 600) {
 async function run() {
 	console.log("[CBCT-E2E] Starting CBCT Tools Exhaustion Suite (The Hammer v5.0)...");
 
-	// Clean stale screenshots in target folders
-	const existing = readdirSync(SCREENSHOT_DIR);
-	for (const file of existing) {
-		if (file.endsWith(".png")) {
-			try { unlinkSync(path.join(SCREENSHOT_DIR, file)); } catch {}
-		}
-	}
-
 	const browser = await chromium.launch({
 		headless: true,
 		executablePath: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
