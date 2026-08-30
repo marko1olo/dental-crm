@@ -20,17 +20,21 @@
 	max-width: 380px;
 }
 
-/* Position toast in bottom-right (left of sidebar) when CBCT Studio / 3D viewer is active so it does not occlude layout, Coronal plane, or Cross-section window controls */
+/* Position toast centered at bottom in safe area when CBCT Studio / 3D viewer is active (DEF-C01 / DEF-16.1) to avoid sidebar and viewport occlusion */
 body:has([id^="cbct-mpr-studio-modal"]) .sa-toast,
 body:has([data-testid="cbct-mpr-studio-modal"]) .sa-toast,
 body:has([data-testid="cbct-mpr-implant-studio-modal"]) .sa-toast,
-body:has([data-testid="cbct-viewport-container-axial"]) .sa-toast {
+body:has([data-testid="cbct-viewport-container-axial"]) .sa-toast,
+body:has(.cbct-mpr-studio-modal) .sa-toast,
+body:has(.cbct-mpr-implant-studio-modal) .sa-toast,
+body:has(.cbct-viewport-container-axial) .sa-toast {
+	bottom: 44px !important;
+	left: 50% !important;
+	right: auto !important;
 	top: auto !important;
-	bottom: 48px !important;
-	right: 340px !important;
-	left: auto !important;
+	transform: translateX(-50%) !important;
+	max-width: 440px !important;
 	z-index: 9999 !important;
-	max-width: 360px !important;
 }
 
 @keyframes sa-slide-up {
