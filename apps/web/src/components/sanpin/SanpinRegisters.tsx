@@ -1409,7 +1409,7 @@ export function SanpinRegisters() {
 			{/* Segmented Category & Tab Switcher (Miller's Law 7±2, 44px Touch Targets, Clean Interval) */}
 			<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))", paddingBottom: "0.5rem" }}>
 				{/* 1. Category Switcher (3 Categories with gap-2 and 44px touch target) */}
-				<div className="sanpin-category-nav" role="tablist" aria-label="Категории журналов СанПиН">
+				<div className="sanpin-category-nav flex items-center gap-2 flex-wrap" role="tablist" aria-label="Категории журналов СанПиН">
 					{SANPIN_CATEGORIES.map((cat) => {
 						const Icon = cat.icon;
 						const isActive = activeCategory === cat.id;
@@ -1424,7 +1424,7 @@ export function SanpinRegisters() {
 									minHeight: "44px",
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "0.5rem", // gap-2 to prevent sticky badge (Стерилизация 4)
+									gap: "0.5rem", // gap-2 to prevent sticky badge
 									padding: "0.4rem 0.85rem",
 									borderRadius: "8px",
 									cursor: "pointer",
@@ -1433,16 +1433,17 @@ export function SanpinRegisters() {
 								data-testid={`category-tab-${cat.id}`}
 							>
 								<Icon size={16} color={isActive ? "var(--teal-600, #0d9488)" : "currentColor"} />
-								<span className="font-semibold text-xs">{cat.shortLabel}</span>
+								<span className="font-semibold text-xs whitespace-nowrap">{cat.shortLabel}</span>
 								<span
 									style={{
-										marginLeft: "0.25rem",
+										marginLeft: "0.5rem", // 8px separation guarantees zero collision for 'Отходы и климат 4'
 										fontSize: "0.75rem",
 										padding: "0.15rem 0.45rem",
 										borderRadius: "9999px",
 										background: isActive ? "rgba(13, 148, 136, 0.15)" : "rgba(148, 163, 184, 0.15)",
 										color: isActive ? "var(--teal-600, #0d9488)" : "var(--muted, #64748b)",
 										fontWeight: 700,
+										flexShrink: 0,
 									}}
 								>
 									{cat.tabs.length}
@@ -1452,15 +1453,16 @@ export function SanpinRegisters() {
 					})}
 				</div>
 
-				{/* 2. Sub-Tabs of Active Category */}
+				{/* 2. Sub-Tabs with horizontal scroll and whitespace-nowrap (Zero clipping for 'Фенолфталеин') */}
 				<div
-					className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 touch-pan-x min-w-0"
+					className="w-full sm:w-auto flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 touch-pan-x min-w-0 pb-1"
 					style={{
 						display: "flex",
 						gap: "0.35rem",
 						alignItems: "center",
 						overflowX: "auto",
 						whiteSpace: "nowrap",
+						WebkitOverflowScrolling: "touch",
 					}}
 					data-testid="sanpin-active-category-subtabs"
 				>
@@ -1482,6 +1484,7 @@ export function SanpinRegisters() {
 									alignItems: "center",
 									gap: "0.35rem",
 									flexShrink: 0,
+									whiteSpace: "nowrap",
 									cursor: "pointer",
 									borderRadius: "0.5rem",
 									border: "1px solid",
@@ -1493,7 +1496,7 @@ export function SanpinRegisters() {
 								data-testid={`tab-${tab.id}-btn`}
 							>
 								<Icon size={14} color={isActive ? "#ffffff" : "currentColor"} />
-								<span>{tab.shortLabel}</span>
+								<span className="whitespace-nowrap">{tab.shortLabel}</span>
 							</button>
 						);
 					})}

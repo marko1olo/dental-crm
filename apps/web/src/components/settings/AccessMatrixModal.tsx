@@ -53,8 +53,8 @@ export const AccessMatrixModal: React.FC<AccessMatrixModalProps> = ({
 					</button>
 				</div>
 
-				{/* Monolithic Role Matrix Area (Occupies >= 80% modal viewport) */}
-				<div className="flex-1 overflow-y-auto min-w-0 pr-0.5">
+				{/* Monolithic Role Matrix Area (Occupies >= 80% modal viewport with pb-20 bottom frame clearance) */}
+				<div className="flex-1 overflow-y-auto min-w-0 pr-0.5 pb-20 sm:pb-8" data-testid="settings-access-modal-scroll-body">
 					<GranularRoleMatrixView
 						initialRole={initialRole}
 						initialModuleFilter={initialModuleFilter}

@@ -257,7 +257,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 			)}
 
 			<div
-				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm pb-36 pr-4 sm:pb-28 sm:pr-48 touch-pan-x"
+				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm pb-40 pr-6 sm:pb-28 sm:pr-48 touch-pan-x"
 				data-testid="schedule-grid-view"
 				role="region"
 				aria-label="Сетка расписания по креслам и времени"
@@ -885,13 +885,13 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																reason: "Острая боль (CITO Резерв)",
 															})
 														}
-														className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-amber-400/80 dark:border-amber-600 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-xs"
+														className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-amber-400/80 dark:border-amber-600 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-xs whitespace-nowrap shrink-0"
 														title={`Экстренный резерв (CITO): ${hour} (${chair.name}). Буфер 30 мин для пациентов с острой болью`}
 														aria-label={`Экстренный резерв на ${hour}, кресло ${chair.name}. Буфер 30 минут по острой боли`}
 														data-testid="schedule-emergency-buffer-slot"
 													>
 														<Zap size={14} className="text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
-														<span className="text-xs">⚡ Резерв: Острая боль ({hour})</span>
+														<span className="text-xs whitespace-nowrap shrink-0">⚡ Резерв: Острая боль ({hour})</span>
 													</button>
 												);
 											}
@@ -908,12 +908,12 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 															durationMinutes: 30,
 														})
 													}
-													className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper)] dark:bg-[rgba(255,255,255,0.03)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+													className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper)] dark:bg-[rgba(255,255,255,0.03)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none whitespace-nowrap shrink-0"
 													title={`Записать на ${hour} (${chair.name})`}
 													aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
 												>
-													<Plus size={14} className="text-[var(--teal)] opacity-60 group-hover:opacity-100" />
-													<span className="text-xs">+ Записать на {hour}</span>
+													<Plus size={14} className="text-[var(--teal)] opacity-60 group-hover:opacity-100 shrink-0" />
+													<span className="text-xs whitespace-nowrap shrink-0">+ Записать на {hour}</span>
 												</button>
 											);
 										})()}

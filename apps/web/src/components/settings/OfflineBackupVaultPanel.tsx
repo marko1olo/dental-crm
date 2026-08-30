@@ -329,7 +329,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 				overflowY: "auto",
 				overscrollBehavior: "contain",
 				gap: "20px",
-				padding: "12px 0 64px 0",
+				padding: "12px 0 80px 0",
 				boxSizing: "border-box",
 			}}
 		>
@@ -478,6 +478,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 						onClick={() => setActiveSection(tab.id as any)}
 						style={{
 							minHeight: "44px",
+							minWidth: "120px",
 							padding: "6px 14px",
 							borderRadius: "8px",
 							border: activeSection === tab.id ? "1px solid var(--teal, #0d9488)" : "1px solid transparent",
@@ -492,6 +493,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							gap: "6px",
 							boxShadow: activeSection === tab.id ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
 							transition: "all 0.15s ease",
+							flexShrink: 0,
 						}}
 						className="touch-manipulation break-words min-w-0"
 					>

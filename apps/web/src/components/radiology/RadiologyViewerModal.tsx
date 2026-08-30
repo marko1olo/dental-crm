@@ -743,7 +743,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsMprViewerOpen(true)}
-						className="flex items-center gap-2 min-h-[44px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-[var(--on-teal,#ffffff)] text-xs font-bold transition-all shadow-sm"
+						className="flex items-center justify-center gap-2 min-h-[44px] min-w-[44px] px-2.5 sm:px-3.5 py-2.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-[var(--on-teal,#ffffff)] text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer"
 						title="Открыть 3D MPR мультипланарную реконструкцию и панораму зубной дуги"
 						data-testid="open-mpr-viewer-modal-btn"
 					>
@@ -755,7 +755,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsCbctStudioOpen(true)}
-							className="flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold shadow-md transition-all"
+							className="flex items-center justify-center gap-2 min-h-[44px] min-w-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
 							title="Открыть 3D MPR имплант-планировщик"
 							data-testid="open-cbct-mpr-studio-from-viewer-btn"
 						>
@@ -768,7 +768,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => onOpenDoseSheetModal(study)}
-							className="hidden md:flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-[var(--teal-soft)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] text-xs font-bold transition-all"
+							className="hidden md:flex items-center justify-center gap-2 min-h-[44px] min-w-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-[var(--teal-soft)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)] text-xs font-bold transition-all shrink-0 cursor-pointer"
 							title="Лист учета дозовых нагрузок (СанПиН)"
 						>
 							<Activity className="w-4 h-4 text-[var(--teal)]" />
@@ -780,7 +780,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsSideDrawerOpen((prev) => !prev)}
-						className={`flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl border transition-all ${
+						className={`flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2.5 rounded-xl border transition-all shrink-0 cursor-pointer ${
 							isSideDrawerOpen
 								? "bg-[var(--teal-surface)] border-[var(--teal-soft)] text-[var(--teal)]"
 								: "bg-[var(--paper,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft,#0f172a)]"
@@ -1469,7 +1469,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 												className="overflow-visible"
 												style={{ transform: "translate(-50%, -50%)" }}
 											>
-												<div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal)] text-[10px] font-bold shadow-lg whitespace-nowrap">
+												<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal)] text-[10px] font-bold shadow-lg whitespace-nowrap">
 													<span>{ruler.distanceMm} мм</span>
 													<button
 														type="button"
@@ -1477,10 +1477,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 															e.stopPropagation();
 															handleDeleteRuler(ruler.id);
 														}}
-														className="text-rose-400 hover:text-rose-200 ml-0.5"
+														className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-rose-300 hover:text-white bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 text-xs font-bold ml-1 cursor-pointer transition-all active:scale-95 leading-none"
 														title="Удалить измерение"
+														aria-label="Удалить измерение"
 													>
-														×
+														<X className="w-3.5 h-3.5" />
 													</button>
 												</div>
 											</foreignObject>
@@ -1568,7 +1569,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 												className="overflow-visible"
 												style={{ transform: "translate(-50%, -50%)" }}
 											>
-												<div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-950/90 border border-amber-500 text-amber-300 text-[10px] font-bold shadow-lg whitespace-nowrap">
+												<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/90 border border-amber-500 text-amber-300 text-[10px] font-bold shadow-lg whitespace-nowrap">
 													<span>
 														{isUpperJaw ? "Гайморова пазуха" : "Нерв"} ({nerve.side === "left" ? "Лев." : "Прав."}): {nerve.lengthMm} мм
 													</span>
@@ -1578,10 +1579,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 															e.stopPropagation();
 															handleDeleteNerve(nerve.id);
 														}}
-														className="text-rose-400 hover:text-rose-200 ml-0.5"
+														className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-rose-300 hover:text-white bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 text-xs font-bold ml-1 cursor-pointer transition-all active:scale-95 leading-none"
 														title={isUpperJaw ? "Удалить трассировку гайморовой пазухи" : "Удалить трассировку нерва"}
+														aria-label={isUpperJaw ? "Удалить трассировку гайморовой пазухи" : "Удалить трассировку нерва"}
 													>
-														×
+														<X className="w-3.5 h-3.5" />
 													</button>
 												</div>
 											</foreignObject>
@@ -1695,8 +1697,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 												className="overflow-visible"
 												style={{ transform: "translate(-50%, -50%)" }}
 											>
-												<div className="flex flex-col gap-0.5 p-1.5 rounded-xl bg-slate-950/95 border border-[var(--teal)] text-slate-100 text-[10px] font-bold shadow-2xl whitespace-nowrap backdrop-blur-md">
-													<div className="flex items-center justify-between gap-1.5">
+												<div className="flex flex-col gap-0.5 p-2 rounded-xl bg-slate-950/95 border border-[var(--teal)] text-slate-100 text-[10px] font-bold shadow-2xl whitespace-nowrap backdrop-blur-md">
+													<div className="flex items-center justify-between gap-2">
 														<span className="text-[var(--teal)]">
 															H={caliper.heightMm} мм | W={caliper.crestWidthMm} мм
 														</span>
@@ -1706,10 +1708,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 																e.stopPropagation();
 																handleDeleteCaliper(caliper.id);
 															}}
-															className="text-rose-400 hover:text-rose-200"
+															className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-rose-300 hover:text-white bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 text-xs font-bold ml-1 cursor-pointer transition-all active:scale-95 leading-none"
 															title="Удалить замер"
+															aria-label="Удалить замер"
 														>
-															×
+															<X className="w-3.5 h-3.5" />
 														</button>
 													</div>
 													<div className={`text-[9px] font-semibold ${
@@ -1774,10 +1777,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 													e.stopPropagation();
 													handleDeleteLandmark(pin.id);
 												}}
-												className="text-rose-300 hover:text-white bg-rose-950/60 px-1 py-0.5 rounded text-[10px] font-bold ml-1 cursor-pointer transition-colors leading-none"
+												className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-rose-300 hover:text-white bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 text-xs font-bold ml-1 cursor-pointer transition-all active:scale-95 leading-none"
 												title="Удалить метку"
+												aria-label={`Удалить метку зуба ${pin.toothFdi}`}
 											>
-												×
+												<X className="w-3.5 h-3.5" />
 											</button>
 										</div>
 										{/* Vertical leader line */}
@@ -2101,9 +2105,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 																<button
 																	type="button"
 																	onClick={() => handleDeleteCaliper(cal.id)}
-																	className="text-[var(--muted,#94a3b8)] hover:text-rose-400 p-0.5 cursor-pointer"
+																	className="min-h-[44px] min-w-[44px] p-2.5 flex items-center justify-center rounded-lg text-[var(--muted,#94a3b8)] hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer"
+																	title="Удалить замер"
+																	aria-label="Удалить замер"
 																>
-																	<Trash2 className="w-3.5 h-3.5" />
+																	<Trash2 className="w-4 h-4" />
 																</button>
 															</div>
 															<div className="grid grid-cols-2 gap-1.5 text-[11px] text-[var(--ink,#cbd5e1)] font-mono">
@@ -2178,10 +2184,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 																<button
 																	type="button"
 																	onClick={() => handleDeleteNerve(nerve.id)}
-																	className="text-[var(--muted,#94a3b8)] hover:text-rose-400 p-0.5 cursor-pointer"
-																	title="Удалить"
+																	className="min-h-[44px] min-w-[44px] p-2.5 flex items-center justify-center rounded-lg text-[var(--muted,#94a3b8)] hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer"
+																	title={isUpperJaw ? "Удалить контур пазухи" : "Удалить канал нерва"}
+																	aria-label={isUpperJaw ? "Удалить контур пазухи" : "Удалить канал нерва"}
 																>
-																	<Trash2 className="w-3.5 h-3.5" />
+																	<Trash2 className="w-4 h-4" />
 																</button>
 															</div>
 															<div className="flex items-center justify-between text-[11px] text-[var(--ink,#cbd5e1)]">
@@ -2239,9 +2246,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 														<button
 															type="button"
 															onClick={() => handleDeleteRuler(r.id)}
-															className="text-[var(--muted,#94a3b8)] hover:text-rose-400 p-1 cursor-pointer"
+															className="min-h-[44px] min-w-[44px] p-2.5 flex items-center justify-center rounded-lg text-[var(--muted,#94a3b8)] hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer"
+															title="Удалить измерение"
+															aria-label="Удалить измерение"
 														>
-															<Trash2 className="w-3.5 h-3.5" />
+															<Trash2 className="w-4 h-4" />
 														</button>
 													</div>
 												</div>
@@ -2289,9 +2298,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 													<button
 														type="button"
 														onClick={() => handleDeleteLandmark(p.id)}
-														className="text-[var(--muted,#94a3b8)] hover:text-rose-400 p-1 cursor-pointer"
+														className="min-h-[44px] min-w-[44px] p-2.5 flex items-center justify-center rounded-lg text-[var(--muted,#94a3b8)] hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer"
+														title="Удалить метку"
+														aria-label="Удалить метку"
 													>
-														<Trash2 className="w-3.5 h-3.5" />
+														<Trash2 className="w-4 h-4" />
 													</button>
 												</div>
 											))}

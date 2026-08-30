@@ -93,7 +93,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 
 	return (
 		<article
-			className={`flex flex-col gap-2.5 min-w-0 w-full ${className}`}
+			className={`flex flex-col gap-2.5 min-w-0 w-full pb-20 sm:pb-8 ${className}`}
 			data-testid="granular-role-matrix-panel"
 		>
 			{/* TIER 1 CONTROLS: 2-Level Role Category Switcher + Role Tabs + Module Selector */}
@@ -201,10 +201,10 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 				</div>
 			</div>
 
-			{/* ACTIVE ROLE SUMMARY STRIP: Full Description without collision with P&L Isolation Badge */}
+			{/* ACTIVE ROLE SUMMARY STRIP: Clean formatting on all viewports without orphan line */}
 			<div className="py-2.5 px-3.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 min-w-0 text-xs">
-				<div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-					<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex flex-col gap-1 min-w-0 flex-1">
+					<div className="flex items-center gap-1.5 flex-wrap">
 						<span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
 							{activeRoleMeta.title}
 						</span>
@@ -212,12 +212,12 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							role: {activeRoleMeta.role}
 						</span>
 					</div>
-					<span className="text-slate-700 dark:text-slate-300 text-[11px] leading-tight break-words min-w-0">
-						— {activeRoleMeta.description}
-					</span>
+					<p className="text-slate-700 dark:text-slate-300 text-[11px] leading-snug break-words m-0 min-w-0">
+						{activeRoleMeta.description}
+					</p>
 				</div>
 
-				<div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+				<div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto mt-1 sm:mt-0">
 					{activeRoleMeta.role === "doctor" && (
 						<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-100 text-purple-900 dark:bg-purple-950/80 dark:text-purple-200 border border-purple-300 dark:border-purple-700 whitespace-nowrap shadow-xs">
 							<Lock size={12} className="shrink-0 text-purple-700 dark:text-purple-300" />
