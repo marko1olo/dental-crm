@@ -17,6 +17,7 @@ import {
 	drawCbctMeasurementRuler,
 	drawCbctAngleMeasurement,
 	drawCbctProbeMarker,
+	formatHuProbe,
 	getCbctToolCursor,
 } from "../cbctMprMath";
 
@@ -351,7 +352,7 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			assert.ok(calls.some((c) => c.includes("fillText(×)")));
 		});
 
-		it("drawMeasurementDeleteButton renders 9px circular badge with red tint and centered cross (DEF-D03)", () => {
+		it("drawMeasurementDeleteButton renders 11px circular badge with red tint and centered cross (DEF-03 / DEF-18.1)", () => {
 			const calls: string[] = [];
 			const fills: string[] = [];
 			const strokes: string[] = [];
@@ -384,12 +385,12 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				textBaseline: "",
 			} as unknown as CanvasRenderingContext2D;
 
-			drawMeasurementDeleteButton(mockCtx, 100, 100, 9);
+			drawMeasurementDeleteButton(mockCtx, 100, 100, 11);
 
-			// Radius must be 9px (diameter 18px)
-			assert.equal(arcRadius, 9, "Radius must be 9px (18px diameter)");
-			// Background must be red tint rgba(239, 68, 68, 0.25)
-			assert.ok(fills.includes("rgba(239, 68, 68, 0.25)"), "Must use rgba(239, 68, 68, 0.25) fill");
+			// Radius must be 11px (diameter 22px)
+			assert.equal(arcRadius, 11, "Radius must be 11px (22px diameter)");
+			// Background must be red tint rgba(239, 68, 68, 0.35)
+			assert.ok(fills.includes("rgba(239, 68, 68, 0.35)"), "Must use rgba(239, 68, 68, 0.35) fill");
 			// Stroke border must be #ef4444
 			assert.ok(strokes.includes("#ef4444"), "Must use #ef4444 stroke border");
 			// Must draw centered white cross
@@ -399,8 +400,10 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			assert.equal(typeof drawCaliperDeleteButton, "function");
 		});
 
-		it("drawCbctMeasurementRuler with isActive=true renders delete [×] badge", () => {
+		it("drawCbctMeasurementRuler with isActive=true renders delete [×] badge with 12px bold font (DEF-03 / DEF-18.1)", () => {
 			const calls: string[] = [];
+			const fonts: string[] = [];
+			let currentFont = "";
 			const mockCtx = {
 				save: () => calls.push("save"),
 				restore: () => calls.push("restore"),
@@ -417,7 +420,8 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				strokeStyle: "",
 				fillStyle: "",
 				lineWidth: 1,
-				font: "",
+				get font() { return currentFont; },
+				set font(v: string) { currentFont = v; fonts.push(v); },
 				textAlign: "",
 				textBaseline: "",
 				shadowColor: "",
@@ -427,6 +431,80 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			drawCbctMeasurementRuler(mockCtx, { x: 10, y: 10 }, { x: 110, y: 10 }, 25.4, true, null, false);
 			assert.ok(calls.some((c) => c.includes("25.4 мм")), "Should render distance label");
 			assert.ok(calls.some((c) => c.includes("fillText(×)")), "Should render delete [×] button");
+			assert.ok(fonts.includes("bold 12px monospace"), "Must use bold 12px monospace for ruler text");
+		});
+
+		it("formatHuProbe eliminates duplicate HU strings and formats strictly (DEF-17.1)", () => {
+			// 1. Raw HU value
+			assert.equal(formatHuProbe(1200), "+1200 HU (Кортикальная кость / Дентин)");
+			assert.equal(formatHuProbe(-500), "-500 HU (Воздух / Синус / Дыхательные пути)");
+			assert.equal(formatHuProbe(0), "0 HU (Мягкие ткани / Слизистая / Хрящ)");
+
+			// 2. Tissue name supplied as raw string
+			assert.equal(formatHuProbe(950, "D2 • Кортикальная кость"), "+950 HU (D2 • Кортикальная кость)");
+
+			// 3. Pre-formatted string should not get duplicated
+			assert.equal(formatHuProbe(950, "+950 HU (D2 • Кортикальная кость)"), "+950 HU (D2 • Кортикальная кость)");
+			assert.equal(formatHuProbe(950, "950 HU · D2 • Кортикальная кость"), "+950 HU (D2 • Кортикальная кость)");
+			assert.equal(formatHuProbe(950, "+950 HU • D2 • Кортикальная кость"), "+950 HU (D2 • Кортикальная кость)");
+		});
+
+		it("drawCbctProbeMarker renders label without double HU repetition (DEF-17.1)", () => {
+			const calls: string[] = [];
+			const mockCtx = {
+				save: () => calls.push("save"),
+				restore: () => calls.push("restore"),
+				beginPath: () => calls.push("beginPath"),
+				moveTo: () => {},
+				lineTo: () => {},
+				stroke: () => calls.push("stroke"),
+				fill: () => calls.push("fill"),
+				arc: () => calls.push("arc"),
+				roundRect: () => calls.push("roundRect"),
+				rect: () => calls.push("rect"),
+				fillText: (text: string) => calls.push(`fillText(${text})`),
+				measureText: (text: string) => ({ width: text.length * 7 }),
+				setLineDash: () => {},
+				strokeStyle: "",
+				fillStyle: "",
+				lineWidth: 1,
+				font: "",
+				textAlign: "",
+				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
+			} as unknown as CanvasRenderingContext2D;
+
+			drawCbctProbeMarker(mockCtx, { x: 50, y: 50 }, 950, "D2 • Кортикальная кость", true);
+			assert.ok(calls.some((c) => c.includes("+950 HU (D2 • Кортикальная кость)")));
+			// Ensure there is NO repetition like "950 HU · +950 HU" or "950 HU • 950 HU"
+			assert.ok(!calls.some((c) => /HU.*HU/.test(c)));
+		});
+
+		it("hitTestMeasurementObject detects 32x32px hitbox for delete button (DEF-03 / DEF-18.1)", () => {
+			const mockRulers = [
+				{
+					id: "r1",
+					plane: "axial",
+					startPx: { x: 100, y: 100 },
+					endPx: { x: 200, y: 100 },
+					badgePx: { x: 150, y: 100, width: 80, height: 22 },
+				},
+			];
+			// Delete target is at badgeX + badgeW/2 - 14 = 150 + 40 - 14 = 176, y = 100
+			// Hit within 16px radius (32x32 hitbox)
+			const hitInside = hitTestMeasurementObject({ x: 176 + 14, y: 100 + 14 }, mockRulers, []);
+			assert.ok(hitInside !== null);
+			assert.equal(hitInside.isDeleteButtonHit, true);
+
+			// Click on badge body (left side, e.g. x = 120, y = 100) -> hits badge but not delete button
+			const hitBadgeBody = hitTestMeasurementObject({ x: 120, y: 100 }, mockRulers, []);
+			assert.ok(hitBadgeBody !== null);
+			assert.equal(hitBadgeBody.isDeleteButtonHit, false);
+
+			// Click completely outside badge (e.g. x = 230, y = 100)
+			const hitOutside = hitTestMeasurementObject({ x: 230, y: 100 }, mockRulers, []);
+			assert.ok(hitOutside === null);
 		});
 	});
 });

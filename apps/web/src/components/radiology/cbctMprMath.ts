@@ -623,11 +623,27 @@ export function getTissueNameFromHU(hu: number): string {
 
 /**
  * Formats a point HU probe measurement with anatomical tissue description.
+ * Adheres to DEF-17.1: Strictly formatted as `${huValue > 0 ? '+' : ''}${huValue} HU (${tissueName})`.
+ * Prevents any double HU repetition or dot insertion.
  */
 export function formatHuProbe(hu: number, tissueName?: string): string {
-	const tissue = tissueName || getTissueNameFromHU(hu);
-	const sign = hu > 0 ? "+" : "";
-	return `${sign}${Math.round(hu)} HU (${tissue})`;
+	const roundedHu = Math.round(hu);
+	const sign = roundedHu > 0 ? "+" : "";
+	let cleanTissue = tissueName;
+	if (cleanTissue) {
+		// Strip outer HU prefix if already formatted like "+950 HU (tissue)" or "950 HU · tissue" or "+950 HU • tissue"
+		const parenMatch = cleanTissue.match(/^[+-]?\d+\s*HU\s*\((.+)\)$/);
+		if (parenMatch) {
+			cleanTissue = parenMatch[1];
+		} else {
+			const dotMatch = cleanTissue.match(/^[+-]?\d+\s*HU\s*[·•\.\-]\s*(.+)$/);
+			if (dotMatch) {
+				cleanTissue = dotMatch[1];
+			}
+		}
+	}
+	const tissue = cleanTissue || getTissueNameFromHU(roundedHu);
+	return `${sign}${roundedHu} HU (${tissue})`;
 }
 
 /**
@@ -759,10 +775,10 @@ export function drawCbctMeasurementRuler(
 	const midY = (startPx.y + endPx.y) / 2;
 	const distText = `${distanceMm.toFixed(1)} мм`;
 
-	ctx.font = "bold 10px monospace";
+	ctx.font = "bold 12px monospace";
 	const textWidth = ctx.measureText(distText).width;
-	const badgeW = isActive ? textWidth + 30 : textWidth + 12;
-	const badgeH = 18;
+	const badgeW = isActive ? textWidth + 38 : textWidth + 16;
+	const badgeH = 22;
 
 	// Contrast semi-transparent background (rgba(0, 0, 0, 0.88)) and bright cyan/amber border
 	ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
@@ -787,11 +803,11 @@ export function drawCbctMeasurementRuler(
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillText(distText, midX - badgeW / 2 + 6, midY);
+		ctx.fillText(distText, midX - badgeW / 2 + 7, midY);
 
-		// Fast Delete [×] Button Trigger (DEF-D03: 18px diameter round badge with red tint, border #ef4444 and crisp white cross)
-		const delBtnX = midX + badgeW / 2 - 11;
-		drawMeasurementDeleteButton(ctx, delBtnX, midY, 9);
+		// Fast Delete [×] Button Trigger (DEF-03 / DEF-18.1: 22px diameter round badge with red tint, border #ef4444 and crisp white cross)
+		const delBtnX = midX + badgeW / 2 - 14;
+		drawMeasurementDeleteButton(ctx, delBtnX, midY, 11);
 	} else {
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "center";
@@ -944,10 +960,10 @@ export function drawCbctAngleMeasurement(
 	}
 
 	const angleText = `${angleDeg.toFixed(1)}°`;
-	ctx.font = "bold 10px monospace";
+	ctx.font = "bold 12px monospace";
 	const textWidth = ctx.measureText(angleText).width;
-	const badgeW = isActive ? textWidth + 30 : textWidth + 12;
-	const badgeH = 18;
+	const badgeW = isActive ? textWidth + 38 : textWidth + 16;
+	const badgeH = 22;
 
 	// Contrast semi-transparent background (rgba(0, 0, 0, 0.85)) and bright cyan/amber border
 	ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
@@ -971,11 +987,11 @@ export function drawCbctAngleMeasurement(
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillText(angleText, badgeX - badgeW / 2 + 6, badgeY);
+		ctx.fillText(angleText, badgeX - badgeW / 2 + 7, badgeY);
 
-		// Fast Delete [×] Button Trigger (DEF-D03)
-		const delBtnX = badgeX + badgeW / 2 - 11;
-		drawMeasurementDeleteButton(ctx, delBtnX, badgeY, 9);
+		// Fast Delete [×] Button Trigger (DEF-03 / DEF-18.1)
+		const delBtnX = badgeX + badgeW / 2 - 14;
+		drawMeasurementDeleteButton(ctx, delBtnX, badgeY, 11);
 	} else {
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "center";
@@ -1036,14 +1052,14 @@ export function drawCbctProbeMarker(
 	ctx.lineTo(posPx.x, posPx.y + 10);
 	ctx.stroke();
 
-	// Info label badge
-	const label = tissueName ? `${hu} HU · ${tissueName}` : `${hu} HU`;
-	ctx.font = "bold 9px monospace";
+	// Info label badge (DEF-17.1: Zero string duplication via formatHuProbe)
+	const label = formatHuProbe(hu, tissueName);
+	ctx.font = "bold 11px monospace";
 	const textWidth = ctx.measureText(label).width;
-	const badgeW = isActive ? textWidth + 28 : textWidth + 8;
-	const badgeH = 18;
+	const badgeW = isActive ? textWidth + 38 : textWidth + 12;
+	const badgeH = 22;
 	const badgeX = posPx.x + 10;
-	const badgeY = posPx.y - 18;
+	const badgeY = posPx.y - 22;
 
 	ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
 	ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
@@ -1066,15 +1082,15 @@ export function drawCbctProbeMarker(
 		ctx.fillStyle = "#fef08a";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillText(label, badgeX + 4, badgeY + badgeH / 2);
+		ctx.fillText(label, badgeX + 6, badgeY + badgeH / 2);
 
-		const delBtnX = badgeX + badgeW - 10;
-		drawMeasurementDeleteButton(ctx, delBtnX, badgeY + badgeH / 2, 7.5);
+		const delBtnX = badgeX + badgeW - 14;
+		drawMeasurementDeleteButton(ctx, delBtnX, badgeY + badgeH / 2, 11);
 	} else {
 		ctx.fillStyle = "#38bdf8";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillText(label, badgeX + 4, badgeY + badgeH / 2);
+		ctx.fillText(label, badgeX + 6, badgeY + badgeH / 2);
 	}
 
 	ctx.restore();

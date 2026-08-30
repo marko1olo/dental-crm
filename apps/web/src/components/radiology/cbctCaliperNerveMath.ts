@@ -836,21 +836,21 @@ export function hitTestMeasurementObject(
 		const badgeX = r.badgePx?.x ?? midX;
 		const badgeY = r.badgePx?.y ?? midY;
 
-		// Hitbox check for fast delete [×] trigger with invisible padding (>= 24x24 px, DEF-D03)
-		const deleteTargetX = badgeX + badgeW / 2 - 10;
+		// Hitbox check for fast delete [×] trigger with invisible padding (32x32 px hitbox, DEF-03 / DEF-18.1)
+		const deleteTargetX = badgeX + badgeW / 2 - 14;
 		const deleteTargetY = badgeY;
 		const isDeleteHitbox =
-			Math.abs(pointerPx.x - deleteTargetX) <= 12 &&
-			Math.abs(pointerPx.y - deleteTargetY) <= 12;
+			Math.abs(pointerPx.x - deleteTargetX) <= 16 &&
+			Math.abs(pointerPx.y - deleteTargetY) <= 16;
 
 		// Check if click is on badge
 		const isInsideBadge =
-			Math.abs(pointerPx.x - badgeX) <= badgeW / 2 + 6 &&
-			Math.abs(pointerPx.y - badgeY) <= badgeH / 2 + 6;
+			Math.abs(pointerPx.x - badgeX) <= badgeW / 2 + 8 &&
+			Math.abs(pointerPx.y - badgeY) <= badgeH / 2 + 8;
 
 		if (isDeleteHitbox || isInsideBadge) {
 			const isDeleteHit =
-				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 20;
+				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 28;
 			return {
 				type: "ruler",
 				id: r.id,
@@ -878,7 +878,7 @@ export function hitTestMeasurementObject(
 		let badgeX = a.vertexPx.x;
 		let badgeY = a.vertexPx.y;
 		let badgeW = a.badgePx?.width ?? 60;
-		let badgeH = a.badgePx?.height ?? 18;
+		let badgeH = a.badgePx?.height ?? 22;
 
 		if (a.badgePx) {
 			badgeX = a.badgePx.x;
@@ -908,20 +908,20 @@ export function hitTestMeasurementObject(
 			}
 		}
 
-		// Hitbox check for fast delete [×] trigger with invisible padding (>= 24x24 px, DEF-D03)
-		const deleteTargetX = badgeX + badgeW / 2 - 10;
+		// Hitbox check for fast delete [×] trigger with invisible padding (32x32 px hitbox, DEF-03 / DEF-18.1)
+		const deleteTargetX = badgeX + badgeW / 2 - 14;
 		const deleteTargetY = badgeY;
 		const isDeleteHitbox =
-			Math.abs(pointerPx.x - deleteTargetX) <= 12 &&
-			Math.abs(pointerPx.y - deleteTargetY) <= 12;
+			Math.abs(pointerPx.x - deleteTargetX) <= 16 &&
+			Math.abs(pointerPx.y - deleteTargetY) <= 16;
 
 		const isInsideBadge =
-			Math.abs(pointerPx.x - badgeX) <= badgeW / 2 + 6 &&
-			Math.abs(pointerPx.y - badgeY) <= badgeH / 2 + 6;
+			Math.abs(pointerPx.x - badgeX) <= badgeW / 2 + 8 &&
+			Math.abs(pointerPx.y - badgeY) <= badgeH / 2 + 8;
 
 		if (isDeleteHitbox || isInsideBadge) {
 			const isDeleteHit =
-				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 20;
+				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 28;
 			return {
 				type: "angle",
 				id: a.id,
@@ -966,23 +966,23 @@ export function hitTestMeasurementObject(
 }
 
 /**
- * Draws visual 18px circular delete [×] button badge on measurement overlays (DEF-D03).
- * Visual: round badge radius 9px (diameter 18px), background rgba(239, 68, 68, 0.25)
- * with border #ef4444 and crisp white cross in center.
- * Retains 24x24px invisible hit-test area.
+ * Draws visual 22px circular delete [×] button badge on measurement overlays (DEF-03 / DEF-18.1).
+ * Visual: round badge radius 11px (diameter 22px), background rgba(239, 68, 68, 0.35)
+ * with border #ef4444 (1.5px) and crisp white cross in center (12px bold).
+ * Retains 32x32px invisible hit-test area.
  */
 export function drawMeasurementDeleteButton(
 	ctx: CanvasRenderingContext2D,
 	centerX: number,
 	centerY: number,
-	radius = 9,
+	radius = 11,
 ): void {
 	ctx.save();
 	ctx.shadowBlur = 0;
 	// Round badge background
-	ctx.fillStyle = "rgba(239, 68, 68, 0.25)";
+	ctx.fillStyle = "rgba(239, 68, 68, 0.35)";
 	ctx.strokeStyle = "#ef4444";
-	ctx.lineWidth = 1.0;
+	ctx.lineWidth = 1.5;
 	ctx.beginPath();
 	ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
 	ctx.fill();
@@ -990,7 +990,7 @@ export function drawMeasurementDeleteButton(
 
 	// Crisp white cross in the center
 	ctx.fillStyle = "#ffffff";
-	ctx.font = "bold 11px sans-serif";
+	ctx.font = "bold 12px sans-serif";
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
 	ctx.fillText("×", centerX, centerY);
