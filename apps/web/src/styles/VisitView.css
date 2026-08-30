@@ -422,11 +422,12 @@
 	.visit-focus-bar.odontogram-compact {
 		min-height: 44px !important;
 		height: auto !important;
-		padding: 4px 10px !important;
+		padding: 6px 10px !important;
 		margin: 8px 0 8px 0 !important;
 		gap: 8px !important;
 		border-radius: 12px !important;
 		display: flex !important;
+		flex-wrap: wrap !important;
 		align-items: center !important;
 		justify-content: space-between !important;
 	}
@@ -440,26 +441,47 @@
 	}
 
 	.visit-focus-bar .visit-focus-patient .avatar {
-		width: 28px !important;
-		height: 28px !important;
-		min-width: 28px !important;
-		min-height: 28px !important;
-		font-size: 12px !important;
+		width: 32px !important;
+		height: 32px !important;
+		min-width: 32px !important;
+		min-height: 32px !important;
+		font-size: 13px !important;
 		flex-shrink: 0 !important;
 	}
 
-	.visit-focus-bar .eyebrow,
-	.visit-focus-bar .visit-focus-patient p,
-	.visit-focus-bar .visit-focus-status {
+	.visit-focus-bar .eyebrow {
 		display: none !important;
 	}
 
+	.visit-focus-bar .visit-focus-patient p {
+		display: block !important;
+		font-size: 11px !important;
+		color: var(--muted) !important;
+		margin: 0 !important;
+	}
+
+	.visit-focus-bar .visit-focus-status {
+		display: flex !important;
+		align-items: center !important;
+		gap: 6px !important;
+		min-width: 0 !important;
+		flex-wrap: wrap !important;
+		font-size: 11px !important;
+		width: 100% !important;
+		padding-top: 4px !important;
+		border-top: 1px dashed var(--line) !important;
+	}
+
+	.visit-focus-bar .visit-focus-status span,
+	.visit-focus-bar .visit-focus-status strong {
+		font-size: 11px !important;
+	}
+
 	.visit-focus-bar .visit-focus-patient h3 {
-		font-size: 13px !important;
+		font-size: 14px !important;
 		font-weight: 800 !important;
-		white-space: nowrap !important;
-		overflow: hidden !important;
-		text-overflow: ellipsis !important;
+		white-space: normal !important;
+		word-break: break-word !important;
 		margin: 0 !important;
 		line-height: 1.2 !important;
 		color: var(--ink) !important;

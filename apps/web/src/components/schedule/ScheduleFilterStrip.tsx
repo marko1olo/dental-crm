@@ -589,18 +589,18 @@ export function ScheduleFilterStrip({
 						</div>
 				</div>
 
-				{/* STRICTLY 1 PRIMARY ACTION BUTTON: "+ Запись" */}
+				{/* Secondary Action: "+ Запись" (Header CTA is dominant Primary) */}
 				{onQuickBooking && (
 					<button
 						type="button"
 						onClick={onQuickBooking}
-						className="primary-button min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-7.5 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-extrabold flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 shadow-sm border border-transparent transition-all cursor-pointer select-none"
+						className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-7.5 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] active:scale-95 text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 transition-all cursor-pointer select-none"
 						title="Новая запись пациента на прием (горячая клавиша N)"
 						aria-label="Добавить запись"
 					>
-						<Sparkles size={13} className="shrink-0" />
-						<span className="hidden sm:inline whitespace-nowrap font-black">+ Запись</span>
-						<span className="sm:hidden font-black text-sm leading-none">+</span>
+						<Sparkles size={13} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />
+						<span className="hidden sm:inline whitespace-nowrap font-bold">+ Запись</span>
+						<span className="sm:hidden font-bold text-sm leading-none">+</span>
 					</button>
 				)}
 			</div>

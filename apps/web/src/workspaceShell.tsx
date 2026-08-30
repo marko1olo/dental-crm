@@ -552,6 +552,16 @@ type WorkspaceTopbarProps = {
 	onOpenDoctorShiftCockpit?: () => void;
 };
 
+export function formatDisplayClinicName(name?: string | null): string {
+	if (!name || !name.trim()) return "Стоматологическая клиника";
+	const trimmed = name.trim();
+	if (/^\d{10,14}$/.test(trimmed)) {
+		return "Стоматологическая клиника";
+	}
+	const cleaned = trimmed.replace(/[_-\s]+\d{10,14}$/, "").trim();
+	return cleaned || "Стоматологическая клиника";
+}
+
 export function WorkspaceTopbar({
 	clinicName,
 	onGoToDictation,
@@ -607,7 +617,7 @@ export function WorkspaceTopbar({
 					<p className="eyebrow">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>
-					<h1>{clinicName}</h1>
+					<h1>{formatDisplayClinicName(clinicName)}</h1>
 				</div>
 				<div className="topbar-selectors">
 					<details

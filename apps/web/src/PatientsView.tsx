@@ -299,7 +299,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						onChange={(event: TextFieldChangeEvent) =>
 							setQuery(event.target.value)
 						}
-						placeholder="Поиск пациента: ФИО или телефон"
+						placeholder="Поиск пациента по ФИО или телефону..."
 					/>
 					{query ? (
 						<button
@@ -346,7 +346,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						style={{ minHeight: "44px" }}
 					>
 						<Plus size={18} aria-hidden="true" />
-						<span>+ Создать нового</span>
+						<span>Создать нового</span>
 					</button>
 				</div>
 			</header>
@@ -479,7 +479,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									data-testid="empty-state-create-patient-btn"
 								>
 									<Plus size={16} aria-hidden="true" />
-									<span>+ Создать нового</span>
+									<span>Создать нового</span>
 								</button>
 							}
 							glass={false}

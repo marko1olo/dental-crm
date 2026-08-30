@@ -1072,9 +1072,10 @@ export function SanpinRegisters() {
 					<button
 						type="button"
 						onClick={() => setIsSterilizationModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+						className="sanpin-btn sanpin-btn-secondary touch-manipulation min-h-[44px] min-w-[44px]"
 						style={{
 							minHeight: "44px",
+							minWidth: "44px",
 							padding: "0.4rem 0.85rem",
 							fontSize: "0.8125rem",
 							fontWeight: 600,
@@ -1392,13 +1393,14 @@ export function SanpinRegisters() {
 						</div>
 					)}
 
-					{/* Refresh Button */}
+					{/* Refresh / Reset Button (44px Touch Target) */}
 					<button
 						type="button"
 						onClick={fetchSummary}
-						className="sanpin-btn sanpin-btn-secondary"
+						className="sanpin-btn sanpin-btn-secondary touch-manipulation min-h-[44px] min-w-[44px]"
 						style={{ minHeight: "44px", minWidth: "44px", width: "44px", height: "44px", padding: "0.5rem", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 						title="Обновить сводку"
+						aria-label="Обновить сводку"
 					>
 						<RotateCcw size={16} />
 					</button>

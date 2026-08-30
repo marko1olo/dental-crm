@@ -279,7 +279,7 @@ export function IncomingCallPopupModal({
 
 	return (
 		<div
-			className="incoming-call-modal-body flex flex-col text-[var(--ink,#0f172a)] animate-fade-in max-h-[90dvh] overflow-hidden rounded-2xl"
+			className="incoming-call-modal-body flex flex-col text-[var(--ink,#0f172a)] animate-fade-in max-h-[85vh] overflow-hidden rounded-2xl"
 			data-testid="incoming-call-modal-content"
 		>
 			{/* Scrollable Middle Body */}
@@ -510,7 +510,7 @@ export function IncomingCallPopupModal({
 			</div>
 
 			{/* STICKY PRIMARY CALL ACTION BUTTONS (>= 48x48px) */}
-			<div className="sticky bottom-0 shrink-0 bg-[var(--paper-strong,var(--paper,#ffffff))] pt-2.5 pb-1 px-2 sm:px-3 border-t border-[var(--line,#e2e8f0)] flex items-center gap-2 z-20">
+			<div className="sticky bottom-0 shrink-0 bg-[var(--paper-strong,var(--paper,#ffffff))] pt-2 pb-2 px-2 sm:px-3 border-t border-[var(--line,#e2e8f0)] flex items-center gap-2 z-20">
 				{/* Reject / Hangup Button */}
 				<button
 					type="button"

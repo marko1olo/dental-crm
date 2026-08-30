@@ -448,8 +448,15 @@
 		grid-template-columns: 1fr;
 	}
 	.emk-tabs-container {
-		flex-direction: column;
-		align-items: stretch;
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+	.emk-tabs-container::-webkit-scrollbar {
+		display: none;
 	}
 }
 

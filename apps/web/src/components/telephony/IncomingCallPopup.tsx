@@ -827,11 +827,11 @@ export function IncomingCallPopup() {
 			style={{ zIndex: 9999 }}
 		>
 			<div
-				className="dnt-incoming-call-popup w-full sm:w-[460px] max-w-[calc(100vw-24px)] max-h-[90dvh] flex flex-col rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in overflow-hidden"
+				className="dnt-incoming-call-popup w-full sm:w-[460px] max-w-[calc(100vw-24px)] max-h-[85vh] flex flex-col rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in overflow-hidden"
 				style={{
 					boxShadow:
 						"0 20px 40px -15px rgba(0,0,0,0.3), 0 0 20px 2px rgba(15,118,110,0.18)",
-					maxHeight: "90dvh",
+					maxHeight: "85vh",
 				}}
 				role="dialog"
 				aria-labelledby="incoming-call-title"
@@ -1267,7 +1267,7 @@ export function IncomingCallPopup() {
 			</div>
 
 			{/* Sticky Quick Actions Action Bar with prominent >= 48x48px Answer/Hangup/Accept buttons */}
-			<div className="sticky bottom-0 shrink-0 bg-[var(--paper-strong,var(--paper,#ffffff))] pt-2.5 pb-1 border-t border-[var(--line,#e2e8f0)] flex items-center gap-2.5 z-20">
+			<div className="sticky bottom-0 shrink-0 bg-[var(--paper-strong,var(--paper,#ffffff))] pt-2 pb-2 border-t border-[var(--line,#e2e8f0)] flex items-center gap-2.5 z-20">
 				{/* Reject Call Button (Hangup >= 48x48px) */}
 				<button
 					type="button"

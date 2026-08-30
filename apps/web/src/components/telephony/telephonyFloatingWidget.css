@@ -4,7 +4,7 @@
 
 .dnt-telephony-floating {
 	position: fixed;
-	bottom: calc(var(--bottom-nav-height, 64px) + 24px + env(safe-area-inset-bottom, 0px));
+	bottom: calc(var(--bottom-nav-height, 64px) + 36px + env(safe-area-inset-bottom, 0px));
 	right: 16px;
 	z-index: 35;
 	display: flex;
@@ -89,7 +89,7 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 
 @media (max-width: 640px) {
 	.dnt-telephony-floating {
-		bottom: calc(var(--bottom-nav-height, 64px) + 24px + env(safe-area-inset-bottom, 0px));
+		bottom: calc(var(--bottom-nav-height, 64px) + 36px + env(safe-area-inset-bottom, 0px));
 		right: 16px;
 		z-index: 35;
 		pointer-events: none !important;

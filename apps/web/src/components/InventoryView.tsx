@@ -2,6 +2,7 @@ import {
 	AlertTriangle,
 	ArrowDownToLine,
 	ArrowUpFromLine,
+	ChevronDown,
 	Edit2,
 	Package,
 	PackageCheck,
@@ -166,6 +167,20 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
 	const [isInventoryAuditOpen, setIsInventoryAuditOpen] = useState(false);
 	const [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
+	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
+	const opsMenuRef = React.useRef<HTMLDivElement>(null);
+
+	React.useEffect(() => {
+		const handleOutside = (e: MouseEvent) => {
+			if (opsMenuRef.current && !opsMenuRef.current.contains(e.target as Node)) {
+				setIsOpsMenuOpen(false);
+			}
+		};
+		if (isOpsMenuOpen) {
+			document.addEventListener("mousedown", handleOutside);
+		}
+		return () => document.removeEventListener("mousedown", handleOutside);
+	}, [isOpsMenuOpen]);
 
 	/*
 	 * ЭТО ЗНАЧЕНИЯ CSS, А НЕ ИМЕНА КЛАССОВ.
@@ -495,125 +510,206 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							/>
 						</div>
 						<div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-							<button
-								type="button"
-								className="secondary-button"
-								data-testid="clinical-writeoff-trigger"
-								onClick={() => setIsClinicalWriteoffOpen(true)}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									padding: "8px 12px",
-									minHeight: "40px",
-									borderRadius: 8,
-									border: `1px solid ${borderColor}`,
-									background: paperSoftBg,
-									color: "var(--ink)",
-									fontWeight: 600,
-									fontSize: 13,
-									cursor: "pointer",
-									whiteSpace: "nowrap",
-								}}
-								title="Клиническое списание расходников по нормам Приказа Минздрава 804н (Акты 0504230, М-11 и ТОРГ-16)"
-							>
-								<PackageCheck size={16} className="text-teal-600" /> Списание по наряду
-							</button>
-							<button
-								type="button"
-								className="secondary-button"
-								data-testid="warehouse-transfer-trigger"
-								onClick={() => setIsWarehouseTransferOpen(true)}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									padding: "8px 12px",
-									minHeight: "40px",
-									borderRadius: 8,
-									border: `1px solid ${borderColor}`,
-									background: paperSoftBg,
-									color: "var(--ink)",
-									fontWeight: 600,
-									fontSize: 13,
-									cursor: "pointer",
-									whiteSpace: "nowrap",
-								}}
-								title="Межфилиальное перемещение ТМЦ по накладным ТОРГ-13"
-							>
-								<Truck size={16} /> Перемещение (ТОРГ-13)
-							</button>
-							<button
-								type="button"
-								className="secondary-button"
-								data-testid="warehouse-inventory-audit-trigger"
-								onClick={() => setIsInventoryAuditOpen(true)}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									padding: "8px 12px",
-									minHeight: "40px",
-									borderRadius: 8,
-									border: `1px solid ${borderColor}`,
-									background: paperSoftBg,
-									color: "var(--ink)",
-									fontWeight: 600,
-									fontSize: 13,
-									cursor: "pointer",
-									whiteSpace: "nowrap",
-								}}
-								title="Складская инвентаризация: Опись ИНВ-3, Сличительная ведомость ИНВ-19 и FEFO контроль"
-							>
-								<PackageCheck size={16} className="text-teal-600" /> Инвентаризация (ИНВ-3/19)
-							</button>
-							<button
-								type="button"
-								className="secondary-button"
-								data-testid="mdlp-disposal-trigger"
-								onClick={() => setIsMdlpDisposalOpen(true)}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									padding: "8px 12px",
-									minHeight: "40px",
-									borderRadius: 8,
-									border: `1px solid ${borderColor}`,
-									background: paperSoftBg,
-									color: "var(--ink)",
-									fontWeight: 600,
-									fontSize: 13,
-									cursor: "pointer",
-									whiteSpace: "nowrap",
-								}}
-								title="Официальный вывод из оборота лекарственных препаратов по Схеме 10560 ИС МДЛП (Честный ЗНАК)"
-							>
-								<Package size={16} className="text-teal-600" /> МДЛП (Схема 10560)
-							</button>
-							<button
-								type="button"
-								className="secondary-button"
-								onClick={() => setIsDeductionModalOpen(true)}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									padding: "8px 12px",
-									minHeight: "40px",
-									borderRadius: 8,
-									border: `1px solid ${borderColor}`,
-									background: paperSoftBg,
-									color: "var(--ink)",
-									fontWeight: 600,
-									fontSize: 13,
-									cursor: "pointer",
-									whiteSpace: "nowrap",
-								}}
-								title="Списание расходных материалов по клиническим техкартам"
-							>
-								<Package size={16} /> Техкарты
-							</button>
+							{/* Operations Dropdown Menu (Hick's Law grouping) */}
+							<div ref={opsMenuRef} style={{ position: "relative", display: "inline-block" }}>
+								<button
+									type="button"
+									className="secondary-button"
+									onClick={() => setIsOpsMenuOpen((prev) => !prev)}
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 6,
+										padding: "8px 14px",
+										minHeight: "40px",
+										borderRadius: 8,
+										border: `1px solid ${borderColor}`,
+										background: paperSoftBg,
+										color: "var(--ink)",
+										fontWeight: 600,
+										fontSize: 13,
+										cursor: "pointer",
+										whiteSpace: "nowrap",
+									}}
+									title="Операции со складом: Списание по наряду, ТОРГ-13, ИНВ-3/19, МДЛП, Техкарты"
+									aria-expanded={isOpsMenuOpen}
+								>
+									<PackageCheck size={16} className="text-teal-600" />
+									<span>Операции со складом</span>
+									<ChevronDown size={14} style={{ transform: isOpsMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+								</button>
+
+								{isOpsMenuOpen && (
+									<div
+										style={{
+											position: "absolute",
+											left: 0,
+											top: "calc(100% + 4px)",
+											background: paperBg,
+											border: `1px solid ${borderColor}`,
+											borderRadius: 10,
+											boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15)",
+											padding: 6,
+											zIndex: 50,
+											minWidth: 260,
+											display: "flex",
+											flexDirection: "column",
+											gap: 2,
+										}}
+										role="menu"
+									>
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="clinical-writeoff-trigger"
+											onClick={() => {
+												setIsClinicalWriteoffOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Клиническое списание расходников по нормам Приказа Минздрава 804н (Акты 0504230, М-11 и ТОРГ-16)"
+											role="menuitem"
+										>
+											<PackageCheck size={16} className="text-teal-600 shrink-0" />
+											<span>Списание по наряду (804н)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="warehouse-transfer-trigger"
+											onClick={() => {
+												setIsWarehouseTransferOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Межфилиальное перемещение ТМЦ по накладным ТОРГ-13"
+											role="menuitem"
+										>
+											<Truck size={16} className="shrink-0" />
+											<span>Перемещение (ТОРГ-13)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="warehouse-inventory-audit-trigger"
+											onClick={() => {
+												setIsInventoryAuditOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Складская инвентаризация: Опись ИНВ-3, Сличительная ведомость ИНВ-19 и FEFO контроль"
+											role="menuitem"
+										>
+											<PackageCheck size={16} className="text-teal-600 shrink-0" />
+											<span>Инвентаризация (ИНВ-3/19)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="mdlp-disposal-trigger"
+											onClick={() => {
+												setIsMdlpDisposalOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Официальный вывод из оборота лекарственных препаратов по Схеме 10560 ИС МДЛП (Честный ЗНАК)"
+											role="menuitem"
+										>
+											<Package size={16} className="text-teal-600 shrink-0" />
+											<span>МДЛП (Схема 10560)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											onClick={() => {
+												setIsDeductionModalOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Списание расходных материалов по клиническим техкартам"
+											role="menuitem"
+										>
+											<Package size={16} className="shrink-0" />
+											<span>Клинические техкарты</span>
+										</button>
+									</div>
+								)}
+							</div>
+
 							<button
 								type="button"
 								className="primary-button"

@@ -1338,7 +1338,7 @@ export function VisitEmkTab() {
 			</details>
 
 			{/* Компактные 32px вкладки (EMK Tabs) */}
-			<div className="emk-tabs-container flex items-center gap-1.5 overflow-x-auto scrollbar-none my-2 pb-1 border-b border-[var(--line)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist">
+			<div className="emk-tabs-container flex items-center gap-1.5 overflow-x-auto flex-nowrap scrollbar-none my-2 pb-1 border-b border-[var(--line)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist">
 				{emkTabs.map((tab) => {
 					const isFilled =
 						tab.id !== "all" &&
@@ -1364,7 +1364,7 @@ export function VisitEmkTab() {
 			</div>
 
 			<div
-				className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""}`}
+				className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""} pb-36 pr-0 sm:pb-32 sm:pr-72 lg:pr-80`}
 			>
 				{fieldsUnavailable ? (
 					<div
