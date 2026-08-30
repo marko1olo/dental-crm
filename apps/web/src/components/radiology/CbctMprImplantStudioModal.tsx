@@ -2197,9 +2197,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setCrossSections(csList);
 	}, [volume, isOpen, archCurve, windowWidth, windowLevel, slabMode, invertColors]);
 
+	// ─── LAYER 1: RENDER PANORAMIC BASE RADIOGRAPH (OFFSCREEN RASTER) ─────────
+	useEffect(() => {
+		if (!panoramicData || !panoBaseCanvasRef.current) return;
+
+		const canvas = panoBaseCanvasRef.current;
+		canvas.width = panoramicData.widthPx;
+		canvas.height = panoramicData.heightPx;
+		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
-		// 1. Draw Panoramic Grayscale Radiograph
 		if (!panoOffscreenRef.current) {
 			panoOffscreenRef.current = document.createElement("canvas");
 		}
@@ -2217,13 +2224,32 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			offCtx.putImageData(panoImgDataRef.current, 0, 0);
 		}
 
-		// ─── PASS 1: TRANSFORMED WORLD SPACE (RADIOGRAPH & ANATOMICAL OVERLAYS) ───
 		ctx.save();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		const transform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
 		ctx.translate(transform.panX, transform.panY);
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
+		ctx.restore();
+	}, [panoramicData, transforms.panoramic]);
+
+	// ─── LAYER 2: RENDER PANORAMIC OVERLAY UI (INTERACTIVE FAN, NERVE, IMPLANTS) ───
+	useEffect(() => {
+		if (!panoramicData || !panoOverlayCanvasRef.current) return;
+
+		const canvas = panoOverlayCanvasRef.current;
+		canvas.width = panoramicData.widthPx;
+		canvas.height = panoramicData.heightPx;
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		// ─── PASS 1: TRANSFORMED WORLD SPACE (RADIOGRAPH & ANATOMICAL OVERLAYS) ───
+		ctx.save();
+		const transform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+		ctx.translate(transform.panX, transform.panY);
+		ctx.scale(transform.zoom, transform.zoom);
 
 		// Draw Axial Plane Intersection Line (Cyan #06b6d4)
 		if (volume) {
@@ -2629,19 +2655,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.fillText(`FDI #${implant3DWorld.targetToothFdi}`, panoXScreen, badgeY + 7);
 			ctx.restore();
 		}
-	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout, interpolatedNerve3D, nervePoints, selectedNerveNodeIdx]);
+	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic, maximizedViewport, viewLayout, interpolatedNerve3D, nervePoints, selectedNerveNodeIdx, invertColors]);
 
-	// ─── RENDER ACTIVE CROSS-SECTION WITH IMPLANT & NERVE ─────────────────────
+	// ─── LAYER 1: RENDER ACTIVE CROSS-SECTION BASE BONE SLICE (OFFSCREEN RASTER) ───
 	useEffect(() => {
-		if (!activeCrossSection || !crossSectionCanvasRef.current) return;
+		if (!activeCrossSection || !crossSectionBaseCanvasRef.current) return;
 
-		const canvas = crossSectionCanvasRef.current;
+		const canvas = crossSectionBaseCanvasRef.current;
 		canvas.width = activeCrossSection.widthPx;
 		canvas.height = activeCrossSection.heightPx;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
-		// 1. Draw Resliced Bone Voxel Texture
 		if (!crossSectionOffscreenRef.current) {
 			crossSectionOffscreenRef.current = document.createElement("canvas");
 		}
@@ -2659,13 +2684,32 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			offCtx.putImageData(crossSectionImgDataRef.current, 0, 0);
 		}
 
-		// ─── PASS 1: TRANSFORMED WORLD SPACE (RESLICED BONE & CAD SHAPES) ───
 		ctx.save();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		const transform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
 		ctx.translate(transform.panX, transform.panY);
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
+		ctx.restore();
+	}, [activeCrossSection, transforms.cross_section]);
+
+	// ─── LAYER 2: RENDER ACTIVE CROSS-SECTION OVERLAY UI (CAD IMPLANT, NERVE, GRID) ───
+	useEffect(() => {
+		if (!activeCrossSection || !crossSectionOverlayCanvasRef.current) return;
+
+		const canvas = crossSectionOverlayCanvasRef.current;
+		canvas.width = activeCrossSection.widthPx;
+		canvas.height = activeCrossSection.heightPx;
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		// ─── PASS 1: TRANSFORMED WORLD SPACE (RESLICED BONE & CAD SHAPES) ───
+		ctx.save();
+		const transform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
+		ctx.translate(transform.panX, transform.panY);
+		ctx.scale(transform.zoom, transform.zoom);
 
 		const pxSpacing = activeCrossSection.pixelSpacingMm;
 		const centerX = canvas.width / 2;
@@ -2886,7 +2930,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.fillText(`${nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм`, midScreen.x, midScreen.y);
 			ctx.restore();
 		}
-	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout, selectedMeasurement, hoveredImplantPart, dragImplantPart, implantAngulationDeg]);
+	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section, maximizedViewport, viewLayout, selectedMeasurement, hoveredImplantPart, dragImplantPart, implantAngulationDeg, invertColors]);
 
 	// ─── INTERACTIVE PANORAMA CLICK & SCRUB TO JUMP TO CROSS-SECTION ──────────
 	const handleSelectTooth = useCallback((toothFdi: number | string) => {
