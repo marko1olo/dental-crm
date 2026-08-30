@@ -420,25 +420,39 @@ export function reconstructPanoramicView(
 		}
 	}
 
-	// Calculate tooth marker positions on the panoramic image based on exact arc distance
+	// Calculate tooth marker positions on the panoramic image based on exact arc distance & symmetric margins >= 20px
 	const toothMarkers = archCurve.anchors.map((anchor) => {
-		let closestCol = 0;
 		let minDistance = Infinity;
+		let bestArcDistMm = 0;
 
-		for (let col = 0; col < outW; col++) {
-			const targetDistMm = (col / denomW) * totalLengthMm;
-			const pDist = Math.hypot(
-				(vectorField[Math.min(nNodes - 1, Math.round((col / denomW) * (nNodes - 1)))]?.point.x ?? 0) - anchor.positionMm.x,
-				(vectorField[Math.min(nNodes - 1, Math.round((col / denomW) * (nNodes - 1)))]?.point.y ?? 0) - anchor.positionMm.y,
-			);
-			if (pDist < minDistance) {
-				minDistance = pDist;
-				closestCol = col;
+		for (let i = 0; i < nNodes - 1; i++) {
+			const n0 = vectorField[i]!;
+			const n1 = vectorField[i + 1]!;
+			const segDx = n1.point.x - n0.point.x;
+			const segDy = n1.point.y - n0.point.y;
+			const segL2 = segDx * segDx + segDy * segDy;
+			let t = 0;
+			if (segL2 > 1e-6) {
+				const pDx = anchor.positionMm.x - n0.point.x;
+				const pDy = anchor.positionMm.y - n0.point.y;
+				t = Math.max(0, Math.min(1, (pDx * segDx + pDy * segDy) / segL2));
+			}
+			const projX = n0.point.x + t * segDx;
+			const projY = n0.point.y + t * segDy;
+			const dist = Math.hypot(anchor.positionMm.x - projX, anchor.positionMm.y - projY);
+			if (dist < minDistance) {
+				minDistance = dist;
+				const segLen = n1.distanceAlongArchMm - n0.distanceAlongArchMm;
+				bestArcDistMm = n0.distanceAlongArchMm + t * segLen;
 			}
 		}
 
-		// Ensure minimum margin from boundaries (at least 16px from left/right) so FDI badges like #48 are never clipped
-		const clampedCol = Math.max(16, Math.min(outW - 16, closestCol));
+		const ratio = totalLengthMm > 0 ? Math.max(0, Math.min(1, bestArcDistMm / totalLengthMm)) : 0;
+		// Ensure symmetrical dental arch landmarks with equal margins on left and right (>= 20px)
+		const minMarginPx = 20;
+		const availableWidth = Math.max(0, outW - 2 * minMarginPx);
+		const mappedCol = Math.round(minMarginPx + ratio * availableWidth);
+		const clampedCol = Math.max(minMarginPx, Math.min(outW - minMarginPx, mappedCol));
 
 		return {
 			toothFdi: anchor.toothFdi,

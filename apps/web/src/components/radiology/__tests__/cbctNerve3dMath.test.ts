@@ -353,20 +353,28 @@ describe("Domain 2: 3D Mandibular Canal (IAN) Spline & Distance Gating Suite", (
 			isDisposed: false,
 		};
 
-		it("guarantees at least 16px left margin for FDI #48 badge so '4' is not clipped", () => {
+		it("guarantees at least 20px margins for FDI badges and symmetric centering (DEF-07)", () => {
 			const pano = reconstructPanoramicView(mockVolume, archCurve, {
 				heightPx: 220,
 			});
 
 			assert.ok(pano.toothMarkersOnPano.length > 0);
 			const marker48 = pano.toothMarkersOnPano.find((m) => m.toothFdi === "48");
+			const marker38 = pano.toothMarkersOnPano.find((m) => m.toothFdi === "38");
 			assert.ok(marker48, "Marker for tooth FDI 48 must exist");
-			assert.ok(marker48.xPx >= 16, `Marker 48 xPx (${marker48.xPx}) must be >= 16 to prevent clipping`);
+			assert.ok(marker38, "Marker for tooth FDI 38 must exist");
+			assert.ok(marker48.xPx >= 20, `Marker 48 xPx (${marker48.xPx}) must be >= 20 to prevent clipping`);
+			assert.ok(marker38.xPx <= pano.widthPx - 20, `Marker 38 xPx (${marker38.xPx}) must be <= widthPx - 20`);
 
-			// Verify all tooth markers respect the 16px boundary constraint
+			// Verify symmetric margins: left margin of #48 equals right margin of #38
+			const leftMargin = marker48.xPx;
+			const rightMargin = pano.widthPx - marker38.xPx;
+			assert.ok(Math.abs(leftMargin - rightMargin) <= 1, `Margins must be symmetric: left=${leftMargin}, right=${rightMargin}`);
+
+			// Verify all tooth markers respect the 20px boundary constraint
 			for (const tm of pano.toothMarkersOnPano) {
-				assert.ok(tm.xPx >= 16, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be >= 16`);
-				assert.ok(tm.xPx <= pano.widthPx - 16, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be <= widthPx - 16`);
+				assert.ok(tm.xPx >= 20, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be >= 20`);
+				assert.ok(tm.xPx <= pano.widthPx - 20, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be <= widthPx - 20`);
 			}
 		});
 	});
