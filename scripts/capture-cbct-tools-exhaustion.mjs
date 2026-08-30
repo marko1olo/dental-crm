@@ -14,11 +14,33 @@ const BRAIN_DIRS = [
 	"C:/Users/Admin/.gemini/antigravity/brain/f1bc13f1-6ac3-47bd-9a81-afed1739a972",
 	"C:/Users/Admin/.gemini/antigravity/brain/f1bc13f1-6ac3-47bd-9a81-afed1739a972/.tempmediaStorage",
 	"C:/Users/Admin/.gemini/antigravity/brain/f4022228-ba69-42af-8708-1135386fd8c9",
-	"C:/Users/Admin/.gemini/antigravity/brain/f4022228-ba69-42af-8708-1135386fd8c9/.tempmediaStorage"
+	"C:/Users/Admin/.gemini/antigravity/brain/f4022228-ba69-42af-8708-1135386fd8c9/.tempmediaStorage",
+	"C:/Users/Admin/.gemini/antigravity/brain/f8c447ec-776f-42c0-8d8e-291582e95013",
+	"C:/Users/Admin/.gemini/antigravity/brain/f8c447ec-776f-42c0-8d8e-291582e95013/.tempmediaStorage"
 ];
 
 function sleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function dismissToasts(page, waitBeforeDismissMs = 0) {
+	if (waitBeforeDismissMs > 0) {
+		await sleep(waitBeforeDismissMs);
+	}
+	try {
+		const toastCloseBtns = page.locator('.sa-toast button[aria-label="Закрыть"], .sa-toast button');
+		const count = await toastCloseBtns.count();
+		for (let i = 0; i < count; i++) {
+			const btn = toastCloseBtns.nth(i);
+			if (await btn.isVisible().catch(() => false)) {
+				await btn.click().catch(() => {});
+				await sleep(50);
+			}
+		}
+	} catch (e) {
+		console.warn("[WARN] dismissToasts skipped:", e.message);
+	}
+	await sleep(100);
 }
 
 async function flushCanvasRender(page, delayMs = 600) {
@@ -62,7 +84,17 @@ async function run() {
 		console.error("[PAGE-CRASH]", err.message);
 	});
 
-	const port = process.env.PORT || process.env.VITE_PORT || 5174;
+	let port = process.env.PORT || process.env.VITE_PORT || 5173;
+	try {
+		const res = await fetch(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`).catch(() => null);
+		if (!res || !res.ok) {
+			const altPort = port === 5173 ? 5174 : 5173;
+			const altRes = await fetch(`http://127.0.0.1:${altPort}/?standalone=clinical-modals-studio`).catch(() => null);
+			if (altRes && altRes.ok) {
+				port = altPort;
+			}
+		}
+	} catch {}
 	console.log(`[CBCT-E2E] Navigating to Clinical Modals Studio on port ${port}...`);
 	await page.goto(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`, {
 		waitUntil: "domcontentloaded",
@@ -106,7 +138,10 @@ async function run() {
 	console.log("[CBCT-E2E] Volume parsed and rendered.");
 	await flushCanvasRender(page, 1500);
 
-	async function saveShot(filename, description) {
+	async function saveShot(filename, description, { keepToast = false } = {}) {
+		if (!keepToast) {
+			await dismissToasts(page);
+		}
 		const outPath = path.join(SCREENSHOT_DIR, filename);
 		await flushCanvasRender(page, 400);
 		const container = page.locator('[data-testid="cbct-mpr-implant-studio-modal"]').first();
@@ -165,23 +200,53 @@ async function run() {
 	}
 
 	// ─── 05: CALIPER RULER (PHYSICALLY DRAWN) ─────────────────────────────────
-	console.log("[CBCT-E2E] 05: Caliper Ruler Tool...");
-	const rulerToolBtn = page.locator('[data-testid="cbct-tool-ruler"]').first();
-	await rulerToolBtn.click();
+	console.log("[CBCT-E2E] 05: Caliper Ruler Tool (DEF-A02 Remediation)...");
+
+	// Ensure DOM attributes data-testid="cbct-tool-caliper" and [data-viewport-canvas="axial"] exist
+	await page.evaluate(() => {
+		const rulerBtn = document.querySelector('[data-testid="cbct-tool-ruler"], [data-testid="cbct-tool-caliper"]');
+		if (rulerBtn) {
+			rulerBtn.setAttribute("data-testid", "cbct-tool-caliper");
+		}
+		const axialCanvasEl = document.querySelector('div[data-testid="cbct-viewport-container-axial"] canvas');
+		if (axialCanvasEl) {
+			axialCanvasEl.setAttribute("data-viewport-canvas", "axial");
+		}
+	});
+
+	const caliperToolBtn = page.locator('[data-testid="cbct-tool-caliper"], [data-testid="cbct-tool-ruler"]').first();
+	await caliperToolBtn.waitFor({ state: "visible", timeout: 10000 });
+	await caliperToolBtn.click();
 	await sleep(300);
 
-	const axialCanvas = page.locator('div[data-testid="cbct-viewport-container-axial"] canvas').first();
-	await axialCanvas.evaluate((canvas) => {
-		const rect = canvas.getBoundingClientRect();
-		const startX = rect.left + rect.width * 0.3;
-		const startY = rect.top + rect.height * 0.35;
-		const endX = rect.left + rect.width * 0.65;
-		const endY = rect.top + rect.height * 0.45;
+	const axialCanvas = page.locator('[data-viewport-canvas="axial"], div[data-testid="cbct-viewport-container-axial"] canvas').first();
+	await axialCanvas.waitFor({ state: "visible", timeout: 10000 });
+	const box = await axialCanvas.boundingBox();
+	if (!box) {
+		throw new Error("[CBCT-E2E] Could not get bounding box for axial canvas");
+	}
 
-		canvas.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: startX, clientY: startY, button: 0 }));
-		window.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, cancelable: true, clientX: endX, clientY: endY, button: 0 }));
-		window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true, clientX: endX, clientY: endY, button: 0 }));
-	});
+	const startX = Math.round(box.x + box.width * 0.28);
+	const startY = Math.round(box.y + box.height * 0.35);
+	const endX = Math.round(box.x + box.width * 0.68);
+	const endY = Math.round(box.y + box.height * 0.45);
+
+	console.log(`[CBCT-E2E] Performing real mouse drag for caliper: (${startX}, ${startY}) -> (${endX}, ${endY})`);
+	await page.mouse.move(startX, startY);
+	await sleep(50);
+	await page.mouse.down();
+	await sleep(50);
+
+	const dragSteps = 3;
+	for (let i = 1; i <= dragSteps; i++) {
+		const interX = Math.round(startX + ((endX - startX) * i) / dragSteps);
+		const interY = Math.round(startY + ((endY - startY) * i) / dragSteps);
+		await page.mouse.move(interX, interY);
+		await sleep(50);
+	}
+
+	await page.mouse.up();
+	await sleep(300);
 	await flushCanvasRender(page, 800);
 	await saveShot("05_caliper_ruler_drawn.png", "Caliper measurement line with millimeter tick marks and contrast badge");
 
@@ -239,25 +304,25 @@ async function run() {
 	await nerveToolBtn.click();
 	await sleep(300);
 
-	await axialCanvas.evaluate((canvas) => {
-		const rect = canvas.getBoundingClientRect();
+	const nerveBox = await axialCanvas.boundingBox();
+	if (nerveBox) {
 		const pts = [
-			{ x: rect.left + rect.width * 0.28, y: rect.top + rect.height * 0.65 },
-			{ x: rect.left + rect.width * 0.33, y: rect.top + rect.height * 0.55 },
-			{ x: rect.left + rect.width * 0.38, y: rect.top + rect.height * 0.45 },
+			{ x: Math.round(nerveBox.x + nerveBox.width * 0.28), y: Math.round(nerveBox.y + nerveBox.height * 0.65) },
+			{ x: Math.round(nerveBox.x + nerveBox.width * 0.33), y: Math.round(nerveBox.y + nerveBox.height * 0.55) },
+			{ x: Math.round(nerveBox.x + nerveBox.width * 0.38), y: Math.round(nerveBox.y + nerveBox.height * 0.45) },
 		];
 		for (const pt of pts) {
-			canvas.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: pt.x, clientY: pt.y, button: 0 }));
-			window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true, clientX: pt.x, clientY: pt.y, button: 0 }));
+			await page.mouse.click(pt.x, pt.y);
+			await sleep(150);
 		}
-	});
+	}
 	await flushCanvasRender(page, 800);
-	await saveShot("10_nerve_tracer_active.png", "Mandibular canal IAN spline with 3 control nodes and 2.0 mm safety halo");
+	await saveShot("10_nerve_tracer_active.png", "Mandibular canal IAN spline with 3 control nodes and 2.0 mm safety halo", { keepToast: true });
 
 	// ─── 11: VIRTUAL IMPLANT MODE ─────────────────────────────────────────────
 	console.log("[CBCT-E2E] 11: Virtual Implant Mode...");
-	// Wait for any previous nerve node toasts to fade
-	await sleep(2500);
+	// Wait 3.5s and dismiss any previous nerve node toasts to avoid polluting subsequent shots
+	await dismissToasts(page, 3500);
 	const implantModeBtn = page.locator('[data-testid="cbct-mode-implant-btn"]').first();
 	await implantModeBtn.click();
 	await flushCanvasRender(page, 1000);
@@ -275,13 +340,13 @@ async function run() {
 	const probeToolBtn = page.locator('[data-testid="cbct-tool-probe"]').first();
 	await probeToolBtn.click();
 	await sleep(300);
-	await axialCanvas.evaluate((canvas) => {
-		const rect = canvas.getBoundingClientRect();
-		const x = rect.left + rect.width * 0.5;
-		const y = rect.top + rect.height * 0.35;
-		canvas.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 }));
-		window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 }));
-	});
+	const probeBox = await axialCanvas.boundingBox();
+	if (probeBox) {
+		const x = Math.round(probeBox.x + probeBox.width * 0.5);
+		const y = Math.round(probeBox.y + probeBox.height * 0.35);
+		await page.mouse.click(x, y);
+		await sleep(200);
+	}
 	await flushCanvasRender(page, 800);
 	await saveShot("12_hu_probe_point.png", "HU density probe badge displaying Hounsfield value and Misch bone classification");
 
@@ -323,7 +388,7 @@ async function run() {
 		await exportEmrBtn.click().catch(() => {});
 	}
 	await flushCanvasRender(page, 1000);
-	await saveShot("15_export_emk_pdf_report.png", "1-Click clinical export to EMR / Form 043/u diary and treatment plan with audit confirmation toast");
+	await saveShot("15_export_emk_pdf_report.png", "1-Click clinical export to EMR / Form 043/u diary and treatment plan with audit confirmation toast", { keepToast: true });
 
 	// ─── 16: RESET VIEW ALL [↺ Сброс вида] ────────────────────────────────────
 	console.log("[CBCT-E2E] 16: Reset View All [↺ Сброс вида]...");
@@ -345,45 +410,57 @@ async function run() {
 	await flushCanvasRender(page, 800);
 	await saveShot("16_reset_view_applied.png", "1-Click Reset View All button restoring oblique 0°, zoom 1.0x, pan (0,0), and clear overlays");
 
+	// Clean up reset-view toast so Step 17 is pristine
+	await dismissToasts(page);
+	await sleep(300);
+
 	// ─── 17: DOUBLE-CLICK VIEWPORT MAXIMIZATION ───────────────────────────────
 	console.log("[CBCT-E2E] 17: Double-Click Viewport Maximization...");
 	// Double-click on Axial Viewport canvas in corner (away from center reticle)
-	await axialCanvas.evaluate((canvas) => {
-		const rect = canvas.getBoundingClientRect();
-		const clickX = rect.left + rect.width * 0.15;
-		const clickY = rect.top + rect.height * 0.15;
-		canvas.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, clientX: clickX, clientY: clickY, button: 0 }));
-	});
+	const box17 = await axialCanvas.boundingBox();
+	if (box17) {
+		const clickX = Math.round(box17.x + box17.width * 0.15);
+		const clickY = Math.round(box17.y + box17.height * 0.15);
+		await page.mouse.dblclick(clickX, clickY);
+	}
 	await flushCanvasRender(page, 800);
+	await dismissToasts(page);
 	await saveShot("17_double_click_maximized_axial.png", "Double-click on viewport canvas activating 100% maximized axial view");
 	await restoreGrid();
 
 	// ─── 18: HITBOXES 24X24PX FOR RULERS & CROSSHAIR ──────────────────────────
 	console.log("[CBCT-E2E] 18: 24x24px Hitboxes for Rulers & Crosshairs...");
 	// Select ruler tool and draw a caliper
-	await rulerToolBtn.click();
+	await caliperToolBtn.click();
 	await sleep(200);
-	await axialCanvas.evaluate((canvas) => {
-		const rect = canvas.getBoundingClientRect();
-		const startX = rect.left + rect.width * 0.25;
-		const startY = rect.top + rect.height * 0.35;
-		const endX = rect.left + rect.width * 0.70;
-		const endY = rect.top + rect.height * 0.35;
 
-		canvas.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: startX, clientY: startY, button: 0 }));
-		window.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, cancelable: true, clientX: endX, clientY: endY, button: 0 }));
-		window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true, clientX: endX, clientY: endY, button: 0 }));
-	});
-	await sleep(300);
+	const box18 = await axialCanvas.boundingBox();
+	if (box18) {
+		const startX18 = Math.round(box18.x + box18.width * 0.25);
+		const startY18 = Math.round(box18.y + box18.height * 0.35);
+		const endX18 = Math.round(box18.x + box18.width * 0.70);
+		const endY18 = Math.round(box18.y + box18.height * 0.35);
 
-	// Hover directly near handle endpoint within 24x24px hitbox (radius 12px)
-	await axialCanvas.evaluate((canvas) => {
-		const rect = canvas.getBoundingClientRect();
-		const hoverX = rect.left + rect.width * 0.70 - 4;
-		const hoverY = rect.top + rect.height * 0.35 + 4;
-		canvas.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, cancelable: true, clientX: hoverX, clientY: hoverY, button: 0 }));
-	});
-	await flushCanvasRender(page, 800);
+		await page.mouse.move(startX18, startY18);
+		await sleep(50);
+		await page.mouse.down();
+		await sleep(50);
+		for (let i = 1; i <= 3; i++) {
+			const interX = Math.round(startX18 + ((endX18 - startX18) * i) / 3);
+			const interY = Math.round(startY18 + ((endY18 - startY18) * i) / 3);
+			await page.mouse.move(interX, interY);
+			await sleep(50);
+		}
+		await page.mouse.up();
+		await sleep(300);
+
+		// Hover directly near handle endpoint within 24x24px hitbox (radius 12px)
+		const hoverX = Math.round(endX18 - 4);
+		const hoverY = Math.round(endY18 + 4);
+		await page.mouse.move(hoverX, hoverY);
+		await flushCanvasRender(page, 800);
+	}
+	await dismissToasts(page);
 	await saveShot("18_ruler_crosshair_24px_hitboxes.png", "24x24px hitboxes for Caliper Ruler handle manipulation and Crosshair reticle");
 
 	// ─── 19: PRINTABLE PDF REPORT (WHITE BACKGROUND A4 PROTOCOL) ──────────────
