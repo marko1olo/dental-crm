@@ -196,6 +196,7 @@ export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Arr
 	normal: Point2D;
 	distanceAlongArchMm: number;
 }> {
+	if (!spline || spline.length === 0) return [];
 	const results: Array<{
 		point: Point2D;
 		tangent: Point2D;
@@ -316,14 +317,14 @@ export function updateDentalArchAnchorPosition(
 	anchorIndexOrFdiOrId: number | string,
 	newPositionMm: Point2D,
 ): DentalArchCurve {
+	let modified = false;
 	const anchors = archCurve.anchors.map((anchor, idx) => {
 		const isTarget =
-			typeof anchorIndexOrFdiOrId === "number"
-				? idx === anchorIndexOrFdiOrId
-				: anchor.id === anchorIndexOrFdiOrId ||
-				  anchor.toothFdi === anchorIndexOrFdiOrId ||
-				  anchor.toothFdi === String(anchorIndexOrFdiOrId);
+			(typeof anchorIndexOrFdiOrId === "number" && idx === anchorIndexOrFdiOrId) ||
+			anchor.id === String(anchorIndexOrFdiOrId) ||
+			anchor.toothFdi === String(anchorIndexOrFdiOrId);
 		if (isTarget) {
+			modified = true;
 			return {
 				...anchor,
 				positionMm: {
@@ -334,6 +335,10 @@ export function updateDentalArchAnchorPosition(
 		}
 		return anchor;
 	});
+
+	if (!modified) {
+		return archCurve;
+	}
 
 	return buildDentalArchCurve(anchors, archCurve.jawType, archCurve.focalTroughThicknessMm);
 }

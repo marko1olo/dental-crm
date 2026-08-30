@@ -55,6 +55,8 @@ import {
 	type CbctVoxelVolume,
 	type HounsfieldPreset,
 	type MprPlane,
+	type MprSliceMetadata,
+	type Point2D,
 	type Point3D,
 	type SlabProjectionMode,
 	type ObliqueRotationAngles,
@@ -1043,30 +1045,41 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const canvas = axialCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const { data, metadata } = extractObliqueMprSlice(volume, "axial", crosshairMm, obliqueAngles, {
-					windowWidth,
-					windowLevel,
-					invert: invertColors,
-					slabMode,
-					slabThicknessMm,
-					interpolation: "trilinear",
-				});
-				if (!axialOffscreenRef.current) {
-					axialOffscreenRef.current = document.createElement("canvas");
+				const axialKey = `${crosshairMm.x.toFixed(1)}_${crosshairMm.y.toFixed(1)}_${crosshairMm.z.toFixed(1)}_${obliqueAngles.axialAngleDeg}_${windowWidth}_${windowLevel}_${invertColors}_${slabMode}_${slabThicknessMm}`;
+				let metadata: MprSliceMetadata;
+				if (axialKey === lastAxialSliceKeyRef.current && lastAxialMetadataRef.current && axialOffscreenRef.current) {
+					metadata = lastAxialMetadataRef.current;
+				} else {
+					const res = extractObliqueMprSlice(volume, "axial", crosshairMm, obliqueAngles, {
+						windowWidth,
+						windowLevel,
+						invert: invertColors,
+						slabMode,
+						slabThicknessMm,
+						interpolation: "trilinear",
+					});
+					metadata = res.metadata;
+					lastAxialSliceKeyRef.current = axialKey;
+					lastAxialMetadataRef.current = metadata;
+					if (!axialOffscreenRef.current) {
+						axialOffscreenRef.current = document.createElement("canvas");
+					}
+					const off = axialOffscreenRef.current;
+					if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
+						off.width = metadata.widthPx;
+						off.height = metadata.heightPx;
+					}
+					const offCtx = off.getContext("2d");
+					if (offCtx) {
+						if (!axialImgDataRef.current || axialImgDataRef.current.width !== metadata.widthPx || axialImgDataRef.current.height !== metadata.heightPx) {
+							axialImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
+						}
+						axialImgDataRef.current.data.set(res.data);
+						offCtx.putImageData(axialImgDataRef.current, 0, 0);
+					}
 				}
 				const off = axialOffscreenRef.current;
-				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
-					off.width = metadata.widthPx;
-					off.height = metadata.heightPx;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!axialImgDataRef.current || axialImgDataRef.current.width !== metadata.widthPx || axialImgDataRef.current.height !== metadata.heightPx) {
-						axialImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
-					}
-					axialImgDataRef.current.data.set(data);
-					offCtx.putImageData(axialImgDataRef.current, 0, 0);
-				}
+				if (!off) return;
 
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
 					canvas.width = metadata.widthPx;
@@ -1388,7 +1401,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					activeHandle: activeRotationHandle?.plane === "axial" ? activeRotationHandle.handle : null,
 					hoveredHandle: hoveredHandle?.plane === "axial" ? hoveredHandle.handle : null,
 					showHandles: true,
-					showAngleBadge: false,
+					showAngleBadge: true,
 					invertColors,
 				});
 
@@ -1414,30 +1427,41 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const canvas = coronalCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const { data, metadata } = extractObliqueMprSlice(volume, "coronal", crosshairMm, obliqueAngles, {
-					windowWidth,
-					windowLevel,
-					invert: invertColors,
-					slabMode,
-					slabThicknessMm,
-					interpolation: "trilinear",
-				});
-				if (!coronalOffscreenRef.current) {
-					coronalOffscreenRef.current = document.createElement("canvas");
+				const coronalKey = `${crosshairMm.x.toFixed(1)}_${crosshairMm.y.toFixed(1)}_${crosshairMm.z.toFixed(1)}_${obliqueAngles.coronalTiltDeg}_${windowWidth}_${windowLevel}_${invertColors}_${slabMode}_${slabThicknessMm}`;
+				let metadata: MprSliceMetadata;
+				if (coronalKey === lastCoronalSliceKeyRef.current && lastCoronalMetadataRef.current && coronalOffscreenRef.current) {
+					metadata = lastCoronalMetadataRef.current;
+				} else {
+					const res = extractObliqueMprSlice(volume, "coronal", crosshairMm, obliqueAngles, {
+						windowWidth,
+						windowLevel,
+						invert: invertColors,
+						slabMode,
+						slabThicknessMm,
+						interpolation: "trilinear",
+					});
+					metadata = res.metadata;
+					lastCoronalSliceKeyRef.current = coronalKey;
+					lastCoronalMetadataRef.current = metadata;
+					if (!coronalOffscreenRef.current) {
+						coronalOffscreenRef.current = document.createElement("canvas");
+					}
+					const off = coronalOffscreenRef.current;
+					if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
+						off.width = metadata.widthPx;
+						off.height = metadata.heightPx;
+					}
+					const offCtx = off.getContext("2d");
+					if (offCtx) {
+						if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== metadata.widthPx || coronalImgDataRef.current.height !== metadata.heightPx) {
+							coronalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
+						}
+						coronalImgDataRef.current.data.set(res.data);
+						offCtx.putImageData(coronalImgDataRef.current, 0, 0);
+					}
 				}
 				const off = coronalOffscreenRef.current;
-				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
-					off.width = metadata.widthPx;
-					off.height = metadata.heightPx;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== metadata.widthPx || coronalImgDataRef.current.height !== metadata.heightPx) {
-						coronalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
-					}
-					coronalImgDataRef.current.data.set(data);
-					offCtx.putImageData(coronalImgDataRef.current, 0, 0);
-				}
+				if (!off) return;
 
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
 					canvas.width = metadata.widthPx;
@@ -1734,7 +1758,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					activeHandle: activeRotationHandle?.plane === "coronal" ? activeRotationHandle.handle : null,
 					hoveredHandle: hoveredHandle?.plane === "coronal" ? hoveredHandle.handle : null,
 					showHandles: true,
-					showAngleBadge: false,
+					showAngleBadge: true,
 					invertColors,
 				});
 			}
@@ -1745,30 +1769,41 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const canvas = sagittalCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const { data, metadata } = extractObliqueMprSlice(volume, "sagittal", crosshairMm, obliqueAngles, {
-					windowWidth,
-					windowLevel,
-					invert: invertColors,
-					slabMode,
-					slabThicknessMm,
-					interpolation: "trilinear",
-				});
-				if (!sagittalOffscreenRef.current) {
-					sagittalOffscreenRef.current = document.createElement("canvas");
+				const sagittalKey = `${crosshairMm.x.toFixed(1)}_${crosshairMm.y.toFixed(1)}_${crosshairMm.z.toFixed(1)}_${obliqueAngles.sagittalTiltDeg}_${windowWidth}_${windowLevel}_${invertColors}_${slabMode}_${slabThicknessMm}`;
+				let metadata: MprSliceMetadata;
+				if (sagittalKey === lastSagittalSliceKeyRef.current && lastSagittalMetadataRef.current && sagittalOffscreenRef.current) {
+					metadata = lastSagittalMetadataRef.current;
+				} else {
+					const res = extractObliqueMprSlice(volume, "sagittal", crosshairMm, obliqueAngles, {
+						windowWidth,
+						windowLevel,
+						invert: invertColors,
+						slabMode,
+						slabThicknessMm,
+						interpolation: "trilinear",
+					});
+					metadata = res.metadata;
+					lastSagittalSliceKeyRef.current = sagittalKey;
+					lastSagittalMetadataRef.current = metadata;
+					if (!sagittalOffscreenRef.current) {
+						sagittalOffscreenRef.current = document.createElement("canvas");
+					}
+					const off = sagittalOffscreenRef.current;
+					if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
+						off.width = metadata.widthPx;
+						off.height = metadata.heightPx;
+					}
+					const offCtx = off.getContext("2d");
+					if (offCtx) {
+						if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== metadata.widthPx || sagittalImgDataRef.current.height !== metadata.heightPx) {
+							sagittalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
+						}
+						sagittalImgDataRef.current.data.set(res.data);
+						offCtx.putImageData(sagittalImgDataRef.current, 0, 0);
+					}
 				}
 				const off = sagittalOffscreenRef.current;
-				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
-					off.width = metadata.widthPx;
-					off.height = metadata.heightPx;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== metadata.widthPx || sagittalImgDataRef.current.height !== metadata.heightPx) {
-						sagittalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
-					}
-					sagittalImgDataRef.current.data.set(data);
-					offCtx.putImageData(sagittalImgDataRef.current, 0, 0);
-				}
+				if (!off) return;
 
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
 					canvas.width = metadata.widthPx;
@@ -2065,12 +2100,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					activeHandle: activeRotationHandle?.plane === "sagittal" ? activeRotationHandle.handle : null,
 					hoveredHandle: hoveredHandle?.plane === "sagittal" ? hoveredHandle.handle : null,
 					showHandles: true,
-					showAngleBadge: false,
+					showAngleBadge: true,
 					invertColors,
 				});
 			}
 		}
-	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, angles, activeAngle, selectedMeasurement, draggingMeasurementHandle, hoveredMeasurementHandle, probeMarkers, activeProbe, activeTool, maximizedViewport, viewLayout, nervePoints, interpolatedNerve3D, selectedNerveNodeIdx, nerveTotalLengthMm]);
+	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, showDentalArch, selectedArchAnchorIdx, hoveredArchAnchorIdx, isDraggingArchAnchor, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal, rulers, activeRuler, angles, activeAngle, selectedMeasurement, draggingMeasurementHandle, hoveredMeasurementHandle, probeMarkers, activeProbe, activeTool, maximizedViewport, viewLayout, nervePoints, interpolatedNerve3D, selectedNerveNodeIdx, nerveTotalLengthMm]);
 
 	// ─── RECONSTRUCT PANORAMIC & CROSS SECTIONS ───────────────────────────────
 	useEffect(() => {
@@ -3290,16 +3325,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
-		// 1h. Click on dental arch tooth anchors when clicking on Axial plane
+		// 1h. Hit-testing for Draggable Dental Arch Spline Control Points on Axial Viewport
 		if (plane === "axial" && showDentalArch) {
 			const currentTransform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
-			for (const anchor of archCurve.anchors) {
-				const anchorSlicePx = worldMmToSlicePx({ x: anchor.positionMm.x, y: anchor.positionMm.y, z: crosshairMm.z }, "axial", volume);
-				const anchorScreenPx = slicePxToScreenPx(anchorSlicePx, currentTransform);
-				if (Math.hypot(pointerPx.x - anchorScreenPx.x, pointerPx.y - anchorScreenPx.y) <= 12) {
-					handleSelectTooth(anchor.toothFdi);
-					return;
-				}
+			const hitAnchor = hitTestDentalArchControlPoint(pointerPx, archCurve, volume, currentTransform, 12, crosshairMm.z);
+			if (hitAnchor) {
+				setSelectedArchAnchorIdx(hitAnchor.index);
+				setIsDraggingArchAnchor(hitAnchor.index);
+				handleSelectTooth(hitAnchor.anchor.toothFdi);
+				showToast(`Выбрана контрольная точка дуги FDI #${hitAnchor.anchor.toothFdi} (перетащите мышкой)`, "info");
+				return;
 			}
 		}
 
@@ -3337,13 +3372,41 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			volume,
 		);
 		setCrosshairMm(newWorldMm);
-	}, [volume, crosshairMm, obliqueAngles, activeTool, windowWidth, windowLevel, transforms, nervePoints, rulers, angles, activeAngle, showDentalArch, archCurve.anchors, handleSelectTooth]);
+	}, [volume, crosshairMm, obliqueAngles, activeTool, windowWidth, windowLevel, transforms, nervePoints, rulers, angles, activeAngle, showDentalArch, archCurve, handleSelectTooth]);
 
 	const handleCanvasMouseMove = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
 		const canvas = e.currentTarget;
 		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
 		const pointerPx = { x, y };
+
+		// 0-arch. Dental Arch Spline Anchor Drag (60fps rAF Coalesced)
+		if (isDraggingArchAnchor !== null && plane === "axial") {
+			const currentTransform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				"axial",
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			pendingArchAnchorMmRef.current = {
+				index: isDraggingArchAnchor,
+				positionMm: { x: pointMm.x, y: pointMm.y },
+			};
+			if (rafArchAnchorIdRef.current === null) {
+				rafArchAnchorIdRef.current = requestAnimationFrame(() => {
+					if (pendingArchAnchorMmRef.current) {
+						const { index, positionMm } = pendingArchAnchorMmRef.current;
+						setArchCurve((prev) => updateDentalArchAnchorPosition(prev, index, positionMm));
+					}
+					rafArchAnchorIdRef.current = null;
+				});
+			}
+			return;
+		}
 
 		// 0-cad. Measurement Handle Drag
 		if (draggingMeasurementHandle && draggingMeasurementHandle.plane === plane) {
@@ -3462,7 +3525,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
-		// 1. Shift Drag Rotation
+		// 1. Shift Drag Rotation (rAF Coalesced 60fps)
 		if (isShiftRotating && isShiftRotating.plane === plane) {
 			const newAngle = calculateAngleFromShiftDrag(
 				isShiftRotating.centerPx,
@@ -3470,32 +3533,48 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				isShiftRotating.startPointerPx,
 				isShiftRotating.initialAngleDeg,
 			);
-			setObliqueAngles((prev) => ({
-				...prev,
+			pendingObliqueAnglesRef.current = {
+				...obliqueAngles,
 				...(plane === "axial"
 					? { axialAngleDeg: newAngle }
 					: plane === "coronal"
 					? { coronalTiltDeg: newAngle }
 					: { sagittalTiltDeg: newAngle }),
-			}));
+			};
+			if (rafObliqueIdRef.current === null) {
+				rafObliqueIdRef.current = requestAnimationFrame(() => {
+					if (pendingObliqueAnglesRef.current) {
+						setObliqueAngles(pendingObliqueAnglesRef.current);
+					}
+					rafObliqueIdRef.current = null;
+				});
+			}
 			return;
 		}
 
-		// 2. Rotation Handle Drag
+		// 2. Rotation Handle Drag (rAF Coalesced 60fps)
 		if (activeRotationHandle && activeRotationHandle.plane === plane) {
 			const newAngle = calculateAngleFromHandleDrag(
 				activeRotationHandle.centerPx,
 				pointerPx,
 				activeRotationHandle.handle,
 			);
-			setObliqueAngles((prev) => ({
-				...prev,
+			pendingObliqueAnglesRef.current = {
+				...obliqueAngles,
 				...(plane === "axial"
 					? { axialAngleDeg: newAngle }
 					: plane === "coronal"
 					? { coronalTiltDeg: newAngle }
 					: { sagittalTiltDeg: newAngle }),
-			}));
+			};
+			if (rafObliqueIdRef.current === null) {
+				rafObliqueIdRef.current = requestAnimationFrame(() => {
+					if (pendingObliqueAnglesRef.current) {
+						setObliqueAngles(pendingObliqueAnglesRef.current);
+					}
+					rafObliqueIdRef.current = null;
+				});
+			}
 			return;
 		}
 
@@ -3576,8 +3655,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			} else if (hoveredMeasurementHandle?.plane === plane) {
 				setHoveredMeasurementHandle(null);
 			}
+
+			// 6. Hover Detection for Dental Arch Control Points on Axial
+			if (plane === "axial" && showDentalArch) {
+				const currentTransform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
+				const hit = hitTestDentalArchControlPoint(pointerPx, archCurve, volume, currentTransform, 12, crosshairMm.z);
+				if (hit) {
+					setHoveredArchAnchorIdx(hit.index);
+				} else if (hoveredArchAnchorIdx !== null) {
+					setHoveredArchAnchorIdx(null);
+				}
+			}
 		}
-	}, [volume, isDraggingWL, isPanning, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, draggingMeasurementHandle, activeAngle, activeRuler, crosshairMm, obliqueAngles, hoveredHandle, hoveredMeasurementHandle, transforms, nervePoints, rulers, angles]);
+	}, [volume, isDraggingWL, isPanning, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, isDraggingArchAnchor, showDentalArch, archCurve, hoveredArchAnchorIdx, draggingMeasurementHandle, activeAngle, activeRuler, crosshairMm, obliqueAngles, hoveredHandle, hoveredMeasurementHandle, transforms, nervePoints, rulers, angles]);
 
 	const handleCanvasMouseUp = useCallback(() => {
 		if (rafCrosshairIdRef.current !== null) {
@@ -3587,6 +3677,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (pendingCrosshairMmRef.current !== null) {
 			setCrosshairMm(pendingCrosshairMmRef.current);
 			pendingCrosshairMmRef.current = null;
+		}
+		if (rafObliqueIdRef.current !== null) {
+			cancelAnimationFrame(rafObliqueIdRef.current);
+			rafObliqueIdRef.current = null;
+		}
+		if (pendingObliqueAnglesRef.current !== null) {
+			setObliqueAngles(pendingObliqueAnglesRef.current);
+			pendingObliqueAnglesRef.current = null;
+		}
+		if (rafArchAnchorIdRef.current !== null) {
+			cancelAnimationFrame(rafArchAnchorIdRef.current);
+			rafArchAnchorIdRef.current = null;
+		}
+		if (pendingArchAnchorMmRef.current !== null) {
+			const { index, positionMm } = pendingArchAnchorMmRef.current;
+			setArchCurve((prev) => updateDentalArchAnchorPosition(prev, index, positionMm));
+			pendingArchAnchorMmRef.current = null;
+		}
+		if (isDraggingArchAnchor !== null) {
+			setIsDraggingArchAnchor(null);
+			showToast("Контур зубной дуги и панорама обновлены", "success");
 		}
 		if (draggingMeasurementHandle) {
 			setDraggingMeasurementHandle(null);
@@ -3616,14 +3727,105 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setIsPanning(null);
 		setIsDraggingWL(null);
 		setIsDraggingNerveNode(null);
-	}, [activeRuler, draggingMeasurementHandle]);
+	}, [activeRuler, draggingMeasurementHandle, isDraggingArchAnchor]);
 
-	// ─── WINDOW-LEVEL DRAG TRACKING (ZERO-STALL SMOOTH PAN/CROSSHAIR) ─────────
+	// ─── WINDOW-LEVEL DRAG TRACKING (ZERO-STALL SMOOTH PAN/CROSSHAIR/ROTATION) ─────────
 	useEffect(() => {
-		if (!isDraggingCrosshair && !isDraggingPano) return;
+		if (!isDraggingCrosshair && !isDraggingPano && !activeRotationHandle && !isShiftRotating && isDraggingArchAnchor === null) return;
 
 		const handleGlobalMouseMove = (e: MouseEvent) => {
-			if (isDraggingCrosshair && volume) {
+			if (isDraggingArchAnchor !== null && axialCanvasRef.current && volume) {
+				const canvas = axialCanvasRef.current;
+				const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+				const currentTransform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
+				const pointMm = mapCanvasPointerToWorldMmWithTransform(
+					{ x, y },
+					{ width: canvas.width, height: canvas.height },
+					"axial",
+					crosshairMm,
+					obliqueAngles,
+					currentTransform,
+					volume,
+				);
+				pendingArchAnchorMmRef.current = {
+					index: isDraggingArchAnchor,
+					positionMm: { x: pointMm.x, y: pointMm.y },
+				};
+				if (rafArchAnchorIdRef.current === null) {
+					rafArchAnchorIdRef.current = requestAnimationFrame(() => {
+						if (pendingArchAnchorMmRef.current) {
+							const { index, positionMm } = pendingArchAnchorMmRef.current;
+							setArchCurve((prev) => updateDentalArchAnchorPosition(prev, index, positionMm));
+						}
+						rafArchAnchorIdRef.current = null;
+					});
+				}
+			} else if (activeRotationHandle) {
+				const plane = activeRotationHandle.plane;
+				const canvas =
+					plane === "axial"
+						? axialCanvasRef.current
+						: plane === "coronal"
+							? coronalCanvasRef.current
+							: sagittalCanvasRef.current;
+				if (canvas) {
+					const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+					const newAngle = calculateAngleFromHandleDrag(
+						activeRotationHandle.centerPx,
+						{ x, y },
+						activeRotationHandle.handle,
+					);
+					pendingObliqueAnglesRef.current = {
+						...obliqueAngles,
+						...(plane === "axial"
+							? { axialAngleDeg: newAngle }
+							: plane === "coronal"
+							? { coronalTiltDeg: newAngle }
+							: { sagittalTiltDeg: newAngle }),
+					};
+					if (rafObliqueIdRef.current === null) {
+						rafObliqueIdRef.current = requestAnimationFrame(() => {
+							if (pendingObliqueAnglesRef.current) {
+								setObliqueAngles(pendingObliqueAnglesRef.current);
+							}
+							rafObliqueIdRef.current = null;
+						});
+					}
+				}
+			} else if (isShiftRotating) {
+				const plane = isShiftRotating.plane;
+				const canvas =
+					plane === "axial"
+						? axialCanvasRef.current
+						: plane === "coronal"
+							? coronalCanvasRef.current
+							: sagittalCanvasRef.current;
+				if (canvas) {
+					const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+					const newAngle = calculateAngleFromShiftDrag(
+						isShiftRotating.centerPx,
+						{ x, y },
+						isShiftRotating.startPointerPx,
+						isShiftRotating.initialAngleDeg,
+					);
+					pendingObliqueAnglesRef.current = {
+						...obliqueAngles,
+						...(plane === "axial"
+							? { axialAngleDeg: newAngle }
+							: plane === "coronal"
+							? { coronalTiltDeg: newAngle }
+							: { sagittalTiltDeg: newAngle }),
+					};
+					if (rafObliqueIdRef.current === null) {
+						rafObliqueIdRef.current = requestAnimationFrame(() => {
+							if (pendingObliqueAnglesRef.current) {
+								setObliqueAngles(pendingObliqueAnglesRef.current);
+							}
+							rafObliqueIdRef.current = null;
+						});
+					}
+				}
+			} else if (isDraggingCrosshair && volume) {
 				const canvas =
 					isDraggingCrosshair === "axial"
 						? axialCanvasRef.current
@@ -3677,7 +3879,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		};
 
 		const handleGlobalMouseUp = () => {
-			if (isDraggingCrosshair) {
+			if (isDraggingArchAnchor !== null || isDraggingCrosshair || activeRotationHandle || isShiftRotating) {
 				handleCanvasMouseUp();
 			}
 			if (isDraggingPano) {
@@ -3694,6 +3896,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	}, [
 		isDraggingCrosshair,
 		isDraggingPano,
+		isDraggingArchAnchor,
+		activeRotationHandle,
+		isShiftRotating,
 		volume,
 		crosshairMm,
 		obliqueAngles,
