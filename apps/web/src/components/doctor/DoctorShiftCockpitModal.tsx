@@ -330,27 +330,27 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 			<div className="doctor-cockpit-container">
 				{/* Top Header Strip */}
 				<header className="doctor-cockpit-header">
-					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-teal-950/60 border border-teal-800/80 flex items-center justify-center text-teal-400">
-							<Stethoscope size={20} />
+					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-950/60 border border-teal-800/80 flex items-center justify-center text-teal-400 shrink-0">
+							<Stethoscope size={18} />
 						</div>
-						<div>
+						<div className="min-w-0">
 							<h2 className="doctor-cockpit-title" data-testid="doctor-cockpit-title">
-								<span>Кокпит смены</span>
-								<span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-950/50 text-teal-300 border border-teal-800/60">
+								<span className="truncate">Кокпит смены</span>
+								<span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-950/50 text-teal-300 border border-teal-800/60 shrink-0">
 									{cabinetName}
 								</span>
 							</h2>
-							<div className="flex items-center gap-2 text-xs text-[var(--ink-2,#cbd5e1)] mt-0.5">
-								<span className="font-bold text-slate-100">{doctorName}</span>
+							<div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+								<span className="font-bold text-slate-900 dark:text-slate-100 truncate">{doctorName}</span>
 								<span>•</span>
-								<span>{doctorSpecialty}</span>
+								<span className="truncate">{doctorSpecialty}</span>
 							</div>
 						</div>
 					</div>
 
-					<div className="flex items-center gap-3">
-						<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-200">
+					<div className="flex items-center gap-2 shrink-0">
+						<div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--paper-soft,#0f172a)] border border-[var(--line,#1e293b)] text-xs font-semibold text-[var(--ink,#f8fafc)]">
 							<Calendar size={14} className="text-teal-400" />
 							<span>29 авг 2026</span>
 							<span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-1" />
@@ -358,7 +358,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl bg-slate-900 text-[var(--ink-2,#cbd5e1)] hover:text-slate-100 hover:bg-slate-800 flex items-center justify-center border border-slate-800 transition-colors cursor-pointer"
+							className="min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl bg-[var(--paper-soft,#0f172a)] text-[var(--ink-2,#cbd5e1)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper,#1e293b)] flex items-center justify-center border border-[var(--line,#1e293b)] transition-colors cursor-pointer shrink-0"
 							aria-label="Закрыть кокпит смены"
 							data-testid="close-doctor-cockpit-btn"
 						>
@@ -367,16 +367,16 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 					</div>
 				</header>
 
-				{/* Navigation Sub-Tabs with flex-wrap and safe gap */}
-				<div className="flex items-center justify-between flex-wrap gap-2 px-5 pt-3 pb-2 border-b border-slate-800 bg-slate-950 text-xs">
-					<div className="flex items-center gap-2 flex-wrap min-w-0" data-testid="doctor-tabs-container">
+				{/* Navigation Sub-Tabs with horizontal scroll on mobile */}
+				<div className="flex items-center justify-between gap-2 px-3 sm:px-5 pt-2.5 pb-2 border-b border-[var(--line,#1e293b)] bg-[var(--paper-strong,#09090b)] text-xs overflow-x-auto scrollbar-none pr-4 shrink-0">
+					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0" data-testid="doctor-tabs-container">
 						<button
 							type="button"
 							onClick={() => setActiveTab("cockpit")}
-							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+							className={`min-h-[36px] px-3 sm:px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap text-xs ${
 								activeTab === "cockpit"
 									? "bg-teal-950/60 text-teal-300 border border-teal-800/80"
-									: "text-[var(--ink-2,#cbd5e1)] hover:text-slate-100 hover:bg-slate-900"
+									: "text-[var(--ink-2,#cbd5e1)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#0f172a)]"
 							}`}
 							data-testid="tab-cockpit-view"
 						>
@@ -385,16 +385,16 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveTab("emr_journal")}
-							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+							className={`min-h-[36px] px-3 sm:px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap text-xs ${
 								activeTab === "emr_journal"
 									? "bg-teal-950/60 text-teal-300 border border-teal-800/80"
-									: "text-[var(--ink-2,#cbd5e1)] hover:text-slate-100 hover:bg-slate-900"
+									: "text-[var(--ink-2,#cbd5e1)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#0f172a)]"
 							}`}
 							data-testid="tab-emr-journal"
 						>
 							<span>ЭМК ф. 043/у</span>
 							{unsignedAppointments.length > 0 && (
-								<span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-extrabold shrink-0" data-testid="tab-unsigned-badge">
+								<span className="px-1.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-extrabold shrink-0" data-testid="tab-unsigned-badge">
 									Нужна подпись ({unsignedAppointments.length})
 								</span>
 							)}
@@ -402,10 +402,10 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveTab("earnings")}
-							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+							className={`min-h-[36px] px-3 sm:px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap text-xs ${
 								activeTab === "earnings"
 									? "bg-teal-950/60 text-teal-300 border border-teal-800/80"
-									: "text-[var(--ink-2,#cbd5e1)] hover:text-slate-100 hover:bg-slate-900"
+									: "text-[var(--ink-2,#cbd5e1)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#0f172a)]"
 							}`}
 							data-testid="tab-earnings"
 						>
@@ -413,7 +413,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 						</button>
 					</div>
 
-					<div className="text-xs text-[var(--ink-2,#cbd5e1)] flex items-center gap-2 shrink-0">
+					<div className="hidden md:flex text-xs text-[var(--ink-2,#cbd5e1)] items-center gap-2 shrink-0">
 						<ShieldCheck size={14} className="text-emerald-400" />
 						<span>Изоляция смены активна</span>
 					</div>
@@ -513,7 +513,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 												<span>Пациент в кресле</span>
 											</span>
 											{activeAppointment && (
-												<span className="text-xs text-[var(--ink-2,#cbd5e1)] font-semibold shrink-0">
+												<span className="text-xs text-slate-300 font-semibold shrink-0">
 													{activeAppointment.startsAtIso.split("T")[1]?.slice(0, 5)} — {activeAppointment.endsAtIso.split("T")[1]?.slice(0, 5)}
 												</span>
 											)}
@@ -555,11 +555,11 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 											<div>
 												<div className="flex items-start justify-between gap-4">
 													<div>
-														<h3 className="text-lg font-extrabold text-slate-100 flex items-center gap-2" data-testid="active-patient-name">
-															<User className="text-teal-400 w-5 h-5 shrink-0" />
+														<h3 className="text-lg font-extrabold !text-white flex items-center gap-2" data-testid="active-patient-name">
+															<User className="text-teal-300 w-5 h-5 shrink-0" />
 															<span>{activeAppointment.patientFullName}</span>
 														</h3>
-														<div className="text-xs text-[var(--ink-2,#cbd5e1)] flex items-center gap-2 mt-1 flex-wrap">
+														<div className="text-xs text-slate-300 flex items-center gap-2 mt-1 flex-wrap">
 															<span>Карта: {activeAppointment.cardNumber}</span>
 															<span>•</span>
 															<span>1988 г.р. (38 лет)</span>
@@ -577,11 +577,11 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 
 													{/* Patient Balance & Doctor Earnings */}
 													<div className="text-right flex flex-col items-end">
-														<div className="text-[10px] uppercase font-bold text-[var(--ink-2,#cbd5e1)]">
-															Баланс: <span className="font-extrabold text-slate-100" data-testid="active-patient-balance">{formatKopecksRu(activeGrossKop)}</span>
+														<div className="text-[10px] uppercase font-bold text-slate-300">
+															Баланс: <span className="font-extrabold !text-white" data-testid="active-patient-balance">{formatKopecksRu(activeGrossKop)}</span>
 														</div>
 														<div className="text-sm font-extrabold text-emerald-400 flex items-center gap-1 mt-0.5" data-testid="active-doctor-earned">
-															<span className="text-[11px] font-bold text-[var(--ink-2,#cbd5e1)] uppercase">Врачу:</span>
+															<span className="text-[11px] font-bold text-slate-300 uppercase">Врачу:</span>
 															<span>+{formatKopecksRu(activeDoctorEarnedKop)}</span>
 														</div>
 													</div>
@@ -605,28 +605,28 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 											</div>
 
 											{/* Clinical Diagnosis & Tooth Formula */}
-											<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col gap-1.5">
+											<div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex flex-col gap-1.5 text-slate-200">
 												<div className="flex items-center justify-between text-xs">
 													<span className="font-extrabold text-teal-300">
 														{activeAppointment.diagnosisTooth ? `Зуб ${activeAppointment.diagnosisTooth}` : "Клинический осмотр"} • {activeAppointment.diagnosisIcd10 || "К04.0 Пульпит"}
 													</span>
-													<span className="text-[11px] text-[var(--ink-2,#cbd5e1)] font-medium">
+													<span className="text-[11px] text-slate-300 font-medium">
 														{activeAppointment.services.length} услуг в плане
 													</span>
 												</div>
-												<p className="text-xs text-[var(--ink,#f8fafc)] leading-relaxed">
+												<p className="text-xs text-slate-100 leading-relaxed">
 													{activeAppointment.treatmentDescription || "Лечение кариеса дентина, инструментальная обработка каналов."}
 												</p>
 											</div>
 
 											{/* Quick Time Extension Controls */}
-											<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line,#334155)]">
-												<span className="text-[var(--ink-2,#cbd5e1)] font-medium">Продлить слот приема:</span>
+											<div className="flex items-center justify-between text-xs pt-1 border-t border-slate-700">
+												<span className="text-slate-300 font-medium">Продлить слот приема:</span>
 												<div className="flex items-center gap-2">
 													<button
 														type="button"
 														onClick={() => setTimerExtraMinutes((m) => m + 10)}
-														className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] font-bold transition-all cursor-pointer text-xs"
+														className="min-h-[36px] px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold transition-all cursor-pointer text-xs"
 														data-testid="btn-extend-10m"
 													>
 														+10 мин
@@ -634,7 +634,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 													<button
 														type="button"
 														onClick={() => setTimerExtraMinutes((m) => m + 15)}
-														className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] font-bold transition-all cursor-pointer text-xs"
+														className="min-h-[36px] px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold transition-all cursor-pointer text-xs"
 														data-testid="btn-extend-15m"
 													>
 														+15 мин
@@ -812,11 +812,11 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 											<div>
 												<div className="flex items-start justify-between gap-2">
 													<div>
-														<h4 className="text-base font-extrabold text-slate-100 flex items-center gap-1.5" data-testid="next-patient-name">
-															<User className="text-[var(--ink-2,#cbd5e1)] w-4 h-4" />
+														<h4 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5" data-testid="next-patient-name">
+															<User className="text-teal-600 dark:text-teal-400 w-4 h-4 shrink-0" />
 															<span>{nextQueuedAppointment.patientFullName}</span>
 														</h4>
-														<div className="text-xs text-[var(--ink-2,#cbd5e1)] mt-0.5">
+														<div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
 															<span>Карта: {nextQueuedAppointment.cardNumber}</span>
 															{nextQueuedAppointment.patientPhone && (
 																<span> • {nextQueuedAppointment.patientPhone}</span>
@@ -828,14 +828,14 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 													<span
 														className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${
 															nextQueuedAppointment.status === "waiting"
-																? "bg-emerald-950/80 text-emerald-300 border border-emerald-700"
-																: "bg-slate-800 text-slate-200 border border-slate-700"
+																? "bg-emerald-500/10 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-500/30 dark:border-emerald-700"
+																: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
 														}`}
 														data-testid="next-patient-arrival-badge"
 													>
 														{nextQueuedAppointment.status === "waiting" ? (
 															<>
-																<UserCheck size={13} className="text-emerald-400" />
+																<UserCheck size={13} className="text-emerald-500 dark:text-emerald-400" />
 																<span>В холле (прибыл)</span>
 															</>
 														) : (
@@ -849,37 +849,37 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 
 												{/* Allergy Preview & EMR Status */}
 												<div className="mt-2.5 flex items-center gap-2 flex-wrap">
-													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-950/40 text-amber-300 border border-amber-800/60 text-[11px] font-bold">
-														<ShieldAlert size={12} className="text-amber-400" />
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/30 dark:border-amber-800/60 text-[11px] font-bold">
+														<ShieldAlert size={12} className="text-amber-600 dark:text-amber-400" />
 														<span>Аллергия: Артикаин ⚠️</span>
 													</span>
-													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--paper-soft,#1e293b)] text-[var(--ink-2,#cbd5e1)] border border-[var(--line,#334155)] text-[11px] font-semibold" data-testid="next-patient-emr-status">
-														<FileText size={12} className="text-teal-400" />
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-[var(--paper-soft,#1e293b)] text-slate-600 dark:text-[var(--ink-2,#cbd5e1)] border border-slate-200 dark:border-[var(--line,#334155)] text-[11px] font-semibold" data-testid="next-patient-emr-status">
+														<FileText size={12} className="text-teal-600 dark:text-teal-400" />
 														<span>ЭМК 043/у: {nextQueuedAppointment.emrCard043uStatus === "signed" ? "Заверена ПЭП" : nextQueuedAppointment.emrCard043uStatus === "pending_signature" ? "Требует подписи" : "Ожидает приёма"}</span>
 													</span>
 												</div>
 											</div>
 
 											{/* Financial Deal Breakdown for Next Patient */}
-											<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex items-center justify-between text-xs">
+											<div className="p-2.5 rounded-xl bg-slate-100 dark:bg-[var(--paper-soft,#1e293b)] border border-slate-200 dark:border-[var(--line,#334155)] flex items-center justify-between text-xs">
 												<div>
-													<div className="text-[10px] uppercase font-bold text-[var(--ink-2,#cbd5e1)]">Смета услуг</div>
-													<div className="font-extrabold text-slate-100">{formatKopecksRu(nextGrossKop)}</div>
+													<div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Смета услуг</div>
+													<div className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{formatKopecksRu(nextGrossKop)}</div>
 												</div>
 												<div className="text-right">
-													<div className="text-[10px] uppercase font-bold text-[var(--ink-2,#cbd5e1)]">Врачу (расчет ЗП)</div>
-													<div className="font-extrabold text-emerald-400" data-testid="next-patient-doctor-earned">
+													<div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Врачу (расчет ЗП)</div>
+													<div className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm" data-testid="next-patient-doctor-earned">
 														+{formatKopecksRu(nextDoctorEarnedKop)}
 													</div>
 												</div>
 											</div>
 
 											{/* Planned Procedures */}
-											<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-1">
-												<div className="font-bold text-slate-100">
+											<div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 space-y-1">
+												<div className="font-bold text-slate-900 dark:text-slate-100">
 													{nextQueuedAppointment.diagnosisTooth ? `Зуб ${nextQueuedAppointment.diagnosisTooth}` : "План лечения"}: {nextQueuedAppointment.diagnosisIcd10 || "К08.1"}
 												</div>
-												<div className="text-[11px] text-[var(--ink-2,#cbd5e1)] leading-tight">
+												<div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
 													{nextQueuedAppointment.treatmentDescription || "Фиксация ортопедической конструкции."}
 												</div>
 											</div>

@@ -9,11 +9,14 @@ import {
 	Activity,
 	Check,
 	CheckCheck,
+	ClipboardList,
 	Coins,
 	FileText,
 	Mic,
 	MicOff,
+	Sliders,
 	Sparkles,
+	Syringe,
 	Trash2,
 	Volume2,
 	X,
@@ -269,8 +272,9 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 
 							{/* Anesthesia */}
 							{intent.anesthesia && (
-								<span className="px-2.5 py-1 rounded-lg bg-teal-500/15 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-bold">
-									💉 {intent.anesthesia.displayName}
+								<span className="px-2.5 py-1 rounded-lg bg-teal-500/15 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-bold flex items-center gap-1">
+									<Syringe size={13} className="shrink-0" />
+									<span>{intent.anesthesia.displayName}</span>
 								</span>
 							)}
 
@@ -278,16 +282,18 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 							{intent.procedures804n.map((p, idx) => (
 								<span
 									key={`proc-${idx}`}
-									className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-bold"
+									className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-bold flex items-center gap-1"
 								>
-									⚙️ {p.name}
+									<Sliders size={13} className="shrink-0" />
+									<span>{p.name}</span>
 								</span>
 							))}
 
 							{/* SOAP Summary */}
 							{intent.soapNotes.assessment && (
-								<span className="px-2.5 py-1 rounded-lg bg-purple-500/15 text-purple-800 dark:text-purple-200 border border-purple-500/30 font-bold">
-									📋 {intent.soapNotes.assessment}
+								<span className="px-2.5 py-1 rounded-lg bg-purple-500/15 text-purple-800 dark:text-purple-200 border border-purple-500/30 font-bold flex items-center gap-1">
+									<ClipboardList size={13} className="shrink-0" />
+									<span>{intent.soapNotes.assessment}</span>
 								</span>
 							)}
 						</div>

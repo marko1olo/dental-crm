@@ -25,17 +25,17 @@ describe("VisitMainTabs Component", () => {
 			html.includes("shrink-0"),
 			"Buttons have flex shrink-0 to prevent narrow collapsing",
 		);
-		assert.ok(html.includes("📝 ЭМК и Диктовка"), "Renders ЭМК tab");
+		assert.ok(html.includes("ЭМК и Диктовка"), "Renders ЭМК tab");
 		assert.ok(
-			html.includes("🦷 Зубная формула и Дневник"),
+			html.includes("Зубная формула и Дневник"),
 			"Renders Зубная формула tab",
 		);
 		assert.ok(
-			html.includes("📊 Пародонтология и Зондирование"),
+			html.includes("Пародонтология и Зондирование"),
 			"Renders Пародонтология tab",
 		);
 		assert.ok(
-			html.includes("🖼️ Рентгены и Диагностика"),
+			html.includes("Рентгены и Диагностика"),
 			"Renders Рентгены tab",
 		);
 	});

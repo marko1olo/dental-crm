@@ -732,78 +732,82 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</div>
 			</div>
 
-			{/* ── 1-Click Fast Clinical Presets Bar ── */}
+			{/* ── 1-Click Fast Clinical Presets Accordion (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (
-				<div
-					className="flex flex-col gap-2 p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]"
+				<details
+					className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3 text-xs mb-1"
 					data-testid="fast-clinical-presets-bar"
 				>
-					<div className="flex items-center justify-between gap-2 flex-wrap">
-						<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
+					<summary className="cursor-pointer font-bold text-xs text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none list-none">
+						<span className="flex items-center gap-1.5">
 							<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
-							1-Click Клинические протоколы:
+							<span>1-Click Клинические протоколы и формулы (PSR, Дети, Кариес...)</span>
 						</span>
-						{activeTeeth && activeTeeth.length > 0 && (
+						<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
+					</summary>
+					<div className="pt-2.5 flex flex-col gap-2">
+						<div className="flex items-center justify-between gap-2 flex-wrap">
+							<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
+								<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
+								1-Click Клинические протоколы:
+							</span>
+							{activeTeeth && activeTeeth.length > 0 && (
+								<button
+									type="button"
+									onClick={() => populateFromOdontogram(activeTeeth)}
+									className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal-surface)] text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] border border-[var(--teal)] text-xs sm:text-sm font-bold transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
+									title="Сформировать структурированный дневник SOAP из отметок на зубной формуле"
+									data-testid="populate-diary-from-odontogram-btn"
+								>
+									<FileText size={15} className="shrink-0" />
+									<span className="min-w-0 break-words">Заполнить дневник из формулы</span>
+								</button>
+							)}
+						</div>
+						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain min-w-0">
 							<button
 								type="button"
-								onClick={() => populateFromOdontogram(activeTeeth)}
-								className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal-surface)] text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] border border-[var(--teal)] text-xs sm:text-sm font-bold transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
-								title="Сформировать структурированный дневник SOAP из отметок на зубной формуле"
-								data-testid="populate-diary-from-odontogram-btn"
+								onClick={handleInsertPerioStatus}
+								className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 text-xs sm:text-sm font-bold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
+								title="Вставить протокол пародонтологического обследования PSR и индексы 043/у (AAP/EFP 2018)"
+								data-testid="insert-perio-043-btn"
 							>
-								<span className="shrink-0 text-base">🦷</span>
-								<span className="min-w-0 break-words">Заполнить дневник из формулы</span>
-							</button>
-						)}
-					</div>
-					<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain min-w-0">
-						<button
-							type="button"
-							onClick={handleInsertPerioStatus}
-							className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 text-xs sm:text-sm font-bold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
-							title="Вставить протокол пародонтологического обследования PSR и индексы 043/у (AAP/EFP 2018)"
-							data-testid="insert-perio-043-btn"
-						>
-							<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 font-black shrink-0">
-								PSR
-							</span>
-							<Activity className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
-							<span className="min-w-0 break-words">Пародонтологический статус (PSR + 043/у)</span>
-						</button>
-						<button
-							type="button"
-							onClick={handleInsertPediatricStatus}
-							className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 text-xs sm:text-sm font-bold transition-all shrink-0 shadow-xs touch-manipulation hover:border-purple-500 min-w-0 break-words cursor-pointer"
-							title="Вставить протокол сменного прикуса, физиологической резорбции корней и Кариограммы Bratthall"
-							data-testid="insert-pediatric-cariogram-btn"
-						>
-							<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-700 dark:text-purple-200 font-black shrink-0">
-								ДЕТИ
-							</span>
-							<Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
-							<span className="min-w-0 break-words">Сменный прикус (резорбция + кариограмма)</span>
-						</button>
-						{CLINICAL_FAST_PRESETS.map((preset) => (
-							<button
-								key={preset.id}
-								type="button"
-								onClick={() => applyClinicalPreset(preset.id)}
-								className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-xs sm:text-sm font-bold text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
-								title={preset.description}
-								data-testid={`preset-btn-${preset.id}`}
-							>
-								<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] font-black shrink-0">
-									{preset.badge}
+								<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 font-black shrink-0">
+									PSR
 								</span>
-								<span className="min-w-0 break-words">{preset.label}</span>
+								<Activity className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
+								<span className="min-w-0 break-words">Пародонтологический статус (PSR + 043/у)</span>
 							</button>
-						))}
-					</div>
-					<details className="mt-1 text-xs">
-						<summary className="cursor-pointer font-bold text-[var(--muted)] hover:text-[var(--ink)]">
-							Все клинические протоколы по категориям...
-						</summary>
-						<div className="pt-2">
+							<button
+								type="button"
+								onClick={handleInsertPediatricStatus}
+								className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 text-xs sm:text-sm font-bold transition-all shrink-0 shadow-xs touch-manipulation hover:border-purple-500 min-w-0 break-words cursor-pointer"
+								title="Вставить протокол сменного прикуса, физиологической резорбции корней и Кариограммы Bratthall"
+								data-testid="insert-pediatric-cariogram-btn"
+							>
+								<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-700 dark:text-purple-200 font-black shrink-0">
+									ДЕТИ
+								</span>
+								<Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
+								<span className="min-w-0 break-words">Сменный прикус (резорбция + кариограмма)</span>
+							</button>
+							{CLINICAL_FAST_PRESETS.map((preset) => (
+								<button
+									key={preset.id}
+									type="button"
+									onClick={() => applyClinicalPreset(preset.id)}
+									className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-xs sm:text-sm font-bold text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
+									title={preset.description}
+									data-testid={`preset-btn-${preset.id}`}
+								>
+									<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] font-black shrink-0">
+										{preset.badge}
+									</span>
+									<span className="min-w-0 break-words">{preset.label}</span>
+								</button>
+							))}
+						</div>
+						<div className="pt-1">
 							<ClinicalQuickPresetsBar
 								isLocked={fieldsDisabled}
 								onSelectPreset={(preset) => {
@@ -824,45 +828,49 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								}}
 							/>
 						</div>
-					</details>
-				</div>
+					</div>
+				</details>
 			)}
 
-			{/* ── Anesthesia Quick Logger Bar & Calculator ── */}
+			{/* ── Anesthesia Quick Logger & Dosage Calculator Accordion (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (
-				<div
-					className="flex flex-col gap-2 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]"
+				<details
+					className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3 text-xs mb-2"
 					data-testid="anesthesia-quick-logger-bar"
 				>
-					<div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
-						<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+					<summary className="cursor-pointer font-bold text-xs text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none list-none">
+						<span className="flex items-center gap-1.5">
 							<Syringe className="w-4 h-4 text-blue-500 shrink-0" />
-							Анестезия:
+							<span>Калькулятор дозировок анестезии и карпул (СтАР)...</span>
 						</span>
-						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 sm:pb-0 scrollbar-none flex-1 overscroll-x-contain min-w-0">
-							{ANESTHESIA_QUICK_PRESETS.map((ane) => (
-								<button
-									key={ane.id}
-									type="button"
-									onClick={() => applyAnesthesiaPreset(ane.textToInsert)}
-									className="inline-flex items-center gap-1.5 px-3.5 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-blue-500/10 border border-[var(--line)] hover:border-blue-500/30 text-xs sm:text-sm font-bold text-[var(--ink)] transition-colors shrink-0 touch-manipulation min-w-0 break-words cursor-pointer"
-									title={ane.textToInsert}
-									data-testid={`anesthesia-btn-${ane.id}`}
-								>
-									<Plus className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-									<span className="min-w-0 break-words">{ane.label}</span>
-									<span className="text-xs text-[var(--muted)] shrink-0 font-normal">
-										({ane.volume})
-									</span>
-								</button>
-							))}
+						<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
+					</summary>
+					<div className="pt-2.5 flex flex-col gap-2">
+						<div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+							<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+								<Syringe className="w-4 h-4 text-blue-500 shrink-0" />
+								Анестезия:
+							</span>
+							<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 sm:pb-0 scrollbar-none flex-1 overscroll-x-contain min-w-0">
+								{ANESTHESIA_QUICK_PRESETS.map((ane) => (
+									<button
+										key={ane.id}
+										type="button"
+										onClick={() => applyAnesthesiaPreset(ane.textToInsert)}
+										className="inline-flex items-center gap-1.5 px-3.5 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-blue-500/10 border border-[var(--line)] hover:border-blue-500/30 text-xs sm:text-sm font-bold text-[var(--ink)] transition-colors shrink-0 touch-manipulation min-w-0 break-words cursor-pointer"
+										title={ane.textToInsert}
+										data-testid={`anesthesia-btn-${ane.id}`}
+									>
+										<Plus className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+										<span className="min-w-0 break-words">{ane.label}</span>
+										<span className="text-xs text-[var(--muted)] shrink-0 font-normal">
+											({ane.volume})
+										</span>
+									</button>
+								))}
+							</div>
 						</div>
-					</div>
-					<details className="mt-0.5 text-xs">
-						<summary className="cursor-pointer font-medium text-[var(--muted)] hover:text-[var(--ink)]">
-							Калькулятор дозировок анестезии и карпул...
-						</summary>
-						<div className="pt-2">
+						<div className="pt-2 border-t border-[var(--line)]/50">
 							<ToothAnesthesiaCalculator
 								toothNumber={typeof diary.diagnosisTooth === "number" ? diary.diagnosisTooth : Number.parseInt(String(diary.diagnosisTooth ?? 16), 10) || 16}
 								hasCardioRisk={diary.comorbidities?.toLowerCase().includes("сердц") || diary.comorbidities?.toLowerCase().includes("давлен")}
@@ -873,8 +881,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								}}
 							/>
 						</div>
-					</details>
-				</div>
+					</div>
+				</details>
 			)}
 
 			{/* ── Load States ── */}

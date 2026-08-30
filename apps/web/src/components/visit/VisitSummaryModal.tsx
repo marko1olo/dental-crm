@@ -346,12 +346,12 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								title="Записать пациента на следующий этап через 5-7 дней"
 								data-testid="ribbon-schedule-next-stage-btn"
 							>
-								<Calendar size={13} />
-								<span>📅 Записать на след. этап (+5 дней)</span>
+								<Calendar size={14} />
+								<span>Записать на след. этап (+5 дней)</span>
 							</button>
 							<div className="flex items-center gap-1 text-[var(--muted)] text-[11px]">
 								<Save size={12} className="text-[var(--ok-fg)]" />
-								<span>💾 Автосохранено</span>
+								<span>Автосохранено</span>
 							</div>
 						</div>
 					</div>
@@ -430,7 +430,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 									className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-xs font-semibold min-w-0 break-words"
 									data-testid="summary-badge-pediatric"
 								>
-									<span className="text-xs shrink-0">🧒</span>
+									<Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0" />
 									<span className="min-w-0 break-words">Сменный прикус & Кариограмма Bratthall</span>
 								</span>
 							)}
@@ -441,7 +441,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 					{abnormalTeeth.length > 0 && (
 						<div className="space-y-2">
 							<h4 className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
-								<span>🦷</span> Зубная формула ({abnormalTeeth.length}{" "}
+								<Activity className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" /> Зубная формула ({abnormalTeeth.length}{" "}
 								{abnormalTeeth.length === 1 ? "зуб" : "зубов"} с отметками)
 							</h4>
 							<div className="flex flex-wrap gap-2">
@@ -513,7 +513,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							data-testid="summary-schedule-next-stage-btn"
 						>
 							<Calendar className="w-4 h-4" />
-							<span>📅 След. этап (+5 дней)</span>
+							<span>След. этап (+5 дней)</span>
 						</button>
 						<button
 							type="button"
@@ -688,9 +688,9 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 														</span>
 													)}
 													{snap.exposureTimeSec !== undefined && snap.exposureTimeSec !== null && (
-														<span>
-															⏱ {snap.exposureTimeSec.toFixed(2)} с
-															{snap.exposureParameters?.kVp ? ` (${snap.exposureParameters.kVp} кВ)` : ""}
+														<span className="flex items-center gap-1">
+															<Clock className="w-3.5 h-3.5" />
+															<span>{snap.exposureTimeSec.toFixed(2)} с{snap.exposureParameters?.kVp ? ` (${snap.exposureParameters.kVp} кВ)` : ""}</span>
 														</span>
 													)}
 												</div>
@@ -771,7 +771,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							data-testid="summary-open-protocol-generator-btn"
 						>
 							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-							<span>⚡ Протокол 043/у (1 клик)</span>
+							<span>Протокол 043/у (1 клик)</span>
 						</button>
 						{onOpenPrescription ? (
 							<button

@@ -423,8 +423,7 @@ export function extractObliqueMprSlice(
 	const invSpX = 1.0 / sp.x;
 	const invSpY = 1.0 / sp.y;
 	const invSpZ = 1.0 / sp.z;
-	const volData = volume.data;
-	if (!volData || volume.isDisposed) {
+	if (!volume.data || volume.isDisposed) {
 		return {
 			data: pixelBuffer,
 			metadata: {
@@ -440,6 +439,7 @@ export function extractObliqueMprSlice(
 			},
 		};
 	}
+	const volData: Int16Array = volume.data;
 
 	const volW = dim.width;
 	const volH = dim.height;

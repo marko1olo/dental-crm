@@ -20,6 +20,14 @@
 	overflow-y: auto;
 }
 
+@media (max-width: 640px) {
+	.doctor-cockpit-overlay {
+		padding: 0;
+		align-items: stretch;
+		overflow: hidden;
+	}
+}
+
 /* Main Cockpit Container */
 .doctor-cockpit-container {
 	position: relative;
@@ -36,6 +44,17 @@
 	overflow: hidden;
 }
 
+@media (max-width: 640px) {
+	.doctor-cockpit-container {
+		max-height: 100vh;
+		height: 100vh;
+		border-radius: 0;
+		border: none;
+		display: flex;
+		flex-direction: column;
+	}
+}
+
 /* Header & Status Bar */
 .doctor-cockpit-header {
 	display: flex;
@@ -45,6 +64,7 @@
 	background: var(--paper, #09090b);
 	border-bottom: 1px solid var(--line, #1e293b);
 	gap: 16px;
+	flex-shrink: 0;
 }
 
 .doctor-cockpit-title {
@@ -57,8 +77,12 @@
 }
 
 .doctor-cockpit-body {
-	padding: 18px 20px 128px;
+	flex: 1 1 0%;
+	min-height: 0;
+	padding: 18px 20px 128px !important;
+	padding-bottom: 128px !important;
 	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
 	display: flex;
 	flex-direction: column;
 	gap: 18px;
@@ -69,6 +93,27 @@
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 	gap: 12px;
+}
+
+@media (max-width: 640px) {
+	.doctor-cockpit-metrics-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+	.doctor-metric-card {
+		padding: 8px 10px;
+	}
+	.doctor-metric-value {
+		font-size: 15px;
+	}
+	.doctor-cockpit-body {
+		flex: 1 1 0%;
+		min-height: 0;
+		overflow-y: auto !important;
+		-webkit-overflow-scrolling: touch;
+		padding: 12px 12px 140px !important;
+		gap: 12px;
+	}
 }
 
 .doctor-metric-card {
@@ -114,14 +159,55 @@
 
 /* Active Patient Focus Card */
 .doctor-active-patient-card {
-	background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(9, 9, 11, 0.98) 100%);
-	border: 1px solid #14b8a6;
+	background: #0f172a !important;
+	border: 1.5px solid #14b8a6;
 	box-shadow: 0 0 20px -5px rgba(20, 184, 166, 0.2);
 	border-radius: 16px;
 	padding: 16px;
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
+	color: #f8fafc !important;
+}
+
+.doctor-active-patient-card h3,
+.doctor-active-patient-card h3[data-testid="active-patient-name"] {
+	color: #ffffff !important;
+}
+
+.doctor-active-patient-card [data-testid="active-patient-balance"] {
+	color: #ffffff !important;
+}
+
+.doctor-active-patient-card .doctor-quick-btn {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+.doctor-active-patient-card .doctor-quick-btn:hover {
+	background: #334155 !important;
+	border-color: #475569 !important;
+	color: #ffffff !important;
+}
+
+/* Strict theme isolation: Ensure active patient card is always dark with white text in light mode */
+[data-theme="light"] .doctor-active-patient-card {
+	background: #0f172a !important;
+	color: #f8fafc !important;
+}
+
+[data-theme="light"] .doctor-active-patient-card h3,
+[data-theme="light"] .doctor-active-patient-card h3[data-testid="active-patient-name"] {
+	color: #ffffff !important;
+}
+
+[data-theme="light"] .doctor-active-patient-card [data-testid="active-patient-balance"] {
+	color: #ffffff !important;
+}
+
+[data-theme="light"] .doctor-active-patient-card .text-slate-300 {
+	color: #cbd5e1 !important;
 }
 
 /* Next Patient in Queue Card */

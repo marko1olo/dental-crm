@@ -1,3 +1,4 @@
+import { FileText, Sparkles } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { EgiszMonitor } from "../EgiszMonitor";
@@ -58,7 +59,7 @@ export function VisitOdontogramTab(props?: {
 	if (!activePatient?.id) {
 		return (
 			<div className="text-center py-12 px-6 text-slate-500 dark:text-slate-400">
-				<div className="text-4xl mb-3">🦷</div>
+				<Sparkles className="w-8 h-8 text-teal-400 opacity-40 mx-auto mb-2" />
 				<h4 className="text-base font-semibold text-slate-900 dark:text-white">
 					Пациент не выбран
 				</h4>
@@ -127,7 +128,7 @@ export function VisitOdontogramTab(props?: {
 					</>
 				) : (
 					<div className="text-center py-10 px-6 rounded-2xl border border-dashed border-[var(--odontogram-border,#cbd5e1)] bg-[var(--odontogram-surface,#f8fafc)] text-[var(--odontogram-ink-muted,#64748b)]">
-						<div className="text-3xl mb-2">📝</div>
+						<FileText className="w-8 h-8 text-teal-400 opacity-40 mx-auto mb-2" />
 						<h4 className="text-base font-bold text-[var(--odontogram-ink,#0f172a)] m-0">
 							{appointmentId
 								? "Дневник приёма появится, когда визит откроют"

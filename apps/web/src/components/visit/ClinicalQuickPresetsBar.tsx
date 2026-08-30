@@ -147,7 +147,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 			<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between gap-2 flex-wrap shadow-2xs">
 				<div className="flex items-center gap-2">
 					<span className="text-xs font-black uppercase tracking-wider text-[var(--teal,var(--brand-primary))] flex items-center gap-1.5">
-						<span>🦷</span>
+						<Activity size={14} className="shrink-0" />
 						<span>Активный зуб:</span>
 					</span>
 					<span className="text-sm font-black font-mono px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)] shadow-2xs">
