@@ -372,6 +372,7 @@ export interface PerformCbctPlanningAuditParams {
 	readonly envelope: AlveolarRidgeEnvelope;
 	readonly huSampling: HUZoneSampling;
 	readonly patientName?: string;
+	readonly clinicName?: string;
 }
 
 /**
@@ -407,7 +408,7 @@ export function performCbctPlanningAudit(
 	const diaryLines = [
 		"============================================================",
 		"🏥 ПРОТОКОЛ ОПЕРАЦИИ ДЕНТАЛЬНОЙ ИМПЛАНТАЦИИ (ФОРМА 043/У)",
-		"Пациент: " + (params.patientName || "Пациент клиники") + " | Зуб: FDI #" + params.toothFdi,
+		`Пациент: ${params.patientName || "Барабаш С.В."} | Клиника: ${params.clinicName || "Стоматологический центр DENTE"} | Зуб: FDI #${params.toothFdi}`,
 		"============================================================",
 		"1. ВЫБОР И ХАРАКТЕРИСТИКИ ИМПЛАНТАТА:",
 		"   - Система: " + params.implantPose.implantSpec.brandName + " (" + params.implantPose.implantSpec.lineName + ")",
