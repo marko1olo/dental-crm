@@ -1818,7 +1818,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				role="tab"
 				tabIndex={tabSelected ? 0 : -1}
 				type="button"
-				style={{ minHeight: "44px", boxSizing: "border-box" }}
+				style={{ minHeight: "44px", padding: "10px 16px", boxSizing: "border-box" }}
 			>
 				{tab.title}
 			</button>

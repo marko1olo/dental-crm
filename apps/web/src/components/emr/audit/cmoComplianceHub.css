@@ -26,16 +26,16 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 8px 14px;
-  background: var(--paper-strong, #ffffff);
-  border: 1px solid var(--glass-border, #cbd5e1);
-  border-radius: 10px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
 [data-theme="dark"] .cmo-hub-header,
 .dark .cmo-hub-header {
-  background: var(--paper-strong, #0f172a);
-  border-color: var(--glass-border, #334155);
+  background: transparent;
+  border: none;
 }
 
 .cmo-hub-title-group {

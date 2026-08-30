@@ -7071,8 +7071,8 @@ section.imaging-panel {
 	border-radius: 8px;
 	color: var(--muted);
 	font-weight: 900;
-	min-height: 40px;
-	padding: 8px;
+	min-height: 44px;
+	padding: 8px 14px;
 }
 
 .settings-tabs button.active {
@@ -7090,14 +7090,12 @@ section.imaging-panel {
 }
 
 .clinic-config {
-	background:
-		linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(255, 255, 255, 0)),
-		var(--paper-strong);
-	border: 1px solid var(--line);
-	border-radius: 8px;
+	background: transparent;
+	border: none;
+	border-radius: 0;
 	display: grid;
 	gap: 14px;
-	padding: 16px;
+	padding: 0;
 }
 
 .clinic-config-head {
@@ -12313,6 +12311,11 @@ html.dark .visit-note-status-badge.ready,
 }
 
 .finance-panel {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	padding: 0;
 	display: grid;
 	gap: 14px;
 }
@@ -15213,7 +15216,7 @@ textarea:focus {
 	transition: all 0.2s ease;
 	font-weight: 500;
 	color: var(--ink);
-	min-height: auto;
+	min-height: 44px;
 }
 .settings-tabs button:hover {
 	background: rgba(13, 148, 136, 0.08);

@@ -1047,9 +1047,8 @@ export function SanpinRegisters() {
 						disabled={autoFilling}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{
-							minHeight: "34px",
-							height: "34px",
-							padding: "0.35rem 0.95rem",
+							minHeight: "44px",
+							padding: "0.5rem 1rem",
 							fontSize: "0.85rem",
 							fontWeight: 700,
 							background: "var(--teal-600, #0d9488)",
@@ -1398,10 +1397,10 @@ export function SanpinRegisters() {
 						type="button"
 						onClick={fetchSummary}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "34px", minWidth: "34px", padding: "0.35rem", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+						style={{ minHeight: "44px", minWidth: "44px", width: "44px", height: "44px", padding: "0.5rem", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 						title="Обновить сводку"
 					>
-						<RotateCcw size={14} />
+						<RotateCcw size={16} />
 					</button>
 				</div>
 			</div>

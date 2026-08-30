@@ -832,14 +832,14 @@ export function TelephonyFloatingWidget({
 														</button>
 													</div>
 
-													{/* Speed toggles >= 44x44px */}
-													<div className="flex items-center bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-xl p-1 border border-[var(--line,#e2e8f0)] gap-1">
+													{/* Speed toggles >= 44x44px with gap-2 */}
+													<div className="flex items-center bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-xl p-1 border border-[var(--line,#e2e8f0)] gap-2">
 														{speeds.map((s) => (
 															<button
 																key={s}
 																type="button"
 																onClick={() => setPlaybackSpeed(s)}
-																className={`min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center ${
+																className={`min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center ${
 																	playbackSpeed === s
 																		? "bg-[var(--teal)] text-white shadow-xs"
 																		: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))]"

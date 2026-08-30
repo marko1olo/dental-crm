@@ -3201,13 +3201,13 @@ export function App() {
 								<WorkspaceRouteErrorBoundary
 									view="finance"
 									label={viewLabels.finance}
-									panelClassName="panel finance-panel"
+									panelClassName="finance-panel border-0 bg-transparent p-0 shadow-none"
 									panelId="finance"
 								>
 									<Suspense
 										fallback={
 											<section
-												className="panel finance-panel"
+												className="finance-panel border-0 bg-transparent p-0 shadow-none"
 												id="finance"
 												aria-label="Финансы"
 												aria-busy="true"
@@ -4125,7 +4125,7 @@ export function App() {
 						<WorkspaceRouteErrorBoundary
 							view="inventory"
 							label={viewLabels.inventory}
-							panelClassName="panel inventory-panel"
+							panelClassName="inventory-panel border-0 bg-transparent p-0 shadow-none"
 							panelId="inventory"
 						>
 							<Suspense

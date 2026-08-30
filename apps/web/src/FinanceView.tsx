@@ -292,7 +292,7 @@ export function FinanceView({
 	};
 
 	return (
-		<div className="panel finance-panel" id="finance">
+		<div className="finance-panel border-0 bg-transparent p-0 shadow-none" id="finance">
 			<div className="panel-heading">
 				<div>
 					<h2>Оплаты, план лечения и вычет</h2>

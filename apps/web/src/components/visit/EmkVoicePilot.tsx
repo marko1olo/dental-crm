@@ -181,7 +181,12 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 										: "bg-[var(--surface-hover,#f1f5f9)] dark:bg-zinc-800 text-[var(--muted,#64748b)]"
 								}`}
 							>
-								{isListening ? "Слушаю..." : "Готов (Ctrl+Space)"}
+								{isListening ? "Слушаю..." : (
+									<>
+										<span>Готов</span>
+										<span className="hidden sm:inline"> (Ctrl+Space)</span>
+									</>
+								)}
 							</span>
 						</div>
 						<span className="text-xs text-[var(--muted,#64748b)] truncate">

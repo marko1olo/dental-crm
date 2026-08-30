@@ -297,11 +297,12 @@
 .plan-metric-group {
 	display: flex;
 	flex-direction: column;
-	gap: 5px;
-	background: var(--plan-bg);
-	border: 1px solid var(--plan-border);
-	border-radius: var(--plan-radius-sm);
-	padding: 8px 10px;
+	gap: 6px;
+	background: transparent;
+	border: none;
+	border-top: 1px solid var(--plan-border);
+	border-radius: 0;
+	padding: 8px 0 0 0;
 }
 
 .plan-metric-row {
