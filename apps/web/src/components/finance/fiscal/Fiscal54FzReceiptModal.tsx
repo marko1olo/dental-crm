@@ -764,7 +764,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 												className="w-28 px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
 												placeholder="0%"
 											/>
-											<span className="text-xs text-slate-500">
+											<span className="text-xs text-slate-500 dark:text-slate-400">
 												(от 0% до 100%, авто-распределение по строкам до копейки)
 											</span>
 										</div>
@@ -788,7 +788,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 												className="w-32 px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
 												placeholder="0.00 ₽"
 											/>
-											<span className="text-xs text-slate-500">
+											<span className="text-xs text-slate-500 dark:text-slate-400">
 												(максимум: {discountResult.totalGrossRub.toLocaleString("ru-RU")} ₽)
 											</span>
 										</div>
@@ -818,7 +818,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 
 								{/* 1-Click Fast Actions */}
 								<div>
-									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+									<label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
 										1-Click Способ оплаты
 									</label>
 									<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
@@ -911,7 +911,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 														<span>{st.isInitialDownPayment ? "Взнос 30% (Сегодня)" : `Этап ${st.stageIndex}`}</span>
 														<span className="font-mono text-emerald-600 dark:text-emerald-400">{st.amountRub.toLocaleString("ru-RU")} ₽</span>
 													</div>
-													<div className="text-[10px] text-slate-500">Срок: {st.dueDateRu}</div>
+													<div className="text-[10px] text-slate-500 dark:text-slate-400">Срок: {st.dueDateRu}</div>
 												</div>
 											))}
 										</div>
@@ -921,12 +921,12 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 								{/* Multi-Tender Inputs */}
 								<div className="space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
 									<div className="flex flex-wrap items-center justify-between gap-2">
-										<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+										<label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
 											Разделение сумм по видам оплат (рубли)
 										</label>
 										{summary.remainingRub > 0 && (
 											<div className="flex items-center gap-1.5 flex-wrap">
-												<span className="text-[11px] text-slate-500 font-medium">
+												<span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
 													Остаток <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{summary.remainingRub.toLocaleString("ru-RU")} ₽</span>:
 												</span>
 												<button
@@ -1129,7 +1129,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 
 										{/* Крупные кнопки быстрого выбора купюр: [1 000 ₽], [2 000 ₽], [5 000 ₽], [Без сдачи] высотой 52px */}
 										<div className="space-y-1.5">
-											<span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+											<span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
 												Быстрый выбор купюр (высота 52px):
 											</span>
 											<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1211,7 +1211,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 													className="p-2 rounded-lg text-left text-xs bg-slate-50 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 transition-all cursor-pointer"
 												>
 													<div className="font-bold text-slate-800 dark:text-slate-200">Напоминание о приёме</div>
-													<div className="text-[11px] text-slate-500">«Напоминаем о визите...»</div>
+													<div className="text-[11px] text-slate-500 dark:text-slate-400">«Напоминаем о визите...»</div>
 												</button>
 												<button
 													type="button"
@@ -1222,7 +1222,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 													className="p-2 rounded-lg text-left text-xs bg-slate-50 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 transition-all cursor-pointer"
 												>
 													<div className="font-bold text-slate-800 dark:text-slate-200">Доктор освободился раньше</div>
-													<div className="text-[11px] text-slate-500">«Можете подойти пораньше...»</div>
+													<div className="text-[11px] text-slate-500 dark:text-slate-400">«Можете подойти пораньше...»</div>
 												</button>
 												<button
 													type="button"
@@ -1233,7 +1233,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 													className="p-2 rounded-lg text-left text-xs bg-slate-50 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 transition-all cursor-pointer"
 												>
 													<div className="font-bold text-slate-800 dark:text-slate-200">Вы задерживаетесь?</div>
-													<div className="text-[11px] text-slate-500">«Уточняем, всё ли в порядке...»</div>
+													<div className="text-[11px] text-slate-500 dark:text-slate-400">«Уточняем, всё ли в порядке...»</div>
 												</button>
 											</div>
 										</div>
@@ -1252,7 +1252,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 							{/* Right Column: Positions Review & DataMatrix Scanner Input */}
 							<div className="lg:col-span-5 space-y-4">
 								<div className="flex items-center justify-between">
-									<label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+									<label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
 										Номенклатура ({currentItems.length})
 									</label>
 									{summary.overallTaxDeductionCategory === "2" && (
@@ -1343,7 +1343,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 								</h4>
 								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 									<div>
-										<label className="block text-xs font-semibold text-slate-500 mb-1">
+										<label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
 											Номер акта:
 										</label>
 										<input
@@ -1354,7 +1354,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										/>
 									</div>
 									<div>
-										<label className="block text-xs font-semibold text-slate-500 mb-1">
+										<label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
 											К договору №:
 										</label>
 										<input
@@ -1365,14 +1365,14 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										/>
 									</div>
 									<div>
-										<label className="block text-xs font-semibold text-slate-500 mb-1">
+										<label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
 											Кассир-администратор:
 										</label>
 										<input
 											type="text"
 											value={cashierFullName}
 											readOnly
-											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 cursor-not-allowed"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed"
 										/>
 									</div>
 								</div>
@@ -1511,13 +1511,13 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										<span className="px-2.5 py-1 rounded-lg bg-teal-500/10 text-teal-700 dark:text-teal-300 font-mono font-bold text-xs">
 											КОД 01 — Стандартное лечение
 										</span>
-										<span className="text-xs text-slate-500">Лимит: 150 000 ₽ / год</span>
+										<span className="text-xs text-slate-500 dark:text-slate-400">Лимит: 150 000 ₽ / год</span>
 									</div>
-									<p className="text-xs text-slate-500">
+									<p className="text-xs text-slate-500 dark:text-slate-400">
 										Терапия, кариес, пульпит, чистка, ортодонтия.
 									</p>
 									<div className="pt-2 flex justify-between items-baseline border-t border-slate-200 dark:border-slate-700">
-										<span className="text-xs text-slate-500">Сумма:</span>
+										<span className="text-xs text-slate-500 dark:text-slate-400">Сумма:</span>
 										<span className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100">
 											{(taxDeductionSummary.yearsSummary[0]?.code01Rub || 0).toLocaleString("ru-RU")} ₽
 										</span>
@@ -1531,11 +1531,11 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										</span>
 										<span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">БЕЗ ЛИМИТА</span>
 									</div>
-									<p className="text-xs text-slate-500">
+									<p className="text-xs text-slate-500 dark:text-slate-400">
 										Дентальная имплантация, костная пластика, синус-лифтинг.
 									</p>
 									<div className="pt-2 flex justify-between items-baseline border-t border-slate-200 dark:border-slate-700">
-										<span className="text-xs text-slate-500">Сумма:</span>
+										<span className="text-xs text-slate-500 dark:text-slate-400">Сумма:</span>
 										<span className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100">
 											{(taxDeductionSummary.yearsSummary[0]?.code02Rub || 0).toLocaleString("ru-RU")} ₽
 										</span>
@@ -1551,7 +1551,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 								</h4>
 								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 									<div>
-										<label className="block text-xs font-semibold text-slate-500 mb-1">
+										<label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
 											Налогоплательщик (ФИО):
 										</label>
 										<input
@@ -1562,7 +1562,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										/>
 									</div>
 									<div>
-										<label className="block text-xs font-semibold text-slate-500 mb-1">
+										<label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
 											ИНН налогоплательщика:
 										</label>
 										<input
@@ -1574,7 +1574,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										/>
 									</div>
 									<div>
-										<label className="block text-xs font-semibold text-slate-500 mb-1">
+										<label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
 											Степень родства:
 										</label>
 										<select
@@ -1589,7 +1589,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										</select>
 									</div>
 									<div>
-										<label className="block text-xs font-semibold text-slate-500 mb-1">
+										<label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
 											Налоговый год:
 										</label>
 										<input

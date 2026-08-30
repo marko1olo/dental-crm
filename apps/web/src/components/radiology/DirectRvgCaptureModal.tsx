@@ -879,7 +879,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								value={clinicalNotes}
 								onChange={(e) => setClinicalNotes(e.target.value)}
 								rows={2}
-								className="w-full p-2 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-teal-500 transition-colors"
+								className="w-full p-2 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-200 placeholder-slate-400 outline-none focus:border-teal-500 transition-colors"
 								placeholder="Диагностические примечания к снимку..."
 								data-testid="rvg-clinical-notes-input"
 							/>

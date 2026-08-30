@@ -767,7 +767,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 									{/* Code 01 */}
 									<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
-										<div className="text-[11px] font-bold uppercase text-slate-500">
+										<div className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
 											Код 01 (Обычное лечение)
 										</div>
 										<div className="text-lg font-bold font-mono text-teal-700 dark:text-teal-300">
@@ -1056,7 +1056,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 									<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] block">
 										Электронный XML-реестр сведений (КНД 1184043, Формат 5.01)
 									</span>
-									<span className="text-[11px] font-mono text-slate-500">
+									<span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
 										Имя файла: {xmlRepresentation.fileName}
 									</span>
 								</div>

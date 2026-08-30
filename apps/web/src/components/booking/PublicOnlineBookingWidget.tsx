@@ -1351,7 +1351,7 @@ export const PublicOnlineBookingWidget: React.FC<
 						</div>
 
 						<footer className="dbw-actions-footer">
-							<div className="text-xs font-semibold text-slate-500">
+							<div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
 								Шаг 1 из 4: Выбор филиала и услуги
 							</div>
 							<button
@@ -1633,7 +1633,7 @@ export const PublicOnlineBookingWidget: React.FC<
 										) : (
 											<button
 												type="button"
-												className="text-xs text-slate-500 underline text-left font-medium"
+												className="text-xs text-slate-500 dark:text-slate-400 underline text-left font-medium"
 												onClick={handleSendSmsCode}
 											>
 												Отправить код ещё раз
@@ -1910,7 +1910,7 @@ export const PublicOnlineBookingWidget: React.FC<
 						</div>
 
 						{/* Additional Actions */}
-						<div className="flex items-center justify-between w-full pt-4 border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 flex-wrap gap-2">
+						<div className="flex items-center justify-between w-full pt-4 border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 flex-wrap gap-2">
 							<button
 								type="button"
 								className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-slate-100 p-2"

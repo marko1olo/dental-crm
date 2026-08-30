@@ -682,7 +682,7 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 											<td className="p-3 text-right font-mono font-bold text-emerald-600">
 												{(Number((exactSplit.code01EligibleKopecks * 13n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
-											<td className="p-3 text-right font-mono text-slate-500">
+											<td className="p-3 text-right font-mono text-slate-500 dark:text-slate-400">
 												{(Number((exactSplit.code01EligibleKopecks * 15n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
 										</tr>
@@ -694,7 +694,7 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 											<td className="p-3 text-right font-mono font-bold text-emerald-600">
 												{(Number((exactSplit.code02Kopecks * 13n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
-											<td className="p-3 text-right font-mono text-slate-500">
+											<td className="p-3 text-right font-mono text-slate-500 dark:text-slate-400">
 												{(Number((exactSplit.code02Kopecks * 15n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
 										</tr>

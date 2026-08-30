@@ -172,7 +172,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 				{slotsLoading ? (
 					<div className="dbw-slots-loading-container">
 						<div className="dbw-loading-spinner" aria-hidden="true" />
-						<div className="text-sm font-semibold text-slate-500">
+						<div className="text-sm font-semibold text-slate-500 dark:text-slate-400">
 							Загрузка свободных интервалов…
 						</div>
 					</div>
@@ -182,7 +182,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 						<div className="text-sm font-bold text-slate-700 dark:text-slate-200">
 							На выбранный период нет свободных мест
 						</div>
-						<div className="text-xs text-slate-500 mt-1">
+						<div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
 							Попробуйте выбрать другую дату или переключить фильтр времени
 						</div>
 					</div>

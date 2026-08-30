@@ -312,7 +312,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<X size={14} aria-hidden="true" />
 						</button>
 					) : null}
-					<span className="patients-search-shortcut-hint" aria-hidden="true">
+					<span className="patients-search-shortcut-hint hidden sm:inline" aria-hidden="true">
 						Ctrl+K
 					</span>
 				</div>
@@ -680,7 +680,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								<div className="quick-chips-group-title">
 									Сервис и лояльность:
 								</div>
-								<div className="quick-chips-wrap">
+								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full overflow-hidden">
 									{[
 										"VIP",
 										"Семья",
@@ -693,7 +693,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										<button
 											key={chip}
 											type="button"
-											className="quick-chip"
+											className="quick-chip max-w-[180px] truncate"
+											title={`+ ${chip}`}
 											onClick={() => {
 												const currentVal = patientCoreDraft.notes.trim();
 												const chipLower = chip.toLowerCase();
@@ -714,7 +715,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								<div className="quick-chips-group-title">
 									Особенности приёма:
 								</div>
-								<div className="quick-chips-wrap">
+								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full overflow-hidden">
 									{[
 										"Боится уколов",
 										"Очень тревожный",
@@ -724,7 +725,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										<button
 											key={chip}
 											type="button"
-											className="quick-chip"
+											className="quick-chip max-w-[180px] truncate"
+											title={`+ ${chip}`}
 											onClick={() => {
 												const currentVal = patientCoreDraft.notes.trim();
 												const chipLower = chip.toLowerCase();

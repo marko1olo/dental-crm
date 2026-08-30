@@ -63,7 +63,7 @@ const TONE_STYLES: Record<
 	neutral: {
 		frame: "border-slate-200 dark:border-slate-800",
 		headline: "text-slate-900 dark:text-white",
-		icon: "text-slate-400 dark:text-slate-500",
+		icon: "text-slate-400 dark:text-slate-400",
 	},
 	info: {
 		frame: "border-sky-200 dark:border-sky-900",
