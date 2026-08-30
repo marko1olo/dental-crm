@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, Save, Smile, X } from "lucide-react";
+import { Calendar, CheckCircle2, Save, Smile, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -535,8 +535,9 @@ export function OrthodonticProgressWidget({
 										до конца этапа.
 									</p>
 								) : (
-									<p className="m-0 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-										🎉 Все каппы пройдены! Запланируйте контрольный осмотр.
+									<p className="m-0 text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+										<CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
+										<span>Все каппы пройдены! Запланируйте контрольный осмотр.</span>
 									</p>
 								)}
 							</div>

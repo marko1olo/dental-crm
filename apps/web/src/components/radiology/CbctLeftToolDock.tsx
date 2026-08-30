@@ -525,7 +525,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							type="button"
 							onClick={onAutoDetectArch}
 							className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 bg-[#09090b] text-purple-300 hover:text-white hover:bg-purple-950/40 border border-zinc-800 hover:border-purple-500/80 shadow-xs"
-							title="⚙️ Сгенерировать дугу автоматически (по плотности эмали/кости)"
+							title="Сгенерировать дугу автоматически (по плотности эмали/кости)"
 							aria-label="Сгенерировать дугу автоматически"
 							data-testid="cbct-tool-auto-arch"
 						>
@@ -904,7 +904,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-cyan-300 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
 						}`}
-						title="📁 Загрузить КТ / DICOM"
+						title="Загрузить КТ / DICOM"
 						aria-label="Загрузить КТ / DICOM"
 						aria-expanded={openMenu === "dicom"}
 						data-testid="cbct-tool-dicom"

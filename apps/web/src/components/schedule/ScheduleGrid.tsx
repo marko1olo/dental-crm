@@ -891,7 +891,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 														data-testid="schedule-emergency-buffer-slot"
 													>
 														<Zap size={14} className="text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
-														<span className="text-xs whitespace-nowrap shrink-0">⚡ Резерв: Острая боль ({hour})</span>
+														<span className="text-xs whitespace-nowrap shrink-0">Резерв: Острая боль ({hour})</span>
 													</button>
 												);
 											}

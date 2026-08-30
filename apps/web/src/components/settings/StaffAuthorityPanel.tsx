@@ -424,20 +424,24 @@ export const StaffAuthorityPanel: React.FC = () => {
 												<div className="flex items-center gap-2 mt-1 text-[11px] flex-nowrap overflow-x-auto">
 													{isPiiFull ? (
 														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800 whitespace-nowrap">
-															🛡️ 152-ФЗ: Полный
+															<ShieldCheck size={12} className="shrink-0" />
+															<span>152-ФЗ: Полный</span>
 														</span>
 													) : (
 														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
-															🛡️ 152-ФЗ: Маскирован
+															<ShieldAlert size={12} className="shrink-0" />
+															<span>152-ФЗ: Маскирован</span>
 														</span>
 													)}
 													{isPnlVisible ? (
 														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 whitespace-nowrap">
-															🔒 P&L: Доступен
+															<Lock size={12} className="shrink-0" />
+															<span>P&L: Доступен</span>
 														</span>
 													) : (
 														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
-															🔒 P&L: Скрыт (Изоляция)
+															<Lock size={12} className="shrink-0" />
+															<span>P&L: Скрыт (Изоляция)</span>
 														</span>
 													)}
 												</div>
@@ -505,11 +509,14 @@ export const StaffAuthorityPanel: React.FC = () => {
 																</span>
 																{lockedOn ? (
 																	<span
-																		className="text-xs text-amber-700 dark:text-amber-300 block mt-1 font-medium"
+																		className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1 mt-1 font-medium"
 																		data-testid={`staff-authority-role-lock-${row.staffId}-${flag}`}
 																	>
-																		🔒 Даёт роль «{staffRoleTitle(row.role)}» —
-																		снять можно только сменой роли в карточке.
+																		<Lock size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
+																		<span>
+																			Даёт роль «{staffRoleTitle(row.role)}» —
+																			снять можно только сменой роли в карточке.
+																		</span>
 																	</span>
 																) : null}
 																{byGrant && on ? (

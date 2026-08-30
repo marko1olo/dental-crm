@@ -3,6 +3,7 @@ import {
 	AlertTriangle,
 	Calendar,
 	CalendarCheck,
+	CalendarDays,
 	Check,
 	ChevronDown,
 	ChevronUp,
@@ -1036,27 +1037,36 @@ export function TelephonyFloatingWidget({
 												<button
 													type="button"
 													onClick={() => handleQuickBook("urgent")}
-													className="min-h-[44px] p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95"
+													className="min-h-[44px] p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
 												>
-													<span>⚡ Острая боль</span>
+													<span className="inline-flex items-center gap-1">
+														<Zap size={11} className="text-amber-500 shrink-0" />
+														<span>Острая боль</span>
+													</span>
 													<span className="text-[9px] opacity-80">10:00</span>
 												</button>
 
 												<button
 													type="button"
 													onClick={() => handleQuickBook("consultation")}
-													className="min-h-[44px] p-2 rounded-xl bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] text-[var(--teal)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95"
+													className="min-h-[44px] p-2 rounded-xl bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] text-[var(--teal)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
 												>
-													<span>📅 Консультация</span>
+													<span className="inline-flex items-center gap-1">
+														<Calendar size={11} className="text-[var(--teal)] shrink-0" />
+														<span>Консультация</span>
+													</span>
 													<span className="text-[9px] opacity-80">15:00</span>
 												</button>
 
 												<button
 													type="button"
 													onClick={() => handleQuickBook("tomorrow")}
-													className="min-h-[44px] p-2 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95"
+													className="min-h-[44px] p-2 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
 												>
-													<span>🗓️ Завтра</span>
+													<span className="inline-flex items-center gap-1">
+														<CalendarDays size={11} className="text-slate-500 shrink-0" />
+														<span>Завтра</span>
+													</span>
 													<span className="text-[9px] opacity-80">11:00</span>
 												</button>
 											</div>

@@ -3,6 +3,7 @@ import {
 	AlertTriangle,
 	Calendar,
 	CalendarCheck,
+	CalendarDays,
 	CalendarPlus,
 	Check,
 	ChevronDown,
@@ -826,14 +827,11 @@ export function IncomingCallPopup() {
 			style={{ zIndex: 9999 }}
 		>
 			<div
-				className="dnt-incoming-call-popup w-full sm:w-[460px] max-w-[calc(100vw-24px)] max-h-[88vh] flex flex-col gap-3 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in overflow-y-auto overscroll-contain"
+				className="dnt-incoming-call-popup w-full sm:w-[460px] max-w-[calc(100vw-24px)] max-h-[90dvh] flex flex-col rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in overflow-hidden"
 				style={{
 					boxShadow:
 						"0 20px 40px -15px rgba(0,0,0,0.3), 0 0 20px 2px rgba(15,118,110,0.18)",
-					maxHeight: "88vh",
-					overflowY: "auto",
-					overscrollBehavior: "contain",
-					paddingBottom: "24px",
+					maxHeight: "90dvh",
 				}}
 				role="dialog"
 				aria-labelledby="incoming-call-title"
@@ -841,7 +839,7 @@ export function IncomingCallPopup() {
 				data-testid="incoming-call-popup"
 			>
 			{/* Top Bar: WebRTC / SIP Status, Live Duration Timer & Controls */}
-			<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#e2e8f0)]">
+			<div className="shrink-0 flex items-center justify-between pb-2 border-b border-[var(--line,#e2e8f0)]">
 				<div className="flex items-center gap-2">
 					<span className="relative flex h-3 w-3">
 						<span
@@ -913,7 +911,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={dismissCall}
-						className="text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+						className="text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
 						aria-label="Свернуть уведомление"
 					>
 						<X size={18} />
@@ -921,8 +919,10 @@ export function IncomingCallPopup() {
 				</div>
 			</div>
 
-			{/* Patient Profile Card */}
-			<div className="flex items-start gap-3.5 pt-1">
+			{/* Scrollable Middle Body */}
+			<div className="flex-1 overflow-y-auto overscroll-contain min-h-0 space-y-3 pr-1 pt-1 pb-1">
+				{/* Patient Profile Card */}
+				<div className="flex items-start gap-3.5 pt-1">
 				{/* Avatar */}
 				<div
 					className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm flex-shrink-0 shadow-inner border"
@@ -1145,10 +1145,13 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={() => handleQuickBook("today_urgent")}
-						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800/50 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800/50 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95 cursor-pointer"
 						title="Записать сегодня на 10:00 (Острая боль)"
 					>
-						<span>⚡ Сегодня 10:00</span>
+						<span className="inline-flex items-center gap-1">
+							<Zap size={11} className="text-amber-500 shrink-0" />
+							<span>Сегодня 10:00</span>
+						</span>
 						<span className="text-[9px] font-normal text-amber-700 dark:text-amber-300">
 							Острая боль
 						</span>
@@ -1157,10 +1160,13 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={() => handleQuickBook("today_standard")}
-						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] text-[var(--teal)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] text-[var(--teal)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95 cursor-pointer"
 						title="Записать сегодня на 14:30 (Консультация)"
 					>
-						<span>📅 Сегодня 14:30</span>
+						<span className="inline-flex items-center gap-1">
+							<Calendar size={11} className="text-[var(--teal)] shrink-0" />
+							<span>Сегодня 14:30</span>
+						</span>
 						<span className="text-[9px] font-normal text-[var(--teal)]">
 							Консультация
 						</span>
@@ -1169,10 +1175,13 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={() => handleQuickBook("tomorrow")}
-						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95 cursor-pointer"
 						title="Записать завтра на 11:00 (Плановый визит)"
 					>
-						<span>🗓️ Завтра 11:00</span>
+						<span className="inline-flex items-center gap-1">
+							<CalendarDays size={11} className="text-slate-500 shrink-0" />
+							<span>Завтра 11:00</span>
+						</span>
 						<span className="text-[9px] font-normal text-[var(--muted,#64748b)]">
 							Плановый
 						</span>
@@ -1255,14 +1264,15 @@ export function IncomingCallPopup() {
 					)}
 				</div>
 			)}
+			</div>
 
-			{/* Quick Actions Action Bar with prominent >= 48x48px Answer/Hangup/Accept buttons */}
-			<div className="flex items-center gap-2.5 pt-1.5">
+			{/* Sticky Quick Actions Action Bar with prominent >= 48x48px Answer/Hangup/Accept buttons */}
+			<div className="sticky bottom-0 shrink-0 bg-[var(--paper-strong,var(--paper,#ffffff))] pt-2.5 pb-1 border-t border-[var(--line,#e2e8f0)] flex items-center gap-2.5 z-20">
 				{/* Reject Call Button (Hangup >= 48x48px) */}
 				<button
 					type="button"
 					onClick={handleReject}
-					className="px-4 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 active:scale-[0.98] border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-100 text-sm font-bold transition-all inline-flex items-center justify-center gap-2 min-h-[48px] min-w-[48px] focus:outline-none focus:ring-2 focus:ring-rose-500"
+					className="px-4 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 active:scale-[0.98] border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-100 text-sm font-bold transition-all inline-flex items-center justify-center gap-2 min-h-[48px] min-w-[48px] focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer touch-manipulation"
 					aria-label="Отклонить входящий звонок"
 				>
 					<PhoneOff size={18} />
@@ -1274,7 +1284,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={handleAnswerCall}
-						className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 min-h-[48px] min-w-[48px] shadow-lg shadow-emerald-950/30 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+						className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 min-h-[48px] min-w-[48px] shadow-lg shadow-emerald-950/30 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer touch-manipulation"
 						aria-label="Ответить на звонок"
 					>
 						<PhoneCall size={18} className="animate-pulse" />
@@ -1286,7 +1296,7 @@ export function IncomingCallPopup() {
 				<button
 					type="button"
 					onClick={handleOpenCard}
-					className="flex-1 px-5 py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-[0.98] text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 min-h-[48px] shadow-lg shadow-teal-950/40 focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+					className="flex-1 px-5 py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-[0.98] text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 min-h-[48px] shadow-lg shadow-teal-950/40 focus:outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer touch-manipulation"
 					aria-label={
 						isKnownPatient
 							? "Принять звонок и открыть карту пациента"

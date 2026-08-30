@@ -2183,7 +2183,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 						data-testid="cbct-btn-auto-arch"
 					>
 						<Sliders className="w-4 h-4 text-purple-400" />
-						<span>⚙️ Сгенерировать дугу автоматически</span>
+						<span>Сгенерировать дугу автоматически</span>
 					</button>
 
 					{/* Toggle Dental Arch Spline Button */}

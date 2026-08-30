@@ -3,6 +3,7 @@ import {
 	AlertTriangle,
 	Calendar,
 	CalendarCheck,
+	CalendarDays,
 	CalendarPlus,
 	Check,
 	ChevronDown,
@@ -231,7 +232,7 @@ export function IncomingCallPopupModal({
 			const endsTime = type === "urgent" ? "10:30" : "15:30";
 			const reason =
 				type === "urgent"
-					? "⚡ Острая боль (Экстренно)"
+					? "Острая боль (Экстренно)"
 					: "Первичная консультация и осмотр";
 
 			setNewAppointmentDraft({
@@ -278,231 +279,243 @@ export function IncomingCallPopupModal({
 
 	return (
 		<div
-			className="incoming-call-modal-body flex flex-col gap-3 p-1 sm:p-2 text-[var(--ink,#0f172a)] animate-fade-in max-h-[90vh] overflow-y-auto pb-8"
+			className="incoming-call-modal-body flex flex-col text-[var(--ink,#0f172a)] animate-fade-in max-h-[90dvh] overflow-hidden rounded-2xl"
 			data-testid="incoming-call-modal-content"
 		>
-			{/* Top Caller Header Card */}
-			<div className="p-3 sm:p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between gap-3 shadow-xs">
-				<div className="flex items-center gap-3 min-w-0">
-					<div
-						className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-base shadow-sm shrink-0 ${avatarColors.bg} ${avatarColors.text} ${avatarColors.border} border`}
-					>
-						{initials}
-					</div>
-					<div className="min-w-0">
-						<div className="flex items-center gap-2 flex-wrap">
-							<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] truncate">
-								{callerDisplayName}
-							</h3>
-							<span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)] border border-[var(--teal-soft,#99f6e4)] shrink-0">
-								{resolvedPatient ? "Пациент клиники" : "Новый звонок"}
-							</span>
+			{/* Scrollable Middle Body */}
+			<div className="flex-1 overflow-y-auto overscroll-contain min-h-0 space-y-3 p-2 sm:p-3 pr-2 pb-2">
+				{/* Top Caller Header Card */}
+				<div className="p-3 sm:p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between gap-3 shadow-xs">
+					<div className="flex items-center gap-3 min-w-0">
+						<div
+							className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-base shadow-sm shrink-0 ${avatarColors.bg} ${avatarColors.text} ${avatarColors.border} border`}
+						>
+							{initials}
 						</div>
-						<div className="flex items-center gap-2 mt-0.5 text-xs text-[var(--muted,#64748b)]">
-							<span className="font-mono font-bold text-[var(--ink,#0f172a)]">
-								{formattedPhoneDisplayStr}
-							</span>
-							<span>•</span>
-							<span className="text-[11px]">{providerName}</span>
-							<span>•</span>
-							<span className="font-mono font-bold text-[var(--teal,#0d9488)] flex items-center gap-1">
-								<Clock size={12} />
-								{formatDurationTimer(elapsedSeconds)}
-							</span>
+						<div className="min-w-0">
+							<div className="flex items-center gap-2 flex-wrap">
+								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] truncate">
+									{callerDisplayName}
+								</h3>
+								<span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)] border border-[var(--teal-soft,#99f6e4)] shrink-0">
+									{resolvedPatient ? "Пациент клиники" : "Новый звонок"}
+								</span>
+							</div>
+							<div className="flex items-center gap-2 mt-0.5 text-xs text-[var(--muted,#64748b)]">
+								<span className="font-mono font-bold text-[var(--ink,#0f172a)]">
+									{formattedPhoneDisplayStr}
+								</span>
+								<span>•</span>
+								<span className="text-[11px]">{providerName}</span>
+								<span>•</span>
+								<span className="font-mono font-bold text-[var(--teal,#0d9488)] flex items-center gap-1">
+									<Clock size={12} />
+									{formatDurationTimer(elapsedSeconds)}
+								</span>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<div className="flex items-center gap-1.5 shrink-0">
-					<button
-						type="button"
-						onClick={toggleMute}
-						className={`min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all flex items-center justify-center ${
-							isMuted
-								? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
-								: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-						}`}
-						title={isMuted ? "Включить звук" : "Без звука"}
-						aria-label={isMuted ? "Включить звук" : "Без звука"}
-					>
-						{isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-					</button>
-				</div>
-			</div>
-
-			{/* Clinical Context & Badges Banner */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-				{/* Balance / Insurance */}
-				<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between">
-					<div className="flex items-center gap-2 text-[var(--muted,#64748b)]">
-						<CreditCard size={14} className="text-[var(--teal,#0d9488)]" />
-						<span className="font-medium">Баланс / ДМС:</span>
+					<div className="flex items-center gap-1.5 shrink-0">
+						<button
+							type="button"
+							onClick={toggleMute}
+							className={`min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${
+								isMuted
+									? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+							title={isMuted ? "Включить звук" : "Без звука"}
+							aria-label={isMuted ? "Включить звук" : "Без звука"}
+						>
+							{isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+						</button>
 					</div>
-					<span
-						className={`font-bold font-mono ${
-							financialSummary.hasDebt
-								? "text-rose-600 dark:text-rose-400"
-								: "text-emerald-600 dark:text-emerald-400"
-						}`}
-					>
-						{financialSummary.hasDebt ? `Долг: ${financialSummary.formattedDebt}` : financialSummary.formattedBalance}
-					</span>
 				</div>
 
-				{/* Upcoming or Last Visit */}
-				<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between">
-					<div className="flex items-center gap-2 text-[var(--muted,#64748b)]">
-						<CalendarCheck size={14} className="text-[var(--teal,#0d9488)]" />
-						<span className="font-medium">Визит:</span>
-					</div>
-					<span className="font-bold text-[var(--ink,#0f172a)] truncate max-w-[160px]">
-						{upcomingAppointment
-							? `${upcomingAppointment.formattedDate} ${upcomingAppointment.formattedTime}`
-							: lastVisitSummary?.formattedLastVisit || "Первичный"}
-					</span>
-				</div>
-			</div>
-
-			{/* Medical Allergies Banner (if any) */}
-			{resolvedPatient?.allergies && resolvedPatient.allergies.length > 0 && (
-				<div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center gap-2">
-					<AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
-					<span className="truncate">
-						⚠️ Аллергии: {resolvedPatient.allergies.join(", ")}
-					</span>
-				</div>
-			)}
-
-			{/* Call Audio Player with 1.0x / 1.5x Speed Controls & STT Transcript */}
-			<div className="space-y-1">
-				<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
-					<Sparkles size={11} className="text-[var(--teal,#0d9488)]" />
-					Аудиозапись разговора & AI STT расшифровка:
-				</span>
-				<CallAudioPlayer
-					recordingUrl={effectiveRecordingUrl}
-					durationSeconds={54}
-					seed={effectivePhone}
-				/>
-			</div>
-
-			{/* SIP Call Transfer Collapsible Panel */}
-			<div className="rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] p-2.5 space-y-2 text-xs">
-				<button
-					type="button"
-					onClick={() => setShowTransferPanel((prev) => !prev)}
-					className="w-full min-h-[44px] px-3 py-2 rounded-lg bg-[var(--paper,#ffffff)] hover:bg-[var(--teal-soft,#f0fdfa)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--teal,#0d9488)] flex items-center justify-between transition-all"
-				>
-					<div className="flex items-center gap-2">
-						<PhoneForwarded size={15} />
-						<span>{showTransferPanel ? "Скрыть перевод звонка" : "Перевод звонка (SIP Transfer)"}</span>
-					</div>
-					<ChevronDown
-						size={15}
-						className={`transition-transform duration-200 ${showTransferPanel ? "rotate-180" : ""}`}
-					/>
-				</button>
-
-				{showTransferPanel && (
-					<div className="space-y-2 pt-1 animate-fade-in">
-						<div className="flex items-center gap-1 bg-[var(--paper,#ffffff)] rounded-lg p-1 border border-[var(--line,#e2e8f0)]">
-							<button
-								type="button"
-								onClick={() => setTransferType("blind")}
-								className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-md font-bold text-xs transition-all ${
-									transferType === "blind"
-										? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-								}`}
-							>
-								Слепой
-							</button>
-							<button
-								type="button"
-								onClick={() => setTransferType("attended")}
-								className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-md font-bold text-xs transition-all ${
-									transferType === "attended"
-										? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-								}`}
-							>
-								С консультацией
-							</button>
+				{/* Clinical Context & Badges Banner */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+					{/* Balance / Insurance */}
+					<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between">
+						<div className="flex items-center gap-2 text-[var(--muted,#64748b)]">
+							<CreditCard size={14} className="text-[var(--teal,#0d9488)]" />
+							<span className="font-medium">Баланс / ДМС:</span>
 						</div>
+						<span
+							className={`font-bold font-mono ${
+								financialSummary.hasDebt
+									? "text-rose-600 dark:text-rose-400"
+									: "text-emerald-600 dark:text-emerald-400"
+							}`}
+						>
+							{financialSummary.hasDebt ? `Долг: ${financialSummary.formattedDebt}` : financialSummary.formattedBalance}
+						</span>
+					</div>
 
-						<div className="grid grid-cols-4 gap-1.5">
-							{[
-								{ ext: "101", label: "101 Терапевт" },
-								{ ext: "102", label: "102 Хирург" },
-								{ ext: "103", label: "103 Ортопед" },
-								{ ext: "104", label: "104 Ресепшн" },
-							].map((item) => (
-								<button
-									key={item.ext}
-									type="button"
-									onClick={() => {
-										startCallTransfer(item.ext, transferType);
-										showToast(
-											`Перевод на ${item.label} (${transferType === "blind" ? "Слепой" : "С консультацией"})`,
-											"info",
-										);
-									}}
-									className="min-h-[48px] p-1.5 rounded-xl bg-[var(--paper,#ffffff)] hover:bg-[var(--teal-soft,#f0fdfa)] border border-[var(--line,#e2e8f0)] text-center flex flex-col items-center justify-center transition-all active:scale-95 shadow-xs"
-								>
-									<span className="font-mono font-bold text-[var(--teal,#0d9488)]">{item.ext}</span>
-									<span className="text-[9px] text-[var(--muted,#64748b)] truncate w-full">
-										{item.label.split(" ")[1]}
-									</span>
-								</button>
-							))}
+					{/* Upcoming or Last Visit */}
+					<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between">
+						<div className="flex items-center gap-2 text-[var(--muted,#64748b)]">
+							<CalendarCheck size={14} className="text-[var(--teal,#0d9488)]" />
+							<span className="font-medium">Визит:</span>
 						</div>
+						<span className="font-bold text-[var(--ink,#0f172a)] truncate max-w-[160px]">
+							{upcomingAppointment
+								? `${upcomingAppointment.formattedDate} ${upcomingAppointment.formattedTime}`
+								: lastVisitSummary?.formattedLastVisit || "Первичный"}
+						</span>
+					</div>
+				</div>
+
+				{/* Medical Allergies Banner (if any) */}
+				{resolvedPatient?.allergies && resolvedPatient.allergies.length > 0 && (
+					<div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center gap-2">
+						<AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+						<span className="truncate">
+							Аллергии: {resolvedPatient.allergies.join(", ")}
+						</span>
 					</div>
 				)}
-			</div>
 
-			{/* 1-Click Quick Booking Presets */}
-			<div className="space-y-1">
-				<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
-					<Zap size={11} className="text-amber-500" />
-					Быстрая запись в 1 касание:
-				</span>
-				<div className="grid grid-cols-3 gap-1.5">
+				{/* Call Audio Player with 1.0x / 1.5x Speed Controls & STT Transcript */}
+				<div className="space-y-1">
+					<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
+						<Sparkles size={11} className="text-[var(--teal,#0d9488)]" />
+						Аудиозапись разговора & AI STT расшифровка:
+					</span>
+					<CallAudioPlayer
+						recordingUrl={effectiveRecordingUrl}
+						durationSeconds={54}
+						seed={effectivePhone}
+					/>
+				</div>
+
+				{/* SIP Call Transfer Collapsible Panel */}
+				<div className="rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] p-2.5 space-y-2 text-xs">
 					<button
 						type="button"
-						onClick={() => handleQuickBooking("urgent")}
-						className="min-h-[44px] p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
+						onClick={() => setShowTransferPanel((prev) => !prev)}
+						className="w-full min-h-[44px] px-3 py-2 rounded-lg bg-[var(--paper,#ffffff)] hover:bg-[var(--teal-soft,#f0fdfa)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--teal,#0d9488)] flex items-center justify-between transition-all cursor-pointer"
 					>
-						<span>⚡ Острая боль</span>
-						<span className="text-[10px] opacity-80">Сегодня 10:00</span>
+						<div className="flex items-center gap-2">
+							<PhoneForwarded size={15} />
+							<span>{showTransferPanel ? "Скрыть перевод звонка" : "Перевод звонка (SIP Transfer)"}</span>
+						</div>
+						<ChevronDown
+							size={15}
+							className={`transition-transform duration-200 ${showTransferPanel ? "rotate-180" : ""}`}
+						/>
 					</button>
 
-					<button
-						type="button"
-						onClick={() => handleQuickBooking("consultation")}
-						className="min-h-[44px] p-2 rounded-xl bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal-soft,#ccfbf1)] border border-[var(--teal-soft,#99f6e4)] text-[var(--teal-dark,#0f766e)] text-xs font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
-					>
-						<span>📅 Осмотр</span>
-						<span className="text-[10px] opacity-80">Сегодня 15:00</span>
-					</button>
+					{showTransferPanel && (
+						<div className="space-y-2 pt-1 animate-fade-in">
+							<div className="flex items-center gap-1 bg-[var(--paper,#ffffff)] rounded-lg p-1 border border-[var(--line,#e2e8f0)]">
+								<button
+									type="button"
+									onClick={() => setTransferType("blind")}
+									className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-md font-bold text-xs transition-all cursor-pointer ${
+										transferType === "blind"
+											? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+								>
+									Слепой
+								</button>
+								<button
+									type="button"
+									onClick={() => setTransferType("attended")}
+									className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-md font-bold text-xs transition-all cursor-pointer ${
+										transferType === "attended"
+											? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+								>
+									С консультацией
+								</button>
+							</div>
 
-					<button
-						type="button"
-						onClick={() => handleQuickBooking("tomorrow")}
-						className="min-h-[44px] p-2 rounded-xl bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
-					>
-						<span>🗓️ Завтра</span>
-						<span className="text-[10px] opacity-80">11:00</span>
-					</button>
+							<div className="grid grid-cols-4 gap-1.5">
+								{[
+									{ ext: "101", label: "101 Терапевт" },
+									{ ext: "102", label: "102 Хирург" },
+									{ ext: "103", label: "103 Ортопед" },
+									{ ext: "104", label: "104 Ресепшн" },
+								].map((item) => (
+									<button
+										key={item.ext}
+										type="button"
+										onClick={() => {
+											startCallTransfer(item.ext, transferType);
+											showToast(
+												`Перевод на ${item.label} (${transferType === "blind" ? "Слепой" : "С консультацией"})`,
+												"info",
+											);
+										}}
+										className="min-h-[48px] p-1.5 rounded-xl bg-[var(--paper,#ffffff)] hover:bg-[var(--teal-soft,#f0fdfa)] border border-[var(--line,#e2e8f0)] text-center flex flex-col items-center justify-center transition-all active:scale-95 shadow-xs cursor-pointer"
+									>
+										<span className="font-mono font-bold text-[var(--teal,#0d9488)]">{item.ext}</span>
+										<span className="text-[9px] text-[var(--muted,#64748b)] truncate w-full">
+											{item.label.split(" ")[1]}
+										</span>
+									</button>
+								))}
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* 1-Click Quick Booking Presets */}
+				<div className="space-y-1">
+					<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
+						<Zap size={11} className="text-amber-500" />
+						Быстрая запись в 1 касание:
+					</span>
+					<div className="grid grid-cols-3 gap-1.5">
+						<button
+							type="button"
+							onClick={() => handleQuickBooking("urgent")}
+							className="min-h-[44px] p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
+						>
+							<span className="inline-flex items-center gap-1">
+								<Zap size={12} className="text-amber-500 shrink-0" />
+								<span>Острая боль</span>
+							</span>
+							<span className="text-[10px] opacity-80">Сегодня 10:00</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => handleQuickBooking("consultation")}
+							className="min-h-[44px] p-2 rounded-xl bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal-soft,#ccfbf1)] border border-[var(--teal-soft,#99f6e4)] text-[var(--teal-dark,#0f766e)] text-xs font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
+						>
+							<span className="inline-flex items-center gap-1">
+								<Calendar size={12} className="text-[var(--teal)] shrink-0" />
+								<span>Осмотр</span>
+							</span>
+							<span className="text-[10px] opacity-80">Сегодня 15:00</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => handleQuickBooking("tomorrow")}
+							className="min-h-[44px] p-2 rounded-xl bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95 cursor-pointer"
+						>
+							<span className="inline-flex items-center gap-1">
+								<CalendarDays size={12} className="text-slate-500 shrink-0" />
+								<span>Завтра</span>
+							</span>
+							<span className="text-[10px] opacity-80">11:00</span>
+						</button>
+					</div>
 				</div>
 			</div>
 
-			{/* PROMINENT PRIMARY CALL ACTION BUTTONS (>= 48x48px) */}
-			<div className="flex items-center gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
+			{/* STICKY PRIMARY CALL ACTION BUTTONS (>= 48x48px) */}
+			<div className="sticky bottom-0 shrink-0 bg-[var(--paper-strong,var(--paper,#ffffff))] pt-2.5 pb-1 px-2 sm:px-3 border-t border-[var(--line,#e2e8f0)] flex items-center gap-2 z-20">
 				{/* Reject / Hangup Button */}
 				<button
 					type="button"
 					onClick={handleReject}
-					className="min-h-[48px] min-w-[48px] px-4 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 active:scale-95 border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 text-sm font-bold transition-all inline-flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer"
+					className="min-h-[48px] min-w-[48px] px-4 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 active:scale-95 border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 text-sm font-bold transition-all inline-flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer touch-manipulation"
 					aria-label="Отклонить вызов"
 				>
 					<PhoneOff size={18} />
@@ -514,7 +527,7 @@ export function IncomingCallPopupModal({
 					<button
 						type="button"
 						onClick={handleAnswer}
-						className="min-h-[48px] min-w-[48px] px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/30 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer"
+						className="min-h-[48px] min-w-[48px] px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/30 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer touch-manipulation"
 						aria-label="Ответить на входящий вызов"
 					>
 						<PhoneCall size={18} className="animate-pulse" />
@@ -526,7 +539,7 @@ export function IncomingCallPopupModal({
 				<button
 					type="button"
 					onClick={handleOpenPatientCard}
-					className="flex-1 min-h-[48px] px-4 py-3 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-teal-950/30 focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] cursor-pointer"
+					className="flex-1 min-h-[48px] px-4 py-3 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-teal-950/30 focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] cursor-pointer touch-manipulation"
 					aria-label="Открыть карту пациента"
 				>
 					<UserCheck size={18} />

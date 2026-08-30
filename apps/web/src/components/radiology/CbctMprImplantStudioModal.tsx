@@ -4983,7 +4983,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						title="Сгенерировать дугу автоматически по плотности эмали и кортикального гребня"
 					>
 						<Sliders className="w-3.5 h-3.5 text-purple-400" />
-						<span>⚙️ Сгенерировать дугу автоматически</span>
+						<span>Сгенерировать дугу автоматически</span>
 					</button>
 
 					{/* 1-Click Toggle Dental Arch Spline on All Viewports */}

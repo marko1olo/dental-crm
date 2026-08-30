@@ -1,5 +1,6 @@
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as fflate from "fflate";
+import { Archive, Folder } from "lucide-react";
 import type React from "react";
 import { useCallback, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -409,7 +410,8 @@ export function DicomArchiveUploader({
 						color: "var(--ink, #0f172a)",
 					}}
 				>
-					📦 Выбрать ZIP-архив / .DCM
+					<Archive size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<span>Выбрать ZIP-архив / .DCM</span>
 				</button>
 				<button
 					type="button"
@@ -422,7 +424,8 @@ export function DicomArchiveUploader({
 						color: "var(--ink, #0f172a)",
 					}}
 				>
-					📁 Выбрать папку КЛКТ
+					<Folder size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<span>Выбрать папку КЛКТ</span>
 				</button>
 			</div>
 
@@ -434,7 +437,7 @@ export function DicomArchiveUploader({
 					textAlign: "center",
 				}}
 			>
-				⚡ Локальная обработка в браузере. Конфиденциальные данные исследования не
+				Локальная обработка в браузере. Конфиденциальные данные исследования не
 				передаются на сторонние серверы.
 			</div>
 		</div>

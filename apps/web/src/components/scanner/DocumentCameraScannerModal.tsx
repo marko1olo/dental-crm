@@ -7,6 +7,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Camera, Check, FileText, Folder, Info, RotateCw, Save, X } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
@@ -333,9 +334,10 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 									<button
 										type="button"
 										onClick={() => fileInputRef.current?.click()}
-										className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)]"
+										className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)] cursor-pointer"
 									>
-										📁 Выбрать файл с диска
+										<Folder size={15} className="shrink-0" />
+										<span>Выбрать файл с диска</span>
 									</button>
 								</div>
 							) : (
@@ -391,7 +393,7 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 				{/* OCR Summary Banner */}
 				{ocrSummary ? (
 					<div className="flex items-center gap-2 border-t border-[var(--line)] bg-[var(--teal-surface)] px-4 py-2 text-xs text-[var(--teal-dark)] font-medium">
-						<span>ℹ️</span>
+						<Info size={14} className="text-[var(--teal-dark)] shrink-0" />
 						<span>{ocrSummary}</span>
 					</div>
 				) : null}
@@ -431,17 +433,19 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 								<button
 									type="button"
 									onClick={() => fileInputRef.current?.click()}
-									className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-xs font-bold text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
+									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-xs font-bold text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
 								>
-									📁 Файл
+									<Folder size={14} className="shrink-0" />
+									<span>Файл</span>
 								</button>
 								<button
 									type="button"
 									data-testid="scanner-capture-button"
 									onClick={handleCapture}
-									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)] transition-colors"
+									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)] transition-colors cursor-pointer"
 								>
-									📸 Сфотографировать
+									<Camera size={14} className="shrink-0" />
+									<span>Сфотографировать</span>
 								</button>
 							</>
 						) : (
@@ -449,15 +453,16 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 								<button
 									type="button"
 									onClick={handleRotate}
-									className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)]"
+									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
 									title="Повернуть на 90 градусов"
 								>
-									🔄 {rotationDeg}°
+									<RotateCw size={14} className="shrink-0" />
+									<span>{rotationDeg}°</span>
 								</button>
 								<button
 									type="button"
 									onClick={handleRetake}
-									className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-xs font-bold text-[var(--ink)] hover:bg-[var(--line)]"
+									className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-xs font-bold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
 								>
 									Переснять
 								</button>
@@ -466,9 +471,16 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 									data-testid="scanner-save-attachment-button"
 									disabled={isUploading || !capturedBlob}
 									onClick={() => void handleSaveAttachment()}
-									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)] disabled:opacity-50"
+									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)] disabled:opacity-50 cursor-pointer"
 								>
-									{isUploading ? "Сохраняю…" : "💾 Прикрепить к медкарте"}
+									{isUploading ? (
+										"Сохраняю…"
+									) : (
+										<>
+											<Save size={14} className="shrink-0" />
+											<span>Прикрепить к медкарте</span>
+										</>
+									)}
 								</button>
 							</>
 						)}

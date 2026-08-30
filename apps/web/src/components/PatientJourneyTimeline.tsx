@@ -1,5 +1,16 @@
 import React, { useMemo, useState } from "react";
-import { Search, Sparkles, X } from "lucide-react";
+import {
+	Activity,
+	AlertTriangle,
+	Calendar,
+	CircleDot,
+	DollarSign,
+	Layers,
+	Package,
+	Search,
+	Sparkles,
+	X,
+} from "lucide-react";
 import "./PatientJourneyTimeline.css";
 import type { Dashboard } from "@dental/shared";
 import { money } from "../AppHelpers";
@@ -222,20 +233,20 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 			});
 		}, [events, searchQuery]);
 
-		const getIcon = (type: string) => {
+		const renderEventIcon = (type: string) => {
 			switch (type) {
 				case "medical_alert":
-					return "⚠️";
+					return <AlertTriangle size={15} className="text-amber-500" />;
 				case "appointment":
-					return "📅";
+					return <Calendar size={15} className="text-blue-500" />;
 				case "transaction":
-					return "💰";
+					return <DollarSign size={15} className="text-emerald-500" />;
 				case "inventory_depletion":
-					return "📦";
+					return <Package size={15} className="text-purple-500" />;
 				case "lab_order":
-					return "🦷";
+					return <Layers size={15} className="text-teal-500" />;
 				default:
-					return "🔹";
+					return <CircleDot size={15} className="text-slate-400" />;
 			}
 		};
 
@@ -360,7 +371,7 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 									<div
 										className={`marker-icon ${isHighlight ? "marker-icon-large" : ""}`}
 									>
-										{getIcon(evt.type)}
+										{renderEventIcon(evt.type)}
 									</div>
 									{index !== filteredEvents.length - 1 && (
 										<div className="marker-line" />

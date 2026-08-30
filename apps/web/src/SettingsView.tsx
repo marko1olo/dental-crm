@@ -76,7 +76,7 @@ import type {
 	WeekdayIndex,
 } from "@dental/shared";
 import { motion } from "framer-motion";
-import { ClipboardCheck, ShieldCheck } from "lucide-react";
+import { ClipboardCheck, Lock, ShieldCheck } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 /*
  * Разделы левого меню берутся из общего объявления, а не собираются здесь.
@@ -1959,9 +1959,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				{settingsTab !== "telegram" ? (
 					<details className="settings-advanced-block settings-admin-secret-block">
 						<summary className="settings-advanced-toggle">
-							<span className="settings-advanced-label">
-								<span className="settings-advanced-icon">🔐</span>
-								Доступ к защищенным настройкам
+							<span className="settings-advanced-label flex items-center gap-1.5">
+								<Lock size={15} className="text-amber-500 shrink-0" />
+								<span>Доступ к защищенным настройкам</span>
 							</span>
 							<span className="settings-advanced-hint">
 								только если требует сервер

@@ -13,6 +13,7 @@ import {
 	FileCode2,
 	FileSpreadsheet,
 	FileText,
+	Landmark,
 	Receipt,
 	Settings,
 	Stethoscope,
@@ -263,25 +264,37 @@ export function OneCCommerceMlModal({
 				{/* KPI Summary Bar */}
 				<div className="onec-kpi-bar">
 					<div className="onec-kpi-card">
-						<span className="onec-kpi-label">💰 Выручка (Розничные продажи)</span>
+						<span className="onec-kpi-label inline-flex items-center gap-1.5">
+							<Coins size={14} className="text-emerald-500 shrink-0" />
+							<span>Выручка (Розничные продажи)</span>
+						</span>
 						<span className="onec-kpi-value text-emerald-600 dark:text-emerald-400">
 							{formatKopToRubLocale(activePackage.retailSalesDocument.totalRevenueKopecks)}
 						</span>
 					</div>
 					<div className="onec-kpi-card">
-						<span className="onec-kpi-label">📦 Себестоимость BOM (Склад)</span>
+						<span className="onec-kpi-label inline-flex items-center gap-1.5">
+							<Boxes size={14} className="text-amber-500 shrink-0" />
+							<span>Себестоимость BOM (Склад)</span>
+						</span>
 						<span className="onec-kpi-value text-amber-600 dark:text-amber-400">
 							{formatKopToRubLocale(activePackage.materialWriteoffDocument.totalCostKopecks)}
 						</span>
 					</div>
 					<div className="onec-kpi-card">
-						<span className="onec-kpi-label">👨‍⚕️ ФОТ врачей и ассистентов</span>
+						<span className="onec-kpi-label inline-flex items-center gap-1.5">
+							<Users size={14} className="text-cyan-500 shrink-0" />
+							<span>ФОТ врачей и ассистентов</span>
+						</span>
 						<span className="onec-kpi-value text-cyan-600 dark:text-cyan-400">
 							{formatKopToRubLocale(activePackage.payrollDocument.totalGrossKopecks)}
 						</span>
 					</div>
 					<div className="onec-kpi-card">
-						<span className="onec-kpi-label">🏛️ НДФЛ 13% + Взносы 30%</span>
+						<span className="onec-kpi-label inline-flex items-center gap-1.5">
+							<Landmark size={14} className="text-slate-500 shrink-0" />
+							<span>НДФЛ 13% + Взносы 30%</span>
+						</span>
 						<span className="onec-kpi-value text-slate-700 dark:text-slate-300">
 							{formatKopToRubLocale(
 								activePackage.payrollDocument.totalNdflKopecks +

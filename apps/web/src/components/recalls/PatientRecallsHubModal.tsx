@@ -14,6 +14,7 @@ import {
 	Calendar,
 	CheckCircle2,
 	Clock,
+	Lightbulb,
 	MessageCircle,
 	Phone,
 	PhoneCall,
@@ -612,7 +613,9 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 						<main className="recall-content-area">
 							{filteredCandidates.length === 0 ? (
 								<div className="recall-empty-state">
-									<div className="recall-empty-icon">🎉</div>
+									<div className="recall-empty-icon">
+										<CheckCircle2 size={36} className="text-teal-500 mx-auto" />
+									</div>
 									<h3>Нет пациентов по выбранному фильтру</h3>
 									<p>Все пациенты обработаны, либо срок вызова еще не наступил.</p>
 								</div>
@@ -876,8 +879,9 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																				.replace(/\{\{DOCTOR_NAME\}\}/g, doctorName)}
 																		</div>
 																	</div>
-																	<div className="recall-script-tip">
-																		💡 Совет: {currentObjection.psychologicalTip}
+																	<div className="recall-script-tip flex items-start gap-1.5">
+																		<Lightbulb size={13} className="text-amber-500 shrink-0 mt-0.5" />
+																		<span>Совет: {currentObjection.psychologicalTip}</span>
 																	</div>
 																</div>
 															) : null}

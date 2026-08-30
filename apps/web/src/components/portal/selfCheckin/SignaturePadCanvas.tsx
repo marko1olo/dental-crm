@@ -4,6 +4,7 @@ import React, {
 	useRef,
 	useState,
 } from "react";
+import { PenTool, RotateCcw, Trash2 } from "lucide-react";
 
 export interface Point {
 	x: number;
@@ -245,7 +246,9 @@ export const SignaturePadCanvas: React.FC<SignaturePadProps> = ({
 				/>
 				{isEmpty && (
 					<div className="signature-pad-placeholder">
-						<span className="signature-pad-placeholder-icon">✍️</span>
+						<span className="signature-pad-placeholder-icon">
+							<PenTool size={20} className="text-slate-400" />
+						</span>
 						<span>{placeholderText}</span>
 					</div>
 				)}
@@ -254,21 +257,23 @@ export const SignaturePadCanvas: React.FC<SignaturePadProps> = ({
 			<div className="signature-pad-actions">
 				<button
 					type="button"
-					className="signature-pad-btn signature-pad-btn-secondary"
+					className="signature-pad-btn signature-pad-btn-secondary inline-flex items-center justify-center gap-1.5"
 					onClick={handleUndo}
 					disabled={isEmpty}
 					title="Отменить последний штрих"
 				>
-					↩ Отменить
+					<RotateCcw size={13} />
+					<span>Отменить</span>
 				</button>
 				<button
 					type="button"
-					className="signature-pad-btn signature-pad-btn-outline"
+					className="signature-pad-btn signature-pad-btn-outline inline-flex items-center justify-center gap-1.5"
 					onClick={handleClear}
 					disabled={isEmpty}
 					title="Очистить поле подписи"
 				>
-					🗑️ Очистить
+					<Trash2 size={13} />
+					<span>Очистить</span>
 				</button>
 				<div className="signature-pad-status">
 					{isEmpty ? (

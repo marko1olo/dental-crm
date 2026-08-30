@@ -1,7 +1,10 @@
 import {
 	AlertCircle,
+	AlertTriangle,
 	Calendar,
+	CalendarDays,
 	CheckCircle2,
+	ClipboardList,
 	Clock,
 	Copy,
 	ExternalLink,
@@ -90,57 +93,67 @@ export interface MatchScoringResult {
 
 export const PRIORITY_CONFIG: Record<
 	string,
-	{ label: string; badgeClass: string; weight: number; icon: string }
+	{ label: string; badgeClass: string; weight: number }
 > = {
 	urgent: {
 		label: "Острая боль",
 		badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
 		weight: 100,
-		icon: "🚨",
 	},
 	acute_pain: {
 		label: "Острая боль",
 		badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
 		weight: 100,
-		icon: "🚨",
 	},
 	high: {
 		label: "Срочно",
 		badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
 		weight: 100,
-		icon: "🚨",
 	},
 	treatment_plan: {
 		label: "Незавершённый план",
 		badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/35 font-bold",
 		weight: 75,
-		icon: "📋",
 	},
 	vip: {
 		label: "VIP",
 		badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/35 font-bold",
 		weight: 60,
-		icon: "⭐",
 	},
 	routine: {
 		label: "Плановый",
 		badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
 		weight: 25,
-		icon: "🗓️",
 	},
 	medium: {
 		label: "Плановый",
 		badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
 		weight: 25,
-		icon: "🗓️",
 	},
 	low: {
 		label: "Лист ожидания",
 		badgeClass: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/25 font-medium",
 		weight: 10,
-		icon: "⏳",
 	},
 };
+
+export function renderPriorityIcon(priorityKey: string, size = 12) {
+	switch (priorityKey) {
+		case "urgent":
+		case "acute_pain":
+		case "high":
+			return <AlertTriangle size={size} className="shrink-0 text-rose-500" />;
+		case "treatment_plan":
+			return <ClipboardList size={size} className="shrink-0 text-amber-500" />;
+		case "vip":
+			return <Star size={size} className="shrink-0 text-purple-500" />;
+		case "routine":
+		case "medium":
+			return <CalendarDays size={size} className="shrink-0 text-sky-500" />;
+		default:
+			return <Clock size={size} className="shrink-0 text-slate-400" />;
+	}
+}
 
 export const TREATMENT_CATEGORIES = [
 	"Терапия (кариес, пломба)",
@@ -158,7 +171,6 @@ export const DEFAULT_PRIORITY_CFG = {
 	label: "Плановый",
 	badgeClass: "bg-[var(--paper-strong)] text-[var(--ink-2)] border-[var(--line)]",
 	weight: 25,
-	icon: "🗓️",
 };
 
 /**
@@ -884,9 +896,10 @@ export function WaitlistQuickFillModal({
 															{patient.patientName || "Пациент без имени"}
 														</h4>
 														<span
-															className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
+															className={`inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
 														>
-															{priorityCfg.icon} {priorityCfg.label}
+															{renderPriorityIcon(patient.priorityLevel)}
+															<span>{priorityCfg.label}</span>
 														</span>
 														<span
 															className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
@@ -1030,10 +1043,10 @@ export function WaitlistQuickFillModal({
 								<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
 									{[
 										{ id: "all", label: "Все" },
-										{ id: "urgent", label: "🚨 Острая боль" },
-										{ id: "treatment_plan", label: "📋 План" },
-										{ id: "vip", label: "⭐ VIP" },
-										{ id: "routine", label: "🗓️ Плановый" },
+										{ id: "urgent", label: "Острая боль" },
+										{ id: "treatment_plan", label: "План" },
+										{ id: "vip", label: "VIP" },
+										{ id: "routine", label: "Плановый" },
 									].map((filter) => (
 										<button
 											key={filter.id}
@@ -1082,9 +1095,10 @@ export function WaitlistQuickFillModal({
 															{item.patientName || "Пациент без имени"}
 														</h4>
 														<span
-															className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
+															className={`inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
 														>
-															{priorityCfg.icon} {priorityCfg.label}
+															{renderPriorityIcon(item.priorityLevel)}
+															<span>{priorityCfg.label}</span>
 														</span>
 														{item.status === "fulfilled" && (
 															<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-600">
@@ -1194,28 +1208,28 @@ export function WaitlistQuickFillModal({
 											{
 												id: "urgent",
 												label: "Острая боль",
-												icon: "🚨",
+												icon: <Zap size={16} className="shrink-0" />,
 												color:
 													"bg-[var(--bad-bg)] text-[var(--bad-fg)] border-[var(--bad-fg)]",
 											},
 											{
 												id: "treatment_plan",
 												label: "Незавершённый план",
-												icon: "📋",
+												icon: <ClipboardList size={16} className="shrink-0" />,
 												color:
 													"bg-[var(--warn-bg)] text-[var(--warn-fg)] border-[var(--warn-fg)]",
 											},
 											{
 												id: "vip",
 												label: "VIP клиент",
-												icon: "⭐",
+												icon: <Star size={16} className="shrink-0 text-purple-500" />,
 												color:
 													"bg-purple-500/20 text-purple-600 border-purple-500",
 											},
 											{
 												id: "routine",
 												label: "Плановый",
-												icon: "🗓️",
+												icon: <CalendarDays size={16} className="shrink-0 text-slate-500" />,
 												color:
 													"bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line-strong)]",
 											},
@@ -1224,13 +1238,13 @@ export function WaitlistQuickFillModal({
 												key={p.id}
 												type="button"
 												onClick={() => setPriorityLevel(p.id as WaitlistPriority)}
-												className={`p-2.5 min-h-[44px] rounded-xl text-xs font-bold border transition-all flex flex-col items-center justify-center gap-1 ${
+												className={`p-2.5 min-h-[44px] rounded-xl text-xs font-bold border transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
 													priorityLevel === p.id
 														? `${p.color} ring-2 ring-offset-1`
 														: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 												}`}
 											>
-												<span className="text-base">{p.icon}</span>
+												<span className="flex items-center justify-center">{p.icon}</span>
 												<span>{p.label}</span>
 											</button>
 										))}

@@ -7,6 +7,7 @@ import {
 	PackageCheck,
 	Plus,
 	Search,
+	Settings,
 	Trash2,
 	TrendingUp,
 	Truck,
@@ -411,7 +412,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						transition: "all 0.2s ease",
 					}}
 				>
-					📦 Складские остатки
+					<span className="inline-flex items-center gap-1.5">
+						<Package size={15} />
+						<span>Складские остатки</span>
+					</span>
 				</button>
 				<button
 					type="button"
@@ -434,7 +438,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						transition: "all 0.2s ease",
 					}}
 				>
-					⚙️ Правила списания
+					<span className="inline-flex items-center gap-1.5">
+						<Settings size={15} />
+						<span>Правила списания</span>
+					</span>
 				</button>
 			</div>
 
