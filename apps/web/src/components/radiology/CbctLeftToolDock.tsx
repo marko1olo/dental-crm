@@ -15,6 +15,7 @@
 import {
 	Activity,
 	Check,
+	CircleDot,
 	Compass,
 	Contrast,
 	Crosshair,
@@ -26,6 +27,7 @@ import {
 	RotateCw,
 	Ruler,
 	Sliders,
+	Spline,
 	SunMoon,
 	X,
 	Zap,
@@ -87,6 +89,11 @@ export interface CbctLeftToolDockProps {
 	/** Callback to trigger automatic dental arch detection */
 	readonly onAutoDetectArch?: (() => void) | undefined;
 
+	/** Active Studio Mode ('diagnostic' | 'implant' | 'endo' | 'tmj') */
+	readonly studioMode?: string | undefined;
+	/** Callback to switch Studio Mode */
+	readonly onSelectStudioMode?: ((mode: "implant" | "diagnostic") => void) | undefined;
+
 	/** Trigger loading real DICOM folder */
 	readonly onOpenDicomFolder?: (() => void) | undefined;
 	/** Trigger loading real DICOM ZIP archive */
@@ -113,6 +120,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 	showDentalArch = true,
 	onToggleDentalArch,
 	onAutoDetectArch,
+	studioMode,
+	onSelectStudioMode,
 	onOpenDicomFolder,
 	onOpenDicomZip,
 	className = "",
@@ -490,7 +499,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							aria-label="Дуга ОПТГ"
 							data-testid="cbct-left-dock-toggle-arch"
 						>
-							<span className="text-sm">🦷</span>
+							<Spline className="w-5 h-5 text-purple-400" />
 						</button>
 						<div
 							role="tooltip"
@@ -498,6 +507,33 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						>
 							<span className="font-semibold">Дуга ОПТГ</span>
 							<span className="text-zinc-400 text-[11px]">{showDentalArch ? "Включена" : "Выключена"}</span>
+						</div>
+					</div>
+				)}
+
+				{/* 8c. Implant Planning Mode Tool Button */}
+				{onSelectStudioMode && (
+					<div className="relative group flex items-center justify-center">
+						<button
+							type="button"
+							onClick={() => onSelectStudioMode(studioMode === "implant" ? "diagnostic" : "implant")}
+							className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+								studioMode === "implant"
+									? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
+									: "bg-[#09090b] text-zinc-400 hover:text-amber-300 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/40"
+							}`}
+							title="Имплантация (Планирование имплантата) [I]"
+							aria-label="Имплантация"
+							data-testid="cbct-left-dock-toggle-implant"
+						>
+							<CircleDot className="w-5 h-5 text-amber-400" />
+						</button>
+						<div
+							role="tooltip"
+							className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						>
+							<span className="font-semibold text-amber-300">Имплантация</span>
+							<span className="text-zinc-400 text-[11px]">{studioMode === "implant" ? "Режим активен" : "Планирование"}</span>
 						</div>
 					</div>
 				)}

@@ -172,7 +172,9 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 			case "sagittal":
 				return coordinateMm?.x !== undefined ? `X = ${coordinateMm.x.toFixed(1)} мм` : null;
 			case "panoramic":
-				return `Сляб ${slabThicknessMm !== undefined && slabThicknessMm > 1 ? slabThicknessMm.toFixed(1) : "12.0"} мм`;
+				return slabThicknessMm !== undefined && slabThicknessMm > 1.0
+					? `Сляб ${slabThicknessMm.toFixed(1)} мм`
+					: "Срез 1.0 мм";
 			case "cross_section":
 				return toothFdi ? `FDI #${toothFdi}` : null;
 		}
