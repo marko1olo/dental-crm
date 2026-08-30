@@ -511,7 +511,30 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</div>
 				)}
 
-				{/* 8c. Implant Planning Mode Tool Button */}
+				{/* 8c. Auto-Generate Dental Arch Button */}
+				{onAutoDetectArch && (
+					<div className="relative group flex items-center justify-center">
+						<button
+							type="button"
+							onClick={onAutoDetectArch}
+							className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 bg-[#09090b] text-purple-300 hover:text-white hover:bg-purple-950/40 border border-zinc-800 hover:border-purple-500/80 shadow-xs"
+							title="⚙️ Сгенерировать дугу автоматически (по плотности эмали/кости)"
+							aria-label="Сгенерировать дугу автоматически"
+							data-testid="cbct-tool-auto-arch"
+						>
+							<Sliders className="w-5 h-5 text-purple-400" />
+						</button>
+						<div
+							role="tooltip"
+							className="pointer-events-none absolute left-[48px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[#09090b] text-zinc-100 text-xs px-2.5 py-1.5 rounded-md border border-zinc-800 shadow-xl whitespace-nowrap flex items-center gap-2"
+						>
+							<span className="font-semibold text-purple-300">Авто-дуга</span>
+							<span className="text-zinc-400 text-[11px]">Сгенерировать автоматически</span>
+						</div>
+					</div>
+				)}
+
+				{/* 8d. Implant Planning Mode Tool Button */}
 				{onSelectStudioMode && (
 					<div className="relative group flex items-center justify-center">
 						<button

@@ -462,14 +462,14 @@ export function drawDentalArchControlPointManipulators(
 		// 1. Interactive hitbox ring (24x24px touch/drag boundary = 12px radius)
 		if (isDragging) {
 			// Dark underlay halo only on active interaction to prevent contrast loss
-			ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+			ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
 			ctx.beginPath();
 			ctx.arc(screen.x, screen.y, 14, 0, Math.PI * 2);
 			ctx.fill();
 
 			// Dragging state: Vibrant Cyan Glow (24px touch circle)
-			ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
-			ctx.strokeStyle = "#38bdf8";
+			ctx.fillStyle = "rgba(6, 182, 212, 0.35)";
+			ctx.strokeStyle = "#06b6d4";
 			ctx.lineWidth = 2.0;
 			ctx.beginPath();
 			ctx.arc(screen.x, screen.y, 12, 0, Math.PI * 2);
@@ -483,29 +483,38 @@ export function drawDentalArchControlPointManipulators(
 			ctx.fill();
 		} else if (isHovered) {
 			// Dark underlay halo
-			ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+			ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
 			ctx.beginPath();
 			ctx.arc(screen.x, screen.y, 14, 0, Math.PI * 2);
 			ctx.fill();
 
-			// Hovered state: Bright Gold Active Hitbox Ring (24px diameter)
-			ctx.fillStyle = "rgba(234, 179, 8, 0.25)";
-			ctx.strokeStyle = "#eab308";
-			ctx.lineWidth = 2.0;
+			// Hovered state: 24px Transparent Active Hitbox Ring (cursor-grab target)
+			ctx.fillStyle = "rgba(45, 212, 191, 0.22)";
+			ctx.strokeStyle = "rgba(45, 212, 191, 0.95)";
+			ctx.lineWidth = 1.5;
 			ctx.beginPath();
 			ctx.arc(screen.x, screen.y, 12, 0, Math.PI * 2);
 			ctx.fill();
 			ctx.stroke();
 
-			// Center core
+			// 6px Teal-400 core
+			ctx.fillStyle = "#2dd4bf";
+			ctx.strokeStyle = "#09090b";
+			ctx.lineWidth = 1.0;
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 3.0, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.stroke();
+
+			// Center bright dot
 			ctx.fillStyle = "#ffffff";
 			ctx.beginPath();
-			ctx.arc(screen.x, screen.y, 4, 0, Math.PI * 2);
+			ctx.arc(screen.x, screen.y, 1.2, 0, Math.PI * 2);
 			ctx.fill();
 		} else if (isSelected) {
-			// Selected state: Highlighted Violet Ring
-			ctx.fillStyle = "rgba(168, 85, 247, 0.25)";
-			ctx.strokeStyle = "#c084fc";
+			// Selected state: Highlighted Teal/Cyan Ring
+			ctx.fillStyle = "rgba(45, 212, 191, 0.25)";
+			ctx.strokeStyle = "#2dd4bf";
 			ctx.lineWidth = 1.5;
 			ctx.beginPath();
 			ctx.arc(screen.x, screen.y, 8, 0, Math.PI * 2);
@@ -514,12 +523,12 @@ export function drawDentalArchControlPointManipulators(
 
 			ctx.fillStyle = "#ffffff";
 			ctx.beginPath();
-			ctx.arc(screen.x, screen.y, 3.5, 0, Math.PI * 2);
+			ctx.arc(screen.x, screen.y, 3.0, 0, Math.PI * 2);
 			ctx.fill();
 		} else {
-			// Idle state: Delicate hairline anchor point (3.0px) - ZERO occlusion of root apices and bone
-			ctx.fillStyle = invertColors ? "rgba(124, 58, 237, 0.9)" : "rgba(192, 132, 252, 0.9)";
-			ctx.strokeStyle = invertColors ? "#000000" : "#ffffff";
+			// Idle state: Visible small teal-400 circle (6px diameter / 3.0px radius) with dark border
+			ctx.fillStyle = invertColors ? "#0d9488" : "#2dd4bf";
+			ctx.strokeStyle = invertColors ? "#ffffff" : "#09090b";
 			ctx.lineWidth = 1.0;
 			ctx.beginPath();
 			ctx.arc(screen.x, screen.y, 3.0, 0, Math.PI * 2);
@@ -527,7 +536,7 @@ export function drawDentalArchControlPointManipulators(
 			ctx.stroke();
 		}
 
-		// 3. Floating FDI Tooth Badge Pill on Hover/Drag/Select
+		// 2. Floating FDI Tooth Badge Pill on Hover/Drag/Select
 		if (isHovered || isDragging || isSelected) {
 			const labelText = `FDI #${anchor.toothFdi}`;
 			ctx.font = "bold 10px monospace";
@@ -537,9 +546,9 @@ export function drawDentalArchControlPointManipulators(
 			const pillX = screen.x - pillW / 2;
 			const pillY = screen.y - 24;
 
-			// Pill background
-			ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
-			ctx.strokeStyle = isDragging ? "#38bdf8" : isHovered ? "#eab308" : "#a855f7";
+			// Pill background with dark backdrop
+			ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+			ctx.strokeStyle = isDragging ? "#06b6d4" : isHovered ? "#2dd4bf" : "#a855f7";
 			ctx.lineWidth = 1.5;
 			ctx.beginPath();
 			if (typeof ctx.roundRect === "function") {
@@ -551,7 +560,7 @@ export function drawDentalArchControlPointManipulators(
 			ctx.stroke();
 
 			// Pill text
-			ctx.fillStyle = "#ffffff";
+			ctx.fillStyle = isDragging ? "#67e8f9" : isHovered ? "#5eead4" : "#ffffff";
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
 			ctx.fillText(labelText, screen.x, pillY + pillH / 2);

@@ -314,12 +314,424 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		setCrossSections(sections);
 	}, [volume, archCurve, windowWidth, windowLevel, invertColors, crosshairMm.z]);
 
-	// Apply Hounsfield Preset
-	const handleSelectPreset = (preset: { id: string; windowWidth: number; windowLevel: number }) => {
-		setActivePresetId(preset.id);
-		setWindowWidth(preset.windowWidth);
-		setWindowLevel(preset.windowLevel);
-	};
+	// ─── 4b. VECTOR OVERLAY & MEASUREMENT HELPERS ─────────────────────────────
+	const worldMmToSlicePx = useCallback((worldMm: Point3D, plane: MprPlane, vol: CbctVoxelVolume): { x: number; y: number } => {
+		const vox = worldMmToVoxel(worldMm, vol);
+		const depthMax = Math.max(1, vol.dimensions.depth - 1);
+		switch (plane) {
+			case "axial":
+				return { x: vox.x, y: vox.y };
+			case "coronal":
+				return { x: vox.x, y: depthMax - vox.z };
+			case "sagittal":
+				return { x: vox.y, y: depthMax - vox.z };
+		}
+	}, []);
+
+	const slicePxToScreenPx = useCallback((slicePx: { x: number; y: number }, transform: ViewportTransform): { x: number; y: number } => {
+		return {
+			x: Number((slicePx.x * transform.zoom + transform.panX).toFixed(1)),
+			y: Number((slicePx.y * transform.zoom + transform.panY).toFixed(1)),
+		};
+	}, []);
+
+	const calculateAngleBadgePosition = useCallback((
+		p1Screen: { x: number; y: number },
+		vertexScreen: { x: number; y: number },
+		p2Screen: { x: number; y: number },
+	): { x: number; y: number } => {
+		const dx1 = p1Screen.x - vertexScreen.x;
+		const dy1 = p1Screen.y - vertexScreen.y;
+		const dx2 = p2Screen.x - vertexScreen.x;
+		const dy2 = p2Screen.y - vertexScreen.y;
+		const len1 = Math.hypot(dx1, dy1);
+		const len2 = Math.hypot(dx2, dy2);
+
+		if (len1 >= 5 && len2 >= 5) {
+			const angle1 = Math.atan2(dy1, dx1);
+			const angle2 = Math.atan2(dy2, dx2);
+			let diff = angle2 - angle1;
+			while (diff > Math.PI) diff -= Math.PI * 2;
+			while (diff < -Math.PI) diff += Math.PI * 2;
+			const bisectorAngle = angle1 + diff / 2;
+			const badgeDist = Math.min(48, Math.max(26, Math.min(len1, len2) * 0.4 + 14));
+			return {
+				x: Number((vertexScreen.x + Math.cos(bisectorAngle) * badgeDist).toFixed(1)),
+				y: Number((vertexScreen.y + Math.sin(bisectorAngle) * badgeDist).toFixed(1)),
+			};
+		} else if (len1 >= 5) {
+			return {
+				x: Number(((vertexScreen.x + p1Screen.x) / 2).toFixed(1)),
+				y: Number(((vertexScreen.y + p1Screen.y) / 2 - 14).toFixed(1)),
+			};
+		}
+		return {
+			x: vertexScreen.x,
+			y: vertexScreen.y - 18,
+		};
+	}, []);
+
+	// Render vector overlay geometries directly on 2D slice canvas (Zero-GC)
+	const drawPlaneVectorOverlays = useCallback((
+		ctx: CanvasRenderingContext2D,
+		plane: MprPlane,
+		vol: CbctVoxelVolume,
+	) => {
+		// 1. Rulers
+		for (const r of rulers) {
+			if (r.plane === plane) {
+				const p1 = worldMmToSlicePx(r.startMm, plane, vol);
+				const p2 = worldMmToSlicePx(r.endMm, plane, vol);
+				const isSel = selectedMeasurementId === r.id;
+
+				ctx.save();
+				ctx.strokeStyle = isSel ? "#f59e0b" : "#2dd4bf";
+				ctx.lineWidth = isSel ? 2.2 : 1.8;
+				ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+				ctx.shadowBlur = 4;
+
+				ctx.beginPath();
+				ctx.moveTo(p1.x, p1.y);
+				ctx.lineTo(p2.x, p2.y);
+				ctx.stroke();
+
+				// Endpoint ticks
+				const dx = p2.x - p1.x;
+				const dy = p2.y - p1.y;
+				const len = Math.hypot(dx, dy) || 1;
+				const nx = -dy / len;
+				const ny = dx / len;
+				ctx.beginPath();
+				ctx.moveTo(p1.x + nx * 5, p1.y + ny * 5);
+				ctx.lineTo(p1.x - nx * 5, p1.y - ny * 5);
+				ctx.moveTo(p2.x + nx * 5, p2.y + ny * 5);
+				ctx.lineTo(p2.x - nx * 5, p2.y - ny * 5);
+				ctx.stroke();
+
+				// Endpoint dots
+				ctx.fillStyle = isSel ? "#f59e0b" : "#2dd4bf";
+				ctx.beginPath();
+				ctx.arc(p1.x, p1.y, 3, 0, Math.PI * 2);
+				ctx.arc(p2.x, p2.y, 3, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.restore();
+			}
+		}
+
+		// Active Ruler in progress
+		if (activeRuler && activeRuler.plane === plane) {
+			const p1 = worldMmToSlicePx(activeRuler.startMm, plane, vol);
+			const p2 = worldMmToSlicePx(activeRuler.currentMm, plane, vol);
+			ctx.save();
+			ctx.strokeStyle = "#f59e0b";
+			ctx.lineWidth = 2.0;
+			ctx.setLineDash([4, 4]);
+			ctx.beginPath();
+			ctx.moveTo(p1.x, p1.y);
+			ctx.lineTo(p2.x, p2.y);
+			ctx.stroke();
+			ctx.setLineDash([]);
+			ctx.fillStyle = "#f59e0b";
+			ctx.beginPath();
+			ctx.arc(p1.x, p1.y, 3.5, 0, Math.PI * 2);
+			ctx.arc(p2.x, p2.y, 3.5, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.restore();
+		}
+
+		// 2. Angles
+		for (const a of angles) {
+			if (a.plane === plane) {
+				const p1 = worldMmToSlicePx(a.startMm, plane, vol);
+				const pv = worldMmToSlicePx(a.vertexMm, plane, vol);
+				const p2 = worldMmToSlicePx(a.endMm, plane, vol);
+				const isSel = selectedMeasurementId === a.id;
+
+				ctx.save();
+				ctx.strokeStyle = isSel ? "#f59e0b" : "#2dd4bf";
+				ctx.lineWidth = isSel ? 2.2 : 1.8;
+				ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+				ctx.shadowBlur = 4;
+
+				ctx.beginPath();
+				ctx.moveTo(p1.x, p1.y);
+				ctx.lineTo(pv.x, pv.y);
+				ctx.lineTo(p2.x, p2.y);
+				ctx.stroke();
+
+				// Vertex circle
+				ctx.fillStyle = isSel ? "#f59e0b" : "#2dd4bf";
+				ctx.beginPath();
+				ctx.arc(pv.x, pv.y, 4, 0, Math.PI * 2);
+				ctx.fill();
+
+				// Vertex Arc
+				const a1 = Math.atan2(p1.y - pv.y, p1.x - pv.x);
+				const a2 = Math.atan2(p2.y - pv.y, p2.x - pv.x);
+				ctx.beginPath();
+				ctx.arc(pv.x, pv.y, 16, a1, a2, false);
+				ctx.stroke();
+				ctx.restore();
+			}
+		}
+
+		// Active Angle in progress
+		if (activeAngle && activeAngle.plane === plane) {
+			const p1 = worldMmToSlicePx(activeAngle.startMm, plane, vol);
+			const pCur = worldMmToSlicePx(activeAngle.currentMm, plane, vol);
+			ctx.save();
+			ctx.strokeStyle = "#f59e0b";
+			ctx.lineWidth = 2.0;
+			ctx.setLineDash([4, 4]);
+			if (!activeAngle.vertexMm) {
+				ctx.beginPath();
+				ctx.moveTo(p1.x, p1.y);
+				ctx.lineTo(pCur.x, pCur.y);
+				ctx.stroke();
+			} else {
+				const pv = worldMmToSlicePx(activeAngle.vertexMm, plane, vol);
+				ctx.beginPath();
+				ctx.moveTo(p1.x, p1.y);
+				ctx.lineTo(pv.x, pv.y);
+				ctx.lineTo(pCur.x, pCur.y);
+				ctx.stroke();
+			}
+			ctx.setLineDash([]);
+			ctx.restore();
+		}
+
+		// 3. Probes
+		for (const pm of probeMarkers) {
+			if (pm.plane === plane) {
+				const p = worldMmToSlicePx(pm.worldMm, plane, vol);
+				ctx.save();
+				ctx.strokeStyle = "#38bdf8";
+				ctx.lineWidth = 1.5;
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+				ctx.stroke();
+
+				ctx.beginPath();
+				ctx.moveTo(p.x - 10, p.y);
+				ctx.lineTo(p.x + 10, p.y);
+				ctx.moveTo(p.x, p.y - 10);
+				ctx.lineTo(p.x, p.y + 10);
+				ctx.stroke();
+
+				ctx.fillStyle = "#22d3ee";
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.restore();
+			}
+		}
+
+		// 4. 3D Mandibular Canal Nerve with Distance Gating
+		if (interpolatedNerve3D.length > 1) {
+			ctx.save();
+			for (let i = 0; i < interpolatedNerve3D.length - 1; i++) {
+				const pt1 = interpolatedNerve3D[i]!;
+				const pt2 = interpolatedNerve3D[i + 1]!;
+				let deltaZ = 0;
+				if (plane === "axial") deltaZ = (pt1.z + pt2.z) / 2 - crosshairMm.z;
+				else if (plane === "coronal") deltaZ = (pt1.y + pt2.y) / 2 - crosshairMm.y;
+				else deltaZ = (pt1.x + pt2.x) / 2 - crosshairMm.x;
+
+				const gating = calculateNerveDistanceGating(deltaZ);
+				if (!gating.isVisible) continue;
+
+				const p1 = worldMmToSlicePx(pt1, plane, vol);
+				const p2 = worldMmToSlicePx(pt2, plane, vol);
+
+				ctx.strokeStyle = `rgba(245, 158, 11, ${gating.alpha})`;
+				ctx.lineWidth = 2.5;
+				ctx.setLineDash(gating.isDashed ? [4, 4] : []);
+				ctx.beginPath();
+				ctx.moveTo(p1.x, p1.y);
+				ctx.lineTo(p2.x, p2.y);
+				ctx.stroke();
+			}
+			ctx.setLineDash([]);
+
+			// Waypoint nodes
+			for (let i = 0; i < nervePoints.length; i++) {
+				const pt = nervePoints[i]!;
+				let deltaZ = 0;
+				if (plane === "axial") deltaZ = pt.z - crosshairMm.z;
+				else if (plane === "coronal") deltaZ = pt.y - crosshairMm.y;
+				else deltaZ = pt.x - crosshairMm.x;
+
+				const gating = calculateNerveDistanceGating(deltaZ);
+				if (!gating.isVisible) continue;
+
+				const p = worldMmToSlicePx(pt, plane, vol);
+				ctx.fillStyle = `rgba(251, 191, 36, ${gating.alpha})`;
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.strokeStyle = "#ffffff";
+				ctx.lineWidth = 1.2;
+				ctx.stroke();
+			}
+			ctx.restore();
+		}
+	}, [rulers, activeRuler, angles, activeAngle, probeMarkers, interpolatedNerve3D, nervePoints, crosshairMm, selectedMeasurementId, worldMmToSlicePx]);
+
+	// Render crisp DOM HTML/CSS overlays (anti-pixelation badges)
+	const renderViewportOverlays = useCallback((plane: MprPlane) => {
+		if (!volume) return null;
+		const transform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+
+		return (
+			<div className="absolute inset-0 pointer-events-none z-20 overflow-hidden select-none">
+				{/* Rulers */}
+				{rulers
+					.filter((r) => r.plane === plane)
+					.map((r) => {
+						const p1Screen = slicePxToScreenPx(worldMmToSlicePx(r.startMm, plane, volume), transform);
+						const p2Screen = slicePxToScreenPx(worldMmToSlicePx(r.endMm, plane, volume), transform);
+						const midX = (p1Screen.x + p2Screen.x) / 2;
+						const midY = (p1Screen.y + p2Screen.y) / 2;
+						const isSelected = selectedMeasurementId === r.id;
+
+						return (
+							<div
+								key={r.id}
+								style={{ left: `${midX}px`, top: `${midY}px`, transform: "translate(-50%, -50%)" }}
+								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
+									isSelected
+										? "bg-slate-900/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
+										: "bg-slate-900/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+								}`}
+								data-testid={`cbct-ruler-overlay-badge-${r.id}`}
+							>
+								<span>{r.distanceMm.toFixed(1)} мм</span>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										handleDeleteRuler(r.id);
+									}}
+									className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+									title="Удалить линейку [×]"
+									aria-label="Удалить линейку"
+								>
+									×
+								</button>
+							</div>
+						);
+					})}
+
+				{/* Angles */}
+				{angles
+					.filter((a) => a.plane === plane)
+					.map((a) => {
+						const p1Screen = slicePxToScreenPx(worldMmToSlicePx(a.startMm, plane, volume), transform);
+						const pvScreen = slicePxToScreenPx(worldMmToSlicePx(a.vertexMm, plane, volume), transform);
+						const p2Screen = slicePxToScreenPx(worldMmToSlicePx(a.endMm, plane, volume), transform);
+						const badgePos = calculateAngleBadgePosition(p1Screen, pvScreen, p2Screen);
+						const isSelected = selectedMeasurementId === a.id;
+
+						return (
+							<div
+								key={a.id}
+								style={{ left: `${badgePos.x}px`, top: `${badgePos.y}px`, transform: "translate(-50%, -50%)" }}
+								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
+									isSelected
+										? "bg-slate-900/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
+										: "bg-slate-900/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+								}`}
+								data-testid={`cbct-angle-overlay-badge-${a.id}`}
+							>
+								<span>{a.angleDeg.toFixed(1)}°</span>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										handleDeleteAngle(a.id);
+									}}
+									className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+									title="Удалить угол [×]"
+									aria-label="Удалить угол"
+								>
+									×
+								</button>
+							</div>
+						);
+					})}
+
+				{/* Probes */}
+				{probeMarkers
+					.filter((p) => p.plane === plane)
+					.map((pm) => {
+						const pScreen = slicePxToScreenPx(worldMmToSlicePx(pm.worldMm, plane, volume), transform);
+						const isSelected = selectedMeasurementId === pm.id;
+
+						return (
+							<div
+								key={pm.id}
+								style={{ left: `${pScreen.x + 12}px`, top: `${pScreen.y - 12}px`, transform: "translate(0, -50%)" }}
+								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
+									isSelected
+										? "bg-slate-900/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
+										: "bg-slate-900/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+								}`}
+								title={formatMischTooltip(pm.hu)}
+								data-testid={`cbct-probe-overlay-badge-${pm.id}`}
+							>
+								<span>{pm.hu} HU · {pm.tissueName}</span>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										handleDeleteProbe(pm.id);
+									}}
+									className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+									title="Удалить замер плотности [×]"
+									aria-label="Удалить замер плотности"
+								>
+									×
+								</button>
+							</div>
+						);
+					})}
+
+				{/* Floating Mandibular Nerve IAN Badge */}
+				{interpolatedNerve3D.length > 1 && (() => {
+					const visibleNodes = nervePoints.filter((pt) => {
+						if (plane === "axial") return Math.abs(pt.z - crosshairMm.z) <= 3.5;
+						if (plane === "coronal") return Math.abs(pt.y - crosshairMm.y) <= 3.5;
+						if (plane === "sagittal") return Math.abs(pt.x - crosshairMm.x) <= 3.5;
+						return false;
+					});
+					if (visibleNodes.length === 0) return null;
+					const midPt = visibleNodes[Math.floor(visibleNodes.length / 2)]!;
+					const pMidScreen = slicePxToScreenPx(worldMmToSlicePx(midPt, plane, volume), transform);
+					return (
+						<div
+							style={{ left: `${pMidScreen.x}px`, top: `${pMidScreen.y - 24}px`, transform: "translate(-50%, -50%)" }}
+							className="absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-slate-900/80 backdrop-blur text-amber-300 border border-amber-500/60 shadow-lg"
+							data-testid={`cbct-nerve-overlay-badge-${plane}`}
+						>
+							<span>Канал IAN (3D {nerveTotalLengthMm.toFixed(1)} мм · 2.0 мм буфер)</span>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									handleClearNerve();
+								}}
+								className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+								title="Очистить трассировку нерва"
+								aria-label="Очистить трассировку нерва"
+							>
+								×
+							</button>
+						</div>
+					);
+				})()}
+			</div>
+		);
+	}, [volume, transforms, rulers, selectedMeasurementId, handleDeleteRuler, angles, calculateAngleBadgePosition, handleDeleteAngle, probeMarkers, handleDeleteProbe, interpolatedNerve3D.length, nervePoints, crosshairMm, slicePxToScreenPx, worldMmToSlicePx, nerveTotalLengthMm, handleClearNerve]);
 
 	// ─── 5. RENDER 3-PLANE OBLIQUE MPR SLICES ON CANVAS ─────────────────────────
 	const renderMprPlanes = useCallback(() => {
@@ -499,12 +911,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					centerPx: { x: vox.x, y: vox.y },
 					plane: "axial",
 					rotationDeg: obliqueAngles.axialAngleDeg,
-					activeHandle: activeRotationHandle?.plane === "axial" ? activeRotationHandle.handle : null,
-					hoveredHandle: hoveredHandle?.plane === "axial" ? hoveredHandle.handle : null,
 					showHandles: true,
 					showAngleBadge: true,
 					invertColors,
 				});
+
+				// Draw Measurements, HU Probes and 3D Nerve with Distance Gating
+				drawPlaneVectorOverlays(ctx, "axial", volume);
 
 				ctx.restore();
 			}
@@ -574,6 +987,9 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					invertColors,
 				});
 
+				// Draw Measurements, HU Probes and 3D Nerve with Distance Gating
+				drawPlaneVectorOverlays(ctx, "coronal", volume);
+
 				ctx.restore();
 			}
 		}
@@ -642,10 +1058,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					invertColors,
 				});
 
+				// Draw Measurements, HU Probes and 3D Nerve with Distance Gating
+				drawPlaneVectorOverlays(ctx, "sagittal", volume);
+
 				ctx.restore();
 			}
 		}
-	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle, invertColors]);
+	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle, invertColors, showDentalArch, selectedArchAnchorIdx, hoveredArchAnchorIdx, isDraggingArchAnchor, drawPlaneVectorOverlays]);
 
 	useEffect(() => {
 		renderMprPlanes();
@@ -673,6 +1092,14 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	}, []);
 
 	const getCanvasCursor = useCallback((plane: MprPlane) => {
+		if (activeTool === "ruler" || activeTool === "angle") return "crosshair";
+		if (activeTool === "probe") return "crosshair";
+		if (activeTool === "nerve") return "crosshair";
+		if (activeTool === "pan") return isPanning ? "grabbing" : "grab";
+		if (activeTool === "zoom") return "zoom-in";
+		if (activeTool === "window_level") return "ns-resize";
+		if (activeTool === "rotate") return "crosshair";
+
 		if (plane === "axial") {
 			if (isDraggingArchAnchor !== null) return "grabbing";
 			if (hoveredArchAnchorIdx !== null) return "grab";
@@ -682,7 +1109,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		if (isDraggingWL) return "ns-resize";
 		if (isPanning?.plane === plane) return "move";
 		return "crosshair";
-	}, [isShiftRotating, activeRotationHandle, hoveredHandle, isDraggingWL, isPanning, isDraggingArchAnchor, hoveredArchAnchorIdx]);
+	}, [activeTool, isShiftRotating, activeRotationHandle, hoveredHandle, isDraggingWL, isPanning, isDraggingArchAnchor, hoveredArchAnchorIdx]);
 
 	// ─── 6. INTERACTIVE MOUSE HANDLERS (W/L, ZOOM, PAN & ROTATION) ───────────
 	const handlePointerDown = (plane: MprPlane, e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -716,9 +1143,113 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			return;
 		}
 
-		// 3. Left Click -> Check Dental Arch Anchor vs Shift rotation vs handle drag vs Crosshair translation
+		// 3. Left Click -> Check Active Tool Modes & Normal Navigation
 		if (e.button === 0) {
 			if (!volume) return;
+
+			const transform = transforms[plane];
+			const untransformedPx = {
+				x: (pointerPx.x - transform.panX) / transform.zoom,
+				y: (pointerPx.y - transform.panY) / transform.zoom,
+			};
+			const clickedWorldMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				transform,
+				volume,
+			);
+
+			// Tool Mode: Ruler / Caliper
+			if (activeTool === "ruler") {
+				setActiveRuler({ plane, startMm: clickedWorldMm, currentMm: clickedWorldMm });
+				return;
+			}
+
+			// Tool Mode: Angle / Protractor
+			if (activeTool === "angle") {
+				if (!activeAngle) {
+					setActiveAngle({ plane, startMm: clickedWorldMm, vertexMm: null, currentMm: clickedWorldMm });
+				} else if (!activeAngle.vertexMm) {
+					setActiveAngle({ ...activeAngle, vertexMm: clickedWorldMm, currentMm: clickedWorldMm });
+				} else {
+					const angleDeg = calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, clickedWorldMm);
+					if (angleDeg > 0) {
+						setAngles((prev) => [
+							...prev,
+							{
+								id: `angle-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+								plane,
+								startMm: activeAngle.startMm,
+								vertexMm: activeAngle.vertexMm!,
+								endMm: clickedWorldMm,
+								angleDeg,
+							},
+						]);
+					}
+					setActiveAngle(null);
+				}
+				return;
+			}
+
+			// Tool Mode: HU Tissue Density Probe
+			if (activeTool === "probe") {
+				const vox = worldMmToVoxel(clickedWorldMm, volume);
+				const hu = sampleVoxelTrilinearHU(vox.x, vox.y, vox.z, volume);
+				const tissue = getMischTissueDescription(hu);
+				setProbeMarkers((prev) => [
+					...prev,
+					{
+						id: `probe-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+						plane,
+						worldMm: clickedWorldMm,
+						hu,
+						tissueName: tissue.nameRu,
+						mischClass: tissue.boneClass,
+					},
+				]);
+				return;
+			}
+
+			// Tool Mode: Mandibular Canal / Nerve Tracer
+			if (activeTool === "nerve") {
+				setNervePoints((prev) => [...prev, clickedWorldMm]);
+				return;
+			}
+
+			// Tool Mode: Pan
+			if (activeTool === "pan") {
+				setIsPanning({
+					plane,
+					startX: clientX,
+					startY: clientY,
+					startPanX: transform.panX,
+					startPanY: transform.panY,
+				});
+				return;
+			}
+
+			// Tool Mode: Zoom
+			if (activeTool === "zoom") {
+				setTransforms((prev) => ({
+					...prev,
+					[plane]: applyStepZoom(prev[plane], "in", 25),
+				}));
+				return;
+			}
+
+			// Tool Mode: Window / Level
+			if (activeTool === "window_level") {
+				setIsDraggingWL({
+					startX: clientX,
+					startY: clientY,
+					startWW: windowWidth,
+					startWL: windowLevel,
+				});
+				return;
+			}
 
 			// 3a. Hit-testing for Draggable Dental Arch Spline Control Points on Axial Viewport (24x24px Hitbox)
 			if (plane === "axial" && showDentalArch) {
@@ -739,20 +1270,14 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				? { x: vox.x, y: canvas.height - 1 - vox.z }
 				: { x: vox.y, y: canvas.height - 1 - vox.z };
 
-			const transform = transforms[plane];
-			const untransformedPx = {
-				x: (pointerPx.x - transform.panX) / transform.zoom,
-				y: (pointerPx.y - transform.panY) / transform.zoom,
-			};
-
 			const rotDeg = plane === "axial"
 				? obliqueAngles.axialAngleDeg
 				: plane === "coronal"
 				? obliqueAngles.coronalTiltDeg
 				: obliqueAngles.sagittalTiltDeg;
 
-			// Shift + Left Drag -> Rotate slice plane around axis
-			if (e.shiftKey) {
+			// Shift + Left Drag or Rotate Tool -> Rotate slice plane around axis
+			if (e.shiftKey || activeTool === "rotate") {
 				setIsShiftRotating({
 					plane,
 					centerPx,
@@ -769,16 +1294,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				setActiveRotationHandle({ plane, handle: hitHandle.position, centerPx });
 			} else {
 				setActiveDraggingPlane(plane);
-				const newCrosshair = mapCanvasPointerToWorldMmWithTransform(
-					pointerPx,
-					{ width: canvas.width, height: canvas.height },
-					plane,
-					crosshairMm,
-					obliqueAngles,
-					transform,
-					volume,
-				);
-				setCrosshairMm(newCrosshair);
+				setCrosshairMm(clickedWorldMm);
 			}
 		}
 	};
@@ -789,6 +1305,36 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		const clientY = e.clientY;
 		const { x, y } = getCanvasPointerPos(canvas, clientX, clientY);
 		const pointerPx = { x, y };
+
+		// Active Ruler Drag Update
+		if (activeRuler && activeRuler.plane === plane && volume) {
+			const moveWorldMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				transforms[plane],
+				volume,
+			);
+			setActiveRuler((prev) => (prev ? { ...prev, currentMm: moveWorldMm } : null));
+			return;
+		}
+
+		// Active Angle Pointer Update
+		if (activeAngle && activeAngle.plane === plane && volume) {
+			const moveWorldMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				transforms[plane],
+				volume,
+			);
+			setActiveAngle((prev) => (prev ? { ...prev, currentMm: moveWorldMm } : null));
+			return;
+		}
 
 		// 0-arch. Dental Arch Spline Anchor Drag (60fps rAF Coalesced)
 		if (isDraggingArchAnchor !== null && plane === "axial" && volume) {
@@ -966,6 +1512,29 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		} catch {
 			// ignore
 		}
+
+		// Commit Active Ruler Measurement
+		if (activeRuler) {
+			const distMm = Math.hypot(
+				activeRuler.currentMm.x - activeRuler.startMm.x,
+				activeRuler.currentMm.y - activeRuler.startMm.y,
+				activeRuler.currentMm.z - activeRuler.startMm.z,
+			);
+			if (distMm >= 0.5) {
+				setRulers((prev) => [
+					...prev,
+					{
+						id: `ruler-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+						plane: activeRuler.plane,
+						startMm: activeRuler.startMm,
+						endMm: activeRuler.currentMm,
+						distanceMm: Number(distMm.toFixed(2)),
+					},
+				]);
+			}
+			setActiveRuler(null);
+		}
+
 		setIsDraggingWL(null);
 		setIsPanning(null);
 		setActiveRotationHandle(null);
@@ -1070,6 +1639,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const handleToggleMaximizeActive = useCallback(() => {
 		setMaximizedViewport((prev) => (prev === activeViewport ? null : activeViewport));
 	}, [activeViewport]);
+
+	const handleSelectPreset = useCallback((preset: { id: string; windowWidth: number; windowLevel: number }) => {
+		setActivePresetId(preset.id);
+		setWindowWidth(preset.windowWidth);
+		setWindowLevel(preset.windowLevel);
+	}, []);
 
 	const handleSelectPresetShortcut = useCallback((preset: "bone" | "endo" | "soft") => {
 		const presetId = preset === "bone" ? "bone_dense" : preset === "endo" ? "enamel_dentin" : "soft_tissue";

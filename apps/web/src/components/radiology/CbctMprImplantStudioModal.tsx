@@ -4792,10 +4792,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						onClick={handleAutoDetectArch}
 						className="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-purple-300 hover:text-purple-200 border border-purple-500/50 hover:border-purple-400 shadow-xs transition-colors cursor-pointer"
 						data-testid="cbct-btn-auto-arch"
-						title="Авто-поиск зубной дуги ОПТГ по плотности эмали"
+						title="Сгенерировать дугу автоматически по плотности эмали и кортикального гребня"
 					>
 						<Sliders className="w-3.5 h-3.5 text-purple-400" />
-						<span>Авто-дуга</span>
+						<span>⚙️ Сгенерировать дугу автоматически</span>
 					</button>
 
 					{/* 1-Click Toggle Dental Arch Spline on All Viewports */}
