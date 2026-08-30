@@ -181,6 +181,7 @@ import {
 	hitTestNerveNode3D,
 	hitTestNerveNodeOnAxialSlice,
 	buildMandibularNerve3DSpline,
+	drawMandibularNerveBadge,
 	type MandibularNerve3DSpline,
 	type NerveDistanceGatingResult,
 	type GatedNerveSegment3D,
@@ -1286,26 +1287,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					if (visibleNodes.length > 0) {
 						const midPt = visibleNodes[Math.floor(visibleNodes.length / 2)]!;
 						const pMid = slicePxToScreenPx(worldMmToSlicePx(midPt, "axial", volume), transform);
-						ctx.save();
-						ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-						ctx.strokeStyle = "#f59e0b";
-						ctx.lineWidth = 1;
-						const text = `Канал IAN (3D ${nerveTotalLengthMm.toFixed(1)} мм · 2.0 мм буфер)`;
-						ctx.font = "bold 9px monospace";
-						const tw = ctx.measureText(text).width;
-						ctx.beginPath();
-						if (typeof ctx.roundRect === "function") {
-							ctx.roundRect(pMid.x - tw / 2 - 4, pMid.y - 18, tw + 8, 14, 3);
-						} else {
-							ctx.rect(pMid.x - tw / 2 - 4, pMid.y - 18, tw + 8, 14);
-						}
-						ctx.fill();
-						ctx.stroke();
-						ctx.fillStyle = "#fbbf24";
-						ctx.textAlign = "center";
-						ctx.textBaseline = "middle";
-						ctx.fillText(text, pMid.x, pMid.y - 11);
-						ctx.restore();
+						drawMandibularNerveBadge(ctx, pMid, nerveTotalLengthMm, 2.0);
 					}
 				}
 
@@ -4871,7 +4853,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											</div>
 											<p className="text-[11px] mt-1 opacity-90 leading-tight">
 												{isMaxilla && (implant3DWorld?.targetToothFdi === 16 || implant3DWorld?.targetToothFdi === 26)
-													? "✅ Зуб 16/26 (Верхняя челюсть): контроль дна гайморовой пазухи. При дефиците высоты показан синус-лифтинг."
+													? "Зуб 16/26 (Верхняя челюсть): контроль дна гайморовой пазухи. При дефиците высоты показан синус-лифтинг."
 													: nerveAuditResult.clinicalMessageRu}
 											</p>
 										</div>
@@ -4953,12 +4935,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 												showToast("Удален последний узел нерва", "info");
 											}
 										}}
-										disabled={nervePoints.length === 0}
-										className="py-1.5 px-2 rounded-md bg-[#09090b] hover:bg-zinc-900 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+										disabled={selectedNerveNodeIdx === null || selectedNerveNodeIdx < 0 || selectedNerveNodeIdx >= nervePoints.length}
+										className="py-1.5 px-2 rounded-md bg-[#09090b] hover:bg-zinc-900 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
 										data-testid="cbct-delete-nerve-node-btn"
 										title="Удалить выбранный или последний узел (Backspace)"
 									>
-										<Trash2 className="w-3.5 h-3.5 text-rose-400" />
+										<Trash2 className="w-3.5 h-3.5 mr-1 text-rose-400" />
 										<span>Удалить узел</span>
 									</button>
 
@@ -4970,11 +4952,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											showToast("Трасса канала IAN сброшена", "info");
 										}}
 										disabled={nervePoints.length === 0}
-										className="py-1.5 px-2 rounded-md bg-[#09090b] hover:bg-zinc-900 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+										className="py-1.5 px-2 rounded-md bg-[#09090b] hover:bg-zinc-900 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
 										data-testid="cbct-reset-nerve-trace-btn"
 										title="Очистить все точки канала нерва"
 									>
-										<RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+										<RotateCcw className="w-3.5 h-3.5 mr-1 text-amber-400" />
 										<span>Сброс трассы</span>
 									</button>
 								</div>

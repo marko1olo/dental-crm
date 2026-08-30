@@ -10,6 +10,8 @@ import {
 	calculateAngleBetween3Points3D,
 	drawMeasurementDeleteButton,
 	drawCaliperDeleteButton,
+	drawMandibularNerveBadge,
+	drawNerveCanalBadge,
 	hitTestMeasurementHandle,
 	hitTestMeasurementObject,
 } from "../cbctCaliperNerveMath";
@@ -481,7 +483,7 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			assert.ok(!calls.some((c) => /HU.*HU/.test(c)));
 		});
 
-		it("hitTestMeasurementObject detects 32x32px hitbox for delete button (DEF-03 / DEF-18.1)", () => {
+		it("hitTestMeasurementObject detects 44x44px touch hitbox for delete button (DEF-R2-06 / DEF-18.1)", () => {
 			const mockRulers = [
 				{
 					id: "r1",
@@ -492,19 +494,156 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				},
 			];
 			// Delete target is at badgeX + badgeW/2 - 14 = 150 + 40 - 14 = 176, y = 100
-			// Hit within 16px radius (32x32 hitbox)
-			const hitInside = hitTestMeasurementObject({ x: 176 + 14, y: 100 + 14 }, mockRulers, []);
-			assert.ok(hitInside !== null);
-			assert.equal(hitInside.isDeleteButtonHit, true);
+			// Hit within 22px radius (44x44 hitbox for medical gloved touch)
+			const hitInside22px = hitTestMeasurementObject({ x: 176 + 21, y: 100 - 21 }, mockRulers, []);
+			assert.ok(hitInside22px !== null);
+			assert.equal(hitInside22px.isDeleteButtonHit, true, "Hit at offset (21, -21) must register as delete button click");
+
+			const hitCenter = hitTestMeasurementObject({ x: 176, y: 100 }, mockRulers, []);
+			assert.ok(hitCenter !== null);
+			assert.equal(hitCenter.isDeleteButtonHit, true);
 
 			// Click on badge body (left side, e.g. x = 120, y = 100) -> hits badge but not delete button
 			const hitBadgeBody = hitTestMeasurementObject({ x: 120, y: 100 }, mockRulers, []);
 			assert.ok(hitBadgeBody !== null);
 			assert.equal(hitBadgeBody.isDeleteButtonHit, false);
 
+			// Click outside 44x44 hitbox (dx = 24px)
+			const hitOutsideHitbox = hitTestMeasurementObject({ x: 176 + 25, y: 100 }, mockRulers, []);
+			assert.ok(hitOutsideHitbox === null || !hitOutsideHitbox.isDeleteButtonHit);
+
 			// Click completely outside badge (e.g. x = 230, y = 100)
 			const hitOutside = hitTestMeasurementObject({ x: 230, y: 100 }, mockRulers, []);
 			assert.ok(hitOutside === null);
+		});
+
+		it("drawMandibularNerveBadge renders high-contrast tooltip with bold 12px monospace font and >=6px/3px padding (DEF-R2-03)", () => {
+			const calls: string[] = [];
+			const fills: string[] = [];
+			const strokes: string[] = [];
+			const fonts: string[] = [];
+			let currentFont = "";
+			let currentFill = "";
+			let currentStroke = "";
+			let currentLineWidth = 0;
+			let roundRectW = 0;
+			let roundRectH = 0;
+
+			const mockCtx = {
+				save: () => calls.push("save"),
+				restore: () => calls.push("restore"),
+				beginPath: () => calls.push("beginPath"),
+				roundRect: (_x: number, _y: number, w: number, h: number, _r?: number) => {
+					roundRectW = w;
+					roundRectH = h;
+					calls.push(`roundRect(w=${w}, h=${h})`);
+				},
+				rect: (_x: number, _y: number, w: number, h: number) => {
+					roundRectW = w;
+					roundRectH = h;
+					calls.push(`rect(w=${w}, h=${h})`);
+				},
+				fill: () => {
+					fills.push(currentFill);
+					calls.push("fill");
+				},
+				stroke: () => {
+					strokes.push(currentStroke);
+					calls.push("stroke");
+				},
+				fillText: (text: string, x: number, y: number) => {
+					calls.push(`fillText(${text}, x=${x}, y=${y})`);
+				},
+				measureText: (text: string) => ({ width: text.length * 8 }),
+				get fillStyle() { return currentFill; },
+				set fillStyle(v: string) { currentFill = v; fills.push(v); },
+				get strokeStyle() { return currentStroke; },
+				set strokeStyle(v: string) { currentStroke = v; strokes.push(v); },
+				get lineWidth() { return currentLineWidth; },
+				set lineWidth(v: number) { currentLineWidth = v; },
+				get font() { return currentFont; },
+				set font(v: string) { currentFont = v; fonts.push(v); },
+				textAlign: "",
+				textBaseline: "",
+			} as unknown as CanvasRenderingContext2D;
+
+			drawMandibularNerveBadge(mockCtx, { x: 200, y: 150 }, 48.5, 2.0);
+
+			// 1. Font must be bold 12px monospace
+			assert.ok(fonts.includes("bold 12px monospace"), "Must use bold 12px monospace font");
+
+			// 2. Background fill must be dense slate rgba(15, 23, 42, 0.92)
+			assert.ok(fills.includes("rgba(15, 23, 42, 0.92)"), "Must use rgba(15, 23, 42, 0.92) background fill");
+
+			// 3. Border stroke must be #f59e0b with lineWidth 1.5
+			assert.ok(strokes.includes("#f59e0b"), "Must use #f59e0b border stroke");
+			assert.equal(currentLineWidth, 1.5, "Border lineWidth must be 1.5px");
+
+			// 4. Text must include channel length and buffer
+			assert.ok(
+				calls.some((c) => c.includes("Канал IAN (3D 48.5 мм · 2.0 мм буфер)")),
+				"Must render correct IAN canal text",
+			);
+
+			// 5. Padding verification:
+			// Text width for "Канал IAN (3D 48.5 мм · 2.0 мм буфер)" is 37 chars * 8 = 296px
+			// badgeW must be textWidth + 2*padX = 296 + 16 = 312px (padX = 8px >= 6px)
+			// badgeH must be 22px (padY = 5px >= 3px)
+			assert.ok(roundRectW >= 296 + 12, `Horizontal padding must be >= 6px per side: width=${roundRectW}`);
+			assert.ok(roundRectH >= 12 + 6, `Vertical padding must be >= 3px per side: height=${roundRectH}`);
+
+			// 6. Verify drawNerveCanalBadge alias
+			assert.equal(typeof drawNerveCanalBadge, "function");
+		});
+
+		it("drawCbctMeasurementRuler ensures 6px gap between length text and [×] delete button (DEF-R2-06)", () => {
+			let textRenderedX = 0;
+			let btnRenderedX = 0;
+			let badgeWidth = 0;
+			let midX = 100;
+
+			const mockCtx = {
+				save: () => {},
+				restore: () => {},
+				beginPath: () => {},
+				moveTo: () => {},
+				lineTo: () => {},
+				stroke: () => {},
+				fill: () => {},
+				arc: (x: number, _y: number, _r: number) => {
+					btnRenderedX = x;
+				},
+				roundRect: (_x: number, _y: number, w: number, _h: number) => {
+					badgeWidth = w;
+				},
+				rect: (_x: number, _y: number, w: number, _h: number) => {
+					badgeWidth = w;
+				},
+				fillText: (text: string, x: number, _y: number) => {
+					if (text.includes("мм")) {
+						textRenderedX = x;
+					}
+				},
+				measureText: (text: string) => ({ width: text.length * 8 }),
+				strokeStyle: "",
+				fillStyle: "",
+				lineWidth: 1,
+				font: "",
+				textAlign: "",
+				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
+			} as unknown as CanvasRenderingContext2D;
+
+			// Draw active ruler with length "115.7 мм" (8 chars * 8 = 64px)
+			drawCbctMeasurementRuler(mockCtx, { x: 50, y: 50 }, { x: 150, y: 50 }, 115.7, true, null, false);
+
+			const textLengthPx = "115.7 мм".length * 8; // 64px
+			const textRightEdge = textRenderedX + textLengthPx;
+			const btnLeftEdge = btnRenderedX - 11; // 11px radius
+			const gapPx = btnLeftEdge - textRightEdge;
+
+			assert.equal(gapPx, 6, `Gap between text right edge and delete button must be exactly 6px (actual: ${gapPx}px)`);
 		});
 	});
 });

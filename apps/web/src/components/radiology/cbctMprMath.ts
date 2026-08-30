@@ -21,6 +21,8 @@ import {
 	calculateAngleBetween3Points3D,
 	drawMeasurementDeleteButton,
 	drawCaliperDeleteButton,
+	drawMandibularNerveBadge,
+	drawNerveCanalBadge,
 	hitTestMeasurementHandle,
 	hitTestMeasurementObject,
 } from "./cbctCaliperNerveMath";
@@ -38,6 +40,8 @@ export {
 	calculateAngleBetween3Points3D,
 	drawMeasurementDeleteButton,
 	drawCaliperDeleteButton,
+	drawMandibularNerveBadge,
+	drawNerveCanalBadge,
 	hitTestMeasurementHandle,
 	hitTestMeasurementObject,
 };
@@ -777,7 +781,8 @@ export function drawCbctMeasurementRuler(
 
 	ctx.font = "bold 12px monospace";
 	const textWidth = ctx.measureText(distText).width;
-	const badgeW = isActive ? textWidth + 38 : textWidth + 16;
+	// 8px left pad + textWidth + 6px gap + 22px delete button + 3px right pad = textWidth + 39px
+	const badgeW = isActive ? textWidth + 39 : textWidth + 16;
 	const badgeH = 22;
 
 	// Contrast semi-transparent background (rgba(0, 0, 0, 0.88)) and bright cyan/amber border
@@ -799,13 +804,13 @@ export function drawCbctMeasurementRuler(
 
 	if (isActive) {
 		ctx.shadowBlur = 0;
-		// Distance label
+		// Distance label (8px left padding)
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillText(distText, midX - badgeW / 2 + 7, midY);
+		ctx.fillText(distText, midX - badgeW / 2 + 8, midY);
 
-		// Fast Delete [×] Button Trigger (DEF-03 / DEF-18.1: 22px diameter round badge with red tint, border #ef4444 and crisp white cross)
+		// Fast Delete [×] Button Trigger with 6px gap from distance text (DEF-03 / DEF-18.1 / DEF-R2-06)
 		const delBtnX = midX + badgeW / 2 - 14;
 		drawMeasurementDeleteButton(ctx, delBtnX, midY, 11);
 	} else {
@@ -962,7 +967,7 @@ export function drawCbctAngleMeasurement(
 	const angleText = `${angleDeg.toFixed(1)}°`;
 	ctx.font = "bold 12px monospace";
 	const textWidth = ctx.measureText(angleText).width;
-	const badgeW = isActive ? textWidth + 38 : textWidth + 16;
+	const badgeW = isActive ? textWidth + 39 : textWidth + 16;
 	const badgeH = 22;
 
 	// Contrast semi-transparent background (rgba(0, 0, 0, 0.85)) and bright cyan/amber border
@@ -987,9 +992,9 @@ export function drawCbctAngleMeasurement(
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillText(angleText, badgeX - badgeW / 2 + 7, badgeY);
+		ctx.fillText(angleText, badgeX - badgeW / 2 + 8, badgeY);
 
-		// Fast Delete [×] Button Trigger (DEF-03 / DEF-18.1)
+		// Fast Delete [×] Button Trigger (DEF-03 / DEF-18.1 / DEF-R2-06)
 		const delBtnX = badgeX + badgeW / 2 - 14;
 		drawMeasurementDeleteButton(ctx, delBtnX, badgeY, 11);
 	} else {
@@ -1056,7 +1061,7 @@ export function drawCbctProbeMarker(
 	const label = formatHuProbe(hu, tissueName);
 	ctx.font = "bold 11px monospace";
 	const textWidth = ctx.measureText(label).width;
-	const badgeW = isActive ? textWidth + 38 : textWidth + 12;
+	const badgeW = isActive ? textWidth + 39 : textWidth + 12;
 	const badgeH = 22;
 	const badgeX = posPx.x + 10;
 	const badgeY = posPx.y - 22;
@@ -1082,7 +1087,7 @@ export function drawCbctProbeMarker(
 		ctx.fillStyle = "#fef08a";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillText(label, badgeX + 6, badgeY + badgeH / 2);
+		ctx.fillText(label, badgeX + 8, badgeY + badgeH / 2);
 
 		const delBtnX = badgeX + badgeW - 14;
 		drawMeasurementDeleteButton(ctx, delBtnX, badgeY + badgeH / 2, 11);

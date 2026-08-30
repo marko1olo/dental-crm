@@ -836,12 +836,12 @@ export function hitTestMeasurementObject(
 		const badgeX = r.badgePx?.x ?? midX;
 		const badgeY = r.badgePx?.y ?? midY;
 
-		// Hitbox check for fast delete [×] trigger with invisible padding (32x32 px hitbox, DEF-03 / DEF-18.1)
+		// Hitbox check for fast delete [×] trigger with 44x44 px hitbox for medical gloved touch (DEF-R2-06 / DEF-18.1)
 		const deleteTargetX = badgeX + badgeW / 2 - 14;
 		const deleteTargetY = badgeY;
-		const isDeleteHitbox =
-			Math.abs(pointerPx.x - deleteTargetX) <= 16 &&
-			Math.abs(pointerPx.y - deleteTargetY) <= 16;
+		const dx = pointerPx.x - deleteTargetX;
+		const dy = pointerPx.y - deleteTargetY;
+		const isDeleteHitbox = Math.abs(dx) <= 22 && Math.abs(dy) <= 22;
 
 		// Check if click is on badge
 		const isInsideBadge =
@@ -908,12 +908,12 @@ export function hitTestMeasurementObject(
 			}
 		}
 
-		// Hitbox check for fast delete [×] trigger with invisible padding (32x32 px hitbox, DEF-03 / DEF-18.1)
+		// Hitbox check for fast delete [×] trigger with 44x44 px hitbox for medical gloved touch (DEF-R2-06 / DEF-18.1)
 		const deleteTargetX = badgeX + badgeW / 2 - 14;
 		const deleteTargetY = badgeY;
-		const isDeleteHitbox =
-			Math.abs(pointerPx.x - deleteTargetX) <= 16 &&
-			Math.abs(pointerPx.y - deleteTargetY) <= 16;
+		const dx = pointerPx.x - deleteTargetX;
+		const dy = pointerPx.y - deleteTargetY;
+		const isDeleteHitbox = Math.abs(dx) <= 22 && Math.abs(dy) <= 22;
 
 		const isInsideBadge =
 			Math.abs(pointerPx.x - badgeX) <= badgeW / 2 + 8 &&
@@ -949,7 +949,26 @@ export function hitTestMeasurementObject(
 
 	// 3. Check Probes
 	for (const p of probes) {
+		const badgeW = p.badgePx?.width ?? 80;
+		const badgeH = p.badgePx?.height ?? 22;
+		const badgeX = p.badgePx?.x ?? (p.posPx.x + 10);
+		const badgeY = p.badgePx?.y ?? (p.posPx.y - 22);
+		const deleteTargetX = badgeX + badgeW - 14;
+		const deleteTargetY = badgeY + badgeH / 2;
+		const dx = pointerPx.x - deleteTargetX;
+		const dy = pointerPx.y - deleteTargetY;
+		const isDeleteHitbox = Math.abs(dx) <= 22 && Math.abs(dy) <= 22;
+
 		const dProbe = Math.hypot(pointerPx.x - p.posPx.x, pointerPx.y - p.posPx.y);
+		if (isDeleteHitbox) {
+			return {
+				type: "probe",
+				id: p.id,
+				plane: p.plane,
+				isDeleteButtonHit: true,
+				distancePx: 0,
+			};
+		}
 		if (dProbe <= minDistance + 4) {
 			minDistance = dProbe;
 			closestHit = {
@@ -966,10 +985,10 @@ export function hitTestMeasurementObject(
 }
 
 /**
- * Draws visual 22px circular delete [×] button badge on measurement overlays (DEF-03 / DEF-18.1).
+ * Draws visual 22px circular delete [×] button badge on measurement overlays (DEF-03 / DEF-18.1 / DEF-R2-06).
  * Visual: round badge radius 11px (diameter 22px), background rgba(239, 68, 68, 0.35)
  * with border #ef4444 (1.5px) and crisp white cross in center (12px bold).
- * Retains 32x32px invisible hit-test area.
+ * Retains 44x44px invisible touch-friendly hit-test area.
  */
 export function drawMeasurementDeleteButton(
 	ctx: CanvasRenderingContext2D,
@@ -998,6 +1017,50 @@ export function drawMeasurementDeleteButton(
 }
 
 export const drawCaliperDeleteButton = drawMeasurementDeleteButton;
+
+/**
+ * Draws floating 3D Mandibular Canal (IAN) trajectory badge tooltip (DEF-R2-03).
+ * Visual: bold 12px monospace font, dense dark background rgba(15, 23, 42, 0.92)
+ * with #f59e0b border (1.5px) and gold text (#fbbf24).
+ * Padding: >= 6px horizontal (8px), >= 3px vertical (5px).
+ */
+export function drawMandibularNerveBadge(
+	ctx: CanvasRenderingContext2D,
+	posPx: { readonly x: number; readonly y: number },
+	totalLengthMm: number,
+	safetyMarginMm = MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
+): void {
+	ctx.save();
+	ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+	ctx.strokeStyle = "#f59e0b";
+	ctx.lineWidth = 1.5;
+	const text = `Канал IAN (3D ${totalLengthMm.toFixed(1)} мм · ${safetyMarginMm.toFixed(1)} мм буфер)`;
+	ctx.font = "bold 12px monospace";
+	const tw = ctx.measureText(text).width;
+	const padX = 8; // >= 6px horizontal padding
+	const padY = 5; // >= 3px vertical padding
+	const badgeW = tw + padX * 2;
+	const badgeH = 22; // 12px font + 2 * 5px vertical padding
+	const badgeX = posPx.x - badgeW / 2;
+	const badgeY = posPx.y - 24;
+
+	ctx.beginPath();
+	if (typeof ctx.roundRect === "function") {
+		ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
+	} else {
+		ctx.rect(badgeX, badgeY, badgeW, badgeH);
+	}
+	ctx.fill();
+	ctx.stroke();
+
+	ctx.fillStyle = "#fbbf24";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillText(text, posPx.x, badgeY + badgeH / 2);
+	ctx.restore();
+}
+
+export const drawNerveCanalBadge = drawMandibularNerveBadge;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. 3D MANDIBULAR CANAL NERVE TRACER (N. ALVEOLARIS INFERIOR) & DISTANCE GATING
