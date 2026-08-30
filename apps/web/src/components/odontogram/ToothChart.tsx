@@ -984,8 +984,8 @@ const ToothSVG = ({
 	const cfg = getToothConfig(number);
 	const colors = getToothColors(state, material);
 
-	const scaledWidth = scaleCssPx(cfg.width, scale * 1.3);
-	const scaledHeight = scaleCssPx(cfg.height, scale * 1.3);
+	const scaledWidth = scaleCssPx(cfg.width, scale);
+	const scaledHeight = scaleCssPx(cfg.height, scale);
 
 	const isRightSide =
 		(number >= 21 && number <= 28) ||
@@ -2481,8 +2481,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		const recalculate = () => {
 			const element = archContainerRef.current;
 			if (!element) return;
-			// 8px safety buffer for container inner padding
-			const available = Math.max(0, element.clientWidth - 8);
+			// 16px safety buffer for container inner padding so outer molars (18, 28, 48, 38) are never clipped
+			const available = Math.max(0, element.clientWidth - 16);
 			const row = element.querySelector<HTMLElement>(".teeth-row");
 			if (!available || !row) return;
 
@@ -2494,7 +2494,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			const minScale = isQuadrantView ? 0.75 : MIN_ARCH_SCALE;
 			const next = Math.min(
 				2.2,
-				Math.max(minScale, (available / naturalWidth) * 1.3),
+				Math.max(minScale, (available / naturalWidth) * (isQuadrantView ? 1.2 : 0.96)),
 			);
 			if (Math.abs(applied - next) < 0.005) return;
 			appliedArchScaleRef.current = next;

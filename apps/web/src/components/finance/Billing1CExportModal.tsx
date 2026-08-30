@@ -400,11 +400,11 @@ export function Billing1CExportModal({
 						</div>
 					)}
 
-					{/* Tab: Items Table */}
+					{/* Tab: Items Table (overflow-x-auto touch-pan-x with min-w-[560px] for smooth mobile scrolling) */}
 					{activeSubTab === "items" && (
 						<div className="rounded-2xl border border-[var(--border,#cbd5e1)] overflow-hidden bg-[var(--paper,#ffffff)] shadow-2xs">
-							<div className="overflow-x-auto">
-								<table className="w-full text-xs text-left">
+							<div className="overflow-x-auto touch-pan-x min-w-0 [WebkitOverflowScrolling:touch]">
+								<table className="w-full text-xs text-left min-w-[560px]">
 									<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] font-bold uppercase text-[10px] tracking-wider">
 										<tr>
 											<th className="py-2.5 px-3 w-10 text-center">№</th>
@@ -609,25 +609,25 @@ export function Billing1CExportModal({
 					)}
 				</div>
 
-				{/* Modal Footer: Fixed Sticky Bar — Fitts's Law */}
+				{/* Modal Footer: Fixed Sticky Bar — Fitts's Law (44px Touch Targets) */}
 				<div className="sticky bottom-0 z-50 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 shadow-lg">
 					<div className="contents sm:flex sm:items-center sm:gap-2">
 						<button
 							type="button"
 							onClick={handleCopyAccountantSummary}
-							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0"
+							className="min-h-[44px] px-2.5 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0 touch-manipulation"
 							title="Сводка для бухгалтерии"
 						>
-							<FileText size={13} className="shrink-0" />
+							<FileText size={14} className="shrink-0" />
 							<span><span className="hidden sm:inline">Сводка для бухгалтерии</span><span className="sm:hidden">Сводка</span></span>
 						</button>
 						<button
 							type="button"
 							onClick={handleCopyXml}
-							className="min-h-8 sm:h-9 px-2 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0"
+							className="min-h-[44px] px-2.5 sm:px-3.5 rounded-xl font-bold text-[11px] sm:text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs text-center whitespace-nowrap shrink-0 touch-manipulation"
 							title="Скопировать XML CommerceML"
 						>
-							<Copy size={13} className="shrink-0" />
+							<Copy size={14} className="shrink-0" />
 							<span><span className="hidden sm:inline">Скопировать XML</span><span className="sm:hidden">XML</span></span>
 						</button>
 					</div>
@@ -636,7 +636,7 @@ export function Billing1CExportModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-bold text-[11px] sm:text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors flex items-center justify-center text-center whitespace-nowrap"
+							className="min-h-[44px] px-3 sm:px-4 rounded-xl font-bold text-[11px] sm:text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors flex items-center justify-center text-center whitespace-nowrap touch-manipulation"
 						>
 							Закрыть
 						</button>
@@ -658,7 +658,7 @@ export function Billing1CExportModal({
 							contractDate={selectedContractDate}
 							variant="primary"
 							label="Экспорт в 1С (XML)"
-							className="w-full sm:w-auto min-h-8 sm:h-9 px-2 sm:px-4 text-[11px] sm:text-xs font-bold shadow-md bg-teal-600 hover:bg-teal-700 text-white shrink-0 flex items-center justify-center text-center whitespace-nowrap"
+							className="w-full sm:w-auto min-h-[44px] px-2.5 sm:px-4 text-[11px] sm:text-xs font-bold shadow-md bg-teal-600 hover:bg-teal-700 text-white shrink-0 flex items-center justify-center text-center whitespace-nowrap touch-manipulation cursor-pointer"
 						/>
 					</div>
 				</div>

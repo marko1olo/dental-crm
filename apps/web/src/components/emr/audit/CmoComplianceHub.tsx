@@ -691,8 +691,8 @@ export function CmoComplianceHub({
 				</div>
 			</div>
 
-			{/* ── Table & Registry ── */}
-			<div className="cmo-hub-table-wrapper">
+			{/* ── Table & Registry (pb-10 guarantees zero clipping of bottom row) ── */}
+			<div className="cmo-hub-table-wrapper pb-10">
 				<table className="cmo-hub-table">
 					<thead>
 						<tr>

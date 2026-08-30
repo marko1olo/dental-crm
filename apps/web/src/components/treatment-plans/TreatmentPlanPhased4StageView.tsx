@@ -206,7 +206,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
   return (
     <div
-      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink,#0f172a)] pb-36 ${className}`.trim()}
+      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink,#0f172a)] pb-44 sm:pb-36 ${className}`.trim()}
       data-testid="treatment-plan-phased-4stage-view"
     >
       {/* Overview Banner */}

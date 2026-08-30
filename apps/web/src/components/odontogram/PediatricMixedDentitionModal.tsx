@@ -432,8 +432,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</h4>
 								</div>
 
-								<div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-2 touch-pan-x w-full">
-									<div className="min-w-[620px] space-y-4">
+								<div className="w-full overflow-x-auto touch-pan-x min-w-0 pb-2">
+									<div className="min-w-[580px] space-y-4">
 										{/* Upper Arch 12-column grid */}
 										<div className="space-y-1.5">
 											<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">

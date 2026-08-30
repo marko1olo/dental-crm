@@ -886,13 +886,8 @@
 /* Alert Summary Bar */
 .inventory-alert-summary-bar {
 	margin: 6px 20px 0;
-	padding: 3px 12px;
 	border-radius: 8px;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 8px;
-	min-height: 32px;
+	box-sizing: border-box;
 }
 
 .inventory-alert-summary-bar.has-deficit {
@@ -975,9 +970,16 @@
 	}
 
 	.inventory-alert-summary-bar {
-		margin: 8px 10px 0;
+		margin: 6px 10px 0;
 		padding: 8px 10px;
-		gap: 8px;
+		gap: 6px;
+	}
+
+	.inventory-alert-summary-bar .inventory-purchase-order-btn {
+		width: 100%;
+		justify-content: center;
+		min-height: 30px;
+		height: 30px;
 	}
 
 	.inventory-filter-toolbar {

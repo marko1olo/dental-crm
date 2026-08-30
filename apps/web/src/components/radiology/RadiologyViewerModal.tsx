@@ -1881,12 +1881,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 					{/* ── WW/WL PRESETS QUICK BAR (Centered directly inside canvas viewport) ── */}
 					<div
-						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-24px)] sm:max-w-[calc(100%-32px)] overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none transition-all ${
+						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-24px)] sm:max-w-[calc(100%-32px)] overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none transition-all ${
 							!isImageLoaded ? "opacity-40 pointer-events-none" : ""
 						}`}
 						data-testid="viewer-presets-bar"
 					>
-						<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[var(--ink,#f8fafc)] whitespace-nowrap shrink-0">
+						<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 whitespace-nowrap shrink-0">
 							Пресеты WW/WL:
 						</span>
 						{DEFAULT_WW_WL_PRESETS.map((preset) => {
@@ -1899,8 +1899,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									onClick={() => handleSelectPreset(preset)}
 									className={`min-h-[44px] sm:min-h-[32px] sm:h-8 min-w-max shrink-0 whitespace-nowrap px-3 py-2 sm:py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
 										isSelected
-											? "bg-teal-600 border border-teal-300 text-white shadow-md font-bold"
-											: "bg-slate-800 text-[var(--ink,#f8fafc)] hover:text-white hover:bg-slate-700 border border-slate-600 font-bold"
+											? "bg-teal-600 border border-teal-400 text-white shadow-md font-bold"
+											: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 font-semibold"
 									}`}
 									title={preset.description}
 									data-testid={`preset-btn-${preset.id}`}
@@ -1911,22 +1911,22 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						})}
 					</div>
 
-					{/* ── BOTTOM-LEFT VIEWPORT HUD STATUS (Semi-transparent dark HUD badge in both themes) ── */}
+					{/* ── BOTTOM-LEFT VIEWPORT HUD STATUS (High-contrast HUD badge in light/dark themes) ── */}
 					<div
-						className="absolute left-14 bottom-4 z-30 hidden sm:flex items-center gap-2 px-2 py-1 rounded bg-slate-900/80 text-slate-300 text-xs font-mono border border-slate-700/60 backdrop-blur-xs pointer-events-none whitespace-nowrap shadow-lg"
+						className="absolute left-14 bottom-4 z-30 hidden sm:flex items-center gap-2 px-2.5 py-1 rounded bg-white/90 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 text-xs font-mono font-semibold border border-slate-300 dark:border-slate-700/60 backdrop-blur-xs pointer-events-none whitespace-nowrap shadow-lg"
 						data-testid="viewport-hud-status"
 					>
 						<div className="flex items-center gap-1 whitespace-nowrap">
-							<span className="font-bold text-slate-200">Масштаб:</span>
-							<span className="text-teal-300 font-bold">{Math.round(zoom * 100)}%</span>
+							<span className="font-bold text-slate-900 dark:text-slate-200">Масштаб:</span>
+							<span className="text-teal-700 dark:text-teal-300 font-bold">{Math.round(zoom * 100)}%</span>
 						</div>
-						<span className="text-slate-600">•</span>
+						<span className="text-slate-400 dark:text-slate-600">•</span>
 						<div className="flex items-center gap-1 whitespace-nowrap">
-							<span className="font-bold text-slate-200">Поворот:</span>
-							<span className="text-teal-300 font-bold">{rotation}°</span>
+							<span className="font-bold text-slate-900 dark:text-slate-200">Поворот:</span>
+							<span className="text-teal-700 dark:text-teal-300 font-bold">{rotation}°</span>
 						</div>
-						<span className="text-slate-600 hidden md:inline">•</span>
-						<span className="hidden md:inline text-[11px] text-slate-400 whitespace-nowrap">
+						<span className="text-slate-400 dark:text-slate-600 hidden md:inline">•</span>
+						<span className="hidden md:inline text-[11px] text-slate-700 dark:text-slate-300 font-semibold whitespace-nowrap">
 							{study?.metadata?.pixelSpacingMm || 0.05} мм/пикс · Линеек: {visibleMeasurements.length}, Меток: {visibleLandmarks.length}
 						</span>
 					</div>

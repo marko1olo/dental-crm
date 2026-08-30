@@ -1534,7 +1534,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 			const minScale = isQuadrantView ? 0.95 : MIN_ARCH_SCALE;
 			const next = Math.min(
 				2.2,
-				Math.max(minScale, (available / naturalWidth) * 1.25),
+				Math.max(minScale, (available / naturalWidth) * (isQuadrantView ? 1.25 : 0.96)),
 			);
 			if (Math.abs(applied - next) < 0.005) return;
 			appliedArchScaleRef.current = next;

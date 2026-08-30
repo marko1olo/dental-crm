@@ -353,34 +353,24 @@ export function ProcedureMaterialDeductionModal({
 					</div>
 				</div>
 
-				{/* CRITICAL THRESHOLD & DEFICIT ALERT BAR (COMPACT 32px INLINE STRIP) */}
+				{/* CRITICAL THRESHOLD & DEFICIT ALERT BAR (RESPONSIVE 390px LAYOUT) */}
 				{(summary.hasDeficit || summary.warningCount > 0) && (
 					<div
-						className={`inventory-alert-summary-bar ${summary.hasDeficit ? "has-deficit" : "has-warning"}`}
-						style={{
-							margin: "6px 20px 0",
-							padding: "3px 12px",
-							minHeight: "32px",
-							height: "32px",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							gap: "8px",
-						}}
+						className={`inventory-alert-summary-bar flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 p-2 sm:p-1.5 ${summary.hasDeficit ? "has-deficit" : "has-warning"}`}
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--ink)", fontWeight: 600 }}>
+						<div className="flex items-center gap-2 text-xs text-[var(--ink)] font-semibold min-w-0">
 							{summary.hasDeficit ? (
 								<ShieldAlert
 									size={15}
-									style={{ color: "var(--rust, #dc2626)", flexShrink: 0 }}
+									className="text-[var(--rust,#dc2626)] shrink-0"
 								/>
 							) : (
 								<AlertTriangle
 									size={15}
-									style={{ color: "var(--amber, #f59e0b)", flexShrink: 0 }}
+									className="text-[var(--amber,#f59e0b)] shrink-0"
 								/>
 							)}
-							<span style={{ fontSize: "12px", fontWeight: 700 }}>
+							<span className="text-xs font-bold leading-tight">
 								{summary.hasDeficit
 									? `Дефицит материалов: ${summary.criticalCount} поз. требуют пополнения!`
 									: `Внимание: ${summary.warningCount} поз. достигли критического неснижаемого остатка.`}
@@ -389,7 +379,7 @@ export function ProcedureMaterialDeductionModal({
 
 						<button
 							type="button"
-							className="inventory-purchase-order-btn"
+							className="inventory-purchase-order-btn shrink-0"
 							style={{
 								minHeight: "26px",
 								height: "26px",
