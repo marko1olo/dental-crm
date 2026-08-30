@@ -12,7 +12,7 @@ import {
 	Sliders,
 	X,
 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { CBCT_HOTKEY_DEFINITIONS, type CbctNavViewport } from "./useCbctKeyboardShortcuts";
 import { getViewportOrientationLabels } from "./cbctMprMath";
 
@@ -24,6 +24,8 @@ export interface CbctHotkeysStatusBarProps {
 	readonly isMaximized?: boolean;
 	readonly onTogglePanel?: () => void;
 	readonly isPanelOpen?: boolean;
+	readonly onToggleClearView?: () => void;
+	readonly isClearView?: boolean;
 }
 
 export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
@@ -34,6 +36,8 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 	isMaximized = false,
 	onTogglePanel,
 	isPanelOpen = true,
+	onToggleClearView,
+	isClearView = false,
 }) => {
 	const activeMeta = getViewportOrientationLabels(activeViewport);
 
@@ -117,6 +121,23 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 						>
 							<strong className="text-cyan-400">Пробел</strong>
 							<span>{isMaximized ? "⛶ 2x2" : "⛶ 100%"}</span>
+						</button>
+					)}
+
+					{onToggleClearView && (
+						<button
+							type="button"
+							onClick={onToggleClearView}
+							className={`px-2 py-0.5 rounded border font-mono text-[10px] flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
+								isClearView
+									? "bg-amber-950/60 text-amber-300 border-amber-500/60"
+									: "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-cyan-300 border-zinc-800"
+							}`}
+							title="Временное скрытие всех оверлеев и сеток для осмотра тонких трещин кости (KeyH)"
+							data-testid="cbct-status-bar-clearview-btn"
+						>
+							<strong className={isClearView ? "text-amber-400" : "text-cyan-400"}>H</strong>
+							<span>{isClearView ? "Clear View (ВКЛ)" : "Clear View"}</span>
 						</button>
 					)}
 

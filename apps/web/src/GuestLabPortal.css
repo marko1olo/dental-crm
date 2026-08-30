@@ -146,6 +146,13 @@
 	border-top: 1px solid var(--line, #e2e8f0);
 }
 
+.guest-portal-actions .secondary-button.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	font-weight: 700;
+}
+
 .guest-portal-image {
 	width: 100%;
 	height: auto;
@@ -163,4 +170,25 @@
 	font-size: 15px;
 	width: 100%;
 	margin-bottom: 12px;
+}
+
+@media (max-width: 640px) {
+	.guest-portal-container {
+		padding: 12px;
+	}
+	.guest-portal-card {
+		padding: 16px;
+		border-radius: 12px;
+	}
+	.guest-portal-grid {
+		grid-template-columns: 1fr;
+		gap: 12px;
+		margin-bottom: 20px;
+	}
+	.guest-portal-title {
+		font-size: 18px;
+	}
+	.guest-portal-actions div {
+		flex-direction: column;
+	}
 }

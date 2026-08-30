@@ -302,6 +302,7 @@
 .marketing-roi-table-container {
 	width: 100%;
 	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
 	border-radius: 14px;
 	background-color: var(--paper-soft, #0f172a);
@@ -309,6 +310,7 @@
 
 .marketing-roi-table {
 	width: 100%;
+	min-width: 760px;
 	border-collapse: collapse;
 	font-size: 0.78rem;
 	text-align: left;

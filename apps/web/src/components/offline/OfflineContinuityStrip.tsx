@@ -310,9 +310,13 @@ export const OfflineContinuityStrip: React.FC<OfflineContinuityStripProps> = ({
 					</span>
 
 					{pendingMutationCount > 0 && (
-						<span className="offline-continuity-strip__queue-pill">
+						<span
+							className="offline-continuity-strip__queue-pill"
+							title="Очередь мутаций IndexedDB"
+							data-testid="offline-idb-sync-queue-pill"
+						>
 							<Database size={11} aria-hidden="true" />
-							{`В очереди ${pluralizeOperations(pendingMutationCount)}`}
+							<span>{`IndexedDB: В очереди ${pluralizeOperations(pendingMutationCount)}`}</span>
 						</span>
 					)}
 

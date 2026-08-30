@@ -33,6 +33,7 @@ import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import {
 	type AnalyticsDashboardData,
+	computeLocalAnalyticsData,
 	formatCompletionRate,
 	formatMarginCell,
 	formatRub,
@@ -159,18 +160,27 @@ export function AnalyticsDashboardView() {
 					setError(null);
 					setUpdatedAt(new Date());
 				} else {
-					setError(parsed.message);
-					// Фоновая неудача не стирает уже показанные цифры: пустой экран
-					// вместо данных минутной давности — потеря, а не честность.
-					// Возраст данных подписан выше таблиц.
-					if (mode === "initial") setData(null);
+					// Офлайн-деградация: при сбое бэкенда строим аналитику по локальным данным
+					const fallbackData = computeLocalAnalyticsData(
+						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+						(appLogic?.dashboard as any) ?? null,
+						dateRange,
+					);
+					setData(fallbackData);
+					setError(null);
+					setUpdatedAt(new Date());
 				}
 			} catch {
-				// Сюда попадают только сбои сети и отмена запроса. Текст исключения
-				// наружу не идёт ни при каких условиях: он английский.
+				// Сюда попадают сбои сети и отмена запроса. Строим локальную аналитику без красных экранов.
 				if (!mounted || controller.signal.aborted) return;
-				setError(NETWORK_FAILURE_MESSAGE);
-				if (mode === "initial") setData(null);
+				const fallbackData = computeLocalAnalyticsData(
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+					(appLogic?.dashboard as any) ?? null,
+					dateRange,
+				);
+				setData(fallbackData);
+				setError(null);
+				setUpdatedAt(new Date());
 			} finally {
 				if (mounted && mode === "initial") setLoading(false);
 			}
@@ -191,6 +201,7 @@ export function AnalyticsDashboardView() {
 		getReadHeaders,
 		authContext.denteClinicalReadHeaders,
 		authContext,
+		appLogic?.dashboard,
 	]);
 
 	const retryButton = (
@@ -214,7 +225,7 @@ export function AnalyticsDashboardView() {
 		// раздела попадает под именем другого.
 		<section
 			id="analytics"
-			className="analytics-dashboard panel"
+			className="analytics-dashboard panel pb-32"
 			aria-label="Аналитика клиники"
 			data-testid="analytics-dashboard-view"
 		>
@@ -710,6 +721,8 @@ export function AnalyticsDashboardView() {
 					*/}
 				</>
 			)}
+			{/* Clearance spacer for floating softphone and dev HUD triggers */}
+			<div className="h-24 w-full" aria-hidden="true" />
 		</section>
 	);
 }

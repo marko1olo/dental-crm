@@ -705,32 +705,34 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 										</div>
 
 										<div className="flex items-center gap-1.5 flex-shrink-0 relative">
-											{/* Primary Action Button 1 */}
-											<button
-												type="button"
-												onClick={() => handleGenerateOffer(patient)}
-												className="px-2.5 py-1.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm"
-												title="Сформировать персональное предложение"
+											{/* Primary Action Button 1: 📞 Позвонить */}
+											<a
+												href={`tel:${patient.phone.replace(/[^\d+]/g, "")}`}
+												className="px-2.5 py-1.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm touch-manipulation"
+												title="Позвонить пациенту"
 											>
-												<Sparkles className="w-3.5 h-3.5" />
-												<span>1-Клик Предложение</span>
-											</button>
+												<Phone className="w-3.5 h-3.5" />
+												<span>Позвонить</span>
+											</a>
 
-											{/* Primary Action Button 2 */}
-											<button
-												type="button"
-												onClick={() => handleOpenPatientCard(patient?.id)}
-												className="px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] font-medium text-xs transition-colors"
+											{/* Primary Action Button 2: 💬 WhatsApp */}
+											<a
+												href={`https://wa.me/${patient.phone.replace(/\D/g, "")}`}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm touch-manipulation"
+												title="Написать в WhatsApp"
 											>
-												Карта
-											</button>
+												<MessageSquare className="w-3.5 h-3.5" />
+												<span>WhatsApp</span>
+											</a>
 
-											{/* Secondary Actions Dropdown Menu (...) - Hick's Law: 15+ auxiliary actions consolidated */}
+											{/* Secondary Actions Dropdown Menu (...) - Hick's Law: max 2 direct buttons, 4+ auxiliary actions consolidated */}
 											<div className="relative">
 												<button
 													type="button"
 													onClick={() => setOpenMenuPatientId(openMenuPatientId === patient?.id ? null : patient?.id)}
-													className="p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+													className="p-1.5 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center justify-center cursor-pointer touch-manipulation"
 													title="Дополнительные действия"
 													aria-label="Дополнительные действия"
 												>
@@ -739,44 +741,53 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 
 												{openMenuPatientId === patient?.id && (
 													<div
-														className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-[var(--line)] bg-[var(--paper-strong,var(--paper,#ffffff))] shadow-xl z-30 py-1 text-xs divide-y divide-[var(--line)]"
-														style={{ minWidth: "190px" }}
+														className="absolute right-0 top-full mt-1 w-52 rounded-xl border border-[var(--line)] bg-[var(--paper-strong,var(--paper,#ffffff))] shadow-xl z-30 py-1 text-xs divide-y divide-[var(--line)]"
+														style={{ minWidth: "200px" }}
 													>
 														<div className="py-1">
 															<button
 																type="button"
 																onClick={() => {
 																	setOpenMenuPatientId(null);
-																	window.open(`tel:${patient.phone.replace(/[^\d+]/g, "")}`, "_self");
+																	handleGenerateOffer(patient);
 																}}
-																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)]"
+																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
 															>
-																<PhoneCall className="w-3.5 h-3.5 text-[var(--teal)]" />
-																<span>Позвонить</span>
+																<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+																<span>Спецпредложение</span>
 															</button>
 															<button
 																type="button"
 																onClick={() => {
 																	setOpenMenuPatientId(null);
-																	const waNum = patient.phone.replace(/\D/g, "");
-																	window.open(`https://wa.me/${waNum}`, "_blank");
+																	showToast(`Назначен куратор для ${patient.patientName}`, "success");
 																}}
-																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)]"
+																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
 															>
-																<MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
-																<span>WhatsApp Чат</span>
+																<UserCheck className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+																<span>Назначить куратора</span>
 															</button>
 															<button
 																type="button"
 																onClick={() => {
 																	setOpenMenuPatientId(null);
-																	navigator.clipboard?.writeText(patient.phone);
-																	showToast("Телефон скопирован", "info");
+																	showToast(`Создана задача по удержанию для ${patient.patientName}`, "info");
 																}}
-																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)]"
+																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
 															>
-																<Copy className="w-3.5 h-3.5 text-[var(--muted)]" />
-																<span>Скопировать телефон</span>
+																<Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+																<span>Создать задачу</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => {
+																	setOpenMenuPatientId(null);
+																	handleOpenPatientCard(patient.id);
+																}}
+																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
+															>
+																<Users className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
+																<span>Карта пациента</span>
 															</button>
 														</div>
 
@@ -785,35 +796,12 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 																type="button"
 																onClick={() => {
 																	setOpenMenuPatientId(null);
-																	handleGenerateOffer(patient);
-																	showToast("Применена скидка 10% на гигиену", "info");
-																}}
-																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)]"
-															>
-																<Sparkles className="w-3.5 h-3.5 text-amber-500" />
-																<span>Спецпредложение 10%</span>
-															</button>
-															<button
-																type="button"
-																onClick={() => {
-																	setOpenMenuPatientId(null);
-																	showToast(`Назначен куратор для ${patient.patientName}`, "success");
-																}}
-																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)]"
-															>
-																<UserCheck className="w-3.5 h-3.5 text-[var(--teal)]" />
-																<span>Назначить куратора</span>
-															</button>
-															<button
-																type="button"
-																onClick={() => {
-																	setOpenMenuPatientId(null);
 																	setPatients((prev) => prev.filter((p) => p.id !== patient.id));
 																	showToast("Пациент перемещен в архив удержания", "info");
 																}}
-																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-rose-600 dark:text-rose-400"
+																className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-rose-600 dark:text-rose-400 cursor-pointer"
 															>
-																<Archive className="w-3.5 h-3.5" />
+																<Archive className="w-3.5 h-3.5 shrink-0" />
 																<span>В архив удержания</span>
 															</button>
 														</div>

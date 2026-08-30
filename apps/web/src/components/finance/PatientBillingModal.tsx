@@ -275,19 +275,19 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
 								<h3 className="text-lg font-bold text-slate-900 dark:text-white break-words m-0 leading-tight">
-									<span className="hidden sm:inline">Акт выполненных работ и Гарантийный талон (А4)</span>
+									<span className="hidden sm:inline">Акт выполненных работ & Гарантийный талон (А4)</span>
 									<span className="sm:hidden">Акт выполненных работ</span>
 								</h3>
 								<span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0 whitespace-nowrap">
 									Бланк А4
 								</span>
 							</div>
-							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-tight flex items-center gap-x-1.5 truncate">
+							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-tight flex flex-wrap items-center gap-x-1.5">
 								<span className="whitespace-nowrap shrink-0">Лицензия&nbsp;№&nbsp;{clinicLicenseNumber}</span>
 								<span className="hidden sm:inline text-[var(--muted)]/50">•</span>
-								<span className="hidden sm:inline whitespace-nowrap">Приказ МЗ&nbsp;РФ №&nbsp;804н</span>
+								<span className="hidden sm:inline whitespace-nowrap">Приказ МЗ РФ № 804н</span>
 								<span className="hidden sm:inline text-[var(--muted)]/50">•</span>
-								<span className="hidden sm:inline whitespace-nowrap">Закон&nbsp;РФ №&nbsp;2300-1</span>
+								<span className="hidden sm:inline whitespace-nowrap">Закон РФ № 2300-1</span>
 							</p>
 						</div>
 					</div>
@@ -806,7 +806,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+							className="h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] text-white hover:opacity-90 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 							data-testid="btn-print-billing-act"
 						>
 							<Printer className="w-3.5 h-3.5 shrink-0" />

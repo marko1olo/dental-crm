@@ -21,6 +21,7 @@ import {
 	type VolumeSpacingMm,
 	ROMEXIS_COLORS,
 	clampCoordinateToVolume,
+	createEmptyCbctVolume,
 	huToGrayscale,
 	sampleVoxelHU,
 	generate16BitLut,
@@ -29,7 +30,7 @@ import {
 	clearLutCache,
 } from "./cbctMprMath";
 
-export { generate16BitLut, get16BitLut, applyLutToHU, clearLutCache };
+export { createEmptyCbctVolume, sampleVoxelHU, clampCoordinateToVolume, generate16BitLut, get16BitLut, applyLutToHU, clearLutCache };
 
 // ─── 1. OBLIQUE ROTATION & VIEWPORT TYPES ────────────────────────────────────
 
@@ -306,9 +307,24 @@ export function sampleVoxelHUTrilinear(
 	const c0 = c00 * (1.0 - ty) + c10 * ty;
 	const c1 = c01 * (1.0 - ty) + c11 * ty;
 
-	const hu = c0 * (1.0 - tz) + c1 * tz;
+	const rawHu = c0 * (1.0 - tz) + c1 * tz;
+	const slope = volume.rescaleSlope ?? 1.0;
+	const intercept = volume.rescaleIntercept ?? 0.0;
+	const hu = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
 
-	return Math.round(hu);
+	return Math.max(-1000, Math.min(3071, Math.round(hu)));
+}
+
+/**
+ * Continuous sub-voxel trilinear HU sampling alias supporting standard (x, y, z, volume) parameter ordering.
+ */
+export function sampleVoxelTrilinearHU(
+	x: number,
+	y: number,
+	z: number,
+	volume: CbctVoxelVolume,
+): number {
+	return sampleVoxelHUTrilinear(volume, x, y, z);
 }
 
 // ─── 4. OBLIQUE SLICE EXTRACTION ENGINE ──────────────────────────────────────
@@ -504,7 +520,11 @@ export function extractObliqueMprSlice(
 						const c0 = c00 * (1.0 - ty) + c10 * ty;
 						const c1 = c01 * (1.0 - ty) + c11 * ty;
 
-						hu = Math.round(c0 * (1.0 - tz) + c1 * tz);
+						const rawHu = c0 * (1.0 - tz) + c1 * tz;
+						const slope = volume.rescaleSlope ?? 1.0;
+						const intercept = volume.rescaleIntercept ?? 0.0;
+						const huVal = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
+						hu = Math.max(-1000, Math.min(3071, Math.round(huVal)));
 					} else {
 						hu = -1000;
 					}
@@ -592,7 +612,11 @@ export function extractObliqueMprSlice(
 							const c0 = c00 * (1.0 - ty) + c10 * ty;
 							const c1 = c01 * (1.0 - ty) + c11 * ty;
 
-							hu = Math.round(c0 * (1.0 - tz) + c1 * tz);
+							const rawHu = c0 * (1.0 - tz) + c1 * tz;
+							const slope = volume.rescaleSlope ?? 1.0;
+							const intercept = volume.rescaleIntercept ?? 0.0;
+							const huVal = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
+							hu = Math.max(-1000, Math.min(3071, Math.round(huVal)));
 						} else {
 							hu = -1000;
 						}

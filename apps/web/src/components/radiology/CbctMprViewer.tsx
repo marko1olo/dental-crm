@@ -19,6 +19,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Compass,
+	Crosshair,
 	Eye,
 	Layers,
 	Maximize2,
@@ -79,6 +80,7 @@ import {
 	voxelToWorldMm,
 	sampleVoxelHU,
 	sampleVoxelTrilinearHU,
+	getTissueNameFromHU,
 } from "./cbctMprMath";
 import {
 	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
@@ -200,7 +202,22 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const [activeTab, setActiveTab] = useState<"mpr" | "panoramic" | "cross_sections">("mpr");
 	const [mobileMprSlice, setMobileMprSlice] = useState<"axial" | "coronal" | "sagittal" | "panoramic">("axial");
 
-	// ─── 3b. TOOL DOCK, MEASUREMENT CALIPERS & NERVE STATE ──────────────────────
+	// ─── 3b. IMPLANT PLANNING & BONE DENSITY AUDIT (MISCH D1-D4) ────────────────
+	const [cbctImplantMode, setCbctImplantMode] = useState<boolean>(false);
+	const [selectedImplantPresetIdx, setSelectedImplantPresetIdx] = useState<number>(0);
+	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0);
+	const [implantDepthOffsetMm, setImplantDepthOffsetMm] = useState<number>(0);
+
+	const CBCT_IMPLANT_PRESETS = useMemo(() => [
+		{ id: "straumann_blx_40_10", manufacturer: "Straumann", system: "BLX", diameterMm: 4.0, lengthMm: 10.0, platformMm: 3.5, labelRu: "Straumann BLX Ø4.0 × 10 мм" },
+		{ id: "nobel_active_43_115", manufacturer: "Nobel Biocare", system: "NobelActive", diameterMm: 4.3, lengthMm: 11.5, platformMm: 3.9, labelRu: "NobelActive Ø4.3 × 11.5 мм" },
+		{ id: "osstem_tsiii_40_10", manufacturer: "Osstem", system: "TSIII SA", diameterMm: 4.0, lengthMm: 10.0, platformMm: 4.0, labelRu: "Osstem TSIII Ø4.0 × 10 мм" },
+		{ id: "dentium_superline_40_10", manufacturer: "Dentium", system: "SuperLine", diameterMm: 4.0, lengthMm: 10.0, platformMm: 4.0, labelRu: "Dentium SuperLine Ø4.0 × 10 мм" },
+	], []);
+
+	const currentImplantSpec = CBCT_IMPLANT_PRESETS[selectedImplantPresetIdx] ?? CBCT_IMPLANT_PRESETS[0]!;
+
+	// ─── 3c. TOOL DOCK, MEASUREMENT CALIPERS & NERVE STATE ──────────────────────
 	const [activeTool, setActiveTool] = useState<CbctToolMode>("crosshair");
 	const [rulers, setRulers] = useState<CbctMeasurementRuler[]>([]);
 	const [angles, setAngles] = useState<CbctAngleMeasurement[]>([]);
@@ -237,6 +254,52 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const nerveTotalLengthMm = useMemo(() => {
 		return calculateSplineLength3DMm(interpolatedNerve3D);
 	}, [interpolatedNerve3D]);
+
+	const implantDensityAudit = useMemo(() => {
+		if (!volume || !volume.data) return null;
+		const samples: number[] = [];
+		const steps = 10;
+		for (let s = 0; s <= steps; s++) {
+			const t = s / steps;
+			const sampleZ = crosshairMm.z - t * currentImplantSpec.lengthMm + implantDepthOffsetMm;
+			const rad = (implantAngulationDeg * Math.PI) / 180;
+			const sampleX = crosshairMm.x + Math.sin(rad) * (t * currentImplantSpec.lengthMm);
+			const sampleY = crosshairMm.y;
+			const v = worldMmToVoxel({ x: sampleX, y: sampleY, z: sampleZ }, volume);
+			const hu = sampleVoxelTrilinearHU(v.x, v.y, v.z, volume);
+			samples.push(hu);
+		}
+		const meanHU = Math.round(samples.reduce((a, b) => a + b, 0) / Math.max(1, samples.length));
+		let mischClass: "D1" | "D2" | "D3" | "D4" | "D5" = "D3";
+		if (meanHU > 1250) mischClass = "D1";
+		else if (meanHU >= 850) mischClass = "D2";
+		else if (meanHU >= 350) mischClass = "D3";
+		else if (meanHU >= 150) mischClass = "D4";
+		else mischClass = "D5";
+
+		let nerveClearanceMm = 6.5;
+		if (interpolatedNerve3D.length > 0) {
+			const apexMm = {
+				x: crosshairMm.x + Math.sin((implantAngulationDeg * Math.PI) / 180) * currentImplantSpec.lengthMm,
+				y: crosshairMm.y,
+				z: crosshairMm.z - currentImplantSpec.lengthMm + implantDepthOffsetMm,
+			};
+			let minDist = Infinity;
+			for (const pt of interpolatedNerve3D) {
+				const d = Math.hypot(pt.x - apexMm.x, pt.y - apexMm.y, pt.z - apexMm.z);
+				if (d < minDist) minDist = d;
+			}
+			nerveClearanceMm = minDist;
+		}
+
+		return {
+			meanHU,
+			mischClass,
+			tissueDesc: getTissueNameFromHU(meanHU),
+			nerveClearanceMm,
+			isSafe: nerveClearanceMm >= 2.0,
+		};
+	}, [volume, crosshairMm, currentImplantSpec, implantAngulationDeg, implantDepthOffsetMm, interpolatedNerve3D]);
 
 	const handleDeleteRuler = useCallback((id: string) => {
 		setRulers((prev) => prev.filter((r) => r.id !== id));
@@ -1084,11 +1147,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				ctx.restore();
 			}
 		}
-	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle, invertColors, showDentalArch, selectedArchAnchorIdx, hoveredArchAnchorIdx, isDraggingArchAnchor, drawPlaneVectorOverlays, isClearView]);
+	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle, invertColors, showDentalArch, selectedArchAnchorIdx, hoveredArchAnchorIdx, isDraggingArchAnchor, drawPlaneVectorOverlays, isClearView, cbctImplantMode, activeTab, mobileMprSlice, maximizedViewport]);
 
 	useEffect(() => {
 		renderMprPlanes();
-	}, [renderMprPlanes]);
+	}, [renderMprPlanes, activeTab, mobileMprSlice, maximizedViewport, cbctImplantMode]);
 
 	// Reset W/L & View (Zoom, Pan, Rotation, Maximization, transient measurements)
 	const handleResetViewAndWL = useCallback(() => {
@@ -1792,10 +1855,9 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					}
 				}
 
-				// Draw FDI tooth marker lines
+				// Draw FDI tooth marker lines with high-contrast dark underlay
 				ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.7);
 				ctx.lineWidth = 1.0;
-				ctx.fillStyle = "#38bdf8";
 				ctx.font = "bold 10px monospace";
 
 				for (const marker of panoramicResult.toothMarkersOnPano) {
@@ -1803,11 +1865,23 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					ctx.moveTo(marker.xPx, 0);
 					ctx.lineTo(marker.xPx, canvas.height);
 					ctx.stroke();
-					ctx.fillText(marker.toothFdi, marker.xPx - 6, 14);
+
+					const fdiText = `#${marker.toothFdi}`;
+					const tw = ctx.measureText(fdiText).width;
+					ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+					ctx.fillRect(marker.xPx - tw / 2 - 4, 3, tw + 8, 16);
+					ctx.strokeStyle = "rgba(6, 182, 212, 0.6)";
+					ctx.lineWidth = 1;
+					ctx.strokeRect(marker.xPx - tw / 2 - 4, 3, tw + 8, 16);
+
+					ctx.fillStyle = "#38bdf8";
+					ctx.textAlign = "center";
+					ctx.textBaseline = "middle";
+					ctx.fillText(fdiText, marker.xPx, 11);
 				}
 			}
 		}
-	}, [panoramicResult, volume, crosshairMm, slabMode, slabThicknessMm, crossSections, selectedCrossSectionIndex, archCurve]);
+	}, [panoramicResult, volume, crosshairMm, slabMode, slabThicknessMm, crossSections, selectedCrossSectionIndex, archCurve, invertColors, isClearView, activeTab, maximizedViewport, cbctImplantMode]);
 
 	// Render Selected Cross-Section Slice on Canvas
 	const activeCrossSection = crossSections[selectedCrossSectionIndex];
@@ -1847,7 +1921,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				ctx.setLineDash([]);
 			}
 		}
-	}, [activeCrossSection]);
+	}, [activeCrossSection, crossSections, selectedCrossSectionIndex, isClearView, invertColors, activeTab, maximizedViewport, cbctImplantMode]);
 
 	const crossSectionMetrics = useMemo(() => {
 		if (!activeCrossSection) return null;
@@ -2093,6 +2167,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					showDentalArch={showDentalArch}
 					onToggleDentalArch={() => setShowDentalArch((prev) => !prev)}
 					onAutoDetectArch={handleAutoDetectArch}
+					studioMode={cbctImplantMode ? "implant" : "diagnostic"}
+					onSelectStudioMode={(mode) => setCbctImplantMode(mode === "implant")}
 					isClearView={isClearView}
 					onToggleClearView={handleToggleClearView}
 				/>
@@ -2496,6 +2572,136 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					</div>
 				)}
 			</main>
+
+				{/* 4. IMPLANT PLANNING PANEL (RIGHT SIDEBAR) */}
+				{cbctImplantMode && (
+					<aside
+						className="w-80 bg-slate-900 border-l border-slate-800 flex flex-col min-h-0 overflow-y-auto p-3.5 gap-3 text-slate-200 shrink-0 select-none shadow-2xl z-30"
+						data-testid="cbct-implant-planning-panel"
+					>
+						<div className="flex items-center justify-between border-b border-slate-800 pb-2">
+							<div className="flex items-center gap-2">
+								<Crosshair className="w-4 h-4 text-cyan-400" />
+								<span className="text-xs font-bold uppercase tracking-wider text-slate-100">
+									Планирование имплантации
+								</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => setCbctImplantMode(false)}
+								className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+								title="Закрыть панель имплантации"
+							>
+								<X className="w-4 h-4" />
+							</button>
+						</div>
+
+						{/* Implant Preset Selector */}
+						<div className="flex flex-col gap-1.5">
+							<label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+								Имплантационная система
+							</label>
+							<select
+								value={selectedImplantPresetIdx}
+								onChange={(e) => setSelectedImplantPresetIdx(Number(e.target.value))}
+								className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-cyan-500 cursor-pointer"
+							>
+								{CBCT_IMPLANT_PRESETS.map((p, idx) => (
+									<option key={p.id} value={idx}>
+										{p.labelRu}
+									</option>
+								))}
+							</select>
+						</div>
+
+						{/* Spec dimensions grid */}
+						<div className="grid grid-cols-3 gap-1.5 text-xs font-mono">
+							<div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex flex-col">
+								<span className="text-[9px] text-slate-400">Диаметр:</span>
+								<span className="font-bold text-cyan-300">Ø {currentImplantSpec.diameterMm} мм</span>
+							</div>
+							<div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex flex-col">
+								<span className="text-[9px] text-slate-400">Длина:</span>
+								<span className="font-bold text-cyan-300">{currentImplantSpec.lengthMm} мм</span>
+							</div>
+							<div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex flex-col">
+								<span className="text-[9px] text-slate-400">Платформа:</span>
+								<span className="font-bold text-cyan-300">Ø {currentImplantSpec.platformMm} мм</span>
+							</div>
+						</div>
+
+						{/* Angulation Slider */}
+						<div className="flex flex-col gap-1">
+							<div className="flex items-center justify-between text-xs">
+								<span className="text-slate-400">Наклон оси:</span>
+								<span className="font-mono font-bold text-cyan-400">{implantAngulationDeg > 0 ? "+" : ""}{implantAngulationDeg}°</span>
+							</div>
+							<input
+								type="range"
+								min="-25"
+								max="25"
+								step="1"
+								value={implantAngulationDeg}
+								onChange={(e) => setImplantAngulationDeg(Number(e.target.value))}
+								className="w-full accent-cyan-500"
+							/>
+						</div>
+
+						{/* Depth Offset Slider */}
+						<div className="flex flex-col gap-1">
+							<div className="flex items-center justify-between text-xs">
+								<span className="text-slate-400">Субкрестальное погружение:</span>
+								<span className="font-mono font-bold text-cyan-400">{implantDepthOffsetMm.toFixed(1)} мм</span>
+							</div>
+							<input
+								type="range"
+								min="-3"
+								max="5"
+								step="0.5"
+								value={implantDepthOffsetMm}
+								onChange={(e) => setImplantDepthOffsetMm(Number(e.target.value))}
+								className="w-full accent-cyan-500"
+							/>
+						</div>
+
+						{/* Misch Bone Density Profile */}
+						{implantDensityAudit && (
+							<div className="flex flex-col gap-2 p-3 rounded-2xl bg-slate-950 border border-slate-800">
+								<div className="flex items-center justify-between">
+									<span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+										Плотность кости (Misch)
+									</span>
+									<span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-700/60">
+										Класс {implantDensityAudit.mischClass}
+									</span>
+								</div>
+								<div className="text-sm font-mono font-bold text-slate-100">
+									{implantDensityAudit.meanHU > 0 ? "+" : ""}{implantDensityAudit.meanHU} HU
+								</div>
+								<div className="text-xs text-slate-400">
+									{implantDensityAudit.tissueDesc}
+								</div>
+
+								{/* Safety Clearance vs IAN / Sinus */}
+								<div className={`p-2.5 rounded-xl border flex flex-col gap-1 mt-1 ${
+									implantDensityAudit.isSafe
+										? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
+										: "bg-rose-950/40 border-rose-500/40 text-rose-300"
+								}`}>
+									<div className="flex items-center justify-between text-xs font-bold">
+										<span>Зазор до канала нерва (IAN):</span>
+										<span className="font-mono">{implantDensityAudit.nerveClearanceMm.toFixed(1)} мм</span>
+									</div>
+									<div className="text-[11px] leading-tight opacity-90">
+										{implantDensityAudit.isSafe
+											? "✓ Безопасное расстояние: коридор безопасности >= 2.0 мм соблюден"
+											: "⚠ ВНИМАНИЕ: зазор до нерва менее 2.0 мм! Риск травмы IAN"}
+									</div>
+								</div>
+							</div>
+						)}
+					</aside>
+				)}
 			</div>
 
 			{/* Bottom Status Bar & Hotkey Hints */}

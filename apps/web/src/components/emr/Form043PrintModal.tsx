@@ -509,55 +509,61 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 					</header>
 
 					{/* ── Навигационные вкладки ── */}
-					<nav className="emr043-nav-tabs">
+					<nav className="emr043-nav-tabs" style={{ flexWrap: "nowrap", overflowX: "auto", width: "100%", padding: "8px 20px", gap: "6px" }}>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "overview" ? "active" : ""}`}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
 							onClick={() => setActiveTab("overview")}
 						>
 							<FileText className="w-4 h-4" />
-							Обзор и печать A4
+							<span>Обзор и печать A4</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "passport" ? "active" : ""}`}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
 							onClick={() => setActiveTab("passport")}
 						>
 							<User className="w-4 h-4" />
-							1. Паспортная часть
+							<span>1. Паспортная часть</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "anamnesis" ? "active" : ""}`}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
 							onClick={() => setActiveTab("anamnesis")}
 						>
 							<HeartPulse className="w-4 h-4" />
-							2. Анамнез и соматика
+							<span>2. Анамнез и соматика</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "odontogram" ? "active" : ""}`}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
 							onClick={() => setActiveTab("odontogram")}
 						>
 							<Activity className="w-4 h-4" />
-							3. Зубная формула и индексы
+							<span>3. Зубная формула и индексы</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "diaries" ? "active" : ""}`}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
 							onClick={() => setActiveTab("diaries")}
 						>
 							<Calendar className="w-4 h-4" />
-							4. Дневники визитов (SOAP)
+							<span>4. Дневники визитов (SOAP)</span>
 							<span style={{ fontSize: "11px", fontWeight: "bold", opacity: 0.8 }}>({formData.visitDiaries.length})</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "epicrisis" ? "active" : ""}`}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
 							onClick={() => setActiveTab("epicrisis")}
 						>
 							<Award className="w-4 h-4" />
-							5. Эпикриз и диспансеризация
+							<span>5. Эпикриз и диспансеризация</span>
 						</button>
 					</nav>
 
@@ -736,7 +742,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								<div className="emr043-section-card">
 									<h3 className="emr043-section-card-title">
 										<HeartPulse className="w-4 h-4 text-sky-600" />
-										2. Анамнез жизни и заболевания (Anamnesis vitae & morbi)
+										2. Анамнез жизни и заболевания (Anamnesis vitae et morbi)
 									</h3>
 									<div className="emr043-grid-2">
 										<div style={{ gridColumn: "1 / -1" }}>

@@ -412,24 +412,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 						type="button"
 						onClick={() => runIntegrityCheck(false)}
 						disabled={isCheckingIntegrity}
-						style={{
-							height: "38px",
-							minHeight: "38px",
-							padding: "0 14px",
-							borderRadius: "8px",
-							background: "var(--paper, #f1f5f9)",
-							color: "var(--ink, #334155)",
-							border: "1px solid var(--glass-border-strong, #cbd5e1)",
-							fontWeight: "600",
-							fontSize: "13px",
-							cursor: isCheckingIntegrity ? "not-allowed" : "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							boxSizing: "border-box",
-							transition: "all 0.15s ease",
-						}}
+						className="secondary-button min-h-[38px] px-3.5 text-xs font-semibold inline-flex items-center gap-1.5"
 					>
 						<RefreshCw size={14} className={isCheckingIntegrity ? "spin-animation" : ""} />
 						{isCheckingIntegrity ? "Проверка..." : "Сверить буфер"}
@@ -596,18 +579,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									value={exportPassphrase}
 									onChange={(e) => setExportPassphrase(e.target.value)}
 									placeholder="По умолчанию — защищенный ключ клиники"
-									style={{
-										width: "100%",
-										height: "40px",
-										minHeight: "40px",
-										padding: "6px 40px 6px 12px",
-										borderRadius: "8px",
-										border: "1px solid var(--glass-border-strong, #cbd5e1)",
-										background: "var(--paper-strong, #ffffff)",
-										color: "var(--ink, #1e293b)",
-										fontSize: "13px",
-										boxSizing: "border-box",
-									}}
+									className="w-full h-10 min-h-[40px] pl-3 pr-10 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
 								/>
 								<button
 									type="button"
@@ -650,18 +622,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								value={exportNotes}
 								onChange={(e) => setExportNotes(e.target.value)}
 								placeholder="Например: Плановый бэкап перед закрытием смены"
-								style={{
-									width: "100%",
-									height: "40px",
-									minHeight: "40px",
-									padding: "6px 12px",
-									borderRadius: "8px",
-									border: "1px solid var(--glass-border-strong, #cbd5e1)",
-									background: "var(--paper-strong, #ffffff)",
-									color: "var(--ink, #1e293b)",
-									fontSize: "13px",
-									boxSizing: "border-box",
-								}}
+								className="w-full h-10 min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
 							/>
 						</div>
 					</div>
@@ -1012,18 +973,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										value={importPassphrase}
 										onChange={(e) => handlePassphraseChangeForDryRun(e.target.value)}
 										placeholder="По умолчанию — ключ клиники"
-										style={{
-											width: "100%",
-											height: "40px",
-											minHeight: "40px",
-											padding: "6px 40px 6px 12px",
-											borderRadius: "8px",
-											border: "1px solid var(--glass-border-strong, #cbd5e1)",
-											background: "var(--paper-strong, #ffffff)",
-											color: "var(--ink, #1e293b)",
-											fontSize: "13px",
-											boxSizing: "border-box",
-										}}
+										className="w-full h-10 min-h-[40px] pl-3 pr-10 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
 									/>
 									<button
 										type="button"
@@ -1395,15 +1345,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								value={schedulerIntervalMin}
 								onChange={(e) => setSchedulerIntervalMin(Number(e.target.value))}
 								disabled={schedulerStatus.isRunning}
-								style={{
-									minHeight: "44px",
-									padding: "0 12px",
-									borderRadius: "8px",
-									border: "1px solid var(--glass-border-strong, #cbd5e1)",
-									background: "var(--paper-strong, #ffffff)",
-									color: "var(--ink, #1e293b)",
-									fontSize: "14px",
-								}}
+								className="min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
 							>
 								<option value={15}>Каждые 15 минут</option>
 								<option value={30}>Каждые 30 минут</option>

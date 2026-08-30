@@ -1002,13 +1002,15 @@ export function LeadsFunnelAnalyticsModal({
 							</div>
 						</div>
 
-						<div style={{ overflowX: "auto" }}>
+						<div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
 							<table
 								style={{
 									width: "100%",
+									minWidth: "760px",
 									borderCollapse: "collapse",
 									fontSize: 12,
 									textAlign: "left",
+									whiteSpace: "nowrap",
 								}}
 							>
 								<thead>

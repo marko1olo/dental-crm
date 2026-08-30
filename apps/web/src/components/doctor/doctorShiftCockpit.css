@@ -24,7 +24,8 @@
 	.doctor-cockpit-overlay {
 		padding: 0;
 		align-items: stretch;
-		overflow: hidden;
+		overflow-y: auto !important;
+		-webkit-overflow-scrolling: touch;
 	}
 }
 
@@ -52,6 +53,8 @@
 		border: none;
 		display: flex;
 		flex-direction: column;
+		overflow-y: auto !important;
+		-webkit-overflow-scrolling: touch;
 	}
 }
 
@@ -79,8 +82,7 @@
 .doctor-cockpit-body {
 	flex: 1 1 0%;
 	min-height: 0;
-	padding: 18px 20px 128px !important;
-	padding-bottom: 128px !important;
+	padding: 18px 20px 24px;
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
 	display: flex;
@@ -98,21 +100,37 @@
 @media (max-width: 640px) {
 	.doctor-cockpit-metrics-grid {
 		grid-template-columns: repeat(2, 1fr);
-		gap: 8px;
+		gap: 6px;
 	}
 	.doctor-metric-card {
-		padding: 8px 10px;
+		padding: 6px 8px;
+		border-radius: 10px;
+		gap: 2px;
+	}
+	.doctor-metric-label {
+		font-size: 10px;
 	}
 	.doctor-metric-value {
 		font-size: 15px;
+		font-weight: 800;
 	}
 	.doctor-cockpit-body {
 		flex: 1 1 0%;
 		min-height: 0;
 		overflow-y: auto !important;
 		-webkit-overflow-scrolling: touch;
-		padding: 12px 12px 140px !important;
-		gap: 12px;
+		padding: 10px 10px 110px !important;
+		padding-bottom: 110px !important;
+		gap: 10px;
+	}
+	.doctor-patient-showcase-grid {
+		gap: 10px;
+	}
+	.doctor-active-patient-card,
+	.doctor-next-patient-card {
+		padding: 12px;
+		gap: 10px;
+		border-radius: 14px;
 	}
 }
 
@@ -144,6 +162,101 @@
 	font-variant-numeric: tabular-nums;
 }
 
+/* Navigation Tabs Scroll Container & Mobile Indicator [DEFECT-M4] */
+.doctor-tabs-scroll-wrapper {
+	position: relative;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	border-bottom: 1px solid var(--line, #1e293b);
+	background: var(--paper-strong, #09090b);
+}
+
+.doctor-tabs-scroll-wrapper::after {
+	content: '';
+	position: absolute;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 28px;
+	background: linear-gradient(to right, transparent, var(--paper-strong, #09090b));
+	pointer-events: none;
+	opacity: 0.9;
+}
+
+@media (min-width: 641px) {
+	.doctor-tabs-scroll-wrapper::after {
+		display: none;
+	}
+}
+
+/* Tab Buttons */
+.doctor-tab-btn {
+	background: #f1f5f9;
+	color: #334155;
+	border: 1px solid #cbd5e1;
+}
+
+.doctor-tab-btn:hover {
+	background: #e2e8f0;
+	color: #0f172a;
+}
+
+.doctor-tab-btn.active {
+	background: #f0fdfa;
+	color: #115e59;
+	border-color: #0d9488;
+	font-weight: 800;
+}
+
+[data-theme="dark"] .doctor-tab-btn,
+.dark .doctor-tab-btn {
+	background: rgba(30, 41, 59, 0.8) !important;
+	color: #cbd5e1 !important;
+	border-color: #334155 !important;
+}
+
+[data-theme="dark"] .doctor-tab-btn:hover,
+.dark .doctor-tab-btn:hover {
+	background: #334155 !important;
+	color: #ffffff !important;
+}
+
+[data-theme="dark"] .doctor-tab-btn.active,
+.dark .doctor-tab-btn.active {
+	background: rgba(19, 78, 74, 0.8) !important;
+	color: #5eead4 !important;
+	border-color: #0f766e !important;
+	font-weight: 800;
+}
+
+[data-theme="light"] .doctor-tabs-scroll-wrapper,
+.light .doctor-tabs-scroll-wrapper {
+	background: #ffffff !important;
+	border-bottom-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .doctor-tab-btn,
+.light .doctor-tab-btn {
+	background: #f1f5f9 !important;
+	color: #334155 !important;
+	border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .doctor-tab-btn:hover,
+.light .doctor-tab-btn:hover {
+	background: #e2e8f0 !important;
+	color: #0f172a !important;
+}
+
+[data-theme="light"] .doctor-tab-btn.active,
+.light .doctor-tab-btn.active {
+	background: #f0fdfa !important;
+	color: #115e59 !important;
+	border-color: #0d9488 !important;
+	font-weight: 800;
+}
+
 /* Patient Showcase Grid */
 .doctor-patient-showcase-grid {
 	display: grid;
@@ -157,58 +270,66 @@
 	}
 }
 
-/* Active Patient Focus Card */
+/* Active Patient Focus Card [DEFECT-C2, DEFECT-C1: Harmonious light/dark themes] */
 .doctor-active-patient-card {
-	background: #0f172a !important;
-	border: 1.5px solid #14b8a6;
+	background: var(--paper-strong, #0f172a);
+	border: 2px solid #0d9488;
 	box-shadow: 0 0 20px -5px rgba(20, 184, 166, 0.2);
 	border-radius: 16px;
 	padding: 16px;
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
-	color: #f8fafc !important;
-}
-
-.doctor-active-patient-card h3,
-.doctor-active-patient-card h3[data-testid="active-patient-name"] {
-	color: #ffffff !important;
-}
-
-.doctor-active-patient-card [data-testid="active-patient-balance"] {
-	color: #ffffff !important;
+	color: var(--ink, #f8fafc);
 }
 
 .doctor-active-patient-card .doctor-quick-btn {
-	background: #1e293b !important;
-	border-color: #334155 !important;
-	color: #f1f5f9 !important;
+	background: var(--paper, #1e293b);
+	border: 1px solid var(--line, #334155);
+	color: var(--ink, #f1f5f9);
 }
 
 .doctor-active-patient-card .doctor-quick-btn:hover {
-	background: #334155 !important;
-	border-color: #475569 !important;
-	color: #ffffff !important;
+	background: var(--paper-soft, #334155);
+	border-color: var(--line-strong, #475569);
+	color: var(--ink, #ffffff);
 }
 
-/* Strict theme isolation: Ensure active patient card is always dark with white text in light mode */
-[data-theme="light"] .doctor-active-patient-card {
-	background: #0f172a !important;
-	color: #f8fafc !important;
+/* Light Mode Overrides for Active Patient Card */
+[data-theme="light"] .doctor-active-patient-card,
+.light .doctor-active-patient-card {
+	background: #ffffff !important;
+	border: 2px solid #0d9488 !important;
+	color: #0f172a !important;
+	box-shadow: 0 4px 20px -4px rgba(13, 148, 136, 0.15) !important;
 }
 
 [data-theme="light"] .doctor-active-patient-card h3,
-[data-theme="light"] .doctor-active-patient-card h3[data-testid="active-patient-name"] {
-	color: #ffffff !important;
+[data-theme="light"] .doctor-active-patient-card h3[data-testid="active-patient-name"],
+.light .doctor-active-patient-card h3,
+.light .doctor-active-patient-card h3[data-testid="active-patient-name"] {
+	color: #0f172a !important;
 }
 
-[data-theme="light"] .doctor-active-patient-card [data-testid="active-patient-balance"] {
-	color: #ffffff !important;
+[data-theme="light"] .doctor-active-patient-card [data-testid="active-patient-balance"],
+.light .doctor-active-patient-card [data-testid="active-patient-balance"] {
+	color: #0f172a !important;
 }
 
-[data-theme="light"] .doctor-active-patient-card .text-slate-300 {
-	color: #cbd5e1 !important;
+[data-theme="light"] .doctor-active-patient-card .doctor-quick-btn,
+.light .doctor-active-patient-card .doctor-quick-btn {
+	background: #f1f5f9 !important;
+	border-color: #cbd5e1 !important;
+	color: #0f172a !important;
 }
+
+[data-theme="light"] .doctor-active-patient-card .doctor-quick-btn:hover,
+.light .doctor-active-patient-card .doctor-quick-btn:hover {
+	background: #e2e8f0 !important;
+	border-color: #94a3b8 !important;
+	color: #000000 !important;
+}
+
 
 /* Next Patient in Queue Card */
 .doctor-next-patient-card {
@@ -270,10 +391,33 @@
 	border-radius: 8px;
 	font-size: 11px;
 	font-weight: 800;
-	background: rgba(185, 28, 28, 0.25);
-	color: #fca5a5;
-	border: 1px solid rgba(239, 68, 68, 0.6);
+	background: rgba(136, 19, 55, 0.4);
+	color: #fecdd3;
+	border: 1px solid rgba(244, 63, 94, 0.6);
 	letter-spacing: 0.01em;
+}
+
+[data-theme="light"] .doctor-allergy-alert-badge,
+.light .doctor-allergy-alert-badge {
+	background: #ffe4e6 !important;
+	color: #881337 !important;
+	border: 1px solid #fda4af !important;
+}
+
+[data-theme="dark"] .doctor-allergy-alert-badge,
+.dark .doctor-allergy-alert-badge {
+	background: rgba(76, 5, 25, 0.8) !important;
+	color: #fecdd3 !important;
+	border: 1px solid #9f1239 !important;
+}
+
+/* Scrollbar None Utility */
+.scrollbar-none::-webkit-scrollbar {
+	display: none;
+}
+.scrollbar-none {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
 }
 
 /* 0-Click Quick Action Buttons Bar */
@@ -335,21 +479,21 @@
 	border-radius: 10px;
 	font-size: 13px;
 	font-weight: 800;
-	background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+	background: #0d9488;
 	color: #ffffff;
-	border: 1px solid #14b8a6;
-	box-shadow: 0 4px 14px -2px rgba(13, 148, 136, 0.45);
+	border: 1px solid #0f766e;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
 
 .doctor-primary-action-btn:hover {
-	background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-	box-shadow: 0 6px 20px -2px rgba(20, 184, 166, 0.6);
+	background: #0f766e;
+	border-color: #115e59;
 }
 
 .doctor-primary-action-btn:active {
-	transform: translateY(1px);
+	background: #134e4a;
 }
 
 /* Desktop Header Bar Styles */
@@ -358,12 +502,12 @@
 	align-items: center;
 	justify-content: space-between;
 	min-height: 44px;
-	padding: 4px 16px;
+	padding: 4px 8px;
 	background: var(--paper-strong, #09090b);
 	border-bottom: 1px solid var(--line, #1e293b);
 	color: var(--ink, #f8fafc);
 	font-size: 12px;
-	gap: 12px;
+	gap: 6px;
 	position: sticky;
 	top: 0;
 	z-index: 40;
@@ -372,7 +516,7 @@
 .doctor-desktop-header-section {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 4px;
 }
 
 /* Unsigned EMR Accordion List */
@@ -402,3 +546,54 @@
 .doctor-emr-list-table tr:hover td {
 	background: rgba(30, 41, 59, 0.4);
 }
+
+/* Light mode overrides for Desktop Header and Cockpit Modal */
+[data-theme="light"] .doctor-desktop-header-strip,
+.light .doctor-desktop-header-strip {
+	background: #ffffff !important;
+	border-bottom: 1px solid #e2e8f0 !important;
+	color: #0f172a !important;
+}
+
+[data-theme="light"] .doctor-desktop-header-strip [data-testid="header-patient-name"],
+.light .doctor-desktop-header-strip [data-testid="header-patient-name"] {
+	color: #0f172a !important;
+}
+
+[data-theme="light"] .doctor-cockpit-container,
+.light .doctor-cockpit-container {
+	background: #ffffff !important;
+	color: #0f172a !important;
+	border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .doctor-cockpit-header,
+.light .doctor-cockpit-header {
+	background: #ffffff !important;
+	border-bottom-color: #e2e8f0 !important;
+	color: #0f172a !important;
+}
+
+[data-theme="light"] .doctor-cockpit-title,
+.light .doctor-cockpit-title {
+	color: #0f172a !important;
+}
+
+[data-theme="light"] .doctor-metric-card,
+.light .doctor-metric-card {
+	background: #f8fafc !important;
+	border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .doctor-metric-value,
+.light .doctor-metric-value {
+	color: #0f172a !important;
+}
+
+[data-theme="light"] .doctor-next-patient-card,
+.light .doctor-next-patient-card {
+	background: #f8fafc !important;
+	border-color: #e2e8f0 !important;
+	color: #0f172a !important;
+}
+

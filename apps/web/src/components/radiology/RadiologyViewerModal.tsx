@@ -194,6 +194,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			size: 700609,
 			type: "image/jpeg",
 		});
+		setSelectedFdiTooth("16");
+		setFlipV(true); // Tooth 16 is maxillary molar: roots point UP (towards sinus), crown DOWN
 	};
 
 	// Dragging state
@@ -219,12 +221,17 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		if (typeof window !== "undefined") {
 			setIsSideDrawerOpen(window.innerWidth >= 768);
 		}
-		// Reset view state
+		// Reset view state with anatomical orientation for dental periapical X-rays:
+		// Upper jaw teeth (11..28, 51..65) naturally have roots pointing UP (towards maxillary sinus) and crowns facing DOWN.
+		// Lower jaw teeth (31..48, 71..85) naturally have roots pointing DOWN and crowns facing UP.
+		const toothStr = (study?.teethFdi && study.teethFdi[0]) || selectedFdiTooth || "16";
+		const toothNum = Number.parseInt(toothStr, 10);
+		const upper = (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
 		setZoom(1.0);
 		setPan({ x: 0, y: 0 });
 		setRotation(0);
 		setFlipH(false);
-		setFlipV(false);
+		setFlipV(upper);
 		setActivePresetId("standard");
 		setBrightness(100);
 		setContrast(100);
@@ -295,11 +302,14 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 	// Reset All Adjustments
 	const handleResetAll = () => {
+		const toothStr = selectedFdiTooth || (study?.teethFdi && study.teethFdi[0]) || "16";
+		const toothNum = Number.parseInt(toothStr, 10);
+		const upper = (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
 		setZoom(1.0);
 		setPan({ x: 0, y: 0 });
 		setRotation(0);
 		setFlipH(false);
-		setFlipV(false);
+		setFlipV(upper);
 		setActivePresetId("standard");
 		setBrightness(100);
 		setContrast(100);
@@ -308,6 +318,14 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		setPendingLandmarkPos(null);
 		setIsControlsExpanded(false);
 		setIsFiltersMenuOpen(false);
+	};
+
+	// Select FDI Tooth with Anatomical Orientation (Upper Jaw: roots UP / crown DOWN; Lower Jaw: roots DOWN / crown UP)
+	const handleSelectTooth = (tooth: string) => {
+		setSelectedFdiTooth(tooth);
+		const toothNum = Number.parseInt(tooth, 10);
+		const upper = (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
+		setFlipV(upper);
 	};
 
 	// Get click coordinates in % of image
@@ -1245,7 +1263,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 										<button
 											key={tooth}
 											type="button"
-											onClick={() => setSelectedFdiTooth(tooth)}
+											onClick={() => handleSelectTooth(tooth)}
 											className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-lg transition-all ${
 												selectedFdiTooth === tooth
 													? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md font-extrabold"
@@ -1259,7 +1277,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 										<button
 											key={tooth}
 											type="button"
-											onClick={() => setSelectedFdiTooth(tooth)}
+											onClick={() => handleSelectTooth(tooth)}
 											className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-lg transition-all ${
 												selectedFdiTooth === tooth
 													? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md font-extrabold"
@@ -1276,7 +1294,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 										<button
 											key={tooth}
 											type="button"
-											onClick={() => setSelectedFdiTooth(tooth)}
+											onClick={() => handleSelectTooth(tooth)}
 											className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-lg transition-all ${
 												selectedFdiTooth === tooth
 													? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md font-extrabold"
@@ -1290,7 +1308,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 										<button
 											key={tooth}
 											type="button"
-											onClick={() => setSelectedFdiTooth(tooth)}
+											onClick={() => handleSelectTooth(tooth)}
 											className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-lg transition-all ${
 												selectedFdiTooth === tooth
 													? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md font-extrabold"
@@ -1859,7 +1877,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 					{/* ── WW/WL PRESETS QUICK BAR (Centered directly inside canvas viewport) ── */}
 					<div
-						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-16px)] sm:max-w-[calc(100%-32px)] overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none transition-all ${
+						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-24px)] sm:max-w-[calc(100%-32px)] overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none transition-all ${
 							!isImageLoaded ? "opacity-40 pointer-events-none" : ""
 						}`}
 						data-testid="viewer-presets-bar"
@@ -1927,7 +1945,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							data-testid="radiology-viewer-side-drawer"
 						>
 							{/* Header */}
-							<div className="flex items-center justify-between px-5 py-3 border-b border-[var(--line,#334155)] bg-[var(--paper-soft,#0f172a)] sticky top-0 z-10">
+							<div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-[var(--line,#334155)] bg-[var(--paper-soft,#0f172a)] sticky top-0 z-10">
 								<div className="flex items-center gap-2">
 									<FileText className="w-4 h-4 text-[var(--teal)]" />
 									<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink,#f8fafc)]">
@@ -1945,7 +1963,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								</button>
 							</div>
 
-							<div className="p-5 flex flex-col gap-5 min-w-0">
+							<div className="p-4 sm:p-5 flex flex-col gap-4 sm:gap-5 min-w-0 pb-16">
 								{/* Radiation Safety Card (SanPiN Compliant) */}
 								<div className="p-4 rounded-2xl bg-[var(--paper,#020617)] border border-[var(--line,#1e293b)] flex flex-col gap-2.5">
 									<div className="flex items-center justify-between">

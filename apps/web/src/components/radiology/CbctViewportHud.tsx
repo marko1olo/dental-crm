@@ -12,8 +12,7 @@
  */
 
 import { Maximize2, Minimize2 } from "lucide-react";
-import type React from "react";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import {
 	type CbctViewportType,
 	ROMEXIS_COLORS,

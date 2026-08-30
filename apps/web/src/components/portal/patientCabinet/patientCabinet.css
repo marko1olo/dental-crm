@@ -251,6 +251,7 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 /* Tab Navigation */
 .pc-nav-bar {
 	display: flex;
+	flex-wrap: nowrap;
 	background: var(--pc-surface);
 	border-bottom: 1px solid var(--pc-border);
 	padding: 0 16px;

@@ -114049,3 +114049,4 @@ export declare class DentalInteractionMatrixEngine {
     }>): CheckInteractionsResponse;
 }
 export * from "./security/index.js";
+export * from "./clinical/cmoEmkQualityAuditEngine.js";

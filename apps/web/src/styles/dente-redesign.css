@@ -47,6 +47,8 @@
 	--shadow-3: 0 24px 60px -12px rgba(13, 31, 27, 0.18);
 	--shadow-premium: 0 16px 40px -16px rgba(15, 118, 110, 0.22);
 	--focus-ring: rgba(13, 148, 136, 0.5);
+	--mobile-nav-height: 68px;
+	--bottom-nav-height: 68px;
 	--transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	--transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 	--transition-spring: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);

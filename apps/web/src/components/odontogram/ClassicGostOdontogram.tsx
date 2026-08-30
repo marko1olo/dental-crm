@@ -4,7 +4,6 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
 import type { ToothData, ToothState } from "./ToothChart";
-import "./odontogram.css";
 
 export type GostToothAbbreviation =
 	| "К"

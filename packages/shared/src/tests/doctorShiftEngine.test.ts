@@ -306,6 +306,7 @@ describe("Wave 21 Domain 2: Doctor Shift Engine & Mobile PWA Operations", () => 
 				appointmentIds: ["apt-shift-02"],
 				fixedSecretCode: "123456",
 				validityDurationSeconds: 10, // 10s
+				currentTimeIso: "2026-08-29T16:00:00.000Z",
 			});
 
 			// Simulate attempt after 1 hour

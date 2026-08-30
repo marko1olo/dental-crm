@@ -460,40 +460,39 @@ export function AutoclaveRegisterTab() {
 				</div>
 
 				<div style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexShrink: 0 }}>
-					{/* Primary Action: + Зафиксировать цикл */}
+					{/* Action: + Зафиксировать цикл (Secondary) */}
 					<button
 						type="button"
 						onClick={() => setIsModalOpen(true)}
-						className="sanpin-btn sanpin-btn-primary"
+						className="sanpin-btn sanpin-btn-secondary"
 						style={{
-							minHeight: "36px",
-							height: "36px",
-							padding: "0.35rem 0.85rem",
-							fontSize: "0.825rem",
-							fontWeight: 700,
-							background: "var(--teal-600, #0d9488)",
-							borderColor: "var(--teal-600, #0d9488)",
-							color: "#ffffff",
-							boxShadow: "0 2px 6px rgba(13, 148, 136, 0.25)",
+							minHeight: "34px",
+							height: "34px",
+							padding: "0.35rem 0.75rem",
+							fontSize: "0.8125rem",
+							fontWeight: 600,
 							cursor: "pointer",
 							whiteSpace: "nowrap",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.25rem",
 						}}
 						data-testid="sanpin-autoclave-new-cycle-btn"
 					>
-						<Plus size={15} /> <span>Зафиксировать цикл</span>
+						<Plus size={14} /> <span>Зафиксировать цикл</span>
 					</button>
 
 					{/* Dropdown: [⋮ Дополнительно] */}
-					<div ref={moreMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 50 }}>
+					<div ref={moreMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
 						<button
 							type="button"
 							onClick={() => setIsMoreMenuOpen((prev) => !prev)}
 							className="sanpin-btn sanpin-btn-secondary"
 							style={{
-								minHeight: "36px",
-								height: "36px",
-								padding: "0.35rem 0.65rem",
-								fontSize: "0.825rem",
+								minHeight: "34px",
+								height: "34px",
+								padding: "0.35rem 0.6rem",
+								fontSize: "0.8125rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								display: "inline-flex",
@@ -505,9 +504,9 @@ export function AutoclaveRegisterTab() {
 							title="Дополнительные операции: Форма 257/у, вскрытие крафт-пакетов"
 							data-testid="autoclave-more-options-btn"
 						>
-							<MoreVertical size={15} color="var(--brand-primary, #2563eb)" />
+							<MoreVertical size={14} color="var(--brand-primary, #2563eb)" />
 							<span className="hidden sm:inline">Дополнительно</span>
-							<ChevronDown size={13} style={{ transform: isMoreMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+							<ChevronDown size={12} style={{ transform: isMoreMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
 						</button>
 
 						{isMoreMenuOpen && (
@@ -520,8 +519,8 @@ export function AutoclaveRegisterTab() {
 									background: "var(--paper-strong, #ffffff)",
 									border: "1px solid var(--line, #e2e8f0)",
 									borderRadius: "8px",
-									boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.18), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-									zIndex: 100,
+									boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15)",
+									zIndex: 1000,
 									padding: "0.35rem",
 									display: "flex",
 									flexDirection: "column",

@@ -1649,13 +1649,13 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 
 						<div className="h-5 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
 
-						{/* Quadrant buttons in a sleek inline strip (>= 44px touch targets) */}
-						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 flex-1 min-w-0">
+						{/* Quadrant buttons in a sleek inline strip (>= 48px touch targets on mobile with safe gap-3) */}
+						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 flex-1 min-w-0">
 							{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(pediatricMode ? "Q5" : "Q1")}
-								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (pediatricMode ? "Q5" : "Q1")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -1671,7 +1671,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(pediatricMode ? "Q6" : "Q2")}
-								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (pediatricMode ? "Q6" : "Q2")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -1687,7 +1687,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(pediatricMode ? "Q8" : "Q4")}
-								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (pediatricMode ? "Q8" : "Q4")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -1703,7 +1703,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(pediatricMode ? "Q7" : "Q3")}
-								className={`quadrant-btn min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
 									currentQuadrant === (pediatricMode ? "Q7" : "Q3")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"

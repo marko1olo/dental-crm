@@ -157,26 +157,26 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						</span>
 					</div>
 
-					{/* Procedure Items List */}
-					<div className="space-y-2">
+					{/* Procedure Items Flat List (Anti-Matryoshka: no nested card boxes) */}
+					<div className="rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)]/60 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
 						{stage.items.length === 0 ? (
-							<div className="p-6 text-center text-xs text-[var(--muted,#64748b)]">
+							<div className="p-4 text-center text-xs text-[var(--muted,#64748b)]">
 								В данном этапе нет запланированных процедур.
 							</div>
 						) : (
 							stage.items.map((item, idx) => (
 								<div
 									key={item.id || idx}
-									className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] hover:border-[var(--teal,var(--brand-primary))]/40 transition-all"
+									className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-2.5 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0"
 								>
-									<div className="flex flex-col gap-1 min-w-0 flex-1">
+									<div className="flex flex-col gap-0.5 min-w-0 flex-1">
 										<div className="flex items-center gap-1.5 flex-wrap">
 											{item.toothNumber && (
-												<span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">
+												<span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 whitespace-nowrap">
 													#{item.toothNumber}
 												</span>
 											)}
-											<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]">
+											<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-[var(--line,#e2e8f0)] whitespace-nowrap">
 												{item.code804n}
 											</span>
 											<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
@@ -189,13 +189,13 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 										</span>
 
 										{item.materials && (
-											<p className="text-[11px] text-[var(--muted,#64748b)] italic">
+											<p className="text-[11px] text-[var(--muted,#64748b)] italic m-0">
 												Материал: {item.materials}
 											</p>
 										)}
 									</div>
 
-									<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border,#cbd5e1)]">
+									<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0">
 										{onOpenLabOrder &&
 											(item.category === "Ортопедия" ||
 												item.category === "Детская ортопедия" ||
@@ -214,7 +214,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 															item.toothNumber ? [item.toothNumber] : undefined,
 														)
 													}
-													className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0"
+													className="min-h-[30px] h-[30px] flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0"
 													title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
 													data-testid={`item-lab-order-btn-${item.id}`}
 												>

@@ -1,27 +1,14 @@
 import {
-	type GranularStaffRole,
-	GRANULAR_STAFF_ROLES,
-	GRANULAR_ROLE_MATRIX,
-	PERMISSION_DEFINITIONS,
-	ROLE_METADATA_REGISTRY,
 	type StaffRole,
-	getAccessLevelBadge,
 } from "@dental/shared";
 import {
 	Check,
 	Coins,
-	FileSpreadsheet,
-	FileText,
-	KeyRound,
 	Link as LinkIcon,
 	Lock,
 	Mail,
-	PhoneCall,
-	Shield,
-	ShieldAlert,
 	ShieldCheck,
 	UserCheck,
-	Users,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
@@ -30,6 +17,7 @@ import { readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { logger } from "../../utils/logger";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { showToast } from "../GlobalToast";
+import { GranularRoleMatrixView } from "./GranularRoleMatrixView";
 import {
 	INVITABLE_STAFF_ROLES,
 	inviteRoleTitle,
@@ -40,17 +28,6 @@ import {
 type WorkspaceProfile = any;
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 type RoleAccessPolicy = any;
-
-const ROLE_DISPLAY_NAMES: Record<GranularStaffRole, string> = {
-	owner: "Владелец",
-	head_doctor: "Главный врач",
-	doctor: "Врач",
-	assistant: "Ассистент",
-	senior_nurse: "Старшая медсестра",
-	senior_admin: "Старший администратор",
-	registrar: "Регистратор",
-	accountant: "Бухгалтер",
-};
 
 export interface SettingsAccessTabProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -80,8 +57,6 @@ export function SettingsAccessTab({
 	const [inviteLink, setInviteLink] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [copied, setCopied] = useState(false);
-	const [selectedMatrixRole, setSelectedMatrixRole] = useState<GranularStaffRole>("doctor");
-	const [selectedModuleFilter, setSelectedModuleFilter] = useState<string>("all");
 
 	if (settingsTab !== "access") return null;
 
@@ -154,27 +129,21 @@ export function SettingsAccessTab({
 	const typedRoleAccessPolicies = (dashboard?.clinicSettings
 		?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
 
-	const activeRoleMeta = ROLE_METADATA_REGISTRY[selectedMatrixRole];
-	const activeRolePermissions = GRANULAR_ROLE_MATRIX[selectedMatrixRole] || {};
-
-	const filteredPermissions = PERMISSION_DEFINITIONS.filter((perm) => {
-		if (selectedModuleFilter === "all") return true;
-		return perm.module === selectedModuleFilter;
-	});
-
 	return (
 		<section
-			className="access-settings flex flex-col gap-6 pb-32 sm:pb-24"
+			className="access-settings flex flex-col gap-6 pb-32 sm:pb-24 w-full max-w-full min-w-0"
 			aria-label="Доступы, рабочие профили и роли"
 		>
-			<div className="import-copy p-4 sm:p-6 rounded-2xl">
-				<UserCheck aria-hidden="true" />
-				<div>
-					<p className="eyebrow">Безопасность и RBAC</p>
-					<h2 style={{ wordBreak: "normal", overflowWrap: "break-word", fontSize: "clamp(1.05rem, 3.5vw, 1.35rem)", lineHeight: 1.3 }}>
+			<div className="import-copy p-3 sm:p-5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-start gap-3 min-w-0">
+				<div className="p-2 sm:p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
+					<UserCheck size={20} className="sm:w-6 sm:h-6" aria-hidden="true" />
+				</div>
+				<div className="flex-1 min-w-0">
+					<p className="eyebrow text-[10px] sm:text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider m-0">Безопасность и RBAC</p>
+					<h2 className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white m-0 mt-0.5 break-words leading-snug">
 						Матрица прав доступа к модулям DENTE, 152-ФЗ защита и финансовая изоляция
 					</h2>
-					<p>
+					<p className="text-xs text-slate-600 dark:text-slate-300 m-0 mt-1 leading-relaxed break-words hidden sm:block">
 						Гранулярная ролевая модель для 8 клинических и административных ролей.
 						Строгая изоляция финансовой отчётности клиники, маскирование персональных данных
 						пациентов и расчёт сдельной мотивации в целых копейках.
@@ -183,226 +152,43 @@ export function SettingsAccessTab({
 			</div>
 
 			{/* Ключевые гарантии безопасности системы */}
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="security-guarantees-grid">
-				<div className="p-4 rounded-xl border border-teal-200 dark:border-teal-900/60 bg-teal-50/50 dark:bg-teal-950/20 flex flex-col gap-2">
-					<div className="flex items-center gap-2 text-teal-700 dark:text-teal-300 font-semibold text-sm">
-						<ShieldCheck size={18} />
-						<span>152-ФЗ Защита ПДн</span>
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3.5 min-w-0" data-testid="security-guarantees-grid">
+				<div className="p-3 sm:p-4 rounded-xl border border-teal-300 dark:border-teal-800 bg-teal-50/80 dark:bg-teal-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
+					<div className="flex items-center gap-2 text-teal-800 dark:text-teal-200 font-bold text-xs sm:text-sm">
+						<ShieldCheck size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-teal-600 dark:text-teal-400" />
+						<span className="min-w-0 flex-1 break-words">152-ФЗ Защита ПДн</span>
 					</div>
-					<p className="text-xs text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
 						Телефоны, паспорта, СНИЛС и адреса проживания маскируются для ассистентов и младшего персонала.
 						Врачи и администраторы видят необходимые контакты для связи и приёма.
 					</p>
 				</div>
 
-				<div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 flex flex-col gap-2">
-					<div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-semibold text-sm">
-						<Lock size={18} />
-						<span>Финансовая изоляция</span>
+				<div className="p-3 sm:p-4 rounded-xl border border-purple-300 dark:border-purple-800 bg-purple-50/80 dark:bg-purple-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
+					<div className="flex items-center gap-2 text-purple-800 dark:text-purple-200 font-bold text-xs sm:text-sm">
+						<Lock size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-purple-600 dark:text-purple-400" />
+						<span className="min-w-0 flex-1 break-words">Финансовая изоляция</span>
 					</div>
-					<p className="text-xs text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
 						Сводный P&L, выручка клиники, маржинальность и общие зарплатные ведомости доступны только Директору,
 						Главврачу и Бухгалтеру. Врач видит исключительно свою личную сдельную выработку.
 					</p>
 				</div>
 
-				<div className="p-4 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/50 dark:bg-amber-950/20 flex flex-col gap-2">
-					<div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-semibold text-sm">
-						<Coins size={18} />
-						<span>Сдельная оплата (Копейки)</span>
+				<div className="p-3 sm:p-4 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
+					<div className="flex items-center gap-2 text-amber-800 dark:text-amber-200 font-bold text-xs sm:text-sm">
+						<Coins size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-amber-600 dark:text-amber-400" />
+						<span className="min-w-0 flex-1 break-words">Сдельная оплата (Копейки)</span>
 					</div>
-					<p className="text-xs text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
 						Расчёт мотивации (% от терапевтического/ортопедического приёма минус ЗТЛ и материалы)
-						ведётся strictly в целых копейках с нулевой погрешностью округления.
+						ведётся строго в целых копейках с нулевой погрешностью округления.
 					</p>
 				</div>
 			</div>
 
 			{/* Гранулярная ролевая матрица (8 канонических ролей) */}
-			<article
-				className="p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4"
-				data-testid="granular-role-matrix-panel"
-			>
-				<div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-					<div>
-						<h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 m-0">
-							<Shield size={18} className="text-[var(--teal)]" />
-							Гранулярная матрица прав персонала (8 ролей)
-						</h3>
-						<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-1">
-							Выберите роль для инспекции прав доступа к медицинским картам, кассе, 152-ФЗ ПДн, складу и настройкам.
-						</p>
-					</div>
-
-					<div className="flex items-center gap-2 flex-wrap">
-						<span className="text-xs font-semibold text-slate-500">Модуль:</span>
-						<select
-							value={selectedModuleFilter}
-							onChange={(e) => setSelectedModuleFilter(e.target.value)}
-							className="px-2.5 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
-							aria-label="Фильтр по функциональному модулю"
-						>
-							<option value="all">Все модули (22 права)</option>
-							<option value="clinical">ЭМК и протоколы</option>
-							<option value="schedule">Расписание и смены</option>
-							<option value="patients">Пациенты и 152-ФЗ</option>
-							<option value="finance_cashier">Касса 54-ФЗ</option>
-							<option value="finance_reports">P&L и финансы клиники</option>
-							<option value="payroll">Зарплата и мотивация</option>
-							<option value="inventory">Склад и СанПиН</option>
-							<option value="settings">Настройки клиники</option>
-							<option value="egisz">ЕГИСЗ Минздрава</option>
-							<option value="communications">Коммуникации</option>
-						</select>
-					</div>
-				</div>
-
-				{/* 8 кнопок переключения ролей: горизонтальный ряд со свайпом */}
-				<div className="w-full overflow-x-auto whitespace-nowrap scrollbar-none snap-x pb-2 -mx-1 px-1 flex gap-2 flex-nowrap">
-					{GRANULAR_STAFF_ROLES.map((roleKey) => {
-						const roleTitle = ROLE_DISPLAY_NAMES[roleKey] || ROLE_METADATA_REGISTRY[roleKey]?.title;
-						const isSelected = selectedMatrixRole === roleKey;
-						return (
-							<button
-								key={roleKey}
-								type="button"
-								role="tab"
-								aria-selected={isSelected}
-								onClick={() => setSelectedMatrixRole(roleKey)}
-								className={`snap-start flex-shrink-0 px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all text-center whitespace-nowrap border cursor-pointer touch-manipulation ${
-									isSelected
-										? "bg-[var(--teal-surface,#f0fdfa)] dark:bg-teal-500/15 text-[var(--teal,#0d9488)] dark:text-teal-300 border-[var(--teal,#0d9488)] dark:border-teal-500 shadow-sm font-bold ring-1 ring-[var(--teal,#0d9488)] dark:ring-teal-500/40"
-										: "bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
-								}`}
-								data-testid={`role-matrix-tab-${roleKey}`}
-							>
-								<span>{roleTitle}</span>
-							</button>
-						);
-					})}
-				</div>
-
-				{/* Карточка выбранной роли */}
-				<div className="p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-start justify-between flex-wrap gap-3">
-					<div>
-						<div className="flex items-center gap-2">
-							<h4 className="m-0 text-sm font-bold text-slate-900 dark:text-white">
-								{activeRoleMeta.title}
-							</h4>
-							<span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono">
-								role: {activeRoleMeta.role}
-							</span>
-						</div>
-						<p className="text-xs text-slate-600 dark:text-slate-400 m-0 mt-1">
-							{activeRoleMeta.description}
-						</p>
-					</div>
-
-					<div className="flex items-center gap-2 flex-wrap">
-						{activeRoleMeta.role === "doctor" && (
-							<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 whitespace-nowrap">
-								🔒 P&L: Скрыт (Изоляция)
-							</span>
-						)}
-						{activeRoleMeta.role === "assistant" && (
-							<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
-								🛡️ 152-ФЗ: Маскирован
-							</span>
-						)}
-					</div>
-				</div>
-
-				{/* Таблица полномочий для выбранной роли (Desktop / Tablet >= 640px) */}
-				<div className="hidden sm:block overflow-x-auto">
-					<table className="w-full text-left text-xs border-collapse">
-						<thead>
-							<tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 font-medium">
-								<th className="py-2.5 px-3">Полномочие и назначение</th>
-								<th className="py-2.5 px-3">Модуль</th>
-								<th className="py-2.5 px-3 text-right">Уровень доступа</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-							{filteredPermissions.map((perm) => {
-								const level = activeRolePermissions[perm.key] || "none";
-								const badge = getAccessLevelBadge(level);
-								return (
-									<tr
-										key={perm.key}
-										className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-										data-testid={`perm-row-${perm.key}`}
-									>
-										<td className="py-2.5 px-3">
-											<span className="font-semibold text-slate-900 dark:text-white block">
-												{perm.title}
-											</span>
-											<span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
-												{perm.description}
-											</span>
-										</td>
-										<td className="py-2.5 px-3">
-											<span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-												{perm.module}
-											</span>
-										</td>
-										<td className="py-2.5 px-3 text-right">
-											<span
-												className={`inline-block px-2.5 py-1 rounded-lg text-xs font-semibold border ${badge.badgeClass} ${badge.borderClass}`}
-												data-testid={`perm-badge-${perm.key}-${level}`}
-											>
-												{badge.label}
-											</span>
-										</td>
-									</tr>
-								);
-							})}
-						</tbody>
-					</table>
-				</div>
-
-				{/* Карточки полномочий для выбранной роли на мобильных экранах (< 640px) */}
-				<div className="flex flex-col gap-2.5 sm:hidden" data-testid="rbac-mobile-cards">
-					{filteredPermissions.map((perm) => {
-						const level = activeRolePermissions[perm.key] || "none";
-						const badge = getAccessLevelBadge(level);
-						const hasAccess = level !== "none";
-						return (
-							<div
-								key={`mobile-${perm.key}`}
-								className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 flex flex-col gap-2 shadow-2xs"
-								data-testid={`perm-card-mobile-${perm.key}`}
-							>
-								<div className="flex items-start justify-between gap-2">
-									<div className="flex-1 min-w-0">
-										<div className="flex items-center gap-1.5 flex-wrap">
-											<span className="font-bold text-xs text-slate-900 dark:text-white">
-												{perm.title}
-											</span>
-											<span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-												{perm.module}
-											</span>
-										</div>
-									</div>
-									<span
-										className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${badge.badgeClass} ${badge.borderClass}`}
-										data-testid={`perm-badge-mobile-${perm.key}-${level}`}
-									>
-										{hasAccess ? (
-											<Check size={11} className="stroke-[3]" />
-										) : (
-											<ShieldAlert size={11} />
-										)}
-										<span>{badge.label}</span>
-									</span>
-								</div>
-								<p className="text-[11px] text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
-									{perm.description}
-								</p>
-							</div>
-						);
-					})}
-				</div>
-			</article>
+			<GranularRoleMatrixView />
 
 			{/* Пригласить сотрудника */}
 			<article className="p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shadow-sm">
@@ -468,17 +254,17 @@ export function SettingsAccessTab({
 						<button
 							type="button"
 							onClick={handleCopy}
-							className="secondary-button ml-3 shrink-0"
+							className="secondary-button ml-3 shrink-0 flex items-center gap-1"
 							style={{ minHeight: "32px", fontSize: "12px" }}
 						>
 							{copied ? (
-								<>
+								<span className="flex items-center gap-1">
 									<Check size={14} className="text-emerald-500" /> Скопировано
-								</>
+								</span>
 							) : (
-								<>
+								<span className="flex items-center gap-1">
 									<LinkIcon size={14} /> Копировать
-								</>
+								</span>
 							)}
 						</button>
 					</div>

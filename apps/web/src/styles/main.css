@@ -11137,7 +11137,37 @@ html.dark .visit-note-panel strong,
 [data-theme="night"] .visit-note-panel h3,
 [data-theme="night"] .visit-note-panel h4,
 [data-theme="night"] .visit-note-panel strong {
-	color: var(--ink, #f8fafc);
+	color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .visit-note-panel .eyebrow,
+[data-theme="dark"] .visit-note-panel .eyebrow,
+[data-theme="night"] .visit-note-panel .eyebrow {
+	color: var(--ink-2, #e2e8f0) !important;
+}
+
+html.dark .emk-field-container,
+[data-theme="dark"] .emk-field-container,
+[data-theme="night"] .emk-field-container {
+	background: var(--paper-soft, rgba(30, 41, 59, 0.5));
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+}
+
+html.dark .emk-field-container strong,
+[data-theme="dark"] .emk-field-container strong,
+[data-theme="night"] .emk-field-container strong {
+	color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .visit-fields textarea,
+[data-theme="dark"] .visit-fields textarea,
+[data-theme="night"] .visit-fields textarea,
+html.dark .emk-field-container textarea,
+[data-theme="dark"] .emk-field-container textarea,
+[data-theme="night"] .emk-field-container textarea {
+	background: var(--paper, rgba(15, 23, 42, 0.85)) !important;
+	color: var(--ink, #f8fafc) !important;
+	border-color: var(--line, rgba(255, 255, 255, 0.15)) !important;
 }
 
 html.dark .emk-tabs-container,
@@ -11184,7 +11214,8 @@ html.dark .emk-tab-button.active,
 	margin: 0;
 }
 
-.visit-note-head > span {
+.visit-note-head > span,
+.visit-note-status-badge {
 	background: #f4ead8;
 	border-radius: 999px;
 	color: #744d18;
@@ -11195,9 +11226,32 @@ html.dark .emk-tab-button.active,
 	text-transform: uppercase;
 }
 
-.visit-note-head > span.ready {
+.visit-note-head > span.ready,
+.visit-note-status-badge.ready {
 	background: #dfeee3;
 	color: #26562f;
+}
+
+html.dark .visit-note-head > span,
+[data-theme="dark"] .visit-note-head > span,
+[data-theme="night"] .visit-note-head > span,
+html.dark .visit-note-status-badge,
+[data-theme="dark"] .visit-note-status-badge,
+[data-theme="night"] .visit-note-status-badge {
+	background: rgba(30, 41, 59, 0.8) !important;
+	color: var(--ink, #f8fafc) !important;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.15)) !important;
+}
+
+html.dark .visit-note-head > span.ready,
+[data-theme="dark"] .visit-note-head > span.ready,
+[data-theme="night"] .visit-note-head > span.ready,
+html.dark .visit-note-status-badge.ready,
+[data-theme="dark"] .visit-note-status-badge.ready,
+[data-theme="night"] .visit-note-status-badge.ready {
+	background: rgba(16, 185, 129, 0.15) !important;
+	color: #34d399 !important;
+	border: 1px solid rgba(16, 185, 129, 0.3) !important;
 }
 
 .visit-fields {
@@ -16802,9 +16856,9 @@ body.dark-mode .document-manual-override {
 .treatment-plan-phased-view,
 .visit-note-panel,
 .visit-view-layout,
+.workspace.view-visit,
 .doctor-cockpit-body,
-.clinical-presets-bar,
-.emk-tabs-container,
+.doctor-cockpit-container,
 .visit-fields {
 	padding-bottom: 128px !important;
 }
@@ -16823,10 +16877,27 @@ body.dark-mode .document-manual-override {
 	.treatment-plan-phased-view,
 	.visit-note-panel,
 	.visit-view-layout,
+	.workspace.view-visit,
 	.doctor-cockpit-body,
-	.clinical-presets-bar,
-	.emk-tabs-container,
+	.doctor-cockpit-container,
 	.visit-fields {
 		padding-bottom: calc(var(--bottom-nav-height, 64px) + 128px + env(safe-area-inset-bottom, 0px)) !important;
 	}
 }
+
+html.dark .quick-chip,
+[data-theme="dark"] .quick-chip,
+[data-theme="night"] .quick-chip {
+	background: var(--paper-soft, rgba(30, 41, 59, 0.7)) !important;
+	border-color: var(--line, rgba(255, 255, 255, 0.15)) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .quick-chip:hover,
+[data-theme="dark"] .quick-chip:hover,
+[data-theme="night"] .quick-chip:hover {
+	background: var(--paper-strong, rgba(51, 65, 85, 0.85)) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+}
+

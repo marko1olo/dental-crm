@@ -151,12 +151,16 @@ import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar"
 import { BeforeAfterComparisonView } from "../components/photography/BeforeAfterComparisonView";
 import { PatientMemoPrintModal } from "../components/visit/PatientMemoPrintModal";
 import { ProcedureMaterialDeductionModal } from "../components/inventory/ProcedureMaterialDeductionModal";
-import { IncomingCallPopup } from "../components/telephony/IncomingCallPopup";
+import {
+	IncomingCallPopup,
+	IncomingCallPopupModal,
+} from "../components/telephony";
 import { TelephonyFloatingWidget } from "../components/telephony/TelephonyFloatingWidget";
 import { useTelephonyStore } from "../store/telephonyStore";
 import { SettingsAccessTab } from "../components/settings/SettingsAccessTab";
 import { AccessMatrixModal } from "../components/settings/AccessMatrixModal";
 import { StaffCommissionsPanel } from "../components/settings/StaffCommissionsPanel";
+import { StaffCommissionsModal } from "../components/settings/StaffCommissionsModal";
 import { CmoComplianceHub } from "../components/emr/audit/CmoComplianceHub";
 import { Form043PrintModal } from "../components/emr/Form043PrintModal";
 import { OfflineBackupVaultPanel } from "../components/settings/OfflineBackupVaultPanel";
@@ -4143,7 +4147,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							</button>
 						</div>
 						<div className="flex-1 overflow-y-auto">
-							<IncomingCallPopup />
+							<IncomingCallPopupModal
+								isOpen={isIncomingCallOpen}
+								onClose={() => {
+									setIsIncomingCallOpen(false);
+									useTelephonyStore.getState().dismissCall();
+								}}
+							/>
 						</div>
 					</div>
 				</div>
@@ -4194,44 +4204,10 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				props={{}}
 			/>
 
-			{isStaffCommissionsOpen && (
-				<div
-					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
-					role="dialog"
-					aria-modal="true"
-					data-testid="staff-commissions-modal-container"
-				>
-					<div className="relative w-full max-w-4xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
-						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
-							<div className="flex items-center gap-2.5">
-								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
-									<Calculator className="w-5 h-5" />
-								</div>
-								<div>
-									<h3 className="text-base font-bold text-[var(--ink)]">
-										Ставки и комиссии врачей (Номенклатура 804н)
-									</h3>
-									<p className="text-xs text-[var(--muted)]">
-										Индивидуальные ставки врачей, вычет лаборатории и материалов, даты вступления в силу
-									</p>
-								</div>
-							</div>
-							<button
-								type="button"
-								onClick={() => setIsStaffCommissionsOpen(false)}
-								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
-								data-testid="close-staff-commissions-modal-btn"
-								aria-label="Закрыть панель комиссий"
-							>
-								<X className="w-5 h-5" />
-							</button>
-						</div>
-						<div className="flex-1 overflow-y-auto">
-							<StaffCommissionsPanel />
-						</div>
-					</div>
-				</div>
-			)}
+			<StaffCommissionsModal
+				isOpen={isStaffCommissionsOpen}
+				onClose={() => setIsStaffCommissionsOpen(false)}
+			/>
 
 			{isCmoHubOpen && (
 				<div

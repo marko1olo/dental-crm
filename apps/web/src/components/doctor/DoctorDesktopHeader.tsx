@@ -6,6 +6,7 @@ import {
 	BellRing,
 	Calendar,
 	CheckCircle2,
+	ChevronDown,
 	Clock,
 	ClipboardList,
 	FileBadge,
@@ -72,6 +73,7 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 	const [isCockpitOpen, setIsCockpitOpen] = useState<boolean>(false);
 	const [isAssistantCalled, setIsAssistantCalled] = useState<boolean>(false);
 	const [currentTime, setCurrentTime] = useState<Date>(new Date());
+	const [showDocsDropdown, setShowDocsDropdown] = useState<boolean>(false);
 	const [showSecondaryDropdown, setShowSecondaryDropdown] = useState<boolean>(false);
 
 	// Live tick for countdown timer
@@ -110,7 +112,7 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 		if (/новокаин/i.test(text)) return "Аллергия: Новокаин";
 		if (/артикаин/i.test(text)) return "Аллергия: Артикаин";
 		if (/бисфосфонат/i.test(text)) return "Риск: Бисфосфонаты (BRONJ)";
-		return "Аллергический статус проверен";
+		return "Аллергостатус: норма";
 	}, [patientAllergyAlert, currentAppointment]);
 
 	// Unsigned 043/у EMR count
@@ -138,9 +140,17 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 		const seconds = absDiffSec % 60;
 		const p = (n: number) => n.toString().padStart(2, "0");
 
+		if (isOvertime) {
+			const displayMin = Math.min(Math.max(1, minutes), 120);
+			return {
+				isOvertime: true,
+				formatted: `+${displayMin} мин`,
+			};
+		}
+
 		return {
-			isOvertime,
-			formatted: isOvertime ? `+${p(minutes)}:${p(seconds)}` : `${p(minutes)}:${p(seconds)}`,
+			isOvertime: false,
+			formatted: `${p(minutes)}:${p(seconds)}`,
 		};
 	}, [currentAppointment, currentTime]);
 
@@ -176,165 +186,196 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 				aria-label="Панель рабочего стола врача"
 			>
 				{/* 1. Left: Doctor & Cabinet Identity */}
-				<div className="doctor-desktop-header-section shrink-0">
-					<div className="flex items-center gap-2">
-						<div className="w-8 h-8 rounded-lg bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] flex items-center justify-center text-teal-400">
-							<Stethoscope size={16} />
+				<div className="doctor-desktop-header-section shrink-0 min-w-fit">
+					<div className="flex items-center gap-1.5">
+						<div className="w-7 h-7 rounded-lg bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] flex items-center justify-center text-teal-400 shrink-0">
+							<Stethoscope size={15} />
 						</div>
-						<div className="flex flex-col">
-							<div className="flex items-center gap-1.5 leading-tight">
-								<span className="font-extrabold text-xs text-[var(--ink,#f8fafc)]">{doctorName}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper,#0f172a)] text-teal-400 border border-[var(--line,#334155)] font-bold">
+						<div className="flex flex-col min-w-fit shrink-0">
+							<div className="flex items-center gap-1 leading-tight">
+								<span className="font-extrabold text-xs text-slate-900 dark:text-[var(--ink,#f8fafc)] whitespace-nowrap min-w-fit shrink-0">{doctorName}</span>
+								<span className="text-[10px] px-1 py-0.5 rounded bg-teal-50 dark:bg-[var(--paper,#0f172a)] text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-[var(--line,#334155)] font-bold whitespace-nowrap shrink-0">
 									{effectiveCabinetName}
 								</span>
 							</div>
-							<span className="text-[10px] text-[var(--ink-2,var(--muted,#cbd5e1))] leading-tight">
+							<span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium leading-tight whitespace-nowrap">
 								{doctorSpecialty}
 							</span>
 						</div>
 					</div>
 				</div>
 
-				{/* 2. Middle: Active Patient Context & Dynamic Emergency Alert Badge */}
+				{/* 2. Middle: Active Patient Context, Emergency Allergy Badge & Overtime Timer [Clean flex-nowrap container] */}
 				{currentAppointment ? (
-					<div className="doctor-desktop-header-section flex-1 min-w-0 justify-center max-w-2xl px-2">
-						<div className="flex items-center gap-2.5 bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] px-3 py-1 rounded-xl truncate">
-							<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#f8fafc)] shrink-0">
-								<User size={14} className="text-teal-400" />
-								<span className="truncate" data-testid="header-patient-name">{currentAppointment.patientFullName}</span>
+					<div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+						<div className="flex items-center gap-1.5 flex-nowrap bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] px-2 py-1 rounded-xl">
+							<div className="flex items-center gap-1 font-bold text-xs text-[var(--ink,#f8fafc)] shrink-0">
+								<User size={13} className="text-teal-400 shrink-0" />
+								<span className="whitespace-nowrap font-bold" data-testid="header-patient-name">{currentAppointment.patientFullName}</span>
 							</div>
 
-							<span className="text-[11px] text-teal-400 font-semibold shrink-0">
-								{currentAppointment.diagnosisTooth ? `Зуб ${currentAppointment.diagnosisTooth}` : "Осмотр"} ({currentAppointment.diagnosisIcd10 || "К04.0"})
+							<span className="text-[11px] text-teal-400 font-semibold shrink-0 whitespace-nowrap">
+								{currentAppointment.diagnosisTooth ? `Зуб ${currentAppointment.diagnosisTooth}` : "Осмотр"}
 							</span>
 
 							{/* Emergency Allergy Alert Badge */}
 							{dynamicAllergyText && (
 								<div
-									className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-950/70 border border-red-800 text-red-300 text-[10px] font-extrabold shrink-0"
+									className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-900 border border-rose-300 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800 text-[10px] font-extrabold shrink-0 whitespace-nowrap"
 									data-testid="header-allergy-alert"
 								>
-									<ShieldAlert size={12} className="text-red-400" />
+									<ShieldAlert size={11} className="text-rose-600 dark:text-rose-400 shrink-0" />
 									<span>{dynamicAllergyText}</span>
 								</div>
 							)}
 
-							<span className="text-[11px] font-extrabold text-emerald-400 shrink-0">
+							<span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 shrink-0 whitespace-nowrap">
 								{formatKopecksRu(activePatientBalanceKop)}
 							</span>
 						</div>
+
+						{/* Live Countdown Timer in the same flex-nowrap flow */}
+						<div
+							className={`doctor-countdown-timer !py-1 !px-2 !text-xs whitespace-nowrap tabular-nums shrink-0 ${
+								timerState.isOvertime ? "overtime" : "normal"
+							}`}
+							data-testid="header-countdown-timer"
+							role="timer"
+						>
+							<Clock size={13} className="shrink-0" />
+							<span className="whitespace-nowrap tabular-nums shrink-0">{timerState.formatted}</span>
+							{timerState.isOvertime && (
+								<span className="text-[9px] font-extrabold uppercase whitespace-nowrap shrink-0">Овертайм</span>
+							)}
+						</div>
 					</div>
 				) : (
-					<div className="doctor-desktop-header-section flex-1 justify-center text-xs text-[var(--ink-2,var(--muted,#cbd5e1))]">
+					<div className="flex items-center justify-center text-xs text-[var(--ink-2,var(--muted,#cbd5e1))] px-2">
 						<span>Нет активного приема в кресле</span>
 					</div>
 				)}
 
-				{/* 3. Middle-Right: Live Countdown Timer */}
+				{/* 3. Right: Action Buttons & Clean Hick's/Miller's Toolbar */}
 				<div className="doctor-desktop-header-section shrink-0">
-					<div
-						className={`doctor-countdown-timer !py-1 !px-2.5 !text-xs whitespace-nowrap tabular-nums shrink-0 ${
-							timerState.isOvertime ? "overtime" : "normal"
-						}`}
-						data-testid="header-countdown-timer"
-						role="timer"
-					>
-						<Clock size={14} className="shrink-0" />
-						<span className="whitespace-nowrap tabular-nums shrink-0">{timerState.formatted}</span>
-						{timerState.isOvertime && (
-							<span className="text-[9px] font-extrabold uppercase whitespace-nowrap shrink-0">Овертайм</span>
-						)}
-					</div>
-				</div>
-
-				{/* 4. Right: 0-Click Fast Action Buttons & Hick's 1-Primary Action */}
-				<div className="doctor-desktop-header-section shrink-0">
-					{/* 0-Click Tools (Fitts touch-compliant) */}
-					<div className="flex items-center gap-1">
-						<button
-							type="button"
-							onClick={() => handleQuickCall("odontogram")}
-							className="min-h-[36px] px-2.5 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation"
-							data-testid="header-btn-odontogram"
-							title="Одонтограмма 043/у"
-						>
-							<FileText size={14} className="text-teal-400" />
-							<span>043/у</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleQuickCall("lab_order")}
-							className="min-h-[36px] px-2.5 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation"
-							data-testid="header-btn-lab-order"
-							title="Наряд-заказ в зуботехническую лабораторию"
-						>
-							<ClipboardList size={14} className="text-teal-400" />
-							<span>Наряд</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleQuickCall("imaging")}
-							className="min-h-[36px] px-2.5 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation"
-							data-testid="header-btn-imaging"
-							title="КЛКТ и рентгенограммы"
-						>
-							<ImageIcon size={14} className="text-teal-400" />
-							<span>Снимки</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleQuickCall("consent")}
-							className="min-h-[36px] px-2.5 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation"
-							data-testid="header-btn-consent"
-							title="Информированное добровольное согласие"
-						>
-							<FileSignature size={14} className="text-teal-400" />
-							<span>ИДС</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleQuickCall("assistant_call")}
-							className={`min-h-[36px] px-2.5 rounded-lg border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation ${
-								isAssistantCalled
-									? "bg-amber-950/70 border-amber-500 text-amber-300 animate-pulse"
-									: "bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border-[var(--line,#334155)]"
-							}`}
-							data-testid="header-btn-assistant"
-							title="Вызов ассистента в кабинет"
-						>
-							{isAssistantCalled ? <BellRing size={14} className="text-amber-400" /> : <Bell size={14} />}
-							<span>Ассистент</span>
-						</button>
-					</div>
-
-					{/* Hick's Law: 1 Dominant Primary Action CTA */}
-					<button
-						type="button"
-						onClick={handleFinishVisit}
-						className="min-h-[36px] px-3.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer shrink-0 touch-manipulation"
-						data-testid="header-btn-finish-visit"
-					>
-						<CheckCircle2 size={15} />
-						<span>Завершить приём</span>
-					</button>
-
-					{/* Shift Cockpit Modal Trigger Button */}
+					{/* Cockpit trigger */}
 					<button
 						type="button"
 						onClick={() => {
 							setIsCockpitOpen(true);
 							onOpenCockpitModal?.();
+							onOpenCockpit?.();
 						}}
-						className="min-h-[36px] px-3 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-teal-400 border border-teal-800/80 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0 touch-manipulation"
+						className="min-h-[32px] px-2 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-teal-400 border border-teal-800/80 font-extrabold text-xs flex items-center gap-1 transition-all cursor-pointer shrink-0 touch-manipulation"
 						data-testid="header-btn-open-cockpit"
+						title="Открыть полный кокпит смены врача"
 					>
-						<Layers size={15} />
+						<Layers size={13} />
 						<span>Кокпит</span>
 						{unsignedCount > 0 && (
-							<span className="px-1.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-extrabold">
+							<span className="px-1 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[9px] font-extrabold">
 								{unsignedCount}
 							</span>
 						)}
+					</button>
+
+					{/* 0-Click Primary Chart Tool: 043/у */}
+					<button
+						type="button"
+						onClick={() => handleQuickCall("odontogram")}
+						className="min-h-[32px] px-2 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer touch-manipulation shrink-0"
+						data-testid="header-btn-odontogram"
+						title="Одонтограмма 043/у"
+					>
+						<FileText size={13} className="text-teal-400" />
+						<span>043/у</span>
+					</button>
+
+					{/* Grouped Documents Dropdown (Наряд, Снимки, ИДС) */}
+					<div className="relative">
+						<button
+							type="button"
+							onClick={() => setShowDocsDropdown((v) => !v)}
+							className="min-h-[32px] px-2 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer touch-manipulation shrink-0"
+							title="Документы и наряды"
+							data-testid="header-btn-docs-group"
+						>
+							<ClipboardList size={13} className="text-teal-400" />
+							<span>Документы</span>
+							<ChevronDown size={11} className="text-[var(--ink-2,#cbd5e1)]" />
+						</button>
+
+						{/* Dropdown Menu with Secondary Document Tools */}
+						<div className={`absolute right-0 top-10 w-52 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs text-[var(--ink,#f8fafc)] ${showDocsDropdown ? "block" : "hidden"}`}>
+							<button
+								type="button"
+								onClick={() => {
+									setShowDocsDropdown(false);
+									handleQuickCall("lab_order");
+								}}
+								className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
+								data-testid="header-btn-lab-order"
+								title="Наряд-заказ в зуботехническую лабораторию"
+							>
+								<ClipboardList size={14} className="text-teal-400" />
+								<span>Наряд ЗТЛ</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShowDocsDropdown(false);
+									handleQuickCall("imaging");
+								}}
+								className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
+								data-testid="header-btn-imaging"
+								title="КЛКТ и рентгенограммы"
+							>
+								<ImageIcon size={14} className="text-teal-400" />
+								<span>Снимки КЛКТ</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShowDocsDropdown(false);
+									handleQuickCall("consent");
+								}}
+								className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
+								data-testid="header-btn-consent"
+								title="Информированное добровольное согласие"
+							>
+								<FileSignature size={14} className="text-teal-400" />
+								<span>ИДС</span>
+							</button>
+						</div>
+					</div>
+
+					{/* Assistant Call Button */}
+					<button
+						type="button"
+						onClick={() => handleQuickCall("assistant_call")}
+						className={`min-h-[32px] px-2 rounded-lg border text-xs font-bold transition-all flex items-center gap-1 cursor-pointer touch-manipulation shrink-0 ${
+							isAssistantCalled
+								? "bg-amber-950/70 border-amber-500 text-amber-300 animate-pulse"
+								: "bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border-[var(--line,#334155)]"
+						}`}
+						data-testid="header-btn-assistant"
+						title="Вызов ассистента в кабинет"
+					>
+						{isAssistantCalled ? <BellRing size={13} className="text-amber-400" /> : <Bell size={13} />}
+						<span>Ассистент</span>
+					</button>
+
+					{/* Visual Divider separating tools and primary CTA */}
+					<div className="w-px h-5 bg-[var(--line,#334155)] mx-0.5 shrink-0" />
+
+					{/* Hick's Law: 1 Dominant Primary Action CTA */}
+					<button
+						type="button"
+						onClick={handleFinishVisit}
+						className="min-h-[32px] px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-extrabold text-xs flex items-center gap-1 transition-colors cursor-pointer shrink-0 touch-manipulation border-0 shadow-none outline-none"
+						data-testid="header-btn-finish-visit"
+					>
+						<CheckCircle2 size={14} />
+						<span className="whitespace-nowrap">Завершить</span>
 					</button>
 
 					{/* Miller's Law: Secondary Dropdown Menu */}
@@ -342,11 +383,11 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 						<button
 							type="button"
 							onClick={() => setShowSecondaryDropdown((v) => !v)}
-							className="w-9 h-9 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink-2,var(--muted,#cbd5e1))] hover:text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] flex items-center justify-center cursor-pointer transition-colors touch-manipulation"
+							className="w-8 h-8 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink-2,var(--muted,#cbd5e1))] hover:text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] flex items-center justify-center cursor-pointer transition-colors touch-manipulation"
 							aria-label="Дополнительные опции"
 							data-testid="header-secondary-dropdown-btn"
 						>
-							<MoreHorizontal size={16} />
+							<MoreHorizontal size={14} />
 						</button>
 
 						{showSecondaryDropdown && (
@@ -407,3 +448,4 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 		</>
 	);
 };
+

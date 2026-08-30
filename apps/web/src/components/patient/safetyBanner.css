@@ -59,16 +59,16 @@
 	border: 1.5px solid #3b82f6;
 }
 
-/* Safe / Clear Banner (Анамнез чист) */
+/* Safe / Clear Banner (Анамнез чист — схлопывается в 0px для здоровых пациентов) */
 .patient-safety-banner--safe {
-	background: var(--paper-soft, rgba(241, 245, 249, 0.6));
-	border: 1px solid var(--line, #e2e8f0);
-}
-
-[data-theme="dark"] .patient-safety-banner--safe,
-[data-theme="night"] .patient-safety-banner--safe {
-	background: rgba(30, 41, 59, 0.5);
-	border-color: rgba(71, 85, 105, 0.4);
+	display: none !important;
+	height: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: none !important;
+	overflow: hidden !important;
+	opacity: 0 !important;
+	pointer-events: none !important;
 }
 
 /* =========================================================================

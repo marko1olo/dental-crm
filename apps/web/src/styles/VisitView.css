@@ -486,3 +486,20 @@
 	}
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   STRICT VISIT TIMER NOWRAP & ZERO VERTICAL BREAK (DEFECT 2)
+   ═══════════════════════════════════════════════════════════════════ */
+.visit-timer {
+	display: inline-flex !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+	font-variant-numeric: tabular-nums !important;
+	align-items: center !important;
+}
+
+.visit-timer * {
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+}
+
+

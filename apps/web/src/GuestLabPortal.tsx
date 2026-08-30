@@ -334,10 +334,12 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 									style={{
 										display: "flex",
 										justifyContent: "space-between",
+										alignItems: "center",
+										gap: "12px",
 										marginBottom: "8px",
 									}}
 								>
-									<span className="guest-portal-field-label">Зуб (FDI)</span>
+									<span className="guest-portal-field-label">Зуб (FDI):</span>
 									<span className="guest-portal-field-value">
 										{order.toothFdi || "—"}
 									</span>
@@ -346,10 +348,12 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 									style={{
 										display: "flex",
 										justifyContent: "space-between",
+										alignItems: "center",
+										gap: "12px",
 										marginBottom: "8px",
 									}}
 								>
-									<span className="guest-portal-field-label">Материал</span>
+									<span className="guest-portal-field-label">Материал:</span>
 									{/*
 										Неизвестный код печатается как есть, а не заменяется на «—»:
 										прочерк скрыл бы от зуботехника то, что врач всё-таки указал.
@@ -361,9 +365,14 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 									</span>
 								</div>
 								<div
-									style={{ display: "flex", justifyContent: "space-between" }}
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+										gap: "12px",
+									}}
 								>
-									<span className="guest-portal-field-label">Цвет (Vita)</span>
+									<span className="guest-portal-field-label">Цвет (Vita):</span>
 									<span className="guest-portal-field-value">
 										{order.colorVita || "—"}
 									</span>
@@ -464,13 +473,13 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 						>
 							Управление статусом заказа
 						</h3>
-						<div style={{ display: "flex", gap: "12px" }}>
+						<div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
 							<button
 								type="button"
 								onClick={() => updateStatus("in_progress")}
 								disabled={isUpdating || order.status === "in_progress"}
 								className={`secondary-button ${order.status === "in_progress" ? "active" : ""}`}
-								style={{ flex: 1, padding: "12px" }}
+								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px" }}
 							>
 								Взять в работу
 							</button>
@@ -479,7 +488,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								onClick={() => updateStatus("shipped")}
 								disabled={isUpdating || order.status === "shipped"}
 								className={`secondary-button ${order.status === "shipped" ? "active" : ""}`}
-								style={{ flex: 1, padding: "12px" }}
+								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px" }}
 							>
 								Работа готова
 							</button>
@@ -488,7 +497,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								onClick={() => updateStatus("refitting")}
 								disabled={isUpdating || order.status === "refitting"}
 								className={`secondary-button ${order.status === "refitting" ? "active" : ""}`}
-								style={{ flex: 1, padding: "12px" }}
+								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px" }}
 							>
 								На переделке
 							</button>

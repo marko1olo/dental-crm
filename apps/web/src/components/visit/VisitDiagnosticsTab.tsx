@@ -8,9 +8,9 @@ import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
 import { EndoCanalLogModal } from "../odontogram/EndoCanalLogModal";
 import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
 import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
-import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
-import { CbctMprWorkspace } from "../dicom/CbctMprWorkspace";
+import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
+import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import {
 	type ClinicalPhotoAttachment,
@@ -423,6 +423,15 @@ export function VisitDiagnosticsTab(props?: {
 			<div className="flex items-center gap-2 flex-wrap">
 				<button
 					type="button"
+					onClick={() => setIsCbctModalOpen(true)}
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-teal-300 border border-teal-500/40 cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					data-testid="btn-open-cbct-studio-modal"
+				>
+					<Activity size={16} className="text-teal-400" />
+					<span>3D КЛКТ / КТ-исследование (MPR & Имплантация)</span>
+				</button>
+				<button
+					type="button"
 					onClick={() => setIsRadiologyModalOpen(true)}
 					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
 					data-testid="btn-open-radiology-referral-modal"
@@ -527,12 +536,29 @@ export function VisitDiagnosticsTab(props?: {
 			/>
 
 			{/* 3D CBCT / MPR Fullscreen Studio Modal (Tier 3 on-demand) */}
-			<CbctMprWorkspace
-				isOpen={isCbctModalOpen}
-				onClose={() => setIsCbctModalOpen(false)}
-				patientId={visitPatientId ?? activePatient?.id}
-				patientName={visitPatientName ?? activePatient?.fullName}
-			/>
+			{isCbctModalOpen && (
+				<CbctMprImplantStudioModal
+					isOpen={isCbctModalOpen}
+					onClose={() => setIsCbctModalOpen(false)}
+					onApplyToDiary043={(diaryText) => {
+						if (!diaryText) return;
+						try {
+							window.dispatchEvent(
+								new CustomEvent("dente-apply-soap-protocol", {
+									detail: {
+										soap: {
+											treatmentDescription: diaryText,
+										},
+										mode: "smart_append",
+									},
+								}),
+							);
+						} catch {
+							// ignore
+						}
+					}}
+				/>
+			)}
 		</div>
 	);
 }

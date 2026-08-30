@@ -228,7 +228,7 @@ export function Billing1CExportModal({
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h3 className="text-lg font-bold text-slate-900 dark:text-white break-words m-0 leading-tight">
-									1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ
+									1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 & 54-ФЗ
 								</h3>
 								<div className="flex items-center gap-1.5 shrink-0">
 									<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-800 dark:text-teal-200 border border-teal-500/25 font-bold whitespace-nowrap">

@@ -510,7 +510,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								}}
 								title="Клиническое списание расходников по нормам Приказа Минздрава 804н (Акты 0504230, М-11 и ТОРГ-16)"
 							>
-								<PackageCheck size={16} className="text-teal-600" /> Списание по наряду (804н)
+								<PackageCheck size={16} className="text-teal-600" /> Списание по наряду
 							</button>
 							<button
 								type="button"

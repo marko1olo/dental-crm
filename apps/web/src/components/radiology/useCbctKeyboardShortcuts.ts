@@ -127,6 +127,12 @@ export const CBCT_HOTKEY_DEFINITIONS: readonly CbctHotkeyItem[] = [
 		category: "presets_modes",
 	},
 	{
+		keyLabel: "H",
+		actionLabel: "Режим «Clear View»",
+		descriptionRu: "Временное скрытие всех оверлеев и сеток для осмотра тонких трещин кости",
+		category: "presets_modes",
+	},
+	{
 		keyLabel: "? / F1",
 		actionLabel: "Подсказки",
 		descriptionRu: "Открыть / закрыть шпаргалку по горячим клавишам",
@@ -153,6 +159,7 @@ export interface CbctKeyboardShortcutsOptions {
 	readonly onToggleMaximize?: () => void;
 	readonly onTogglePanel?: () => void;
 	readonly onToggleMode?: () => void;
+	readonly onToggleClearView?: () => void;
 	readonly onSelectPreset?: (preset: "bone" | "endo" | "soft") => void;
 	readonly onToggleHelp?: () => void;
 }
@@ -280,7 +287,15 @@ export function handleCbctKeyDown(
 		return true;
 	}
 
-	// 8. Toggle Panel: KeyP
+	// 8. Toggle Clear View (Hide Overlays for Fracture Inspection): KeyH
+	if (code === "KeyH" || lowerKey === "h" || lowerKey === "р") {
+		event.preventDefault?.();
+		event.stopPropagation?.();
+		options.onToggleClearView?.();
+		return true;
+	}
+
+	// 9. Toggle Panel: KeyP
 	if (code === "KeyP" || lowerKey === "p" || lowerKey === "з") {
 		event.preventDefault?.();
 		event.stopPropagation?.();

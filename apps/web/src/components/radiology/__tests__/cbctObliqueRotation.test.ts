@@ -30,7 +30,8 @@ import {
 	resliceObliqueMprSynchronized,
 	sampleVoxelHU,
 	sampleVoxelHUTrilinear,
-} from "../cbctMprMath";
+	sampleVoxelTrilinearHU,
+} from "../cbctObliqueMath";
 
 describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigation Suite", () => {
 	const testVolume = createEmptyCbctVolume(80, 80, 60, 0.5, 400);
@@ -153,6 +154,39 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			assert.equal(sampleVoxelHUTrilinear(testVolume, -5, 40, 30), -1000);
 			assert.equal(sampleVoxelHUTrilinear(testVolume, 40, 150, 30), -1000);
 			assert.equal(sampleVoxelHUTrilinear(testVolume, 40, 40, 200), -1000);
+		});
+
+		it("applies rescaleSlope and rescaleIntercept to trilinear HU sampling", () => {
+			const scaledVolume = {
+				...testVolume,
+				rescaleSlope: 1.5,
+				rescaleIntercept: -100,
+			};
+			const rawVal = sampleVoxelHU(40, 40, 30, testVolume);
+			const expectedScaled = Math.max(-1000, Math.min(3071, Math.round(rawVal * 1.5 - 100)));
+
+			const scaledHU = sampleVoxelHUTrilinear(scaledVolume, 40, 40, 30);
+			assert.equal(scaledHU, expectedScaled);
+
+			// Test alias with (x, y, z, volume) parameter ordering
+			const aliasHU = sampleVoxelTrilinearHU(40, 40, 30, scaledVolume);
+			assert.equal(aliasHU, expectedScaled);
+		});
+
+		it("clamps trilinear sampled values to physical HU range [-1000 .. 3071]", () => {
+			const extremeVolume = {
+				...testVolume,
+				rescaleSlope: 10.0,
+				rescaleIntercept: 5000,
+			};
+			assert.equal(sampleVoxelHUTrilinear(extremeVolume, 40, 40, 30), 3071);
+
+			const subZeroVolume = {
+				...testVolume,
+				rescaleSlope: 1.0,
+				rescaleIntercept: -10000,
+			};
+			assert.equal(sampleVoxelHUTrilinear(subZeroVolume, 40, 40, 30), -1000);
 		});
 	});
 

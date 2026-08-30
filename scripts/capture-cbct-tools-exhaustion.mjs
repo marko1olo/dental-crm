@@ -34,13 +34,14 @@ async function dismissToasts(page, waitBeforeDismissMs = 0) {
 		const count = await toastCloseBtns.count();
 		for (let i = 0; i < count; i++) {
 			const btn = toastCloseBtns.nth(i);
-			if (await btn.isVisible().catch(() => false)) {
-				await btn.click().catch(() => {});
+			if (await btn.isVisible()) {
+				await btn.click();
 				await sleep(50);
 			}
 		}
 	} catch (e) {
-		console.warn("[WARN] dismissToasts skipped:", e.message);
+		console.error("[FATAL] dismissToasts failed:", e.message);
+		process.exit(1);
 	}
 	await sleep(100);
 }
@@ -50,7 +51,8 @@ async function flushCanvasRender(page, delayMs = 600) {
 	try {
 		await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 	} catch (e) {
-		console.warn("[WARN] flushCanvasRender evaluate skipped:", e.message);
+		console.error("[FATAL] flushCanvasRender evaluate failed:", e.message);
+		process.exit(1);
 	}
 }
 
@@ -81,7 +83,12 @@ async function run() {
 	let port = process.env.PORT || process.env.VITE_PORT || 5173;
 	let viteProc = null;
 	try {
-		let res = await fetch(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`).catch(() => null);
+		let res;
+		try {
+			res = await fetch(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`);
+		} catch {
+			res = null;
+		}
 		if (!res || !res.ok) {
 			console.log(`[CBCT-E2E] Port ${port} not reachable. Spawning local Vite dev server...`);
 			const { spawn } = await import("node:child_process");
@@ -91,21 +98,35 @@ async function run() {
 			});
 			for (let i = 0; i < 40; i++) {
 				await sleep(500);
-				res = await fetch(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`).catch(() => null);
+				try {
+					res = await fetch(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`);
+				} catch {
+					res = null;
+				}
 				if (res && res.ok) {
 					console.log(`[CBCT-E2E] Vite dev server ready on port ${port}.`);
 					break;
 				}
 			}
 		}
+		if (!res || !res.ok) {
+			console.error(`[FATAL] Vite dev server failed to start or respond on port ${port}`);
+			process.exit(1);
+		}
 	} catch (e) {
-		console.warn("[WARN] Vite check error:", e.message);
+		console.error(`[FATAL] Vite preflight error: ${e.message}`);
+		process.exit(1);
 	}
 	console.log(`[CBCT-E2E] Navigating to Clinical Modals Studio on port ${port}...`);
-	await page.goto(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`, {
-		waitUntil: "domcontentloaded",
-		timeout: 30000,
-	});
+	try {
+		await page.goto(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`, {
+			waitUntil: "domcontentloaded",
+			timeout: 30000,
+		});
+	} catch (err) {
+		console.error(`[FATAL] Navigation to standalone studio failed: ${err.message}`);
+		process.exit(1);
+	}
 
 	// Open CBCT Studio
 	const openCbctBtn = page.locator('[data-testid="open-cbct-mpr-3d-studio-modal-btn"]').first();
@@ -146,8 +167,8 @@ async function run() {
 
 	// Trigger Auto-Arch alignment right on volume ingest to center all 4 planes on teeth
 	const initAutoArchBtn = page.locator('[data-testid="cbct-btn-auto-arch"], button:has-text("Авто-дуга")').first();
-	if (await initAutoArchBtn.isVisible().catch(() => false)) {
-		await initAutoArchBtn.click().catch(() => {});
+	if (await initAutoArchBtn.isVisible()) {
+		await initAutoArchBtn.click();
 		await flushCanvasRender(page, 1200);
 	}
 
@@ -158,11 +179,21 @@ async function run() {
 		const outPath = path.join(SCREENSHOT_DIR, filename);
 		await flushCanvasRender(page, 400);
 		const container = page.locator('[data-testid="cbct-mpr-implant-studio-modal"]').first();
-		await container.screenshot({ path: outPath });
+		try {
+			await container.screenshot({ path: outPath });
+		} catch (err) {
+			console.error(`[FATAL] container.screenshot failed for ${filename}: ${err.message}`);
+			process.exit(1);
+		}
 
 		for (const brainDir of BRAIN_DIRS) {
 			if (existsSync(brainDir)) {
-				try { copyFileSync(outPath, path.join(brainDir, filename)); } catch {}
+				try {
+					copyFileSync(outPath, path.join(brainDir, filename));
+				} catch (err) {
+					console.error(`[FATAL] Copying to brainDir ${brainDir} failed: ${err.message}`);
+					process.exit(1);
+				}
 			}
 		}
 
@@ -173,12 +204,15 @@ async function run() {
 	async function restoreGrid() {
 		const restoreBtn = page.locator('[data-testid="cbct-restore-grid-btn"]').first();
 		try {
-			if (await restoreBtn.isVisible().catch(() => false)) {
-				await restoreBtn.click().catch(() => {});
+			if (await restoreBtn.isVisible()) {
+				await restoreBtn.click();
 				await sleep(200);
 				await flushCanvasRender(page, 500);
 			}
-		} catch {}
+		} catch (err) {
+			console.error(`[FATAL] restoreGrid failed: ${err.message}`);
+			process.exit(1);
+		}
 	}
 
 	// ─── 01: MAXIMIZED AXIAL ──────────────────────────────────────────────────
@@ -211,7 +245,7 @@ async function run() {
 	// ─── 04: MAXIMIZED PANORAMA (OPTG) ────────────────────────────────────────
 	console.log("[CBCT-E2E] 04: Maximized Panorama Viewport...");
 	const maxPanoBtn = page.locator('[data-testid="cbct-maximize-panoramic-btn"]').first();
-	if (await maxPanoBtn.isVisible().catch(() => false)) {
+	if (await maxPanoBtn.isVisible()) {
 		await maxPanoBtn.click();
 		await flushCanvasRender(page, 800);
 		await saveShot("04_maximized_panorama.png", "Maximized Panorama OPTG 100% curved planar reconstruction of all 32 teeth");
@@ -242,7 +276,8 @@ async function run() {
 	await axialCanvas.waitFor({ state: "visible", timeout: 10000 });
 	const box = await axialCanvas.boundingBox();
 	if (!box) {
-		throw new Error("[CBCT-E2E] Could not get bounding box for axial canvas");
+		console.error("[FATAL] Could not get bounding box for axial canvas");
+		process.exit(1);
 	}
 
 	const startX = Math.round(box.x + box.width * 0.28);
@@ -349,8 +384,8 @@ async function run() {
 
 	// Close implant mode to keep subsequent viewports clean
 	const diagModeBtn = page.locator('[data-testid="cbct-mode-diagnostic-btn"]').first();
-	if (await diagModeBtn.isVisible().catch(() => false)) {
-		await diagModeBtn.click().catch(() => {});
+	if (await diagModeBtn.isVisible()) {
+		await diagModeBtn.click();
 	}
 	await flushCanvasRender(page, 500);
 
@@ -376,8 +411,8 @@ async function run() {
 	await sleep(300);
 
 	const slab15Btn = page.locator('[data-testid="cbct-tool-slab-15mm"], [data-testid="cbct-slab-thickness-15"]').first();
-	if (await slab15Btn.isVisible().catch(() => false)) {
-		await slab15Btn.click().catch(() => {});
+	if (await slab15Btn.isVisible()) {
+		await slab15Btn.click();
 	}
 	await page.keyboard.press("Escape");
 	await flushCanvasRender(page, 800);
@@ -393,16 +428,16 @@ async function run() {
 	// ─── 15: EXPORT TO EMR / FORM 043/U & TREATMENT PLAN REPORT ──────────────
 	console.log("[CBCT-E2E] 15: Export to EMR & PDF Report...");
 	const quadLayoutBtn = page.locator('[data-testid="cbct-layout-quad-btn"]').first();
-	if (await quadLayoutBtn.isVisible().catch(() => false)) {
-		await quadLayoutBtn.click().catch(() => {});
+	if (await quadLayoutBtn.isVisible()) {
+		await quadLayoutBtn.click();
 	}
 	const implantModeBtn2 = page.locator('[data-testid="cbct-mode-implant-btn"]').first();
 	await implantModeBtn2.click();
 	await sleep(400);
 
 	const exportEmrBtn = page.locator('[data-testid="cbct-btn-export-emr"]').first();
-	if (await exportEmrBtn.isVisible().catch(() => false)) {
-		await exportEmrBtn.click().catch(() => {});
+	if (await exportEmrBtn.isVisible()) {
+		await exportEmrBtn.click();
 	}
 	await flushCanvasRender(page, 1000);
 	await saveShot("15_export_emk_pdf_report.png", "1-Click clinical export to EMR / Form 043/u diary and treatment plan with audit confirmation toast", { keepToast: true });
@@ -487,9 +522,15 @@ async function run() {
 	await exportPdfBtn.waitFor({ state: "visible", timeout: 5000 });
 
 	// Capture report preview by opening report HTML in a new tab/page
-	const printPagePromise = context.waitForEvent("page", { timeout: 8000 }).catch(() => null);
+	const printPagePromise = context.waitForEvent("page", { timeout: 8000 });
 	await exportPdfBtn.click();
-	const printPage = await printPagePromise;
+	let printPage = null;
+	try {
+		printPage = await printPagePromise;
+	} catch (err) {
+		console.error(`[FATAL] Waiting for PDF report page failed: ${err.message}`);
+		process.exit(1);
+	}
 
 	if (printPage) {
 		await printPage.waitForLoadState("domcontentloaded");
@@ -506,14 +547,18 @@ async function run() {
 
 		for (const brainDir of BRAIN_DIRS) {
 			if (existsSync(brainDir)) {
-				try { copyFileSync(outPath, path.join(brainDir, "19_printable_pdf_report_white_background.png")); } catch {}
+				try {
+					copyFileSync(outPath, path.join(brainDir, "19_printable_pdf_report_white_background.png"));
+				} catch (err) {
+					console.error(`[FATAL] Copying PDF report screenshot to ${brainDir} failed: ${err.message}`);
+					process.exit(1);
+				}
 			}
 		}
 		const stat = statSync(outPath);
 		console.log(`[CBCT-E2E] Saved 19_printable_pdf_report_white_background.png (${(stat.size / 1024).toFixed(1)} KB) - Printable A4 CBCT Planning Protocol`);
-		await printPage.close().catch(() => {});
+		await printPage.close();
 	} else {
-		// Fallback: evaluate and capture report directly
 		console.log("[CBCT-E2E] Capturing report preview directly...");
 		await saveShot("19_printable_pdf_report_white_background.png", "Printable A4 CBCT Planning Protocol with white background");
 	}
@@ -523,6 +568,7 @@ async function run() {
 }
 
 run().catch((err) => {
-	console.error("[CBCT-E2E] Fatal error:", err);
+	console.error("[FATAL] [CBCT-E2E] Unhandled error:", err);
 	process.exit(1);
 });
+

@@ -462,7 +462,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<QrCode className="w-5 h-5" />
 						</div>
 						<div>
-							<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] flex items-center gap-2 m-0">
+							<h2 className="text-lg font-bold text-slate-900 dark:text-white break-words flex items-center gap-2 m-0">
 								1-Клик Оплата приема & Фискализация 54-ФЗ
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
@@ -626,7 +626,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					{/* 1-Click Method Tiles (Elevated to 56px / 64px) */}
 					<div className="space-y-2">
 						<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
-							Способ оплаты (1 клик = 100%):
+							Способ оплаты:
 						</span>
 						{isSimpleCashierMode ? (
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid="simple-cashier-methods">
@@ -641,7 +641,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									data-testid="simple-card-btn"
 								>
 									<CreditCard size={24} className="text-blue-600 dark:text-blue-400 shrink-0" />
-									<span>💳 КАРТОЙ (100%)</span>
+									<span>💳 Картой</span>
 								</button>
 
 								<button
@@ -655,7 +655,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									data-testid="simple-cash-btn"
 								>
 									<Banknote size={24} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>💵 НАЛИЧНЫМИ (100%)</span>
+									<span>💵 Наличными</span>
 								</button>
 
 								<button
@@ -669,7 +669,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									data-testid="simple-sbp-btn"
 								>
 									<QrCode size={24} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>📱 ПО QR-КОДУ СБП</span>
+									<span>📱 По QR-коду СБП</span>
 								</button>
 							</div>
 						) : (
@@ -694,7 +694,6 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 											{m.id === "dms_insurance" && <ShieldCheck size={16} className="text-purple-600 dark:text-purple-400" />}
 											{m.id === "loyalty_points" && <Sparkles size={16} className="text-indigo-600 dark:text-indigo-400" />}
 											<span className="text-xs font-bold whitespace-nowrap">{m.titleRu.split(" ")[0]}</span>
-											<span className="text-xs opacity-75 font-normal leading-none">(100%)</span>
 										</button>
 									);
 								})}
@@ -766,7 +765,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							) : remainingRub === 0 ? (
 								<div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
 									<Check size={14} className="text-emerald-600" />
-									<span>Чек сбалансирован (100%)</span>
+									<span>Чек сбалансирован</span>
 								</div>
 							) : (
 								<div className="flex items-center gap-1.5 text-xs font-bold text-rose-600">
@@ -1102,17 +1101,17 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								type="button"
 								onClick={() => handleSingle100Percent(activeMethod || "bank_card")}
 								className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1 cursor-pointer transition-all shadow-xs"
-								title="Сбросить суммы и применить 100% на выбранный способ"
+								title="Сбросить суммы и применить выбранный способ на весь чек"
 							>
-								<Zap size={13} /> ⚡ Исправить в 1 клик (100% {activeMethod ? CHECKOUT_PAYMENT_METHODS.find((m) => m.id === activeMethod)?.titleRu : "Картой"})
+								<Zap size={13} /> ⚡ Исправить в 1 клик ({activeMethod ? CHECKOUT_PAYMENT_METHODS.find((m) => m.id === activeMethod)?.titleRu : "Картой"})
 							</button>
 						</div>
 					)}
 				</div>
 
-				{/* Footer Actions */}
-				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between flex-wrap gap-3">
-					<div className="text-xs text-[var(--muted,#64748b)]">
+				{/* Footer Actions (Fixed Sticky Bar — Fitts's Law) */}
+				<div className="sticky bottom-0 z-50 p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between sm:justify-end flex-wrap gap-3 shrink-0 shadow-lg">
+					<div className="text-xs text-slate-500 dark:text-slate-400 mr-auto hidden sm:block">
 						ФФД 1.2 • Чек будет отправлен на {patientPhone}
 					</div>
 					<div className="flex items-center gap-2">

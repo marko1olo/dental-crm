@@ -407,22 +407,88 @@
 @media (max-width: 640px) {
 	.tooth-chart-arch-container {
 		padding: 6px 2px;
+		max-width: 100%;
+		overflow-x: auto;
 	}
-	.tooth-svg-wrapper {
-		min-width: 0;
-		padding: 1px 0;
+	.tooth-chart-arch-wrapper {
+		max-width: 100%;
 	}
-	.tooth-quadrant-group {
-		gap: 1px;
+	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-svg-wrapper {
+		min-width: 0 !important;
+		min-height: 0 !important;
+		padding: 0 !important;
+		margin: 0 !important;
 	}
-	.teeth-row {
-		gap: 2px;
+	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-svg-wrapper::before {
+		min-width: 0 !important;
+		min-height: 0 !important;
+	}
+	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-number-badge {
+		min-width: 0 !important;
+		padding: 1px 1px !important;
+		gap: 1px !important;
+		font-size: 8px !important;
+		border-radius: 4px !important;
+	}
+	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-status-dot {
+		width: 3px !important;
+		height: 3px !important;
+	}
+	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-number-text {
+		font-size: 8px !important;
+		line-height: 1 !important;
+	}
+	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-quadrant-group {
+		gap: 0px !important;
+	}
+	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .teeth-row {
+		gap: 0px !important;
+		width: 100% !important;
+		justify-content: center !important;
+	}
+
+	/* Focused Quadrant View on Mobile: DOMINANT TOUCH TARGETS (>= 48x48px) */
+	.quadrant-view-wrapper {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	.quadrant-view-wrapper .teeth-row {
+		display: flex !important;
+		justify-content: center !important;
+		gap: 2px !important;
+		width: 100% !important;
+	}
+	.quadrant-view-wrapper .tooth-quadrant-group {
+		display: flex !important;
+		justify-content: center !important;
+		gap: 2px !important;
+		flex-wrap: nowrap !important;
+	}
+	.quadrant-view-wrapper .tooth-svg-wrapper {
+		min-width: 44px !important;
+		min-height: 48px !important;
+		padding: 2px !important;
+	}
+	.quadrant-view-wrapper .tooth-number-badge {
+		min-width: 22px !important;
+		padding: 2px 4px !important;
+		font-size: 11px !important;
+		font-weight: 800 !important;
+		border-radius: 6px !important;
+	}
+	.quadrant-view-wrapper .tooth-number-text {
+		font-size: 11px !important;
+		font-weight: 800 !important;
+		line-height: 1.1 !important;
 	}
 	.tooth-arch-midline-guide {
-		width: 6px;
+		width: 2px !important;
 	}
 	.midline-notch {
-		width: 1.5px;
+		width: 1px !important;
+		height: 18px !important;
 	}
 }
 
@@ -484,7 +550,7 @@
 	justify-content: center;
 	cursor: pointer;
 	padding: 2px 2px;
-	min-width: 48px;
+	min-width: 44px;
 	min-height: 48px;
 	border-radius: 10px;
 	transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
@@ -503,8 +569,8 @@
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	min-height: 48px;
-	min-width: 48px;
+	min-height: 44px;
+	min-width: 44px;
 	width: 100%;
 	height: 100%;
 	pointer-events: auto;

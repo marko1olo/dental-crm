@@ -119,13 +119,6 @@ export async function fetchWidgetList<T>(
 		const raw = await response.text();
 		return parseWidgetListPayload(response.status, raw, toItem);
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		// Текст исключения наружу не идёт ни при каких условиях: он английский.
 		logger.error(`[analytics widget fetch error] ${url}:`, error);
 		return { ok: false, message: WIDGET_LOAD_ERROR_MESSAGE };

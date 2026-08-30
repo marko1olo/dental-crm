@@ -390,11 +390,11 @@ export function CmoComplianceHub({
 
 	return (
 		<div className="cmo-hub-container pb-32">
-			{/* ── Top Header ── */}
+			{/* ── Top Header (Compressed Compact Layout) ── */}
 			<div className="cmo-hub-header">
 				<div className="cmo-hub-title-group">
 					<div className="cmo-hub-badge-role">
-						<ShieldCheck size={16} />
+						<ShieldCheck size={15} />
 						<span>Главный врач / ВК</span>
 					</div>
 					<div>
@@ -413,7 +413,7 @@ export function CmoComplianceHub({
 						className="cmo-hub-btn cmo-hub-btn--secondary"
 						title="Запросить актуальные статусы документов из РЭМД ЕГИСЗ"
 					>
-						<RefreshCw size={16} className={isSyncingRemd ? "dente-icon-spin" : ""} />
+						<RefreshCw size={14} className={isSyncingRemd ? "dente-icon-spin" : ""} />
 						<span>Синхронизировать РЭМД</span>
 					</button>
 
@@ -423,7 +423,7 @@ export function CmoComplianceHub({
 						className="cmo-hub-btn cmo-hub-btn--secondary"
 						title="Экспорт отфильтрованного реестра в CSV (Excel)"
 					>
-						<Download size={16} />
+						<Download size={14} />
 						<span>Экспорт CSV</span>
 					</button>
 
@@ -433,16 +433,16 @@ export function CmoComplianceHub({
 						className="cmo-hub-btn cmo-hub-btn--secondary"
 						title="Печать официального протокола контроля качества"
 					>
-						<Printer size={16} />
+						<Printer size={14} />
 						<span>Печать протокола</span>
 					</button>
 				</div>
 			</div>
 
-			{/* ── Roszdravnadzor Statutory Risk Banner ── */}
+			{/* ── Roszdravnadzor Statutory Risk Banner (Zero Truncation Guarantee) ── */}
 			<div className={`cmo-hub-risk-banner cmo-hub-risk-banner--${metrics.riskAssessment.riskLevel}`}>
 				<div className="cmo-hub-risk-banner-header">
-					<div className="cmo-hub-risk-title-wrap">
+					<div className="cmo-hub-risk-title-wrap flex-wrap">
 						<span className={`cmo-hub-risk-badge cmo-hub-risk-badge--${metrics.riskAssessment.riskLevel}`}>
 							{metrics.riskAssessment.riskLevel === "zero" && <CheckCircle2 size={13} />}
 							{metrics.riskAssessment.riskLevel === "low" && <Info size={13} />}
@@ -455,7 +455,7 @@ export function CmoComplianceHub({
 							Ответственность: {metrics.riskAssessment.fineLiabilityRub}
 						</span>
 
-						<span className="text-xs text-[var(--muted)] hidden lg:inline truncate max-w-lg">
+						<span className="text-xs text-[var(--muted)] leading-tight break-words min-w-0">
 							{metrics.riskAssessment.summaryMessage}
 						</span>
 					</div>
@@ -466,70 +466,82 @@ export function CmoComplianceHub({
 				</div>
 			</div>
 
-			{/* ── Metrics Cards Grid ── */}
-			<div className="cmo-hub-metrics-grid">
-				<div className="cmo-hub-metric-card" onClick={() => setActiveFilter("all")} style={{ cursor: "pointer" }}>
-					<div className="cmo-hub-metric-header">
-						<span>Всего приёмов</span>
-						<Layers size={16} />
-					</div>
-					<div className="cmo-hub-metric-val">{metrics.totalEncounters}</div>
-					<div className="cmo-hub-metric-sub">За период: {periodLabels[activePeriod]}</div>
-				</div>
+			{/* ── Compact Metrics Strip (Single Inline Row <= 32px) ── */}
+			<div className="cmo-hub-metrics-strip" role="region" aria-label="Метрики комплаенса">
+				<button
+					type="button"
+					onClick={() => setActiveFilter("all")}
+					className={`cmo-hub-metric-badge ${activeFilter === "all" ? "cmo-hub-metric-badge--active" : ""}`}
+					title="Всего приёмов за период"
+				>
+					<Layers size={13} className="text-slate-500 shrink-0" />
+					<span>Всего приёмов:</span>
+					<strong className="cmo-hub-badge-val">{metrics.totalEncounters}</strong>
+				</button>
 
-				<div className="cmo-hub-metric-card" onClick={() => setActiveFilter("registered_remd")} style={{ cursor: "pointer" }}>
-					<div className="cmo-hub-metric-header">
-						<span>В РЭМД ЕГИСЗ</span>
-						<CheckCircle2 size={16} className="text-emerald-500" />
-					</div>
-					<div className="cmo-hub-metric-val cmo-hub-metric-val--success">{metrics.registeredRemdCount}</div>
-					<div className="cmo-hub-metric-sub">С присвоением OID СЭМД</div>
-				</div>
+				<button
+					type="button"
+					onClick={() => setActiveFilter("registered_remd")}
+					className={`cmo-hub-metric-badge ${activeFilter === "registered_remd" ? "cmo-hub-metric-badge--active" : ""}`}
+					title="Успешно зарегистрировано в РЭМД ЕГИСЗ с присвоением OID"
+				>
+					<CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+					<span>В РЭМД:</span>
+					<strong className="cmo-hub-badge-val cmo-hub-badge-val--success">{metrics.registeredRemdCount}</strong>
+				</button>
 
-				<div className="cmo-hub-metric-card" onClick={() => setActiveFilter("no_icd_or_tooth")} style={{ cursor: "pointer" }}>
-					<div className="cmo-hub-metric-header">
-						<span>Без МКБ-10 / зуба</span>
-						<AlertOctagon size={16} className="text-red-500" />
-					</div>
-					<div className={`cmo-hub-metric-val ${metrics.noIcdOrToothCount > 0 ? "cmo-hub-metric-val--danger" : ""}`}>
+				<button
+					type="button"
+					onClick={() => setActiveFilter("no_icd_or_tooth")}
+					className={`cmo-hub-metric-badge ${activeFilter === "no_icd_or_tooth" ? "cmo-hub-metric-badge--active" : ""}`}
+					title="Карты без кода МКБ-10 или номера зуба (Приказ 834н)"
+				>
+					<AlertOctagon size={13} className="text-red-500 shrink-0" />
+					<span>Без МКБ/зуба:</span>
+					<strong className={`cmo-hub-badge-val ${metrics.noIcdOrToothCount > 0 ? "cmo-hub-badge-val--danger" : ""}`}>
 						{metrics.noIcdOrToothCount}
-					</div>
-					<div className="cmo-hub-metric-sub">Приказ Минздрава № 834н</div>
-				</div>
+					</strong>
+				</button>
 
-				<div className="cmo-hub-metric-card" onClick={() => setActiveFilter("not_signed_doctor")} style={{ cursor: "pointer" }}>
-					<div className="cmo-hub-metric-header">
-						<span>Без подписи УКЭП</span>
-						<FileSignature size={16} className="text-amber-500" />
-					</div>
-					<div className={`cmo-hub-metric-val ${metrics.notSignedDoctorCount > 0 ? "cmo-hub-metric-val--warning" : ""}`}>
+				<button
+					type="button"
+					onClick={() => setActiveFilter("not_signed_doctor")}
+					className={`cmo-hub-metric-badge ${activeFilter === "not_signed_doctor" ? "cmo-hub-metric-badge--active" : ""}`}
+					title="Карты без электронной подписи врача (Приказ 947н)"
+				>
+					<FileSignature size={13} className="text-amber-500 shrink-0" />
+					<span>Без УКЭП:</span>
+					<strong className={`cmo-hub-badge-val ${metrics.notSignedDoctorCount > 0 ? "cmo-hub-badge-val--warning" : ""}`}>
 						{metrics.notSignedDoctorCount}
-					</div>
-					<div className="cmo-hub-metric-sub">Приказ Минздрава № 947н</div>
-				</div>
+					</strong>
+				</button>
 
-				<div className="cmo-hub-metric-card" onClick={() => setActiveFilter("pending_or_failed_egisz")} style={{ cursor: "pointer" }}>
-					<div className="cmo-hub-metric-header">
-						<span>В очереди / Ошибки</span>
-						<Clock size={16} className="text-blue-500" />
-					</div>
-					<div className="cmo-hub-metric-val cmo-hub-metric-val--info">{metrics.pendingOrFailedEgiszCount}</div>
-					<div className="cmo-hub-metric-sub">Ожидают отправки в РЭМД</div>
-				</div>
+				<button
+					type="button"
+					onClick={() => setActiveFilter("pending_or_failed_egisz")}
+					className={`cmo-hub-metric-badge ${activeFilter === "pending_or_failed_egisz" ? "cmo-hub-metric-badge--active" : ""}`}
+					title="Ожидают отправки или ошибки передачи"
+				>
+					<Clock size={13} className="text-blue-500 shrink-0" />
+					<span>В очереди:</span>
+					<strong className="cmo-hub-badge-val cmo-hub-badge-val--info">{metrics.pendingOrFailedEgiszCount}</strong>
+				</button>
 
-				<div className="cmo-hub-metric-card" onClick={() => setActiveFilter("overdue_24h")} style={{ cursor: "pointer" }}>
-					<div className="cmo-hub-metric-header">
-						<span>Просрочено &gt;24 ч.</span>
-						<AlertTriangle size={16} className="text-red-500" />
-					</div>
-					<div className={`cmo-hub-metric-val ${metrics.overdue24hCount > 0 ? "cmo-hub-metric-val--danger" : ""}`}>
+				<button
+					type="button"
+					onClick={() => setActiveFilter("overdue_24h")}
+					className={`cmo-hub-metric-badge ${activeFilter === "overdue_24h" ? "cmo-hub-metric-badge--active" : ""}`}
+					title="Просрочено более 24 часов по ПП РФ № 852"
+				>
+					<AlertTriangle size={13} className="text-red-500 shrink-0" />
+					<span>Просрочено &gt;24ч:</span>
+					<strong className={`cmo-hub-badge-val ${metrics.overdue24hCount > 0 ? "cmo-hub-badge-val--danger" : ""}`}>
 						{metrics.overdue24hCount}
-					</div>
-					<div className="cmo-hub-metric-sub">ПП РФ № 852 (1 раб. день)</div>
-				</div>
+					</strong>
+				</button>
 			</div>
 
-			{/* ── Statutory Filter Tabs ── */}
+			{/* ── Statutory Filter Tabs (With Flex-Wrap & Scroll Protection) ── */}
 			<div className="cmo-hub-tabs-bar" role="tablist">
 				<button
 					type="button"
@@ -538,7 +550,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("all")}
 					className={`cmo-hub-tab-btn ${activeFilter === "all" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<Layers size={16} />
+					<Layers size={14} />
 					<span>Все приёмы</span>
 					<span className="cmo-hub-tab-count">{metrics.totalEncounters}</span>
 				</button>
@@ -550,7 +562,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("no_icd_or_tooth")}
 					className={`cmo-hub-tab-btn ${activeFilter === "no_icd_or_tooth" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<AlertCircle size={15} className="text-red-500 shrink-0" />
+					<AlertCircle size={14} className="text-red-500 shrink-0" />
 					<span>Без диагноза МКБ-10 / зуба</span>
 					<span className={`cmo-hub-tab-count ${metrics.noIcdOrToothCount > 0 ? "cmo-hub-tab-count--danger" : ""}`}>
 						{metrics.noIcdOrToothCount}
@@ -564,7 +576,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("not_signed_doctor")}
 					className={`cmo-hub-tab-btn ${activeFilter === "not_signed_doctor" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<FileSignature size={15} className="text-amber-500 shrink-0" />
+					<FileSignature size={14} className="text-amber-500 shrink-0" />
 					<span>Не подписано врачом (нет ЭП/УКЭП)</span>
 					<span className={`cmo-hub-tab-count ${metrics.notSignedDoctorCount > 0 ? "cmo-hub-tab-count--warning" : ""}`}>
 						{metrics.notSignedDoctorCount}
@@ -578,7 +590,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("pending_or_failed_egisz")}
 					className={`cmo-hub-tab-btn ${activeFilter === "pending_or_failed_egisz" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<Clock size={15} className="text-blue-500 shrink-0" />
+					<Clock size={14} className="text-blue-500 shrink-0" />
 					<span>В очереди (ЕГИСЗ)</span>
 					<span className="cmo-hub-tab-count cmo-hub-tab-count--info">
 						{metrics.pendingOrFailedEgiszCount}
@@ -592,7 +604,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("registered_remd")}
 					className={`cmo-hub-tab-btn ${activeFilter === "registered_remd" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+					<CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
 					<span>Зарегистрировано в РЭМД</span>
 					<span className="cmo-hub-tab-count cmo-hub-tab-count--success">
 						{metrics.registeredRemdCount}
@@ -606,7 +618,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("overdue_24h")}
 					className={`cmo-hub-tab-btn ${activeFilter === "overdue_24h" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<AlertTriangle size={15} className="text-red-500 shrink-0" />
+					<AlertTriangle size={14} className="text-red-500 shrink-0" />
 					<span>Просрочено &gt;24ч (ПП РФ № 852)</span>
 					<span className={`cmo-hub-tab-count ${metrics.overdue24hCount > 0 ? "cmo-hub-tab-count--danger" : ""}`}>
 						{metrics.overdue24hCount}

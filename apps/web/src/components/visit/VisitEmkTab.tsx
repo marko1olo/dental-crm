@@ -27,6 +27,7 @@ import {
 	Tag,
 	Trash2,
 	X,
+	Zap,
 } from "lucide-react";
 import React from "react";
 import { visitDraftQualityLabels } from "../../AppConstants";
@@ -1159,8 +1160,8 @@ export function VisitEmkTab() {
 						ЭМК после диктовки
 					</p>
 					<h3
-						className="text-slate-900 dark:text-slate-200 text-base font-extrabold"
-						style={{ color: "var(--ink, var(--ink-2, #f8fafc))" }}
+						className="text-slate-900 dark:text-slate-100 text-base font-extrabold"
+						style={{ color: "var(--ink, #f8fafc)" }}
 						data-testid="emk-section-title"
 					>
 						{draft
@@ -1192,7 +1193,13 @@ export function VisitEmkTab() {
 						<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
 						<span>{isCompletingVisit ? "Завершение приёма…" : "Завершить приём и сформировать чек"}</span>
 					</button>
-					<span className={draft || isVisitNoteDirty ? "ready" : ""}>
+					<span
+						className={`visit-note-status-badge text-xs font-bold px-2.5 py-1 rounded-full border transition-all ${
+							draft || isVisitNoteDirty
+								? "ready bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
+								: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 dark:bg-emerald-950/40"
+						}`}
+					>
 						{visitNoteStatusLabel}
 					</span>
 				</div>
@@ -1206,7 +1213,7 @@ export function VisitEmkTab() {
 				>
 					<div className="flex items-center gap-3">
 						<div className="w-11 h-11 rounded-xl bg-[var(--ok-fg)] text-white flex items-center justify-center font-black text-xl shrink-0 shadow-xs">
-							✓
+							<Check size={20} className="stroke-[3]" />
 						</div>
 						<div>
 							<div className="text-xs font-bold text-[var(--ok-fg)] uppercase tracking-wider flex items-center gap-1.5">
@@ -1241,7 +1248,7 @@ export function VisitEmkTab() {
 							data-testid="btn-pay-sbp-qr"
 						>
 							<QrCode size={16} />
-							<span>⚡ Оплата СБП (QR-код)</span>
+							<span>Оплата СБП (QR-код)</span>
 						</button>
 						<button
 							type="button"
@@ -1312,11 +1319,11 @@ export function VisitEmkTab() {
 			{/* Быстрые клинические протоколы SOAP + МКБ-10 (Tier 2 Warm Context Accordion) */}
 			<details className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-2.5 text-xs my-2">
 				<summary className="flex items-center justify-between cursor-pointer font-bold text-xs select-none list-none text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
-					<div className="flex items-center gap-2">
-						<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-						<span>Экспресс-протоколы SOAP и шаблоны СтАР (1 клик)</span>
+					<div className="flex items-center gap-2 min-w-0 pr-2">
+						<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+						<span className="truncate">Экспресс-протоколы SOAP и шаблоны СтАР (1 клик)</span>
 					</div>
-					<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
+					<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden shrink-0 ml-auto whitespace-nowrap">Развернуть &darr;</span>
 				</summary>
 				<div className="pt-2">
 					<ClinicalQuickPresetsBar
@@ -1331,7 +1338,7 @@ export function VisitEmkTab() {
 			</details>
 
 			{/* Компактные 32px вкладки (EMK Tabs) */}
-			<div className="emk-tabs-container flex items-center gap-1.5 flex-wrap my-2 pb-1 border-b border-[var(--line)]" role="tablist">
+			<div className="emk-tabs-container flex items-center gap-1.5 overflow-x-auto scrollbar-none my-2 pb-1 border-b border-[var(--line)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist">
 				{emkTabs.map((tab) => {
 					const isFilled =
 						tab.id !== "all" &&
@@ -1342,7 +1349,7 @@ export function VisitEmkTab() {
 							type="button"
 							role="tab"
 							aria-selected={activeEmkTab === tab.id}
-							className={`emk-tab-button h-8 !min-h-[32px] px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 ${
+							className={`emk-tab-button h-8 !min-h-[32px] px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
 								activeEmkTab === tab.id
 									? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-xs"
 									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
@@ -1645,7 +1652,7 @@ export function VisitEmkTab() {
 								textareaRef={(el) => {
 									textareaRefs.current[field.key] = el;
 								}}
-								className="min-h-[120px] rounded-b-xl rounded-t-none p-3.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
+								className="min-h-[120px] rounded-b-xl rounded-t-none p-3.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
 							/>
 
 							{/* Горизонтальный скролл быстрых чипов 32px под textarea */}
@@ -1656,7 +1663,7 @@ export function VisitEmkTab() {
 											key={chip}
 											type="button"
 											onClick={() => handleChipClick(chip)}
-											className="quick-chip h-8 !min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation whitespace-nowrap shadow-2xs inline-flex items-center gap-1.5 shrink-0"
+											className="quick-chip h-8 !min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation whitespace-nowrap shadow-2xs inline-flex items-center gap-1.5 shrink-0"
 										>
 											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold">+</span>
 											<span>{chip}</span>
@@ -1671,7 +1678,9 @@ export function VisitEmkTab() {
 									<details className="group rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] overflow-hidden">
 										<summary className="flex items-center justify-between p-3 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--teal-soft)]/40 transition-colors">
 											<div className="flex items-center gap-2">
-												<span className="w-6 h-6 rounded-md bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center text-xs">💉</span>
+												<span className="w-6 h-6 rounded-md bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center text-xs">
+													<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+												</span>
 												<span>Местная карпульная анестезия & Расчет МДД по весу ({liveAnesCalc.drugName}, {selectedCarpulesCount} карп.)</span>
 											</div>
 											<ChevronDown size={16} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
@@ -2527,7 +2536,7 @@ export function VisitEmkTab() {
 						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
 						data-testid="btn-quick-memo-surgery"
 					>
-						<span>🧊</span>
+						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
 						<span>Памятка: Удаление / Хирургия</span>
 					</button>
 					<button
@@ -2539,7 +2548,7 @@ export function VisitEmkTab() {
 						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
 						data-testid="btn-quick-memo-caries"
 					>
-						<span>🦷</span>
+						<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
 						<span>Памятка: Анестезия / Кариес</span>
 					</button>
 					<button
@@ -2551,7 +2560,7 @@ export function VisitEmkTab() {
 						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
 						data-testid="btn-quick-memo-endo"
 					>
-						<span>⚡</span>
+						<Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
 						<span>Памятка: Эндодонтия / Каналы</span>
 					</button>
 				</div>
@@ -2571,7 +2580,7 @@ export function VisitEmkTab() {
 						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
 						data-testid="btn-quick-rx-amoxi-nimesil"
 					>
-						<span>💊</span>
+						<Pill className="w-3.5 h-3.5 text-rose-500 shrink-0" />
 						<span>Амоксиклав 1000 мг + Нимесил</span>
 					</button>
 					<button
@@ -2583,7 +2592,7 @@ export function VisitEmkTab() {
 						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
 						data-testid="btn-quick-rx-nimesil"
 					>
-						<span>💊</span>
+						<Pill className="w-3.5 h-3.5 text-rose-500 shrink-0" />
 						<span>Нимесил 100 мг (НПВП)</span>
 					</button>
 					<button
@@ -2595,7 +2604,7 @@ export function VisitEmkTab() {
 						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
 						data-testid="btn-quick-rx-chlorhexidine"
 					>
-						<span>🧴</span>
+						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
 						<span>Хлоргексидин 0.05%</span>
 					</button>
 				</div>

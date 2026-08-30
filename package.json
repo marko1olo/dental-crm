@@ -21,6 +21,7 @@
     "smoke:chains": "node scripts/run-chain-proofs.mjs",
     "smoke:script-guards": "node --test scripts/tests/*.test.mjs",
     "check:encoding": "node scripts/check-encoding.mjs",
+    "check:css-tokens": "node scripts/check-css-tokens.mjs",
     "check:tracked-ignored": "node scripts/check-tracked-ignored.mjs",
     "check:dynamic-imports": "node scripts/check-dynamic-imports.mjs",
     "check:env-contract": "node --import tsx scripts/check-env-contract.mjs",

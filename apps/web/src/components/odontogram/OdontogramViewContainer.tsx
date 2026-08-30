@@ -55,7 +55,7 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	{
 		mode: "anatomical_svg",
 		label: "3D Анатомический",
-		shortLabel: "3D Анатомия",
+		shortLabel: "3D Анатомический",
 		icon: <Sparkles size={14} className="text-indigo-500 shrink-0" />,
 		tooltip: "Векторная анатомическая визуализация коронок, корней и каналов",
 		badge: "3D",
@@ -385,77 +385,18 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							</label>
 						)}
 
-						{/* 1-Click Group Selection Buttons */}
-						<div
-							className="flex items-center gap-1 shrink-0 p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)]"
-							role="group"
-							aria-label="Быстрый выбор группы зубов"
-						>
+						{/* 1-Click Total Sanitation Action */}
+						{onQuickStateChange && (
 							<button
 								type="button"
-								onClick={() => {
-									const targetUpper = pediatricMode ? PEDIATRIC_TOP_TEETH : TOP_TEETH;
-									if (onSelectTeethGroup) onSelectTeethGroup(targetUpper);
-								}}
-								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
-								title="Выбрать все зубы верхней челюсти (18–28)"
-								data-testid="select-upper-jaw-btn"
+								onClick={() => setIsConfirmSanitationModalOpen(true)}
+								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--ok-bg,rgba(16,185,129,0.15))] text-[var(--ok-fg,#10b981)] hover:opacity-90 border border-[var(--ok-fg,rgba(16,185,129,0.3))] transition-all cursor-pointer shrink-0"
+								title="Тотальная санация: пометить все зубы здоровыми (Healthy) в 1 клик с подтверждением"
+								data-testid="total-sanitation-btn"
 							>
-								Вся ВЧ
+								Санация
 							</button>
-							<button
-								type="button"
-								onClick={() => {
-									const targetLower = pediatricMode ? PEDIATRIC_BOTTOM_TEETH : BOTTOM_TEETH;
-									if (onSelectTeethGroup) onSelectTeethGroup(targetLower);
-								}}
-								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
-								title="Выбрать все зубы нижней челюсти (38–48)"
-								data-testid="select-lower-jaw-btn"
-							>
-								Вся НЧ
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									const targetMolars = pediatricMode ? PEDIATRIC_MOLARS : ADULT_MOLARS;
-									if (onSelectTeethGroup) onSelectTeethGroup([...targetMolars]);
-								}}
-								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
-								title="Выбрать все моляры (18–16, 26–28, 48–46, 36–38)"
-								data-testid="select-molars-btn"
-							>
-								Все моляры
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									const allTeeth = pediatricMode
-										? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
-										: ALL_ADULT_TEETH_NUMBERS;
-									const inverted = allTeeth.filter(
-										(t) => !selectedTeeth.includes(t),
-									);
-									if (onSelectTeethGroup) onSelectTeethGroup(inverted);
-								}}
-								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
-								title="Инвертировать текущий выбор зубов"
-								data-testid="invert-selection-btn"
-							>
-								Инверсия
-							</button>
-							{onQuickStateChange && (
-								<button
-									type="button"
-									onClick={() => setIsConfirmSanitationModalOpen(true)}
-									className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold bg-[var(--ok-bg,rgba(16,185,129,0.15))] text-[var(--ok-fg,#10b981)] hover:opacity-90 border border-[var(--ok-fg,rgba(16,185,129,0.3))] transition-all cursor-pointer shrink-0"
-									title="Тотальная санация: пометить все зубы здоровыми (Healthy) в 1 клик с подтверждением"
-									data-testid="total-sanitation-btn"
-								>
-									Санация
-								</button>
-							)}
-						</div>
+						)}
 					</div>
 
 					<div className="h-6 w-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 mx-0.5 hidden sm:block" />

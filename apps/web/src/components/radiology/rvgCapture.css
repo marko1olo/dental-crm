@@ -411,7 +411,7 @@
 	backdrop-filter: blur(8px);
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	border-radius: 0.5rem;
-	color: #cbd5e1;
+	color: var(--ink, #e2e8f0);
 	pointer-events: auto;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -524,7 +524,7 @@
 	border-radius: 0.25rem;
 	background: rgba(255, 255, 255, 0.06);
 	border: 1px solid rgba(255, 255, 255, 0.1);
-	color: #cbd5e1;
+	color: var(--ink, #e2e8f0);
 	cursor: pointer;
 	transition: all 0.1s ease;
 	display: flex;
@@ -577,7 +577,7 @@
 	font-weight: 600;
 	background: rgba(255, 255, 255, 0.04);
 	border: 1px solid rgba(255, 255, 255, 0.08);
-	color: #cbd5e1;
+	color: var(--ink, #e2e8f0);
 	cursor: pointer;
 	transition: all 0.15s ease;
 	text-align: left;
@@ -621,7 +621,7 @@
 	font-weight: 600;
 	background: rgba(255, 255, 255, 0.04);
 	border: 1px solid rgba(255, 255, 255, 0.08);
-	color: #cbd5e1;
+	color: var(--ink, #e2e8f0);
 	cursor: pointer;
 	transition: all 0.15s ease;
 	white-space: nowrap;

@@ -346,7 +346,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						style={{ minHeight: "44px" }}
 					>
 						<Plus size={18} aria-hidden="true" />
-						<span>Новый пациент</span>
+						<span>+ Создать нового</span>
 					</button>
 				</div>
 			</header>
@@ -469,7 +469,19 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							className="patient-empty-state"
 							icon={<Search size={28} />}
 							title="Пациент не найден"
-							description="Проверьте ФИО или телефон. Чтобы добавить нового пациента, нажмите «Создать»."
+							description="Проверьте ФИО или телефон. Чтобы добавить нового пациента, нажмите кнопку ниже."
+							action={
+								<button
+									type="button"
+									className="primary-button"
+									onClick={() => setIsCreateModalOpen(true)}
+									style={{ minHeight: "40px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+									data-testid="empty-state-create-patient-btn"
+								>
+									<Plus size={16} aria-hidden="true" />
+									<span>+ Создать нового</span>
+								</button>
+							}
 							glass={false}
 							style={{ padding: "24px 16px" }}
 						/>
@@ -758,7 +770,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							type="button"
 							className="secondary-button"
 							onClick={() => setIsLoyaltyModalOpen(true)}
-							title="Программа лояльности и бонусы (54-ФЗ)"
+							title="Программа лояльности и бонусы (54-ФЗ / ФФД 1.2)"
 							data-testid="open-loyalty-program-modal-btn"
 							style={{
 								display: "inline-flex",
@@ -768,7 +780,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							}}
 						>
 							<Gift size={16} aria-hidden="true" />
-							<span>Программа лояльности (54-ФЗ)</span>
+							<span>Программа лояльности</span>
 						</button>
 						<button
 							type="button"

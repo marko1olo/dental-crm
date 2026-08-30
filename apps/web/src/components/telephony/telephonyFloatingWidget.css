@@ -27,6 +27,8 @@ body:has(.modal-overlay) .dnt-telephony-floating,
 body:has(.modal-backdrop) .dnt-telephony-floating,
 body:has(dialog[open]) .dnt-telephony-floating,
 body:has([role="dialog"]) .dnt-telephony-floating,
+body:has([aria-modal="true"]) .dnt-telephony-floating,
+body:has(.fixed.inset-0) .dnt-telephony-floating,
 body:has(._ccm-overlay) .dnt-telephony-floating,
 body:has(.treatment-plan-modal) .dnt-telephony-floating,
 body:has(.treatment-comparator-modal) .dnt-telephony-floating,
@@ -60,6 +62,27 @@ body.studio-open .dnt-telephony-floating,
 	pointer-events: none !important;
 	visibility: hidden !important;
 	transform: scale(0.8) translateY(20px) !important;
+}
+
+/* Prevent obscuring settings checkboxes, authority toggles, and forms */
+body:has(.settings-access-grid) .dnt-telephony-floating,
+body:has([data-testid="rbac-mobile-cards"]) .dnt-telephony-floating,
+body:has([data-testid="staff-authority-panel"]) .dnt-telephony-floating,
+body:has([data-testid="staff-commissions-panel"]) .dnt-telephony-floating,
+body:has(.access-settings) .dnt-telephony-floating,
+body:has(.rbac-card) .dnt-telephony-floating {
+	opacity: 0.25;
+	pointer-events: none;
+	transition: opacity 0.2s ease;
+}
+body:has(.settings-access-grid) .dnt-telephony-floating:hover,
+body:has([data-testid="rbac-mobile-cards"]) .dnt-telephony-floating:hover,
+body:has([data-testid="staff-authority-panel"]) .dnt-telephony-floating:hover,
+body:has([data-testid="staff-commissions-panel"]) .dnt-telephony-floating:hover,
+body:has(.access-settings) .dnt-telephony-floating:hover,
+body:has(.rbac-card) .dnt-telephony-floating:hover {
+	opacity: 1;
+	pointer-events: auto;
 }
 
 @media (max-width: 640px) {

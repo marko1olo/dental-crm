@@ -29,6 +29,18 @@ import {
   type MischClassificationResult,
 } from "./boneDensityMischMath";
 import {
+  type CbctVoxelVolume,
+  createEmptyCbctVolume,
+  sampleVoxelHU,
+} from "./cbctMprMath";
+import {
+  type DentalArchCurve,
+  type CrossSectionSliceData,
+  buildDentalArchCurve,
+  DEFAULT_MANDIBULAR_ARCH_ANCHORS,
+  generateCrossSectionSlices,
+} from "./dentalCurveEngine";
+import {
   auditAlveolarBoneContainment,
   auditMandibularNerveSafety,
   calculateApexCoordinates,
@@ -51,6 +63,8 @@ export interface ImplantCrossSectionPlannerProps {
   readonly initialBrand?: ImplantBrandKey;
   readonly initialDiameterMm?: number;
   readonly initialLengthMm?: number;
+  readonly volume?: CbctVoxelVolume | null;
+  readonly archCurve?: DentalArchCurve | null;
   readonly onPlanApproved?: (audit: ComprehensiveCbctPlanAudit) => void;
   readonly onClose?: () => void;
 }
@@ -63,6 +77,8 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   initialBrand = "osstem",
   initialDiameterMm = 4.0,
   initialLengthMm = 10.0,
+  volume = null,
+  archCurve = null,
   onPlanApproved,
   onClose,
 }) => {
@@ -80,6 +96,42 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<"viewport" | "misch" | "diary">("viewport");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const crossSectionCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Real 3D CBCT voxel volume & dental arch curve reslicing
+  const effectiveVolume = useMemo(() => {
+    return volume ?? createEmptyCbctVolume(160, 160, 100, 0.4);
+  }, [volume]);
+
+  const effectiveArch = useMemo(() => {
+    return archCurve ?? buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+  }, [archCurve]);
+
+  const crossSectionSlice: CrossSectionSliceData | null = useMemo(() => {
+    if (!effectiveVolume || !effectiveArch) return null;
+    const slices = generateCrossSectionSlices(effectiveVolume, effectiveArch, 1.5, 0.0, {
+      windowWidth: 4400,
+      windowLevel: 1300,
+      widthMm: 28.0,
+      heightMm: 36.0,
+      invert: false,
+    });
+    const toothStr = toothFdi.toString();
+    return slices.find((s) => s.nearestToothFdi === toothStr) ?? slices[Math.floor(slices.length / 2)] ?? slices[0] ?? null;
+  }, [effectiveVolume, effectiveArch, toothFdi]);
+
+  useEffect(() => {
+    if (!crossSectionCanvasRef.current || !crossSectionSlice) return;
+    const canvas = crossSectionCanvasRef.current;
+    canvas.width = crossSectionSlice.widthPx;
+    canvas.height = crossSectionSlice.heightPx;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const imgData = ctx.createImageData(crossSectionSlice.widthPx, crossSectionSlice.heightPx);
+    imgData.data.set(crossSectionSlice.pixelData);
+    ctx.putImageData(imgData, 0, 0);
+  }, [crossSectionSlice]);
 
   const canal: MandibularCanalCrossSection = useMemo(() => ({
     center: { x: 14.0, y: 26.5 },
@@ -266,35 +318,26 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
             </button>
           </div>
 
-          <div className="cbct-slice-canvas-wrapper">
-            <svg className="cbct-svg-viewport" viewBox={`0 0 ${viewW} ${viewH}`}>
+          <div className="cbct-slice-canvas-wrapper relative w-full h-[360px] bg-black rounded-xl overflow-hidden flex items-center justify-center">
+            {/* 1. Real Transversal CBCT Voxel Slice Canvas */}
+            <canvas
+              ref={crossSectionCanvasRef}
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              data-testid="cbct-cross-section-voxel-canvas"
+            />
+
+            {/* 2. Interactive SVG Overlay */}
+            <svg className="cbct-svg-viewport absolute inset-0 w-full h-full" viewBox={`0 0 ${viewW} ${viewH}`}>
               <defs>
-                <pattern id="boneGrain" width="8" height="8" patternUnits="userSpaceOnUse">
-                  <circle cx="2" cy="2" r="0.8" fill="#1e293b" />
-                  <circle cx="6" cy="6" r="0.8" fill="#1e293b" />
-                </pattern>
                 <radialGradient id="nerveGlow" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
                   <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
                 </radialGradient>
               </defs>
 
-              {/* Alveolar Bone Contour */}
-              <path
-                d="M 50,50 Q 80,45 140,45 Q 200,45 230,50 L 220,320 Q 140,335 60,320 Z"
-                fill="#0f172a"
-                stroke="#334155"
-                strokeWidth="2"
-              />
-              <path
-                d="M 50,50 Q 80,45 140,45 Q 200,45 230,50 L 220,320 Q 140,335 60,320 Z"
-                fill="url(#boneGrain)"
-                opacity="0.6"
-              />
-
               {/* Alveolar Crest Line */}
-              <line x1="40" y1="45" x2="240" y2="45" stroke="#475569" strokeWidth="1" strokeDasharray="3 3" />
-              <text x="45" y="40" fill="#64748b" fontSize="9" fontWeight="bold">Крестальный гребень</text>
+              <line x1="20" y1="45" x2="260" y2="45" stroke="#475569" strokeWidth="1" strokeDasharray="3 3" />
+              <text x="25" y="40" fill="#94a3b8" fontSize="9" fontWeight="bold">Крестальный гребень</text>
 
               {/* Mandibular Canal 2.0 mm Safety Corridor Halo */}
               <circle

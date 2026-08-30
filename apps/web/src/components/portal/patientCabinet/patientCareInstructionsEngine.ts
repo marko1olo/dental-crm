@@ -1419,6 +1419,13 @@ export function generateCareMemoPrintHtml(memo: PatientCareMemo): string {
 // FRIENDLY BILLING BREAKDOWN (АНТИ-ЛАТЫНЬ)
 // ============================================================================
 
+function cleanToothNumberFromName(name: string): string {
+	return (name || "")
+		.replace(/\s*\((?:зуб\s*(?:№\s*)?|позиция\s*)\d+\)/gi, "")
+		.replace(/\s*\[(?:зуб\s*(?:№\s*)?|позиция\s*)\d+\]/gi, "")
+		.trim();
+}
+
 /**
  * Переводит сложную медицинскую номенклатуру 804н / латынь в понятный для пациента русский блок.
  */
@@ -1447,9 +1454,8 @@ export function translateMedicalTermToFriendly(
 		lower.includes("проводников") ||
 		lower.includes("b01.003")
 	) {
-		const toothStr = toothNumber ? ` (зуб №${toothNumber})` : "";
 		return {
-			friendlyName: `Обезболивание (анестезия)${toothStr}`,
+			friendlyName: "Обезболивание (анестезия)",
 			categoryGroup: "anesthesia",
 			categoryGroupRu: "Обезболивание (анестезия)",
 			groupIcon: "💉",
@@ -1469,11 +1475,10 @@ export function translateMedicalTermToFriendly(
 		lower.includes("оптг") ||
 		lower.includes("a06.07")
 	) {
-		const toothStr = toothNumber ? ` (зуб №${toothNumber})` : "";
 		return {
 			friendlyName: lower.includes("кт") || lower.includes("томограф")
 				? "3D-компьютерная томография (КТ)"
-				: `Снимок зуба (радиовизиография)${toothStr}`,
+				: "Снимок зуба (радиовизиография)",
 			categoryGroup: "xray",
 			categoryGroupRu: "Снимки и диагностика",
 			groupIcon: "📷",
@@ -1494,9 +1499,8 @@ export function translateMedicalTermToFriendly(
 		lower.includes("a16.07.002") ||
 		lower.includes("a16.07.003")
 	) {
-		const toothStr = toothNumber ? ` (зуб №${toothNumber})` : "";
 		return {
-			friendlyName: `Лечение кариеса и световая пломба${toothStr}`,
+			friendlyName: "Лечение кариеса и световая пломба",
 			categoryGroup: "caries",
 			categoryGroupRu: "Лечение кариеса и пломбирование",
 			groupIcon: "🦷",
@@ -1535,9 +1539,8 @@ export function translateMedicalTermToFriendly(
 		lower.includes("osstem") ||
 		lower.includes("a16.07.054")
 	) {
-		const toothStr = toothNumber ? ` (позиция ${toothNumber})` : "";
 		return {
-			friendlyName: `Установка дентального имплантата${toothStr}`,
+			friendlyName: "Установка дентального имплантата",
 			categoryGroup: "implant",
 			categoryGroupRu: "Дентальная имплантация",
 			groupIcon: "🔩",
@@ -1558,9 +1561,8 @@ export function translateMedicalTermToFriendly(
 		lower.includes("a16.07.004") ||
 		lower.includes("a16.07.006")
 	) {
-		const toothStr = toothNumber ? ` (зуб №${toothNumber})` : "";
 		return {
-			friendlyName: `Ортопедическая коронка/реставрация${toothStr}`,
+			friendlyName: "Ортопедическая коронка/реставрация",
 			categoryGroup: "crowns",
 			categoryGroupRu: "Коронки и реставрации",
 			groupIcon: "👑",
@@ -1579,9 +1581,8 @@ export function translateMedicalTermToFriendly(
 		lower.includes("костная пластика") ||
 		lower.includes("a16.07.001")
 	) {
-		const toothStr = toothNumber ? ` (зуб №${toothNumber})` : "";
 		return {
-			friendlyName: `Бережное хирургическое вмешательство${toothStr}`,
+			friendlyName: "Бережное хирургическое вмешательство",
 			categoryGroup: "surgery",
 			categoryGroupRu: "Хирургическое лечение",
 			groupIcon: "🩹",
@@ -1608,9 +1609,8 @@ export function translateMedicalTermToFriendly(
 	}
 
 	// 9. Прочее
-	const toothStr = toothNumber ? ` (зуб №${toothNumber})` : "";
 	return {
-		friendlyName: `${rawName}${toothStr}`,
+		friendlyName: cleanToothNumberFromName(rawName),
 		categoryGroup: "other",
 		categoryGroupRu: "Стоматологические процедуры",
 		groupIcon: "✨",

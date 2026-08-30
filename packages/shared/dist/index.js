@@ -11054,3 +11054,4 @@ export class DentalInteractionMatrixEngine {
     }
 }
 export * from "./security/index.js";
+export * from "./clinical/cmoEmkQualityAuditEngine.js";

@@ -816,5 +816,42 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 		assert.ok(!html.includes("30 Н*см"));
 		assert.ok(!html.includes("35 N·cm"));
 	});
+
+	it("18. DEF-R2-05: Eliminates blinding white fill in MPR matrix and guarantees all 4 slice views", () => {
+		const reportData = buildCbctReportData({
+			patientName: "Кузнецов В.С.",
+			doctorName: "Д-р Барабаш С.В.",
+			studyDate: "30.08.2026",
+			targetToothFdi: 46,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			containment: mockContainment,
+			nerveSafety: mockNerveSafety,
+			snapshots: {
+				axial: { title: "Аксиальный срез", dataUrl: "data:image/png;base64,axial_data" },
+				panoramic: { title: "Панорамная реконструкция (ОПТГ)", dataUrl: "data:image/png;base64,pano_data" },
+				crossSection: { title: "Кросс-секция", dataUrl: "data:image/png;base64,cs_data" },
+				sagittal: { title: "Сагиттальный срез", dataUrl: "data:image/png;base64,sag_data" },
+			},
+		});
+
+		const html = renderCbctReportHtml(reportData);
+
+		// MPR card dark background (#090d16) and border (#334155) to prevent blinding white fill
+		assert.ok(html.includes("background: #090d16;"));
+		assert.ok(html.includes("border: 1px solid #334155;"));
+
+		// All 4 slices are present in 2x2 matrix
+		assert.ok(html.includes("1. Аксиальный срез (Z)"));
+		assert.ok(html.includes("2. Панорамная реконструкция (ОПТГ)"));
+		assert.ok(html.includes("3. Кросс-секция ложа FDI #46"));
+		assert.ok(html.includes("4. Косой сагиттальный срез"));
+
+		assert.ok(html.includes("data:image/png;base64,axial_data"));
+		assert.ok(html.includes("data:image/png;base64,pano_data"));
+		assert.ok(html.includes("data:image/png;base64,cs_data"));
+		assert.ok(html.includes("data:image/png;base64,sag_data"));
+	});
 });
 

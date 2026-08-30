@@ -180,23 +180,35 @@ export function CephalometricAnalysisModal({
 			aria-label="Ортодонтический цефалометрический анализ ТРГ"
 			data-testid="cephalometric-analysis-modal"
 		>
-			<div className="relative w-full max-w-7xl max-h-[96vh] bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[var(--ink,#0f172a)] dark:text-slate-100">
+			<div
+				className="relative w-full max-w-7xl max-h-[96vh] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100"
+				style={{ backgroundColor: "#020617", color: "#f8fafc", borderColor: "#1e293b" }}
+			>
 				{/* ── Modal Header ────────────────────────────────────────────── */}
-				<header className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/95 shrink-0">
+				<header
+					className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-slate-800 bg-slate-900/95 shrink-0"
+					style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}
+				>
 					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
-						<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] shadow-sm shrink-0">
+						<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-teal-950/80 border border-teal-500/50 flex items-center justify-center text-teal-400 shadow-sm shrink-0">
 							<Activity size={22} className="sm:w-6 sm:h-6" />
 						</div>
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-								<h2 className="text-sm sm:text-base md:text-lg font-black tracking-tight text-[var(--ink,#0f172a)] dark:text-white m-0 truncate">
+								<h2
+									className="text-sm sm:text-base md:text-lg font-black tracking-tight text-white m-0 truncate"
+									style={{ color: "#ffffff", margin: 0 }}
+								>
 									Цефалометрический анализ ТРГ (Телерентгенография)
 								</h2>
-								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg shrink-0">
+								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-teal-950/80 text-teal-300 border border-teal-500/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg shrink-0">
 									Steiner / Tweed / Downs / Ricketts
 								</span>
 							</div>
-							<p className="text-xs sm:text-sm text-[var(--muted,#64748b)] dark:text-slate-400 m-0 mt-0.5 truncate">
+							<p
+								className="text-xs sm:text-sm text-slate-400 m-0 mt-0.5 truncate"
+								style={{ color: "#94a3b8", margin: 0 }}
+							>
 								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} · Форма 043/у (Приказ МЗ РФ №834н)
 							</p>
 						</div>
@@ -208,7 +220,8 @@ export function CephalometricAnalysisModal({
 							onClick={onClose}
 							data-testid="ceph-modal-close-btn"
 							aria-label="Закрыть окно цефалометрического анализа"
-							className="w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--muted,#64748b)] dark:text-slate-300 hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
+							className="w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer border border-slate-700"
+							style={{ backgroundColor: "#1e293b", color: "#f8fafc", borderColor: "#334155" }}
 						>
 							<X size={20} />
 						</button>
@@ -299,6 +312,7 @@ export function CephalometricAnalysisModal({
 						className={`lg:col-span-7 flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden ${
 							mobileView === "canvas" ? "flex flex-1 min-h-[360px]" : "hidden lg:flex"
 						}`}
+						style={{ backgroundColor: "#020617", color: "#f8fafc" }}
 					>
 						{/* X-ray Canvas Component with Unified 36px HUD Strip & Maximum Vertical Screen Utilization */}
 						<div className="flex-1 min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] flex items-center justify-center relative overflow-hidden">
@@ -332,16 +346,125 @@ export function CephalometricAnalysisModal({
 								onResetLandmarks={handleResetLandmarks}
 							/>
 						</div>
+
+						{/* Mobile Accordion: Таблица расчетов углов и 16 анатомических точек ТРГ под снимком */}
+						<details className="lg:hidden mt-2.5 rounded-xl border border-slate-700 bg-slate-900/90 text-slate-100 overflow-hidden group shrink-0">
+							<summary className="px-3.5 py-2.5 bg-slate-800/90 font-bold text-xs flex items-center justify-between cursor-pointer select-none text-slate-200 hover:text-white transition-colors">
+								<div className="flex items-center gap-2">
+									<Activity size={14} className="text-teal-400" />
+									<span>Таблица расчетов углов (Steiner, Tweed, Downs) & 16 точек</span>
+								</div>
+								<span className="text-[11px] font-mono font-bold text-teal-400 group-open:rotate-180 transition-transform duration-200">
+									▼
+								</span>
+							</summary>
+							<div className="p-3 space-y-3 max-h-[320px] overflow-y-auto">
+								{/* Summary Diagnosis */}
+								<div className="p-2.5 rounded-lg bg-teal-950/40 border border-teal-500/30 text-xs">
+									<div className="font-bold text-teal-300">{analysis.diagnosis.skeletalClassRu}</div>
+									<div className="text-[11px] text-slate-300 mt-0.5">{analysis.diagnosis.summaryRu}</div>
+								</div>
+
+								{/* Angles Table */}
+								<div className="space-y-1.5">
+									<div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+										Основные углы и параметры
+									</div>
+									<div className="grid grid-cols-1 gap-1.5">
+										{analysis.measurements.map((m) => (
+											<div
+												key={m.id}
+												className="p-2 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between text-xs"
+											>
+												<div className="min-w-0 pr-2">
+													<div className="font-bold text-white truncate">{m.name}</div>
+													<div className="text-[10px] text-slate-400 truncate">
+														{m.clinicalInterpretation} · Норма: {m.normText}
+													</div>
+												</div>
+												<div className="text-right shrink-0 flex items-center gap-1.5">
+													<span className="font-mono font-black text-xs text-white">
+														{m.value !== null ? `${m.value}${m.unit}` : "—"}
+													</span>
+													<span
+														className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+															m.status === "normal"
+																? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+																: m.status === "increased"
+																	? "bg-rose-950 text-rose-300 border border-rose-500/40"
+																	: m.status === "decreased"
+																		? "bg-sky-950 text-sky-300 border border-sky-500/40"
+																		: "bg-slate-800 text-slate-400"
+														}`}
+													>
+														{m.status === "normal"
+															? "Норма"
+															: m.status === "increased"
+																? "Увелич."
+																: m.status === "decreased"
+																	? "Уменьш."
+																	: "—"}
+													</span>
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+
+								{/* 16 Landmarks Quick List */}
+								<div className="space-y-1.5 pt-1 border-t border-slate-800">
+									<div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+										<span>16 анатомических ориентиров</span>
+										<span className="text-teal-400 font-mono font-black">
+											{analysis.placedCount}/16
+										</span>
+									</div>
+									<div className="grid grid-cols-2 gap-1">
+										{CEPHALOMETRIC_LANDMARKS.map((lm) => {
+											const isPlaced = landmarks[lm.key] !== undefined;
+											const isTarget = activeTargetKey === lm.key;
+											return (
+												<button
+													key={lm.key}
+													type="button"
+													onClick={() => {
+														setActiveTargetKey(lm.key);
+														showToast(`Укажите точку «${lm.nameRu}» на снимке`, "info");
+													}}
+													className={`p-1.5 rounded-lg border text-left flex items-center gap-1.5 transition-all text-[11px] min-h-[36px] ${
+														isTarget
+															? "bg-teal-900/50 border-teal-400 text-teal-200 ring-1 ring-teal-400"
+															: isPlaced
+																? "bg-slate-800/80 border-slate-700 text-slate-200"
+																: "bg-slate-900/40 border-dashed border-slate-700 text-slate-400"
+													}`}
+												>
+													<span
+														className="w-5 h-5 rounded flex items-center justify-center font-black text-[10px] shrink-0 text-white"
+														style={{ backgroundColor: lm.color }}
+													>
+														{lm.code}
+													</span>
+													<span className="truncate flex-1 font-semibold">{lm.nameRu}</span>
+													{isPlaced && <Check size={11} className="text-emerald-400 shrink-0" />}
+												</button>
+											);
+										})}
+									</div>
+								</div>
+							</div>
+						</details>
 					</div>
 
 					{/* ── Right Column: Interactive Sidebar (Landmarks, Measurements & Form 043/y) (5 Cols) ── */}
 					<div
-						className={`lg:col-span-5 flex-col bg-[var(--paper)] overflow-hidden ${
+						className={`lg:col-span-5 flex-col bg-slate-950 border-l border-slate-800 text-slate-100 overflow-hidden ${
 							mobileView !== "canvas" ? "flex flex-1" : "hidden lg:flex"
 						}`}
+						style={{ backgroundColor: "#020617", color: "#f8fafc" }}
 					>
 						{/* Tab Navigation with Symmetric 3-Column Grid (Zero Truncation) */}
-						<div className="grid grid-cols-3 border-b border-[var(--line)] bg-[var(--paper-soft)] px-2 pt-1.5 shrink-0 gap-1 w-full">
+						<div className="grid grid-cols-3 border-b border-slate-800 bg-slate-900 px-2 pt-1.5 shrink-0 gap-1 w-full">
 							<button
 								type="button"
 								onClick={() => {
@@ -350,8 +473,8 @@ export function CephalometricAnalysisModal({
 								}}
 								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "landmarks"
-										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper)] rounded-t-lg shadow-xs"
-										: "border-transparent text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+										? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs"
+										: "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"
 								}`}
 								title="Ориентиры ТРГ"
 							>
@@ -371,15 +494,15 @@ export function CephalometricAnalysisModal({
 								}}
 								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "metrics"
-										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper)] rounded-t-lg shadow-xs"
-										: "border-transparent text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+										? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs"
+										: "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"
 								} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
 								title="Расчет углов (Steiner, Tweed, Downs)"
 							>
 								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов</span>
 								<span className="sm:hidden whitespace-nowrap">2. Углы</span>
 								{isImageLoaded && analysis.isComplete && (
-									<CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+									<CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
 								)}
 							</button>
 
@@ -395,8 +518,8 @@ export function CephalometricAnalysisModal({
 								}}
 								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "report"
-										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper)] rounded-t-lg shadow-xs"
-										: "border-transparent text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+										? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs"
+										: "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"
 								} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
 								title="Форма 043/у-ТРГ (Ортодонтический протокол)"
 							>
@@ -410,20 +533,20 @@ export function CephalometricAnalysisModal({
 						{activeTab === "landmarks" && (
 							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden">
 								{/* Progress Bar */}
-								<div className="mb-3.5 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0">
+								<div className="mb-3.5 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 shrink-0" style={{ backgroundColor: "#0f172a", borderColor: "#334155" }}>
 									<div className="flex items-center justify-between text-xs sm:text-sm font-bold mb-1.5">
-										<span className="text-[var(--ink,#0f172a)] dark:text-slate-200">
+										<span className="text-slate-200" style={{ color: "#f8fafc" }}>
 											Прогресс разметки ТРГ
 										</span>
-										<span className="text-[var(--teal)] font-extrabold">{placedPercent}%</span>
+										<span className="text-teal-400 font-extrabold">{placedPercent}%</span>
 									</div>
-									<div className="h-2.5 w-full bg-[var(--line,#e2e8f0)] dark:bg-slate-700 rounded-full overflow-hidden">
+									<div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden">
 										<div
-											className="h-full bg-[var(--teal)] rounded-full transition-all duration-300"
+											className="h-full bg-teal-500 rounded-full transition-all duration-300"
 											style={{ width: `${placedPercent}%` }}
 										/>
 									</div>
-									<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 m-0 mt-2 min-w-0 break-words">
+									<p className="text-xs text-slate-400 m-0 mt-2 min-w-0 break-words">
 										{isImageLoaded
 											? "Кликните ориентир ниже, затем укажите его положение на снимке ТРГ слева."
 											: "Загрузите боковую ТРГ пациента или выберите эталонный снимок для начала анализа."}
@@ -451,24 +574,28 @@ export function CephalometricAnalysisModal({
 												}}
 												className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer min-h-[52px] ${
 													isTarget
-														? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-md ring-1 ring-[var(--teal-soft)]"
+														? "bg-teal-950/80 border-teal-400 shadow-md ring-1 ring-teal-500/40"
 														: isPlaced
-															? "bg-[var(--surface,#f8fafc)] dark:bg-slate-800/70 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-[var(--teal)]"
-															: "bg-[var(--paper,#ffffff)] dark:bg-slate-900/60 border-dashed border-[var(--line,#cbd5e1)] dark:border-slate-700 opacity-85 hover:opacity-100"
+															? "bg-slate-900/90 border-slate-700 hover:border-teal-400"
+															: "bg-slate-900/90 border-slate-700 opacity-90 hover:opacity-100"
 												}`}
+												style={{
+													backgroundColor: isTarget ? "rgba(4, 47, 46, 0.9)" : "#0f172a",
+													borderColor: isTarget ? "#2dd4bf" : "#334155",
+												}}
 											>
 												<div className="flex items-center gap-3 min-w-0">
 													<div
 														className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 text-white shadow-sm"
-														style={{ backgroundColor: isImageLoaded ? lm.color : "#64748b" }}
+														style={{ backgroundColor: isImageLoaded ? lm.color : "#475569" }}
 													>
 														{lm.code}
 													</div>
 													<div className="min-w-0">
-														<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 min-w-0 break-words">
+														<div className="text-sm font-bold min-w-0 break-words" style={{ color: "#ffffff" }}>
 															{lm.nameRu}
 														</div>
-														<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 min-w-0 break-words leading-snug">
+														<div className="text-xs font-medium min-w-0 break-words leading-snug" style={{ color: "#cbd5e1" }}>
 															{lm.anatomicalDescription}
 														</div>
 													</div>
@@ -476,11 +603,11 @@ export function CephalometricAnalysisModal({
 
 												<div className="shrink-0 flex items-center gap-1.5">
 													{isPlaced ? (
-														<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-500/40 flex items-center gap-1">
+														<span className="text-xs font-bold text-teal-300 bg-teal-950/80 px-2.5 py-1 rounded-lg border border-teal-500/40 flex items-center gap-1">
 															<Check size={13} /> Задана
 														</span>
 													) : (
-														<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/70 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700">
+														<span className="text-xs font-semibold text-slate-300 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
 															Не задана
 														</span>
 													)}
@@ -491,7 +618,7 @@ export function CephalometricAnalysisModal({
 								</div>
 
 								{/* Bottom Action */}
-								<div className="mt-3 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0">
+								<div className="mt-3 pt-3 border-t border-slate-800 shrink-0">
 									<button
 										type="button"
 										disabled={!isImageLoaded || placedPercent === 0}
@@ -514,16 +641,16 @@ export function CephalometricAnalysisModal({
 
 						{/* Tab 2: Cephalometric Measurements Table & Cards (Steiner, Tweed, Downs, Jacobson, Ricketts) */}
 						{activeTab === "metrics" && (
-							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto">
+							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-slate-950">
 								{/* Quick Diagnosis Banner */}
-								<div className="mb-4 p-4 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] shadow-sm">
-									<div className="text-xs font-black text-[var(--teal)] uppercase tracking-wider">
+								<div className="mb-4 p-4 rounded-xl bg-teal-950/70 border border-teal-500/40 shadow-sm">
+									<div className="text-xs font-black text-teal-400 uppercase tracking-wider">
 										Клиническое резюме анализа
 									</div>
-									<div className="text-base font-black text-[var(--ink,#0f172a)] dark:text-white mt-1 min-w-0 break-words">
+									<div className="text-base font-black text-white mt-1 min-w-0 break-words">
 										{analysis.diagnosis.skeletalClassRu}
 									</div>
-									<div className="text-sm text-[var(--muted,#64748b)] dark:text-slate-300 mt-1.5 leading-relaxed min-w-0 break-words">
+									<div className="text-sm text-slate-300 mt-1.5 leading-relaxed min-w-0 break-words">
 										{analysis.diagnosis.summaryRu}
 									</div>
 								</div>
@@ -532,7 +659,7 @@ export function CephalometricAnalysisModal({
 								<div className="space-y-4 flex-1 overflow-y-auto pr-1">
 									{/* Category 1: Sagittal (Steiner, Downs, Jacobson Wits) */}
 									<div>
-										<div className="text-xs font-black text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2.5">
+										<div className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5">
 											1. Сагиттальные параметры (Steiner, Downs, Jacobson)
 										</div>
 										<div className="space-y-2">
@@ -541,26 +668,26 @@ export function CephalometricAnalysisModal({
 												.map((m) => (
 													<div
 														key={m.id}
-														className="p-3 rounded-xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/70 border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
+														className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
 													>
 														<div className="min-w-0">
-															<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white min-w-0 break-words">
+															<div className="text-sm font-bold text-white min-w-0 break-words">
 																{m.name}
 															</div>
-															<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5 min-w-0 break-words">
-																{m.clinicalInterpretation} · Норма: <span className="font-bold text-[var(--ink,#0f172a)] dark:text-slate-200">{m.normText}</span>
+															<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
+																{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
 															</div>
 														</div>
 														<div className="text-right shrink-0 flex flex-col items-end gap-1">
 															<div
 																className={`text-base font-black ${
 																	m.status === "normal"
-																		? "text-emerald-600 dark:text-emerald-400"
+																		? "text-emerald-400"
 																		: m.status === "increased"
-																			? "text-rose-600 dark:text-rose-400"
+																			? "text-rose-400"
 																			: m.status === "decreased"
-																				? "text-[var(--info-fg,#0284c7)]"
-																				: "text-[var(--muted,#64748b)]"
+																				? "text-cyan-400"
+																				: "text-slate-400"
 																}`}
 															>
 																{m.value !== null ? `${m.value}${m.unit}` : "—"}
@@ -568,12 +695,12 @@ export function CephalometricAnalysisModal({
 															<span
 																className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
 																	m.status === "normal"
-																		? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-500/40"
+																		? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
 																		: m.status === "increased"
-																			? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-500/40"
+																			? "bg-rose-950 text-rose-300 border-rose-500/40"
 																			: m.status === "decreased"
-																				? "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border-[var(--info-fg,rgba(2,132,199,0.3))]"
-																				: "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-600/30"
+																				? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
+																				: "bg-slate-800 text-slate-400 border-slate-700"
 																}`}
 															>
 																{m.status === "normal"
@@ -592,7 +719,7 @@ export function CephalometricAnalysisModal({
 
 									{/* Category 2: Vertical & Growth Pattern (Tweed, Steiner, Downs, Ricketts) */}
 									<div className="pt-2">
-										<div className="text-xs font-black text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2.5">
+										<div className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5">
 											2. Вертикальные параметры и тип роста (Tweed, Steiner, Downs, Ricketts)
 										</div>
 										<div className="space-y-2">
@@ -601,26 +728,26 @@ export function CephalometricAnalysisModal({
 												.map((m) => (
 													<div
 														key={m.id}
-														className="p-3 rounded-xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/70 border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
+														className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
 													>
 														<div className="min-w-0">
-															<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white min-w-0 break-words">
+															<div className="text-sm font-bold text-white min-w-0 break-words">
 																{m.name}
 															</div>
-															<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5 min-w-0 break-words">
-																{m.clinicalInterpretation} · Норма: <span className="font-bold text-[var(--ink,#0f172a)] dark:text-slate-200">{m.normText}</span>
+															<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
+																{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
 															</div>
 														</div>
 														<div className="text-right shrink-0 flex flex-col items-end gap-1">
 															<div
 																className={`text-base font-black ${
 																	m.status === "normal"
-																		? "text-emerald-600 dark:text-emerald-400"
+																		? "text-emerald-400"
 																		: m.status === "increased"
-																			? "text-rose-600 dark:text-rose-400"
+																			? "text-rose-400"
 																			: m.status === "decreased"
-																				? "text-[var(--info-fg,#0284c7)]"
-																				: "text-[var(--muted,#64748b)]"
+																				? "text-cyan-400"
+																				: "text-slate-400"
 																}`}
 															>
 																{m.value !== null ? `${m.value}${m.unit}` : "—"}
@@ -628,12 +755,12 @@ export function CephalometricAnalysisModal({
 															<span
 																className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
 																	m.status === "normal"
-																		? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-500/40"
+																		? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
 																		: m.status === "increased"
-																			? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-500/40"
+																			? "bg-rose-950 text-rose-300 border-rose-500/40"
 																			: m.status === "decreased"
-																				? "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border-[var(--info-fg,rgba(2,132,199,0.3))]"
-																				: "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-600/30"
+																				? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
+																				: "bg-slate-800 text-slate-400 border-slate-700"
 																}`}
 															>
 																{m.status === "normal"
@@ -652,7 +779,7 @@ export function CephalometricAnalysisModal({
 
 									{/* Category 3: Dental & Incisors (Steiner, Tweed) */}
 									<div className="pt-2">
-										<div className="text-xs font-black text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2.5">
+										<div className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5">
 											3. Дентальные параметры резцов (Steiner, Tweed)
 										</div>
 										<div className="space-y-2">
@@ -661,26 +788,26 @@ export function CephalometricAnalysisModal({
 												.map((m) => (
 													<div
 														key={m.id}
-														className="p-3 rounded-xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/70 border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
+														className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
 													>
 														<div className="min-w-0">
-															<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white min-w-0 break-words">
+															<div className="text-sm font-bold text-white min-w-0 break-words">
 																{m.name}
 															</div>
-															<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5 min-w-0 break-words">
-																{m.clinicalInterpretation} · Норма: <span className="font-bold text-[var(--ink,#0f172a)] dark:text-slate-200">{m.normText}</span>
+															<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
+																{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
 															</div>
 														</div>
 														<div className="text-right shrink-0 flex flex-col items-end gap-1">
 															<div
 																className={`text-base font-black ${
 																	m.status === "normal"
-																		? "text-emerald-600 dark:text-emerald-400"
+																		? "text-emerald-400"
 																		: m.status === "increased"
-																			? "text-rose-600 dark:text-rose-400"
+																			? "text-rose-400"
 																			: m.status === "decreased"
-																				? "text-[var(--info-fg,#0284c7)]"
-																				: "text-[var(--muted,#64748b)]"
+																				? "text-cyan-400"
+																				: "text-slate-400"
 																}`}
 															>
 																{m.value !== null ? `${m.value}${m.unit}` : "—"}
@@ -688,12 +815,12 @@ export function CephalometricAnalysisModal({
 															<span
 																className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
 																	m.status === "normal"
-																		? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-500/40"
+																		? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
 																		: m.status === "increased"
-																			? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-500/40"
+																			? "bg-rose-950 text-rose-300 border-rose-500/40"
 																			: m.status === "decreased"
-																				? "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border-[var(--info-fg,rgba(2,132,199,0.3))]"
-																				: "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-600/30"
+																				? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
+																				: "bg-slate-800 text-slate-400 border-slate-700"
 																}`}
 															>
 																{m.status === "normal"
@@ -712,14 +839,14 @@ export function CephalometricAnalysisModal({
 								</div>
 
 								{/* Bottom Action */}
-								<div className="mt-3 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+								<div className="mt-3 pt-3 border-t border-slate-800">
 									<button
 										type="button"
 										onClick={() => {
 											setActiveTab("report");
 											setMobileView("report");
 										}}
-										className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+										className="w-full min-h-[48px] py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
 									>
 										<span>Сформировать протокол Формы 043/у</span>
 										<ArrowRight size={16} />
@@ -730,20 +857,20 @@ export function CephalometricAnalysisModal({
 
 						{/* Tab 3: Structured Protocol for Form 043/y */}
 						{activeTab === "report" && (
-							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto">
+							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-slate-950">
 								<div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
 									<div className="flex items-center gap-2 min-w-0">
-										<FileText size={20} className="text-[var(--teal)] shrink-0" />
-										<span className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white min-w-0 break-words">
+										<FileText size={20} className="text-teal-400 shrink-0" />
+										<span className="text-sm font-bold text-white min-w-0 break-words">
 											Предпросмотр протокола для карты 043/у
 										</span>
 									</div>
 									<button
 										type="button"
 										onClick={handleCopyText}
-										className="min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] text-xs sm:text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 flex items-center gap-2 transition-colors border border-[var(--line,#cbd5e1)] dark:border-slate-700 cursor-pointer shadow-sm"
+										className="min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2 transition-colors border border-slate-700 cursor-pointer shadow-sm"
 									>
-										{copied ? <Check size={15} className="text-emerald-500" /> : <Clipboard size={15} />}
+										{copied ? <Check size={15} className="text-emerald-400" /> : <Clipboard size={15} />}
 										<span>{copied ? "Скопировано" : "Копировать"}</span>
 									</button>
 								</div>
@@ -753,20 +880,20 @@ export function CephalometricAnalysisModal({
 									readOnly
 									value={analysis.diagnosis.protocol043Text}
 									aria-label="Текст протокола ТРГ для формы 043/у"
-									className="flex-1 min-h-[320px] p-4 bg-[var(--surface,#f8fafc)] dark:bg-slate-950 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-xl font-mono text-xs sm:text-sm text-[var(--ink,#0f172a)] dark:text-slate-200 resize-none outline-none focus:border-[var(--teal)] leading-relaxed shadow-inner"
+									className="flex-1 min-h-[320px] p-4 bg-slate-900 border border-slate-800 rounded-xl font-mono text-xs sm:text-sm text-slate-200 resize-none outline-none focus:border-teal-400 leading-relaxed shadow-inner"
 								/>
 
 								{/* Bottom Action: 1-Click Insert into Orthodontic Card */}
-								<div className="mt-3 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2">
+								<div className="mt-3 pt-3 border-t border-slate-800 flex flex-col gap-2">
 									<button
 										type="button"
 										onClick={handleInsertToChart}
-										className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer border border-[var(--teal-soft)]"
+										className="w-full min-h-[48px] py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer border border-teal-400/40"
 									>
 										<Sparkles size={18} />
 										<span>Вставить в ортодонтическую карту Формы 043/у</span>
 									</button>
-									<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 text-center m-0 min-w-0 break-words">
+									<p className="text-xs text-slate-400 text-center m-0 min-w-0 break-words">
 										Текст и угловые расчеты будут добавлены в дневник приёма и историю болезни пациента
 									</p>
 								</div>

@@ -551,8 +551,8 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 
 			assert.equal(evalResult.isFullyReady, true);
 			assert.equal(evalResult.missingItems.length, 0);
-			assert.equal(evalResult.statusMessageRu, "🟢 Кабинет стерилен и готов к приёму");
-			assert.equal(evalResult.summaryBadgeRu, "🟢 Готов к приёму");
+			assert.equal(evalResult.statusMessageRu, "Кабинет стерилен и готов к приёму");
+			assert.equal(evalResult.summaryBadgeRu, "Готов к приёму");
 		});
 
 		it("rejects cabinet readiness if disinfection exposure is insufficient or cofferdam is missing for Endodontics", () => {
@@ -597,7 +597,7 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 			assert.ok(evalResult.missingItems.some((m) => m.includes("экспозиция дезинфекции")));
 			assert.ok(evalResult.missingItems.some((m) => m.includes("индикаторы 5 класса")));
 			assert.ok(evalResult.missingItems.some((m) => m.includes("Коффердам не подготовлен")));
-			assert.ok(evalResult.statusMessageRu.startsWith("🔴 Кабинет не готов:"));
+			assert.ok(evalResult.statusMessageRu.startsWith("Кабинет не готов:"));
 		});
 
 		it("allows Surgery profile without cofferdam requirement, verifying 5-min disinfection and surgical tray", () => {
@@ -639,7 +639,7 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 			});
 
 			assert.equal(evalResult.isFullyReady, true);
-			assert.equal(evalResult.statusMessageRu, "🟢 Кабинет стерилен и готов к приёму");
+			assert.equal(evalResult.statusMessageRu, "Кабинет стерилен и готов к приёму");
 		});
 
 		it("creates a complete CabinetReadinessRecord with digital stamp hash and exports to CSV & HTML", () => {
@@ -699,7 +699,7 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 			const html = generateCabinetReadinessPrintHtml({ records: [record] });
 			assert.ok(html.includes("ЖУРНАЛ ЭКСПРЕСС-КОНТРОЛЯ ГОТОВНОСТИ КАБИНЕТОВ"));
 			assert.ok(html.includes("СанПиН 3.3686-21"));
-			assert.ok(html.includes("🟢 ГОТОВ"));
+			assert.ok(html.includes("ГОТОВ"));
 			assert.ok(html.includes("Смирнова Анна Викторовна"));
 		});
 	});

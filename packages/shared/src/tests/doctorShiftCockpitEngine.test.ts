@@ -24,7 +24,7 @@ import {
 	appointmentTimerStatusSchema,
 	appointmentTimerResultSchema,
 	APPOINTMENT_TIMER_STATUS_META,
-	emr043SectionKeySchema,
+	emr043SectionIdSchema,
 	EMR_043_SECTIONS_CONFIG,
 	emr043CompletenessResultSchema,
 	pagerEventTypeSchema,

@@ -74,8 +74,13 @@ export function VisitTimer({ createdAt }: { createdAt?: string | null }) {
 			}}
 			aria-label="Время приёма"
 		>
-			<Clock size={16} className="shrink-0" />
-			<span className="whitespace-nowrap tabular-nums shrink-0">{elapsed}</span>
+			<Clock size={16} className="shrink-0 whitespace-nowrap" />
+			<span
+				className="whitespace-nowrap tabular-nums shrink-0 inline-block"
+				style={{ whiteSpace: "nowrap", flexShrink: 0, display: "inline-block" }}
+			>
+				{elapsed}
+			</span>
 		</div>
 	);
 }

@@ -43,16 +43,7 @@ async function capture() {
 	const capturedFiles = [];
 
 	try {
-		// 1. PC Viewport (1440x900, DPR: 2)
-		const pcContext = await browser.newContext({
-			viewport: { width: 1440, height: 900 },
-			deviceScaleFactor: 2,
-		});
-		const pcPage = await pcContext.newPage();
-
-		// Set initial localStorage state for doctor role
-		await pcPage.goto("http://127.0.0.1:5173/#clinical-modals-studio", { waitUntil: "domcontentloaded", timeout: 30000 });
-		await pcPage.evaluate(() => {
+		const initDoctorStorage = () => {
 			localStorage.setItem("dente_clinic_token", "mock_clinic_token");
 			localStorage.setItem("dente_staff_token", "mock_staff_token");
 			localStorage.setItem("dente_active_session_token", "mock-session-token");
@@ -65,10 +56,15 @@ async function capture() {
 			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
 			localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({ onboardingDismissed: true, version: 1, selectedWorkspaceRole: "doctor" }));
 			localStorage.setItem("dente_theme", "light");
-			document.documentElement.setAttribute("data-theme", "light");
-			document.documentElement.classList.remove("dark");
-			document.documentElement.classList.add("light");
+		};
+
+		// 1. PC Viewport (1440x900, DPR: 2)
+		const pcContext = await browser.newContext({
+			viewport: { width: 1440, height: 900 },
+			deviceScaleFactor: 2,
 		});
+		await pcContext.addInitScript(initDoctorStorage);
+		const pcPage = await pcContext.newPage();
 
 		// 1.1 PC Header Light
 		console.log("Navigating to Doctor Desktop Header (PC Light)...");
@@ -120,7 +116,7 @@ async function capture() {
 
 		// 1.3 PC Modal Light
 		console.log("Navigating to Doctor Shift Cockpit Modal (PC Light)...");
-		await pcPage.goto("http://127.0.0.1:5173/?modal=doctor_shift_cockpit#clinical-modals-studio", { waitUntil: "networkidle", timeout: 30000 });
+		await pcPage.goto("http://127.0.0.1:5173/#clinical-modals-studio?modal=doctor_shift_cockpit", { waitUntil: "networkidle", timeout: 30000 });
 		await pcPage.waitForSelector('[data-testid="doctor-shift-cockpit-modal"]', { state: "visible", timeout: 15000 });
 		await pcPage.evaluate(() => {
 			document.documentElement.setAttribute("data-theme", "light");
@@ -170,31 +166,12 @@ async function capture() {
 			hasTouch: true,
 			deviceScaleFactor: 2,
 		});
+		await mobileContext.addInitScript(initDoctorStorage);
 		const mobilePage = await mobileContext.newPage();
-
-		// Set initial localStorage state for mobile
-		await mobilePage.goto("http://127.0.0.1:5173/#clinical-modals-studio", { waitUntil: "domcontentloaded", timeout: 30000 });
-		await mobilePage.evaluate(() => {
-			localStorage.setItem("dente_clinic_token", "mock_clinic_token");
-			localStorage.setItem("dente_staff_token", "mock_staff_token");
-			localStorage.setItem("dente_active_session_token", "mock-session-token");
-			localStorage.setItem("dente_organization_id", "c-1");
-			localStorage.setItem("dente_user_role", "doctor");
-			localStorage.setItem("dente_role", "doctor");
-			localStorage.setItem("dente_perspective", "doctor");
-			localStorage.setItem("dente_user_name", "Д-р Смирнов Алексей Петрович");
-			localStorage.setItem("dente_onboarding_completed", "true");
-			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
-			localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({ onboardingDismissed: true, version: 1, selectedWorkspaceRole: "doctor" }));
-			localStorage.setItem("dente_theme", "light");
-			document.documentElement.setAttribute("data-theme", "light");
-			document.documentElement.classList.remove("dark");
-			document.documentElement.classList.add("light");
-		});
 
 		// 2.1 Mobile Modal Light
 		console.log("Navigating to Doctor Shift Cockpit Modal (Mobile Light)...");
-		await mobilePage.goto("http://127.0.0.1:5173/?modal=doctor_shift_cockpit#clinical-modals-studio", { waitUntil: "networkidle", timeout: 30000 });
+		await mobilePage.goto("http://127.0.0.1:5173/#clinical-modals-studio?modal=doctor_shift_cockpit", { waitUntil: "networkidle", timeout: 30000 });
 		await mobilePage.waitForSelector('[data-testid="doctor-shift-cockpit-modal"]', { state: "visible", timeout: 15000 });
 		await mobilePage.evaluate(() => {
 			document.documentElement.setAttribute("data-theme", "light");

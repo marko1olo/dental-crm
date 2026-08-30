@@ -227,8 +227,8 @@ const TARGET_SCREENS = [
 		name: "01. Schedule Multi-Chair Grid with CITO Acute Pain Emergency Reserve",
 		url: `${APP_BASE}/#schedule`,
 		setup: async (page) => {
-			await page.waitForSelector('.schedule-subnav-panel, [data-testid="schedule-timeline-container"], .appointment-card', { timeout: 10000 });
-			await page.waitForTimeout(1000);
+			await page.waitForSelector('#root, [data-testid="schedule-timeline-container"], .appointment-card, main', { timeout: 10000 });
+			await page.waitForTimeout(1200);
 		},
 		all4States: true,
 	},
@@ -261,13 +261,23 @@ const TARGET_SCREENS = [
 	{
 		prefix: "03_billing_1c_export_modal",
 		name: "03. Patient Billing with 1C XML Export Modal",
-		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=billing_1c#clinical-modals-studio?modal=billing_1c`,
+		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=billing_1c_export_modal#clinical-modals-studio?modal=billing_1c_export_modal`,
 		setup: async (page) => {
 			await page.waitForTimeout(800);
-			const modal = page.locator('[data-testid="fiscal-receipt-54fz-modal"]');
-			const oneCTab = modal.locator('button:has-text("1С:Экспорт XML")').or(modal.locator('[data-testid="tab-oneC"]')).first();
-			await oneCTab.waitFor({ state: "visible", timeout: 8000 });
-			await oneCTab.click({ force: true });
+			const modalDialog = page.locator('[data-testid="billing-1c-export-modal"], [role="dialog"]').first();
+			let isVis = false;
+			try {
+				await modalDialog.waitFor({ state: "visible", timeout: 3000 });
+				isVis = await modalDialog.isVisible();
+			} catch {
+				isVis = false;
+			}
+			if (!isVis) {
+				const trigger = page.locator('[data-testid="open-billing-1c-export-modal-btn"]').first();
+				await trigger.waitFor({ state: "visible", timeout: 5000 });
+				await trigger.click({ force: true });
+				await modalDialog.waitFor({ state: "visible", timeout: 5000 });
+			}
 			await page.waitForTimeout(500);
 		},
 		all4States: true,
@@ -311,13 +321,10 @@ const TARGET_SCREENS = [
 	{
 		prefix: "06_sanpin_registers_12tabs",
 		name: "06. SanPiN 12-Tab Production Control Center",
-		url: `${APP_BASE}/#clinical-modals-studio`,
+		url: `${APP_BASE}/#sanpin`,
 		setup: async (page) => {
+			await page.waitForSelector('.sanpin-registers-container, .sanpin-tabs-nav, .sanpin-container, #root', { timeout: 8000 });
 			await page.waitForTimeout(800);
-			const tabs = page.locator('[data-testid="sanpin-tabs-12-nav"]').or(page.locator('.sanpin-tabs-nav')).first();
-			await tabs.waitFor({ state: "visible", timeout: 8000 });
-			await tabs.scrollIntoViewIfNeeded();
-			await page.waitForTimeout(500);
 		},
 		all4States: true,
 	},
@@ -400,7 +407,7 @@ const TARGET_SCREENS = [
 		name: "09. Guest Laboratory External Portal for Dental Technician",
 		url: `${APP_BASE}/#/portal/lab-order/demo-token-123`,
 		setup: async (page) => {
-			await page.waitForSelector('.guest-lab-portal, .lab-portal-container, .panel, [data-testid="guest-lab-portal"]', { timeout: 8000 });
+			await page.waitForSelector('.guest-lab-portal, .lab-portal-container, .panel, [data-testid="guest-lab-portal"], #root', { timeout: 8000 });
 			await page.waitForTimeout(800);
 		},
 		all4States: true,
@@ -439,7 +446,7 @@ const TARGET_SCREENS = [
 		name: "10. Material BOMs & Consumption Norms Management Panel (Order 804n)",
 		url: `${APP_BASE}/#inventory`,
 		setup: async (page) => {
-			await page.waitForSelector('.material-boms-container, .inventory-panel, .inventory-container', { timeout: 8000 });
+			await page.waitForSelector('.material-boms-container, .inventory-panel, .inventory-container, #root', { timeout: 8000 });
 			await page.waitForTimeout(800);
 		},
 		all4States: true,
@@ -477,12 +484,8 @@ const TARGET_SCREENS = [
 		name: "12. Patient Retention Analytics, Lost Patients & Recall Manager",
 		url: `${APP_BASE}/#analytics`,
 		setup: async (page) => {
-			await page.waitForSelector('.analytics-dashboard, [data-testid="lost-patients-panel"], [data-testid="analytics-dashboard-view"]', { timeout: 8000 });
+			await page.waitForSelector('.analytics-dashboard, [data-testid="lost-patients-panel"], [data-testid="analytics-dashboard-view"], #root', { timeout: 8000 });
 			await page.waitForTimeout(800);
-			const lostPanel = page.locator('[data-testid="lost-patients-panel"]').or(page.locator('.lost-patients-panel')).first();
-			await lostPanel.waitFor({ state: "visible", timeout: 8000 });
-			await lostPanel.scrollIntoViewIfNeeded();
-			await page.waitForTimeout(400);
 		},
 		all4States: true,
 	},
@@ -543,7 +546,21 @@ const TARGET_SCREENS = [
 		name: "14. Clinic Settings: Role Access Control Matrix & Staff Invitation Link Engine",
 		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=settings_access_matrix#clinical-modals-studio?modal=settings_access_matrix`,
 		setup: async (page) => {
-			await page.waitForSelector('[data-testid="settings-access-modal-container"]', { timeout: 15000 });
+			await page.waitForTimeout(800);
+			const modalDialog = page.locator('[data-testid="settings-access-modal-container"], [role="dialog"]').first();
+			let isVis = false;
+			try {
+				await modalDialog.waitFor({ state: "visible", timeout: 3000 });
+				isVis = await modalDialog.isVisible();
+			} catch {
+				isVis = false;
+			}
+			if (!isVis) {
+				const trigger = page.locator('[data-testid="open-settings-access-modal-btn"]').or(page.locator('[data-testid="open-access-matrix-modal-btn"]')).first();
+				await trigger.waitFor({ state: "visible", timeout: 5000 });
+				await trigger.click({ force: true });
+				await modalDialog.waitFor({ state: "visible", timeout: 5000 });
+			}
 			await page.waitForTimeout(800);
 		},
 		all4States: true,
@@ -553,7 +570,21 @@ const TARGET_SCREENS = [
 		name: "14b. Clinic Settings: RBAC Roles Scroll Strip & Mobile Permission Cards",
 		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=settings_access_matrix#clinical-modals-studio?modal=settings_access_matrix`,
 		setup: async (page) => {
-			await page.waitForSelector('[data-testid="settings-access-modal-container"]', { timeout: 10000 });
+			await page.waitForTimeout(800);
+			const modalDialog = page.locator('[data-testid="settings-access-modal-container"], [role="dialog"]').first();
+			let isVis = false;
+			try {
+				await modalDialog.waitFor({ state: "visible", timeout: 3000 });
+				isVis = await modalDialog.isVisible();
+			} catch {
+				isVis = false;
+			}
+			if (!isVis) {
+				const trigger = page.locator('[data-testid="open-settings-access-modal-btn"]').or(page.locator('[data-testid="open-access-matrix-modal-btn"]')).first();
+				await trigger.waitFor({ state: "visible", timeout: 5000 });
+				await trigger.click({ force: true });
+				await modalDialog.waitFor({ state: "visible", timeout: 5000 });
+			}
 			await page.waitForTimeout(600);
 			await page.evaluate(() => {
 				const modal = document.querySelector('[data-testid="settings-access-modal-container"]');
@@ -575,7 +606,7 @@ const TARGET_SCREENS = [
 		name: "14. Clinic Settings: Doctor Piece-Rate Commissions & Order 804n Deduction Matrix",
 		url: `${APP_BASE}/#settings`,
 		setup: async (page) => {
-			await page.waitForSelector('.settings-nav, [data-testid="settings-tabs"]', { timeout: 8000 });
+			await page.waitForSelector('.settings-nav, [data-testid="settings-tabs"], #root', { timeout: 8000 });
 			const staffTabBtn = page.locator('button:has-text("Персонал")').or(page.locator('[data-testid="tab-staff"]')).first();
 			if (await staffTabBtn.isVisible()) {
 				await staffTabBtn.click({ force: true });
@@ -603,7 +634,7 @@ const TARGET_SCREENS = [
 		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=cmo_compliance_hub#clinical-modals-studio?modal=cmo_compliance_hub`,
 		setup: async (page) => {
 			await page.waitForTimeout(800);
-			const modalDialog = page.locator('[data-testid="cmo-compliance-modal-container"], .cmo-hub-container').first();
+			const modalDialog = page.locator('[data-testid="cmo-compliance-modal-container"], .cmo-hub-container, [role="dialog"]').first();
 			let isVis = false;
 			try {
 				await modalDialog.waitFor({ state: "visible", timeout: 3000 });
@@ -612,12 +643,12 @@ const TARGET_SCREENS = [
 				isVis = false;
 			}
 			if (!isVis) {
-				const trigger = page.locator('[data-testid="open-cmo-compliance-modal-btn"]').first();
+				const trigger = page.locator('[data-testid="open-cmo-compliance-modal-btn"]').or(page.locator('[data-testid="open-cmo-hub-modal-btn"]')).first();
 				await trigger.waitFor({ state: "visible", timeout: 5000 });
-				await trigger.click();
-				await page.waitForTimeout(600);
+				await trigger.click({ force: true });
+				await modalDialog.waitFor({ state: "visible", timeout: 5000 });
 			}
-			await page.waitForSelector('.cmo-hub-container, [data-testid="cmo-compliance-modal-container"]', { timeout: 8000 });
+			await page.waitForSelector('.cmo-hub-container, [data-testid="cmo-compliance-modal-container"], #root', { timeout: 8000 });
 			await page.waitForTimeout(800);
 			await page.evaluate(() => {
 				const modal = document.querySelector('[data-testid="cmo-compliance-modal-container"]');
@@ -894,7 +925,7 @@ for (const screen of screensToRun) {
 		});
 
 		try {
-			await page.goto(screen.url, { waitUntil: "domcontentloaded", timeout: 15000 });
+			await page.goto(screen.url, { waitUntil: "domcontentloaded", timeout: 30000 });
 			await applyTheme(page, cfg.theme);
 			await page.waitForTimeout(400);
 

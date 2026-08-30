@@ -475,12 +475,12 @@ export const StaffAuthorityPanel: React.FC = () => {
 													return (
 														<label
 															key={flag}
-															className="flex items-start gap-3 text-sm cursor-pointer p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+															className="flex items-start gap-3 text-sm cursor-pointer p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors min-h-[44px] touch-manipulation"
 															data-testid={`staff-authority-flag-${row.staffId}-${flag}`}
 														>
 															<input
 																type="checkbox"
-																className="mt-1"
+																className="mt-1 w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-[var(--teal)] focus:ring-[var(--teal)]"
 																checked={on}
 																disabled={lockedOn || isSaving}
 																onChange={(e) => {
@@ -542,7 +542,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 			</div>
 
 			{/* FAB clearance bottom spacer */}
-			<div className="h-16 w-full shrink-0" aria-hidden="true" />
+			<div className="h-28 sm:h-20 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 		</article>
 	);
 };

@@ -1161,6 +1161,27 @@ export function App() {
 		setScheduleDateFilter,
 	} = appLogicValue;
 	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
+
+	// Direct hash routes support: /#sanpin -> scanner, /#cmo -> analytics, /#lab -> inventory, /#telephony -> communications
+	useEffect(() => {
+		const handleDirectHashRoutes = () => {
+			if (typeof window === "undefined") return;
+			const hash = window.location.hash.replace(/^#\/?/, "").toLowerCase();
+			const [route] = hash.split("/");
+			if (route === "sanpin") {
+				setCurrentView("scanner");
+			} else if (route === "cmo") {
+				setCurrentView("analytics");
+			} else if (route === "lab") {
+				setCurrentView("inventory");
+			} else if (route === "telephony") {
+				setCurrentView("communications");
+			}
+		};
+		handleDirectHashRoutes();
+		window.addEventListener("hashchange", handleDirectHashRoutes);
+		return () => window.removeEventListener("hashchange", handleDirectHashRoutes);
+	}, [setCurrentView]);
 	const [resetting, setResetting] = useState(false);
 	// --- DUAL-TIER AUTH STATE ---
 	const [clinicAuthed, setClinicAuthed] = useState<boolean>(() => {

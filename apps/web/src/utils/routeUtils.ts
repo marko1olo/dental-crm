@@ -140,9 +140,13 @@ export type SettingsTab = (typeof settingsTabs)[number]["id"];
 
 export function viewFromHash(): AppView {
 	if (typeof window === "undefined") return "shift";
-	const hash = window.location.hash.replace("#", "");
+	const hash = window.location.hash.replace(/^#\/?/, "");
 	const parts = hash.split("/").filter(Boolean);
-	const view = parts[0] ?? "";
+	const view = parts[0]?.toLowerCase() ?? "";
+	if (view === "sanpin") return "scanner";
+	if (view === "cmo") return "analytics";
+	if (view === "lab") return "inventory";
+	if (view === "telephony") return "communications";
 	return (appViews as readonly string[]).includes(view)
 		? (view as AppView)
 		: "shift";

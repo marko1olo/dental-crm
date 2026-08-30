@@ -14,6 +14,7 @@ import {
 	Clock,
 	Copy,
 	MessageSquare,
+	MoreVertical,
 	Phone,
 	PhoneCall,
 	Plus,
@@ -85,6 +86,18 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 	} = props;
 
 	const [hoveredApptId, setHoveredApptId] = React.useState<string | null>(null);
+	const [activeMenuApptId, setActiveMenuApptId] = React.useState<string | null>(null);
+
+	React.useEffect(() => {
+		const handleGlobalClick = () => {
+			setActiveMenuApptId(null);
+		};
+		if (activeMenuApptId) {
+			window.addEventListener("click", handleGlobalClick);
+		}
+		return () => window.removeEventListener("click", handleGlobalClick);
+	}, [activeMenuApptId]);
+
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
 	const chairs = useMemo(() => {
@@ -244,7 +257,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 			)}
 
 			<div
-				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm pb-28 pr-4 sm:pr-96 touch-pan-x"
+				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm pb-28 pr-48 touch-pan-x"
 				data-testid="schedule-grid-view"
 				role="region"
 				aria-label="Сетка расписания по креслам и времени"
@@ -573,145 +586,268 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 															</div>
 														)}
 
-														{/* Mini Quick Action Toggles */}
-														<div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[var(--line)]/50 mt-1">
+														{/* Compact 2-Button Action Bar (📞 Позвонить, 👤 Профиль) + More Options Dropdown (...) */}
+														<div className="flex items-center gap-1.5 pt-1.5 border-t border-[var(--line)]/50 mt-1">
+															{patObj?.phone ? (
+																<a
+																	href={`tel:${patObj.phone}`}
+																	onClick={(e) => e.stopPropagation()}
+																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none"
+																	title={`Позвонить ${pName}: ${patObj.phone}`}
+																	aria-label={`Позвонить ${pName}`}
+																>
+																	<Phone size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+																	<span className="hidden sm:inline">Позвонить</span>
+																</a>
+															) : (
+																<button
+																	type="button"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		onAppointmentClick(a);
+																	}}
+																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none"
+																	title={`Открыть прием ${pName}`}
+																	aria-label={`Открыть прием ${pName}`}
+																>
+																	<User size={14} className="text-[var(--teal)] shrink-0" />
+																	<span className="hidden sm:inline">Прием</span>
+																</button>
+															)}
+
+															<button
+																type="button"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	onAppointmentClick(a);
+																}}
+																className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/40 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none"
+																title={`Открыть профиль ${pName}`}
+																aria-label={`Открыть профиль ${pName}`}
+															>
+																<User size={14} className="text-[var(--teal)] shrink-0" />
+																<span>Профиль</span>
+															</button>
+
+															{/* Quick status transitions right on the card for Tier 1 1-click ergonomics */}
 															{onQuickStatusChange && (
-																<>
+																<div className="flex items-center gap-1">
 																	<button
 																		type="button"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onQuickStatusChange(a.id, "confirmed");
-																		}}
-																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
-																			a.status === "confirmed"
-																				? "bg-violet-500 text-white border-violet-600 font-bold shadow-xs"
-																				: "bg-[var(--paper-soft)] border-[var(--line)] text-violet-700 dark:text-violet-300 hover:bg-violet-500/20"
-																		}`}
-																		title="Подтвержден"
-																		aria-label={`Отметить статус Подтвержден для ${pName}`}
-																	>
-																		<PhoneCall size={16} />
-																	</button>
-																	<button
-																		type="button"
+																		title="Пришел"
 																		onClick={(e) => {
 																			e.stopPropagation();
 																			onQuickStatusChange(a.id, "arrived");
 																		}}
-																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
+																		className={`min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 																			a.status === "arrived"
-																				? "bg-emerald-500 text-white border-emerald-600 font-bold shadow-xs"
-																				: "bg-[var(--paper-soft)] border-[var(--line)] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
+																				? "bg-emerald-500 text-white shadow-xs"
+																				: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30"
 																		}`}
-																		title="Пришел"
-																		aria-label={`Отметить статус Пришел для ${pName}`}
 																	>
-																		<UserCheck size={16} />
+																		<UserCheck size={13} />
+																		<span className="hidden sm:inline">Пришел</span>
 																	</button>
 																	<button
 																		type="button"
+																		title="В кресле"
 																		onClick={(e) => {
 																			e.stopPropagation();
 																			onQuickStatusChange(a.id, "in_treatment");
 																		}}
-																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
+																		className={`min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 																			a.status === "in_treatment"
-																				? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal-dark,var(--teal))] font-bold shadow-xs"
-																				: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))]"
+																				? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+																				: "bg-[var(--teal-soft)] text-[var(--teal-dark)] hover:bg-[var(--teal-surface)] border border-[var(--teal)]/30"
 																		}`}
-																		title="В кресле"
-																		aria-label={`Отметить статус В кресле для ${pName}`}
 																	>
-																		<CalendarCheck size={16} />
+																		<CalendarCheck size={13} />
+																		<span className="hidden sm:inline">В кресле</span>
 																	</button>
 																	<button
 																		type="button"
+																		title="Завершен"
 																		onClick={(e) => {
 																			e.stopPropagation();
 																			onQuickStatusChange(a.id, "completed");
 																		}}
-																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
+																		className={`min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 																			a.status === "completed"
-																				? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal-dark,var(--teal))] font-bold shadow-xs"
-																				: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))]"
+																				? "bg-slate-600 text-white shadow-xs"
+																				: "bg-slate-500/10 text-slate-700 dark:text-slate-300 hover:bg-slate-500/20 border border-slate-500/30"
 																		}`}
-																		title="Завершен"
-																		aria-label={`Отметить статус Завершен для ${pName}`}
 																	>
-																		<CheckCircle2 size={16} />
-																	</button>
-																	<button
-																		type="button"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onQuickStatusChange(a.id, "no_show");
-																		}}
-																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
-																			a.status === "no_show"
-																				? "bg-rose-500 text-white border-rose-600 font-bold shadow-xs"
-																				: "bg-[var(--paper-soft)] border-[var(--line)] text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"
-																		}`}
-																		title="Не явился"
-																		aria-label={`Отметить статус Не явился для ${pName}`}
-																	>
-																		<UserX size={16} />
-																	</button>
-																</>
-															)}
-
-															{patObj?.phone && (
-																<div className="flex items-center gap-1 ml-auto">
-																	<button
-																		type="button"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			const text = generateAppointmentWhatsAppMessage({
-																				patientName: pName,
-																				doctorName: docObj?.fullName,
-																				doctorSpecialty: docObj?.role,
-																				appointmentStartsAt: a.startsAt,
-																				clinicName: dashboard.clinicSettings?.profile?.clinicName,
-																				clinicAddress: dashboard.clinicSettings?.profile?.address,
-																				clinicPhone: dashboard.clinicSettings?.profile?.phone,
-																				treatmentReason: a.reason,
-																			});
-																			if (typeof navigator !== "undefined" && navigator.clipboard) {
-																				void navigator.clipboard.writeText(text);
-																				showToast(`Текст напоминания для ${pName} скопирован в буфер`, "success");
-																			}
-																		}}
-																		className="p-2 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer"
-																		title={`Скопировать текст напоминания (SMS) для ${pName}`}
-																		aria-label={`Скопировать SMS напоминание для ${pName}`}
-																	>
-																		<Copy size={16} />
-																	</button>
-
-																	<button
-																		type="button"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			const text = generateAppointmentWhatsAppMessage({
-																				patientName: pName,
-																				doctorName: docObj?.fullName,
-																				doctorSpecialty: docObj?.role,
-																				appointmentStartsAt: a.startsAt,
-																				clinicName: dashboard.clinicSettings?.profile?.clinicName,
-																				clinicAddress: dashboard.clinicSettings?.profile?.address,
-																				clinicPhone: dashboard.clinicSettings?.profile?.phone,
-																				treatmentReason: a.reason,
-																			});
-																			openWhatsAppChat(patObj.phone!, text);
-																		}}
-																		className="p-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer"
-																		title={`Отправить WhatsApp напоминание (${pName})`}
-																		aria-label={`WhatsApp напоминание для ${pName}`}
-																	>
-																		<MessageSquare size={16} />
+																		<CheckCircle2 size={13} />
+																		<span className="hidden sm:inline">Завершен</span>
 																	</button>
 																</div>
 															)}
+
+															{/* Overflow Actions Dropdown Menu (...) */}
+															<div className="relative ml-auto">
+																<button
+																	type="button"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		setActiveMenuApptId((prev) => (prev === a.id ? null : a.id));
+																	}}
+																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
+																	title="Все действия и статусы визита"
+																	aria-label="Дополнительные действия визита"
+																	aria-expanded={activeMenuApptId === a.id}
+																>
+																	<MoreVertical size={16} />
+																</button>
+
+																{activeMenuApptId === a.id && (
+																	<div
+																		className="absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100"
+																		onClick={(e) => e.stopPropagation()}
+																	>
+																		<div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] pb-1">
+																			Статус визита
+																		</div>
+																		{onQuickStatusChange && (
+																			<div className="space-y-0.5">
+																				<button
+																					type="button"
+																					title="Подтвержден"
+																					onClick={() => {
+																						onQuickStatusChange(a.id, "confirmed");
+																						setActiveMenuApptId(null);
+																					}}
+																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																						a.status === "confirmed"
+																							? "bg-violet-500 text-white font-bold"
+																							: "hover:bg-[var(--paper-soft)] text-violet-700 dark:text-violet-300"
+																					}`}
+																				>
+																					<PhoneCall size={14} />
+																					<span>Подтвержден</span>
+																				</button>
+																				<button
+																					type="button"
+																					title="Пришел"
+																					onClick={() => {
+																						onQuickStatusChange(a.id, "arrived");
+																						setActiveMenuApptId(null);
+																					}}
+																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																						a.status === "arrived"
+																							? "bg-emerald-500 text-white font-bold"
+																							: "hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300"
+																					}`}
+																				>
+																					<UserCheck size={14} />
+																					<span>Пришел</span>
+																				</button>
+																				<button
+																					type="button"
+																					title="В кресле"
+																					onClick={() => {
+																						onQuickStatusChange(a.id, "in_treatment");
+																						setActiveMenuApptId(null);
+																					}}
+																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																						a.status === "in_treatment"
+																							? "bg-[var(--teal,var(--brand-primary))] text-white font-bold"
+																							: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]"
+																					}`}
+																				>
+																					<CalendarCheck size={14} />
+																					<span>В кресле</span>
+																				</button>
+																				<button
+																					type="button"
+																					title="Завершен"
+																					onClick={() => {
+																						onQuickStatusChange(a.id, "completed");
+																						setActiveMenuApptId(null);
+																					}}
+																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																						a.status === "completed"
+																							? "bg-slate-600 text-white font-bold"
+																							: "hover:bg-[var(--paper-soft)] text-slate-700 dark:text-slate-300"
+																					}`}
+																				>
+																					<CheckCircle2 size={14} />
+																					<span>Завершен</span>
+																				</button>
+																				<button
+																					type="button"
+																					title="Не явился"
+																					onClick={() => {
+																						onQuickStatusChange(a.id, "no_show");
+																						setActiveMenuApptId(null);
+																					}}
+																					className={`w-full text-left min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
+																						a.status === "no_show"
+																							? "bg-rose-500 text-white font-bold"
+																							: "hover:bg-[var(--paper-soft)] text-rose-700 dark:text-rose-300"
+																					}`}
+																				>
+																					<UserX size={14} />
+																					<span>Не явился</span>
+																				</button>
+																			</div>
+																		)}
+
+																		{patObj?.phone && (
+																			<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
+																				<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+																					Связь
+																				</div>
+																				<button
+																					type="button"
+																					onClick={() => {
+																						const text = generateAppointmentWhatsAppMessage({
+																							patientName: pName,
+																							doctorName: docObj?.fullName,
+																							doctorSpecialty: docObj?.role,
+																							appointmentStartsAt: a.startsAt,
+																							clinicName: dashboard.clinicSettings?.profile?.clinicName,
+																							clinicAddress: dashboard.clinicSettings?.profile?.address,
+																							clinicPhone: dashboard.clinicSettings?.profile?.phone,
+																							treatmentReason: a.reason,
+																						});
+																						openWhatsAppChat(patObj.phone!, text);
+																						setActiveMenuApptId(null);
+																					}}
+																					className="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 font-bold transition-colors cursor-pointer"
+																				>
+																					<MessageSquare size={14} className="text-emerald-600 dark:text-emerald-400" />
+																					<span>WhatsApp напоминание</span>
+																				</button>
+
+																				<button
+																					type="button"
+																					onClick={() => {
+																						const text = generateAppointmentWhatsAppMessage({
+																							patientName: pName,
+																							doctorName: docObj?.fullName,
+																							doctorSpecialty: docObj?.role,
+																							appointmentStartsAt: a.startsAt,
+																							clinicName: dashboard.clinicSettings?.profile?.clinicName,
+																							clinicAddress: dashboard.clinicSettings?.profile?.address,
+																							clinicPhone: dashboard.clinicSettings?.profile?.phone,
+																							treatmentReason: a.reason,
+																						});
+																						if (typeof navigator !== "undefined" && navigator.clipboard) {
+																							void navigator.clipboard.writeText(text);
+																							showToast(`Текст напоминания для ${pName} скопирован в буфер`, "success");
+																						}
+																						setActiveMenuApptId(null);
+																					}}
+																					className="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium transition-colors cursor-pointer"
+																				>
+																					<Copy size={14} className="text-[var(--teal)]" />
+																					<span>Скопировать SMS</span>
+																				</button>
+																			</div>
+																		)}
+																	</div>
+																)}
+															</div>
 														</div>
 													</div>
 												);
@@ -826,7 +962,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 															durationMinutes: 30,
 														})
 													}
-													className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+													className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper)] dark:bg-[rgba(255,255,255,0.03)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 													title={`Записать на ${hour} (${chair.name})`}
 													aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
 												>

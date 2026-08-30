@@ -300,18 +300,19 @@ async function openDiaryAndPreview(page) {
 						.filter({ hasText: /Зубная|формула|Дневник|Одонтограмм/i })
 						.first();
 					if ((await diaryTab.count()) > 0) {
-						await diaryTab.click({ timeout: 2500 }).catch(() => {});
+						await diaryTab.click({ timeout: 2500 });
 						await page.waitForTimeout(900);
 						break;
 					}
 				} else {
-					await el.click({ timeout: 2500 }).catch(() => {});
+					await el.click({ timeout: 2500 });
 					await page.waitForTimeout(900);
 					break;
 				}
 			}
-		} catch {
-			/* try next */
+		} catch (err) {
+			console.error(`[FATAL] Tab selection failed for selector ${sel}: ${err.message}`);
+			process.exit(1);
 		}
 	}
 
@@ -603,6 +604,35 @@ async function auditPage(page, label) {
 async function run() {
 	fs.mkdirSync(OUT_DIR, { recursive: true });
 
+	// Preflight health check
+	console.log(`[PREFLIGHT] Checking Fastify API (${API}) and Vite frontend (${BASE})...`);
+	let apiRes;
+	try {
+		apiRes = await fetch(`${API}/api/health`);
+	} catch {
+		try {
+			apiRes = await fetch(`${API}/`);
+		} catch (e) {
+			console.error(`[FATAL] Fastify API unreachable at ${API}: ${e.message}`);
+			process.exit(1);
+		}
+	}
+	if (!apiRes || (apiRes.status >= 500 && apiRes.status !== 503)) {
+		console.error(`[FATAL] Fastify API at ${API} responded with HTTP ${apiRes?.status || "unreachable"}`);
+		process.exit(1);
+	}
+
+	try {
+		const webRes = await fetch(BASE);
+		if (!webRes.ok && webRes.status !== 200 && webRes.status !== 304) {
+			throw new Error(`HTTP ${webRes.status}`);
+		}
+	} catch (e) {
+		console.error(`[FATAL] Vite dev server unreachable at ${BASE}: ${e.message}`);
+		process.exit(1);
+	}
+	console.log("[PREFLIGHT] Fastify API and Vite Frontend are live.");
+
 	console.log("[auth] fetching real demo tokens from API…");
 	const tokens = await fetchDemoTokens();
 	const seed = buildLocalStorageSeed(tokens);
@@ -623,7 +653,13 @@ async function run() {
 			const page = await context.newPage();
 
 			// Seed origin first, then hard-reload so apiAuthFetch + auth boot see tokens.
-			await page.goto(BASE, { waitUntil: "domcontentloaded", timeout: 45000 });
+			try {
+				await page.goto(BASE, { waitUntil: "domcontentloaded", timeout: 45000 });
+			} catch (err) {
+				console.error(`[FATAL] Initial page navigation to ${BASE} failed: ${err.message}`);
+				process.exit(1);
+			}
+
 			await page.evaluate(
 				({ s, t }) => {
 					for (const [k, v] of Object.entries(s)) {
@@ -634,17 +670,16 @@ async function run() {
 				{ s: seed, t: theme },
 			);
 
-			await page
-				.goto(VISIT_URL, {
-					waitUntil: "networkidle",
-					timeout: 60000,
-				})
-				.catch(async () => {
-					await page.goto(VISIT_URL, {
-						waitUntil: "domcontentloaded",
-						timeout: 45000,
-					});
+			try {
+				await page.goto(VISIT_URL, {
+					waitUntil: "domcontentloaded",
+					timeout: 45000,
 				});
+			} catch (err) {
+				console.error(`[FATAL] Navigation to ${VISIT_URL} failed: ${err.message}`);
+				process.exit(1);
+			}
+
 			await page.waitForTimeout(4500);
 			await forceTheme(page, theme);
 			await dismissOverlays(page);
@@ -665,10 +700,15 @@ async function run() {
 						localStorage.setItem(k, v);
 					}
 				}, seed);
-				await page.goto(VISIT_URL, {
-					waitUntil: "domcontentloaded",
-					timeout: 45000,
-				});
+				try {
+					await page.goto(VISIT_URL, {
+						waitUntil: "domcontentloaded",
+						timeout: 45000,
+					});
+				} catch (err) {
+					console.error(`[FATAL] Re-login navigation to ${VISIT_URL} failed: ${err.message}`);
+					process.exit(1);
+				}
 				await page.waitForTimeout(5000);
 				await forceTheme(page, theme);
 				await dismissOverlays(page);
@@ -685,14 +725,19 @@ async function run() {
 			);
 			const previewRoot = page.locator('[data-testid="form-043-preview"]');
 			const editorLoc = page.locator('[data-testid="visit-diary-editor"]');
-			if ((await previewLoc.count()) > 0) {
-				await previewLoc.first().screenshot({ path: shotPath });
-			} else if ((await previewRoot.count()) > 0) {
-				await previewRoot.first().screenshot({ path: shotPath });
-			} else if ((await editorLoc.count()) > 0) {
-				await editorLoc.first().screenshot({ path: shotPath });
-			} else {
-				await page.screenshot({ path: shotPath, fullPage: true });
+			try {
+				if ((await previewLoc.count()) > 0) {
+					await previewLoc.first().screenshot({ path: shotPath });
+				} else if ((await previewRoot.count()) > 0) {
+					await previewRoot.first().screenshot({ path: shotPath });
+				} else if ((await editorLoc.count()) > 0) {
+					await editorLoc.first().screenshot({ path: shotPath });
+				} else {
+					await page.screenshot({ path: shotPath, fullPage: true });
+				}
+			} catch (err) {
+				console.error(`[FATAL] Screenshot failed for ${label}: ${err.message}`);
+				process.exit(1);
 			}
 			console.log(`Saved ${shotPath}`);
 
@@ -715,18 +760,12 @@ async function run() {
 		console.log("\nAll 4 shots clean (no audit issues).");
 	}
 
-	try {
-		await browser.close();
-	} catch (err) {
-		console.log(
-			"[browser] soft close:",
-			String(err?.message || err).slice(0, 120),
-		);
-	}
+	await browser.close();
 	process.exit(0);
 }
 
 run().catch(async (err) => {
-	console.error(err);
+	console.error("[FATAL] [form043-viewport-shots] Unhandled error:", err);
 	process.exit(1);
 });
+

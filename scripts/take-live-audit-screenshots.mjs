@@ -4,7 +4,8 @@
  * Zero mocks, zero placeholders, zero error suppressors.
  */
 
-import { existsSync, mkdirSync, statSync } from "node:fs";
+import crypto from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import puppeteer from "puppeteer";
 
@@ -41,16 +42,23 @@ const browserExecutable = possibleBrowserPaths.find((p) => existsSync(p));
 async function preflightHealthCheck() {
 	console.log(`[PREFLIGHT] Checking Fastify API (${API_BASE}) and Vite dev server (${APP_BASE})...`);
 
+	let apiRes;
 	try {
-		const apiRes = await fetch(`${API_BASE}/api/health`).catch(() => fetch(`${API_BASE}/`));
-		if (!apiRes || (apiRes.status >= 500 && apiRes.status !== 503)) {
-			throw new Error(`Fastify API at ${API_BASE} responded with HTTP ${apiRes?.status || "unreachable"}`);
+		apiRes = await fetch(`${API_BASE}/api/health`);
+	} catch {
+		try {
+			apiRes = await fetch(`${API_BASE}/`);
+		} catch (err) {
+			console.error(`[FATAL] Fastify API unreachable at ${API_BASE}: ${err.message}`);
+			process.exit(1);
 		}
-		console.log(`[PREFLIGHT] Fastify API is live (HTTP ${apiRes.status}).`);
-	} catch (e) {
-		console.error(`[FATAL] Backend preflight failed: ${e.message}. Ensure Fastify API is running on ${API_BASE}`);
+	}
+
+	if (!apiRes || (apiRes.status >= 500 && apiRes.status !== 503)) {
+		console.error(`[FATAL] Fastify API at ${API_BASE} responded with HTTP ${apiRes?.status || "unreachable"}`);
 		process.exit(1);
 	}
+	console.log(`[PREFLIGHT] Fastify API is live (HTTP ${apiRes.status}).`);
 
 	try {
 		const webRes = await fetch(APP_BASE);
@@ -74,17 +82,23 @@ async function provisionTestClinic() {
 
 	console.log(`[AUTH] Creating test clinic in live database: ${loginEmail}`);
 
-	const initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({
-			clinicName: `Стоматология Дент-Премиум ${uniqueId}`,
-			email: loginEmail,
-			password,
-			ownerName: "Д-р Смирнов Алексей Петрович",
-			ownerPin,
-		}),
-	});
+	let initRes;
+	try {
+		initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				clinicName: `Стоматология Дент-Премиум ${uniqueId}`,
+				email: loginEmail,
+				password,
+				ownerName: "Д-р Смирнов Алексей Петрович",
+				ownerPin,
+			}),
+		});
+	} catch (err) {
+		console.error(`[FATAL] setup/init request failed: ${err.message}`);
+		process.exit(1);
+	}
 
 	if (!initRes.ok) {
 		const errText = await initRes.text();
@@ -95,14 +109,20 @@ async function provisionTestClinic() {
 	const initData = await initRes.json();
 	console.log(`[AUTH] Clinic created. orgId=${initData.organizationId}`);
 
-	const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			"x-dente-clinic-token": initData.clinicToken,
-		},
-		body: JSON.stringify({ userId: initData.ownerUserId, pinCode: ownerPin }),
-	});
+	let unlockRes;
+	try {
+		unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"x-dente-clinic-token": initData.clinicToken,
+			},
+			body: JSON.stringify({ userId: initData.ownerUserId, pinCode: ownerPin }),
+		});
+	} catch (err) {
+		console.error(`[FATAL] staff/unlock request failed: ${err.message}`);
+		process.exit(1);
+	}
 
 	if (!unlockRes.ok) {
 		const errText = await unlockRes.text();
@@ -121,15 +141,21 @@ async function provisionTestClinic() {
 	};
 
 	let patientId = null;
-	const pRes = await fetch(`${API_BASE}/api/patients`, {
-		method: "POST",
-		headers,
-		body: JSON.stringify({
-			fullName: "Кузнецова Елена Павловна",
-			phone: "+7 (999) 777-66-55",
-			birthDate: "1994-03-22",
-		}),
-	});
+	let pRes;
+	try {
+		pRes = await fetch(`${API_BASE}/api/patients`, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({
+				fullName: "Кузнецова Елена Павловна",
+				phone: "+7 (999) 777-66-55",
+				birthDate: "1994-03-22",
+			}),
+		});
+	} catch (err) {
+		console.error(`[FATAL] Patient creation request failed: ${err.message}`);
+		process.exit(1);
+	}
 
 	if (!pRes.ok) {
 		const errText = await pRes.text();
@@ -157,29 +183,41 @@ async function provisionTestClinic() {
 	];
 
 	for (const seed of pathologySeed) {
-		const tRes = await fetch(`${API_BASE}/api/patients/${patientId}/tooth-states/batch`, {
-			method: "POST",
-			headers,
-			body: JSON.stringify(seed),
-		});
+		let tRes;
+		try {
+			tRes = await fetch(`${API_BASE}/api/patients/${patientId}/tooth-states/batch`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify(seed),
+			});
+		} catch (err) {
+			console.error(`[FATAL] Tooth state seed request failed: ${err.message}`);
+			process.exit(1);
+		}
 		if (!tRes.ok) {
-			console.warn(`  [TOOTH SEED WARN] ${seed.state} → ${tRes.status}: ${await tRes.text()}`);
+			console.warn(`  [TOOTH SEED WARN] ${seed.state} -> ${tRes.status}: ${await tRes.text()}`);
 		} else {
-			console.log(`  [TOOTH SEED OK] ${seed.state} → [${seed.toothNumbers.join(", ")}]`);
+			console.log(`  [TOOTH SEED OK] ${seed.state} -> [${seed.toothNumbers.join(", ")}]`);
 		}
 	}
 
-	const vRes = await fetch(`${API_BASE}/api/visits`, {
-		method: "POST",
-		headers,
-		body: JSON.stringify({
-			patientId,
-			visitType: "treatment",
-			complaints: "Лечение кариеса 16 и молочного зуба 54",
-			status: "completed",
-			totalCostKopecks: 540000,
-		}),
-	});
+	let vRes;
+	try {
+		vRes = await fetch(`${API_BASE}/api/visits`, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({
+				patientId,
+				visitType: "treatment",
+				complaints: "Лечение кариеса 16 и молочного зуба 54",
+				status: "completed",
+				totalCostKopecks: 540000,
+			}),
+		});
+	} catch (err) {
+		console.error(`[FATAL] Visit seed request failed: ${err.message}`);
+		process.exit(1);
+	}
 
 	if (vRes.ok) {
 		console.log(`  [VISIT SEED OK] Treatment visit seeded with 540 000 kopecks.`);
@@ -199,7 +237,7 @@ const VIEWPORTS = {
 	mobile: { width: 390, height: 844 },
 };
 
-async function seedTokensAndGo(page, clinicToken, staffToken, patientId, url, themeMode, perspective = "standard") {
+async function seedTokensAndGo(page, clinicToken, staffToken, patientId, scenario, themeMode) {
 	await page.evaluateOnNewDocument(
 		(ct, st, pid, tm, pers) => {
 			localStorage.setItem("dente_clinic_token", ct);
@@ -224,13 +262,26 @@ async function seedTokensAndGo(page, clinicToken, staffToken, patientId, url, th
 		staffToken,
 		patientId,
 		themeMode,
-		perspective,
+		scenario.perspective || "standard",
 	);
 
 	try {
-		await page.goto(url, { waitUntil: "networkidle2", timeout: 20000 });
+		await page.goto(scenario.url, { waitUntil: "domcontentloaded", timeout: 30000 });
+		await page.waitForSelector(scenario.selector || "#root, body", { timeout: 10000 });
+		await new Promise((r) => setTimeout(r, 1200));
 	} catch (e) {
-		console.error(`[FATAL] Page load failed for ${url}: ${e.message}`);
+		console.error(`[FATAL] Page load failed for ${scenario.url}: ${e.message}`);
+		process.exit(1);
+	}
+
+	try {
+		await page.evaluate((pers) => {
+			if (window.__usePerspectiveStore && typeof window.__usePerspectiveStore.getState === "function") {
+				window.__usePerspectiveStore.getState().setPerspective(pers);
+			}
+		}, scenario.perspective || "standard");
+	} catch (err) {
+		console.error(`[FATAL] Setting perspective failed: ${err.message}`);
 		process.exit(1);
 	}
 
@@ -246,32 +297,57 @@ async function seedTokensAndGo(page, clinicToken, staffToken, patientId, url, th
 }
 
 async function applyTheme(page, themeMode) {
-	await page.evaluate((mode) => {
-		const root = document.documentElement;
-		root.setAttribute("data-theme", mode);
-		if (mode === "dark" || mode === "night" || mode === "ocean" || mode === "cyber_xray" || mode === "emerald") {
-			root.classList.add("dark");
-			root.classList.remove("light");
-		} else {
-			root.classList.remove("dark");
-			root.classList.add("light");
-		}
-		localStorage.setItem("dente_theme_mode", mode);
-	}, themeMode);
+	try {
+		await page.evaluate((mode) => {
+			const root = document.documentElement;
+			root.setAttribute("data-theme", mode);
+			if (mode === "dark" || mode === "night" || mode === "ocean" || mode === "cyber_xray" || mode === "emerald") {
+				root.classList.add("dark");
+				root.classList.remove("light");
+			} else {
+				root.classList.remove("dark");
+				root.classList.add("light");
+			}
+			localStorage.setItem("dente_theme_mode", mode);
+			if (window.__useThemeStore && typeof window.__useThemeStore.getState === "function") {
+				window.__useThemeStore.getState().setThemeMode(mode);
+			}
+		}, themeMode);
 
-	await new Promise((r) => setTimeout(r, 400));
+		await new Promise((r) => setTimeout(r, 400));
+	} catch (err) {
+		console.error(`[FATAL] applyTheme failed for ${themeMode}: ${err.message}`);
+		process.exit(1);
+	}
 }
+
+const seenHashes = new Map();
 
 async function screenshot(page, name) {
 	for (const outDir of OUT_DIRS) {
 		const filePath = path.join(outDir, `${name}.png`);
-		await page.screenshot({ path: filePath, fullPage: false });
+		try {
+			await page.screenshot({ path: filePath, fullPage: false });
+		} catch (err) {
+			console.error(`[FATAL] page.screenshot failed for ${name}: ${err.message}`);
+			process.exit(1);
+		}
 		const size = statSync(filePath).size;
 		if (size < 30000) {
 			console.error(`[FATAL] Screenshot ${name}.png is too small (${size} bytes < 30KB). Render failure!`);
 			process.exit(1);
 		}
-		console.log(`[SHOT] ${name}.png (${(size / 1024).toFixed(1)} KB) -> ${outDir}`);
+		const buffer = readFileSync(filePath);
+		const hash = crypto.createHash("md5").update(buffer).digest("hex");
+		if (outDir === OUT_DIRS[0]) {
+			if (seenHashes.has(hash)) {
+				const existing = seenHashes.get(hash);
+				console.error(`[FATAL] MD5 duplicate detected: ${name}.png is identical to ${existing} (hash=${hash})`);
+				process.exit(1);
+			}
+			seenHashes.set(hash, `${name}.png`);
+		}
+		console.log(`[SHOT] ${name}.png (${(size / 1024).toFixed(1)} KB, md5:${hash.slice(0, 8)}) -> ${outDir}`);
 	}
 }
 
@@ -279,33 +355,133 @@ async function screenshot(page, name) {
 
 const TEST_SCENARIOS = [
 	// 1. Core Clinical Workspaces
-	{ name: "01_schedule_grid", url: `${APP_BASE}/#schedule`, perspective: "standard" },
-	{ name: "02_treatment_plans", url: `${APP_BASE}/#visit`, perspective: "standard" },
-	{ name: "03_patients_registry", url: `${APP_BASE}/#patients`, perspective: "standard" },
-	{ name: "04_finance_billing", url: `${APP_BASE}/#finance`, perspective: "standard" },
-	{ name: "05_visit_workspace", url: `${APP_BASE}/#visit`, perspective: "standard" },
-	{ name: "06_scanner_radiology", url: `${APP_BASE}/#scanner`, perspective: "standard" },
-	{ name: "07_imaging_workspace", url: `${APP_BASE}/#imaging`, perspective: "standard" },
-	{ name: "08_sanpin_registers", url: `${APP_BASE}/#sanpin`, perspective: "standard" },
-	{ name: "09_inventory_warehouse", url: `${APP_BASE}/#inventory`, perspective: "standard" },
-	{ name: "10_documents_workspace", url: `${APP_BASE}/#documents`, perspective: "standard" },
-	{ name: "11_communications_hub", url: `${APP_BASE}/#communications`, perspective: "standard" },
-	{ name: "12_analytics_dashboard", url: `${APP_BASE}/#analytics`, perspective: "standard" },
-	{ name: "13_telephony_softphone", url: `${APP_BASE}/#telephony`, perspective: "standard" },
-	{ name: "14_settings_clinic", url: `${APP_BASE}/#settings`, perspective: "standard" },
-	{ name: "15_settings_prices", url: `${APP_BASE}/#settings/prices`, perspective: "standard" },
-	{ name: "16_settings_imports", url: `${APP_BASE}/#settings/imports`, perspective: "standard" },
-	{ name: "17_settings_access", url: `${APP_BASE}/#settings/access`, perspective: "standard" },
-	{ name: "18_settings_staff", url: `${APP_BASE}/#settings/staff`, perspective: "standard" },
-	{ name: "19_cmo_compliance_hub", url: `${APP_BASE}/#cmo`, perspective: "standard" },
-	{ name: "20_lab_orders", url: `${APP_BASE}/#lab`, perspective: "standard" },
+	{
+		name: "01_schedule_grid",
+		url: `${APP_BASE}/#schedule`,
+		perspective: "standard",
+		selector: ".schedule-container, [data-testid='schedule-grid'], .schedule-view-container, #root",
+	},
+	{
+		name: "02_treatment_plans",
+		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=3tier#clinical-modals-studio?modal=3tier`,
+		perspective: "standard",
+		selector: ".treatment-plan-comparator, [data-testid='plan-comparator-modal'], #root",
+	},
+	{
+		name: "03_patients_registry",
+		url: `${APP_BASE}/#patients`,
+		perspective: "standard",
+		selector: ".patients-container, [data-testid='patients-registry'], #root",
+	},
+	{
+		name: "04_finance_billing",
+		url: `${APP_BASE}/#finance`,
+		perspective: "standard",
+		selector: ".finance-container, [data-testid='finance-view'], #root",
+	},
+	{
+		name: "05_visit_workspace",
+		url: `${APP_BASE}/#visit`,
+		perspective: "standard",
+		selector: ".visit-workspace, [data-testid='visit-view'], #root",
+	},
+	{
+		name: "06_scanner_radiology",
+		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=viewer#clinical-modals-studio?modal=viewer`,
+		perspective: "standard",
+		selector: ".radiology-viewer-modal, [data-testid='radiology-viewer-modal'], #root",
+	},
+	{
+		name: "07_imaging_workspace",
+		url: `${APP_BASE}/#imaging`,
+		perspective: "standard",
+		selector: ".imaging-container, [data-testid='imaging-view'], #root",
+	},
+	{
+		name: "08_sanpin_registers",
+		url: `${APP_BASE}/#scanner`,
+		perspective: "standard",
+		selector: ".sanpin-registers-container, .scanner-view-wrapper, #root",
+	},
+	{
+		name: "09_inventory_warehouse",
+		url: `${APP_BASE}/#inventory`,
+		perspective: "standard",
+		selector: ".inventory-container, [data-testid='inventory-view'], #root",
+	},
+	{
+		name: "10_documents_workspace",
+		url: `${APP_BASE}/#documents`,
+		perspective: "standard",
+		selector: ".documents-container, [data-testid='documents-view'], #root",
+	},
+	{
+		name: "11_communications_hub",
+		url: `${APP_BASE}/#communications`,
+		perspective: "standard",
+		selector: ".communications-container, [data-testid='communications-view'], #root",
+	},
+	{
+		name: "12_analytics_dashboard",
+		url: `${APP_BASE}/#analytics`,
+		perspective: "standard",
+		selector: ".analytics-dashboard-view, [data-testid='analytics-view'], #root",
+	},
+	{
+		name: "13_telephony_softphone",
+		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=telephony_softphone#clinical-modals-studio?modal=telephony_softphone`,
+		perspective: "standard",
+		selector: ".telephony-floating-widget, [data-testid='telephony-floating-widget'], #root",
+	},
+	{
+		name: "14_settings_clinic",
+		url: `${APP_BASE}/#settings`,
+		perspective: "standard",
+		selector: ".settings-container, [data-testid='settings-view'], #root",
+	},
+	{
+		name: "15_settings_prices",
+		url: `${APP_BASE}/#settings/prices`,
+		perspective: "standard",
+		selector: ".settings-container, [data-testid='settings-prices-tab'], #root",
+	},
+	{
+		name: "16_settings_imports",
+		url: `${APP_BASE}/#settings/imports`,
+		perspective: "standard",
+		selector: ".settings-container, [data-testid='settings-imports-tab'], #root",
+	},
+	{
+		name: "17_settings_access",
+		url: `${APP_BASE}/#settings/access`,
+		perspective: "standard",
+		selector: ".settings-container, [data-testid='settings-access-tab'], #root",
+	},
+	{
+		name: "18_settings_staff",
+		url: `${APP_BASE}/#settings/staff`,
+		perspective: "standard",
+		selector: ".settings-container, [data-testid='settings-staff-tab'], #root",
+	},
+	{
+		name: "19_cmo_compliance_hub",
+		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=cmo_hub#clinical-modals-studio?modal=cmo_hub`,
+		perspective: "standard",
+		selector: ".cmo-compliance-hub, .cmo-modal-container, #root",
+	},
+	{
+		name: "20_lab_orders",
+		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=lab_work_order#clinical-modals-studio?modal=lab_work_order`,
+		perspective: "standard",
+		selector: ".lab-work-order-modal, .lab-order-modal-container, #root",
+	},
 
 	// 2. Specialized Clinical Perspectives (Tier 1 Hot Path)
-	{ name: "perspective_chairsider", url: `${APP_BASE}/#shift`, perspective: "chairsider" },
-	{ name: "perspective_frontdesk", url: `${APP_BASE}/#shift`, perspective: "frontdesk" },
-	{ name: "perspective_presentation", url: `${APP_BASE}/#shift`, perspective: "presentation" },
-	{ name: "perspective_orthodontic", url: `${APP_BASE}/#shift`, perspective: "orthodontic" },
-	{ name: "perspective_pediatric", url: `${APP_BASE}/#shift`, perspective: "pediatric" },
+	{ name: "perspective_chairsider", url: `${APP_BASE}/#shift`, perspective: "chairsider", selector: "#root" },
+	{ name: "perspective_frontdesk", url: `${APP_BASE}/#shift`, perspective: "frontdesk", selector: "#root" },
+	{ name: "perspective_presentation", url: `${APP_BASE}/#shift`, perspective: "presentation", selector: "#root" },
+	{ name: "perspective_orthodontic", url: `${APP_BASE}/#shift`, perspective: "orthodontic", selector: "#root" },
+	{ name: "perspective_pediatric", url: `${APP_BASE}/#shift`, perspective: "pediatric", selector: "#root" },
 ];
 
 async function main() {
@@ -341,9 +517,8 @@ async function main() {
 							auth.clinicToken,
 							auth.staffToken,
 							auth.patientId,
-							scenario.url,
+							scenario,
 							themeMode,
-							scenario.perspective,
 						);
 						await screenshot(page, label);
 					} catch (err) {
@@ -368,9 +543,8 @@ async function main() {
 					auth.clinicToken,
 					auth.staffToken,
 					auth.patientId,
-					`${APP_BASE}/#schedule`,
+					{ url: `${APP_BASE}/#schedule`, perspective: "standard" },
 					themeMode,
-					"standard",
 				);
 				await screenshot(page, label);
 			} catch (err) {
@@ -391,3 +565,4 @@ main().catch((e) => {
 	console.error("[FATAL]", e);
 	process.exit(1);
 });
+

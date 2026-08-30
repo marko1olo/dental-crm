@@ -14,9 +14,61 @@ import {
 	Palette,
 	X,
 	Check,
-	ShieldCheck
+	ShieldCheck,
+	Crown,
+	Gem,
+	Sparkles,
+	Wrench,
+	Columns,
+	Crosshair,
+	Settings,
+	Search,
+	RotateCcw
 } from 'lucide-react';
 import './labWorkOrder.css';
+
+const renderProstheticIcon = (iconId: string) => {
+	switch (iconId) {
+		case 'crown':
+			return <Crown size={22} className="text-teal-600 dark:text-teal-400" />;
+		case 'gem':
+			return <Gem size={22} className="text-teal-600 dark:text-teal-400" />;
+		case 'sparkles':
+			return <Sparkles size={22} className="text-teal-600 dark:text-teal-400" />;
+		case 'screw':
+		case 'wrench':
+			return <Wrench size={22} className="text-teal-600 dark:text-teal-400" />;
+		case 'layers':
+			return <Layers size={22} className="text-teal-600 dark:text-teal-400" />;
+		case 'arch':
+		case 'columns':
+			return <Columns size={22} className="text-teal-600 dark:text-teal-400" />;
+		case 'crosshair':
+		case 'target':
+			return <Crosshair size={22} className="text-teal-600 dark:text-teal-400" />;
+		default:
+			return <Layers size={22} className="text-teal-600 dark:text-teal-400" />;
+	}
+};
+
+const renderStageIcon = (iconId: string) => {
+	switch (iconId) {
+		case 'settings':
+		case 'in_progress':
+			return <Settings size={18} />;
+		case 'search':
+		case 'fitting_scheduled':
+			return <Search size={18} />;
+		case 'check':
+		case 'delivered_completed':
+			return <Check size={18} />;
+		case 'rotate-ccw':
+		case 'correction_remake':
+			return <RotateCcw size={18} />;
+		default:
+			return <Settings size={18} />;
+	}
+};
 import {
 	ProstheticTypeId,
 	PROSTHETIC_TYPES,
@@ -308,7 +360,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 				</nav>
 
 				{/* Modal Body */}
-				<div className="lab-order-modal-body">
+				<div className="lab-order-modal-body" style={{ paddingBottom: '3.5rem' }}>
 					{/* TAB 1: SELECTION */}
 					{activeTab === 'selection' && (
 						<>
@@ -459,7 +511,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 												className={`lab-type-card ${isSelected ? 'selected' : ''}`}
 												onClick={() => handleProstheticTypeChange(typeKey)}
 											>
-												<span className="lab-type-icon">{def.icon}</span>
+												<span className="lab-type-icon">{renderProstheticIcon(def.icon)}</span>
 												<div className="lab-type-details">
 													<div className="lab-type-name">{def.shortNameRu}</div>
 													<div className="lab-type-desc">{def.descriptionRu}</div>
@@ -467,8 +519,9 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 														<span style={{ color: 'var(--teal, #0d9488)', fontWeight: 700 }}>
 															{def.defaultPriceClinicRub.toLocaleString('ru-RU')} ₽ / ед.
 														</span>
-														<span style={{ color: 'var(--muted, #64748b)' }}>
-															⏳ {def.standardTurnaroundWorkingDays} раб. дн.
+														<span style={{ color: 'var(--muted, #64748b)', display: 'inline-flex', alignItems: 'center' }}>
+															<Clock size={12} className="inline mr-1 text-[var(--muted)]" />
+															{def.standardTurnaroundWorkingDays} раб. дн.
 														</span>
 													</div>
 												</div>
@@ -667,7 +720,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 												onClick={() => setCurrentStage(stageKey)}
 											>
 												<div className="lab-stage-icon-circle">
-													{isCompleted ? <Check size={18} /> : stageDef.icon}
+													{isCompleted ? <Check size={18} /> : renderStageIcon(stageDef.icon)}
 												</div>
 												<div className="lab-stage-label">{stageDef.shortTitleRu}</div>
 											</div>

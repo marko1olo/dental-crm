@@ -97,38 +97,38 @@ export interface SanpinCategoryDef {
 export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 	{
 		id: "sterilization",
-		label: "Стерилизация и автоклавы",
+		label: "🧼 Стерилизация и автоклавы",
 		shortLabel: "Стерилизация",
 		icon: Flame,
 		tabs: [
-			{ id: "autoclave", label: "2. Автоклавы (Ф. 257/у)", shortLabel: "Автоклавы", category: "sterilization", icon: Flame },
-			{ id: "pso", label: "1. ПСО и Азопирам (Ф. 366/у)", shortLabel: "ПСО/Азопирам", category: "sterilization", icon: FlaskConical },
-			{ id: "cabinet_readiness", label: "0. Готовность кабинета", shortLabel: "Готовность", category: "sterilization", icon: ShieldCheck },
-			{ id: "retroactive_batch", label: "Пакетное закрытие", shortLabel: "Пакет", category: "sterilization", icon: Rocket },
+			{ id: "autoclave", label: "Автоклавы (Форма 257/у)", shortLabel: "Автоклавы 257/у", category: "sterilization", icon: Flame },
+			{ id: "pso", label: "ПСО и Азопирамовая проба (Форма 366/у)", shortLabel: "ПСО / Азопирам", category: "sterilization", icon: FlaskConical },
+			{ id: "cabinet_readiness", label: "Фенолфталеиновая проба и готовность", shortLabel: "Фенолфталеин", category: "sterilization", icon: ShieldCheck },
+			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар / Пакет", category: "sterilization", icon: Rocket },
 		],
 	},
 	{
 		id: "disinfection",
-		label: "Дезинфекция и уборка",
+		label: "🧴 Дезинфекция и уборка",
 		shortLabel: "Дезинфекция",
 		icon: Sparkles,
 		tabs: [
-			{ id: "disinfectants", label: "8. Дезсредства и растворы", shortLabel: "Дезсредства", category: "disinfection", icon: Droplets },
-			{ id: "bactericidal", label: "3. Дезар и рециркуляторы", shortLabel: "Дезар/УФ", category: "disinfection", icon: Wind },
-			{ id: "cleaning", label: "4. Генеральные уборки", shortLabel: "Генуборки", category: "disinfection", icon: Sparkles },
-			{ id: "bac_lab", label: "9. Баклаборатория и смывы", shortLabel: "Бакпосев", category: "disinfection", icon: Activity },
+			{ id: "disinfectants", label: "Дезсредства и рабочие растворы (п. 3582)", shortLabel: "Дезсредства", category: "disinfection", icon: Droplets },
+			{ id: "bactericidal", label: "Бактерицидные установки / Дезар (Ф. 38/у)", shortLabel: "Дезар / УФ", category: "disinfection", icon: Wind },
+			{ id: "cleaning", label: "Генеральные и текущие уборки", shortLabel: "Генуборки", category: "disinfection", icon: Sparkles },
+			{ id: "bac_lab", label: "Анти-ВИЧ аптечка и баклаборатория", shortLabel: "Анти-ВИЧ / Бакпосев", category: "disinfection", icon: Activity },
 		],
 	},
 	{
 		id: "waste_climate",
-		label: "Отходы, климат и безопасность",
+		label: "🌡️ Отходы и климат",
 		shortLabel: "Отходы и климат",
 		icon: Recycle,
 		tabs: [
-			{ id: "waste", label: "5. Медотходы класса Б", shortLabel: "Медотходы", category: "waste_climate", icon: Recycle },
-			{ id: "needle_disposal", label: "10. Иглы и карпулы", shortLabel: "Иглы/карпулы", category: "waste_climate", icon: Trash2 },
-			{ id: "temperature", label: "7. T° и влажность", shortLabel: "T°/Влажность", category: "waste_climate", icon: Thermometer },
-			{ id: "biohazard", label: "6. Аварии Анти-ВИЧ", shortLabel: "Анти-ВИЧ", category: "waste_climate", icon: ShieldAlert },
+			{ id: "waste", label: "Медотходы классов Б и В (СанПиН 2.1.3684-21)", shortLabel: "Медотходы Б/В", category: "waste_climate", icon: Recycle },
+			{ id: "needle_disposal", label: "Острый инструментарий и УЗ-мойка", shortLabel: "УЗ-мойка / Иглы", category: "waste_climate", icon: Trash2 },
+			{ id: "temperature", label: "Температура и влажность холодильников", shortLabel: "T° Холодильников", category: "waste_climate", icon: Thermometer },
+			{ id: "biohazard", label: "Аварийные ситуации и проливы", shortLabel: "Аварийные ситуации", category: "waste_climate", icon: ShieldAlert },
 		],
 	},
 ];
@@ -1027,86 +1027,95 @@ export function SanpinRegisters() {
 
 	return (
 		<div className="sanpin-container">
-			{/* Top Header — Compact Medical Density (<= 40px) */}
-			<div className="sanpin-header" style={{ paddingBottom: "0.5rem", borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))" }}>
-				<div className="sanpin-title-block" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-					<h1 style={{ fontSize: "1.15rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-						<ShieldCheck size={22} color="var(--brand-primary, #2563eb)" />
+			{/* Top Header — Compact Medical Density (<= 42px) */}
+			<div className="sanpin-header" style={{ padding: "0.25rem 0 0.4rem", borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+				<div className="sanpin-title-block" style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexShrink: 0 }}>
+					<h1 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "0.45rem", color: "var(--ink)" }}>
+						<ShieldCheck size={20} color="var(--brand-primary, #2563eb)" />
 						<span>Журналы СанПиН 3.3686-21</span>
 					</h1>
-					<span className="sanpin-badge-gov" style={{ minHeight: "28px", fontSize: "0.75rem", padding: "0.2rem 0.55rem" }}>
-						<CheckCircle2 size={13} /> СанПиН 2026
+					<span className="sanpin-badge-gov" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
+						<CheckCircle2 size={12} /> 2026 Норма
 					</span>
 				</div>
 
 				<div className="sanpin-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}>
-					{/* Primary 1: + Новый цикл */}
-					<button
-						type="button"
-						onClick={() => setIsSterilizationModalOpen(true)}
-						className="sanpin-btn"
-						style={{
-							minHeight: "34px",
-							padding: "0.35rem 0.85rem",
-							fontSize: "0.8125rem",
-							fontWeight: 700,
-							background: "var(--teal-600, #0d9488)",
-							borderColor: "var(--teal-600, #0d9488)",
-							color: "#ffffff",
-							boxShadow: "0 2px 5px rgba(13, 148, 136, 0.25)",
-							cursor: "pointer",
-						}}
-						data-testid="sanpin-new-cycle-primary-btn"
-					>
-						<Plus size={15} /> <span>Новый цикл</span>
-					</button>
-
-					{/* 1-Click Autopilot Shift */}
+					{/* SOLE DOMINANT PRIMARY ACTION: ⚡ 1-Клик Автопилот смены СанПиН */}
 					<button
 						type="button"
 						onClick={handleAutofillShift}
 						disabled={autoFilling}
-						className="sanpin-btn"
+						className="sanpin-btn sanpin-btn-primary"
 						style={{
 							minHeight: "34px",
-							padding: "0.35rem 0.85rem",
-							fontSize: "0.8125rem",
+							height: "34px",
+							padding: "0.35rem 0.95rem",
+							fontSize: "0.85rem",
 							fontWeight: 700,
-							background: "rgba(13, 148, 136, 0.12)",
-							borderColor: "rgba(13, 148, 136, 0.3)",
-							color: "var(--teal-600, #0d9488)",
+							background: "var(--teal-600, #0d9488)",
+							borderColor: "var(--teal-600, #0d9488)",
+							color: "#ffffff",
+							boxShadow: "0 2px 6px rgba(13, 148, 136, 0.3)",
 							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.35rem",
+							whiteSpace: "nowrap",
 						}}
-						data-testid="sanpin-1click-autofill-btn"
-						title="1-Клик Автопилот: мгновенно оформляет пробы ПСО, циклы 134°C, Дезар и журнал T°"
+						data-testid="sanpin-1click-autopilot-primary-btn"
+						title="1-Клик Автопилот смены: мгновенно фиксирует пробы ПСО, азопирам, фенолфталеин, циклы 134°C, Дезар и журнал T°"
 					>
 						<Sparkles size={15} />
-						<span>{autoFilling ? "Оформление..." : "⚡ 1-Клик Автопилот"}</span>
+						<span>{autoFilling ? "Оформление смены..." : "⚡ 1-Клик Автопилот смены СанПиН"}</span>
+					</button>
+
+					{/* Secondary: + Новый цикл */}
+					<button
+						type="button"
+						onClick={() => setIsSterilizationModalOpen(true)}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{
+							minHeight: "34px",
+							height: "34px",
+							padding: "0.35rem 0.75rem",
+							fontSize: "0.8125rem",
+							fontWeight: 600,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.25rem",
+							whiteSpace: "nowrap",
+						}}
+						data-testid="sanpin-new-cycle-secondary-btn"
+					>
+						<Plus size={14} /> <span>Новый цикл</span>
 					</button>
 
 					{/* Dropdown: [⋮ Опции СанПиН] */}
-					<div ref={exportMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 50 }}>
+					<div ref={exportMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
 						<button
 							type="button"
 							onClick={() => setIsExportMenuOpen((prev) => !prev)}
 							className="sanpin-btn sanpin-btn-secondary"
 							style={{
 								minHeight: "34px",
-								padding: "0.35rem 0.65rem",
+								height: "34px",
+								padding: "0.35rem 0.6rem",
 								fontSize: "0.8125rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "0.25rem",
+								whiteSpace: "nowrap",
 							}}
 							aria-expanded={isExportMenuOpen}
 							title="Опции СанПиН: Закрытие смены, пакетный расчет, сшивы, ЭЦП и экспорт"
 							data-testid="sanpin-options-dropdown-btn"
 						>
-							<MoreVertical size={15} color="var(--brand-primary, #2563eb)" />
+							<MoreVertical size={14} color="var(--brand-primary, #2563eb)" />
 							<span>Опции</span>
-							<ChevronDown size={13} style={{ transform: isExportMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+							<ChevronDown size={12} style={{ transform: isExportMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
 						</button>
 
 						{isExportMenuOpen && (
@@ -1119,8 +1128,8 @@ export function SanpinRegisters() {
 									background: "var(--paper-strong, #ffffff)",
 									border: "1px solid var(--line, #e2e8f0)",
 									borderRadius: "10px",
-									boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.18), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-									zIndex: 100,
+									boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15)",
+									zIndex: 1000,
 									padding: "0.35rem",
 									display: "flex",
 									flexDirection: "column",

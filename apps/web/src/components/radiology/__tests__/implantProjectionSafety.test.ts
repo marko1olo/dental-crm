@@ -5,6 +5,7 @@ import {
 	calculateAxialImplantIntersection,
 	calculateImplant3DWorldPose,
 	auditMandibularNerveSafety,
+	performCbctPlanningAudit,
 	checkImplantSliceIntersection,
 	findImplantSpec,
 	sampleCrossSectionHUProfile,
@@ -117,6 +118,41 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 		assert.equal(dangerAudit.safetyStatus, "danger");
 		assert.equal(dangerAudit.isDangerous, true);
 		assert.equal(dangerAudit.shouldTriggerAudioAlarm, true);
+	});
+
+	it("disapproves plan (isPlanApproved: false) when IAN clearance is in warning corridor (1.0..1.99 mm)", () => {
+		const warningCanal: MandibularCanalCrossSection = {
+			center: { x: 0, y: 17.0 },
+			radiusMm: 1.5,
+			safetyMarginMm: 2.0,
+		};
+		const envelope = {
+			crestPoint: { x: 0, y: 2.0 },
+			basePoint: { x: 0, y: 20.0 },
+			buccalCrestPoint: { x: -4.0, y: 2.0 },
+			lingualCrestPoint: { x: 4.5, y: 2.0 },
+			ridgeWidthMm: 8.5,
+			ridgeHeightMm: 18.0,
+		};
+		const huSampling = {
+			coronalCrestalHU: 1100,
+			trabecularCoreHU: 700,
+			apicalBaseHU: 850,
+			overallMeanHU: 880,
+		};
+
+		const audit = performCbctPlanningAudit({
+			toothFdi: 46,
+			implantPose: mockPose,
+			canal: warningCanal,
+			envelope,
+			huSampling,
+		});
+
+		assert.equal(audit.nerveSafety.safetyStatus, "warning");
+		assert.equal(audit.nerveSafety.isWarning, true);
+		assert.equal(audit.isPlanApproved, false);
+		assert.ok(audit.form043DiaryText.includes("ТРЕБУЕТСЯ УМЕНЬШЕНИЕ ДЛИНЫ ИМПЛАНТАТА ДЛЯ ЗАЗОРА >= 2.0 ММ"));
 	});
 
 	it("maps cross-section slices to panoramic X columns and performs inverse click lookup", () => {

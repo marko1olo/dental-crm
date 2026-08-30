@@ -729,7 +729,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
   </table>
 
   <!-- 2. Анамнез жизни и заболевания -->
-  <div class="section-title">2. Анамнез жизни и настоящего заболевания (Anamnesis vitae & morbi)</div>
+  <div class="section-title">2. Анамнез жизни и настоящего заболевания (Anamnesis vitae et morbi)</div>
   <table class="data-table">
     <tr>
       <td style="width:25%;"><strong>Жалобы при обращении:</strong></td>

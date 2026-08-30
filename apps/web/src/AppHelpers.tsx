@@ -546,13 +546,6 @@ export function loadDocumentIssueSignatureDraft(
 			savedAt,
 		};
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.warn(error);
 		return fallback;
 	}
@@ -577,13 +570,6 @@ export function saveDocumentIssueSignatureDraft(
 			} satisfies DocumentIssueSignatureDraft),
 		);
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.warn(error);
 		// Signature defaults are convenience only; the server still requires explicit attestation on issue.
 	}
@@ -678,13 +664,6 @@ export function loadDocumentPaymentSelectionStore(
 		}
 		return { version: 1, selections };
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.error("Failed to load signature draft", error);
 		// Document payment selection is local operator convenience; read failures are safe to ignore.
 		return emptyDocumentPaymentSelectionStore();
@@ -726,13 +705,6 @@ export function saveDocumentPaymentSelection(
 			} satisfies DocumentPaymentSelectionStore),
 		);
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.error("Failed to save payment selection", error);
 		// Document payment selection is local operator convenience; failed storage must not block document issue.
 	}
@@ -1131,13 +1103,6 @@ export function saveOutpatient025uDocumentDraft(
 			} satisfies DocumentPayloadDraftStore),
 		);
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.error("Failed to save outpatient 025u document draft", error);
 		// Payload drafts are recovery data only; document issue still validates all facts server-side.
 	}
@@ -1186,13 +1151,6 @@ export function saveMedicalRecordExtractDocumentDraft(
 			} satisfies DocumentPayloadDraftStore),
 		);
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.error("Failed to save medical record extract document draft", error);
 		// Payload drafts are recovery data only; document issue still validates all facts server-side.
 	}
@@ -1230,13 +1188,6 @@ export function loadLocalImagingViewerDraft(
 		}
 		return parsed?.state && Array.isArray(parsed.annotations) ? parsed : null;
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.warn("Failed to load local imaging viewer draft", error);
 		return null;
 	}
@@ -1328,13 +1279,6 @@ export function loadLocalDicomWorkbenchDraftFromLocalStorage(
 		}
 		return parsed;
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.warn(
 			"Failed to load local DICOM workbench draft from local storage:",
 			error,
@@ -1468,13 +1412,6 @@ export function loadLocalMprWorkbenchDraftFromLocalStorage(
 		const state = normalizeMprWorkbenchState(parsed.state);
 		return state ? { ...parsed, state } : null;
 	} catch (error) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.warn(error);
 		return null;
 	}
@@ -2561,13 +2498,6 @@ export function normalizeTelegramPublicHttpsUrlDraft(
 			try {
 				return decodeURIComponent(segment).trim().toLowerCase();
 			} catch (scanError) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(scanError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (isBrowserMigrationScanAbortError(scanError)) throw scanError;
 				throw new Error(`${fieldLabel}: исправьте кодировку пути в ссылке.`);
 			}
@@ -4959,13 +4889,7 @@ export function openSpeechChunkDb(): Promise<IDBDatabase> {
 				assertSpeechChunkDbStores(db);
 				resolve(db);
 			} catch (error) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(error as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
+				logger.warn("Offline IndexedDB stores assert failed, closing db", error);
 				db.close();
 				speechChunkDbPromise = null;
 				reject(

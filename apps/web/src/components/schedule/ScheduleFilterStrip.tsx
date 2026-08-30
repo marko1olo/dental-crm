@@ -155,19 +155,19 @@ export function ScheduleFilterStrip({
 
 	return (
 		<section
-			className="schedule-filter-strip h-9 min-h-[36px] max-h-[36px] flex items-center justify-between gap-1.5 px-2 sm:px-3 py-0 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
+			className="schedule-filter-strip min-h-[44px] sm:min-h-[36px] sm:h-9 flex items-center justify-between gap-1.5 px-2 sm:px-3 py-1 sm:py-0 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
 			aria-label="Сохраненные фильтры расписания"
 		>
-			{/* Left: Date Stepper (< dd.mm.yyyy >) */}
-			<div className="schedule-date-picker-group flex items-center gap-0.5 shrink-0 pr-1 sm:pr-1.5 border-r border-[var(--line)]">
+			{/* Left: Date Stepper (< dd.mm.yyyy >) with >= 44px mobile touch targets */}
+			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-0.5 shrink-0 pr-1 sm:pr-1.5 border-r border-[var(--line)]">
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-prev h-7 w-6 sm:w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+					className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] sm:min-h-[28px] sm:min-w-[28px] sm:h-7 sm:w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(-1)}
 					aria-label="Показать предыдущий день"
 					title="День назад"
 				>
-					<ChevronLeft size={14} aria-hidden="true" />
+					<ChevronLeft size={16} aria-hidden="true" />
 				</button>
 				<input
 					type="date"
@@ -176,16 +176,16 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input h-7 px-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[96px] sm:w-[115px] text-center"
+					className="schedule-date-input min-h-[44px] sm:min-h-[28px] sm:h-7 px-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[100px] sm:w-[115px] text-center"
 				/>
 				<button
 					type="button"
-					className="secondary-button schedule-day-step-next h-7 w-6 sm:w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+					className="secondary-button schedule-day-step-next min-h-[44px] min-w-[44px] sm:min-h-[28px] sm:min-w-[28px] sm:h-7 sm:w-7 inline-flex items-center justify-center cursor-pointer rounded-lg font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
 					onClick={() => stepScheduleDay(1)}
 					aria-label="Показать следующий день"
 					title="День вперёд"
 				>
-					<ChevronRight size={14} aria-hidden="true" />
+					<ChevronRight size={16} aria-hidden="true" />
 				</button>
 			</div>
 
@@ -263,7 +263,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("grid")}
-							className={`h-6.5 px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[26px] min-w-[44px] sm:min-w-0 sm:h-6.5 px-2 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 								scheduleViewMode === "grid"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -272,13 +272,13 @@ export function ScheduleFilterStrip({
 							aria-label="Сетка по кабинетам"
 							aria-pressed={scheduleViewMode === "grid"}
 						>
-							<LayoutGrid size={12} className="shrink-0" />
+							<LayoutGrid size={14} className="shrink-0" />
 							<span className="hidden md:inline">Сетка</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("timeline")}
-							className={`h-6.5 px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[26px] min-w-[44px] sm:min-w-0 sm:h-6.5 px-2 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
 								scheduleViewMode === "timeline"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -287,7 +287,7 @@ export function ScheduleFilterStrip({
 							aria-label="Лента по дням"
 							aria-pressed={scheduleViewMode === "timeline"}
 						>
-							<List size={12} className="shrink-0" />
+							<List size={14} className="shrink-0" />
 							<span className="hidden md:inline">Лента</span>
 						</button>
 					</div>
@@ -492,7 +492,7 @@ export function ScheduleFilterStrip({
 									aria-label="Пациент с острой болью CITO: быстрая запись дежурному врачу"
 								>
 									<AlertCircle size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									<span>CITO! Острая боль</span>
+									<span>Острая боль (CITO!)</span>
 								</button>
 							)}
 

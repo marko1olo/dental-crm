@@ -207,10 +207,10 @@ export function PatientMemoPrintModal({
 									<MemoIcon className="w-4 h-4" />
 								</div>
 								<div className="min-w-0 flex-1">
-									<div className="text-xs sm:text-sm font-extrabold truncate">
+									<div className="text-xs sm:text-sm font-extrabold leading-snug break-words">
 										{memo.shortTitle}
 									</div>
-									<div className="text-[11px] opacity-80 line-clamp-1 mt-0.5">
+									<div className="text-[11px] opacity-80 leading-snug mt-0.5 break-words">
 										{memo.summary}
 									</div>
 								</div>
@@ -220,9 +220,9 @@ export function PatientMemoPrintModal({
 				</div>
 
 				{/* Live Memo Preview Box (White Sheet with authentic printed preview in all themes) */}
-				<div className="flex-1 overflow-y-auto min-h-[260px] max-h-[380px] p-2 bg-slate-900/10 dark:bg-slate-950/40 rounded-xl border border-[var(--line)]">
+				<div className="flex-1 overflow-y-auto min-h-[280px] max-h-[440px] p-2 pb-8 bg-slate-900/10 dark:bg-slate-950/40 rounded-xl border border-[var(--line)]">
 					<div
-						className="p-5 sm:p-6 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl leading-relaxed flex flex-col gap-3.5"
+						className="p-5 sm:p-6 pb-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl leading-relaxed flex flex-col gap-3.5"
 						style={{ background: "#ffffff", color: "#0f172a" }}
 					>
 						{/* Form Official Header */}

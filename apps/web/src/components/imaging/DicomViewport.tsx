@@ -82,7 +82,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 
 		ctx.save();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = "#020617";
+		ctx.fillStyle = "#0f172a";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 		// Transform matrix
@@ -224,7 +224,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				height: "100%",
 				position: "relative",
 				overflow: "hidden",
-				backgroundColor: "#020617",
+				backgroundColor: "#0f172a",
 				touchAction: "none",
 				userSelect: "none",
 			}}

@@ -125,17 +125,17 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 							return (
 								<span
 									key={num}
-									className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-black border flex items-center justify-center gap-1 shadow-xs transition-all ${
+									className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-bold border flex items-center justify-center gap-1 shadow-xs transition-all ${
 										isErupting
-											? "bg-amber-500/25 dark:bg-amber-900/60 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-black"
+											? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 											: isPrim
-												? "bg-amber-500/15 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-500/40 hover:border-amber-500"
-												: "bg-emerald-500/15 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-500/40 hover:border-emerald-500"
+												? "bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border-amber-400/50 hover:border-amber-500"
+												: "bg-teal-50 dark:bg-teal-950/30 text-teal-900 dark:text-teal-200 border-teal-400/50 hover:border-teal-500"
 									}`}
 									title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 								>
-									<span className="text-sm sm:text-base font-black font-mono">{num}</span>
-									<span className="text-[10px] sm:text-xs font-bold opacity-90">{isPrim ? "Мол." : "Пост."}</span>
+									<span className="text-sm font-bold font-mono">{num}</span>
+									<span className="text-[10px] sm:text-xs font-medium opacity-90">{isPrim ? "Мол." : "Пост."}</span>
 								</span>
 							);
 						})}
@@ -154,17 +154,17 @@ export const PediatricTimelineTab: React.FC<PediatricTimelineTabProps> = ({
 							return (
 								<span
 									key={num}
-									className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-black border flex items-center justify-center gap-1 shadow-xs transition-all ${
+									className={`min-h-[44px] min-w-[36px] sm:min-h-[48px] sm:min-w-[48px] px-2 py-1 rounded-xl text-sm font-mono font-bold border flex items-center justify-center gap-1 shadow-xs transition-all ${
 										isErupting
-											? "bg-amber-500/25 dark:bg-amber-900/60 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-black"
+											? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 											: isPrim
-												? "bg-amber-500/15 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-500/40 hover:border-amber-500"
-												: "bg-emerald-500/15 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-500/40 hover:border-emerald-500"
+												? "bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border-amber-400/50 hover:border-amber-500"
+												: "bg-teal-50 dark:bg-teal-950/30 text-teal-900 dark:text-teal-200 border-teal-400/50 hover:border-teal-500"
 									}`}
 									title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 								>
-									<span className="text-sm sm:text-base font-black font-mono">{num}</span>
-									<span className="text-[10px] sm:text-xs font-bold opacity-90">{isPrim ? "Мол." : "Пост."}</span>
+									<span className="text-sm font-bold font-mono">{num}</span>
+									<span className="text-[10px] sm:text-xs font-medium opacity-90">{isPrim ? "Мол." : "Пост."}</span>
 								</span>
 							);
 						})}

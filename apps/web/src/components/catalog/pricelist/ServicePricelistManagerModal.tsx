@@ -293,14 +293,16 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							<Layers size={24} />
 						</div>
 						<div>
-							<div className="pricelist-header-title">Прейскурант и Номенклатура услуг № 804н</div>
+							<div className="pricelist-header-title" title="Прейскурант и Номенклатура медицинских услуг по Приказу Минздрава России № 804н">
+								Прейскурант услуг
+							</div>
 							<div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-								{items.length} позиций · Государственный классификатор Минздрава РФ · НДС 0%
+								{items.length} позиций · Классификатор Минздрава РФ · НДС 0%
 							</div>
 						</div>
-						<div className="pricelist-statutory-badge">
+						<div className="pricelist-statutory-badge" title="Соответствует Приказу Минздрава России № 804н">
 							<ShieldCheck size={14} />
-							<span>Приказ № 804н</span>
+							<span>Номенклатура</span>
 						</div>
 					</div>
 

@@ -26,6 +26,23 @@ import type {
 	NerveSafetyAuditResult,
 	VirtualImplantSpec,
 } from "./implantSafetyEngine";
+import {
+	type CbctVoxelVolume,
+	type Point3D,
+	type ObliqueRotationAngles,
+	type MprPlane,
+	DEFAULT_OBLIQUE_ROTATION,
+	extractObliqueMprSlice,
+	clampCoordinateToVolume,
+} from "./cbctMprMath";
+import {
+	type DentalArchCurve,
+	type CrossSectionSliceData,
+	buildDentalArchCurve,
+	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
+	reconstructPanoramicView,
+	generateCrossSectionSlices,
+} from "./dentalCurveEngine";
 
 export interface CbctReportPatientInfo {
 	readonly patientName: string;
@@ -159,6 +176,7 @@ export interface ViewportSnapshotOptions {
 	readonly showPatientBadge?: boolean | undefined;
 	readonly showWatermark?: boolean | undefined;
 	readonly showScaleBar?: boolean | undefined;
+	readonly redrawCanvas?: (() => HTMLCanvasElement | null | undefined) | undefined;
 }
 
 export interface CbctReportRenderOptions {
@@ -173,6 +191,7 @@ export interface CbctReportRenderOptions {
  * 2. Inscribes calibrated 10 mm scale ruler bar (using physical scaleMm pixel spacing).
  * 3. Stamps patient metadata badge (optional for PDF protocol to avoid raster redundancy).
  * 4. Imprints clean clinical orientation & medical branding (optional for PDF protocol).
+ * 5. Guarantees synchronous canvas rendering before extracting dataUrl.
  */
 export async function exportCleanViewportSnapshot(
 	canvas: HTMLCanvasElement,
@@ -180,15 +199,21 @@ export async function exportCleanViewportSnapshot(
 	scaleMm: number,
 	options: ViewportSnapshotOptions = {},
 ): Promise<string> {
-	if (!canvas) {
+	let sourceCanvas = canvas;
+	if (options.redrawCanvas) {
+		const redrawn = options.redrawCanvas();
+		if (redrawn) sourceCanvas = redrawn;
+	}
+
+	if (!sourceCanvas) {
 		return "";
 	}
 
 	// In Node.js testing environment without DOM canvas
 	if (typeof document === "undefined" || !document.createElement) {
-		if (typeof canvas.toDataURL === "function") {
+		if (typeof sourceCanvas.toDataURL === "function") {
 			try {
-				return canvas.toDataURL("image/png");
+				return sourceCanvas.toDataURL("image/png");
 			} catch {
 				return `data:image/png;base64,mock_${viewportTitle.replace(/\s+/g, "_")}`;
 			}
@@ -196,8 +221,8 @@ export async function exportCleanViewportSnapshot(
 		return `data:image/png;base64,mock_${viewportTitle.replace(/\s+/g, "_")}`;
 	}
 
-	const width = canvas.width > 0 ? canvas.width : 512;
-	const height = canvas.height > 0 ? canvas.height : 512;
+	const width = sourceCanvas.width > 0 ? sourceCanvas.width : 512;
+	const height = sourceCanvas.height > 0 ? sourceCanvas.height : 512;
 
 	const exportCanvas = document.createElement("canvas");
 	exportCanvas.width = width;
@@ -206,7 +231,7 @@ export async function exportCleanViewportSnapshot(
 	const ctx = exportCanvas.getContext("2d");
 	if (!ctx) {
 		try {
-			return canvas.toDataURL("image/png");
+			return sourceCanvas.toDataURL("image/png");
 		} catch {
 			return "";
 		}
@@ -228,8 +253,8 @@ export async function exportCleanViewportSnapshot(
 
 	// 2. Draw source slice image from canvas (with LUT pixel inversion if toner saving is active)
 	try {
-		if (canvas.width > 0 && canvas.height > 0) {
-			ctx.drawImage(canvas, 0, 0, width, height);
+		if (sourceCanvas.width > 0 && sourceCanvas.height > 0) {
+			ctx.drawImage(sourceCanvas, 0, 0, width, height);
 
 			if (isInvertToner && typeof ctx.getImageData === "function" && typeof ctx.putImageData === "function") {
 				try {
@@ -237,9 +262,20 @@ export async function exportCleanViewportSnapshot(
 					if (imgData && imgData.data) {
 						const d = imgData.data;
 						for (let i = 0; i < d.length; i += 4) {
-							d[i] = 255 - d[i]!; // R
-							d[i + 1] = 255 - d[i + 1]!; // G
-							d[i + 2] = 255 - d[i + 2]!; // B
+							const r = d[i]!;
+							const g = d[i + 1]!;
+							const b = d[i + 2]!;
+							const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+							// Anti-blinding: keep air / black background (intensity <= 15) dark (#090d16) to eliminate blinding white background
+							if (gray <= 15) {
+								d[i] = 10;
+								d[i + 1] = 13;
+								d[i + 2] = 22;
+							} else {
+								d[i] = 255 - r;
+								d[i + 1] = 255 - g;
+								d[i + 2] = 255 - b;
+							}
 							d[i + 3] = 255; // Ensure solid alpha
 						}
 						ctx.putImageData(imgData, 0, 0);
@@ -368,6 +404,201 @@ export async function exportCleanViewportSnapshot(
 	} catch {
 		return "";
 	}
+}
+
+export interface GenerateReportSnapshotsParams {
+	readonly volume: CbctVoxelVolume;
+	readonly archCurve?: DentalArchCurve | null | undefined;
+	readonly crosshairMm: Point3D;
+	readonly obliqueAngles?: ObliqueRotationAngles | undefined;
+	readonly windowWidth?: number | undefined;
+	readonly windowLevel?: number | undefined;
+	readonly targetToothFdi?: number | undefined;
+	readonly tonerSaving?: boolean | undefined;
+	readonly patientName?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly studyDate?: string | undefined;
+}
+
+/**
+ * Synchronously generates all 4 diagnostic report slice snapshots directly from 3D voxel volume:
+ * 1. Axial MPR slice.
+ * 2. Panoramic (OPG) reconstructed dental arch slice.
+ * 3. Transversal Cross-Section slice (perpendicular to dental arch at target tooth).
+ * 4. Sagittal MPR slice.
+ *
+ * Guarantees zero blank/white windows in PDF exports.
+ */
+export async function generateSynchronizedReportSnapshots(
+	params: GenerateReportSnapshotsParams,
+): Promise<{
+	axial: CbctReportSliceSnapshot;
+	panoramic: CbctReportSliceSnapshot;
+	crossSection: CbctReportSliceSnapshot;
+	sagittal: CbctReportSliceSnapshot;
+}> {
+	const {
+		volume,
+		archCurve,
+		crosshairMm,
+		obliqueAngles = DEFAULT_OBLIQUE_ROTATION,
+		windowWidth = 4400,
+		windowLevel = 1300,
+		targetToothFdi = 46,
+		tonerSaving = true,
+		patientName = "Пациент",
+		clinicName = "Стоматологический центр DENTE",
+		studyDate = new Date().toLocaleDateString("ru-RU"),
+	} = params;
+
+	const pixelSpacing = volume.spacingMm.x || 0.4;
+	const safeCrosshair = clampCoordinateToVolume(crosshairMm, volume);
+
+	const createSliceCanvas = (data: Uint8ClampedArray, w: number, h: number): HTMLCanvasElement => {
+		if (typeof document === "undefined" || !document.createElement) {
+			return {
+				width: w,
+				height: h,
+				toDataURL: () => "data:image/png;base64,mock_slice",
+			} as unknown as HTMLCanvasElement;
+		}
+		const c = document.createElement("canvas");
+		c.width = Math.max(1, w);
+		c.height = Math.max(1, h);
+		const ctx = c.getContext("2d");
+		if (ctx) {
+			const img = ctx.createImageData(c.width, c.height);
+			img.data.set(data.slice(0, c.width * c.height * 4));
+			ctx.putImageData(img, 0, 0);
+		}
+		return c;
+	};
+
+	// 1. Axial MPR Slice
+	const axialRes = extractObliqueMprSlice(volume, "axial", safeCrosshair, obliqueAngles, {
+		windowWidth,
+		windowLevel,
+		invert: false,
+		slabMode: "single",
+	});
+	const axialCanvas = createSliceCanvas(axialRes.data, axialRes.metadata.widthPx, axialRes.metadata.heightPx);
+	const axialDataUrl = await exportCleanViewportSnapshot(
+		axialCanvas,
+		`Аксиальный срез (Z = ${safeCrosshair.z.toFixed(1)} мм)`,
+		pixelSpacing,
+		{
+			patientName,
+			clinicName,
+			studyDate,
+			targetToothFdi,
+			sliceLocationMm: safeCrosshair.z,
+			invertToner: tonerSaving,
+			cleanForReport: true,
+		},
+	);
+
+	// 2. Panoramic (OPG) Reconstructed Slice
+	const effectiveCurve = archCurve ?? buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+	const panoRes = reconstructPanoramicView(volume, effectiveCurve, {
+		windowWidth,
+		windowLevel,
+		invert: false,
+		heightMm: 38.0,
+		heightPx: 280,
+	});
+	const panoCanvas = panoRes
+		? createSliceCanvas(panoRes.pixelData, panoRes.widthPx, panoRes.heightPx)
+		: createSliceCanvas(new Uint8ClampedArray(512 * 280 * 4), 512, 280);
+	const panoDataUrl = await exportCleanViewportSnapshot(
+		panoCanvas,
+		"Панорамная томограмма (ОПТГ сляб 15 мм)",
+		pixelSpacing,
+		{
+			patientName,
+			clinicName,
+			studyDate,
+			targetToothFdi,
+			invertToner: tonerSaving,
+			cleanForReport: true,
+		},
+	);
+
+	// 3. Cross-Section Transversal Slice
+	const csSlices = generateCrossSectionSlices(volume, effectiveCurve, 1.5, safeCrosshair.z, {
+		windowWidth,
+		windowLevel,
+		invert: false,
+	});
+	const targetToothStr = targetToothFdi.toString();
+	const targetCs =
+		csSlices.find((s) => s.nearestToothFdi === targetToothStr) ??
+		csSlices[Math.floor(csSlices.length / 2)] ??
+		csSlices[0];
+
+	const csCanvas = targetCs
+		? createSliceCanvas(targetCs.pixelData, targetCs.widthPx, targetCs.heightPx)
+		: createSliceCanvas(new Uint8ClampedArray(256 * 256 * 4), 256, 256);
+	const csDataUrl = await exportCleanViewportSnapshot(
+		csCanvas,
+		`Трансверзальный срез (Зуб #${targetToothFdi})`,
+		pixelSpacing,
+		{
+			patientName,
+			clinicName,
+			studyDate,
+			targetToothFdi,
+			invertToner: tonerSaving,
+			cleanForReport: true,
+		},
+	);
+
+	// 4. Sagittal MPR Slice
+	const sagittalRes = extractObliqueMprSlice(volume, "sagittal", safeCrosshair, obliqueAngles, {
+		windowWidth,
+		windowLevel,
+		invert: false,
+		slabMode: "single",
+	});
+	const sagittalCanvas = createSliceCanvas(sagittalRes.data, sagittalRes.metadata.widthPx, sagittalRes.metadata.heightPx);
+	const sagittalDataUrl = await exportCleanViewportSnapshot(
+		sagittalCanvas,
+		`Сагиттальный срез (X = ${safeCrosshair.x.toFixed(1)} мм)`,
+		pixelSpacing,
+		{
+			patientName,
+			clinicName,
+			studyDate,
+			targetToothFdi,
+			sliceLocationMm: safeCrosshair.x,
+			invertToner: tonerSaving,
+			cleanForReport: true,
+		},
+	);
+
+	return {
+		axial: {
+			title: `Аксиальный срез (Z = ${safeCrosshair.z.toFixed(1)} мм)`,
+			dataUrl: axialDataUrl,
+			orientationLabel: "AXIAL",
+			sliceLocationMm: safeCrosshair.z,
+		},
+		panoramic: {
+			title: "Панорамная реконструкция (ОПТГ сляб 15 мм)",
+			dataUrl: panoDataUrl,
+			orientationLabel: "PANORAMIC",
+		},
+		crossSection: {
+			title: `Кросс-секция (Зуб #${targetToothFdi})`,
+			dataUrl: csDataUrl,
+			orientationLabel: `FDI #${targetToothFdi}`,
+		},
+		sagittal: {
+			title: `Сагиттальный срез (X = ${safeCrosshair.x.toFixed(1)} мм)`,
+			dataUrl: sagittalDataUrl,
+			orientationLabel: "SAGITTAL",
+			sliceLocationMm: safeCrosshair.x,
+		},
+	};
 }
 
 /**
@@ -777,8 +1008,8 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     margin-bottom: 4px;
   }
   .mpr-card {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
+    background: #090d16;
+    border: 1px solid #334155;
     border-radius: 4px;
     overflow: hidden;
     position: relative;
@@ -798,16 +1029,16 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     position: absolute;
     top: 3px;
     left: 3px;
-    background: rgba(248, 250, 252, 0.95);
-    color: #0369a1;
+    background: rgba(15, 23, 42, 0.9);
+    color: #38bdf8;
     font-size: 7.5px;
     font-weight: 700;
     padding: 1.5px 4px;
     border-radius: 3px;
-    border: 0.5px solid #cbd5e1;
+    border: 0.5px solid #0284c7;
   }
   .mpr-empty {
-    color: #64748b;
+    color: #94a3b8;
     font-size: 8px;
     text-align: center;
     padding: 10px;

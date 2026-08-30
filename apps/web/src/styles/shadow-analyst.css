@@ -20,6 +20,15 @@
 	max-width: 380px;
 }
 
+@media (max-width: 840px) {
+	.sa-toast {
+		bottom: calc(var(--mobile-nav-height, 68px) + 12px + env(safe-area-inset-bottom, 0px));
+		left: 12px;
+		right: 12px;
+		max-width: calc(100vw - 24px);
+	}
+}
+
 /* Position toast centered at bottom in safe area when CBCT Studio / 3D viewer is active (DEF-C01 / DEF-16.1) to avoid sidebar and viewport occlusion */
 body:has([id^="cbct-mpr-studio-modal"]) .sa-toast,
 body:has([data-testid="cbct-mpr-studio-modal"]) .sa-toast,

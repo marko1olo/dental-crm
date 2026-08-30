@@ -211,6 +211,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							alignItems: "center",
 							gap: "6px",
 							fontSize: "13px",
+							whiteSpace: "nowrap",
 						}}
 					>
 						<Ruler size={16} /> Линейка (мм)

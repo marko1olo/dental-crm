@@ -87,17 +87,17 @@ describe("16-Bit Look-Up Table (LUT) Window/Level Contrast Engine Suite", () => 
 		});
 	});
 
-	describe("2. Color Inversion (Negative / White Paper LUT)", () => {
-		it("inverts grayscale values completely when invert=true", () => {
+	describe("2. Color Inversion (Negative / White Paper LUT with Dark Air Anti-Blinding)", () => {
+		it("inverts grayscale values with dark air anti-blinding when invert=true", () => {
 			const stdLut = generate16BitLut(2000, 400, false);
 			const invLut = generate16BitLut(2000, 400, true);
 
 			assert.equal(invLut.length, 65536);
 
-			// Air (-1000 HU) is 0 in standard, 255 in inverted
+			// Air (-1000 HU < -600 HU) is 0 in standard, and 10 (#090d16 deep dark) in inverted to prevent blinding
 			const airIdx = -1000 + 32768;
 			assert.equal(stdLut[airIdx], 0);
-			assert.equal(invLut[airIdx], 255);
+			assert.equal(invLut[airIdx], 10);
 
 			// Dense bone/enamel (+2000 HU) is 255 in standard, 0 in inverted
 			const denseIdx = 2000 + 32768;
@@ -109,8 +109,9 @@ describe("16-Bit Look-Up Table (LUT) Window/Level Contrast Engine Suite", () => 
 			assert.equal(stdLut[centerIdx], 128);
 			assert.equal(invLut[centerIdx], 127);
 
-			// Full symmetry check across all 65536 entries
-			for (let i = 0; i < 65536; i += 256) {
+			// Symmetry check across anatomical tissue entries (HU >= -600)
+			const airCutoffIdx = -600 + 32768;
+			for (let i = airCutoffIdx; i < 65536; i += 256) {
 				assert.ok(
 					Math.abs(stdLut[i]! + invLut[i]! - 255) <= 1,
 					`Symmetry failure at index ${i}: std=${stdLut[i]}, inv=${invLut[i]}`,

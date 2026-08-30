@@ -162,6 +162,12 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Страница рабочего стола главного врача для проведения экспертизы качества медицинской помощи (ЭКМП), пакетного подписания УКЭП и централизованной передачи СЭМД в ЕГИСЗ (РЭМД).",
 	},
+	{
+		file: "components/schedule/ScheduleSubNavTabs.tsx",
+		name: "ScheduleSubNavTabs",
+		reason:
+			"Альтернативная модульная панель навигации и вторичных режимов расписания (Закон Миллера: 7±2 элемента с выпадающим меню '⋮ Ещё'). В активном расписании используется объединенная панель фильтрации ScheduleFilterStrip.",
+	},
 	/*
 	 * OneCCommerceMlModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
 	 * через точку входа #clinical-modals-studio.
@@ -293,6 +299,36 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "PublicEstimatePortalPage",
 		reason:
 			"Автономная страница публичного портала согласования плана лечения и сметы по прямой пациентской ссылке без доступа к внутреннему кабинету клиники.",
+	},
+	{
+		file: "components/dicom/CbctMprWorkspace.tsx",
+		name: "CbctMprWorkspace",
+		reason:
+			"Изолированное рабочее пространство 3D КЛКТ MPR-реконструкции томографических срезов и позиционирования осей дентальных имплантатов. Подключено через прямое модальное окно CbctMpr3DStudioModal.",
+	},
+	{
+		file: "components/lab/GuestLabPortalView.tsx",
+		name: "GuestLabPortalView",
+		reason:
+			"Автономная интерфейсная обертка внешнего гостевого портала зуботехнической лаборатории для взаимодействия с техниками по временным токенам заказов.",
+	},
+	{
+		file: "components/odontogram/OdontogramView.tsx",
+		name: "OdontogramView",
+		reason:
+			"Канонический фасадный контейнер мультирежимной интерактивной одонтограммы (3D анатомическая, 6-поверхностная и ГОСТ 043/у) для изолированного тестирования и встраивания.",
+	},
+	{
+		file: "components/retention/RetentionAnalyticsView.tsx",
+		name: "RetentionAnalyticsView",
+		reason:
+			"Изолированное представление аналитики удержания пациентов и когорт диспансерного учета с соблюдением Закона Хика (не более 2 кнопок прямого действия в строке).",
+	},
+	{
+		file: "components/visit/VisitTreatmentPlanTab.tsx",
+		name: "VisitTreatmentPlanTab",
+		reason:
+			"Вкладка составления поэтапного клинического плана лечения внутри амбулаторного визита пациента с интеграцией классификатора Номенклатуры услуг 804н.",
 	},
 ];
 

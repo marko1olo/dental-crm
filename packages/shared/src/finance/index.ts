@@ -17,4 +17,5 @@ export * from "./treatmentPlanStages.js";
 export * from "./expensesEngine.js";
 export * from "./splitPayment.js";
 export * from "./partialRefundEngine.js";
+export * from "./installmentScheduleEngine.js";
 

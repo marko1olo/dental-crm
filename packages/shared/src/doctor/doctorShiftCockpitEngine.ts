@@ -46,6 +46,8 @@ import {
 	maskDoctorPhoneNumber,
 } from "../doctor-portal/doctorShiftEngine.js";
 
+export type { DoctorShiftServiceItem };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. APPOINTMENT TIMER SCHEMAS & METADATA
 // ─────────────────────────────────────────────────────────────────────────────
@@ -717,6 +719,7 @@ export interface Emr043CardEvaluationInput {
 	readonly generalTreatmentPlan?: string | null | undefined;
 	readonly procedureProtocol?: string | null | undefined;
 	readonly services?: readonly DoctorShiftServiceItem[] | null | undefined;
+	readonly servicesCount?: number | null | undefined;
 	readonly emrCard043uStatus?: Emr043CardStatus | null | undefined;
 	readonly emrSignedAtIso?: string | null | undefined;
 	readonly emrPepProtocolHash?: string | null | undefined;
@@ -831,7 +834,9 @@ export function evaluateEmr043Completeness(
 	});
 
 	// 6. Rendered Services 804n (Наряд-заказ) — 15%
-	const hasServices = Array.isArray(input.services) && input.services.length > 0;
+	const hasServices =
+		(Array.isArray(input.services) && input.services.length > 0) ||
+		(typeof input.servicesCount === "number" && input.servicesCount > 0);
 	const servicesMissing: string[] = [];
 	if (!hasServices) {
 		servicesMissing.push("В наряд-заказ не добавлено ни одной медицинской услуги");

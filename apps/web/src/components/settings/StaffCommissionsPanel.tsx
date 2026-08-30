@@ -90,7 +90,13 @@ function isDoctorLikeRole(role: string): boolean {
 	return role === "doctor" || role === "owner" || role === "head_doctor";
 }
 
-export const StaffCommissionsPanel: React.FC = () => {
+export interface StaffCommissionsPanelProps {
+	readonly isModalView?: boolean;
+}
+
+export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
+	isModalView = false,
+}) => {
 	const appLogic = useOptionalAppLogicContext();
 	const authRef = useRef(appLogic?.auth);
 	authRef.current = appLogic?.auth;
@@ -362,45 +368,58 @@ export const StaffCommissionsPanel: React.FC = () => {
 
 	return (
 		<article
-			className="settings-card col-span-full flex flex-col gap-4"
+			className={
+				isModalView
+					? "col-span-full flex flex-col gap-3 min-w-0"
+					: "settings-card col-span-full flex flex-col gap-4 min-w-0"
+			}
 			aria-label="Ставки врачей"
 			data-testid="staff-commissions-panel"
 		>
 			<div
-				className="settings-card-header"
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					gap: "0.75rem",
-					flexWrap: "wrap",
-				}}
+				className={
+					isModalView
+						? "flex items-center justify-between gap-3 flex-wrap pb-2 border-b border-slate-200 dark:border-slate-800"
+						: "settings-card-header flex items-center justify-between gap-3 flex-wrap"
+				}
 			>
-				<div>
-					<h4 className="m-0 flex items-center gap-2">
-						<Percent size={16} className="text-[var(--teal)]" />
-						Ставки врачей и сдельная мотивация (% от кассы)
-					</h4>
-					<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-1">
-						Процент, по которому клиника начисляет зарплату врачам от приёма.
-						Расчёт ведётся строго в целых копейках с учётом списания ЗТЛ и материалов.
-					</p>
-				</div>
+				{!isModalView ? (
+					<div>
+						<h4 className="m-0 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+							<Percent size={16} className="text-[var(--teal)]" />
+							Ставки врачей и сдельная мотивация (% от кассы)
+						</h4>
+						<p className="text-xs text-slate-600 dark:text-slate-400 m-0 mt-1">
+							Процент, по которому клиника начисляет зарплату врачам от приёма.
+							Расчёт ведётся строго в целых копейках с учётом списания ЗТЛ и материалов.
+						</p>
+					</div>
+				) : (
+					<div className="flex items-center gap-2">
+						<span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+							Врачей в штате: <strong>{doctors.length}</strong>
+						</span>
+					</div>
+				)}
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 ml-auto">
 					<button
 						type="button"
-						className="secondary-button text-xs flex items-center gap-1.5"
+						className={`secondary-button text-xs flex items-center gap-1.5 min-h-[36px] ${
+							isSimulatorOpen
+								? "bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-200 border-teal-300 dark:border-teal-700 font-bold"
+								: ""
+						}`}
 						onClick={() => setIsSimulatorOpen((v) => !v)}
 						data-testid="toggle-piece-rate-simulator"
 					>
-						<Calculator size={13} />
-						{isSimulatorOpen ? "Скрыть калькулятор" : "Калькулятор сделки"}
+						<Calculator size={14} className="text-teal-600 dark:text-teal-400" />
+						<span>{isSimulatorOpen ? "Скрыть калькулятор" : "Калькулятор сделки"}</span>
 					</button>
 
 					<button
 						type="button"
-						className="secondary-button text-xs"
+						className="secondary-button text-xs min-h-[36px]"
 						onClick={() => void loadRates()}
 						disabled={load.kind === "loading"}
 						data-testid="staff-commissions-refresh"
@@ -413,7 +432,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 			{/* Интерактивный калькулятор сдельной оплаты (Simulator) */}
 			{isSimulatorOpen && (
 				<div
-					className="p-4 rounded-xl border border-teal-200 dark:border-teal-900 bg-teal-50/40 dark:bg-teal-950/20 flex flex-col gap-3 transition-all"
+					className="p-3 sm:p-4 rounded-xl border border-teal-300 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/30 flex flex-col gap-3 transition-all"
 					data-testid="piece-rate-simulator-panel"
 				>
 					<div className="flex items-center justify-between flex-wrap gap-2">
@@ -602,31 +621,31 @@ export const StaffCommissionsPanel: React.FC = () => {
 				{rows.length > 0 ? (
 					<>
 						{withoutRate > 0 ? (
-							<p
-								className="text-xs text-amber-700 dark:text-amber-300 m-0 mb-3"
+							<div
+								className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex items-center gap-2 text-xs text-amber-900 dark:text-amber-200 m-0 mb-3"
 								role="status"
 							>
-								Без ставки: {withoutRate}. Пока процент не задан, отчёт выплат
-								не включает этого врача в итог к выплате.
-							</p>
+								<span>Без ставки: <strong>{withoutRate}</strong>. Пока процент не задан, отчёт выплат не включает этого врача в итог к выплате.</span>
+							</div>
 						) : null}
-						<div className="overflow-x-auto">
+						{/* Десктопная таблица (>= 640px) */}
+						<div className="hidden sm:block overflow-x-auto">
 							<table
 								className="w-full text-sm"
 								data-testid="staff-commissions-table"
 							>
 								<thead>
-									<tr className="text-left text-xs text-slate-500 border-b border-slate-200 dark:border-slate-700">
-										<th scope="col" className="py-2.5 pr-3 font-semibold">
+									<tr className="text-left text-xs text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold bg-slate-50/50 dark:bg-slate-800/50">
+										<th scope="col" className="py-2.5 px-3 font-bold">
 											Врач-клиницист
 										</th>
-										<th scope="col" className="py-2.5 pr-3 font-semibold">
+										<th scope="col" className="py-2.5 px-3 font-bold">
 											Ставка (% от кассы)
 										</th>
-										<th scope="col" className="py-2.5 pr-3 font-semibold">
+										<th scope="col" className="py-2.5 px-3 font-bold">
 											Действует с
 										</th>
-										<th scope="col" className="py-2.5 font-semibold text-right">
+										<th scope="col" className="py-2.5 px-3 font-bold text-right">
 											Действие
 										</th>
 									</tr>
@@ -683,7 +702,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 														<div className="flex items-center justify-end gap-2">
 															<button
 																type="button"
-																className="primary-button px-3 py-1 text-xs"
+																className="primary-button px-3 py-1 text-xs min-h-[36px]"
 																disabled={isSaving}
 																onClick={() => void saveRate(row.userId)}
 																data-testid={`staff-commission-save-${row.userId}`}
@@ -692,7 +711,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 															</button>
 															<button
 																type="button"
-																className="secondary-button px-3 py-1 text-xs"
+																className="secondary-button px-3 py-1 text-xs min-h-[36px]"
 																disabled={isSaving}
 																onClick={cancelEdit}
 															>
@@ -702,7 +721,7 @@ export const StaffCommissionsPanel: React.FC = () => {
 													) : (
 														<button
 															type="button"
-															className="secondary-button px-3 py-1 text-xs"
+															className="secondary-button px-3 py-1 text-xs min-h-[36px]"
 															onClick={() =>
 																beginEdit(
 																	row.userId,
@@ -720,6 +739,95 @@ export const StaffCommissionsPanel: React.FC = () => {
 									})}
 								</tbody>
 							</table>
+						</div>
+
+						{/* Мобильные карточки и аккордеоны (< 640px) */}
+						<div className="flex flex-col gap-2.5 sm:hidden" data-testid="staff-commissions-mobile-cards">
+							{rows.map((row) => {
+								const isEditing = editingUserId === row.userId;
+								const isSaving = save.kind === "saving" && save.userId === row.userId;
+								return (
+									<div
+										key={`mobile-comm-${row.userId}`}
+										className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col gap-3 shadow-2xs"
+										data-testid={`staff-commission-mobile-card-${row.userId}`}
+									>
+										<div className="flex items-center justify-between gap-2">
+											<div className="min-w-0">
+												<span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
+													{row.name}
+												</span>
+												<span className="text-[11px] text-slate-500 block mt-0.5">
+													Действует с: {row.rate?.effectiveFrom ? formatEffectiveFrom(row.rate.effectiveFrom) : "—"}
+												</span>
+											</div>
+											<div className="shrink-0">
+												{row.rate ? (
+													<span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+														{percentLabel(row.rate.commissionPct)}
+													</span>
+												) : (
+													<span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+														не задана
+													</span>
+												)}
+											</div>
+										</div>
+
+										{isEditing ? (
+											<div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+												<div className="flex items-center gap-2">
+													<label className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+														Ставка (%):
+													</label>
+													<input
+														type="text"
+														inputMode="decimal"
+														value={draft}
+														onChange={(e) => setDraft(e.target.value)}
+														placeholder="0–100"
+														aria-label={`Ставка для ${row.name}`}
+														className="flex-1 min-h-[44px] px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+													/>
+												</div>
+												<div className="flex items-center gap-2">
+													<button
+														type="button"
+														className="flex-1 primary-button min-h-[44px] text-xs font-bold inline-flex items-center justify-center gap-1.5"
+														disabled={isSaving}
+														onClick={() => void saveRate(row.userId)}
+													>
+														{isSaving ? "Сохраняем…" : "Сохранить ставку"}
+													</button>
+													<button
+														type="button"
+														className="secondary-button min-h-[44px] px-4 text-xs font-medium"
+														disabled={isSaving}
+														onClick={cancelEdit}
+													>
+														Отмена
+													</button>
+												</div>
+											</div>
+										) : (
+											<div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+												<button
+													type="button"
+													className="secondary-button min-h-[44px] w-full text-xs font-semibold justify-center"
+													onClick={() =>
+														beginEdit(
+															row.userId,
+															row.rate ? row.rate.commissionPct : null,
+														)
+													}
+												>
+													{row.rate ? "Изменить ставку врача" : "Назначить ставку"}
+												</button>
+											</div>
+										)}
+									</div>
+								);
+							})}
 						</div>
 					</>
 				) : null}

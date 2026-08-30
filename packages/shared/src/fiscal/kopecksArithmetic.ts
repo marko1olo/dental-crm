@@ -27,6 +27,8 @@ export function kopecksToRub(kopecks: number): number {
 	return Math.round(kopecks) / 100;
 }
 
+export const kopecksToRubles = kopecksToRub;
+
 /**
  * Banker's Rounding (Round Half to Even) to eliminate cumulative rounding bias.
  * Standard round-to-even algorithm per IEEE-754 and statutory financial arithmetic.

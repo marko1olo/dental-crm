@@ -394,8 +394,7 @@ export function performCbctPlanningAudit(
 		: auditMandibularNerveSafety(params.implantPose, params.canal);
 	const boneContainment = auditAlveolarBoneContainment(params.implantPose, params.envelope);
 	const boneQuality = analyzeMischBoneQuality(params.huSampling, params.implantPose.implantSpec.diameterMm);
-
-	const isPlanApproved = !nerveSafety.isDangerous;
+	const isPlanApproved = !nerveSafety.isDangerous && !nerveSafety.isWarning;
 
 	// Build Form 043/u Surgery Protocol text
 	const anatomyTitle = isMaxilla
@@ -404,6 +403,14 @@ export function performCbctPlanningAudit(
 	const distanceLine = isMaxilla
 		? "   - Дистанция до дна гайморовой пазухи: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм"
 		: "   - Дистанция до нижнечелюстного канала: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм";
+
+	const approvalStatusText = isPlanApproved
+		? "ОДОБРЕНО К УСТАНОВКЕ"
+		: nerveSafety.isWarning
+			? "ТРЕБУЕТСЯ УМЕНЬШЕНИЕ ДЛИНЫ ИМПЛАНТАТА ДЛЯ ЗАЗОРА >= 2.0 ММ"
+			: isMaxilla
+				? "ОТКЛОНЕНО (ТРЕБУЕТСЯ СИНУС-ЛИФТИНГ)"
+				: "ОТКЛОНЕНО (РИСК ПОВРЕЖДЕНИЯ НЕРВА)";
 
 	const diaryLines = [
 		"============================================================",
@@ -425,7 +432,7 @@ export function performCbctPlanningAudit(
 		"3. " + formatMischProtocolToDiaryText(params.huSampling, boneQuality, params.toothFdi),
 		"",
 		"4. ЗАКЛЮЧЕНИЕ И ПЛАН ЛЕЧЕНИЯ:",
-		"   - Допуск к операции: " + (isPlanApproved ? "ОДОБРЕНО К УСТАНОВКЕ" : isMaxilla ? "ОТКЛОНЕНО (ТРЕБУЕТСЯ СИНУС-ЛИФТИНГ)" : "ОТКЛОНЕНО (РИСК ПОВРЕЖДЕНИЯ НЕРВА)"),
+		"   - Допуск к операции: " + approvalStatusText,
 		boneContainment.requiresGbrAugmentation
 			? "   - Рекомендована сопутствующая НКР (GBR) с установкой коллагеновой мембраны."
 			: "   - Дополнительной костной пластики не требуется.",

@@ -195,7 +195,8 @@ for (const vp of VIEWPORTS) {
 
 	// Warm up page
 	try {
-		await page.goto(`${BASE_URL}/?standalone=clinical-modals-studio`, { waitUntil: "networkidle", timeout: 20000 });
+		await page.goto(`${BASE_URL}/?standalone=clinical-modals-studio`, { waitUntil: "domcontentloaded", timeout: 20000 });
+		await page.waitForTimeout(1000);
 	} catch (err) {
 		console.error(`[FATAL] Warmup page goto failed: ${err.message}`);
 		process.exit(1);

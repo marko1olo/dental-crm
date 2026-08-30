@@ -13,10 +13,12 @@ import {
 	formatRussianPhone,
 	generateFnsTaxCertificateData,
 	generateIcsCalendarEvent,
+	generateSbpPaymentQrPayload,
 	generateSmsOtpCode,
 	generateTimeSlots,
 	verifySmsOtpCode,
 } from "../patientPortalEngine";
+import { generateQrCodeSvg } from "../patientCabinet/patientCabinetEngine";
 import {
 	SAMPLE_BOOKING_DOCTORS,
 	SAMPLE_BOOKING_SERVICES,
@@ -176,6 +178,26 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 			assert.strictEqual(cert.maxDeductionRefundRub, 2769); // 21300 * 0.13 = 2769
 			assert.strictEqual(cert.patientFullName, "Смирнова Екатерина Васильевна");
 			assert.strictEqual(cert.clinicInn, "7701234567");
+		});
+	});
+
+	describe("10. SBP QR Code & Exact Integer Kopecks", () => {
+		it("generates NSPK SBP payment URL with exact integer kopecks (sum parameter)", () => {
+			const payload = generateSbpPaymentQrPayload("inv-101", 12500.5, "Лечение кариеса");
+			assert.ok(payload.startsWith("https://qr.nspk.ru/"));
+			assert.ok(payload.includes("sum=1250050")); // 12500.5 * 100 = 1250050 kopecks without float bugs
+			assert.ok(payload.includes("cur=RUB"));
+			assert.ok(payload.includes("qrcId=inv-101"));
+		});
+
+		it("generates deterministic crisp SVG QR code containing finder and timing patterns", () => {
+			const payload = generateSbpPaymentQrPayload("inv-102", 5000, "Консультация");
+			const svg = generateQrCodeSvg(payload, { size: 160, color: "#0f172a", background: "#ffffff" });
+			assert.ok(svg.includes("<svg"));
+			assert.ok(svg.includes('viewBox="0 0 160 160"'));
+			assert.ok(svg.includes('shape-rendering="crispEdges"'));
+			assert.ok(svg.includes("<rect"));
+			assert.ok(svg.includes("</svg>"));
 		});
 	});
 });
