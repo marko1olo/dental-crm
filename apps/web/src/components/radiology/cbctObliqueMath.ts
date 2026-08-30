@@ -23,7 +23,13 @@ import {
 	clampCoordinateToVolume,
 	huToGrayscale,
 	sampleVoxelHU,
+	generate16BitLut,
+	get16BitLut,
+	applyLutToHU,
+	clearLutCache,
 } from "./cbctMprMath";
+
+export { generate16BitLut, get16BitLut, applyLutToHU, clearLutCache };
 
 // ─── 1. OBLIQUE ROTATION & VIEWPORT TYPES ────────────────────────────────────
 
@@ -390,6 +396,9 @@ export function extractObliqueMprSlice(
 	const totalPixels = widthPx * heightPx;
 	const pixelBuffer = new Uint8ClampedArray(totalPixels * 4);
 
+	// Pre-cached 16-bit Window/Level Look-Up Table (LUT)
+	const lut = get16BitLut(windowWidth, windowLevel, invert);
+
 	const halfW = widthPx / 2.0;
 	const halfH = heightPx / 2.0;
 
@@ -441,7 +450,7 @@ export function extractObliqueMprSlice(
 					hu = sampleVoxelHU(Math.round(vx), Math.round(vy), Math.round(vz), volume);
 				}
 
-				const gray = huToGrayscale(hu, windowWidth, windowLevel, invert);
+				const gray = lut[(hu + 32768) & 0xffff]!;
 
 				pixelBuffer[pIdx] = gray;
 				pixelBuffer[pIdx + 1] = gray;
@@ -497,7 +506,7 @@ export function extractObliqueMprSlice(
 				if (slabMode === "minip") finalHU = minHU;
 				else if (slabMode === "average") finalHU = count > 0 ? Math.round(sumHU / count) : minHU;
 
-				const gray = huToGrayscale(finalHU, windowWidth, windowLevel, invert);
+				const gray = lut[(finalHU + 32768) & 0xffff]!;
 
 				pixelBuffer[pIdx] = gray;
 				pixelBuffer[pIdx + 1] = gray;
@@ -964,8 +973,8 @@ export function drawObliqueCrosshairWithRotationHandles(
 		const badgeX = widthPx - 10;
 		const badgeY = 10;
 
-		ctx.fillStyle = invertColors ? "rgba(255, 255, 255, 0.95)" : "rgba(9, 9, 11, 0.9)";
-		ctx.strokeStyle = invertColors ? "rgba(2, 132, 199, 0.8)" : "rgba(6, 182, 212, 0.5)";
+		ctx.fillStyle = invertColors ? "rgba(255, 255, 255, 0.95)" : "rgba(15, 23, 42, 0.92)";
+		ctx.strokeStyle = invertColors ? "rgba(2, 132, 199, 0.8)" : "rgba(6, 182, 212, 0.6)";
 		ctx.lineWidth = 1.0;
 
 		const textW = ctx.measureText(badgeText).width;

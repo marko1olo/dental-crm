@@ -12,11 +12,16 @@
 
 import {
 	type CbctVoxelVolume,
+	get16BitLut,
 	huToGrayscale,
 	sampleVoxelHU,
 	sampleVoxelTrilinearHU,
 	worldMmToVoxel,
 	worldMmToVoxelContinuous,
+	worldMmToSlicePx,
+	slicePxToScreenPx,
+	type ViewportTransform,
+	DEFAULT_VIEWPORT_TRANSFORM,
 } from "./cbctMprMath";
 import {
 	type Point2D,
@@ -302,6 +307,249 @@ export function createDentalArchCurve(
 	return buildDentalArchCurve(jawTypeOrAnchors, jawType, focalTroughThicknessMm);
 }
 
+/**
+ * Updates the physical 2D millimeter position (X, Y) of an anchor point on the dental arch curve
+ * and re-calculates the Catmull-Rom spline, total arc length, and tangents/normals in real time.
+ */
+export function updateDentalArchAnchorPosition(
+	archCurve: DentalArchCurve,
+	anchorIndexOrFdiOrId: number | string,
+	newPositionMm: Point2D,
+): DentalArchCurve {
+	const anchors = archCurve.anchors.map((anchor, idx) => {
+		const isTarget =
+			typeof anchorIndexOrFdiOrId === "number"
+				? idx === anchorIndexOrFdiOrId
+				: anchor.id === anchorIndexOrFdiOrId ||
+				  anchor.toothFdi === anchorIndexOrFdiOrId ||
+				  anchor.toothFdi === String(anchorIndexOrFdiOrId);
+		if (isTarget) {
+			return {
+				...anchor,
+				positionMm: {
+					x: Number(newPositionMm.x.toFixed(2)),
+					y: Number(newPositionMm.y.toFixed(2)),
+				},
+			};
+		}
+		return anchor;
+	});
+
+	return buildDentalArchCurve(anchors, archCurve.jawType, archCurve.focalTroughThicknessMm);
+}
+
+export interface DentalArchAnchorHitResult {
+	readonly anchor: DentalArchAnchor;
+	readonly index: number;
+	readonly screenPx: Point2D;
+	readonly distancePx: number;
+}
+
+/**
+ * Hit-tests screen pointer against all dental arch anchor control points on the Axial plane.
+ * Enforces a standard 24x24px circular hitbox (hitRadiusPx = 12).
+ */
+export function hitTestDentalArchControlPoint(
+	pointerScreenPx: Point2D,
+	archCurve: DentalArchCurve,
+	volume: CbctVoxelVolume,
+	transform?: { readonly panX?: number; readonly panY?: number; readonly zoom?: number } | undefined,
+	hitRadiusPx = 12,
+	crosshairZMm = 0,
+): DentalArchAnchorHitResult | null {
+	if (!archCurve || !archCurve.anchors || archCurve.anchors.length === 0 || !volume) {
+		return null;
+	}
+
+	const activeTransform: ViewportTransform = {
+		panX: transform?.panX ?? 0,
+		panY: transform?.panY ?? 0,
+		zoom: transform?.zoom ?? 1.0,
+	};
+
+	let closestHit: DentalArchAnchorHitResult | null = null;
+	let minDistance = Infinity;
+
+	for (let i = 0; i < archCurve.anchors.length; i++) {
+		const anchor = archCurve.anchors[i]!;
+		const slicePx = worldMmToSlicePx(
+			{ x: anchor.positionMm.x, y: anchor.positionMm.y, z: crosshairZMm },
+			"axial",
+			volume,
+		);
+		const screenPx = slicePxToScreenPx(slicePx, activeTransform);
+
+		const dist = Math.hypot(pointerScreenPx.x - screenPx.x, pointerScreenPx.y - screenPx.y);
+		if (dist <= hitRadiusPx && dist < minDistance) {
+			minDistance = dist;
+			closestHit = {
+				anchor,
+				index: i,
+				screenPx,
+				distancePx: Number(dist.toFixed(2)),
+			};
+		}
+	}
+
+	return closestHit;
+}
+
+export interface DrawDentalArchManipulatorsOptions {
+	readonly archCurve: DentalArchCurve;
+	readonly volume: CbctVoxelVolume;
+	readonly transform?: { readonly panX?: number; readonly panY?: number; readonly zoom?: number } | undefined;
+	readonly crosshairZMm?: number;
+	readonly selectedAnchorIdx?: number | null;
+	readonly hoveredAnchorIdx?: number | null;
+	readonly draggingAnchorIdx?: number | null;
+	readonly activeToothFdi?: string | null;
+	readonly invertColors?: boolean;
+}
+
+/**
+ * Renders interactive 24x24px dental arch control points on the Axial canvas in Screen Space (Pass 2).
+ * Features:
+ * - Clear 24px round touch/drag targets with high contrast dark halos.
+ * - Distinct visual states: default (purple/white), hovered (cyan/gold glow), dragging (bright cyan ring + pill badge).
+ * - Floating FDI tooth number badge on hover/drag for immediate anatomical feedback.
+ */
+export function drawDentalArchControlPointManipulators(
+	ctx: CanvasRenderingContext2D,
+	options: DrawDentalArchManipulatorsOptions,
+): void {
+	const {
+		archCurve,
+		volume,
+		transform,
+		crosshairZMm = 0,
+		selectedAnchorIdx = null,
+		hoveredAnchorIdx = null,
+		draggingAnchorIdx = null,
+		activeToothFdi = null,
+		invertColors = false,
+	} = options;
+
+	if (!archCurve || !archCurve.anchors || archCurve.anchors.length === 0 || !volume) {
+		return;
+	}
+
+	const activeTransform: ViewportTransform = {
+		panX: transform?.panX ?? 0,
+		panY: transform?.panY ?? 0,
+		zoom: transform?.zoom ?? 1.0,
+	};
+
+	ctx.save();
+
+	for (let i = 0; i < archCurve.anchors.length; i++) {
+		const anchor = archCurve.anchors[i]!;
+		const isDragging = draggingAnchorIdx === i;
+		const isHovered = hoveredAnchorIdx === i;
+		const isSelected = selectedAnchorIdx === i || (activeToothFdi !== null && anchor.toothFdi === activeToothFdi);
+
+		const slicePx = worldMmToSlicePx(
+			{ x: anchor.positionMm.x, y: anchor.positionMm.y, z: crosshairZMm },
+			"axial",
+			volume,
+		);
+		const screen = slicePxToScreenPx(slicePx, activeTransform);
+
+		// 1. Dark underlay halo (prevents contrast loss over bright cortical bone or metal)
+		ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+		ctx.beginPath();
+		ctx.arc(screen.x, screen.y, 9, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 2. Interactive hitbox ring (24x24px touch/drag boundary = 12px radius)
+		if (isDragging) {
+			// Dragging state: Vibrant Cyan Glow (24px touch circle)
+			ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
+			ctx.strokeStyle = "#38bdf8";
+			ctx.lineWidth = 2.0;
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 12, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.stroke();
+
+			// Center core
+			ctx.fillStyle = "#ffffff";
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 5, 0, Math.PI * 2);
+			ctx.fill();
+		} else if (isHovered) {
+			// Hovered state: Bright Gold/Cyan Active Hitbox Ring (24px diameter)
+			ctx.fillStyle = "rgba(168, 85, 247, 0.3)";
+			ctx.strokeStyle = "#eab308";
+			ctx.lineWidth = 2.0;
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 12, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.stroke();
+
+			// Center core
+			ctx.fillStyle = "#ffffff";
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 4.5, 0, Math.PI * 2);
+			ctx.fill();
+		} else if (isSelected) {
+			// Selected state: Highlighted Violet Ring
+			ctx.fillStyle = "rgba(168, 85, 247, 0.25)";
+			ctx.strokeStyle = "#c084fc";
+			ctx.lineWidth = 1.5;
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 9, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.stroke();
+
+			ctx.fillStyle = "#ffffff";
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 4, 0, Math.PI * 2);
+			ctx.fill();
+		} else {
+			// Default state: Purple control point with crisp white core
+			ctx.fillStyle = "rgba(168, 85, 247, 0.9)";
+			ctx.strokeStyle = "#ffffff";
+			ctx.lineWidth = 1.5;
+			ctx.beginPath();
+			ctx.arc(screen.x, screen.y, 5.5, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.stroke();
+		}
+
+		// 3. Floating FDI Tooth Badge Pill on Hover/Drag/Select
+		if (isHovered || isDragging || isSelected) {
+			const labelText = `FDI #${anchor.toothFdi}`;
+			ctx.font = "bold 10px monospace";
+			const textWidth = ctx.measureText(labelText).width;
+			const pillW = textWidth + 10;
+			const pillH = 16;
+			const pillX = screen.x - pillW / 2;
+			const pillY = screen.y - 24;
+
+			// Pill background
+			ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+			ctx.strokeStyle = isDragging ? "#38bdf8" : isHovered ? "#eab308" : "#a855f7";
+			ctx.lineWidth = 1.5;
+			ctx.beginPath();
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(pillX, pillY, pillW, pillH, 4);
+			} else {
+				ctx.rect(pillX, pillY, pillW, pillH);
+			}
+			ctx.fill();
+			ctx.stroke();
+
+			// Pill text
+			ctx.fillStyle = "#ffffff";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(labelText, screen.x, pillY + pillH / 2);
+		}
+	}
+
+	ctx.restore();
+}
+
 // ─── 2. UNFOLDED PANORAMIC (OPG) RECONSTRUCTION ─────────────────────────────
 
 /**
@@ -346,6 +594,8 @@ export function reconstructPanoramicView(
 	const zStepMm = (zTopMm - zBottomMm) / outH;
 	const nNodes = vectorField.length;
 	const totalLengthMm = archCurve.totalArcLengthMm || 100;
+
+	const lut = get16BitLut(windowWidth, windowLevel, invert);
 
 	// Sweep along the spline with constant physical arc-length distance
 	const denomW = Math.max(1, outW - 1);
@@ -411,7 +661,7 @@ export function reconstructPanoramicView(
 			if (projectionMode === "minip") finalHU = minHU;
 			else if (projectionMode === "average") finalHU = sampleCount > 0 ? Math.round(sumHU / sampleCount) : maxHU;
 
-			const gray = huToGrayscale(finalHU, windowWidth, windowLevel, invert);
+			const gray = lut[(finalHU + 32768) & 0xffff]!;
 			const idx = (row * outW + col) * 4;
 			pixelBuffer[idx] = gray;
 			pixelBuffer[idx + 1] = gray;
@@ -503,6 +753,7 @@ export function extractSingleCrossSectionSlice(
 	const widthPx = Math.round(widthMm / pixelSpacingMm);
 	const heightPx = Math.round(heightMm / pixelSpacingMm);
 	const pixelData = new Uint8ClampedArray(widthPx * heightPx * 4);
+	const lut = get16BitLut(windowWidth, windowLevel, invert);
 
 	const halfW = widthMm / 2.0;
 	const halfH = heightMm / 2.0;
@@ -518,7 +769,7 @@ export function extractSingleCrossSectionSlice(
 
 			const vox = worldMmToVoxelContinuous({ x: sampleX, y: sampleY, z: sampleZ }, volume);
 			const hu = sampleVoxelTrilinearHU(vox.x, vox.y, vox.z, volume);
-			const gray = huToGrayscale(hu, windowWidth, windowLevel, invert);
+			const gray = lut[(hu + 32768) & 0xffff]!;
 
 			const idx = (y * widthPx + x) * 4;
 			pixelData[idx] = gray;

@@ -1019,9 +1019,18 @@ export function drawMeasurementDeleteButton(
 export const drawCaliperDeleteButton = drawMeasurementDeleteButton;
 
 /**
+ * Standard crisp high-contrast overlay pad background & border tokens (The Hammer V 8.0: Rendering Brutality)
+ * Guarantees WCAG AAA contrast (>= 7:1) over hyperdense white cortical bone and enamel.
+ */
+export const CRISP_OVERLAY_PAD_BG = "rgba(15, 23, 42, 0.92)";
+export const CRISP_OVERLAY_BORDER_GOLD = "#f59e0b";
+export const CRISP_OVERLAY_BORDER_CYAN = "#06b6d4";
+export const CRISP_OVERLAY_BORDER_BLUE = "#0284c7";
+
+/**
  * Draws floating 3D Mandibular Canal (IAN) trajectory badge tooltip (DEF-R2-03).
  * Visual: bold 12px monospace font, dense dark background rgba(15, 23, 42, 0.92)
- * with #f59e0b border (1.5px) and gold text (#fbbf24).
+ * with #f59e0b border (1.0px) and gold text (#fbbf24).
  * Padding: >= 6px horizontal (8px), >= 3px vertical (5px).
  */
 export function drawMandibularNerveBadge(
@@ -1031,8 +1040,8 @@ export function drawMandibularNerveBadge(
 	safetyMarginMm = MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
 ): void {
 	ctx.save();
-	ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
-	ctx.strokeStyle = "#f59e0b";
+	ctx.fillStyle = CRISP_OVERLAY_PAD_BG;
+	ctx.strokeStyle = CRISP_OVERLAY_BORDER_GOLD;
 	ctx.lineWidth = 1.5;
 	const text = `Канал IAN (3D ${totalLengthMm.toFixed(1)} мм · ${safetyMarginMm.toFixed(1)} мм буфер)`;
 	ctx.font = "bold 12px monospace";
