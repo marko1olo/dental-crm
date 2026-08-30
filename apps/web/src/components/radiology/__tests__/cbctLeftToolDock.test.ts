@@ -17,17 +17,19 @@ describe("Planmeca Romexis 6.x / Ez3D-i Left Tool Dock Architecture", () => {
 				"window_level",
 				"rotate",
 				"ruler",
+				"angle",
 				"probe",
 				"nerve",
 			];
 
-			assert.equal(expectedTools.length, 8);
+			assert.equal(expectedTools.length, 9);
 			assert.ok(expectedTools.includes("crosshair"), "Crosshair navigation must be available");
 			assert.ok(expectedTools.includes("pan"), "Pan tool must be available");
 			assert.ok(expectedTools.includes("zoom"), "Zoom tool must be available");
 			assert.ok(expectedTools.includes("window_level"), "Window/Level tool must be available");
 			assert.ok(expectedTools.includes("rotate"), "Oblique rotation tool must be available");
 			assert.ok(expectedTools.includes("ruler"), "Caliper distance tool must be available");
+			assert.ok(expectedTools.includes("angle"), "Angle protractor tool must be available");
 			assert.ok(expectedTools.includes("probe"), "HU densitometry probe must be available");
 			assert.ok(expectedTools.includes("nerve"), "Mandibular canal nerve tracer must be available");
 		});

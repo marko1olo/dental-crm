@@ -595,3 +595,505 @@ export function buildMandibularNerveSpline(params: {
 		safetyMarginMm,
 	};
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. ANGLE (PROTRACTOR) & CAD MEASUREMENT MATHEMATICS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Измерение угла протрактором (Угломер) в пространстве MPR
+ */
+export interface CbctAngleMeasurement {
+	readonly id: string;
+	readonly plane: "axial" | "coronal" | "sagittal" | "panoramic" | "cross_section";
+	readonly startMm: Point3D; // Опорная точка плеча 1
+	readonly vertexMm: Point3D; // Вершина угла (угловая точка)
+	readonly endMm: Point3D; // Опорная точка плеча 2
+	readonly angleDeg: number; // Рассчитанный угол в градусах θ ∈ [0°, 180°]
+}
+
+/**
+ * Расчет угла в градусах θ ∈ [0°, 180°] по трем 2D-точкам (плечо 1 -> вершина -> плечо 2)
+ */
+export function calculateAngleBetween3Points2D(
+	p1: Point2D,
+	vertex: Point2D,
+	p2: Point2D,
+): number {
+	const v1x = p1.x - vertex.x;
+	const v1y = p1.y - vertex.y;
+	const v2x = p2.x - vertex.x;
+	const v2y = p2.y - vertex.y;
+
+	const len1 = Math.hypot(v1x, v1y);
+	const len2 = Math.hypot(v2x, v2y);
+
+	if (len1 === 0 || len2 === 0) return 0;
+
+	const dot = v1x * v2x + v1y * v2y;
+	const cosTheta = Math.max(-1.0, Math.min(1.0, dot / (len1 * len2)));
+	const angleRad = Math.acos(cosTheta);
+	const angleDeg = (angleRad * 180) / Math.PI;
+
+	return Number(angleDeg.toFixed(1));
+}
+
+/**
+ * Расчет угла в градусах θ ∈ [0°, 180°] по трем 3D-точкам в физических миллиметрах
+ */
+export function calculateAngleBetween3Points3D(
+	p1: Point3D,
+	vertex: Point3D,
+	p2: Point3D,
+): number {
+	const v1x = p1.x - vertex.x;
+	const v1y = p1.y - vertex.y;
+	const v1z = p1.z - vertex.z;
+
+	const v2x = p2.x - vertex.x;
+	const v2y = p2.y - vertex.y;
+	const v2z = p2.z - vertex.z;
+
+	const len1 = Math.hypot(v1x, v1y, v1z);
+	const len2 = Math.hypot(v2x, v2y, v2z);
+
+	if (len1 === 0 || len2 === 0) return 0;
+
+	const dot = v1x * v2x + v1y * v2y + v1z * v2z;
+	const cosTheta = Math.max(-1.0, Math.min(1.0, dot / (len1 * len2)));
+	const angleRad = Math.acos(cosTheta);
+	const angleDeg = (angleRad * 180) / Math.PI;
+
+	return Number(angleDeg.toFixed(1));
+}
+
+/**
+ * Результат проверки попадания курсора в опорную точку (handle) измерения
+ */
+export interface MeasurementHandleHit {
+	readonly type: "ruler" | "angle";
+	readonly id: string;
+	readonly handleIndex: number; // ruler: 0 (start) | 1 (end); angle: 0 (start) | 1 (vertex) | 2 (end)
+	readonly plane: string;
+	readonly distancePx: number;
+}
+
+/**
+ * Интерактивный CAD Hit-testing для перемещения (drag-and-drop) опорных точек линеек и угломеров
+ */
+export function hitTestMeasurementHandle(
+	pointerPx: { readonly x: number; readonly y: number },
+	rulers: readonly {
+		readonly id: string;
+		readonly plane: string;
+		readonly startPx: { readonly x: number; readonly y: number };
+		readonly endPx: { readonly x: number; readonly y: number };
+	}[],
+	angles: readonly {
+		readonly id: string;
+		readonly plane: string;
+		readonly startPx: { readonly x: number; readonly y: number };
+		readonly vertexPx: { readonly x: number; readonly y: number };
+		readonly endPx: { readonly x: number; readonly y: number };
+	}[],
+	hitRadiusPx = 10,
+): MeasurementHandleHit | null {
+	let closestHit: MeasurementHandleHit | null = null;
+	let minDistance = hitRadiusPx;
+
+	// 1. Check Ruler handles (0 = start, 1 = end)
+	for (const r of rulers) {
+		const dStart = Math.hypot(pointerPx.x - r.startPx.x, pointerPx.y - r.startPx.y);
+		if (dStart <= minDistance) {
+			minDistance = dStart;
+			closestHit = {
+				type: "ruler",
+				id: r.id,
+				handleIndex: 0,
+				plane: r.plane,
+				distancePx: Number(dStart.toFixed(1)),
+			};
+		}
+		const dEnd = Math.hypot(pointerPx.x - r.endPx.x, pointerPx.y - r.endPx.y);
+		if (dEnd <= minDistance) {
+			minDistance = dEnd;
+			closestHit = {
+				type: "ruler",
+				id: r.id,
+				handleIndex: 1,
+				plane: r.plane,
+				distancePx: Number(dEnd.toFixed(1)),
+			};
+		}
+	}
+
+	// 2. Check Angle handles (0 = start/arm1, 1 = vertex, 2 = end/arm2)
+	for (const a of angles) {
+		const dStart = Math.hypot(pointerPx.x - a.startPx.x, pointerPx.y - a.startPx.y);
+		if (dStart <= minDistance) {
+			minDistance = dStart;
+			closestHit = {
+				type: "angle",
+				id: a.id,
+				handleIndex: 0,
+				plane: a.plane,
+				distancePx: Number(dStart.toFixed(1)),
+			};
+		}
+		const dVertex = Math.hypot(pointerPx.x - a.vertexPx.x, pointerPx.y - a.vertexPx.y);
+		if (dVertex <= minDistance) {
+			minDistance = dVertex;
+			closestHit = {
+				type: "angle",
+				id: a.id,
+				handleIndex: 1,
+				plane: a.plane,
+				distancePx: Number(dVertex.toFixed(1)),
+			};
+		}
+		const dEnd = Math.hypot(pointerPx.x - a.endPx.x, pointerPx.y - a.endPx.y);
+		if (dEnd <= minDistance) {
+			minDistance = dEnd;
+			closestHit = {
+				type: "angle",
+				id: a.id,
+				handleIndex: 2,
+				plane: a.plane,
+				distancePx: Number(dEnd.toFixed(1)),
+			};
+		}
+	}
+
+	return closestHit;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. 3D MANDIBULAR CANAL NERVE TRACER (N. ALVEOLARIS INFERIOR) & DISTANCE GATING
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * 3D Трассировка нижнечелюстного канала (Nervus alveolaris inferior / IAN) в физических миллиметрах
+ */
+export interface MandibularNerve3DSpline {
+	id: string;
+	side: "left" | "right" | "both";
+	label: string;
+	controlPoints: readonly Point3D[] | Point3D[]; // 3D опорные узлы разметки врача в миллиметрах
+	interpolatedCurve: Point3D[]; // 3D сглаженная кривая Catmull-Rom в миллиметрах
+	lengthMm: number; // Общая анатомическая 3D-длина хода канала в мм
+	canalDiameterMm: number; // Средний диаметр самого канала (2.5-3.0 мм, по умолчанию 2.8 мм)
+	safetyMarginMm: number; // Цилиндрический коридор безопасности (ровно 2.0 мм)
+}
+
+/**
+ * Результат непрерывного Distance Gating для отображения среза нерва
+ */
+export interface NerveDistanceGatingResult {
+	deltaZMm: number; // Физическое расстояние по оси Z от текущего среза до участка нерва (|Z_slice - Z_nerve|)
+	alpha: number; // Прозрачность: α = exp(-(Δz / 2.0)²)
+	isDashed: boolean; // Пунктирная отрисовка при 3.5 мм < |Δz| <= 6.0 мм
+	isVisible: boolean; // Видимость (true если |Δz| <= 6.0 мм, false если > 6.0 мм)
+}
+
+/**
+ * Сглаживание 3D-траектории нижнечелюстного нерва методом Catmull-Rom сплайн-интерполяции
+ * Выполняет расчет гладкой трехмерной кривой по точкам (x_i, y_i, z_i) в физических миллиметрах.
+ */
+export function interpolateNerveSpline3D(
+	controlPoints: readonly Point3D[],
+	subdivisionsPerSegment = 12,
+): Point3D[] {
+	if (controlPoints.length === 0) return [];
+	if (controlPoints.length === 1) {
+		const p0 = controlPoints[0]!;
+		return [{ x: Number(p0.x.toFixed(3)), y: Number(p0.y.toFixed(3)), z: Number(p0.z.toFixed(3)) }];
+	}
+	if (controlPoints.length === 2) {
+		const [p0, p1] = controlPoints;
+		if (!p0 || !p1) return [];
+		const result: Point3D[] = [];
+		for (let i = 0; i <= subdivisionsPerSegment; i++) {
+			const t = i / subdivisionsPerSegment;
+			result.push({
+				x: Number((p0.x + (p1.x - p0.x) * t).toFixed(3)),
+				y: Number((p0.y + (p1.y - p0.y) * t).toFixed(3)),
+				z: Number((p0.z + (p1.z - p0.z) * t).toFixed(3)),
+			});
+		}
+		return result;
+	}
+
+	const pts = controlPoints;
+	const n = pts.length;
+	const spline: Point3D[] = [];
+
+	for (let i = 0; i < n - 1; i++) {
+		const p0 = i > 0 ? pts[i - 1]! : pts[i]!;
+		const p1 = pts[i]!;
+		const p2 = pts[i + 1]!;
+		const p3 = i < n - 2 ? pts[i + 2]! : p2;
+
+		for (let step = 0; step < subdivisionsPerSegment; step++) {
+			const t = step / subdivisionsPerSegment;
+			const t2 = t * t;
+			const t3 = t2 * t;
+
+			const x = 0.5 * (
+				(2 * p1.x) +
+				(-p0.x + p2.x) * t +
+				(2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+				(-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+			);
+
+			const y = 0.5 * (
+				(2 * p1.y) +
+				(-p0.y + p2.y) * t +
+				(2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+				(-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+			);
+
+			const z = 0.5 * (
+				(2 * p1.z) +
+				(-p0.z + p2.z) * t +
+				(2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 +
+				(-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3
+			);
+
+			spline.push({
+				x: Number(x.toFixed(3)),
+				y: Number(y.toFixed(3)),
+				z: Number(z.toFixed(3)),
+			});
+		}
+	}
+
+	const last = pts[n - 1]!;
+	spline.push({
+		x: Number(last.x.toFixed(3)),
+		y: Number(last.y.toFixed(3)),
+		z: Number(last.z.toFixed(3)),
+	});
+
+	return spline;
+}
+
+/**
+ * Расчет общей длины 3D-кривой нерва в физических миллиметрах
+ */
+export function calculateSplineLength3DMm(points: Point3D[]): number {
+	if (points.length < 2) return 0;
+	let totalMm = 0;
+	for (let i = 0; i < points.length - 1; i++) {
+		const p1 = points[i]!;
+		const p2 = points[i + 1]!;
+		const dx = p2.x - p1.x;
+		const dy = p2.y - p1.y;
+		const dz = p2.z - p1.z;
+		totalMm += Math.hypot(dx, dy, dz);
+	}
+	return Number(totalMm.toFixed(2));
+}
+
+/**
+ * Непрерывный Distance Gating по оси Z:
+ * При удалении текущего среза Z_slice от участка нерва на расстояние Δz:
+ * - Прозрачность спадает по экспоненциальной формуле α = exp(-(Δz / 2.0)²)
+ * - При |Δz| > 3.5 мм линия рисуется пунктиром с низкой прозрачностью
+ * - При |Δz| > 6.0 мм полностью гасится (isVisible = false, alpha = 0)
+ */
+export function calculateNerveDistanceGating(deltaZMm: number): NerveDistanceGatingResult {
+	const absDeltaZ = Math.abs(deltaZMm);
+	if (absDeltaZ > 6.0) {
+		return {
+			deltaZMm: Number(absDeltaZ.toFixed(3)),
+			alpha: 0,
+			isDashed: false,
+			isVisible: false,
+		};
+	}
+
+	const alpha = Math.exp(-Math.pow(absDeltaZ / 2.0, 2));
+	const isDashed = absDeltaZ > 3.5;
+
+	return {
+		deltaZMm: Number(absDeltaZ.toFixed(3)),
+		alpha: Number(alpha.toFixed(4)),
+		isDashed,
+		isVisible: true,
+	};
+}
+
+/**
+ * Сегмент 3D-сплайна нерва с рассчитанными параметрами видимости для аксиального среза
+ */
+export interface GatedNerveSegment3D {
+	p1: Point3D;
+	p2: Point3D;
+	midZ: number;
+	deltaZMm: number;
+	alpha: number;
+	isDashed: boolean;
+	isVisible: boolean;
+}
+
+/**
+ * Разделение 3D-сплайна на сегменты с оценкой Distance Gating относительно аксиального среза Z_slice
+ */
+export function getGatedNerveSegments(
+	spline3D: Point3D[],
+	sliceZMm: number,
+): GatedNerveSegment3D[] {
+	if (spline3D.length < 2) return [];
+	const segments: GatedNerveSegment3D[] = [];
+
+	for (let i = 0; i < spline3D.length - 1; i++) {
+		const p1 = spline3D[i]!;
+		const p2 = spline3D[i + 1]!;
+		const midZ = (p1.z + p2.z) / 2.0;
+		const gating = calculateNerveDistanceGating(midZ - sliceZMm);
+
+		if (gating.isVisible) {
+			segments.push({
+				p1,
+				p2,
+				midZ,
+				deltaZMm: gating.deltaZMm,
+				alpha: gating.alpha,
+				isDashed: gating.isDashed,
+				isVisible: true,
+			});
+		}
+	}
+
+	return segments;
+}
+
+/**
+ * Проверка попадания курсора в 3D-узел нерва в физическом пространстве миллиметров
+ */
+export function hitTestNerveNode3D(
+	pointerMm: Point3D,
+	nervePoints: readonly Point3D[],
+	toleranceMm = 3.0,
+): number {
+	if (nervePoints.length === 0) return -1;
+	let closestIdx = -1;
+	let minDistance = toleranceMm;
+
+	for (let i = 0; i < nervePoints.length; i++) {
+		const pt = nervePoints[i]!;
+		const dist = Math.hypot(pt.x - pointerMm.x, pt.y - pointerMm.y, pt.z - pointerMm.z);
+		if (dist <= minDistance) {
+			minDistance = dist;
+			closestIdx = i;
+		}
+	}
+
+	return closestIdx;
+}
+
+/**
+ * Проверка попадания курсора в узел нерва на аксиальном срезе (с учетом допустимого Z-диапазона)
+ */
+export function hitTestNerveNodeOnAxialSlice(
+	pointerMm: Point3D,
+	nervePoints: readonly Point3D[],
+	toleranceDistanceMm = 3.5,
+	maxDeltaZMm = 6.0,
+): number {
+	if (nervePoints.length === 0) return -1;
+	let closestIdx = -1;
+	let minDistance2D = toleranceDistanceMm;
+
+	for (let i = 0; i < nervePoints.length; i++) {
+		const pt = nervePoints[i]!;
+		const deltaZ = Math.abs(pt.z - pointerMm.z);
+		if (deltaZ <= maxDeltaZMm) {
+			const dist2D = Math.hypot(pt.x - pointerMm.x, pt.y - pointerMm.y);
+			if (dist2D <= minDistance2D) {
+				minDistance2D = dist2D;
+				closestIdx = i;
+			}
+		}
+	}
+
+	return closestIdx;
+}
+
+/**
+ * Построение 3D-структуры трассировки нижнечелюстного нерва
+ */
+export function buildMandibularNerve3DSpline(
+	points: readonly Point3D[],
+	subdivisions?: number,
+): MandibularNerve3DSpline;
+export function buildMandibularNerve3DSpline(params: {
+	id?: string;
+	side?: "left" | "right" | "both";
+	label?: string;
+	controlPoints: readonly Point3D[];
+	subdivisionsPerSegment?: number;
+	canalDiameterMm?: number;
+	safetyMarginMm?: number;
+}): MandibularNerve3DSpline;
+export function buildMandibularNerve3DSpline(
+	paramsOrPoints:
+		| {
+				id?: string;
+				side?: "left" | "right" | "both";
+				label?: string;
+				controlPoints: readonly Point3D[];
+				subdivisionsPerSegment?: number;
+				canalDiameterMm?: number;
+				safetyMarginMm?: number;
+		  }
+		| readonly Point3D[],
+	subdivisions?: number,
+): MandibularNerve3DSpline {
+	if (Array.isArray(paramsOrPoints)) {
+		const controlPoints = paramsOrPoints as readonly Point3D[];
+		const sideLabel = "правый";
+		const label = `Нижнечелюстной канал 3D (${sideLabel})`;
+		const interpolatedCurve = interpolateNerveSpline3D(controlPoints, subdivisions);
+		const lengthMm = calculateSplineLength3DMm(interpolatedCurve);
+		return {
+			id: `nerve-spline-3d-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+			side: "right",
+			label,
+			controlPoints,
+			interpolatedCurve,
+			lengthMm,
+			canalDiameterMm: 2.8,
+			safetyMarginMm: MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
+		};
+	}
+
+	const params = paramsOrPoints as {
+		id?: string;
+		side?: "left" | "right" | "both";
+		label?: string;
+		controlPoints: readonly Point3D[];
+		subdivisionsPerSegment?: number;
+		canalDiameterMm?: number;
+		safetyMarginMm?: number;
+	};
+
+	const canalDiameterMm = params.canalDiameterMm ?? 2.8;
+	const safetyMarginMm = params.safetyMarginMm ?? MANDIBULAR_NERVE_SAFETY_MARGIN_MM;
+	const interpolatedCurve = interpolateNerveSpline3D(params.controlPoints, params.subdivisionsPerSegment);
+	const lengthMm = calculateSplineLength3DMm(interpolatedCurve);
+	const sideLabel = params.side === "left" ? "левый" : params.side === "right" ? "правый" : "двусторонний";
+	const label = params.label || `Нижнечелюстной канал 3D (${sideLabel})`;
+
+	return {
+		id: params.id || `nerve-spline-3d-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		side: params.side || "right",
+		label,
+		controlPoints: params.controlPoints,
+		interpolatedCurve,
+		lengthMm,
+		canalDiameterMm,
+		safetyMarginMm,
+	};
+}
+

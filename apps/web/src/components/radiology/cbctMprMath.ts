@@ -11,11 +11,20 @@
  * 6. Procedural realistic anatomical Dental CBCT voxel volume generator (Mandible, Maxillary Sinus, Alveolar Ridge, Teeth 18..48, Inferior Alveolar Canal).
  */
 
-import type { Point2D, Point3D } from "./cbctCaliperNerveMath";
+import {
+	type Point2D,
+	type Point3D,
+	type CbctAngleMeasurement,
+	type MeasurementHandleHit,
+	calculateAngleBetween3Points2D,
+	calculateAngleBetween3Points3D,
+	hitTestMeasurementHandle,
+} from "./cbctCaliperNerveMath";
 
 export type MprPlane = "axial" | "coronal" | "sagittal";
 export type SlabProjectionMode = "single" | "mip" | "minip" | "average";
-export type { Point2D, Point3D };
+export type { Point2D, Point3D, CbctAngleMeasurement, MeasurementHandleHit };
+export { calculateAngleBetween3Points2D, calculateAngleBetween3Points3D, hitTestMeasurementHandle };
 
 export interface VolumeDimensions {
 	readonly width: number; // X size (voxels along Sagittal axis)
@@ -130,20 +139,20 @@ export interface MprSliceExtractionResult {
 export const ROMEXIS_COLORS = {
 	axial: "#06b6d4", // Cyan (Horizontal / Z-plane)
 	axialRgba: (alpha = 1) => `rgba(6, 182, 212, ${alpha})`,
-	coronal: "#f59e0b", // Orange / Amber (Frontal / Y-plane)
-	coronalRgba: (alpha = 1) => `rgba(245, 158, 11, ${alpha})`,
-	sagittal: "#10b981", // Emerald Green (Profile / X-plane)
-	sagittalRgba: (alpha = 1) => `rgba(16, 185, 129, ${alpha})`,
+	coronal: "#f97316", // Orange (Frontal / Y-plane)
+	coronalRgba: (alpha = 1) => `rgba(249, 115, 22, ${alpha})`,
+	sagittal: "#22c55e", // Emerald Green (Profile / X-plane)
+	sagittalRgba: (alpha = 1) => `rgba(34, 197, 94, ${alpha})`,
 	panoramic: "#a855f7", // Purple (Dental Arch Spline)
 	panoramicRgba: (alpha = 1) => `rgba(168, 85, 247, ${alpha})`,
 	crossSection: "#eab308", // Yellow (Transverse Cross-Section)
 	crossSectionRgba: (alpha = 1) => `rgba(234, 179, 8, ${alpha})`,
-	rulerGrid: "rgba(148, 163, 184, 0.15)",
-	rulerMajor: "rgba(226, 232, 240, 0.85)",
-	rulerMinor: "rgba(148, 163, 184, 0.45)",
-	rulerText: "rgba(203, 213, 225, 0.9)",
-	compassBg: "rgba(15, 23, 42, 0.75)",
-	compassBorder: "rgba(51, 65, 85, 0.8)",
+	rulerGrid: "rgba(113, 113, 122, 0.15)",
+	rulerMajor: "rgba(244, 244, 245, 0.85)",
+	rulerMinor: "rgba(113, 113, 122, 0.45)",
+	rulerText: "rgba(228, 228, 231, 0.9)",
+	compassBg: "rgba(9, 9, 11, 0.85)",
+	compassBorder: "rgba(39, 39, 42, 0.9)",
 } as const;
 
 export type CbctViewportType = MprPlane | "panoramic" | "cross_section";
@@ -155,6 +164,7 @@ export type CbctActiveMouseTool =
 	| "window_level"
 	| "rotate"
 	| "ruler"
+	| "angle"
 	| "probe";
 
 export interface CbctMeasurementRuler {
@@ -403,7 +413,7 @@ export function drawCalibratedMillimeterRulers(
 		const barX = 14;
 		const barY = heightPx - 14;
 
-		ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+		ctx.fillStyle = "rgba(9, 9, 11, 0.85)";
 		ctx.fillRect(barX - 4, barY - 12, barWidthPx + 8, 16);
 
 		ctx.strokeStyle = ROMEXIS_COLORS.rulerMajor;
@@ -531,6 +541,8 @@ export function getCbctToolCursor(
 			return "crosshair";
 		case "ruler":
 			return "crosshair";
+		case "angle":
+			return "crosshair";
 		default:
 			return "crosshair";
 	}
@@ -538,6 +550,7 @@ export function getCbctToolCursor(
 
 /**
  * Draws precision calibrated measurement ruler between two points on the slice canvas.
+ * Features high-contrast dark badge (rgba(0, 0, 0, 0.85)) and bright border for maximum readability.
  */
 export function drawCbctMeasurementRuler(
 	ctx: CanvasRenderingContext2D,
@@ -545,6 +558,7 @@ export function drawCbctMeasurementRuler(
 	endPx: { readonly x: number; readonly y: number },
 	distanceMm: number,
 	isActive = false,
+	selectedHandleIndex: number | null = null,
 ): void {
 	const dx = endPx.x - startPx.x;
 	const dy = endPx.y - startPx.y;
@@ -556,8 +570,9 @@ export function drawCbctMeasurementRuler(
 	const tickHalfLen = 5;
 
 	ctx.save();
-	ctx.strokeStyle = isActive ? "#38bdf8" : "#22d3ee";
-	ctx.lineWidth = 1.5;
+	const primaryColor = isActive ? "#38bdf8" : "#22d3ee";
+	ctx.strokeStyle = primaryColor;
+	ctx.lineWidth = isActive ? 2.0 : 1.5;
 
 	// Main connecting line
 	ctx.beginPath();
@@ -577,14 +592,26 @@ export function drawCbctMeasurementRuler(
 	ctx.lineTo(endPx.x - nx * tickHalfLen, endPx.y - ny * tickHalfLen);
 	ctx.stroke();
 
-	// End anchor circles
-	ctx.fillStyle = "#38bdf8";
+	// End anchor handles (start = 0, end = 1)
+	const isStartActive = selectedHandleIndex === 0;
+	ctx.fillStyle = isStartActive ? "#f59e0b" : "#38bdf8";
+	ctx.strokeStyle = isStartActive ? "#ffffff" : "rgba(0, 0, 0, 0.85)";
+	ctx.lineWidth = 1.2;
 	ctx.beginPath();
-	ctx.arc(startPx.x, startPx.y, 2.5, 0, Math.PI * 2);
-	ctx.arc(endPx.x, endPx.y, 2.5, 0, Math.PI * 2);
+	ctx.arc(startPx.x, startPx.y, isStartActive ? 4.5 : 3.0, 0, Math.PI * 2);
 	ctx.fill();
+	ctx.stroke();
 
-	// Floating distance pill badge at midpoint
+	const isEndActive = selectedHandleIndex === 1;
+	ctx.fillStyle = isEndActive ? "#f59e0b" : "#38bdf8";
+	ctx.strokeStyle = isEndActive ? "#ffffff" : "rgba(0, 0, 0, 0.85)";
+	ctx.lineWidth = 1.2;
+	ctx.beginPath();
+	ctx.arc(endPx.x, endPx.y, isEndActive ? 4.5 : 3.0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.stroke();
+
+	// Floating distance pill badge at midpoint with high-contrast background
 	const midX = (startPx.x + endPx.x) / 2;
 	const midY = (startPx.y + endPx.y) / 2;
 	const text = `${distanceMm.toFixed(1)} мм`;
@@ -595,11 +622,16 @@ export function drawCbctMeasurementRuler(
 	const badgeW = textWidth + padX * 2;
 	const badgeH = 16;
 
-	ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-	ctx.strokeStyle = "#38bdf8";
-	ctx.lineWidth = 1.0;
+	// Contrast semi-transparent background (rgba(0, 0, 0, 0.85)) and bright cyan/amber border
+	ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+	ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
+	ctx.lineWidth = 1.2;
 	ctx.beginPath();
-	ctx.roundRect(midX - badgeW / 2, midY - badgeH / 2, badgeW, badgeH, 3);
+	if (typeof ctx.roundRect === "function") {
+		ctx.roundRect(midX - badgeW / 2, midY - badgeH / 2, badgeW, badgeH, 3);
+	} else {
+		ctx.rect(midX - badgeW / 2, midY - badgeH / 2, badgeW, badgeH);
+	}
 	ctx.fill();
 	ctx.stroke();
 
@@ -612,18 +644,158 @@ export function drawCbctMeasurementRuler(
 }
 
 /**
+ * Draws precision protractor / angle measurement on the slice canvas.
+ * Renders two arms, circular vertex arc, control handles, and high-contrast degree badge.
+ */
+export function drawCbctAngleMeasurement(
+	ctx: CanvasRenderingContext2D,
+	p1Px: { readonly x: number; readonly y: number },
+	vertexPx: { readonly x: number; readonly y: number },
+	p2Px: { readonly x: number; readonly y: number },
+	angleDeg: number,
+	isActive = false,
+	selectedHandleIndex: number | null = null,
+): void {
+	const dx1 = p1Px.x - vertexPx.x;
+	const dy1 = p1Px.y - vertexPx.y;
+	const len1 = Math.hypot(dx1, dy1);
+
+	const dx2 = p2Px.x - vertexPx.x;
+	const dy2 = p2Px.y - vertexPx.y;
+	const len2 = Math.hypot(dx2, dy2);
+
+	if (len1 < 1 && len2 < 1) return;
+
+	ctx.save();
+	const primaryColor = isActive ? "#38bdf8" : "#22d3ee";
+	ctx.strokeStyle = primaryColor;
+	ctx.lineWidth = isActive ? 2.0 : 1.5;
+
+	// 1. Draw arm 1 (vertex -> p1)
+	if (len1 >= 1) {
+		ctx.beginPath();
+		ctx.moveTo(vertexPx.x, vertexPx.y);
+		ctx.lineTo(p1Px.x, p1Px.y);
+		ctx.stroke();
+	}
+
+	// 2. Draw arm 2 (vertex -> p2)
+	if (len2 >= 1) {
+		ctx.beginPath();
+		ctx.moveTo(vertexPx.x, vertexPx.y);
+		ctx.lineTo(p2Px.x, p2Px.y);
+		ctx.stroke();
+	}
+
+	// 3. Draw circular angle arc at vertex if both arms are present
+	if (len1 >= 5 && len2 >= 5) {
+		const angle1 = Math.atan2(dy1, dx1);
+		const angle2 = Math.atan2(dy2, dx2);
+
+		let diff = angle2 - angle1;
+		while (diff > Math.PI) diff -= Math.PI * 2;
+		while (diff < -Math.PI) diff += Math.PI * 2;
+
+		const arcRadius = Math.min(32, Math.max(16, Math.min(len1, len2) * 0.45));
+		const anticlockwise = diff < 0;
+
+		ctx.beginPath();
+		ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
+		ctx.lineWidth = 1.5;
+		ctx.arc(vertexPx.x, vertexPx.y, arcRadius, angle1, angle1 + diff, anticlockwise);
+		ctx.stroke();
+
+		// Translucent wedge fill
+		ctx.beginPath();
+		ctx.moveTo(vertexPx.x, vertexPx.y);
+		ctx.arc(vertexPx.x, vertexPx.y, arcRadius, angle1, angle1 + diff, anticlockwise);
+		ctx.closePath();
+		ctx.fillStyle = isActive ? "rgba(245, 158, 11, 0.15)" : "rgba(56, 189, 248, 0.12)";
+		ctx.fill();
+	}
+
+	// 4. Draw control handles (0 = arm 1, 1 = vertex, 2 = arm 2)
+	const handles = [
+		{ pt: p1Px, idx: 0 },
+		{ pt: vertexPx, idx: 1 },
+		{ pt: p2Px, idx: 2 },
+	];
+
+	for (const h of handles) {
+		const isHandleActive = selectedHandleIndex === h.idx;
+		ctx.fillStyle = isHandleActive ? "#f59e0b" : primaryColor;
+		ctx.strokeStyle = isHandleActive ? "#ffffff" : "rgba(0, 0, 0, 0.85)";
+		ctx.lineWidth = 1.2;
+		ctx.beginPath();
+		ctx.arc(h.pt.x, h.pt.y, isHandleActive ? 4.5 : 3.0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.stroke();
+	}
+
+	// 5. Floating angle degree badge with high contrast background
+	let badgeX = vertexPx.x;
+	let badgeY = vertexPx.y;
+
+	if (len1 >= 5 && len2 >= 5) {
+		const angle1 = Math.atan2(dy1, dx1);
+		const angle2 = Math.atan2(dy2, dx2);
+		let diff = angle2 - angle1;
+		while (diff > Math.PI) diff -= Math.PI * 2;
+		while (diff < -Math.PI) diff += Math.PI * 2;
+		const bisectorAngle = angle1 + diff / 2;
+		const badgeDist = Math.min(48, Math.max(26, Math.min(len1, len2) * 0.4 + 14));
+		badgeX = vertexPx.x + Math.cos(bisectorAngle) * badgeDist;
+		badgeY = vertexPx.y + Math.sin(bisectorAngle) * badgeDist;
+	} else if (len1 >= 5) {
+		badgeX = (vertexPx.x + p1Px.x) / 2;
+		badgeY = (vertexPx.y + p1Px.y) / 2 - 12;
+	} else {
+		badgeY -= 16;
+	}
+
+	const text = `${angleDeg.toFixed(1)}°`;
+	ctx.font = "bold 10px monospace";
+	const textWidth = ctx.measureText(text).width;
+	const padX = 5;
+	const badgeW = textWidth + padX * 2;
+	const badgeH = 16;
+
+	// Contrast semi-transparent background (rgba(0, 0, 0, 0.85)) and bright cyan/amber border
+	ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+	ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
+	ctx.lineWidth = 1.2;
+	ctx.beginPath();
+	if (typeof ctx.roundRect === "function") {
+		ctx.roundRect(badgeX - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 3);
+	} else {
+		ctx.rect(badgeX - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH);
+	}
+	ctx.fill();
+	ctx.stroke();
+
+	ctx.fillStyle = "#ffffff";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillText(text, badgeX, badgeY);
+
+	ctx.restore();
+}
+
+/**
  * Draws point HU densitometry probe marker with target reticle and label badge.
+ * Features high-contrast dark badge (rgba(0, 0, 0, 0.85)) and bright cyan/amber border.
  */
 export function drawCbctProbeMarker(
 	ctx: CanvasRenderingContext2D,
 	posPx: { readonly x: number; readonly y: number },
 	hu: number,
 	tissueName?: string,
+	isActive = false,
 ): void {
 	ctx.save();
 
 	// Target reticle
-	ctx.strokeStyle = "#38bdf8";
+	ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
 	ctx.lineWidth = 1.5;
 	ctx.beginPath();
 	ctx.arc(posPx.x, posPx.y, 6, 0, Math.PI * 2);
@@ -658,15 +830,19 @@ export function drawCbctProbeMarker(
 	const badgeX = posPx.x + 10;
 	const badgeY = posPx.y - 18;
 
-	ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
-	ctx.strokeStyle = "#38bdf8";
-	ctx.lineWidth = 1.0;
+	ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+	ctx.strokeStyle = isActive ? "#f59e0b" : "#38bdf8";
+	ctx.lineWidth = 1.2;
 	ctx.beginPath();
-	ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3);
+	if (typeof ctx.roundRect === "function") {
+		ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3);
+	} else {
+		ctx.rect(badgeX, badgeY, badgeW, badgeH);
+	}
 	ctx.fill();
 	ctx.stroke();
 
-	ctx.fillStyle = "#38bdf8";
+	ctx.fillStyle = isActive ? "#fef08a" : "#38bdf8";
 	ctx.textAlign = "left";
 	ctx.textBaseline = "middle";
 	ctx.fillText(label, badgeX + 4, badgeY + badgeH / 2);
