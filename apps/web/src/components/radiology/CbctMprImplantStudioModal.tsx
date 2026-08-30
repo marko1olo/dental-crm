@@ -560,6 +560,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		});
 		setObliqueAngles(DEFAULT_OBLIQUE_ROTATION);
 		setCrosshairMm({ x: 0, y: 0, z: 0 });
+		setMaximizedViewport(null);
+		setViewLayout("quad_view");
 		setActivePreset("bone_dense");
 		const bonePreset = CBCT_HOUNSFIELD_PRESETS.find((p) => p.id === "bone_dense");
 		if (bonePreset) {
@@ -579,7 +581,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setHoveredMeasurementHandle(null);
 		setProbeMarkers([]);
 		setActiveProbe(null);
-		showToast("Вид сброшен: масштаб 100%, оси 0°, контраст «Кость»", "info");
+		showToast("Вид сброшен: масштаб 100%, оси 0°, сетка 2x2, контраст «Кость»", "info");
 	}, []);
 
 	const handleSelectTool = useCallback((tool: CbctToolMode) => {
@@ -2368,7 +2370,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			showXAxis: false,
 			showYAxis: true,
 			showScaleBar: true,
-			scaleBarOffsetY: 38,
+			scaleBarOffsetY: 58,
 			invertColors,
 			transform,
 		});
@@ -2413,31 +2415,31 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			if (tickXScreen < -20 || tickXScreen > canvas.width + 20) continue;
 
 			if (tick.isMajor) {
-				// Major slice tick line
+				// Major slice tick line strictly at bottom edge (canvas.height - 6 .. -2)
 				ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
 				ctx.lineWidth = 1.0;
 				ctx.beginPath();
-				ctx.moveTo(tickXScreen, canvas.height - 7);
-				ctx.lineTo(tickXScreen, canvas.height);
+				ctx.moveTo(tickXScreen, canvas.height - 6);
+				ctx.lineTo(tickXScreen, canvas.height - 2);
 				ctx.stroke();
 
-				// Major tick label (always show 1, 5, 10, 60 or spaced >= 18px to prevent overlap)
+				// Major tick label (numeric labels at canvas.height - 12; always show 1, 5, 10, 60 or spaced >= 18px)
 				const isKeySlice = tick.sliceIndex === 1 || tick.sliceIndex === 5 || tick.sliceIndex === 10 || tick.sliceIndex === 60;
 				if (isKeySlice || Math.abs(tickXScreen - lastDrawnMajorTickX) >= 18) {
 					ctx.fillStyle = "rgba(148, 163, 184, 0.85)";
 					ctx.font = "8px monospace";
 					ctx.textAlign = "center";
 					ctx.textBaseline = "middle";
-					ctx.fillText(`${tick.sliceIndex}`, tickXScreen, canvas.height - 11);
+					ctx.fillText(`${tick.sliceIndex}`, tickXScreen, canvas.height - 12);
 					lastDrawnMajorTickX = tickXScreen;
 				}
 			} else {
-				// Minor slice tick mark
+				// Minor slice tick mark strictly at bottom edge
 				ctx.strokeStyle = "rgba(100, 116, 139, 0.3)";
 				ctx.lineWidth = 1.0;
 				ctx.beginPath();
-				ctx.moveTo(tickXScreen, canvas.height - 3.5);
-				ctx.lineTo(tickXScreen, canvas.height);
+				ctx.moveTo(tickXScreen, canvas.height - 4);
+				ctx.lineTo(tickXScreen, canvas.height - 2);
 				ctx.stroke();
 			}
 		}
@@ -2455,14 +2457,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.lineTo(activeXScreen, canvas.height);
 			ctx.stroke();
 
-			// Active slice badge elevated above the tick marks (y: canvas.height - 32)
-			// Ensures active badge #1 never obscures ticks 5, 10 or scale bar
-			const activeBadgeY = canvas.height - 32;
-			const activeBadgeH = 15;
+			// Active slice badge elevated above the tick marks (y = canvas.height - 36, height = 16px)
+			// Ensures active badge #1 never obscures ticks 5, 10 or scale bar (y = canvas.height - 58)
+			const activeBadgeY = canvas.height - 36;
+			const activeBadgeH = 16;
 			const activeBadgeW = Math.max(30, 16 + String(activeTick.sliceIndex).length * 8);
 			const activeBadgeX = Math.max(2, Math.min(canvas.width - activeBadgeW - 2, activeXScreen - activeBadgeW / 2));
 
-			ctx.fillStyle = "rgba(9, 9, 11, 0.92)";
+			ctx.fillStyle = "rgba(9, 9, 11, 0.95)";
 			ctx.beginPath();
 			if (typeof ctx.roundRect === "function") {
 				ctx.roundRect(activeBadgeX, activeBadgeY, activeBadgeW, activeBadgeH, 3);
@@ -4406,12 +4408,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							<button
 								type="button"
 								onClick={() => setMaximizedViewport(null)}
-								className="px-3.5 py-2 rounded-md text-xs font-bold min-w-fit shrink-0 whitespace-nowrap px-3 min-h-[44px] flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs transition-colors"
+								className="whitespace-nowrap shrink-0 px-3 py-2 rounded-md text-xs font-bold min-h-[44px] flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs transition-colors cursor-pointer"
 								data-testid="cbct-restore-grid-btn"
-								title="Восстановить сетку окон"
+								title="Восстановить сетку окон (2x2)"
 							>
-								<Minimize2 className="w-4 h-4" />
-								<span>Восстановить (2x2)</span>
+								<Minimize2 className="w-4 h-4 shrink-0" />
+								<span className="whitespace-nowrap">⤢ Восстановить (2x2)</span>
 							</button>
 						) : (
 							<>

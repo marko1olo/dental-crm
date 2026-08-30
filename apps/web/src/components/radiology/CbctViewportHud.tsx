@@ -269,30 +269,30 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				)}
 			</div>
 
-			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (Calm, semi-transparent) */}
+			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (Unified high-contrast badge) */}
 			<div
-				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[#09090b]/80 backdrop-blur-xs text-zinc-400 border border-zinc-800/60 font-mono font-bold text-[10px] pointer-events-none z-10"
+				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-100 border border-zinc-600 font-mono font-bold text-xs shadow pointer-events-none z-10"
 				title={labels.topTooltipRu}
 			>
 				{labels.top}
 			</div>
 
 			<div
-				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-[#09090b]/80 backdrop-blur-xs text-zinc-400 border border-zinc-800/60 font-mono font-bold text-[10px]"
+				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-100 border border-zinc-600 font-mono font-bold text-xs shadow pointer-events-none z-10"
 				title={labels.bottomTooltipRu}
 			>
 				{labels.bottom}
 			</div>
 
 			<div
-				className={`absolute ${viewportType === "panoramic" ? "left-7" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[#09090b]/80 backdrop-blur-xs text-zinc-400 border border-zinc-800/60 font-mono font-bold text-[10px]`}
+				className={`absolute ${viewportType === "panoramic" ? "left-8" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-100 border border-zinc-600 font-mono font-bold text-xs shadow pointer-events-none z-10`}
 				title={labels.leftTooltipRu}
 			>
 				{labels.left}
 			</div>
 
 			<div
-				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[#09090b]/80 backdrop-blur-xs text-zinc-400 border border-zinc-800/60 font-mono font-bold text-[10px]"
+				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-100 border border-zinc-600 font-mono font-bold text-xs shadow pointer-events-none z-10"
 				title={labels.rightTooltipRu}
 			>
 				{labels.right}
