@@ -204,6 +204,22 @@ export const DEFAULT_IAN_NERVE_POINTS: readonly Point3D[] = [
 	{ x: 32.0, y: -2.0, z: 2.0 },
 ];
 
+export function formatNerveNodesPlural(count: number): string {
+	const abs = Math.abs(count);
+	const mod10 = abs % 10;
+	const mod100 = abs % 100;
+	if (mod100 >= 11 && mod100 <= 14) {
+		return `${count} узлов`;
+	}
+	if (mod10 === 1) {
+		return `${count} узел`;
+	}
+	if (mod10 >= 2 && mod10 <= 4) {
+		return `${count} узла`;
+	}
+	return `${count} узлов`;
+}
+
 export interface CbctMprImplantStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -246,6 +262,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [invertColors, setInvertColors] = useState<boolean>(false);
 	const [slabMode, setSlabMode] = useState<SlabProjectionMode>("single");
 	const [slabThicknessMm, setSlabThicknessMm] = useState<number>(2.0);
+
+	const handleSlabThicknessChange = useCallback((thickness: number) => {
+		setSlabThicknessMm(thickness);
+		setArchCurve((prev) => ({
+			...prev,
+			focalTroughThicknessMm: thickness,
+		}));
+	}, []);
 
 	// ─── SYNCHRONIZED 3D CROSSHAIR COORDINATE (PHYSICAL MM) & OBLIQUE ANGLES ──
 	const [crosshairMm, setCrosshairMm] = useState<Point3D>({ x: 0, y: 0, z: 0 });
@@ -293,7 +317,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				archCenterY = midAnchor?.positionMm.y ?? 0;
 			}
 			setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
-			showToast(`⚙️ Авто-поиск дуги: выровнено ${detected.anchors.length} анатомических ориентиров по вокселям КТ`, "success");
+			showToast(`Авто-поиск дуги: выровнено ${detected.anchors.length} анатомических ориентиров по вокселям КТ`, "success");
 		} catch {
 			setShowDentalArch(true);
 			showToast("Авто-поиск дуги активирован", "info");
@@ -555,7 +579,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setHoveredMeasurementHandle(null);
 		setProbeMarkers([]);
 		setActiveProbe(null);
-		showToast("↺ Вид сброшен: масштаб 100%, оси 0°, контраст «Кость»", "info");
+		showToast("Вид сброшен: масштаб 100%, оси 0°, контраст «Кость»", "info");
 	}, []);
 
 	const handleSelectTool = useCallback((tool: CbctToolMode) => {
@@ -2747,7 +2771,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (res.found) {
 			setActiveCrossSectionIdx(res.crossSectionIdx);
 			setCrosshairMm(res.positionMm);
-			showToast(`🎯 Навигация к зубу FDI #${res.nearestToothFdi} (Срез #${res.crossSectionIdx + 1})`, "info");
+			showToast(`Навигация к зубу FDI #${res.nearestToothFdi} (Срез #${res.crossSectionIdx + 1})`, "info");
 		}
 	}, [crossSections, archCurve, crosshairMm.z]);
 
@@ -3817,7 +3841,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (onApplyToDiary043) {
 			onApplyToDiary043(diaryText);
 		}
-		showToast(`📷 Снимок и протокол КЛКТ-планирования (FDI #${targetTooth}) перенесены в карту 043/у`, "success");
+		showToast(`Снимок и протокол КЛКТ-планирования (FDI #${targetTooth}) перенесены в карту 043/у`, "success");
 	}, [
 		activeCrossSection,
 		activeViewport,
@@ -3952,7 +3976,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		openCbctReportPrintWindow(reportData, { tonerSaving: true });
 		showToast(
-			`📄 Протокол КЛКТ-планирования для зуба FDI #${targetTooth} сформирован для печати / PDF (A4) с экономией тонера`,
+			`Протокол КЛКТ-планирования для зуба FDI #${targetTooth} сформирован для печати / PDF (A4) с экономией тонера`,
 			"success",
 		);
 	}, [
@@ -4124,7 +4148,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					viewportType="panoramic"
 					coordinateMm={{ z: crosshairMm.z }}
 					slabMode={slabMode}
-					slabThicknessMm={archCurve.focalTroughThicknessMm}
+					slabThicknessMm={slabThicknessMm}
 					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
 					isMaximized={maximizedViewport === "panoramic"}
 					onToggleMaximize={() => handleToggleMaximize("panoramic")}
@@ -4147,23 +4171,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}`}
 			data-testid="cbct-viewport-container-cross-section"
 		>
-			{studioMode === "implant" && (
-				<div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-1.5">
-					<button
-						type="button"
-						onClick={() => {
-							setImplantAngulationDeg(0);
-							showToast("↺ Угол наклона имплантата сброшен в 0.0°", "info");
-						}}
-						className="px-2.5 py-1 rounded bg-[#09090b]/90 hover:bg-zinc-900 backdrop-blur-sm text-amber-300 hover:text-amber-200 border border-amber-500/60 font-mono text-[11px] font-bold flex items-center gap-1.5 transition-colors shadow-md cursor-pointer"
-						title="Сбросить наклон оси имплантата в 0.0°"
-						data-testid="cbct-cross-section-maximized-reset-angle-btn"
-					>
-						<RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-						<span>Сброс ({implantAngulationDeg}°)</span>
-					</button>
-				</div>
-			)}
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
 				<canvas
 					ref={crossSectionCanvasRef}
@@ -4569,7 +4576,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					slabMode={slabMode}
 					onSelectSlabMode={setSlabMode}
 					slabThicknessMm={slabThicknessMm}
-					onChangeSlabThicknessMm={setSlabThicknessMm}
+					onChangeSlabThicknessMm={handleSlabThicknessChange}
 					activePresetId={activePreset}
 					onSelectPreset={handleSelectPreset}
 					onResetAll={handleResetAll}
@@ -4636,7 +4643,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 										type="button"
 										onClick={() => {
 											setImplantAngulationDeg(0);
-											showToast("↺ Угол наклона имплантата сброшен в 0.0°", "info");
+											showToast("Угол наклона имплантата сброшен в 0.0°", "info");
 										}}
 										className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/60 font-mono text-[11px] font-bold min-h-[44px] flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer shrink-0"
 										title="Сбросить наклон оси имплантата в 0.0°"
@@ -4774,7 +4781,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								className="w-full py-2.5 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 hover:text-cyan-300 border border-zinc-800 hover:border-cyan-500/60 text-xs font-bold flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-xs"
 								data-testid="cbct-switch-to-implant-mode-btn"
 							>
-								<Compass className="w-4 h-4 text-cyan-400" />
+								<CircleDot className="w-4 h-4 text-amber-400" />
 								<span>Перейти к планированию имплантата</span>
 							</button>
 						</div>
@@ -4899,9 +4906,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											<span className="text-amber-400 font-semibold ml-1">Недопрепарирование (Underdrilling).</span>
 										)}
 									</div>
-									<div className="text-[10px] text-zinc-500 flex items-center justify-between pt-1 border-t border-zinc-800">
-										<span>Торк: <strong className="text-zinc-400">{mischClassification.estimatedInsertionTorqueNcm.expectedNcm} Н·см</strong></span>
-										<span>ISQ: <strong className="text-zinc-400">{mischClassification.estimatedIsqScore.expectedIsq}</strong></span>
+									<div className="text-xs font-bold text-zinc-200 flex items-center justify-between pt-1 border-t border-zinc-800">
+										<span>Торк: <strong className="text-zinc-100">{mischClassification.estimatedInsertionTorqueNcm.expectedNcm} Н·см</strong></span>
+										<span>ISQ: <strong className="text-zinc-100">{mischClassification.estimatedIsqScore.expectedIsq}</strong></span>
 									</div>
 								</div>
 							</div>
@@ -4914,7 +4921,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 										3D Трассировка нерва (IAN)
 									</span>
 									<span className="px-2 py-0.5 rounded bg-zinc-900 text-amber-400 font-mono text-[11px] font-bold border border-amber-500/50">
-										{nervePoints.length} узлов • {nerveTotalLengthMm.toFixed(1)} мм
+										{formatNerveNodesPlural(nervePoints.length)} • {nerveTotalLengthMm.toFixed(1)} мм
 									</span>
 								</div>
 

@@ -398,7 +398,7 @@ export function buildCbctReportData(params: {
 	const {
 		patientName = "Барабаш С.В.",
 		clinicName = "Стоматологический центр DENTE",
-		doctorName = "Врач-хирург-имплантолог",
+		doctorName = "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.",
 		studyDate = new Date().toLocaleDateString("ru-RU"),
 		targetToothFdi,
 		implantPose,
@@ -531,29 +531,39 @@ function renderStructuredDiary043(text: string): string {
 		if (/^={4,}$/.test(line) || /^-{4,}$/.test(line)) {
 			continue;
 		}
+		// Clean line: purge emojis, unify torque units and warnings
+		const cleanLine = line
+			.replace(/🏥\s*/g, "")
+			.replace(/🌱\s*/g, "")
+			.replace(/⚠️\s*ПРИБЛИЖЕНИЕ/g, "ВНИМАНИЕ: ЗОНА ПРИБЛИЖЕНИЯ К НЕРВУ")
+			.replace(/⚠️\s*/g, "")
+			.replace(/⛔\s*/g, "")
+			.replace(/✅\s*/g, "")
+			.replace(/N·cm/g, "Н·см");
+
 		// Document Title
-		if (line.includes("ПРОТОКОЛ ОПЕРАЦИИ") || line.includes("ФОРМА 043/У")) {
-			output.push(`<div style="font-weight:800; color:#0f172a; margin-bottom:2px; font-size:9.5px;">${escapeHtml(line)}</div>`);
+		if (cleanLine.includes("ПРОТОКОЛ ОПЕРАЦИИ") || cleanLine.includes("ФОРМА 043/У")) {
+			output.push(`<div style="font-weight:800; color:#0f172a; margin-bottom:2px; font-size:9px;">${escapeHtml(cleanLine)}</div>`);
 			continue;
 		}
 		// Patient / Clinic meta line
-		if (line.startsWith("Пациент:")) {
-			output.push(`<div class="diary-meta-row">${escapeHtml(line)}</div>`);
+		if (cleanLine.startsWith("Пациент:")) {
+			output.push(`<div class="diary-meta-row">${escapeHtml(cleanLine)}</div>`);
 			continue;
 		}
 		// Numbered section titles (e.g. "1. ВЫБОР...", "2. АНАТОМИЧЕСКАЯ...", "3. Зуб...", "4. ЗАКЛЮЧЕНИЕ...")
-		if (/^\d+\.\s/.test(line)) {
-			output.push(`<div class="diary-section-header">${escapeHtml(line)}</div>`);
+		if (/^\d+\.\s/.test(cleanLine)) {
+			output.push(`<div class="diary-section-header">${escapeHtml(cleanLine)}</div>`);
 			continue;
 		}
 		// Bullet items (e.g. "   - Система: ...", "- Класс: ...", "• ...")
-		if (line.startsWith("- ") || line.startsWith("• ") || line.startsWith("– ")) {
-			const cleanItem = line.replace(/^[-•–]\s*/, "");
+		if (cleanLine.startsWith("- ") || cleanLine.startsWith("• ") || cleanLine.startsWith("– ")) {
+			const cleanItem = cleanLine.replace(/^[-•–]\s*/, "");
 			output.push(`<div class="diary-item">${escapeHtml(cleanItem)}</div>`);
 			continue;
 		}
 		// Default paragraph line
-		output.push(`<div style="margin-bottom: 1.5px;">${escapeHtml(line)}</div>`);
+		output.push(`<div style="margin-bottom: 1.5px;">${escapeHtml(cleanLine)}</div>`);
 	}
 
 	return output.join("");
@@ -614,6 +624,26 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
 				? "#f59e0b"
 				: "#ef4444";
 
+	const formatSurgeonSigner = (name?: string): string => {
+		const trimmed = name?.trim();
+		if (
+			!trimmed ||
+			trimmed === "Врач-хирург-имплантолог" ||
+			trimmed === "Врач-стоматолог-хирург-имплантолог" ||
+			trimmed === "Хирург-имплантолог"
+		) {
+			return "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.";
+		}
+		if (trimmed.startsWith("Врач-стоматолог-хирург-имплантолог:")) {
+			return trimmed;
+		}
+		if (trimmed.startsWith("Врач-стоматолог-хирург-имплантолог")) {
+			return trimmed.replace(/^Врач-стоматолог-хирург-имплантолог\s*/, "Врач-стоматолог-хирург-имплантолог: ");
+		}
+		return `Врач-стоматолог-хирург-имплантолог: ${trimmed}`;
+	};
+	const surgeonSigner = formatSurgeonSigner(patient.doctorName);
+
 	return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -622,7 +652,26 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
 <style>
   @page {
     size: A4 portrait;
-    margin: 10mm 12mm 10mm 12mm;
+    margin: 6mm 8mm;
+  }
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 6mm 8mm;
+    }
+    html, body {
+      background: #ffffff !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .cbct-report-page {
+      max-height: 275mm !important;
+      overflow: hidden !important;
+      page-break-inside: avoid !important;
+      page-break-after: avoid !important;
+    }
   }
   * {
     box-sizing: border-box;
@@ -633,42 +682,50 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #1e293b;
     background: #ffffff;
-    font-size: 11px;
-    line-height: 1.35;
+    font-size: 10.5px;
+    line-height: 1.3;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  .cbct-report-page {
+    width: 100%;
+    max-width: 194mm;
+    max-height: 275mm;
+    overflow: hidden;
+    page-break-inside: avoid;
+    margin: 0 auto;
+  }
   .page {
     width: 100%;
-    max-width: 190mm;
+    max-width: 194mm;
     margin: 0 auto;
   }
   /* Header */
   .header-table {
     width: 100%;
     border-bottom: 2px solid #0284c7;
-    padding-bottom: 6px;
-    margin-bottom: 8px;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
   }
   .clinic-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f172a;
     letter-spacing: -0.2px;
   }
   .clinic-sub {
-    font-size: 9px;
+    font-size: 8.5px;
     color: #64748b;
   }
   .doc-title {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     color: #0369a1;
     text-align: right;
     text-transform: uppercase;
   }
   .doc-meta {
-    font-size: 9px;
+    font-size: 8.5px;
     color: #64748b;
     text-align: right;
   }
@@ -680,17 +737,17 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     align-items: center;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 6px 10px;
-    margin-bottom: 8px;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin-bottom: 6px;
   }
   .info-group {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
   }
   .info-item {
-    font-size: 10px;
+    font-size: 9.5px;
   }
   .info-item b {
     color: #0f172a;
@@ -712,10 +769,10 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .tooth-pill {
     background: #0284c7;
     color: #ffffff;
-    padding: 3px 8px;
-    border-radius: 4px;
+    padding: 2px 6px;
+    border-radius: 3px;
     font-weight: 800;
-    font-size: 11px;
+    font-size: 10.5px;
     letter-spacing: 0.5px;
   }
 
@@ -723,8 +780,8 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .mpr-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin-bottom: 8px;
+    gap: 5px;
+    margin-bottom: 6px;
   }
   .mpr-card {
     background: #ffffff;
@@ -732,7 +789,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     border-radius: 4px;
     overflow: hidden;
     position: relative;
-    height: 140px;
+    height: 110px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -745,41 +802,41 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   }
   .mpr-label {
     position: absolute;
-    top: 4px;
-    left: 4px;
+    top: 3px;
+    left: 3px;
     background: rgba(248, 250, 252, 0.95);
     color: #0369a1;
-    font-size: 8px;
+    font-size: 7.5px;
     font-weight: 700;
-    padding: 2px 5px;
+    padding: 1.5px 4px;
     border-radius: 3px;
     border: 0.5px solid #cbd5e1;
   }
   .mpr-empty {
     color: #64748b;
-    font-size: 9px;
+    font-size: 8.5px;
     text-align: center;
-    padding: 20px;
+    padding: 12px;
   }
 
   /* Structured Implants Table */
   .table-implants {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9.5px;
+    font-size: 9px;
   }
   .table-implants th {
     background: #f1f5f9;
     color: #334155;
     font-weight: 700;
     text-align: left;
-    padding: 5px 6px;
+    padding: 3px 5px;
     border-bottom: 1px solid #cbd5e1;
-    font-size: 8.5px;
+    font-size: 8px;
     text-transform: uppercase;
   }
   .table-implants td {
-    padding: 5px 6px;
+    padding: 3px 5px;
     border-bottom: 1px solid #f1f5f9;
     vertical-align: middle;
   }
@@ -788,10 +845,10 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   }
   .misch-pill {
     display: inline-block;
-    padding: 1px 5px;
+    padding: 1px 4px;
     border-radius: 3px;
     font-weight: 800;
-    font-size: 8px;
+    font-size: 7.5px;
     color: #ffffff;
     margin-right: 4px;
   }
@@ -800,18 +857,18 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .tables-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
+    margin-bottom: 6px;
   }
   .section-box {
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
+    border-radius: 4px;
     overflow: hidden;
   }
   .section-header {
     background: #f1f5f9;
-    padding: 4px 8px;
-    font-size: 10px;
+    padding: 3px 6px;
+    font-size: 9.5px;
     font-weight: 700;
     color: #1e293b;
     border-bottom: 1px solid #e2e8f0;
@@ -822,13 +879,13 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .table-clean {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9.5px;
+    font-size: 9px;
   }
   .table-clean tr:nth-child(even) {
     background: #f8fafc;
   }
   .table-clean td {
-    padding: 3px 6px;
+    padding: 2px 5px;
     border-bottom: 1px solid #f1f5f9;
   }
   .table-clean td:first-child {
@@ -844,9 +901,9 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   /* Nerve & Safety Banner */
   .safety-banner {
     border-radius: 4px;
-    padding: 5px 8px;
-    margin-bottom: 8px;
-    font-size: 9.5px;
+    padding: 3px 6px;
+    margin-bottom: 6px;
+    font-size: 9px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -861,23 +918,23 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .notes-box {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 6px 8px;
-    margin-bottom: 8px;
-    font-size: 9px;
+    border-radius: 4px;
+    padding: 4px 6px;
+    margin-bottom: 6px;
+    font-size: 8.5px;
   }
   .notes-box h4 {
-    font-size: 9.5px;
+    font-size: 9px;
     font-weight: 700;
     color: #0f172a;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
   }
   .notes-box ul {
     list-style: none;
     padding-left: 0;
   }
   .notes-box li {
-    margin-bottom: 2px;
+    margin-bottom: 1px;
     color: #334155;
   }
 
@@ -885,12 +942,12 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .diary-card {
     background: #f8fafc;
     border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 8px 10px;
-    margin-bottom: 8px;
+    border-radius: 4px;
+    padding: 5px 8px;
+    margin-bottom: 6px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 9px;
-    line-height: 1.45;
+    line-height: 1.35;
     color: #334155;
   }
   .diary-header {
@@ -898,23 +955,23 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 4px;
-    margin-bottom: 6px;
+    padding-bottom: 3px;
+    margin-bottom: 4px;
   }
   .diary-title {
-    font-size: 9.5px;
+    font-size: 9px;
     font-weight: 700;
     color: #0f172a;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
   }
   .diary-badge {
     background: #e0f2fe;
     color: #0369a1;
-    font-size: 8px;
+    font-size: 7.5px;
     font-weight: 700;
-    padding: 1px 5px;
+    padding: 1px 4px;
     border-radius: 3px;
     border: 0.5px solid #bae6fd;
     text-transform: uppercase;
@@ -922,20 +979,20 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .diary-content {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 9px;
-    line-height: 1.45;
+    line-height: 1.35;
     color: #334155;
   }
   .diary-section-header {
     font-weight: 700;
     color: #0369a1;
-    margin-top: 5px;
-    margin-bottom: 2px;
+    margin-top: 3px;
+    margin-bottom: 1px;
     font-size: 9px;
   }
   .diary-item {
-    padding-left: 12px;
+    padding-left: 10px;
     position: relative;
-    margin-bottom: 1.5px;
+    margin-bottom: 1px;
   }
   .diary-item::before {
     content: "•";
@@ -945,25 +1002,25 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     font-weight: bold;
   }
   .diary-meta-row {
-    font-size: 8.5px;
+    font-size: 8px;
     color: #64748b;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
 
   /* Signatures */
   .sig-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-top: 12px;
-    padding-top: 8px;
+    gap: 16px;
+    margin-top: 6px;
+    padding-top: 6px;
     border-top: 1px dashed #cbd5e1;
-    font-size: 9.5px;
+    font-size: 9px;
   }
   .sig-line {
     border-bottom: 1px solid #94a3b8;
-    margin-top: 18px;
-    margin-bottom: 3px;
+    margin-top: 12px;
+    margin-bottom: 2px;
   }
   .sig-sub {
     font-size: 8px;
@@ -974,7 +1031,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
 </style>
 </head>
 <body>
-<div class="page">
+<div class="page cbct-report-page">
   <!-- Header -->
   <table class="header-table">
     <tr>
@@ -994,10 +1051,10 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     <div class="info-group">
       <div class="info-item">Пациент: <b>${escapeHtml(patient.patientName)}</b></div>
       <div class="info-item">Карта: <b>${escapeHtml(patient.cardRecordNumber || "043/у")}</b></div>
-      <div class="info-item">Врач: <b>${escapeHtml(patient.doctorName || "Хирург-имплантолог")}</b></div>
+      <div class="info-item">Врач: <b>${escapeHtml(patient.doctorName || "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.")}</b></div>
     </div>
     <div class="right-badges">
-      ${isTonerSaving ? `<div class="toner-badge">🌱 Экономия тонера (Smart White Paper Inversion)</div>` : ""}
+      ${isTonerSaving ? `<div class="toner-badge">Экономия тонера (Smart White Paper Inversion)</div>` : ""}
       <div class="tooth-pill">ЗУБ FDI #${targetToothFdi}</div>
     </div>
   </div>
@@ -1110,7 +1167,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
         <tr><td>Апикальная опора (Apical 20%)</td><td>${bone.apicalBaseHU} HU</td></tr>
         <tr><td>Средневзвешенная плотность</td><td><b>${bone.overallMeanHU} HU</b></td></tr>
         <tr><td>Ширина альвеолярного гребня</td><td>${bone.ridgeWidthMm.toFixed(1)} мм</td></tr>
-        <tr><td>Остаточная щечная пластинка</td><td>${bone.residualBuccalBoneMm.toFixed(1)} мм ${bone.residualBuccalBoneMm < 1.5 ? "(⚠️ < 1.5мм)" : "(Норма)"}</td></tr>
+        <tr><td>Остаточная щечная пластинка</td><td>${bone.residualBuccalBoneMm.toFixed(1)} мм ${bone.residualBuccalBoneMm < 1.5 ? "(< 1.5 мм — Дефицит)" : "(Норма)"}</td></tr>
         <tr><td>Остаточная язычная пластинка</td><td>${bone.residualLingualBoneMm.toFixed(1)} мм</td></tr>
         <tr><td>Потребность в НКР/GBR</td><td>${bone.requiresGbrAugmentation ? "<b>Требуется аугментация</b>" : "Не требуется"}</td></tr>
       </table>
@@ -1127,7 +1184,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
         <tr><td>Артикул / Модель</td><td>${escapeHtml(implant.articleNumber || "Стандарт")}</td></tr>
         <tr><td>Габариты фикстуры</td><td>Ø${implant.diameterMm.toFixed(1)} мм • L ${implant.lengthMm.toFixed(1)} мм</td></tr>
         <tr><td>Угол наклона оси / Погружение</td><td>${implant.angulationDeg.toFixed(1)}° • ${implant.entryDepthMm.toFixed(1)} мм</td></tr>
-        <tr><td>Расчетный торк фиксации</td><td><b>${stability.expectedTorqueNcm} N·cm</b> (${stability.minTorqueNcm}–${stability.maxTorqueNcm} N·cm)</td></tr>
+        <tr><td>Расчетный торк фиксации</td><td><b>${stability.expectedTorqueNcm} Н·см</b> (${stability.minTorqueNcm}–${stability.maxTorqueNcm} Н·см)</td></tr>
         <tr><td>Прогноз стабильности ISQ</td><td><b>${stability.expectedIsq} ISQ</b> (Osstell)</td></tr>
         <tr><td>Протокол нагрузки</td><td>${stability.isImmediateLoadingEligible ? "<b>Немедленная нагрузка (Торк >= 35)</b>" : "Двухэтапный протокол"}</td></tr>
         <tr><td>Режим остеотомии / Сверление</td><td>${escapeHtml(stability.recommendedDrillingRpm)}</td></tr>
@@ -1195,7 +1252,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
       <div class="sig-line"></div>
       <div class="sig-sub">
         <span>(Подпись)</span>
-        <span>${escapeHtml(patient.doctorName || "Врач-хирург-имплантолог")}</span>
+        <span>${escapeHtml(surgeonSigner)}</span>
       </div>
     </div>
     <div>
