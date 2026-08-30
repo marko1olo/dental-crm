@@ -195,7 +195,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			type: "image/jpeg",
 		});
 		setSelectedFdiTooth("16");
-		setFlipV(false);
+		setFlipV(true); // Tooth 16 is maxillary molar: roots point UP (towards sinus), crown DOWN
 	};
 
 	// Dragging state
@@ -221,12 +221,17 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		if (typeof window !== "undefined") {
 			setIsSideDrawerOpen(window.innerWidth >= 768);
 		}
-		// Reset view state with standard anatomical orientation (DICOM standard):
+		// Reset view state with anatomical orientation for dental periapical X-rays:
+		// Upper jaw teeth (11..28, 51..65) naturally have roots pointing UP (towards maxillary sinus) and crowns facing DOWN.
+		// Lower jaw teeth (31..48, 71..85) naturally have roots pointing DOWN and crowns facing UP.
+		const toothStr = (study?.teethFdi && study.teethFdi[0]) || selectedFdiTooth || "16";
+		const toothNum = Number.parseInt(toothStr, 10);
+		const upper = (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
 		setZoom(1.0);
 		setPan({ x: 0, y: 0 });
 		setRotation(0);
 		setFlipH(false);
-		setFlipV(false);
+		setFlipV(upper);
 		setActivePresetId("standard");
 		setBrightness(100);
 		setContrast(100);
@@ -297,11 +302,14 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 	// Reset All Adjustments
 	const handleResetAll = () => {
+		const toothStr = selectedFdiTooth || (study?.teethFdi && study.teethFdi[0]) || "16";
+		const toothNum = Number.parseInt(toothStr, 10);
+		const upper = (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
 		setZoom(1.0);
 		setPan({ x: 0, y: 0 });
 		setRotation(0);
 		setFlipH(false);
-		setFlipV(false);
+		setFlipV(upper);
 		setActivePresetId("standard");
 		setBrightness(100);
 		setContrast(100);
@@ -312,9 +320,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		setIsFiltersMenuOpen(false);
 	};
 
-	// Select FDI Tooth
+	// Select FDI Tooth with Anatomical Orientation (Upper Jaw: roots UP / crown DOWN; Lower Jaw: roots DOWN / crown UP)
 	const handleSelectTooth = (tooth: string) => {
 		setSelectedFdiTooth(tooth);
+		const toothNum = Number.parseInt(tooth, 10);
+		const upper = (toothNum >= 11 && toothNum <= 28) || (toothNum >= 51 && toothNum <= 65);
+		setFlipV(upper);
 	};
 
 	// Get click coordinates in % of image
@@ -1372,6 +1383,29 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								: "cursor-cell"
 					}`}
 				>
+					{/* ── TOP-LEFT DICOM METADATA OVERLAY (ISOLATED DOM LAYER, NEVER MIRRORED) ── */}
+					{isHudVisible && isImageLoaded && activeImageUrl && (
+						<div
+							className="absolute top-4 left-16 z-30 pointer-events-none flex flex-col gap-0.5 px-3 py-2 rounded-xl bg-slate-950/85 border border-slate-700/70 backdrop-blur-md text-xs font-mono shadow-2xl select-none"
+							data-testid="dicom-metadata-overlay"
+						>
+							<div className="flex items-center gap-2">
+								<span className="font-bold text-teal-400">
+									{selectedFdiTooth ? `Зуб FDI #${selectedFdiTooth}` : studyTitle}
+								</span>
+								<span className="px-1.5 py-0.5 text-[10px] rounded bg-teal-950/80 text-teal-300 border border-teal-800/60 font-bold uppercase">
+									{study?.modality || "RVG"}
+								</span>
+							</div>
+							<div className="text-slate-300 text-[11px]">
+								{studyDateFormatted}
+							</div>
+							<div className="text-slate-400 text-[10px]">
+								{study?.patientName || "Смирнова Е. В."} · {study?.metadata?.pixelSpacingMm || 0.05} мм/пикс
+							</div>
+						</div>
+					)}
+
 					{/* Dropzone State (When no image is loaded or doctor requested file upload) */}
 					{!activeImageUrl || isDropzoneOpen ? (
 						<div
@@ -1870,7 +1904,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 					{/* ── WW/WL PRESETS QUICK BAR (Centered directly inside canvas viewport) ── */}
 					<div
-						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-24px)] sm:max-w-[calc(100%-32px)] overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none transition-all ${
+						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-16px)] sm:max-w-[calc(100%-32px)] overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none transition-all ${
 							!isImageLoaded ? "opacity-40 pointer-events-none" : ""
 						}`}
 						data-testid="viewer-presets-bar"

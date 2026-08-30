@@ -563,6 +563,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (!modalContainerRef.current) return;
 		let rafId: number | null = null;
 		const observer = new ResizeObserver(() => {
+			setLayoutBurstCount((c) => c + 1);
 			if (rafId) cancelAnimationFrame(rafId);
 			rafId = requestAnimationFrame(() => {
 				setLayoutBurstCount((c) => c + 1);
