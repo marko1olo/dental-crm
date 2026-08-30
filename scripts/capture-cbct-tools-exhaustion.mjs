@@ -79,16 +79,28 @@ async function run() {
 	});
 
 	let port = process.env.PORT || process.env.VITE_PORT || 5173;
+	let viteProc = null;
 	try {
-		const res = await fetch(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`).catch(() => null);
+		let res = await fetch(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`).catch(() => null);
 		if (!res || !res.ok) {
-			const altPort = port === 5173 ? 5174 : 5173;
-			const altRes = await fetch(`http://127.0.0.1:${altPort}/?standalone=clinical-modals-studio`).catch(() => null);
-			if (altRes && altRes.ok) {
-				port = altPort;
+			console.log(`[CBCT-E2E] Port ${port} not reachable. Spawning local Vite dev server...`);
+			const { spawn } = await import("node:child_process");
+			viteProc = spawn("cmd.exe", ["/c", "npx", "vite", "--port", String(port), "--host", "127.0.0.1"], {
+				cwd: "C:/Clinic_MVP/dental-crm/apps/web",
+				stdio: "ignore",
+			});
+			for (let i = 0; i < 40; i++) {
+				await sleep(500);
+				res = await fetch(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`).catch(() => null);
+				if (res && res.ok) {
+					console.log(`[CBCT-E2E] Vite dev server ready on port ${port}.`);
+					break;
+				}
 			}
 		}
-	} catch {}
+	} catch (e) {
+		console.warn("[WARN] Vite check error:", e.message);
+	}
 	console.log(`[CBCT-E2E] Navigating to Clinical Modals Studio on port ${port}...`);
 	await page.goto(`http://127.0.0.1:${port}/?standalone=clinical-modals-studio`, {
 		waitUntil: "domcontentloaded",
@@ -131,6 +143,13 @@ async function run() {
 
 	console.log("[CBCT-E2E] Volume parsed and rendered.");
 	await flushCanvasRender(page, 1500);
+
+	// Trigger Auto-Arch alignment right on volume ingest to center all 4 planes on teeth
+	const initAutoArchBtn = page.locator('[data-testid="cbct-btn-auto-arch"], button:has-text("Авто-дуга")').first();
+	if (await initAutoArchBtn.isVisible().catch(() => false)) {
+		await initAutoArchBtn.click().catch(() => {});
+		await flushCanvasRender(page, 1200);
+	}
 
 	async function saveShot(filename, description, { keepToast = false } = {}) {
 		if (!keepToast) {

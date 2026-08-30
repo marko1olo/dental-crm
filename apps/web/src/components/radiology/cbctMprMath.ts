@@ -17,6 +17,8 @@ import {
 	type CbctAngleMeasurement,
 	type MeasurementHandleHit,
 	type MeasurementObjectHit,
+	type CbctMeasurementRuler,
+	type CbctProbeMarker,
 	CRISP_OVERLAY_PAD_BG,
 	CRISP_OVERLAY_BORDER_GOLD,
 	CRISP_OVERLAY_BORDER_CYAN,
@@ -40,7 +42,7 @@ import {
 
 export type MprPlane = "axial" | "coronal" | "sagittal";
 export type SlabProjectionMode = "single" | "mip" | "minip" | "average";
-export type { Point2D, Point3D, CbctAngleMeasurement, MeasurementHandleHit, MeasurementObjectHit };
+export type { Point2D, Point3D, CbctAngleMeasurement, MeasurementHandleHit, MeasurementObjectHit, CbctMeasurementRuler, CbctProbeMarker };
 export {
 	CRISP_OVERLAY_PAD_BG,
 	CRISP_OVERLAY_BORDER_GOLD,
@@ -196,22 +198,6 @@ export type CbctActiveMouseTool =
 	| "ruler"
 	| "angle"
 	| "probe";
-
-export interface CbctMeasurementRuler {
-	readonly id: string;
-	readonly plane: CbctViewportType;
-	readonly startMm: Point3D;
-	readonly endMm: Point3D;
-	readonly distanceMm: number;
-}
-
-export interface CbctProbeMarker {
-	readonly id: string;
-	readonly plane: CbctViewportType;
-	readonly worldMm: Point3D;
-	readonly hu: number;
-	readonly tissueName: string;
-}
 
 export interface ViewportOrientationLabels {
 	readonly top: string;

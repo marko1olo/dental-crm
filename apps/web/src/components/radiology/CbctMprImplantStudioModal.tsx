@@ -4200,12 +4200,86 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
 		const pixelSpacing = volume?.spacingMm.x ?? 0.4;
 
-		// Composite Base Canvas (DICOM grayscale slice) and Overlay Canvas (CAD vectors & calipers)
-		const compositeAxial = getCompositeViewportCanvas(axialBaseCanvasRef.current, axialOverlayCanvasRef.current);
-		const compositePano = getCompositeViewportCanvas(panoBaseCanvasRef.current, panoOverlayCanvasRef.current);
-		const compositeCrossSection = getCompositeViewportCanvas(crossSectionBaseCanvasRef.current, crossSectionOverlayCanvasRef.current);
-		const compositeSagittal = getCompositeViewportCanvas(sagittalBaseCanvasRef.current, sagittalOverlayCanvasRef.current);
-		const compositeCoronal = getCompositeViewportCanvas(coronalBaseCanvasRef.current, coronalOverlayCanvasRef.current);
+		// Direct on-demand offscreen generators guarantee 100% slice populating in PDF reports
+		const renderOffscreenMprCanvas = (plane: MprPlane) => {
+			if (!volume) return null;
+			const { data, metadata } = extractObliqueMprSlice(volume, plane, crosshairMm, obliqueAngles, {
+				windowWidth,
+				windowLevel,
+				invert: false,
+				slabMode: "single",
+				slabThicknessMm: 1.0,
+				interpolation: "trilinear",
+			});
+			const c = document.createElement("canvas");
+			c.width = metadata.widthPx;
+			c.height = metadata.heightPx;
+			const ctx = c.getContext("2d");
+			if (ctx) {
+				const imgData = ctx.createImageData(metadata.widthPx, metadata.heightPx);
+				imgData.data.set(data);
+				ctx.putImageData(imgData, 0, 0);
+			}
+			return c;
+		};
+
+		const renderOffscreenPanoCanvas = () => {
+			let pData = panoramicData;
+			if (!pData && volume && archCurve) {
+				pData = reconstructPanoramicView(volume, archCurve, {
+					windowWidth,
+					windowLevel,
+					invert: false,
+				});
+			}
+			if (!pData) return null;
+			const c = document.createElement("canvas");
+			c.width = pData.widthPx;
+			c.height = pData.heightPx;
+			const ctx = c.getContext("2d");
+			if (ctx) {
+				const imgData = ctx.createImageData(pData.widthPx, pData.heightPx);
+				imgData.data.set(pData.pixelData);
+				ctx.putImageData(imgData, 0, 0);
+			}
+			return c;
+		};
+
+		const renderOffscreenCrossSectionCanvas = () => {
+			let cs = activeCrossSection;
+			if (!cs && volume && archCurve) {
+				const generated = generateCrossSectionSlices(volume, archCurve, 1.5, 0.0, {
+					windowWidth,
+					windowLevel,
+					invert: false,
+				});
+				cs = generated[activeCrossSectionIdx] ?? generated[0] ?? null;
+			}
+			if (!cs) return null;
+			const c = document.createElement("canvas");
+			c.width = cs.widthPx;
+			c.height = cs.heightPx;
+			const ctx = c.getContext("2d");
+			if (ctx) {
+				const imgData = ctx.createImageData(cs.widthPx, cs.heightPx);
+				imgData.data.set(cs.pixelData);
+				ctx.putImageData(imgData, 0, 0);
+			}
+			return c;
+		};
+
+		// 100% Reliable Base Slices generated directly from 3D Voxel Volume
+		const baseAxial = renderOffscreenMprCanvas("axial") || axialBaseCanvasRef.current;
+		const basePano = renderOffscreenPanoCanvas() || panoBaseCanvasRef.current;
+		const baseCrossSection = renderOffscreenCrossSectionCanvas() || crossSectionBaseCanvasRef.current;
+		const baseSagittal = renderOffscreenMprCanvas("sagittal") || sagittalBaseCanvasRef.current;
+		const baseCoronal = renderOffscreenMprCanvas("coronal") || coronalBaseCanvasRef.current;
+
+		const compositeAxial = getCompositeViewportCanvas(baseAxial, axialOverlayCanvasRef.current);
+		const compositePano = getCompositeViewportCanvas(basePano, panoOverlayCanvasRef.current);
+		const compositeCrossSection = getCompositeViewportCanvas(baseCrossSection, crossSectionOverlayCanvasRef.current);
+		const compositeSagittal = getCompositeViewportCanvas(baseSagittal, sagittalOverlayCanvasRef.current);
+		const compositeCoronal = getCompositeViewportCanvas(baseCoronal, coronalOverlayCanvasRef.current);
 
 		const axialSnap = compositeAxial
 			? await exportCleanViewportSnapshot(

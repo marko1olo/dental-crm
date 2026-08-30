@@ -76,6 +76,8 @@ import {
 	getCanvasPointerPos,
 	worldMmToVoxel,
 	voxelToWorldMm,
+	sampleVoxelHU,
+	sampleVoxelTrilinearHU,
 } from "./cbctMprMath";
 import {
 	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
@@ -89,10 +91,27 @@ import {
 	getFocalTroughBoundaryCurves,
 	measureAlveolarRidgeCrossSection,
 	reconstructPanoramicView,
+	updateDentalArchAnchorPosition,
+	hitTestDentalArchControlPoint,
+	drawDentalArchControlPointManipulators,
 } from "./dentalCurveEngine";
+import { autoDetectDentalArch } from "./cbctAutoArchEngine";
 import { CbctViewportHud } from "./CbctViewportHud";
 import { useCbctKeyboardShortcuts, applyStepZoom } from "./useCbctKeyboardShortcuts";
 import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
+import { CbctLeftToolDock, type CbctToolMode } from "./CbctLeftToolDock";
+import {
+	type CbctMeasurementRuler,
+	type CbctProbeMarker,
+	type CbctAngleMeasurement,
+	calculateAngleBetween3Points3D,
+	interpolateNerveSpline3D,
+	calculateSplineLength3DMm,
+	calculateNerveDistanceGating,
+	getGatedNerveSegments,
+	MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
+} from "./cbctCaliperNerveMath";
+import { getMischTissueDescription, formatMischTooltip } from "./boneDensityMischMath";
 import type { RadiologyStudy } from "./types";
 
 export interface CbctMprViewerProps {
@@ -155,13 +174,76 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	// ─── 3. DENTAL ARCH SPLINE & PANORAMA STATE ────────────────────────────────
 	const [activeJaw, setActiveJaw] = useState<"mandible" | "maxilla">("mandible");
 	const [anchors, setAnchors] = useState<readonly DentalArchAnchor[]>(DEFAULT_MANDIBULAR_ARCH_ANCHORS);
+	const [showDentalArch, setShowDentalArch] = useState<boolean>(true);
 	const [selectedAnchorId, setSelectedAnchorId] = useState<string | null>(null);
+	const [selectedArchAnchorIdx, setSelectedArchAnchorIdx] = useState<number | null>(null);
+	const [hoveredArchAnchorIdx, setHoveredArchAnchorIdx] = useState<number | null>(null);
+	const [isDraggingArchAnchor, setIsDraggingArchAnchor] = useState<number | null>(null);
+	const pendingArchAnchorMmRef = useRef<{ index: number; positionMm: { x: number; y: number } } | null>(null);
+	const rafArchAnchorIdRef = useRef<number | null>(null);
 	const [focalTroughThicknessMm, setFocalTroughThicknessMm] = useState<number>(12.0);
 	const [panoramicResult, setPanoramicResult] = useState<PanoramicReconstructionResult | null>(null);
 	const [crossSections, setCrossSections] = useState<CrossSectionSliceData[]>([]);
 	const [selectedCrossSectionIndex, setSelectedCrossSectionIndex] = useState<number>(0);
 	const [activeTab, setActiveTab] = useState<"mpr" | "panoramic" | "cross_sections">("mpr");
 	const [mobileMprSlice, setMobileMprSlice] = useState<"axial" | "coronal" | "sagittal" | "panoramic">("axial");
+
+	// ─── 3b. TOOL DOCK, MEASUREMENT CALIPERS & NERVE STATE ──────────────────────
+	const [activeTool, setActiveTool] = useState<CbctToolMode>("crosshair");
+	const [rulers, setRulers] = useState<CbctMeasurementRuler[]>([]);
+	const [angles, setAngles] = useState<CbctAngleMeasurement[]>([]);
+	const [probeMarkers, setProbeMarkers] = useState<CbctProbeMarker[]>([]);
+	const [nervePoints, setNervePoints] = useState<readonly Point3D[]>([]);
+	const [selectedMeasurementId, setSelectedMeasurementId] = useState<string | null>(null);
+
+	const [activeRuler, setActiveRuler] = useState<{
+		plane: MprPlane;
+		startMm: Point3D;
+		currentMm: Point3D;
+	} | null>(null);
+
+	const [activeAngle, setActiveAngle] = useState<{
+		plane: MprPlane;
+		startMm: Point3D;
+		vertexMm: Point3D | null;
+		currentMm: Point3D;
+	} | null>(null);
+
+	const [activeProbe, setActiveProbe] = useState<{
+		plane: MprPlane;
+		worldMm: Point3D;
+		hu: number;
+		tissueName: string;
+	} | null>(null);
+
+	// Computed 3D Mandibular Canal Spline (2.0mm tube with distance gating)
+	const interpolatedNerve3D = useMemo(() => {
+		if (nervePoints.length < 2) return [...nervePoints];
+		return interpolateNerveSpline3D(nervePoints, 12);
+	}, [nervePoints]);
+
+	const nerveTotalLengthMm = useMemo(() => {
+		return calculateSplineLength3DMm(interpolatedNerve3D);
+	}, [interpolatedNerve3D]);
+
+	const handleDeleteRuler = useCallback((id: string) => {
+		setRulers((prev) => prev.filter((r) => r.id !== id));
+		if (selectedMeasurementId === id) setSelectedMeasurementId(null);
+	}, [selectedMeasurementId]);
+
+	const handleDeleteAngle = useCallback((id: string) => {
+		setAngles((prev) => prev.filter((a) => a.id !== id));
+		if (selectedMeasurementId === id) setSelectedMeasurementId(null);
+	}, [selectedMeasurementId]);
+
+	const handleDeleteProbe = useCallback((id: string) => {
+		setProbeMarkers((prev) => prev.filter((p) => p.id !== id));
+		if (selectedMeasurementId === id) setSelectedMeasurementId(null);
+	}, [selectedMeasurementId]);
+
+	const handleClearNerve = useCallback(() => {
+		setNervePoints([]);
+	}, []);
 
 	// ─── 4. CANVAS REFS ────────────────────────────────────────────────────────
 	const axialCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -198,7 +280,39 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		setActiveJaw(jaw);
 		setAnchors(jaw === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS);
 		setSelectedAnchorId(null);
+		setSelectedArchAnchorIdx(null);
 	};
+
+	// 1-Click Auto-Detect Dental Arch Engine (Enamel HU & MIP ray-tracing)
+	const handleAutoDetectArch = useCallback(() => {
+		if (!volume) return;
+		const detected = autoDetectDentalArch(volume, activeJaw);
+		setAnchors(detected.anchors);
+		setSelectedAnchorId(null);
+		setSelectedArchAnchorIdx(null);
+	}, [volume, activeJaw]);
+
+	// Real-Time Automatic Synchronization of OPG Panorama and Cross-Sections
+	useEffect(() => {
+		if (!volume) return;
+		const pano = reconstructPanoramicView(volume, archCurve, {
+			heightMm: 38.0,
+			heightPx: 280,
+			windowWidth,
+			windowLevel,
+			invert: invertColors,
+		});
+		setPanoramicResult(pano);
+
+		const sections = generateCrossSectionSlices(volume, archCurve, 2.0, crosshairMm.z, {
+			widthMm: 24.0,
+			heightMm: 32.0,
+			windowWidth,
+			windowLevel,
+			invert: invertColors,
+		});
+		setCrossSections(sections);
+	}, [volume, archCurve, windowWidth, windowLevel, invertColors, crosshairMm.z]);
 
 	// Apply Hounsfield Preset
 	const handleSelectPreset = (preset: { id: string; windowWidth: number; windowLevel: number }) => {
@@ -318,30 +432,32 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					ctx.restore();
 				}
 
-				// Draw Dental Arch Spline (Purple #a855f7)
-				ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.95);
-				ctx.lineWidth = 2.0;
-				ctx.beginPath();
-				const spline = archCurve.splinePointsMm;
-				for (let i = 0; i < spline.length; i++) {
-					const pt = spline[i]!;
-					const v = worldMmToVoxel({ x: pt.x, y: pt.y, z: crosshairMm.z }, volume);
-					if (i === 0) ctx.moveTo(v.x, v.y);
-					else ctx.lineTo(v.x, v.y);
-				}
-				ctx.stroke();
-
-				// Draw Tooth Anchors
-				for (const anchor of archCurve.anchors) {
-					const v = worldMmToVoxel({ x: anchor.positionMm.x, y: anchor.positionMm.y, z: crosshairMm.z }, volume);
-					const isSelected = selectedAnchorId === anchor.id;
-					ctx.fillStyle = isSelected ? ROMEXIS_COLORS.crossSection : ROMEXIS_COLORS.panoramic;
-					ctx.strokeStyle = "#ffffff";
-					ctx.lineWidth = 1.2;
+				// Draw Dental Arch Spline & Interactive Manipulators (Purple #a855f7 & Teal #2dd4bf)
+				if (showDentalArch) {
+					ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.95);
+					ctx.lineWidth = 2.0;
 					ctx.beginPath();
-					ctx.arc(v.x, v.y, isSelected ? 5.0 : 3.2, 0, Math.PI * 2);
-					ctx.fill();
+					const spline = archCurve.splinePointsMm;
+					for (let i = 0; i < spline.length; i++) {
+						const pt = spline[i]!;
+						const v = worldMmToVoxel({ x: pt.x, y: pt.y, z: crosshairMm.z }, volume);
+						if (i === 0) ctx.moveTo(v.x, v.y);
+						else ctx.lineTo(v.x, v.y);
+					}
 					ctx.stroke();
+
+					// Draw Interactive 24x24px Control Point Manipulators with 6px Teal-400 core
+					drawDentalArchControlPointManipulators(ctx, {
+						archCurve,
+						volume,
+						transform: transforms.axial,
+						crosshairZMm: crosshairMm.z,
+						selectedAnchorIdx: selectedArchAnchorIdx,
+						hoveredAnchorIdx: hoveredArchAnchorIdx,
+						draggingAnchorIdx: isDraggingArchAnchor,
+						activeToothFdi: crossSections[selectedCrossSectionIndex]?.nearestToothFdi ?? null,
+						invertColors,
+					});
 				}
 
 				// Active Cross-Section Slice indicator line on Axial (Yellow #eab308)
@@ -443,10 +559,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				});
 
 				// Draw Oblique Crosshair with Rotation Handles
+				const depthMax = Math.max(1, volume.dimensions.depth - 1);
+				const coronalCenterSlice = { x: vox.x, y: depthMax - vox.z };
 				drawObliqueCrosshairWithRotationHandles(ctx, {
 					widthPx: w,
 					heightPx: h,
-					centerPx: { x: Math.round(w / 2), y: Math.round(h / 2) },
+					centerPx: coronalCenterSlice,
 					plane: "coronal",
 					rotationDeg: obliqueAngles.coronalTiltDeg,
 					activeHandle: activeRotationHandle?.plane === "coronal" ? activeRotationHandle.handle : null,
@@ -509,10 +627,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				});
 
 				// Draw Oblique Crosshair with Rotation Handles
+				const depthMax = Math.max(1, volume.dimensions.depth - 1);
+				const sagittalCenterSlice = { x: vox.y, y: depthMax - vox.z };
 				drawObliqueCrosshairWithRotationHandles(ctx, {
 					widthPx: w,
 					heightPx: h,
-					centerPx: { x: Math.round(w / 2), y: Math.round(h / 2) },
+					centerPx: sagittalCenterSlice,
 					plane: "sagittal",
 					rotationDeg: obliqueAngles.sagittalTiltDeg,
 					activeHandle: activeRotationHandle?.plane === "sagittal" ? activeRotationHandle.handle : null,
@@ -532,10 +652,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	}, [renderMprPlanes]);
 
 	// Reset W/L & View (Zoom, Pan, Rotation, Maximization)
-	const handleResetViewAndWL = () => {
+	const handleResetViewAndWL = useCallback(() => {
 		setActivePresetId("bone_dense");
-		setWindowWidth(2000);
-		setWindowLevel(400);
+		setWindowWidth(4400);
+		setWindowLevel(1300);
 		setObliqueAngles(DEFAULT_OBLIQUE_ROTATION);
 		setTransforms({
 			axial: DEFAULT_VIEWPORT_TRANSFORM,
@@ -545,15 +665,24 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			cross_section: DEFAULT_VIEWPORT_TRANSFORM,
 		});
 		setMaximizedViewport(null);
-	};
+		setActiveDraggingPlane(null);
+		setIsDraggingWL(null);
+		setIsPanning(null);
+		setActiveRotationHandle(null);
+		setIsShiftRotating(null);
+	}, []);
 
 	const getCanvasCursor = useCallback((plane: MprPlane) => {
+		if (plane === "axial") {
+			if (isDraggingArchAnchor !== null) return "grabbing";
+			if (hoveredArchAnchorIdx !== null) return "grab";
+		}
 		if (isShiftRotating?.plane === plane || activeRotationHandle?.plane === plane) return "grabbing";
 		if (hoveredHandle?.plane === plane) return "grab";
 		if (isDraggingWL) return "ns-resize";
 		if (isPanning?.plane === plane) return "move";
 		return "crosshair";
-	}, [isShiftRotating, activeRotationHandle, hoveredHandle, isDraggingWL, isPanning]);
+	}, [isShiftRotating, activeRotationHandle, hoveredHandle, isDraggingWL, isPanning, isDraggingArchAnchor, hoveredArchAnchorIdx]);
 
 	// ─── 6. INTERACTIVE MOUSE HANDLERS (W/L, ZOOM, PAN & ROTATION) ───────────
 	const handlePointerDown = (plane: MprPlane, e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -587,9 +716,22 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			return;
 		}
 
-		// 3. Left Click -> Check Shift rotation vs handle drag vs Crosshair translation
+		// 3. Left Click -> Check Dental Arch Anchor vs Shift rotation vs handle drag vs Crosshair translation
 		if (e.button === 0) {
 			if (!volume) return;
+
+			// 3a. Hit-testing for Draggable Dental Arch Spline Control Points on Axial Viewport (24x24px Hitbox)
+			if (plane === "axial" && showDentalArch) {
+				const currentTransform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
+				const hitAnchor = hitTestDentalArchControlPoint(pointerPx, archCurve, volume, currentTransform, 12, crosshairMm.z);
+				if (hitAnchor) {
+					setSelectedArchAnchorIdx(hitAnchor.index);
+					setSelectedAnchorId(hitAnchor.anchor.id);
+					setIsDraggingArchAnchor(hitAnchor.index);
+					return;
+				}
+			}
+
 			const vox = worldMmToVoxel(crosshairMm, volume);
 			const centerPx = plane === "axial"
 				? { x: vox.x, y: vox.y }
@@ -647,6 +789,40 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		const clientY = e.clientY;
 		const { x, y } = getCanvasPointerPos(canvas, clientX, clientY);
 		const pointerPx = { x, y };
+
+		// 0-arch. Dental Arch Spline Anchor Drag (60fps rAF Coalesced)
+		if (isDraggingArchAnchor !== null && plane === "axial" && volume) {
+			const currentTransform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				"axial",
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+			pendingArchAnchorMmRef.current = {
+				index: isDraggingArchAnchor,
+				positionMm: { x: pointMm.x, y: pointMm.y },
+			};
+			if (rafArchAnchorIdRef.current === null) {
+				rafArchAnchorIdRef.current = requestAnimationFrame(() => {
+					if (pendingArchAnchorMmRef.current) {
+						const { index, positionMm } = pendingArchAnchorMmRef.current;
+						setAnchors((prev) =>
+							prev.map((a, i) =>
+								i === index
+									? { ...a, positionMm: { x: Number(positionMm.x.toFixed(2)), y: Number(positionMm.y.toFixed(2)) } }
+									: a,
+							),
+						);
+					}
+					rafArchAnchorIdRef.current = null;
+				});
+			}
+			return;
+		}
 
 		// 1. Right Click Drag -> Adjust Window / Level
 		if (isDraggingWL) {
@@ -743,8 +919,17 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			return;
 		}
 
-		// 6. Hover Detection for Rotation Handles (Cursor change)
-		if (!isDraggingWL && !isPanning && !activeRotationHandle && !activeDraggingPlane && !isShiftRotating && volume) {
+		// 6. Hover Detection for Dental Arch Anchors & Rotation Handles (Cursor change)
+		if (!isDraggingWL && !isPanning && !activeRotationHandle && !activeDraggingPlane && !isShiftRotating && isDraggingArchAnchor === null && volume) {
+			// Check dental arch anchor hover
+			if (plane === "axial" && showDentalArch) {
+				const currentTransform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
+				const hitAnchor = hitTestDentalArchControlPoint(pointerPx, archCurve, volume, currentTransform, 12, crosshairMm.z);
+				setHoveredArchAnchorIdx(hitAnchor ? hitAnchor.index : null);
+			} else if (hoveredArchAnchorIdx !== null) {
+				setHoveredArchAnchorIdx(null);
+			}
+
 			const vox = worldMmToVoxel(crosshairMm, volume);
 			const centerPx = plane === "axial"
 				? { x: vox.x, y: vox.y }
@@ -786,6 +971,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		setActiveRotationHandle(null);
 		setIsShiftRotating(null);
 		setActiveDraggingPlane(null);
+		setIsDraggingArchAnchor(null);
 	};
 
 	// Double click on canvas: if near crosshair center -> reset angles to 0°, else toggle maximize
@@ -1130,27 +1316,16 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				</div>
 
 				{/* Right: Controls & Close */}
-				{/* Right: Controls & Close */}
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
-						onClick={() => setObliqueAngles(DEFAULT_OBLIQUE_ROTATION)}
-						className="flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white transition-all shadow-sm"
-						title="Сбросить все углы вращения и наклона осей в 0.0°"
-						data-testid="cbct-reset-oblique-angles-btn"
-					>
-						<RotateCcw className="w-4 h-4 text-sky-400" />
-						<span>↺ 0° Оси</span>
-					</button>
-					<button
-						type="button"
 						onClick={handleResetViewAndWL}
-						className="flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white transition-all shadow-sm"
-						title="Сбросить Window/Level, Зум, Панорамирование и Углы поворота"
-						data-testid="cbct-reset-view-wl-btn"
+						className="flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white hover:border-cyan-500/60 transition-all shadow-sm cursor-pointer"
+						title="Сброс вида: масштаб 100%, центрирование (0,0), сброс углов осей 0.0° и стандартный контраст (WW 4400 / WL 1300)"
+						data-testid="cbct-btn-reset-view"
 					>
-						<RotateCcw className="w-4 h-4 text-sky-400" />
-						<span>Сброс W/L & Зума</span>
+						<RotateCcw className="w-4 h-4 text-cyan-400" />
+						<span>↺ Сброс вида</span>
 					</button>
 					<button
 						type="button"
@@ -1253,6 +1428,34 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							В.Ч.
 						</button>
 					</div>
+
+					{/* 1-Click Auto Dental Arch Generation Button */}
+					<button
+						type="button"
+						onClick={handleAutoDetectArch}
+						className="flex items-center gap-1.5 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-purple-950/60 border border-purple-500/70 text-purple-200 text-xs font-bold hover:bg-purple-900 hover:text-white hover:border-purple-400 transition-all shadow-sm cursor-pointer"
+						title="Сгенерировать дугу автоматически по плотности эмали и кортикального гребня"
+						data-testid="cbct-btn-auto-arch"
+					>
+						<Sliders className="w-4 h-4 text-purple-400" />
+						<span>⚙️ Сгенерировать дугу автоматически</span>
+					</button>
+
+					{/* Toggle Dental Arch Spline Button */}
+					<button
+						type="button"
+						onClick={() => setShowDentalArch((prev) => !prev)}
+						className={`flex items-center gap-1.5 min-h-[44px] px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+							showDentalArch
+								? "bg-purple-950/40 text-purple-200 border-purple-500/60"
+								: "bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200"
+						}`}
+						title="Показать / скрыть анатомическую дугу ОПТГ на аксиальном срезе"
+						data-testid="cbct-toggle-dental-arch"
+					>
+						<Spline className="w-4 h-4 text-purple-400" />
+						<span>Дуга ОПТГ</span>
+					</button>
 				</div>
 			</div>
 
