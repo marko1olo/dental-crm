@@ -385,12 +385,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const folderInputRef = useRef<HTMLInputElement>(null);
 	const zipInputRef = useRef<HTMLInputElement>(null);
 
-	// ─── CANVAS REFS FOR ZERO-GC RENDERING ───────────────────────────────────
-	const axialCanvasRef = useRef<HTMLCanvasElement>(null);
-	const coronalCanvasRef = useRef<HTMLCanvasElement>(null);
-	const sagittalCanvasRef = useRef<HTMLCanvasElement>(null);
-	const panoCanvasRef = useRef<HTMLCanvasElement>(null);
-	const crossSectionCanvasRef = useRef<HTMLCanvasElement>(null);
+	// ─── DUAL-CANVAS REFS FOR ZERO-GC 60 FPS LAYERED RENDERING ───────────────
+	// Layer 1: Base Canvases (DICOM slice raster pixels, updated only on Z-scroll / W/L)
+	const axialBaseCanvasRef = useRef<HTMLCanvasElement>(null);
+	const coronalBaseCanvasRef = useRef<HTMLCanvasElement>(null);
+	const sagittalBaseCanvasRef = useRef<HTMLCanvasElement>(null);
+	const panoBaseCanvasRef = useRef<HTMLCanvasElement>(null);
+	const crossSectionBaseCanvasRef = useRef<HTMLCanvasElement>(null);
+
+	// Layer 2: Overlay UI Canvases (vector crosshairs, rulers, nerve, implants, handles)
+	const axialOverlayCanvasRef = useRef<HTMLCanvasElement>(null);
+	const coronalOverlayCanvasRef = useRef<HTMLCanvasElement>(null);
+	const sagittalOverlayCanvasRef = useRef<HTMLCanvasElement>(null);
+	const panoOverlayCanvasRef = useRef<HTMLCanvasElement>(null);
+	const crossSectionOverlayCanvasRef = useRef<HTMLCanvasElement>(null);
+
+	// Aliases for event listeners & interactions bound to overlay canvases
+	const axialCanvasRef = axialOverlayCanvasRef;
+	const coronalCanvasRef = coronalOverlayCanvasRef;
+	const sagittalCanvasRef = sagittalOverlayCanvasRef;
+	const panoCanvasRef = panoOverlayCanvasRef;
+	const crossSectionCanvasRef = crossSectionOverlayCanvasRef;
 
 	const axialImgDataRef = useRef<ImageData | null>(null);
 	const coronalImgDataRef = useRef<ImageData | null>(null);
@@ -1034,65 +1049,176 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		}
 	}, [studioMode, nerveAuditResult.shouldTriggerAudioAlarm, nerveAuditResult.safetyStatus, isAudioEnabled]);
 
-	// ─── RENDER 3-PLANE MPR SLICES (ZERO-GC CANVAS) ───────────────────────────
+	// ─── LAYER 1: RENDER 3-PLANE MPR BASE SLICES (ZERO-GC DICOM GRAYSCALE) ────
 	useEffect(() => {
 		if (!volume || !isOpen) return;
 
-		const vox = worldMmToVoxel(crosshairMm, volume);
-
-		// 1. Axial Viewport (Z-Plane: Intersects with Coronal (Amber) & Sagittal (Green))
-		if (axialCanvasRef.current) {
-			const canvas = axialCanvasRef.current;
+		// 1. Axial Base Slice (Z-Plane)
+		if (axialBaseCanvasRef.current) {
+			const canvas = axialBaseCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const axialKey = `${crosshairMm.x.toFixed(1)}_${crosshairMm.y.toFixed(1)}_${crosshairMm.z.toFixed(1)}_${obliqueAngles.axialAngleDeg}_${windowWidth}_${windowLevel}_${invertColors}_${slabMode}_${slabThicknessMm}`;
-				let metadata: MprSliceMetadata;
-				if (axialKey === lastAxialSliceKeyRef.current && lastAxialMetadataRef.current && axialOffscreenRef.current) {
-					metadata = lastAxialMetadataRef.current;
-				} else {
-					const res = extractObliqueMprSlice(volume, "axial", crosshairMm, obliqueAngles, {
-						windowWidth,
-						windowLevel,
-						invert: invertColors,
-						slabMode,
-						slabThicknessMm,
-						interpolation: "trilinear",
-					});
-					metadata = res.metadata;
-					lastAxialSliceKeyRef.current = axialKey;
-					lastAxialMetadataRef.current = metadata;
-					if (!axialOffscreenRef.current) {
-						axialOffscreenRef.current = document.createElement("canvas");
-					}
-					const off = axialOffscreenRef.current;
-					if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
-						off.width = metadata.widthPx;
-						off.height = metadata.heightPx;
-					}
-					const offCtx = off.getContext("2d");
-					if (offCtx) {
-						if (!axialImgDataRef.current || axialImgDataRef.current.width !== metadata.widthPx || axialImgDataRef.current.height !== metadata.heightPx) {
-							axialImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
-						}
-						axialImgDataRef.current.data.set(res.data);
-						offCtx.putImageData(axialImgDataRef.current, 0, 0);
-					}
+				const { data, metadata } = extractObliqueMprSlice(volume, "axial", crosshairMm, obliqueAngles, {
+					windowWidth,
+					windowLevel,
+					invert: invertColors,
+					slabMode,
+					slabThicknessMm,
+					interpolation: "trilinear",
+				});
+				if (!axialOffscreenRef.current) {
+					axialOffscreenRef.current = document.createElement("canvas");
 				}
 				const off = axialOffscreenRef.current;
-				if (!off) return;
+				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
+					off.width = metadata.widthPx;
+					off.height = metadata.heightPx;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					if (!axialImgDataRef.current || axialImgDataRef.current.width !== metadata.widthPx || axialImgDataRef.current.height !== metadata.heightPx) {
+						axialImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
+					}
+					axialImgDataRef.current.data.set(data);
+					offCtx.putImageData(axialImgDataRef.current, 0, 0);
+				}
 
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
 					canvas.width = metadata.widthPx;
 					canvas.height = metadata.heightPx;
 				}
 
-				// ─── PASS 1: TRANSFORMED WORLD SPACE (CT SLICE & ANATOMICAL GEOMETRY) ───
 				ctx.save();
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 				const transform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
 				ctx.translate(transform.panX, transform.panY);
 				ctx.scale(transform.zoom, transform.zoom);
 				ctx.drawImage(off, 0, 0);
+				ctx.restore();
+			}
+		}
+
+		// 2. Coronal Base Slice (Y-Plane)
+		if (coronalBaseCanvasRef.current) {
+			const canvas = coronalBaseCanvasRef.current;
+			const ctx = canvas.getContext("2d");
+			if (ctx) {
+				const { data, metadata } = extractObliqueMprSlice(volume, "coronal", crosshairMm, obliqueAngles, {
+					windowWidth,
+					windowLevel,
+					invert: invertColors,
+					slabMode,
+					slabThicknessMm,
+					interpolation: "trilinear",
+				});
+				if (!coronalOffscreenRef.current) {
+					coronalOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = coronalOffscreenRef.current;
+				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
+					off.width = metadata.widthPx;
+					off.height = metadata.heightPx;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== metadata.widthPx || coronalImgDataRef.current.height !== metadata.heightPx) {
+						coronalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
+					}
+					coronalImgDataRef.current.data.set(data);
+					offCtx.putImageData(coronalImgDataRef.current, 0, 0);
+				}
+
+				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
+					canvas.width = metadata.widthPx;
+					canvas.height = metadata.heightPx;
+				}
+
+				ctx.save();
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				const transform = transforms.coronal ?? DEFAULT_VIEWPORT_TRANSFORM;
+				ctx.translate(transform.panX, transform.panY);
+				ctx.scale(transform.zoom, transform.zoom);
+				ctx.drawImage(off, 0, 0);
+				ctx.restore();
+			}
+		}
+
+		// 3. Sagittal Base Slice (X-Plane)
+		if (sagittalBaseCanvasRef.current) {
+			const canvas = sagittalBaseCanvasRef.current;
+			const ctx = canvas.getContext("2d");
+			if (ctx) {
+				const { data, metadata } = extractObliqueMprSlice(volume, "sagittal", crosshairMm, obliqueAngles, {
+					windowWidth,
+					windowLevel,
+					invert: invertColors,
+					slabMode,
+					slabThicknessMm,
+					interpolation: "trilinear",
+				});
+				if (!sagittalOffscreenRef.current) {
+					sagittalOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = sagittalOffscreenRef.current;
+				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
+					off.width = metadata.widthPx;
+					off.height = metadata.heightPx;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== metadata.widthPx || sagittalImgDataRef.current.height !== metadata.heightPx) {
+						sagittalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
+					}
+					sagittalImgDataRef.current.data.set(data);
+					offCtx.putImageData(sagittalImgDataRef.current, 0, 0);
+				}
+
+				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
+					canvas.width = metadata.widthPx;
+					canvas.height = metadata.heightPx;
+				}
+
+				ctx.save();
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				const transform = transforms.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM;
+				ctx.translate(transform.panX, transform.panY);
+				ctx.scale(transform.zoom, transform.zoom);
+				ctx.drawImage(off, 0, 0);
+				ctx.restore();
+			}
+		}
+	}, [volume, isOpen, crosshairMm, obliqueAngles, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, transforms.axial, transforms.coronal, transforms.sagittal]);
+
+	// ─── LAYER 2: RENDER 3-PLANE MPR OVERLAY UI (VECTORS, ANATOMY, MEASUREMENTS, HANDLES) ───
+	useEffect(() => {
+		if (!volume || !isOpen) return;
+
+		const vox = worldMmToVoxel(crosshairMm, volume);
+
+		// 1. Axial Overlay Viewport (Z-Plane)
+		if (axialOverlayCanvasRef.current) {
+			const canvas = axialOverlayCanvasRef.current;
+			const ctx = canvas.getContext("2d");
+			if (ctx) {
+				const metadata = {
+					widthPx: volume.dimensions.width,
+					heightPx: volume.dimensions.height,
+					pixelSpacingX: volume.spacingMm.x,
+					pixelSpacingY: volume.spacingMm.y,
+				};
+
+				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
+					canvas.width = metadata.widthPx;
+					canvas.height = metadata.heightPx;
+				}
+
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+				// ─── PASS 1: TRANSFORMED WORLD SPACE (ANATOMICAL GEOMETRY) ───
+				ctx.save();
+				const transform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
+				ctx.translate(transform.panX, transform.panY);
+				ctx.scale(transform.zoom, transform.zoom);
 
 				// Draw Dental Arch Spline on Axial (Clean hairline when enabled)
 				if (showDentalArch) {
@@ -1422,59 +1548,30 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}
 		}
 
-		// 2. Coronal Viewport (Y-Plane: Intersects with Axial (Cyan) & Sagittal (Green))
-		if (coronalCanvasRef.current) {
-			const canvas = coronalCanvasRef.current;
+		// 2. Coronal Overlay Viewport (Y-Plane)
+		if (coronalOverlayCanvasRef.current) {
+			const canvas = coronalOverlayCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const coronalKey = `${crosshairMm.x.toFixed(1)}_${crosshairMm.y.toFixed(1)}_${crosshairMm.z.toFixed(1)}_${obliqueAngles.coronalTiltDeg}_${windowWidth}_${windowLevel}_${invertColors}_${slabMode}_${slabThicknessMm}`;
-				let metadata: MprSliceMetadata;
-				if (coronalKey === lastCoronalSliceKeyRef.current && lastCoronalMetadataRef.current && coronalOffscreenRef.current) {
-					metadata = lastCoronalMetadataRef.current;
-				} else {
-					const res = extractObliqueMprSlice(volume, "coronal", crosshairMm, obliqueAngles, {
-						windowWidth,
-						windowLevel,
-						invert: invertColors,
-						slabMode,
-						slabThicknessMm,
-						interpolation: "trilinear",
-					});
-					metadata = res.metadata;
-					lastCoronalSliceKeyRef.current = coronalKey;
-					lastCoronalMetadataRef.current = metadata;
-					if (!coronalOffscreenRef.current) {
-						coronalOffscreenRef.current = document.createElement("canvas");
-					}
-					const off = coronalOffscreenRef.current;
-					if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
-						off.width = metadata.widthPx;
-						off.height = metadata.heightPx;
-					}
-					const offCtx = off.getContext("2d");
-					if (offCtx) {
-						if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== metadata.widthPx || coronalImgDataRef.current.height !== metadata.heightPx) {
-							coronalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
-						}
-						coronalImgDataRef.current.data.set(res.data);
-						offCtx.putImageData(coronalImgDataRef.current, 0, 0);
-					}
-				}
-				const off = coronalOffscreenRef.current;
-				if (!off) return;
+				const metadata = {
+					widthPx: volume.dimensions.width,
+					heightPx: volume.dimensions.depth,
+					pixelSpacingX: volume.spacingMm.x,
+					pixelSpacingY: volume.spacingMm.z,
+				};
 
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
 					canvas.width = metadata.widthPx;
 					canvas.height = metadata.heightPx;
 				}
 
-				// ─── PASS 1: TRANSFORMED WORLD SPACE (CT SLICE & ANATOMICAL GEOMETRY) ───
-				ctx.save();
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+				// ─── PASS 1: TRANSFORMED WORLD SPACE (ANATOMICAL GEOMETRY) ───
+				ctx.save();
 				const transform = transforms.coronal ?? DEFAULT_VIEWPORT_TRANSFORM;
 				ctx.translate(transform.panX, transform.panY);
 				ctx.scale(transform.zoom, transform.zoom);
-				ctx.drawImage(off, 0, 0);
 
 				const zPx = metadata.heightPx - 1 - vox.z;
 				let coronalImplantPEntry: { x: number; y: number } | null = null;
@@ -1764,59 +1861,30 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}
 		}
 
-		// 3. Sagittal Viewport (X-Plane: Intersects with Axial (Cyan) & Coronal (Amber))
-		if (sagittalCanvasRef.current) {
-			const canvas = sagittalCanvasRef.current;
+		// 3. Sagittal Overlay Viewport (X-Plane)
+		if (sagittalOverlayCanvasRef.current) {
+			const canvas = sagittalOverlayCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const sagittalKey = `${crosshairMm.x.toFixed(1)}_${crosshairMm.y.toFixed(1)}_${crosshairMm.z.toFixed(1)}_${obliqueAngles.sagittalTiltDeg}_${windowWidth}_${windowLevel}_${invertColors}_${slabMode}_${slabThicknessMm}`;
-				let metadata: MprSliceMetadata;
-				if (sagittalKey === lastSagittalSliceKeyRef.current && lastSagittalMetadataRef.current && sagittalOffscreenRef.current) {
-					metadata = lastSagittalMetadataRef.current;
-				} else {
-					const res = extractObliqueMprSlice(volume, "sagittal", crosshairMm, obliqueAngles, {
-						windowWidth,
-						windowLevel,
-						invert: invertColors,
-						slabMode,
-						slabThicknessMm,
-						interpolation: "trilinear",
-					});
-					metadata = res.metadata;
-					lastSagittalSliceKeyRef.current = sagittalKey;
-					lastSagittalMetadataRef.current = metadata;
-					if (!sagittalOffscreenRef.current) {
-						sagittalOffscreenRef.current = document.createElement("canvas");
-					}
-					const off = sagittalOffscreenRef.current;
-					if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
-						off.width = metadata.widthPx;
-						off.height = metadata.heightPx;
-					}
-					const offCtx = off.getContext("2d");
-					if (offCtx) {
-						if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== metadata.widthPx || sagittalImgDataRef.current.height !== metadata.heightPx) {
-							sagittalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
-						}
-						sagittalImgDataRef.current.data.set(res.data);
-						offCtx.putImageData(sagittalImgDataRef.current, 0, 0);
-					}
-				}
-				const off = sagittalOffscreenRef.current;
-				if (!off) return;
+				const metadata = {
+					widthPx: volume.dimensions.height,
+					heightPx: volume.dimensions.depth,
+					pixelSpacingX: volume.spacingMm.y,
+					pixelSpacingY: volume.spacingMm.z,
+				};
 
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
 					canvas.width = metadata.widthPx;
 					canvas.height = metadata.heightPx;
 				}
 
-				// ─── PASS 1: TRANSFORMED WORLD SPACE (CT SLICE & ANATOMICAL GEOMETRY) ───
-				ctx.save();
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+				// ─── PASS 1: TRANSFORMED WORLD SPACE (ANATOMICAL GEOMETRY) ───
+				ctx.save();
 				const transform = transforms.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM;
 				ctx.translate(transform.panX, transform.panY);
 				ctx.scale(transform.zoom, transform.zoom);
-				ctx.drawImage(off, 0, 0);
 
 				const zPx = metadata.heightPx - 1 - vox.z;
 				let sagittalImplantPEntry: { x: number; y: number } | null = null;
@@ -2129,14 +2197,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setCrossSections(csList);
 	}, [volume, isOpen, archCurve, windowWidth, windowLevel, slabMode, invertColors]);
 
-	// ─── RENDER PANORAMIC VIEW WITH INTERACTIVE CROSS-SECTION FAN ─────────────
-	useEffect(() => {
-		if (!panoramicData || !panoCanvasRef.current) return;
-
-		const canvas = panoCanvasRef.current;
-		canvas.width = panoramicData.widthPx;
-		canvas.height = panoramicData.heightPx;
-		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
 		// 1. Draw Panoramic Grayscale Radiograph
