@@ -733,5 +733,88 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 		const customHtml = renderCbctReportHtml(customReport);
 		assert.ok(customHtml.includes("Врач-стоматолог-хирург-имплантолог: Д-р Иванов А.И."));
 	});
+
+	it("16. DEF-R2-04: Eliminates duplicate 'Врач: Врач-...' in report header info-bar", () => {
+		// Case 1: Default / undefined doctorName
+		const defaultReport = buildCbctReportData({
+			patientName: "Барабаш С.В.",
+			targetToothFdi: 46,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			containment: mockContainment,
+			nerveSafety: mockNerveSafety,
+		});
+		const defaultHtml = renderCbctReportHtml(defaultReport);
+		assert.ok(!defaultHtml.includes("Врач: <b>Врач"));
+		assert.ok(defaultHtml.includes("Врач: <b>Барабаш С.В.</b>") || defaultHtml.includes("Врач: <b>стоматолог-хирург-имплантолог: Барабаш С.В.</b>"));
+
+		// Case 2: doctorName starting with 'Врач-стоматолог-хирург: Барабаш С.В.'
+		const reportWithDoctorTitle = buildCbctReportData({
+			patientName: "Петров П.П.",
+			doctorName: "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.",
+			targetToothFdi: 46,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			containment: mockContainment,
+			nerveSafety: mockNerveSafety,
+		});
+		const htmlWithTitle = renderCbctReportHtml(reportWithDoctorTitle);
+		assert.ok(!htmlWithTitle.includes("Врач: <b>Врач"));
+		assert.ok(htmlWithTitle.includes("Врач: <b>стоматолог-хирург-имплантолог: Барабаш С.В.</b>"));
+
+		// Case 3: Plain doctor name without prefix
+		const reportPlain = buildCbctReportData({
+			patientName: "Иванов И.И.",
+			doctorName: "Иванов И.И.",
+			targetToothFdi: 46,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			containment: mockContainment,
+			nerveSafety: mockNerveSafety,
+		});
+		const htmlPlain = renderCbctReportHtml(reportPlain);
+		assert.ok(!htmlPlain.includes("Врач: <b>Врач"));
+		assert.ok(htmlPlain.includes("Врач: <b>Иванов И.И.</b>"));
+	});
+
+	it("17. DEF-R2-04: Unifies diary 043/u torque string variants to canonical '20 Н·см' (GOST)", () => {
+		const diaryWithVariants = [
+			"============================================================",
+			"ПРОТОКОЛ ОПЕРАЦИИ ДЕНТАЛЬНОЙ ИМПЛАНТАЦИИ (ФОРМА 043/У)",
+			"Пациент: Тестовый Т.Т. | Клиника: DENTE | Зуб: FDI #46",
+			"============================================================",
+			"1. ВЫБОР И ХАРАКТЕРИСТИКИ ИМПЛАНТАТА:",
+			"- Прогноз первичного торка: 20 Ncm (ISQ ~72)",
+			"- Альтернативный торк: 25 Нсм",
+			"- Дополнительный торк: 30 Н*см",
+			"- Предельный торк: 35 N·cm",
+			"- Торк с пробелом: 40 Н см",
+		].join("\n");
+
+		const report = buildCbctReportData({
+			patientName: "Тестовый Т.Т.",
+			targetToothFdi: 46,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			containment: mockContainment,
+			nerveSafety: mockNerveSafety,
+			diary043Text: diaryWithVariants,
+		});
+
+		const html = renderCbctReportHtml(report, { includeForm043Diary: true });
+		assert.ok(html.includes("20 Н·см"));
+		assert.ok(html.includes("25 Н·см"));
+		assert.ok(html.includes("30 Н·см"));
+		assert.ok(html.includes("35 Н·см"));
+		assert.ok(html.includes("40 Н·см"));
+		assert.ok(!html.includes("20 Ncm"));
+		assert.ok(!html.includes("25 Нсм"));
+		assert.ok(!html.includes("30 Н*см"));
+		assert.ok(!html.includes("35 N·cm"));
+	});
 });
 

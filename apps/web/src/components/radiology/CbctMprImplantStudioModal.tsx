@@ -226,6 +226,8 @@ export interface CbctMprImplantStudioModalProps {
 	readonly onClose: () => void;
 	readonly study?: RadiologyStudy | null | undefined;
 	readonly onApplyToDiary043?: ((diaryText: string) => void) | undefined;
+	readonly initialStudioMode?: StudioMode | undefined;
+	readonly initialSidebarOpen?: boolean | undefined;
 }
 
 export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps> = ({
@@ -233,12 +235,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	onClose,
 	study,
 	onApplyToDiary043,
+	initialStudioMode,
+	initialSidebarOpen,
 }) => {
 	const modalId = useId();
 
 	// ─── CLINICAL STUDIO MODE & VIEWPORT LAYOUT ──────────────────────────────
-	const [studioMode, setStudioMode] = useState<StudioMode>("diagnostic");
-	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+	const [studioMode, setStudioMode] = useState<StudioMode>(initialStudioMode ?? "diagnostic");
+	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(initialSidebarOpen ?? (initialStudioMode === "implant"));
 	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>("quad_view");
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null);
 
@@ -4189,7 +4193,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		</div>
 	);
 
-	return createPortal(
+	const modalContent = (
 		<div
 			id={`cbct-mpr-studio-modal-${modalId}`}
 			data-testid="cbct-mpr-implant-studio-modal"
@@ -5125,8 +5129,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				onTogglePanel={handleTogglePanel}
 				isPanelOpen={isSidebarOpen}
 			/>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined" && document.body
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };
 

@@ -539,7 +539,10 @@ function renderStructuredDiary043(text: string): string {
 			.replace(/⚠️\s*/g, "")
 			.replace(/⛔\s*/g, "")
 			.replace(/✅\s*/g, "")
-			.replace(/N·cm/g, "Н·см");
+			.replace(/N[·*]?cm/gi, "Н·см")
+			.replace(/Н[·*]см/gi, "Н·см")
+			.replace(/Нсм/gi, "Н·см")
+			.replace(/Н\s+см/gi, "Н·см");
 
 		// Document Title
 		if (cleanLine.includes("ПРОТОКОЛ ОПЕРАЦИИ") || cleanLine.includes("ФОРМА 043/У")) {
@@ -1047,7 +1050,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     <div class="info-group">
       <div class="info-item">Пациент: <b>${escapeHtml(patient.patientName)}</b></div>
       <div class="info-item">Карта: <b>${escapeHtml(patient.cardRecordNumber || "043/у")}</b></div>
-      <div class="info-item">Врач: <b>${escapeHtml(patient.doctorName || "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.")}</b></div>
+      <div class="info-item">Врач: <b>${escapeHtml((patient.doctorName || "Барабаш С.В.").trim().replace(/^Врач[-:\s]*/i, ""))}</b></div>
     </div>
     <div class="right-badges">
       <div class="tooth-pill">ЗУБ FDI #${targetToothFdi}</div>

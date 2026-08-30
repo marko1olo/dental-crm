@@ -283,5 +283,37 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		// Synchronized formatted date from reception prop
 		assert.ok(html.includes("28.08.2026 15:30"), "Synchronized reception date into formatted study header");
 	});
+
+	it("renders CbctMprImplantStudioModal with disabled unselected nerve node delete and strict vector icons (DEF-R2-02)", async () => {
+		const { CbctMprImplantStudioModal } = await import("../CbctMprImplantStudioModal");
+		const { createElement } = await import("react");
+		const { renderToStaticMarkup } = await import("react-dom/server");
+
+		const html = renderToStaticMarkup(
+			createElement(CbctMprImplantStudioModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialStudioMode: "implant",
+			}),
+		);
+
+		// 1. Delete node button exists and has disabled state and classes
+		assert.ok(html.includes('data-testid="cbct-delete-nerve-node-btn"'), "Contains cbct-delete-nerve-node-btn");
+		assert.ok(
+			html.includes("disabled:opacity-40") &&
+			html.includes("disabled:cursor-not-allowed") &&
+			html.includes("disabled:pointer-events-none"),
+			"Delete node button has disabled state classes",
+		);
+
+		// 2. Reset nerve trace button exists
+		assert.ok(html.includes('data-testid="cbct-reset-nerve-trace-btn"'), "Contains cbct-reset-nerve-trace-btn");
+
+		// 3. Strict zero emojis in modal markup
+		assert.ok(!html.includes("🗑️"), "Zero raw trash emoji");
+		assert.ok(!html.includes("✅"), "Zero raw checkmark emoji in sinus notes");
+		assert.ok(!html.includes("⚠️"), "Zero raw warning emoji");
+		assert.ok(!html.includes("⛔"), "Zero raw no-entry emoji");
+	});
 });
 
