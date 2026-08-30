@@ -1177,11 +1177,28 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		}
 	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle, invertColors, showDentalArch, selectedArchAnchorIdx, hoveredArchAnchorIdx, isDraggingArchAnchor, drawPlaneVectorOverlays, isClearView, cbctImplantMode, activeTab, mobileMprSlice, maximizedViewport]);
 
+	// 4b. Immediate & Burst Re-render on Mode/Geometry Switch (Implant Panel, Tabs, Slices)
 	useEffect(() => {
 		renderMprPlanes();
+
+		const raf1 = requestAnimationFrame(() => {
+			renderMprPlanes();
+		});
+		const timer1 = setTimeout(() => {
+			renderMprPlanes();
+		}, 50);
+		const timer2 = setTimeout(() => {
+			renderMprPlanes();
+		}, 120);
+
+		return () => {
+			cancelAnimationFrame(raf1);
+			clearTimeout(timer1);
+			clearTimeout(timer2);
+		};
 	}, [renderMprPlanes, activeTab, mobileMprSlice, maximizedViewport, cbctImplantMode]);
 
-	// ResizeObserver & Layout Sync (Prevents #000000 black screen on sidebar/mode switch)
+	// 4c. ResizeObserver & Layout Sync (Prevents #000000 black screen on sidebar/mode switch)
 	useEffect(() => {
 		if (!mprContainerRef.current) return;
 		let rafId: number | null = null;
