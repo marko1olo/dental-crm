@@ -167,6 +167,9 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 				netPayoutToDoctorKop: 0,
 				minimumGuaranteeApplied: false,
 				manualAdjustmentKop: 0,
+				totalRefundDeductionsKop: 0,
+				totalRefundClawbackKop: 0,
+				refundedServicesCount: 0,
 				serviceCount: 0,
 			};
 		}

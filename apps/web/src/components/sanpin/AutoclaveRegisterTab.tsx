@@ -484,7 +484,7 @@ export function AutoclaveRegisterTab() {
 					</button>
 
 					{/* Dropdown: [⋮ Дополнительно] */}
-					<div ref={moreMenuRef} style={{ position: "relative", display: "inline-block" }}>
+					<div ref={moreMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 50 }}>
 						<button
 							type="button"
 							onClick={() => setIsMoreMenuOpen((prev) => !prev)}
@@ -520,8 +520,8 @@ export function AutoclaveRegisterTab() {
 									background: "var(--paper-strong, #ffffff)",
 									border: "1px solid var(--line, #e2e8f0)",
 									borderRadius: "8px",
-									boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-									zIndex: 50,
+									boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.18), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+									zIndex: 100,
 									padding: "0.35rem",
 									display: "flex",
 									flexDirection: "column",
@@ -621,7 +621,7 @@ export function AutoclaveRegisterTab() {
 			</div>
 
 			{/* Table of Sterilization Cycles */}
-			<div className="sanpin-table-wrapper">
+			<div className="sanpin-table-wrapper" style={{ position: "relative", zIndex: 1 }}>
 				<table className="sanpin-table">
 					<thead>
 						<tr>

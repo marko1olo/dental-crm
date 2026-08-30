@@ -23,6 +23,7 @@ import {
 	integerToRussianWords,
 	formatRussianSheetsCount,
 	KRAFT_PACKAGE_MATERIALS,
+	generateSanpinShiftAutopilotBundle,
 } from "../index.js";
 
 describe("SanPiN Regulatory Engine & Shared Contracts", () => {
@@ -688,6 +689,58 @@ describe("SanPiN Regulatory Engine & Shared Contracts", () => {
 			assert.ok(csv.startsWith("\uFEFF"));
 			assert.ok(csv.includes("Холодильник Pozis ХФ-250"));
 			assert.ok(csv.includes("5.1"));
+		});
+	});
+
+	// ─── 9. Сквозной 1-Клик Автопилот смены СанПиН ─────────────────────────────
+	describe("9. SanPiN 1-Click Shift Autopilot Suite", () => {
+		test("generates complete statutory shift bundle with all 5 points and approvals", () => {
+			const bundle = generateSanpinShiftAutopilotBundle({
+				date: "2026-08-30",
+				operatorFullName: "Смирнова О. И.",
+				headNurseFullName: "Иванова М. П.",
+			});
+
+			assert.strictEqual(bundle.date, "2026-08-30");
+			assert.strictEqual(bundle.operatorFullName, "Смирнова О. И.");
+			assert.strictEqual(bundle.headNurseFullName, "Иванова М. П.");
+
+			// PSO verification
+			assert.strictEqual(bundle.psoRecords.length, 3);
+			assert.strictEqual(bundle.psoRecords[0]!.isBatchApproved, true);
+			assert.strictEqual(bundle.psoRecords[0]!.isAzopyramNegative, true);
+			assert.strictEqual(bundle.psoRecords[0]!.isPhenolphthaleinNegative, true);
+			assert.strictEqual(bundle.psoRecords[0]!.isSudanNegative, true);
+			assert.strictEqual(bundle.summary.totalPsoItems, 310);
+			assert.strictEqual(bundle.summary.totalPsoSamplesTested, 14);
+
+			// Sterilization Form 257/u verification
+			assert.strictEqual(bundle.form257Records.length, 3);
+			assert.strictEqual(bundle.form257Records[0]!.isCyclePassed, true);
+			assert.strictEqual(bundle.form257Records[0]!.areAllPointsPassed, true);
+			assert.strictEqual(bundle.form257Records[0]!.chamberPoints.length, 5);
+			assert.strictEqual(bundle.form257Records[0]!.actualTemperatureCelsius, 134.4);
+			assert.strictEqual(bundle.form257Records[0]!.actualPressureBar, 2.15);
+			assert.ok(bundle.form257Records[0]!.digitalStampHash.length > 0);
+			assert.strictEqual(bundle.summary.totalSterilePacks, 38);
+
+			// Bactericidal & Cleanings verification
+			assert.strictEqual(bundle.bactericidalSessions.length, 2);
+			assert.strictEqual(bundle.cleaningRecords.length, 1);
+			assert.strictEqual(bundle.cleaningRecords[0]!.isInspectorVerified, true);
+			assert.strictEqual(bundle.disinfectantRecords.length, 1);
+			assert.strictEqual(bundle.disinfectantRecords[0]!.isConcentrationNormal, true);
+
+			// Temperature & Waste verification
+			assert.strictEqual(bundle.temperatureRecords.length, 2);
+			assert.strictEqual(bundle.temperatureRecords[0]!.isWithinNorm, true);
+			assert.strictEqual(bundle.temperatureRecords[1]!.isWithinNorm, true);
+			assert.strictEqual(bundle.wasteRecords.length, 1);
+			assert.strictEqual(bundle.wasteRecords[0]!.weightKg, 1.25);
+
+			// Compliance Summary
+			assert.strictEqual(bundle.summary.allProtocolsCompliant, true);
+			assert.ok(bundle.summary.complianceStatementRu.includes("Смена 2026-08-30 полностью опечатана"));
 		});
 	});
 });

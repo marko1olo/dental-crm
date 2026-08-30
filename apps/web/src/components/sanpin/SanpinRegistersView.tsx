@@ -1,9 +1,23 @@
 import React from "react";
-import { SanpinRegisters, type SanpinRegisterTab } from "./SanpinRegisters";
+import {
+	SanpinRegisters,
+	SANPIN_CATEGORIES,
+	type SanpinRegisterTab,
+	type SanpinCategory,
+	type SanpinTabDef,
+	type SanpinCategoryDef,
+} from "./SanpinRegisters";
 
 export function SanpinRegistersView() {
 	return <SanpinRegisters />;
 }
 
-export { SanpinRegisters, type SanpinRegisterTab };
+export {
+	SanpinRegisters,
+	SANPIN_CATEGORIES,
+	type SanpinRegisterTab,
+	type SanpinCategory,
+	type SanpinTabDef,
+	type SanpinCategoryDef,
+};
 export default SanpinRegistersView;
