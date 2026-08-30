@@ -8,10 +8,19 @@ import {
 	hitTestNerveNode3D,
 	hitTestNerveNodeOnAxialSlice,
 	buildMandibularNerve3DSpline,
+	project3DNerveToPanorama,
 	type MandibularNerve3DSpline,
 	type GatedNerveSegment3D,
+	type Projected3DNerveResult,
 } from "../cbctCaliperNerveMath";
-import type { Point3D } from "../cbctMprMath";
+import {
+	buildDentalArchCurve,
+	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
+	getPanoramicSliceFanTicks,
+	reconstructPanoramicView,
+	type CrossSectionSliceData,
+} from "../dentalCurveEngine";
+import type { CbctVoxelVolume, Point3D } from "../cbctMprMath";
 
 describe("Domain 2: 3D Mandibular Canal (IAN) Spline & Distance Gating Suite", () => {
 	// Canonical Mandibular Canal (N. alveolaris inferior) test points
@@ -234,4 +243,181 @@ describe("Domain 2: 3D Mandibular Canal (IAN) Spline & Distance Gating Suite", (
 			assert.ok(nerveModel.label.includes("Нижнечелюстной канал 3D"));
 		});
 	});
+
+	describe("7. 3D Mandibular Nerve (IAN) Projection on Panoramic View", () => {
+		const archCurve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 12.0);
+		const panoWidthPx = 600;
+		const panoHeightPx = 250;
+
+		it("handles empty 3D nerve array gracefully", () => {
+			const res = project3DNerveToPanorama([], archCurve, panoWidthPx, panoHeightPx);
+			assert.equal(res.projectedPoints.length, 0);
+			assert.equal(res.safetyCorridorPolygon.length, 0);
+			assert.equal(res.isVisibleOnPanorama, false);
+			assert.equal(res.safetyMarginMm, 2.0);
+		});
+
+		it("projects single 3D nerve point with vertical bounds", () => {
+			const singlePoint: Point3D[] = [{ x: -32.0, y: -2.0, z: 0.0 }];
+			const res = project3DNerveToPanorama(singlePoint, archCurve, panoWidthPx, panoHeightPx);
+
+			assert.equal(res.projectedPoints.length, 1);
+			const pt = res.projectedPoints[0]!;
+			assert.ok(pt.x >= 0 && pt.x < panoWidthPx);
+			// Z = 0 with heightMm = 38 -> panoY = (19/38)*250 = 125.0
+			assert.equal(pt.y, 125.0);
+			assert.equal(pt.zMm, 0.0);
+			assert.equal(res.safetyCorridorPolygon.length, 2);
+		});
+
+		it("projects complete 3D interpolated nerve spline onto panorama within screen coordinates", () => {
+			const spline = interpolateNerveSpline3D(sampleNervePoints, 10);
+			const res = project3DNerveToPanorama(spline, archCurve, panoWidthPx, panoHeightPx);
+
+			assert.equal(res.projectedPoints.length, spline.length);
+			assert.ok(res.totalLengthMm > 40.0);
+			assert.equal(res.safetyMarginMm, 2.0);
+			assert.equal(res.isVisibleOnPanorama, true);
+
+			// All projected points are within panoramic dimensions
+			for (const p of res.projectedPoints) {
+				assert.ok(p.x >= 0 && p.x <= panoWidthPx, `Pano X out of bounds: ${p.x}`);
+				assert.ok(p.y >= 0 && p.y <= panoHeightPx, `Pano Y out of bounds: ${p.y}`);
+				assert.ok(p.distanceAlongArchMm >= 0);
+				assert.ok(Number.isFinite(p.lateralDistanceMm));
+			}
+
+			// First point (posterior / molar region) should have smaller arc distance than anterior point
+			const firstPano = res.projectedPoints[0]!;
+			const lastPano = res.projectedPoints[res.projectedPoints.length - 1]!;
+			assert.ok(firstPano.distanceAlongArchMm < lastPano.distanceAlongArchMm);
+			assert.ok(firstPano.x < lastPano.x);
+		});
+
+		it("generates 2.0 mm cylindrical safety corridor envelope polygon along the panoramic curve", () => {
+			const spline = interpolateNerveSpline3D(sampleNervePoints, 10);
+			const res = project3DNerveToPanorama(spline, archCurve, panoWidthPx, panoHeightPx, {
+				safetyMarginMm: 2.0,
+			});
+
+			assert.equal(res.safetyCorridorUpper.length, spline.length);
+			assert.equal(res.safetyCorridorLower.length, spline.length);
+			assert.equal(res.safetyCorridorPolygon.length, spline.length * 2);
+
+			// Vertical pixel buffer check: safetyBufferPx = (2.0 / 38.0) * 250 = 13.16 px
+			const expectedBufferPx = Number(((2.0 / 38.0) * panoHeightPx).toFixed(2));
+			assert.equal(res.safetyBufferPx, expectedBufferPx);
+
+			// Upper corridor points must be offset from central path
+			for (let i = 0; i < spline.length; i++) {
+				const center = res.projectedPoints[i]!;
+				const upper = res.safetyCorridorUpper[i]!;
+				const lower = res.safetyCorridorLower[i]!;
+
+				const distUpper = Math.hypot(upper.x - center.x, upper.y - center.y);
+				const distLower = Math.hypot(lower.x - center.x, lower.y - center.y);
+
+				assert.ok(distUpper > 0, "Upper corridor must have non-zero distance");
+				assert.ok(distLower > 0, "Lower corridor must have non-zero distance");
+			}
+		});
+
+		it("respects custom panoramic heightMm and safetyMarginMm options", () => {
+			const spline = interpolateNerveSpline3D(sampleNervePoints, 5);
+			const res = project3DNerveToPanorama(spline, archCurve, panoWidthPx, panoHeightPx, {
+				heightMm: 50.0,
+				safetyMarginMm: 3.0,
+				canalDiameterMm: 3.2,
+			});
+
+			assert.equal(res.safetyMarginMm, 3.0);
+			assert.equal(res.canalDiameterMm, 3.2);
+			const expectedBufferPx = Number(((3.0 / 50.0) * panoHeightPx).toFixed(2));
+			assert.equal(res.safetyBufferPx, expectedBufferPx);
+		});
+	});
+
+	describe("8. FDI #48 Tooth Badge Offset Margin Protection on Panorama", () => {
+		const archCurve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 12.0);
+		const mockVolume: CbctVoxelVolume = {
+			id: "test_volume_48",
+			dimensions: { width: 30, height: 30, depth: 30 },
+			spacingMm: { x: 0.5, y: 0.5, z: 0.5 },
+			originMm: { x: -15, y: -15, z: -15 },
+			physicalSizeMm: { x: 15, y: 15, z: 15 },
+			data: new Int16Array(30 * 30 * 30),
+			minHU: -1000,
+			maxHU: 3000,
+			defaultWindowWidth: 4400,
+			defaultWindowLevel: 1300,
+			isDisposed: false,
+		};
+
+		it("guarantees at least 14px left margin for FDI #48 badge so '4' is not clipped", () => {
+			const pano = reconstructPanoramicView(mockVolume, archCurve, {
+				heightPx: 220,
+			});
+
+			assert.ok(pano.toothMarkersOnPano.length > 0);
+			const marker48 = pano.toothMarkersOnPano.find((m) => m.toothFdi === "48");
+			assert.ok(marker48, "Marker for tooth FDI 48 must exist");
+			assert.ok(marker48.xPx >= 14, `Marker 48 xPx (${marker48.xPx}) must be >= 14 to prevent clipping`);
+
+			// Verify all tooth markers respect the 14px boundary constraint
+			for (const tm of pano.toothMarkersOnPano) {
+				assert.ok(tm.xPx >= 14, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be >= 14`);
+				assert.ok(tm.xPx <= pano.widthPx - 14, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be <= widthPx - 14`);
+			}
+		});
+	});
+
+	describe("9. Panoramic Slice Fan Ticks & Major Division 60 Restoration", () => {
+		it("generates major division tick for slice index 60 and multiples of 5", () => {
+			// Generate synthetic 65 cross-section slices
+			const mockCrossSections: CrossSectionSliceData[] = Array.from({ length: 65 }, (_, idx) => ({
+				sliceIndex: idx + 1,
+				distanceAlongArchMm: (idx / 64) * 128.0,
+				centerPointMm: { x: 0, y: 0, z: -10 },
+				normalVector2D: { x: 1, y: 0 },
+				tangentVector2D: { x: 0, y: 1 },
+				nearestToothFdi: "46",
+				toothLabelRu: "46",
+				widthMm: 24.0,
+				heightMm: 32.0,
+				pixelSpacingMm: 0.25,
+				widthPx: 96,
+				heightPx: 128,
+				pixelData: new Uint8ClampedArray(96 * 128 * 4),
+			}));
+
+			const fanTicks = getPanoramicSliceFanTicks(mockCrossSections, 600, 128.0);
+			assert.equal(fanTicks.length, 65);
+
+			// Slice 1 is major
+			const tick1 = fanTicks.find((t) => t.sliceIndex === 1);
+			assert.ok(tick1);
+			assert.equal(tick1.isMajor, true);
+
+			// Multiples of 5 are major
+			const tick5 = fanTicks.find((t) => t.sliceIndex === 5);
+			const tick20 = fanTicks.find((t) => t.sliceIndex === 20);
+			assert.ok(tick5 && tick5.isMajor);
+			assert.ok(tick20 && tick20.isMajor);
+
+			// Guaranteed slice 60 is major
+			const tick60 = fanTicks.find((t) => t.sliceIndex === 60);
+			assert.ok(tick60, "Slice 60 tick must exist");
+			assert.equal(tick60.isMajor, true, "Slice 60 must be marked as major division");
+
+			// Last slice (65) is major
+			const tick65 = fanTicks.find((t) => t.sliceIndex === 65);
+			assert.ok(tick65 && tick65.isMajor);
+
+			// Non-major slice (e.g. 13) is not major
+			const tick13 = fanTicks.find((t) => t.sliceIndex === 13);
+			assert.ok(tick13);
+			assert.equal(tick13.isMajor, false);
+		});
+	});
 });
+

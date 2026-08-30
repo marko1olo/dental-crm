@@ -1515,6 +1515,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
 										isMaximized={maximizedViewport === "panoramic"}
 										onToggleMaximize={() => handleToggleMaximize("panoramic")}
+										windowWidth={windowWidth}
+										windowLevel={windowLevel}
 									/>
 								</>
 							) : (
@@ -1587,6 +1589,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 											pixelSpacingMm={activeCrossSection.pixelSpacingMm}
 											isMaximized={maximizedViewport === "cross_section"}
 											onToggleMaximize={() => handleToggleMaximize("cross_section")}
+											windowWidth={windowWidth}
+											windowLevel={windowLevel}
 										/>
 									</>
 								) : (

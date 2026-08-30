@@ -164,20 +164,19 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 	// Note: 10 mm calibration scale is rendered directly on Canvas (Zero-GC) by drawCalibratedMillimeterRulers
 
 	const coordText = useMemo(() => {
-		if (!coordinateMm) return null;
 		switch (viewportType) {
 			case "axial":
-				return coordinateMm.z !== undefined ? `Z = ${coordinateMm.z.toFixed(1)} мм` : null;
+				return coordinateMm?.z !== undefined ? `Z = ${coordinateMm.z.toFixed(1)} мм` : null;
 			case "coronal":
-				return coordinateMm.y !== undefined ? `Y = ${coordinateMm.y.toFixed(1)} мм` : null;
+				return coordinateMm?.y !== undefined ? `Y = ${coordinateMm.y.toFixed(1)} мм` : null;
 			case "sagittal":
-				return coordinateMm.x !== undefined ? `X = ${coordinateMm.x.toFixed(1)} мм` : null;
+				return coordinateMm?.x !== undefined ? `X = ${coordinateMm.x.toFixed(1)} мм` : null;
 			case "panoramic":
-				return coordinateMm.z !== undefined ? `Z = ${coordinateMm.z.toFixed(1)} мм` : null;
+				return `Сляб ${slabThicknessMm !== undefined && slabThicknessMm > 1 ? slabThicknessMm.toFixed(1) : "12.0"} мм`;
 			case "cross_section":
 				return toothFdi ? `FDI #${toothFdi}` : null;
 		}
-	}, [viewportType, coordinateMm, toothFdi]);
+	}, [viewportType, coordinateMm, toothFdi, slabThicknessMm]);
 
 	return (
 		<div
@@ -217,7 +216,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 					</span>
 				)}
 
-				{slabMode !== "single" && slabThicknessMm > 1 && (
+				{viewportType !== "panoramic" && slabMode !== "single" && slabThicknessMm > 1 && (
 					<span
 						className="px-1.5 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm text-[10px] font-mono font-semibold border border-zinc-800 shadow-xs"
 						style={{ color: labels.planeColor }}
@@ -297,19 +296,24 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				{labels.right}
 			</div>
 
-			{/* 4. BOTTOM-LEFT W/L BADGE (Calibration scale is on Canvas) */}
-			{windowWidth !== undefined && windowLevel !== undefined && (
-				<div className="absolute bottom-1.5 left-1.5 pointer-events-auto flex items-center gap-1.5">
-					<div className="px-1.5 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm border border-zinc-800 shadow-xs text-[9px] font-mono text-zinc-400">
-						W: <span className="text-zinc-100 font-bold">{windowWidth}</span> L: <span className="text-zinc-100 font-bold">{windowLevel}</span>
-					</div>
+			{/* 4. BOTTOM-LEFT DICOM WW/WL BADGE (DICOM PS3.3 Standard) */}
+			<div className="absolute bottom-1.5 left-1.5 pointer-events-auto flex items-center gap-1.5 z-20">
+				<div
+					className="px-1.5 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm border border-zinc-800 shadow-xs text-[9px] font-mono text-zinc-400 select-none"
+					title={`DICOM WW/WL: W=${windowWidth ?? 4400}, L=${windowLevel ?? 1300}`}
+					data-testid={`cbct-hud-wl-${viewportType}`}
+				>
+					W: <span className="text-zinc-100 font-bold">{windowWidth ?? 4400}</span> L:{" "}
+					<span className="text-zinc-100 font-bold">{windowLevel ?? 1300}</span>
+				</div>
+			</div>
+
+			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE (Rendered in maximized/fullscreen mode to eliminate 4x visual clutter in 2x2 grid) */}
+			{isMaximized && (
+				<div className="absolute bottom-1.5 right-1.5 pointer-events-auto z-20">
+					<OrientationCube3D viewportType={viewportType} size={36} />
 				</div>
 			)}
-
-			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE */}
-			<div className="absolute bottom-1.5 right-1.5 pointer-events-auto">
-				<OrientationCube3D viewportType={viewportType} size={36} />
-			</div>
 		</div>
 	);
 };

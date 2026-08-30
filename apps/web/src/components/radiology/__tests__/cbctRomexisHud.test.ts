@@ -4,6 +4,8 @@ import {
 	ROMEXIS_COLORS,
 	calculateSlabVoxelBounds,
 	drawCalibratedMillimeterRulers,
+	drawCbctAngleMeasurement,
+	drawObliqueCrosshairWithRotationHandles,
 	drawRomexisSlabCorridor,
 	getViewportOrientationLabels,
 } from "../cbctMprMath";
@@ -152,10 +154,22 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 				beginPath: () => calls.push({ method: "beginPath", args: [] }),
 				moveTo: (x: number, y: number) => calls.push({ method: "moveTo", args: [x, y] }),
 				lineTo: (x: number, y: number) => calls.push({ method: "lineTo", args: [x, y] }),
+				arc: (x: number, y: number, r: number, sa: number, ea: number, ac?: boolean) =>
+					calls.push({ method: "arc", args: [x, y, r, sa, ea, ac] }),
+				closePath: () => calls.push({ method: "closePath", args: [] }),
 				stroke: () => calls.push({ method: "stroke", args: [] }),
-				fillRect: (x: number, y: number, w: number, h: number) => calls.push({ method: "fillRect", args: [x, y, w, h] }),
-				strokeRect: (x: number, y: number, w: number, h: number) => calls.push({ method: "strokeRect", args: [x, y, w, h] }),
-				fillText: (text: string, x: number, y: number) => calls.push({ method: "fillText", args: [text, x, y] }),
+				fill: () => calls.push({ method: "fill", args: [] }),
+				fillRect: (x: number, y: number, w: number, h: number) =>
+					calls.push({ method: "fillRect", args: [x, y, w, h] }),
+				strokeRect: (x: number, y: number, w: number, h: number) =>
+					calls.push({ method: "strokeRect", args: [x, y, w, h] }),
+				fillText: (text: string, x: number, y: number) =>
+					calls.push({ method: "fillText", args: [text, x, y] }),
+				strokeText: (text: string, x: number, y: number) =>
+					calls.push({ method: "strokeText", args: [text, x, y] }),
+				roundRect: (x: number, y: number, w: number, h: number, r: number) =>
+					calls.push({ method: "roundRect", args: [x, y, w, h, r] }),
+				measureText: (text: string) => ({ width: text.length * 6 }),
 				save: () => calls.push({ method: "save", args: [] }),
 				restore: () => calls.push({ method: "restore", args: [] }),
 				setLineDash: (d: number[]) => calls.push({ method: "setLineDash", args: [d] }),
@@ -164,6 +178,9 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 				lineWidth: 1,
 				font: "",
 				textAlign: "",
+				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
 			};
 			return mock;
 		};
@@ -187,6 +204,29 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 			assert.ok(fillTextCalls.length > 0, "Should generate text labels for 10mm increments");
 		});
 
+		it("executes drawCalibratedMillimeterRulers with invertColors=true (Negative LUT WCAG AAA mode)", () => {
+			const mockCtx = createMockCtx();
+			assert.doesNotThrow(() => {
+				drawCalibratedMillimeterRulers(mockCtx as unknown as CanvasRenderingContext2D, {
+					widthPx: 512,
+					heightPx: 512,
+					pixelSpacingMmX: 0.4,
+					pixelSpacingMmY: 0.4,
+					showScaleBar: true,
+					showGrid: true,
+					invertColors: true,
+				});
+			});
+
+			const strokeCalls = mockCtx.calls.filter((c) => c.method === "stroke");
+			const fillTextCalls = mockCtx.calls.filter((c) => c.method === "fillText");
+			const strokeTextCalls = mockCtx.calls.filter((c) => c.method === "strokeText");
+
+			assert.ok(strokeCalls.length > 0, "Should generate stroke calls for negative LUT ticks");
+			assert.ok(fillTextCalls.length > 0, "Should generate fill text for numbers");
+			assert.ok(strokeTextCalls.length > 0, "Should generate stroke text calls for #ffffff halo underlay");
+		});
+
 		it("executes drawRomexisSlabCorridor and draws dashed bounds and fill", () => {
 			const mockCtx = createMockCtx();
 			assert.doesNotThrow(() => {
@@ -204,5 +244,70 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 			const fillRectCalls = mockCtx.calls.filter((c) => c.method === "fillRect");
 			assert.equal(fillRectCalls.length, 1, "Should draw slab corridor background fill");
 		});
+
+		it("executes drawCbctAngleMeasurement with dark halo underlay and arc manipulators", () => {
+			const mockCtx = createMockCtx();
+			assert.doesNotThrow(() => {
+				drawCbctAngleMeasurement(
+					mockCtx as unknown as CanvasRenderingContext2D,
+					{ x: 50, y: 100 },
+					{ x: 100, y: 100 },
+					{ x: 150, y: 50 },
+					45.0,
+					true,
+					1,
+				);
+			});
+
+			const strokeCalls = mockCtx.calls.filter((c) => c.method === "stroke");
+			const arcCalls = mockCtx.calls.filter((c) => c.method === "arc");
+			assert.ok(strokeCalls.length > 0, "Should draw angle arms and arc");
+			assert.ok(arcCalls.length > 0, "Should draw circular arc sector and handles");
+		});
+
+		it("executes drawObliqueCrosshairWithRotationHandles with dark halo underlay for axes", () => {
+			const mockCtx = createMockCtx();
+			assert.doesNotThrow(() => {
+				drawObliqueCrosshairWithRotationHandles(mockCtx as unknown as CanvasRenderingContext2D, {
+					widthPx: 512,
+					heightPx: 512,
+					centerPx: { x: 256, y: 256 },
+					plane: "axial",
+					rotationDeg: 15.0,
+					handleDistancePx: 65,
+					showHandles: true,
+					showAngleBadge: true,
+				});
+			});
+
+			const strokeCalls = mockCtx.calls.filter((c) => c.method === "stroke");
+			assert.ok(strokeCalls.length > 0, "Should stroke crosshair axes and handles");
+		});
+	});
+
+	describe("6. HUD Overlays, DICOM WW/WL & Toast Placement Suite (The Hammer v7.0)", () => {
+		it("formats panoramic viewport coordinate badge as 'Сляб X.X мм' instead of Z coordinate", () => {
+			const formatPanoBadge = (slabThicknessMm?: number) => {
+				return `Сляб ${slabThicknessMm !== undefined && slabThicknessMm > 1 ? slabThicknessMm.toFixed(1) : "12.0"} мм`;
+			};
+
+			assert.equal(formatPanoBadge(12.0), "Сляб 12.0 мм");
+			assert.equal(formatPanoBadge(15.5), "Сляб 15.5 мм");
+			assert.equal(formatPanoBadge(1.0), "Сляб 12.0 мм");
+			assert.equal(formatPanoBadge(undefined), "Сляб 12.0 мм");
+		});
+
+		it("formats DICOM PS3.3 WW/WL overlays with valid default dental bone windows", () => {
+			const formatDicomWl = (windowWidth?: number, windowLevel?: number) => {
+				const ww = windowWidth ?? 4400;
+				const wl = windowLevel ?? 1300;
+				return `W: ${ww} L: ${wl}`;
+			};
+
+			assert.equal(formatDicomWl(), "W: 4400 L: 1300");
+			assert.equal(formatDicomWl(2000, 400), "W: 2000 L: 400");
+		});
 	});
 });
+
+

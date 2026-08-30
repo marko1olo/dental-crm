@@ -1,3 +1,4 @@
+import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export type ToastType = "success" | "error" | "info" | "warning";
@@ -66,7 +67,10 @@ export function GlobalToast() {
 				border: "1px solid rgba(255,255,255,0.1)",
 			}}
 		>
-			{toast.type === "error" ? "❌" : toast.type === "success" ? "✅" : "ℹ️"}
+			{toast.type === "error" && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+			{toast.type === "warning" && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
+			{toast.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+			{toast.type === "info" && <Info className="w-4 h-4 text-cyan-400 shrink-0" />}
 			<span>{toast.text}</span>
 			<button
 				type="button"
@@ -77,12 +81,14 @@ export function GlobalToast() {
 					color: "#fff",
 					cursor: "pointer",
 					marginLeft: "auto",
-					fontSize: "18px",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
 					padding: "0 4px",
 				}}
 				aria-label="Закрыть"
 			>
-				×
+				<X size={16} />
 			</button>
 		</div>
 	);

@@ -125,6 +125,7 @@ import {
 	getPanoramicSliceFanTicks,
 	mapPanoPointerToCrosshairAndSlice,
 	mapSliceToPanoramicX,
+	project3DNerveToPanorama,
 	reconstructPanoramicOpg,
 	reconstructPanoramicView,
 } from "./dentalCurveEngine";
@@ -1246,6 +1247,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					pixelSpacingMmX: metadata.pixelSpacingX,
 					pixelSpacingMmY: metadata.pixelSpacingY,
 					showScaleBar: true,
+					invertColors,
 					transform,
 				});
 
@@ -1574,6 +1576,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					pixelSpacingMmX: metadata.pixelSpacingX,
 					pixelSpacingMmY: metadata.pixelSpacingY,
 					showScaleBar: true,
+					invertColors,
 					transform,
 				});
 
@@ -1903,6 +1906,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					pixelSpacingMmX: metadata.pixelSpacingX,
 					pixelSpacingMmY: metadata.pixelSpacingY,
 					showScaleBar: true,
+					invertColors,
 					transform,
 				});
 
@@ -2097,6 +2101,62 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.stroke();
 		}
 
+		// 3D Mandibular Canal Nerve (IAN) Projection on Panorama with 2.0 mm Safety Corridor
+		if (interpolatedNerve3D.length > 1 && panoramicData) {
+			const projectedNerve = project3DNerveToPanorama(
+				interpolatedNerve3D,
+				archCurve,
+				panoramicData.widthPx,
+				panoramicData.heightPx,
+			);
+
+			if (projectedNerve.projectedPoints.length > 1) {
+				// 1. Draw 2.0 mm Safety Corridor Tube Polygon (semi-transparent filled + dashed outline)
+				ctx.save();
+				ctx.strokeStyle = "rgba(239, 68, 68, 0.55)";
+				ctx.fillStyle = "rgba(239, 68, 68, 0.14)";
+				ctx.lineWidth = 1.2;
+				ctx.setLineDash([3, 2]);
+				ctx.beginPath();
+				for (let i = 0; i < projectedNerve.safetyCorridorPolygon.length; i++) {
+					const pt = projectedNerve.safetyCorridorPolygon[i]!;
+					if (i === 0) ctx.moveTo(pt.x, pt.y);
+					else ctx.lineTo(pt.x, pt.y);
+				}
+				ctx.closePath();
+				ctx.fill();
+				ctx.stroke();
+				ctx.setLineDash([]);
+
+				// 2. Draw Central 3D Nerve Spline
+				ctx.strokeStyle = "#ef4444";
+				ctx.lineWidth = 2.0;
+				ctx.beginPath();
+				for (let i = 0; i < projectedNerve.projectedPoints.length; i++) {
+					const pt = projectedNerve.projectedPoints[i]!;
+					if (i === 0) ctx.moveTo(pt.x, pt.y);
+					else ctx.lineTo(pt.x, pt.y);
+				}
+				ctx.stroke();
+
+				// 3. Draw control nodes along nerve on panorama
+				for (const pt of nervePoints) {
+					const nodePano = project3DNerveToPanorama([pt], archCurve, panoramicData.widthPx, panoramicData.heightPx);
+					const nodePt = nodePano.projectedPoints[0];
+					if (nodePt) {
+						ctx.fillStyle = "#ffffff";
+						ctx.strokeStyle = "#ef4444";
+						ctx.lineWidth = 1.5;
+						ctx.beginPath();
+						ctx.arc(nodePt.x, nodePt.y, 2.5, 0, Math.PI * 2);
+						ctx.fill();
+						ctx.stroke();
+					}
+				}
+				ctx.restore();
+			}
+		}
+
 		let panoImplantX: number | null = null;
 		let panoImplantYEntry: number | null = null;
 		let panoImplantStatusColor = "#10b981";
@@ -2179,6 +2239,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			showXAxis: false,
 			showYAxis: true,
 			showScaleBar: true,
+			invertColors,
 			transform,
 		});
 
@@ -2246,7 +2307,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.textBaseline = "middle";
 				ctx.fillText(`#${tick.sliceIndex}`, Math.max(18, tickXScreen), canvas.height - 10);
 				lastDrawnTickX = tickXScreen;
-			} else if (tick.isMajor && Math.abs(tickXScreen - lastDrawnTickX) >= 28) {
+			} else if (tick.isMajor && (tick.sliceIndex === 60 || Math.abs(tickXScreen - lastDrawnTickX) >= 24)) {
 				// Major slice tick mark
 				ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
 				ctx.lineWidth = 1.0;
@@ -3836,6 +3897,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					isMaximized={maximizedViewport === "axial"}
 					onToggleMaximize={() => handleToggleMaximize("axial")}
 					zoomFactor={transforms.axial?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
 				/>
 			</div>
 		</div>
@@ -3874,6 +3937,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					isMaximized={maximizedViewport === "coronal"}
 					onToggleMaximize={() => handleToggleMaximize("coronal")}
 					zoomFactor={transforms.coronal?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
 				/>
 			</div>
 		</div>
@@ -3912,6 +3977,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					isMaximized={maximizedViewport === "sagittal"}
 					onToggleMaximize={() => handleToggleMaximize("sagittal")}
 					zoomFactor={transforms.sagittal?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
 				/>
 			</div>
 		</div>
@@ -3953,6 +4020,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					isMaximized={maximizedViewport === "panoramic"}
 					onToggleMaximize={() => handleToggleMaximize("panoramic")}
 					zoomFactor={transforms.panoramic?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
 				/>
 			</div>
 		</div>
@@ -3996,6 +4065,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					isMaximized={true}
 					onToggleMaximize={() => handleToggleMaximize("cross_section")}
 					zoomFactor={transforms.cross_section?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
 				/>
 			</div>
 		</div>
@@ -4489,6 +4560,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							pixelSpacingMm={activeCrossSection?.pixelSpacingMm ?? 0.25}
 							isMaximized={maximizedViewport === "cross_section"}
 							onToggleMaximize={() => handleToggleMaximize("cross_section")}
+							windowWidth={windowWidth}
+							windowLevel={windowLevel}
 						/>
 
 						{/* Quick Ridge Measurements Badge (compact matte HUD) */}
