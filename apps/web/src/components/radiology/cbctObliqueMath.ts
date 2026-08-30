@@ -423,6 +423,35 @@ export function extractObliqueMprSlice(
 	const invSpX = 1.0 / sp.x;
 	const invSpY = 1.0 / sp.y;
 	const invSpZ = 1.0 / sp.z;
+	const volData = volume.data;
+	if (!volData || volume.isDisposed) {
+		return {
+			data: pixelBuffer,
+			metadata: {
+				plane,
+				sliceIndex: 0,
+				maxSliceIndex,
+				physicalPositionMm: Number(physicalPosMm.toFixed(2)),
+				widthPx,
+				heightPx,
+				pixelSpacingX,
+				pixelSpacingY,
+				slabThicknessMm: slabMode === "single" ? sp.x : slabThicknessMm,
+			},
+		};
+	}
+
+	const volW = dim.width;
+	const volH = dim.height;
+	const volD = dim.depth;
+	const volStride = volW * volH;
+	const maxX = volW - 1;
+	const maxY = volH - 1;
+	const maxD = volD - 1;
+
+	const stepVx = uX * invSpX;
+	const stepVy = uY * invSpY;
+	const stepVz = uZ * invSpZ;
 
 	if (!isSlabActive) {
 		for (let row = 0; row < heightPx; row++) {
@@ -433,19 +462,52 @@ export function extractObliqueMprSlice(
 
 			let pIdx = row * widthPx * 4;
 
+			let vx = (baseRowWorldX - halfW * uX - origin.x) * invSpX;
+			let vy = (baseRowWorldY - halfW * uY - origin.y) * invSpY;
+			let vz = (baseRowWorldZ - halfW * uZ - origin.z) * invSpZ;
+
 			for (let col = 0; col < widthPx; col++) {
-				const offsetCol = col - halfW;
-				const worldX = baseRowWorldX + offsetCol * uX;
-				const worldY = baseRowWorldY + offsetCol * uY;
-				const worldZ = baseRowWorldZ + offsetCol * uZ;
-
-				const vx = (worldX - origin.x) * invSpX;
-				const vy = (worldY - origin.y) * invSpY;
-				const vz = (worldZ - origin.z) * invSpZ;
-
 				let hu: number;
-				if (interpolation === "trilinear") {
-					hu = sampleVoxelHUTrilinear(volume, vx, vy, vz);
+				if (interpolation === "trilinear" && volData) {
+					if (vx >= 0 && vx <= maxX && vy >= 0 && vy <= maxY && vz >= 0 && vz <= maxD) {
+						const x0 = Math.floor(vx);
+						const y0 = Math.floor(vy);
+						const z0 = Math.floor(vz);
+
+						const x1 = x0 < maxX ? x0 + 1 : x0;
+						const y1 = y0 < maxY ? y0 + 1 : y0;
+						const z1 = z0 < maxD ? z0 + 1 : z0;
+
+						const tx = vx - x0;
+						const ty = vy - y0;
+						const tz = vz - z0;
+
+						const row00 = z0 * volStride + y0 * volW;
+						const row10 = z0 * volStride + y1 * volW;
+						const row01 = z1 * volStride + y0 * volW;
+						const row11 = z1 * volStride + y1 * volW;
+
+						const c000 = volData[row00 + x0] ?? -1000;
+						const c100 = volData[row00 + x1] ?? -1000;
+						const c010 = volData[row10 + x0] ?? -1000;
+						const c110 = volData[row10 + x1] ?? -1000;
+						const c001 = volData[row01 + x0] ?? -1000;
+						const c101 = volData[row01 + x1] ?? -1000;
+						const c011 = volData[row11 + x0] ?? -1000;
+						const c111 = volData[row11 + x1] ?? -1000;
+
+						const c00 = c000 * (1.0 - tx) + c100 * tx;
+						const c10 = c010 * (1.0 - tx) + c110 * tx;
+						const c01 = c001 * (1.0 - tx) + c101 * tx;
+						const c11 = c011 * (1.0 - tx) + c111 * tx;
+
+						const c0 = c00 * (1.0 - ty) + c10 * ty;
+						const c1 = c01 * (1.0 - ty) + c11 * ty;
+
+						hu = Math.round(c0 * (1.0 - tz) + c1 * tz);
+					} else {
+						hu = -1000;
+					}
 				} else {
 					hu = sampleVoxelHU(Math.round(vx), Math.round(vy), Math.round(vz), volume);
 				}
@@ -457,6 +519,10 @@ export function extractObliqueMprSlice(
 				pixelBuffer[pIdx + 2] = gray;
 				pixelBuffer[pIdx + 3] = 255;
 				pIdx += 4;
+
+				vx += stepVx;
+				vy += stepVy;
+				vz += stepVz;
 			}
 		}
 	} else {
@@ -490,8 +556,46 @@ export function extractObliqueMprSlice(
 					const vz = (worldZ - origin.z) * invSpZ;
 
 					let hu: number;
-					if (interpolation === "trilinear") {
-						hu = sampleVoxelHUTrilinear(volume, vx, vy, vz);
+					if (interpolation === "trilinear" && volData) {
+						if (vx >= 0 && vx <= maxX && vy >= 0 && vy <= maxY && vz >= 0 && vz <= maxD) {
+							const x0 = Math.floor(vx);
+							const y0 = Math.floor(vy);
+							const z0 = Math.floor(vz);
+
+							const x1 = x0 < maxX ? x0 + 1 : x0;
+							const y1 = y0 < maxY ? y0 + 1 : y0;
+							const z1 = z0 < maxD ? z0 + 1 : z0;
+
+							const tx = vx - x0;
+							const ty = vy - y0;
+							const tz = vz - z0;
+
+							const row00 = z0 * volStride + y0 * volW;
+							const row10 = z0 * volStride + y1 * volW;
+							const row01 = z1 * volStride + y0 * volW;
+							const row11 = z1 * volStride + y1 * volW;
+
+							const c000 = volData[row00 + x0] ?? -1000;
+							const c100 = volData[row00 + x1] ?? -1000;
+							const c010 = volData[row10 + x0] ?? -1000;
+							const c110 = volData[row10 + x1] ?? -1000;
+							const c001 = volData[row01 + x0] ?? -1000;
+							const c101 = volData[row01 + x1] ?? -1000;
+							const c011 = volData[row11 + x0] ?? -1000;
+							const c111 = volData[row11 + x1] ?? -1000;
+
+							const c00 = c000 * (1.0 - tx) + c100 * tx;
+							const c10 = c010 * (1.0 - tx) + c110 * tx;
+							const c01 = c001 * (1.0 - tx) + c101 * tx;
+							const c11 = c011 * (1.0 - tx) + c111 * tx;
+
+							const c0 = c00 * (1.0 - ty) + c10 * ty;
+							const c1 = c01 * (1.0 - ty) + c11 * ty;
+
+							hu = Math.round(c0 * (1.0 - tz) + c1 * tz);
+						} else {
+							hu = -1000;
+						}
 					} else {
 						hu = sampleVoxelHU(Math.round(vx), Math.round(vy), Math.round(vz), volume);
 					}
