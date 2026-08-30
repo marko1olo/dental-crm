@@ -10,6 +10,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
 	ShieldCheck,
 	CheckCircle2,
+	AlertCircle,
 	XCircle,
 	AlertTriangle,
 	FileText,
@@ -388,7 +389,7 @@ export function CmoComplianceHub({
 	};
 
 	return (
-		<div className="cmo-hub-container">
+		<div className="cmo-hub-container pb-32">
 			{/* ── Top Header ── */}
 			<div className="cmo-hub-header">
 				<div className="cmo-hub-title-group">
@@ -443,26 +444,25 @@ export function CmoComplianceHub({
 				<div className="cmo-hub-risk-banner-header">
 					<div className="cmo-hub-risk-title-wrap">
 						<span className={`cmo-hub-risk-badge cmo-hub-risk-badge--${metrics.riskAssessment.riskLevel}`}>
-							{metrics.riskAssessment.riskLevel === "zero" && <CheckCircle2 size={14} />}
-							{metrics.riskAssessment.riskLevel === "low" && <Info size={14} />}
-							{metrics.riskAssessment.riskLevel === "moderate" && <AlertTriangle size={14} />}
-							{metrics.riskAssessment.riskLevel === "critical" && <AlertOctagon size={14} />}
-							<span>Риск проверки Росздравнадзора: {metrics.riskAssessment.riskLevel.toUpperCase()} ({metrics.riskAssessment.riskScore}/100)</span>
+							{metrics.riskAssessment.riskLevel === "zero" && <CheckCircle2 size={13} />}
+							{metrics.riskAssessment.riskLevel === "low" && <Info size={13} />}
+							{metrics.riskAssessment.riskLevel === "moderate" && <AlertTriangle size={13} />}
+							{metrics.riskAssessment.riskLevel === "critical" && <AlertOctagon size={13} />}
+							<span>Риск Росздравнадзора: {metrics.riskAssessment.riskLevel.toUpperCase()} ({metrics.riskAssessment.riskScore}/100)</span>
 						</span>
 
 						<span className="cmo-hub-risk-fine-tag">
 							Ответственность: {metrics.riskAssessment.fineLiabilityRub}
 						</span>
+
+						<span className="text-xs text-[var(--muted)] hidden lg:inline truncate max-w-lg">
+							{metrics.riskAssessment.summaryMessage}
+						</span>
 					</div>
 
-					<div style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)" }}>
-						Комплаенс клиники: <strong style={{ color: "var(--ink)", fontSize: "14px" }}>{metrics.complianceRatePercent}%</strong>
+					<div style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", flexShrink: 0 }}>
+						Комплаенс: <strong style={{ color: "var(--ink)", fontSize: "13px" }}>{metrics.complianceRatePercent}%</strong>
 					</div>
-				</div>
-
-				<div className="cmo-hub-risk-body">
-					<p style={{ margin: "0 0 4px 0", fontWeight: 600 }}>{metrics.riskAssessment.summaryMessage}</p>
-					<p className="cmo-hub-risk-statutory">{metrics.riskAssessment.statutoryWarning}</p>
 				</div>
 			</div>
 
@@ -550,7 +550,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("no_icd_or_tooth")}
 					className={`cmo-hub-tab-btn ${activeFilter === "no_icd_or_tooth" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<span style={{ color: "#ef4444" }}>🔴</span>
+					<AlertCircle size={15} className="text-red-500 shrink-0" />
 					<span>Без диагноза МКБ-10 / зуба</span>
 					<span className={`cmo-hub-tab-count ${metrics.noIcdOrToothCount > 0 ? "cmo-hub-tab-count--danger" : ""}`}>
 						{metrics.noIcdOrToothCount}
@@ -564,7 +564,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("not_signed_doctor")}
 					className={`cmo-hub-tab-btn ${activeFilter === "not_signed_doctor" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<span style={{ color: "#f59e0b" }}>🟡</span>
+					<FileSignature size={15} className="text-amber-500 shrink-0" />
 					<span>Не подписано врачом (нет ЭП/УКЭП)</span>
 					<span className={`cmo-hub-tab-count ${metrics.notSignedDoctorCount > 0 ? "cmo-hub-tab-count--warning" : ""}`}>
 						{metrics.notSignedDoctorCount}
@@ -578,8 +578,8 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("pending_or_failed_egisz")}
 					className={`cmo-hub-tab-btn ${activeFilter === "pending_or_failed_egisz" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<span style={{ color: "#3b82f6" }}>🔵</span>
-					<span>В очереди / Ошибка ЕГИСЗ</span>
+					<Clock size={15} className="text-blue-500 shrink-0" />
+					<span>В очереди (ЕГИСЗ)</span>
 					<span className="cmo-hub-tab-count cmo-hub-tab-count--info">
 						{metrics.pendingOrFailedEgiszCount}
 					</span>
@@ -592,7 +592,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("registered_remd")}
 					className={`cmo-hub-tab-btn ${activeFilter === "registered_remd" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<span style={{ color: "#10b981" }}>🟢</span>
+					<CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
 					<span>Зарегистрировано в РЭМД</span>
 					<span className="cmo-hub-tab-count cmo-hub-tab-count--success">
 						{metrics.registeredRemdCount}
@@ -606,7 +606,7 @@ export function CmoComplianceHub({
 					onClick={() => setActiveFilter("overdue_24h")}
 					className={`cmo-hub-tab-btn ${activeFilter === "overdue_24h" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
-					<span>⚠️</span>
+					<AlertTriangle size={15} className="text-red-500 shrink-0" />
 					<span>Просрочено &gt;24ч (ПП РФ № 852)</span>
 					<span className={`cmo-hub-tab-count ${metrics.overdue24hCount > 0 ? "cmo-hub-tab-count--danger" : ""}`}>
 						{metrics.overdue24hCount}
@@ -617,7 +617,7 @@ export function CmoComplianceHub({
 			{/* ── Controls Bar: Search, Doctor, Period ── */}
 			<div className="cmo-hub-controls-bar">
 				<div className="cmo-hub-controls-left">
-					<div style={{ position: "relative", flex: 1, minWidth: "220px" }}>
+					<div style={{ position: "relative", flex: 1, minWidth: "320px" }}>
 						<input
 							type="text"
 							value={searchQuery}
@@ -1066,6 +1066,8 @@ export function CmoComplianceHub({
 					initialFormType="043u"
 				/>
 			)}
+			{/* Clearance spacer for floating softphone and dev HUD triggers */}
+			<div className="h-24 w-full" aria-hidden="true" />
 		</div>
 	);
 }

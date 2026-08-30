@@ -301,22 +301,22 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                 </div>
               </div>
 
-              {/* Items Body: Isolated Scrolling for 804n services */}
+              {/* Items Body: Flat list without nested card-in-card container */}
               {isExpanded && (
-                <div className="p-3.5 sm:p-4 space-y-3 bg-[var(--paper,#ffffff)]">
+                <div className="p-3 sm:p-3.5 space-y-2.5 bg-[var(--paper,#ffffff)] border-t border-[var(--border,#cbd5e1)]/50">
                   {items.length === 0 ? (
-                    <div className="p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-dashed border-[var(--border,#cbd5e1)] text-center text-xs text-[var(--muted,#64748b)]">
+                    <div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)]">
                       <span>На данном этапе нет назначенных процедур (санация не требуется).</span>
-                      <div className="mt-1 text-[11px] text-[var(--muted,#64748b)]">
+                      <div className="mt-0.5 text-[11px] text-[var(--muted,#64748b)]">
                         Типичные услуги этапа: {meta.typicalServicesRu.join(', ')}.
                       </div>
                     </div>
                   ) : (
-                    <div className="max-h-64 sm:max-h-72 overflow-y-auto min-h-0 divide-y divide-[var(--line,#e2e8f0)] border border-[var(--border,#cbd5e1)] rounded-xl text-xs">
+                    <div className="max-h-64 sm:max-h-72 overflow-y-auto min-h-0 divide-y divide-[var(--line,#e2e8f0)] rounded-xl text-xs bg-[var(--paper-soft,#f8fafc)]/50 border border-[var(--border,#cbd5e1)]/60">
                       {items.map((it, itemIdx) => (
                         <div
                           key={it.id || itemIdx}
-                          className="p-2.5 sm:p-3 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors"
+                          className="p-2.5 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors"
                         >
                           <div className="flex items-start gap-2 min-w-0">
                             <span className="font-mono text-[10px] text-[var(--muted,#64748b)] mt-0.5 shrink-0">
@@ -355,7 +355,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                   )}
 
                   {/* Stage Action Controls with 32px Buttons */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border,#cbd5e1)] text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border,#cbd5e1)]/50 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] text-[var(--muted,#64748b)]">
                         Срок реализации: ~{idx === 0 ? '1-3 дня' : idx === 1 ? '1-2 нед.' : idx === 2 ? '2-3 мес.' : '3-4 нед.'}
@@ -367,7 +367,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                         <button
                           type="button"
                           onClick={() => onExecuteStage(cat)}
-                          className="min-h-[32px] h-8 px-3 rounded-lg font-bold text-xs bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white border border-[var(--teal,#0d9488)]/30 transition-all cursor-pointer flex items-center gap-1.5"
+                          className="min-h-[32px] h-8 px-3 rounded-lg font-bold text-xs bg-[var(--paper-soft)] hover:bg-[var(--teal-soft,#ccfbf1)] text-[var(--ink)] hover:text-[var(--teal,#0d9488)] border border-[var(--border,#cbd5e1)] transition-all cursor-pointer flex items-center gap-1.5"
                         >
                           <span>Приступить к этапу</span>
                           <ArrowRight className="w-3.5 h-3.5" />

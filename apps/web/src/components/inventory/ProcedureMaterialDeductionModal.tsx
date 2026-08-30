@@ -441,7 +441,7 @@ export function ProcedureMaterialDeductionModal({
 					</div>
 				</div>
 
-				{/* MATERIALS LIST BODY */}
+				{/* MATERIALS LIST TABLE */}
 				<div className="inventory-materials-body">
 					{filteredLines.length === 0 ? (
 						<div
@@ -457,154 +457,174 @@ export function ProcedureMaterialDeductionModal({
 							склада.
 						</div>
 					) : (
-						filteredLines.map((line) => {
-							const stockStatus = evaluateStockStatus(
-								line.stockQuantity,
-								line.quantity,
-								line.criticalThreshold,
-								line.unit,
-							);
-							const lineCostKopecks = calculateLineCostKopecks(
-								line.unitCostKopecks,
-								line.quantity,
-							);
-							const catColor =
-								TECH_MAP_CATEGORY_COLORS[line.category] ??
-								TECH_MAP_CATEGORY_COLORS.other;
+						<div className="inventory-table-container">
+							<table className="inventory-dense-table">
+								<thead>
+									<tr>
+										<th>Материал / Категория</th>
+										<th>Норма</th>
+										<th>Остаток склада</th>
+										<th style={{ textAlign: "center" }}>Списание (кол-во)</th>
+										<th style={{ textAlign: "right" }}>Себестоимость</th>
+										<th style={{ width: "38px" }}></th>
+									</tr>
+								</thead>
+								<tbody>
+									{filteredLines.map((line) => {
+										const stockStatus = evaluateStockStatus(
+											line.stockQuantity,
+											line.quantity,
+											line.criticalThreshold,
+											line.unit,
+										);
+										const lineCostKopecks = calculateLineCostKopecks(
+											line.unitCostKopecks,
+											line.quantity,
+										);
+										const catColor =
+											TECH_MAP_CATEGORY_COLORS[line.category] ??
+											TECH_MAP_CATEGORY_COLORS.other;
 
-							return (
-								<div
-									key={line.id}
-									className={`inventory-material-card ${
-										stockStatus.severity === "critical"
-											? "has-deficit"
-											: stockStatus.severity === "warning"
-												? "has-warning"
-												: ""
-									}`}
-								>
-									<div className="inventory-material-main-row">
-										{/* INFO */}
-										<div className="inventory-material-info">
-											<div className="inventory-material-name-wrap">
-												<span className="inventory-material-name">
-													{line.materialName}
-												</span>
-												<span
-													className="inventory-category-badge"
-													style={{
-														background: catColor.bg,
-														color: catColor.text,
-														border: `1px solid ${catColor.border}`,
-													}}
-												>
-													{TECH_MAP_CATEGORY_LABELS[line.category]}
-												</span>
-											</div>
-
-											<div className="inventory-material-meta">
-												<span>Норма: {formatQuantityWithUnitRu(line.standardQuantity, line.unit)}</span>
-												{stockStatus.severity === "critical" ? (
-													<span className="inventory-deficit-badge">
-														<AlertTriangle size={13} />
-														Дефицит: {formatQuantityWithUnitRu(stockStatus.deficit, line.unit)} (на складе: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)})
-													</span>
-												) : stockStatus.severity === "warning" ? (
-													<span className="inventory-stock-pill stock-warning">
-														<AlertTriangle size={13} />
-														Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
-													</span>
-												) : (
-													<span className="inventory-stock-pill stock-ok">
-														Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
-													</span>
-												)}
-												{line.lotNumber && (
-													<span>Партия: {line.lotNumber}</span>
-												)}
-												{line.expirationDate && (
-													<span>Годен до: {line.expirationDate}</span>
-												)}
-											</div>
-										</div>
-
-										{/* STEPPER & CHIPS */}
-										<div className="inventory-stepper-container">
-											<div className="inventory-stepper-group">
-												<button
-													type="button"
-													className="inventory-stepper-btn"
-													onClick={() => handleStepQuantity(line.id, -1)}
-													disabled={line.quantity <= 0}
-													aria-label="Уменьшить количество"
-												>
-													−
-												</button>
-												<input
-													type="text"
-													className="inventory-stepper-input"
-													value={line.quantity}
-													onChange={(e) =>
-														handleDirectQuantityChange(line.id, e.target.value)
-													}
-												/>
-												<button
-													type="button"
-													className="inventory-stepper-btn"
-													onClick={() => handleStepQuantity(line.id, 1)}
-													aria-label="Увеличить количество"
-												>
-													+
-												</button>
-											</div>
-
-											{/* Quick Chip: Reset to standard norm */}
-											<div className="inventory-quick-chips">
-												<button
-													type="button"
-													className="inventory-quick-chip"
-													onClick={() =>
-														handleResetToStandard(line.id)
-													}
-													title="Вернуть стандартную норму"
-												>
-													Норма
-												</button>
-											</div>
-										</div>
-
-										{/* COST & REMOVE BOTTOM BAR */}
-										<div className="inventory-material-bottom-bar">
-											<div className="inventory-material-cost-wrap">
-												<div className="inventory-material-cost-val">
-													{(lineCostKopecks / 100).toLocaleString("ru-RU", {
-														minimumFractionDigits: 2,
-														maximumFractionDigits: 2,
-													})}{" "}
-													₽
-												</div>
-												<div className="inventory-material-unit-price">
-													{(line.unitCostKopecks / 100).toLocaleString("ru-RU", {
-														minimumFractionDigits: 2,
-														maximumFractionDigits: 2,
-													})}{" "}
-													₽ / {formatUnitPriceUnitRu(line.unit)}
-												</div>
-											</div>
-
-											<button
-												type="button"
-												className="inventory-remove-line-btn"
-												onClick={() => handleRemoveLine(line.id)}
-												aria-label="Удалить позицию"
+										return (
+											<tr
+												key={line.id}
+												className={`inventory-table-row ${
+													stockStatus.severity === "critical"
+														? "has-deficit"
+														: stockStatus.severity === "warning"
+															? "has-warning"
+															: ""
+												}`}
 											>
-												<Trash2 size={18} />
-											</button>
-										</div>
-									</div>
-								</div>
-							);
-						})
+												{/* Name & Category */}
+												<td className="inventory-td-name">
+													<div className="inventory-name-cell">
+														<span className="inventory-material-name">
+															{line.materialName}
+														</span>
+														<div className="inventory-sub-meta">
+															<span
+																className="inventory-category-badge"
+																style={{
+																	background: catColor.bg,
+																	color: catColor.text,
+																	border: `1px solid ${catColor.border}`,
+																}}
+															>
+																{TECH_MAP_CATEGORY_LABELS[line.category]}
+															</span>
+															{line.lotNumber && (
+																<span className="inventory-lot-tag">Партия: {line.lotNumber}</span>
+															)}
+															{line.expirationDate && (
+																<span className="inventory-exp-tag">до {line.expirationDate}</span>
+															)}
+														</div>
+													</div>
+												</td>
+
+												{/* Standard Norm */}
+												<td className="inventory-td-norm">
+													{formatQuantityWithUnitRu(line.standardQuantity, line.unit)}
+												</td>
+
+												{/* Stock Status */}
+												<td className="inventory-td-stock">
+													{stockStatus.severity === "critical" ? (
+														<span className="inventory-deficit-badge">
+															<AlertTriangle size={12} />
+															Дефицит {formatQuantityWithUnitRu(stockStatus.deficit, line.unit)} (склад: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)})
+														</span>
+													) : stockStatus.severity === "warning" ? (
+														<span className="inventory-stock-pill stock-warning">
+															<AlertTriangle size={12} />
+															Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
+														</span>
+													) : (
+														<span className="inventory-stock-pill stock-ok">
+															Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
+														</span>
+													)}
+												</td>
+
+												{/* Stepper / Input */}
+												<td className="inventory-td-stepper">
+													<div className="inventory-compact-stepper-wrap">
+														<div className="inventory-stepper-group">
+															<button
+																type="button"
+																className="inventory-stepper-btn"
+																onClick={() => handleStepQuantity(line.id, -1)}
+																disabled={line.quantity <= 0}
+																aria-label="Уменьшить количество"
+															>
+																−
+															</button>
+															<input
+																type="text"
+																className="inventory-stepper-input"
+																value={line.quantity}
+																onChange={(e) =>
+																	handleDirectQuantityChange(line.id, e.target.value)
+																}
+															/>
+															<button
+																type="button"
+																className="inventory-stepper-btn"
+																onClick={() => handleStepQuantity(line.id, 1)}
+																aria-label="Увеличить количество"
+															>
+																+
+															</button>
+														</div>
+														<button
+															type="button"
+															className="inventory-quick-chip"
+															onClick={() => handleResetToStandard(line.id)}
+															title="Вернуть стандартную норму"
+														>
+															Норма
+														</button>
+													</div>
+												</td>
+
+												{/* Cost */}
+												<td className="inventory-td-cost">
+													<div className="inventory-cost-cell">
+														<span className="inventory-cost-val">
+															{(lineCostKopecks / 100).toLocaleString("ru-RU", {
+																minimumFractionDigits: 2,
+																maximumFractionDigits: 2,
+															})}{" "}
+															₽
+														</span>
+														<span className="inventory-unit-price">
+															{(line.unitCostKopecks / 100).toLocaleString("ru-RU", {
+																minimumFractionDigits: 2,
+																maximumFractionDigits: 2,
+															})}{" "}
+															₽ / {formatUnitPriceUnitRu(line.unit)}
+														</span>
+													</div>
+												</td>
+
+												{/* Delete Action */}
+												<td className="inventory-td-action">
+													<button
+														type="button"
+														className="inventory-remove-line-btn"
+														onClick={() => handleRemoveLine(line.id)}
+														aria-label="Удалить позицию"
+													>
+														<Trash2 size={16} />
+													</button>
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
 					)}
 				</div>
 

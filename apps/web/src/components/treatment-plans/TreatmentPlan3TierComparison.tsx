@@ -297,9 +297,9 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							</div>
 
 							{/* Scrollable Card Body: isolated scrolling for stages and materials */}
-							<div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-3 my-3 overscroll-contain max-h-[500px] sm:max-h-[560px]">
-								{/* Dynamic Pricing Box depending on Payment Mode */}
-								<div className="p-3 sm:p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2">
+							<div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-2.5 my-3 overscroll-contain max-h-[500px] sm:max-h-[560px]">
+								{/* Flat Pricing Section */}
+								<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] space-y-1.5 border border-[var(--border,#cbd5e1)]/50">
 									<div className="flex items-baseline justify-between gap-2">
 										<span className="text-xs text-[var(--muted,#64748b)] font-medium">
 											Полная стоимость:
@@ -311,7 +311,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 									{/* Mode 1: Installment 0% */}
 									{activePaymentMode === "installment" && (
-										<div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--border,#cbd5e1)] gap-2">
+										<div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--border,#cbd5e1)]/50 gap-2">
 											<span className="text-[var(--muted,#64748b)] flex items-center gap-1">
 												<Percent size={12} className="text-[var(--teal,var(--brand-primary))]" />
 												Рассрочка {installmentMonths} мес:
@@ -324,7 +324,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 									{/* Mode 2: Staged Payment (30/40/30) */}
 									{activePaymentMode === "staged" && (
-										<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--border,#cbd5e1)]">
+										<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--border,#cbd5e1)]/50">
 											<div className="flex justify-between text-[var(--muted,#64748b)] gap-2">
 												<span>1. Аванс/Санация (30%):</span>
 												<strong className="font-mono text-[var(--ink,#0f172a)] whitespace-nowrap">
@@ -348,7 +348,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 									{/* Mode 3: 5% Single Payment Discount */}
 									{activePaymentMode === "discount" && (
-										<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--border,#cbd5e1)]">
+										<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--border,#cbd5e1)]/50">
 											<div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold gap-2">
 												<span>Скидка 5% за 100% оплату:</span>
 												<span className="font-mono whitespace-nowrap">
@@ -367,7 +367,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 									{/* NDFL Deduction box */}
 									{showNdflBreakdown && tier.ndflRefundRub > 0 && (
 										<div
-											className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-0.5"
+											className="pt-1.5 border-t border-[var(--border,#cbd5e1)]/50 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-0.5"
 											title={tier.ndflDetails?.codeDescription || "Налоговый вычет по НК РФ"}
 										>
 											<div className="flex items-center justify-between font-semibold gap-2">
@@ -391,9 +391,9 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 									)}
 								</div>
 
-								{/* Warranty & Visits Cards */}
-								<div className="grid grid-cols-2 gap-2 text-xs">
-									<div className="p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex flex-col justify-between">
+								{/* Flat Warranty & Visits Strip */}
+								<div className="grid grid-cols-2 gap-2 text-xs py-1">
+									<div className="flex flex-col justify-between">
 										<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
 											<Shield size={11} /> Гарантия клиники
 										</span>
@@ -404,7 +404,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 										</strong>
 									</div>
 
-									<div className="p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex flex-col justify-between">
+									<div className="flex flex-col justify-between">
 										<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
 											<Calendar size={11} /> Сроки & Визиты
 										</span>
@@ -415,7 +415,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								</div>
 
 								{/* Stages Breakdown Accordion Toggle */}
-								<div className="pt-1 border-t border-[var(--border,#cbd5e1)]">
+								<div className="pt-1.5 border-t border-[var(--border,#cbd5e1)]/60">
 									<button
 										type="button"
 										onClick={(e) => toggleStagesExpand(e, tier.tierId)}
@@ -428,13 +428,13 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 										{isExpandedStages ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
 									</button>
 
-									{/* Expanded Stages Content - Isolated Scrolling Container */}
+									{/* Expanded Stages Content - Flat List without nested card box */}
 									{isExpandedStages && (
-										<div className="mt-2 max-h-56 overflow-y-auto min-h-0 space-y-2 text-[11px] bg-[var(--paper-soft,#f8fafc)] p-2.5 rounded-xl border border-[var(--border,#cbd5e1)]">
+										<div className="mt-1.5 max-h-56 overflow-y-auto min-h-0 divide-y divide-[var(--border,#cbd5e1)]/50 text-[11px] bg-[var(--paper-soft,#f8fafc)] p-2 rounded-xl">
 											{tier.stages.map((stg) => (
 												<div
 													key={stg.stageNumber}
-													className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] space-y-1"
+													className="py-1.5 first:pt-0 last:pb-0 space-y-0.5"
 												>
 													<div className="flex justify-between items-center font-bold gap-2">
 														<span className="text-[var(--teal-dark,var(--teal))] truncate">
@@ -448,7 +448,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 														{stg.clinicalGoal} · ~{stg.estimatedWeeks} нед. ({stg.estimatedVisits} виз.)
 													</p>
 													{stg.items.length > 0 && (
-														<ul className="max-h-28 overflow-y-auto min-h-0 text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30 m-0 list-none">
+														<ul className="max-h-24 overflow-y-auto min-h-0 text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30 m-0 list-none mt-1">
 															{stg.items.slice(0, 4).map((it) => (
 																<li key={it.id} className="truncate">
 																	• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
@@ -468,7 +468,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								</div>
 
 								{/* Materials & Technologies Highlights */}
-								<div className="space-y-2 pt-1 border-t border-[var(--border,#cbd5e1)]">
+								<div className="space-y-1.5 pt-1.5 border-t border-[var(--border,#cbd5e1)]/60">
 									<h4 className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5 m-0">
 										<Sparkles size={13} className="text-[var(--teal,var(--brand-primary))]" />
 										<span>Материалы и технологии</span>
@@ -487,12 +487,12 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								</div>
 
 								{/* Key Patient Advantages */}
-								<div className="space-y-1.5 pt-1 border-t border-[var(--border,#cbd5e1)]">
+								<div className="space-y-1 pt-1.5 border-t border-[var(--border,#cbd5e1)]/60">
 									<h4 className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5 m-0">
 										<Star size={13} className="text-amber-500" />
 										<span>Преимущества для пациента</span>
 									</h4>
-									<ul className="space-y-1 text-[11px] text-[var(--muted,#64748b)] m-0 list-none p-0">
+									<ul className="space-y-0.5 text-[11px] text-[var(--muted,#64748b)] m-0 list-none p-0">
 										{tier.keyAdvantages.map((adv, idx) => (
 											<li key={idx} className="flex items-start gap-1.5">
 												<span className="text-amber-500 font-bold">•</span>

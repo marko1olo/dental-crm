@@ -90,9 +90,9 @@
 .cmo-hub-risk-banner {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px;
-  border-radius: 12px;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
   border: 1px solid var(--glass-border, #cbd5e1);
   background: var(--paper-strong, #ffffff);
   transition: all 0.2s ease;
@@ -141,9 +141,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -193,9 +193,9 @@
 }
 
 .cmo-hub-risk-fine-tag {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-radius: 6px;
   background: var(--paper, #f1f5f9);
   color: var(--ink, #334155);
@@ -208,8 +208,8 @@
 }
 
 .cmo-hub-risk-body {
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.35;
   color: var(--ink, #1e293b);
 }
 
@@ -219,26 +219,29 @@
 }
 
 .cmo-hub-risk-statutory {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted, #64748b);
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* ── Metrics Cards Grid ── */
 .cmo-hub-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
 }
 
 .cmo-hub-metric-card {
-  padding: 14px 16px;
+  padding: 6px 10px;
   background: var(--paper-strong, #ffffff);
   border: 1px solid var(--glass-border, #cbd5e1);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
+  min-height: 64px;
+  max-height: 74px;
+  justify-content: center;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -257,13 +260,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted, #64748b);
 }
 
 .cmo-hub-metric-val {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1.1;
   color: var(--ink, #0f172a);
@@ -275,8 +278,11 @@
 }
 
 .cmo-hub-metric-sub {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Specific colors for metrics */
@@ -301,19 +307,20 @@
 }
 
 .cmo-hub-tab-btn {
-  min-height: 44px;
-  padding: 8px 14px;
+  min-height: 40px;
+  padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted, #64748b);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.15s ease;
 }
 
@@ -411,7 +418,7 @@
 }
 
 .cmo-hub-search-input {
-  min-height: 44px;
+  min-height: 40px;
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid var(--glass-border, #cbd5e1);
@@ -419,7 +426,8 @@
   color: var(--ink, #0f172a);
   font-size: 13px;
   flex: 1;
-  min-width: 200px;
+  width: 100%;
+  min-width: 300px;
 }
 
 [data-theme="dark"] .cmo-hub-search-input,
