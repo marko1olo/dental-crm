@@ -1,6 +1,7 @@
 import type { StaffRole } from "@dental/shared";
 import type { LucideIcon } from "lucide-react";
 import {
+	Activity,
 	BarChart3,
 	CalendarClock,
 	CalendarDays,
@@ -548,6 +549,7 @@ type WorkspaceTopbarProps = {
 	staffRoleLabels: Record<StaffRole, string>;
 	todayIso: string;
 	onLockSession?: () => void;
+	onOpenDoctorShiftCockpit?: () => void;
 };
 
 export function WorkspaceTopbar({
@@ -564,6 +566,7 @@ export function WorkspaceTopbar({
 	staffRoleLabels,
 	todayIso,
 	onLockSession,
+	onOpenDoctorShiftCockpit,
 }: WorkspaceTopbarProps) {
 	const validDate = (() => {
 		if (todayIso && !Number.isNaN(Date.parse(`${todayIso}T12:00:00`))) {
@@ -740,6 +743,32 @@ export function WorkspaceTopbar({
 					>
 						<ClipboardCheck aria-hidden="true" />{" "}
 						{workspaceTopbarLabels.visit.label}
+					</button>
+				) : null}
+
+				{/*
+          РАБОЧИЙ СТОЛ ВРАЧА (Doctor Shift Cockpit) — сменные показатели, сделка % и пакетная подпись 043/у.
+          Кнопка отображается только при активной роли врача.
+        */}
+				{selectedWorkspaceRole === "doctor" ? (
+					<button
+						className="secondary-button doctor-shift-cockpit-button"
+						type="button"
+						data-testid="topbar-doctor-cockpit-btn"
+						title={workspaceTopbarLabels.doctorCockpit.title}
+						onClick={onOpenDoctorShiftCockpit}
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "6px",
+							backgroundColor: "var(--teal-soft, rgba(13,148,136,0.12))",
+							color: "var(--teal)",
+							borderColor: "var(--teal-surface, var(--teal))",
+							fontWeight: 600,
+						}}
+					>
+						<Activity className="w-4 h-4 text-[var(--teal)] animate-pulse" aria-hidden="true" />
+						{workspaceTopbarLabels.doctorCockpit.label}
 					</button>
 				) : null}
 

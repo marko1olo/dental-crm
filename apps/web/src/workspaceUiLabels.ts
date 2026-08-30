@@ -428,6 +428,11 @@ export const workspaceTopbarLabels = {
 		label: "Copilot",
 		title: "DENTE Copilot — Клинический ИИ-ассистент (Ctrl+K)",
 	},
+	/** Кнопка открытия рабочего стола врача (Doctor Shift Cockpit). */
+	doctorCockpit: {
+		label: "Рабочий стол",
+		title: "Рабочий стол врача (Doctor Shift Cockpit) — сменные показатели, сделка % и пакетная подпись 043/у",
+	},
 } as const;
 
 export const workloadStateLabels: Record<ResourceLoad["state"], string> = {

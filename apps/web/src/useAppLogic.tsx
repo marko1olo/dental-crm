@@ -4009,6 +4009,16 @@ export function useAppLogic(): any {
 		selectedWorkspaceRole === "owner";
 	const showDoctorVisitShortcut =
 		selectedWorkspaceRole === "doctor" && currentView !== "visit";
+	const [isDoctorShiftCockpitOpen, setIsDoctorShiftCockpitOpen] = useState(false);
+	const openDoctorShiftCockpit = useCallback(() => {
+		setIsDoctorShiftCockpitOpen(true);
+	}, []);
+	const closeDoctorShiftCockpit = useCallback(() => {
+		setIsDoctorShiftCockpitOpen(false);
+	}, []);
+	const toggleDoctorShiftCockpit = useCallback(() => {
+		setIsDoctorShiftCockpitOpen((prev) => !prev);
+	}, []);
 
 	const serviceTitle = (serviceId: string) =>
 		dashboard?.serviceCatalog?.find((service) => service.id === serviceId)
@@ -4741,6 +4751,10 @@ export function useAppLogic(): any {
 		settingsTabs,
 		showAdministrationTopActions,
 		showDoctorVisitShortcut,
+		isDoctorShiftCockpitOpen,
+		openDoctorShiftCockpit,
+		closeDoctorShiftCockpit,
+		toggleDoctorShiftCockpit,
 		showFullOnboardingGuide,
 		smartImportCommit,
 		smartImportMode,

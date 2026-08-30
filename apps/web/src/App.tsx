@@ -41,6 +41,7 @@ import { StaffPinPad } from "./components/auth/StaffPinPad";
 import { CommandPalette } from "./components/CommandPalette";
 import { showToast } from "./components/GlobalToast";
 import { OnboardingWizardModal } from "./components/onboarding/OnboardingWizardModal";
+import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { Omnibar } from "./components/Omnibar";
 import { OfflineConflictReviewDrawer } from "./components/offline/OfflineConflictReviewDrawer";
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
@@ -974,6 +975,9 @@ export function App() {
 		shiftWarnings,
 		showAdministrationTopActions,
 		showDoctorVisitShortcut,
+		isDoctorShiftCockpitOpen,
+		openDoctorShiftCockpit,
+		closeDoctorShiftCockpit,
 		showFullOnboardingGuide,
 		smartImportCommit,
 		smartImportMode,
@@ -1957,6 +1961,7 @@ export function App() {
 						staffRoleLabels={staffRoleLabels}
 						todayIso={dashboard.todayIso}
 						onLockSession={handleLockSession}
+						onOpenDoctorShiftCockpit={openDoctorShiftCockpit}
 					/>
 					<WorkspaceContinuityStrip
 						browserContinuityCritical={browserContinuityCritical}
@@ -2058,6 +2063,16 @@ export function App() {
 								<ShieldCheck aria-hidden="true" /> Настроить
 							</button>
 						</section>
+					) : null}
+					{isDoctorShiftCockpitOpen ? (
+						<DoctorMobileShiftModal
+							isOpen={isDoctorShiftCockpitOpen}
+							onClose={closeDoctorShiftCockpit}
+							initialDoctorId={activeDoctor?.id || "doc-1"}
+							initialDoctorName={activeDoctor?.fullName || "Д-р Смирнов Алексей Петрович"}
+							initialDoctorSpecialty={activeDoctor?.specialty || "Терапевт-ортопед"}
+							initialShiftDateIso={dashboard?.todayIso || "2026-08-29"}
+						/>
 					) : null}
 					{showFullOnboardingGuide ? (
 						<OnboardingWizardModal

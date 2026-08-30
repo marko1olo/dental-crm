@@ -248,7 +248,30 @@ import {
 } from "./components/treatment-plans/validation/planPriceValidationPresets";
 import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
-import { Lock, ShieldCheck } from "lucide-react";
+import { DoctorDesktopHeader } from "./components/visit/DoctorDesktopHeader";
+import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
+import {
+	Activity,
+	AlertCircle,
+	AlertTriangle,
+	Anchor,
+	CheckCircle2,
+	CircleDot,
+	ClipboardList,
+	Crown,
+	Edit3,
+	Eye,
+	FileCheck2,
+	Flame,
+	Lock,
+	Scissors,
+	Shield,
+	ShieldCheck,
+	Sparkles,
+	Wrench,
+	XCircle,
+	Zap,
+} from "lucide-react";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const logicContext = useAppLogicContext();
@@ -448,6 +471,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [labOrderModalToothNumber, setLabOrderModalToothNumber] = React.useState<number | string | null>(null);
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = React.useState(false);
+	const [isDoctorCockpitModalOpen, setIsDoctorCockpitModalOpen] = React.useState(false);
 
 	const priceValidatorCatalogList = React.useMemo<readonly CatalogServiceItem[]>(() => {
 		const rawCatalog = (dashboard as { serviceCatalog?: unknown[] } | null)?.serviceCatalog;
@@ -498,24 +522,34 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				doctorId,
 				doctorFullName,
 				createdAtIso: new Date().toISOString(),
-				items: patientItems.map((item: any, idx: number) => ({
-					itemId: String(item.id || `item_${idx + 1}`),
-					toothNumber: item.toothCode ? Number.parseInt(item.toothCode, 10) || undefined : undefined,
-					code804n: String(item.code804n || item.serviceId || "A16.07.002"),
-					serviceTitle: String(item.snapshotServiceName || item.serviceTitle || "Услуга плана лечения"),
-					category: String(item.snapshotServiceCategory || "Терапия"),
-					planUnitPriceRub: Number(item.unitPriceRub) || 0,
-					planDiscountRub: Number(item.discountRub) || 0,
-					planDiscountPercent:
-						Number(item.unitPriceRub) > 0
-							? Math.round(((Number(item.discountRub) || 0) / Number(item.unitPriceRub)) * 100)
-							: 0,
-					quantity: Number(item.quantity) || 1,
-					planLineTotalRub:
-						(Number(item.unitPriceRub) || 0) * (Number(item.quantity) || 1) - (Number(item.discountRub) || 0),
-					serviceId: item.serviceId ? String(item.serviceId) : undefined,
-					notes: item.notes ? String(item.notes) : undefined,
-				})),
+				items: patientItems.map((item: any, idx: number) => {
+					const unitPriceKop = Math.round(Number(item.unitPriceRub || 0) * 100);
+					const discountKop = Math.round(Number(item.discountRub || 0) * 100);
+					const qty = Math.max(1, Math.round(Number(item.quantity || 1)));
+					const lineTotalKop = Math.max(0, unitPriceKop * qty - discountKop);
+					const planUnitPriceRub = unitPriceKop / 100;
+					const planDiscountRub = discountKop / 100;
+					const planLineTotalRub = lineTotalKop / 100;
+					const planDiscountPercent =
+						unitPriceKop > 0
+							? Math.min(100, Math.max(0, Math.round((discountKop / (unitPriceKop * qty)) * 100)))
+							: 0;
+
+					return {
+						itemId: String(item.id || `item_${idx + 1}`),
+						toothNumber: item.toothCode ? Number.parseInt(item.toothCode, 10) || undefined : undefined,
+						code804n: String(item.code804n || item.serviceId || "A16.07.002"),
+						serviceTitle: String(item.snapshotServiceName || item.serviceTitle || "Услуга плана лечения"),
+						category: String(item.snapshotServiceCategory || "Терапия"),
+						planUnitPriceRub,
+						planDiscountRub,
+						planDiscountPercent,
+						quantity: qty,
+						planLineTotalRub,
+						serviceId: item.serviceId ? String(item.serviceId) : undefined,
+						notes: item.notes ? String(item.notes) : undefined,
+					};
+				}),
 				notes:
 					(typeof visitNoteForm?.treatmentPlan === "string" && visitNoteForm.treatmentPlan) ||
 					(typeof draft?.treatmentPlan === "string" && draft.treatmentPlan) ||
@@ -826,7 +860,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							{visitCloseChecklist
 								? `${visitCloseChecklist.score}% готовности`
 								: "статус закрытия не рассчитан"}{" "}
-							· предупреждения не останавливают прием ·{" "}
+							·{" "}
+							<span className={safeVisitWarnings.length ? "text-amber-400 font-bold" : "text-emerald-400"}>
+								{safeVisitWarnings.length ? "внимание к клиническим рискам" : "клинический статус в норме"}
+							</span>{" "}
+							·{" "}
 							{countLabel(
 								safeImagingStudies.length,
 								"снимок",
@@ -859,6 +897,30 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 					</div>
 				</section>
+
+				{/* Doctor Shift Cockpit Desktop Header: Telemetry, live % piece-rate, SMS PEP 043/u batch signing */}
+				{selectedWorkspaceRole === "doctor" && (
+					<DoctorDesktopHeader
+						doctorId={activeDoctor?.id || "doc-1"}
+						doctorName={activeDoctor?.fullName || activeDoctor?.name || "Д-р Смирнов Алексей Петрович"}
+						doctorSpecialty={activeDoctor?.specialty || activeDoctor?.specialtyRu || "Терапевт-ортопед"}
+						chairName={activeChair?.name || "Кресло 1 (Терапия)"}
+						shiftDateIso={dashboard?.todayIso || "2026-08-29"}
+						onOpenCockpit={() => setIsDoctorCockpitModalOpen(true)}
+						onInitiateBatchSign={() => setIsDoctorCockpitModalOpen(true)}
+					/>
+				)}
+
+				{isDoctorCockpitModalOpen && (
+					<DoctorMobileShiftModal
+						isOpen={isDoctorCockpitModalOpen}
+						onClose={() => setIsDoctorCockpitModalOpen(false)}
+						initialDoctorId={activeDoctor?.id || "doc-1"}
+						initialDoctorName={activeDoctor?.fullName || activeDoctor?.name || "Д-р Смирнов Алексей Петрович"}
+						initialDoctorSpecialty={activeDoctor?.specialty || activeDoctor?.specialtyRu || "Терапевт-ортопед"}
+						initialShiftDateIso={dashboard?.todayIso || "2026-08-29"}
+					/>
+				)}
 
 				<VisitMainTabs
 					visitSubViewTab={visitSubViewTab}
@@ -949,13 +1011,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				)}
 
 				{visitSubViewTab === "perio" && activePatient?.id && (
-					<div className="p-6 bg-slate-900 border border-slate-700 rounded-xl flex flex-col gap-4 text-slate-100" style={{ margin: "16px 0" }}>
+					<div className="p-6 bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] rounded-xl flex flex-col gap-4 text-[var(--ink,#f8fafc)]" style={{ margin: "16px 0" }}>
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-3">
-								<span className="text-2xl">🦷</span>
+								<Activity size={22} className="text-teal-400 shrink-0" />
 								<div>
-									<h3 className="text-base font-bold text-emerald-400">Пародонтальный скрининг (PSR / СтАР 2017)</h3>
-									<p className="text-xs text-slate-400">Экспресс-оценка глубины зондирования и кровоточивости по 6 секстантам</p>
+									<h3 className="text-base font-bold text-teal-400">Пародонтальный скрининг (PSR / СтАР 2017)</h3>
+									<p className="text-xs text-[var(--muted,#94a3b8)]">Экспресс-оценка глубины зондирования и кровоточивости по 6 секстантам</p>
 								</div>
 							</div>
 							<span className="px-3 py-1 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded-full text-xs font-semibold">
@@ -963,20 +1025,20 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							</span>
 						</div>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-							<div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
-								<div className="font-semibold text-slate-300">Фронтальный отдел (13–23, 33–43)</div>
+							<div className="p-3 bg-[var(--paper-soft,#1e293b)] rounded-lg border border-[var(--line,#334155)]">
+								<div className="font-semibold text-[var(--ink,#f8fafc)]">Фронтальный отдел (13–23, 33–43)</div>
 								<div className="text-emerald-400 font-mono mt-1">Зондирование: 1–2 мм • BOP: 0%</div>
 							</div>
-							<div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
-								<div className="font-semibold text-slate-300">Правый боковой (18–14, 48–44)</div>
+							<div className="p-3 bg-[var(--paper-soft,#1e293b)] rounded-lg border border-[var(--line,#334155)]">
+								<div className="font-semibold text-[var(--ink,#f8fafc)]">Правый боковой (18–14, 48–44)</div>
 								<div className="text-emerald-400 font-mono mt-1">Зондирование: 1–2 мм • BOP: 0%</div>
 							</div>
-							<div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
-								<div className="font-semibold text-slate-300">Левый боковой (24–28, 34–38)</div>
+							<div className="p-3 bg-[var(--paper-soft,#1e293b)] rounded-lg border border-[var(--line,#334155)]">
+								<div className="font-semibold text-[var(--ink,#f8fafc)]">Левый боковой (24–28, 34–38)</div>
 								<div className="text-emerald-400 font-mono mt-1">Зондирование: 1–2 мм • BOP: 0%</div>
 							</div>
 						</div>
-						<div className="text-xs text-slate-300 bg-slate-800/60 p-3 rounded-lg border border-slate-700/60">
+						<div className="text-xs text-[var(--ink,#f8fafc)] bg-[var(--paper-soft,#1e293b)] p-3 rounded-lg border border-[var(--line,#334155)]">
 							<strong>Заключение:</strong> Десна бледно-розовая, плотная, при зондировании не кровоточит. Патологическая подвижность и фуркационные дефекты отсутствуют. Скрининг соответствует норме (PSR 0-1).
 						</div>
 					</div>
@@ -1879,7 +1941,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 																		d={geom.crown}
 																		fill={
 																			state === "idle"
-																				? "#fff"
+																				? "var(--paper)"
 																				: state === "planned"
 																					? "var(--info-bg)"
 																					: state === "treatment"
@@ -2033,7 +2095,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 																		d={geom.crown}
 																		fill={
 																			state === "idle"
-																				? "#fff"
+																				? "var(--paper)"
 																				: state === "planned"
 																					? "var(--info-bg)"
 																					: state === "treatment"
@@ -2200,7 +2262,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 																		d={geom.crown}
 																		fill={
 																			state === "idle"
-																				? "#fff"
+																				? "var(--paper)"
 																				: state === "planned"
 																					? "var(--info-bg)"
 																					: state === "treatment"
@@ -2355,7 +2417,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 																		d={geom.crown}
 																		fill={
 																			state === "idle"
-																				? "#fff"
+																				? "var(--paper)"
 																				: state === "planned"
 																					? "var(--info-bg)"
 																					: state === "treatment"
@@ -2680,13 +2742,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							</div>
 							<div>
 								<div
+									title="Контроль цен прайса и Номенклатуры 804н (Price Lock)"
 									style={{
 										fontSize: "0.95rem",
 										fontWeight: 700,
 										color: "var(--ink, #0f172a)",
 									}}
 								>
-									План лечения & Контроль цен прайса (804н / Price Lock)
+									План лечения & Контроль цен прайса
 								</div>
 								<div
 									style={{
@@ -2835,7 +2898,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 					// state → fill/stroke colors (same as tooth map)
 					const FILL: Record<string, string> = {
-						idle: "#fff",
+						idle: "var(--paper)",
 						planned: "var(--info-bg)",
 						treatment: "var(--bad-bg)",
 						watch: "var(--warn-bg)",
@@ -2852,10 +2915,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					};
 					const ROOT_FILL: Record<string, string> = {
 						idle: "var(--paper-soft)",
-						planned: "#f0f9ff",
-						treatment: "#fff5f5",
-						watch: "#fffbeb",
-						done: "#f0fdf4",
+						planned: "var(--info-bg)",
+						treatment: "var(--bad-bg)",
+						watch: "var(--warn-bg)",
+						done: "var(--ok-bg)",
 						missing: "var(--paper-soft)",
 					};
 					const ROOT_STROKE: Record<string, string> = {
@@ -2924,7 +2987,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										)}
 									<path
 										d={geom.crown}
-										fill={FILL[state] ?? "#fff"}
+										fill={FILL[state] ?? "var(--paper)"}
 										stroke={STROKE[state] ?? "#94a3b8"}
 										strokeWidth="2.2"
 										strokeLinejoin="round"
@@ -2986,7 +3049,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										}
 										onClick={() => handleSelectDiagnosis("idle")}
 									>
-										Здоров / Норма <span>🟢</span>
+										<span>Здоров / Норма</span> <CircleDot className="w-4 h-4 text-emerald-500 shrink-0" />
 									</button>
 
 									<button
@@ -3009,7 +3072,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											)
 										}
 									>
-										Санирован / Готово <span>✅</span>
+										<span>Санирован / Готово</span> <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
 									</button>
 
 									<button
@@ -3024,7 +3087,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											)
 										}
 									>
-										Отсутствует / Удалён <span>❌</span>
+										<span>Отсутствует / Удалён</span> <XCircle className="w-4 h-4 text-slate-400 shrink-0" />
 									</button>
 
 									<div className="_ccm-label">Патологии</div>
@@ -3049,7 +3112,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											)
 										}
 									>
-										Кариес дентина (K02.1) <span>⚠️</span>
+										<span>Кариес дентина (K02.1)</span> <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
 									</button>
 
 									<button
@@ -3064,7 +3127,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											)
 										}
 									>
-										Острый пульпит (K04.0) <span>🔥</span>
+										<span>Острый пульпит (K04.0)</span> <Flame className="w-4 h-4 text-red-500 shrink-0" />
 									</button>
 
 									<button
@@ -3079,7 +3142,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											)
 										}
 									>
-										Периодонтит / Киста (K04.5) <span>🔴</span>
+										<span>Периодонтит / Киста (K04.5)</span> <CircleDot className="w-4 h-4 text-rose-500 shrink-0" />
 									</button>
 
 									<button
@@ -3094,7 +3157,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											)
 										}
 									>
-										Клиновидный дефект (K03.1) <span>🦷</span>
+										<span>Клиновидный дефект (K03.1)</span> <Activity className="w-4 h-4 text-amber-500 shrink-0" />
 									</button>
 								</div>
 
@@ -3116,7 +3179,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 								{/* ── RIGHT: Treatment ── */}
 								<div className="_ccm-panel">
-									<h4 className="_ccm-h">🛠️ Лечение (Зуб {code})</h4>
+									<h4 className="_ccm-h" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+										<Wrench className="w-4 h-4 text-[var(--teal)] shrink-0" />
+										<span>Лечение (Зуб {code})</span>
+									</h4>
 
 									{materialCategory ? (
 										<div
@@ -3161,7 +3227,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 														)
 													}
 												>
-													{mat.label} <span>✨</span>
+													<span className="flex-1 text-left">{mat.label}</span> <Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 												</button>
 											))}
 											<button
@@ -3186,7 +3252,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												data-color="blue"
 												onClick={() => setMaterialCategory("filling")}
 											>
-												Пломба / Реставрация <span>🖊️</span>
+												<span>Пломба / Реставрация</span> <Edit3 className="w-4 h-4 text-blue-500 shrink-0" />
 											</button>
 											<button
 												type="button"
@@ -3200,7 +3266,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 													)
 												}
 											>
-												Лечение каналов (Эндо) <span>🌀</span>
+												<span>Лечение каналов (Эндо)</span> <Zap className="w-4 h-4 text-pink-500 shrink-0" />
 											</button>
 											<button
 												type="button"
@@ -3223,7 +3289,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 													setIsEndoModalOpen(true);
 												}}
 											>
-												📋 Журнал каналов (MB1, MB2, DB, P) <span>🌀</span>
+												<span className="flex-1 text-left">Журнал каналов (MB1, MB2, DB, P)</span> <ClipboardList className="w-4 h-4 text-pink-500 shrink-0" />
 											</button>
 											<button
 												type="button"
@@ -3237,7 +3303,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 													)
 												}
 											>
-												Наблюдение / Реминерализация <span>👁️</span>
+												<span>Наблюдение / Реминерализация</span> <Eye className="w-4 h-4 text-amber-500 shrink-0" />
 											</button>
 
 											<div className="_ccm-label">Ортопедия</div>
@@ -3247,7 +3313,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												data-color="cyan"
 												onClick={() => setMaterialCategory("crown")}
 											>
-												Коронка на зуб <span>👑</span>
+												<span>Коронка на зуб</span> <Crown className="w-4 h-4 text-cyan-500 shrink-0" />
 											</button>
 											{/*
                           БЫЛО: кнопка молча записывала в план «винир — E-max
@@ -3263,7 +3329,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												data-color="violet"
 												onClick={() => setMaterialCategory("veneer")}
 											>
-												Винир <span>✨</span>
+												<span>Винир</span> <Sparkles className="w-4 h-4 text-violet-500 shrink-0" />
 											</button>
 											<button
 												type="button"
@@ -3275,7 +3341,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 													closeClinicalModal();
 												}}
 											>
-												Наряд в ЗТЛ (CAD/CAM) <span>🦷</span>
+												<span>Наряд в ЗТЛ (CAD/CAM)</span> <FileCheck2 className="w-4 h-4 text-teal-500 shrink-0" />
 											</button>
 
 											<div className="_ccm-label">Хирургия</div>
@@ -3291,7 +3357,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 													)
 												}
 											>
-												Удаление зуба <span>❌</span>
+												<span>Удаление зуба</span> <Scissors className="w-4 h-4 text-red-500 shrink-0" />
 											</button>
 											<button
 												type="button"
@@ -3305,7 +3371,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 														)
 													) {
 														showToast(
-															`⚠️ ПРЕДУПРЕЖДЕНИЕ: У пациента обнаружены бисфосфонаты в анамнезе. Имплантация противопоказана — риск остеонекроза. Проконсультируйтесь с хирургом-ортопедом.`,
+															`ПРЕДУПРЕЖДЕНИЕ: У пациента обнаружены бисфосфонаты в анамнезе. Имплантация противопоказана — риск остеонекроза. Проконсультируйтесь с хирургом-ортопедом.`,
 															"error",
 														);
 														return;
@@ -3313,7 +3379,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 													setMaterialCategory("implant");
 												}}
 											>
-												Имплантация <span>🔩</span>
+												<span>Имплантация</span> <Anchor className="w-4 h-4 text-violet-500 shrink-0" />
 											</button>
 										</>
 									)}

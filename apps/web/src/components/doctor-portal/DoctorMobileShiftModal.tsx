@@ -168,7 +168,6 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 			doctorPhone: "+7 (926) 555-12-34",
 			appointmentIds: unsignedAppointmentIds,
 			shiftDateIso: initialShiftDateIso,
-			fixedSecretCode: "771204", // Demo code helper
 		});
 
 		setSigningSession(session);
@@ -506,7 +505,6 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 														doctorPhone: "+7 (926) 555-12-34",
 														appointmentIds: [apt.id],
 														shiftDateIso: initialShiftDateIso,
-														fixedSecretCode: "771204",
 													});
 													setSigningSession(session);
 													setEnteredSmsCode("");
@@ -584,17 +582,10 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 									data-testid="sms-code-input"
 									autoFocus
 								/>
-								<div className="mt-2 flex items-center justify-between text-[11px] text-[var(--muted)]">
+								<div className="mt-2 text-center text-[11px] text-[var(--muted)]">
 									<span>
 										Истекает через: <strong className="text-[var(--gold)]">{Math.floor(smsCountdown / 60)}:{(smsCountdown % 60).toString().padStart(2, "0")}</strong>
 									</span>
-									<button
-										type="button"
-										onClick={() => setEnteredSmsCode("771204")}
-										className="text-[var(--teal)] hover:underline font-bold"
-									>
-										Демо-код: 771204
-									</button>
 								</div>
 							</div>
 
