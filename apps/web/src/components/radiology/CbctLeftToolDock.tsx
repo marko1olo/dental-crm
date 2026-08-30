@@ -671,14 +671,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 											key={t}
 											type="button"
 											onClick={() => onChangeSlabThicknessMm?.(t)}
-											data-testid={`cbct-slab-thickness-${t}`}
+											data-testid={t === 15 ? "cbct-tool-slab-15mm" : `cbct-slab-thickness-${t}`}
 											className={`px-2 py-1 rounded text-[11px] font-mono transition-colors shrink-0 ${
 												Math.abs(slabThicknessMm - t) < 0.2
 													? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 font-bold"
 													: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800"
 											}`}
 										>
-											{t}мм
+											<span data-testid={`cbct-slab-thickness-${t}`}>{t}мм</span>
 										</button>
 									))}
 								</div>

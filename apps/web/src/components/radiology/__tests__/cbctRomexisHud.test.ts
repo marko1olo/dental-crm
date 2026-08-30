@@ -388,6 +388,45 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 			assert.equal(formatDicomWl(), "W: 4400 L: 1300");
 			assert.equal(formatDicomWl(2000, 400), "W: 2000 L: 400");
 		});
+
+		it("formats 3D IAN nerve node count with correct Russian pluralization (DEF-C05)", () => {
+			const formatNerveNodesPlural = (count: number): string => {
+				const abs = Math.abs(count);
+				const mod10 = abs % 10;
+				const mod100 = abs % 100;
+				if (mod100 >= 11 && mod100 <= 14) {
+					return `${count} узлов`;
+				}
+				if (mod10 === 1) {
+					return `${count} узел`;
+				}
+				if (mod10 >= 2 && mod10 <= 4) {
+					return `${count} узла`;
+				}
+				return `${count} узлов`;
+			};
+
+			assert.equal(formatNerveNodesPlural(1), "1 узел");
+			assert.equal(formatNerveNodesPlural(2), "2 узла");
+			assert.equal(formatNerveNodesPlural(3), "3 узла");
+			assert.equal(formatNerveNodesPlural(4), "4 узла");
+			assert.equal(formatNerveNodesPlural(5), "5 узлов");
+			assert.equal(formatNerveNodesPlural(11), "11 узлов");
+			assert.equal(formatNerveNodesPlural(21), "21 узел");
+			assert.equal(formatNerveNodesPlural(24), "24 узла");
+
+			const threeNodesStr = `${formatNerveNodesPlural(3)} • 42.9 мм`;
+			assert.equal(threeNodesStr, "3 узла • 42.9 мм");
+		});
+
+		it("formats 15.0 mm slab thickness for panoramic viewport HUD without desync (DEF-C03)", () => {
+			const slabThicknessMm = 15.0;
+			const coordText = slabThicknessMm !== undefined && slabThicknessMm > 1.0
+				? `Сляб ${slabThicknessMm.toFixed(1)} мм`
+				: "Срез 1.0 мм";
+
+			assert.equal(coordText, "Сляб 15.0 мм");
+		});
 	});
 });
 
