@@ -387,6 +387,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					hoveredHandle: hoveredHandle?.plane === "axial" ? hoveredHandle.handle : null,
 					showHandles: true,
 					showAngleBadge: true,
+					invertColors,
 				});
 
 				ctx.restore();
@@ -452,6 +453,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					hoveredHandle: hoveredHandle?.plane === "coronal" ? hoveredHandle.handle : null,
 					showHandles: true,
 					showAngleBadge: true,
+					invertColors,
 				});
 
 				ctx.restore();
@@ -517,12 +519,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					hoveredHandle: hoveredHandle?.plane === "sagittal" ? hoveredHandle.handle : null,
 					showHandles: true,
 					showAngleBadge: true,
+					invertColors,
 				});
 
 				ctx.restore();
 			}
 		}
-	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle]);
+	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle, invertColors]);
 
 	useEffect(() => {
 		renderMprPlanes();

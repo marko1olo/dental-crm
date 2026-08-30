@@ -8,6 +8,8 @@ import assert from "node:assert/strict";
 import {
 	calculateAngleBetween3Points2D,
 	calculateAngleBetween3Points3D,
+	drawMeasurementDeleteButton,
+	drawCaliperDeleteButton,
 	hitTestMeasurementHandle,
 	hitTestMeasurementObject,
 } from "../cbctCaliperNerveMath";
@@ -347,6 +349,84 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			drawCbctProbeMarker(mockCtx, { x: 75, y: 75 }, 950, "+950 HU (D2 • Кортикальная кость)", true);
 			assert.ok(calls.some((c) => c.includes("+950 HU (D2 • Кортикальная кость)")));
 			assert.ok(calls.some((c) => c.includes("fillText(×)")));
+		});
+
+		it("drawMeasurementDeleteButton renders 9px circular badge with red tint and centered cross (DEF-D03)", () => {
+			const calls: string[] = [];
+			const fills: string[] = [];
+			const strokes: string[] = [];
+			let arcRadius = 0;
+
+			const mockCtx = {
+				save: () => calls.push("save"),
+				restore: () => calls.push("restore"),
+				beginPath: () => calls.push("beginPath"),
+				arc: (_x: number, _y: number, r: number) => {
+					arcRadius = r;
+					calls.push(`arc(r=${r})`);
+				},
+				fill: () => {
+					fills.push(String(mockCtx.fillStyle));
+					calls.push("fill");
+				},
+				stroke: () => {
+					strokes.push(String(mockCtx.strokeStyle));
+					calls.push("stroke");
+				},
+				fillText: (text: string, x: number, y: number) => {
+					calls.push(`fillText(${text}, x=${x}, y=${y})`);
+				},
+				fillStyle: "",
+				strokeStyle: "",
+				lineWidth: 1,
+				font: "",
+				textAlign: "",
+				textBaseline: "",
+			} as unknown as CanvasRenderingContext2D;
+
+			drawMeasurementDeleteButton(mockCtx, 100, 100, 9);
+
+			// Radius must be 9px (diameter 18px)
+			assert.equal(arcRadius, 9, "Radius must be 9px (18px diameter)");
+			// Background must be red tint rgba(239, 68, 68, 0.25)
+			assert.ok(fills.includes("rgba(239, 68, 68, 0.25)"), "Must use rgba(239, 68, 68, 0.25) fill");
+			// Stroke border must be #ef4444
+			assert.ok(strokes.includes("#ef4444"), "Must use #ef4444 stroke border");
+			// Must draw centered white cross
+			assert.ok(calls.some((c) => c.includes("fillText(×")), "Must render centered × glyph");
+
+			// Also verify alias works identically
+			assert.equal(typeof drawCaliperDeleteButton, "function");
+		});
+
+		it("drawCbctMeasurementRuler with isActive=true renders delete [×] badge", () => {
+			const calls: string[] = [];
+			const mockCtx = {
+				save: () => calls.push("save"),
+				restore: () => calls.push("restore"),
+				beginPath: () => calls.push("beginPath"),
+				moveTo: () => {},
+				lineTo: () => {},
+				stroke: () => calls.push("stroke"),
+				fill: () => calls.push("fill"),
+				arc: () => calls.push("arc"),
+				roundRect: () => calls.push("roundRect"),
+				rect: () => calls.push("rect"),
+				fillText: (text: string) => calls.push(`fillText(${text})`),
+				measureText: (text: string) => ({ width: text.length * 8 }),
+				strokeStyle: "",
+				fillStyle: "",
+				lineWidth: 1,
+				font: "",
+				textAlign: "",
+				textBaseline: "",
+				shadowColor: "",
+				shadowBlur: 0,
+			} as unknown as CanvasRenderingContext2D;
+
+			drawCbctMeasurementRuler(mockCtx, { x: 10, y: 10 }, { x: 110, y: 10 }, 25.4, true, null, false);
+			assert.ok(calls.some((c) => c.includes("25.4 мм")), "Should render distance label");
+			assert.ok(calls.some((c) => c.includes("fillText(×)")), "Should render delete [×] button");
 		});
 	});
 });

@@ -7,6 +7,8 @@ import {
 	drawCbctAngleMeasurement,
 	drawObliqueCrosshairWithRotationHandles,
 	drawRomexisSlabCorridor,
+	getTissueNameFromHU,
+	formatHuProbe,
 	getViewportOrientationLabels,
 } from "../cbctMprMath";
 import {
@@ -324,9 +326,47 @@ describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suit
 				"Should use rgba(0, 0, 0, 0.85) dark halo underlay for crosshair axes",
 			);
 		});
+
+		it("executes drawObliqueCrosshairWithRotationHandles with invertColors=true (WCAG AAA high contrast mode DEF-B03)", () => {
+			const mockCtx = createMockCtx();
+			assert.doesNotThrow(() => {
+				drawObliqueCrosshairWithRotationHandles(mockCtx as unknown as CanvasRenderingContext2D, {
+					widthPx: 512,
+					heightPx: 512,
+					centerPx: { x: 256, y: 256 },
+					plane: "axial",
+					rotationDeg: 15.0,
+					handleDistancePx: 65,
+					showHandles: true,
+					showAngleBadge: true,
+					invertColors: true,
+				});
+			});
+
+			// Verify WCAG AAA contrast requirements: dark shadow halo underlay rgba(0, 0, 0, 0.95)
+			assert.ok(
+				mockCtx.shadowColorsUsed.includes("rgba(0, 0, 0, 0.95)"),
+				"Should use rgba(0, 0, 0, 0.95) dark halo underlay on invert LUT",
+			);
+
+			// Verify high contrast dense colors applied on inverted LUT
+			const strokeCalls = mockCtx.calls.filter((c) => c.method === "stroke");
+			assert.ok(strokeCalls.length > 0, "Should stroke crosshair with contrast colors");
+		});
 	});
 
 	describe("6. HUD Overlays, DICOM WW/WL & Toast Placement Suite (The Hammer v7.0)", () => {
+		it("formats HU tissue names without 'Пульпа' in soft tissue zone (DEF-C08)", () => {
+			assert.equal(getTissueNameFromHU(100), "Мягкие ткани / Слизистая / Хрящ");
+			assert.equal(getTissueNameFromHU(50), "Мягкие ткани / Слизистая / Хрящ");
+			assert.equal(getTissueNameFromHU(0), "Мягкие ткани / Слизистая / Хрящ");
+			assert.ok(!getTissueNameFromHU(100).includes("Пульпа"));
+
+			const formatted = formatHuProbe(100);
+			assert.equal(formatted, "+100 HU (Мягкие ткани / Слизистая / Хрящ)");
+			assert.ok(!formatted.includes("Пульпа"));
+		});
+
 		it("formats panoramic viewport coordinate badge as 'Сляб X.X мм' instead of Z coordinate", () => {
 			const formatPanoBadge = (slabThicknessMm?: number) => {
 				return `Сляб ${slabThicknessMm !== undefined && slabThicknessMm > 1 ? slabThicknessMm.toFixed(1) : "12.0"} мм`;

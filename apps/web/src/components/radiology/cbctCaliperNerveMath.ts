@@ -836,8 +836,8 @@ export function hitTestMeasurementObject(
 		const badgeX = r.badgePx?.x ?? midX;
 		const badgeY = r.badgePx?.y ?? midY;
 
-		// Hitbox check for fast delete [×] trigger with invisible padding (>= 24x24 px)
-		const deleteTargetX = badgeX + badgeW / 2 - 6;
+		// Hitbox check for fast delete [×] trigger with invisible padding (>= 24x24 px, DEF-D03)
+		const deleteTargetX = badgeX + badgeW / 2 - 10;
 		const deleteTargetY = badgeY;
 		const isDeleteHitbox =
 			Math.abs(pointerPx.x - deleteTargetX) <= 12 &&
@@ -850,7 +850,7 @@ export function hitTestMeasurementObject(
 
 		if (isDeleteHitbox || isInsideBadge) {
 			const isDeleteHit =
-				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 18;
+				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 20;
 			return {
 				type: "ruler",
 				id: r.id,
@@ -908,8 +908,8 @@ export function hitTestMeasurementObject(
 			}
 		}
 
-		// Hitbox check for fast delete [×] trigger with invisible padding (>= 24x24 px)
-		const deleteTargetX = badgeX + badgeW / 2 - 6;
+		// Hitbox check for fast delete [×] trigger with invisible padding (>= 24x24 px, DEF-D03)
+		const deleteTargetX = badgeX + badgeW / 2 - 10;
 		const deleteTargetY = badgeY;
 		const isDeleteHitbox =
 			Math.abs(pointerPx.x - deleteTargetX) <= 12 &&
@@ -921,7 +921,7 @@ export function hitTestMeasurementObject(
 
 		if (isDeleteHitbox || isInsideBadge) {
 			const isDeleteHit =
-				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 18;
+				isDeleteHitbox || pointerPx.x >= badgeX + badgeW / 2 - 20;
 			return {
 				type: "angle",
 				id: a.id,
@@ -964,6 +964,40 @@ export function hitTestMeasurementObject(
 
 	return closestHit;
 }
+
+/**
+ * Draws visual 18px circular delete [×] button badge on measurement overlays (DEF-D03).
+ * Visual: round badge radius 9px (diameter 18px), background rgba(239, 68, 68, 0.25)
+ * with border #ef4444 and crisp white cross in center.
+ * Retains 24x24px invisible hit-test area.
+ */
+export function drawMeasurementDeleteButton(
+	ctx: CanvasRenderingContext2D,
+	centerX: number,
+	centerY: number,
+	radius = 9,
+): void {
+	ctx.save();
+	ctx.shadowBlur = 0;
+	// Round badge background
+	ctx.fillStyle = "rgba(239, 68, 68, 0.25)";
+	ctx.strokeStyle = "#ef4444";
+	ctx.lineWidth = 1.0;
+	ctx.beginPath();
+	ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.stroke();
+
+	// Crisp white cross in the center
+	ctx.fillStyle = "#ffffff";
+	ctx.font = "bold 11px sans-serif";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillText("×", centerX, centerY);
+	ctx.restore();
+}
+
+export const drawCaliperDeleteButton = drawMeasurementDeleteButton;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. 3D MANDIBULAR CANAL NERVE TRACER (N. ALVEOLARIS INFERIOR) & DISTANCE GATING

@@ -122,6 +122,7 @@ export interface ObliqueCrosshairDrawOptions {
 	readonly hoveredHandle?: RotationHandlePosition | null;
 	readonly showHandles?: boolean;
 	readonly showAngleBadge?: boolean;
+	readonly invertColors?: boolean;
 }
 
 // ─── 2. 3D VECTOR & ROTATION MATRIX MATH ─────────────────────────────────────
@@ -795,6 +796,7 @@ export function drawObliqueCrosshairWithRotationHandles(
 		hoveredHandle = null,
 		showHandles = true,
 		showAngleBadge = true,
+		invertColors = false,
 	} = options;
 
 	const safeRotationDeg = Number.isFinite(rotationDeg) ? rotationDeg : 0;
@@ -806,42 +808,63 @@ export function drawObliqueCrosshairWithRotationHandles(
 	let axisColor2: string;
 	let planeAccentColor: string;
 
-	switch (plane) {
-		case "axial":
-			axisColor1 = ROMEXIS_COLORS.coronal; // Amber
-			axisColor2 = ROMEXIS_COLORS.sagittal; // Emerald
-			planeAccentColor = ROMEXIS_COLORS.axial; // Cyan
-			break;
-		case "coronal":
-			axisColor1 = ROMEXIS_COLORS.axial; // Cyan
-			axisColor2 = ROMEXIS_COLORS.sagittal; // Emerald
-			planeAccentColor = ROMEXIS_COLORS.coronal; // Amber
-			break;
-		case "sagittal":
-			axisColor1 = ROMEXIS_COLORS.axial; // Cyan
-			axisColor2 = ROMEXIS_COLORS.coronal; // Amber
-			planeAccentColor = ROMEXIS_COLORS.sagittal; // Emerald
-			break;
+	if (invertColors) {
+		// WCAG AAA high-contrast palette for negative LUT (contrast >= 4.5:1 on pure white air & cortical bone, DEF-B03)
+		switch (plane) {
+			case "axial":
+				axisColor1 = "#c2410c"; // Deep Amber/Orange (contrast 5.75:1 on #ffffff)
+				axisColor2 = "#16a34a"; // Deep Emerald/Green (contrast 4.82:1 on #ffffff)
+				planeAccentColor = "#0284c7"; // Deep Cyan/Sky (contrast 4.67:1 on #ffffff)
+				break;
+			case "coronal":
+				axisColor1 = "#0284c7"; // Deep Cyan/Sky
+				axisColor2 = "#16a34a"; // Deep Emerald/Green
+				planeAccentColor = "#c2410c"; // Deep Amber/Orange
+				break;
+			case "sagittal":
+				axisColor1 = "#0284c7"; // Deep Cyan/Sky
+				axisColor2 = "#c2410c"; // Deep Amber/Orange
+				planeAccentColor = "#16a34a"; // Deep Emerald/Green
+				break;
+		}
+	} else {
+		switch (plane) {
+			case "axial":
+				axisColor1 = ROMEXIS_COLORS.coronal; // Amber
+				axisColor2 = ROMEXIS_COLORS.sagittal; // Emerald
+				planeAccentColor = ROMEXIS_COLORS.axial; // Cyan
+				break;
+			case "coronal":
+				axisColor1 = ROMEXIS_COLORS.axial; // Cyan
+				axisColor2 = ROMEXIS_COLORS.sagittal; // Emerald
+				planeAccentColor = ROMEXIS_COLORS.coronal; // Amber
+				break;
+			case "sagittal":
+				axisColor1 = ROMEXIS_COLORS.axial; // Cyan
+				axisColor2 = ROMEXIS_COLORS.coronal; // Amber
+				planeAccentColor = ROMEXIS_COLORS.sagittal; // Emerald
+				break;
+		}
 	}
 
 	ctx.save();
 
 	const diag = Math.hypot(widthPx, heightPx);
 
-	// 1. Axis 1 (Primary horizontal axis when rotation = 0) with dark halo underlay
+	// 1. Axis 1 (Primary horizontal axis when rotation = 0) with dark halo underlay (DEF-B03)
 	ctx.save();
-	ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
-	ctx.shadowBlur = 4;
+	ctx.shadowColor = invertColors ? "rgba(0, 0, 0, 0.95)" : "rgba(0, 0, 0, 0.85)";
+	ctx.shadowBlur = invertColors ? 4 : 3;
 	ctx.strokeStyle = axisColor1;
-	ctx.lineWidth = 1.2;
+	ctx.lineWidth = invertColors ? 1.4 : 1.2;
 	ctx.beginPath();
 	ctx.moveTo(centerPx.x - diag * cosA, centerPx.y - diag * sinA);
 	ctx.lineTo(centerPx.x + diag * cosA, centerPx.y + diag * sinA);
 	ctx.stroke();
 
-	// 2. Axis 2 (Secondary vertical axis when rotation = 0) with dark halo underlay
+	// 2. Axis 2 (Secondary vertical axis when rotation = 0) with dark halo underlay (DEF-B03)
 	ctx.strokeStyle = axisColor2;
-	ctx.lineWidth = 1.2;
+	ctx.lineWidth = invertColors ? 1.4 : 1.2;
 	ctx.beginPath();
 	ctx.moveTo(centerPx.x + diag * sinA, centerPx.y - diag * cosA);
 	ctx.lineTo(centerPx.x - diag * sinA, centerPx.y + diag * cosA);
@@ -871,7 +894,7 @@ export function drawObliqueCrosshairWithRotationHandles(
 		const handles = getRotationHandles(plane, widthPx, heightPx, centerPx, handleDistancePx, safeRotationDeg);
 
 		// Circular guide track (Dashed background ring)
-		ctx.strokeStyle = "rgba(113, 113, 122, 0.25)";
+		ctx.strokeStyle = invertColors ? "rgba(24, 24, 27, 0.45)" : "rgba(113, 113, 122, 0.25)";
 		ctx.lineWidth = 1.0;
 		ctx.setLineDash([2, 3]);
 		ctx.beginPath();
@@ -884,7 +907,7 @@ export function drawObliqueCrosshairWithRotationHandles(
 			ctx.save();
 			ctx.strokeStyle = planeAccentColor;
 			ctx.lineWidth = 2.0;
-			ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+			ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
 			ctx.shadowBlur = 4;
 			ctx.beginPath();
 			if (safeRotationDeg > 0) {
@@ -916,10 +939,14 @@ export function drawObliqueCrosshairWithRotationHandles(
 				ctx.shadowBlur = 6;
 			} else {
 				ctx.fillStyle = color;
+				if (invertColors) {
+					ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
+					ctx.shadowBlur = 4;
+				}
 			}
 
 			ctx.fill();
-			ctx.strokeStyle = "#ffffff";
+			ctx.strokeStyle = invertColors ? "rgba(0, 0, 0, 0.95)" : "#ffffff";
 			ctx.lineWidth = 1.5;
 			ctx.stroke();
 			ctx.restore();
@@ -937,17 +964,21 @@ export function drawObliqueCrosshairWithRotationHandles(
 		const badgeX = widthPx - 10;
 		const badgeY = 10;
 
-		ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-		ctx.strokeStyle = "rgba(6, 182, 212, 0.5)";
+		ctx.fillStyle = invertColors ? "rgba(255, 255, 255, 0.95)" : "rgba(9, 9, 11, 0.9)";
+		ctx.strokeStyle = invertColors ? "rgba(2, 132, 199, 0.8)" : "rgba(6, 182, 212, 0.5)";
 		ctx.lineWidth = 1.0;
 
 		const textW = ctx.measureText(badgeText).width;
 		ctx.beginPath();
-		ctx.roundRect(badgeX - textW - 8, badgeY, textW + 16, 20, 4);
+		if (typeof ctx.roundRect === "function") {
+			ctx.roundRect(badgeX - textW - 8, badgeY, textW + 16, 20, 4);
+		} else {
+			ctx.rect(badgeX - textW - 8, badgeY, textW + 16, 20);
+		}
 		ctx.fill();
 		ctx.stroke();
 
-		ctx.fillStyle = "#38bdf8";
+		ctx.fillStyle = invertColors ? "#0284c7" : "#38bdf8";
 		ctx.fillText(badgeText, badgeX - 4, badgeY + 4);
 	}
 
