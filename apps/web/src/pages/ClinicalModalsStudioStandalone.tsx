@@ -81,6 +81,7 @@ import { FiscalReceipt54FzModal } from "../components/finance/FiscalReceipt54FzM
 import { Billing1CExportModal } from "../components/finance/Billing1CExportModal";
 import { OneCCommerceMlModal } from "../components/finance/one-c/OneCCommerceMlModal";
 import { PatientBillingModal } from "../components/finance/PatientBillingModal";
+import { PatientInstallmentScheduleModal } from "../components/finance/PatientInstallmentScheduleModal";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { SanpinRegisters } from "../components/sanpin/SanpinRegisters";
 import { PediatricMixedDentitionModal } from "../components/odontogram/PediatricMixedDentitionModal";
@@ -124,6 +125,7 @@ import { TreatmentPlanPriceValidatorModal } from "../components/treatment-plans/
 import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal";
 import { PatientPortalModal, PatientMobilePortalModal, PatientOnlineBookingModal } from "../components/portal";
 import { DoctorMobileShiftModal } from "../components/doctor-portal";
+import { DoctorShiftCockpitModal, DoctorDesktopHeader } from "../components/doctor";
 import { PatientWebappPortalModal } from "../components/patient-portal/PatientWebappPortalModal";
 import { EgiszRemdHubModal } from "../components/egisz/EgiszRemdHubModal";
 import { EgiszCdaExportModal } from "../components/egisz/EgiszCdaExportModal";
@@ -153,6 +155,7 @@ import { IncomingCallPopup } from "../components/telephony/IncomingCallPopup";
 import { TelephonyFloatingWidget } from "../components/telephony/TelephonyFloatingWidget";
 import { useTelephonyStore } from "../store/telephonyStore";
 import { SettingsAccessTab } from "../components/settings/SettingsAccessTab";
+import { AccessMatrixModal } from "../components/settings/AccessMatrixModal";
 import { StaffCommissionsPanel } from "../components/settings/StaffCommissionsPanel";
 import { CmoComplianceHub } from "../components/emr/audit/CmoComplianceHub";
 import { Form043PrintModal } from "../components/emr/Form043PrintModal";
@@ -169,6 +172,7 @@ import {
 } from "../components/photography/photoGridPresets";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
+import { VisitOdontogramTab } from "../components/visit/VisitOdontogramTab";
 
 const THEMES = [
 	{ id: "light", label: "Светлая" },
@@ -466,6 +470,12 @@ const mockStudioAppLogicValue: AppLogicContextType = {
 				chairId: "chair-1",
 			},
 		],
+		activeVisit: {
+			id: "vis-001",
+			appointmentId: "apt-1",
+			patientId: "PAT-001",
+			status: "in_progress",
+		},
 		insuranceContracts: [],
 	} as unknown as AppLogicContextType["dashboard"],
 	auth: {
@@ -487,6 +497,16 @@ const mockStudioAppLogicValue: AppLogicContextType = {
 		phone: "+7 (926) 555-12-34",
 		cardNumber: "043/у-2026/891",
 	} as unknown as AppLogicContextType["activePatient"],
+	activeAppointment: {
+		id: "apt-1",
+		patientId: "PAT-001",
+		patientName: "Смирнова Екатерина Васильевна",
+		doctorId: "doc-1",
+		doctorName: "Д-р Смирнов Алексей Петрович",
+		startsAt: "2026-08-28T10:00:00.000Z",
+		endsAt: "2026-08-28T11:00:00.000Z",
+		status: "in_progress",
+	} as unknown as AppLogicContextType["activeAppointment"],
 	activeDoctor: {
 		id: "doc-1",
 		fullName: "Д-р Смирнов Алексей Петрович",
@@ -497,7 +517,17 @@ const mockStudioAppLogicValue: AppLogicContextType = {
 } as AppLogicContextType;
 
 export const ClinicalModalsStudioStandalone: React.FC = () => {
-	const [activeTheme, setActiveTheme] = useState<string>("dark");
+	const [activeTheme, setActiveTheme] = useState<string>(() => {
+		if (typeof window !== "undefined") {
+			return (
+				safeLocalStorageGetItem("dente_theme_mode") ||
+				safeLocalStorageGetItem("dente_theme") ||
+				document.documentElement.getAttribute("data-theme") ||
+				"light"
+			);
+		}
+		return "light";
+	});
 	const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
 	const [isRadiologyOpen, setIsRadiologyOpen] = useState(false);
 	const [isCbct3DStudioOpen, setIsCbct3DStudioOpen] = useState(false);
@@ -507,6 +537,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isFiscalOpen, setIsFiscalOpen] = useState(false);
 	const [isBilling1cExportOpen, setIsBilling1cExportOpen] = useState(false);
 	const [isPatientBillingOpen, setIsPatientBillingOpen] = useState(false);
+	const [isPatientInstallmentOpen, setIsPatientInstallmentOpen] = useState(false);
 	const [isPediatricOpen, setIsPediatricOpen] = useState(false);
 	const [isConsentOpen, setIsConsentOpen] = useState(false);
 	const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -593,6 +624,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
 	const [isMarketingRoiOpen, setIsMarketingRoiOpen] = useState(false);
 	const [isDoctorMobileShiftOpen, setIsDoctorMobileShiftOpen] = useState(false);
+	const [isDoctorCockpitOpen, setIsDoctorCockpitOpen] = useState(false);
+	const [isVisitOdontogramOpen, setIsVisitOdontogramOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -664,7 +697,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			const hashParams = new URLSearchParams(hashQuery);
 			const getParam = (key: string) => searchParams.get(key) || hashParams.get(key);
 
-			const requestedTheme = getParam("theme");
+			const requestedTheme = getParam("theme") || safeLocalStorageGetItem("dente_theme_mode") || safeLocalStorageGetItem("dente_theme");
 			if (requestedTheme && THEMES.some((t) => t.id === requestedTheme)) {
 				handleThemeChange(requestedTheme);
 			}
@@ -726,6 +759,14 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					setIsMdlpScanningOpen(false);
 					setIsMarketingRoiOpen(false);
 					setIsDoctorMobileShiftOpen(false);
+
+					if (
+						requestedModal === "doctor_cockpit" ||
+						requestedModal === "doctor_shift_cockpit" ||
+						requestedModal === "doctor_desktop_cockpit"
+					) {
+						setIsDoctorCockpitOpen(true);
+					}
 
 					if (
 						requestedModal === "doctor_shift_pwa" ||
@@ -819,6 +860,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "patient_billing" || requestedModal === "billing" || requestedModal === "friendly_billing" || requestedModal === "warranty_act" || requestedModal === "patient_billing_modal") {
 						setIsPatientBillingOpen(true);
 					}
+					if (requestedModal === "installment_schedule" || requestedModal === "patient_installment" || requestedModal === "installment" || requestedModal === "patient_installment_schedule_modal") {
+						setIsPatientInstallmentOpen(true);
+					}
+					if (requestedModal === "phased4" || requestedModal === "treatment_plan_4stages" || requestedModal === "4stages") {
+						setIsPhased4PreviewOpen(true);
+					}
+					if (requestedModal === "3tier" || requestedModal === "treatment_plan_3tier" || requestedModal === "comparator") {
+						setIsPlanComparatorOpen(true);
+					}
 					if (requestedModal === "cephalometry" || requestedModal === "ceph" || requestedModal === "trg" || requestedModal === "cephalometric_analysis_modal") {
 						const isLoaded = getParam("loaded") !== "false" && getParam("state") !== "empty";
 						setCephInitialImageUrl(isLoaded ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined);
@@ -836,7 +886,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						setActiveStudy(SAMPLE_STUDY);
 						setIsViewerOpen(true);
 					}
-					if (requestedModal === "cbct" || requestedModal === "cbct_mpr" || requestedModal === "cbct_studio" || requestedModal === "mpr") {
+					if (requestedModal === "cbct" || requestedModal === "cbct_studio" || requestedModal === "cbct_implant" || requestedModal === "cbct_mpr_implant") {
+						setIsCbct3DStudioOpen(true);
+					} else if (requestedModal === "cbct_mpr" || requestedModal === "mpr") {
 						setIsCbctMpr3DStudioOpen(true);
 					}
 					if (requestedModal === "pediatric" || requestedModal === "pediatric_mixed_dentition" || requestedModal === "mixed_dentition") {
@@ -955,11 +1007,18 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "timesheet_t13" || requestedModal === "t13" || requestedModal === "form_t13" || requestedModal === "form_t13_timesheet" || requestedModal === "timesheet_modal" || requestedModal === "timesheet_t13_modal") {
 						setIsFormT13TimesheetOpen(true);
 					}
+					if (requestedModal === "visit_odontogram" || requestedModal === "odontogram" || requestedModal === "visit_formula" || requestedModal === "odontogram_tab") {
+						setIsVisitOdontogramOpen(true);
+					}
 				}
 		};
 		handleHashOrSearch();
 		window.addEventListener("hashchange", handleHashOrSearch);
-		return () => window.removeEventListener("hashchange", handleHashOrSearch);
+		window.addEventListener("popstate", handleHashOrSearch);
+		return () => {
+			window.removeEventListener("hashchange", handleHashOrSearch);
+			window.removeEventListener("popstate", handleHashOrSearch);
+		};
 	}, []);
 
 	return (
@@ -3415,6 +3474,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
+			{isPatientInstallmentOpen && (
+				<PatientInstallmentScheduleModal
+					isOpen={isPatientInstallmentOpen}
+					onClose={() => setIsPatientInstallmentOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					totalAmountRub={120000}
+				/>
+			)}
+
 			{isPrescriptionOpen && (
 				<PrescriptionModal
 					isOpen={isPrescriptionOpen}
@@ -4120,44 +4188,11 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				</div>
 			)}
 
-			{isSettingsAccessOpen && (
-				<div
-					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
-					role="dialog"
-					aria-modal="true"
-					data-testid="settings-access-modal-container"
-				>
-					<div className="relative w-full max-w-4xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
-						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
-							<div className="flex items-center gap-2.5">
-								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
-									<ShieldCheck className="w-5 h-5" />
-								</div>
-								<div>
-									<h3 className="text-base font-bold text-[var(--ink)]">
-										Ролевая матрица доступа сотрудников
-									</h3>
-									<p className="text-xs text-[var(--muted)]">
-										Настройка прав ролей (Врач, Ассистент, Администратор, Управляющий), генерация инвайт-ссылок
-									</p>
-								</div>
-							</div>
-							<button
-								type="button"
-								onClick={() => setIsSettingsAccessOpen(false)}
-								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
-								data-testid="close-settings-access-modal-btn"
-								aria-label="Закрыть матрицу доступа"
-							>
-								<X className="w-5 h-5" />
-							</button>
-						</div>
-						<div className="flex-1 overflow-y-auto">
-							<SettingsAccessTab settingsTab="access" props={{}} />
-						</div>
-					</div>
-				</div>
-			)}
+			<AccessMatrixModal
+				isOpen={isSettingsAccessOpen}
+				onClose={() => setIsSettingsAccessOpen(false)}
+				props={{}}
+			/>
 
 			{isStaffCommissionsOpen && (
 				<div
@@ -4594,6 +4629,71 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					onClose={() => setIsMarketingRoiOpen(false)}
 					clinicName="ООО «Денте Стоматология»"
 				/>
+			)}
+
+			<div className="mt-4 border-t border-slate-800 pt-4">
+				<DoctorDesktopHeader
+					doctorId="doc-1"
+					doctorName="Д-р Смирнов Алексей Петрович"
+					doctorSpecialty="Врач-стоматолог терапевт-ортопед"
+					cabinetName="Кабинет № 1"
+					shiftDateIso="2026-08-29"
+					onOpenCockpitModal={() => setIsDoctorCockpitOpen(true)}
+				/>
+			</div>
+
+			{isDoctorCockpitOpen && (
+				<DoctorShiftCockpitModal
+					isOpen={isDoctorCockpitOpen}
+					onClose={() => setIsDoctorCockpitOpen(false)}
+					doctorId="doc-1"
+					doctorName="Д-р Смирнов Алексей Петрович"
+					doctorSpecialty="Врач-стоматолог терапевт-ортопед"
+					cabinetName="Кабинет № 1"
+					shiftDateIso="2026-08-29"
+				/>
+			)}
+
+			{isVisitOdontogramOpen && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+					role="dialog"
+					aria-modal="true"
+					data-testid="visit-odontogram-modal-container"
+				>
+					<div className="bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl w-full max-w-7xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+						<div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+							<div className="flex items-center gap-3">
+								<div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+									<Activity size={20} />
+								</div>
+								<div>
+									<h2 className="text-base sm:text-lg font-black tracking-tight text-[var(--ink,#0f172a)] m-0">
+										Зубная формула и клинический дневник приема (043/у)
+									</h2>
+									<p className="text-xs text-[var(--muted,#64748b)] m-0">
+										Пациент: {mockStudioAppLogicValue.activePatient?.fullName} • FDI 11–48 • Расчет сметы в рублях
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsVisitOdontogramOpen(false)}
+								className="w-10 h-10 rounded-xl bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] flex items-center justify-center cursor-pointer transition-colors"
+								data-testid="close-visit-odontogram-modal"
+							>
+								<X size={18} />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto p-3 sm:p-6">
+							<VisitOdontogramTab
+								activePatient={mockStudioAppLogicValue.activePatient}
+								activeAppointment={mockStudioAppLogicValue.activeAppointment}
+								dashboard={mockStudioAppLogicValue.dashboard}
+							/>
+						</div>
+					</div>
+				</div>
 			)}
 
 			</div>

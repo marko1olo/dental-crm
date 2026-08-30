@@ -7,6 +7,7 @@ import {
 	Coins,
 	CreditCard,
 	History,
+	Info,
 	Mic,
 	Printer,
 	QrCode,
@@ -931,7 +932,7 @@ export const OdontogramModule = ({
 					</div>
 
 					{/* 1-Click Immediate Payment Tender Triggers (>= 48px touch targets) */}
-					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+					<div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
 						<button
 							type="button"
 							onClick={() => {
@@ -941,12 +942,12 @@ export const OdontogramModule = ({
 									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
 								}
 							}}
-							className="flex-1 sm:flex-initial min-h-[48px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+							className="flex-1 sm:flex-initial min-h-[48px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none whitespace-nowrap"
 							title="1-клик оплата по QR-коду СБП (0% комиссии)"
 							data-testid="cockpit-pay-sbp-btn"
 						>
-							<QrCode className="w-4 h-4" />
-							<span>⚡ СБП QR</span>
+							<QrCode className="w-4 h-4 shrink-0" />
+							<span>СБП QR</span>
 						</button>
 						<button
 							type="button"
@@ -957,12 +958,12 @@ export const OdontogramModule = ({
 									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
 								}
 							}}
-							className="flex-1 sm:flex-initial min-h-[48px] px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+							className="flex-1 sm:flex-initial min-h-[48px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none whitespace-nowrap"
 							title="1-клик оплата банковской картой (эквайринг)"
 							data-testid="cockpit-pay-card-btn"
 						>
-							<CreditCard className="w-4 h-4" />
-							<span>💳 Карта</span>
+							<CreditCard className="w-4 h-4 shrink-0" />
+							<span>Карта</span>
 						</button>
 						<button
 							type="button"
@@ -973,12 +974,12 @@ export const OdontogramModule = ({
 									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
 								}
 							}}
-							className="flex-1 sm:flex-initial min-h-[48px] px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+							className="flex-1 sm:flex-initial min-h-[48px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none whitespace-nowrap"
 							title="1-клик оплата наличными с расчетом сдачи"
 							data-testid="cockpit-pay-cash-btn"
 						>
-							<Banknote className="w-4 h-4" />
-							<span>💵 Наличные</span>
+							<Banknote className="w-4 h-4 shrink-0" />
+							<span>Наличные</span>
 						</button>
 						<button
 							type="button"
@@ -989,19 +990,20 @@ export const OdontogramModule = ({
 									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
 								}
 							}}
-							className="flex-1 sm:flex-initial min-h-[48px] px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+							className="flex-1 sm:flex-initial min-h-[48px] px-2.5 sm:px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none whitespace-nowrap"
 							title="1-клик списание с семейного лицевого счета / депозита"
 							data-testid="cockpit-pay-deposit-btn"
 						>
-							<Coins className="w-4 h-4" />
-							<span>🪙 Депозит</span>
+							<Coins className="w-4 h-4 shrink-0" />
+							<span>Депозит</span>
 						</button>
 					</div>
 				</div>
 
 				{/* Народная и анатомическая расшифровка выбранного зуба простым русским языком */}
 				<div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-950 dark:text-indigo-200 text-xs sm:text-sm font-bold transition-all">
-					<span className="font-black text-indigo-600 dark:text-indigo-400 shrink-0">💡 Зуб:</span>
+					<Info className="w-4 h-4 text-indigo-500 shrink-0" />
+					<span className="font-black text-indigo-600 dark:text-indigo-400 shrink-0">Зуб:</span>
 					<span className="leading-snug">
 						{selectedTeeth.length === 1
 							? getToothFolkAndAnatomicalNameRu(selectedTeeth[0]!)

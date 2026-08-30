@@ -6,14 +6,42 @@ import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { VisitDiaryEditor } from "../VisitDiaryEditor";
 import { realVisitFieldId } from "./visitIdentity";
 
-export function VisitOdontogramTab(props?: {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activePatient?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeAppointment?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dashboard?: any;
-}) {
+export interface VisitOdontogramTabPatient {
+	id: string;
+	fullName?: string | null | undefined;
+	name?: string | null | undefined;
+	[key: string]: unknown;
+}
+
+export interface VisitOdontogramTabAppointment {
+	id?: string | null | undefined;
+	[key: string]: unknown;
+}
+
+export interface VisitOdontogramTabDashboard {
+	activeVisit?: {
+		id?: string | null | undefined;
+		appointmentId?: string | null | undefined;
+		patientId?: string | null | undefined;
+		[key: string]: unknown;
+	} | null | undefined;
+	clinicSettings?: {
+		profile?: {
+			hasPediatricMode?: boolean | undefined;
+			[key: string]: unknown;
+		} | undefined;
+		[key: string]: unknown;
+	} | undefined;
+	[key: string]: unknown;
+}
+
+export interface VisitOdontogramTabProps {
+	readonly activePatient?: VisitOdontogramTabPatient | null | undefined;
+	readonly activeAppointment?: VisitOdontogramTabAppointment | null | undefined;
+	readonly dashboard?: VisitOdontogramTabDashboard | null | undefined;
+}
+
+export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
 	const ctx = useAppLogicContext();
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
