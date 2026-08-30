@@ -437,8 +437,8 @@ export function reconstructPanoramicView(
 			}
 		}
 
-		// Ensure minimum margin from boundaries (at least 14px from left/right) so FDI badges like #48 are never clipped
-		const clampedCol = Math.max(14, Math.min(outW - 14, closestCol));
+		// Ensure minimum margin from boundaries (at least 16px from left/right) so FDI badges like #48 are never clipped
+		const clampedCol = Math.max(16, Math.min(outW - 16, closestCol));
 
 		return {
 			toothFdi: anchor.toothFdi,

@@ -285,7 +285,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 			</div>
 
 			<div
-				className="absolute left-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[#09090b]/80 backdrop-blur-xs text-zinc-400 border border-zinc-800/60 font-mono font-bold text-[10px]"
+				className={`absolute ${viewportType === "panoramic" ? "left-7" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-[#09090b]/80 backdrop-blur-xs text-zinc-400 border border-zinc-800/60 font-mono font-bold text-[10px]`}
 				title={labels.leftTooltipRu}
 			>
 				{labels.left}

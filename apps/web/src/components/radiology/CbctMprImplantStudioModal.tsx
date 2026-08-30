@@ -1290,7 +1290,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						const p2 = slicePxToScreenPx(worldMmToSlicePx(r.endMm, "axial", volume), transform);
 						const isSelected = selectedMeasurement?.id === r.id;
 						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
-						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH, invertColors);
 					}
 				}
 				if (activeRuler && activeRuler.plane === "axial") {
@@ -1301,7 +1301,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						activeRuler.currentMm.y - activeRuler.startMm.y,
 						activeRuler.currentMm.z - activeRuler.startMm.z,
 					);
-					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null, invertColors);
 				}
 
 				// 4. Draw Angles on Axial in Screen Space
@@ -1352,6 +1352,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					hoveredHandle: hoveredHandle?.plane === "axial" ? hoveredHandle.handle : null,
 					showHandles: true,
 					showAngleBadge: false,
+					invertColors,
 				});
 			}
 		}
@@ -1620,7 +1621,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						const p2 = slicePxToScreenPx(worldMmToSlicePx(r.endMm, "coronal", volume), transform);
 						const isSelected = selectedMeasurement?.id === r.id;
 						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
-						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH, invertColors);
 					}
 				}
 				if (activeRuler && activeRuler.plane === "coronal") {
@@ -1631,7 +1632,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						activeRuler.currentMm.y - activeRuler.startMm.y,
 						activeRuler.currentMm.z - activeRuler.startMm.z,
 					);
-					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null, invertColors);
 				}
 
 				// 4. Draw Angles on Coronal in Screen Space
@@ -1682,6 +1683,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					hoveredHandle: hoveredHandle?.plane === "coronal" ? hoveredHandle.handle : null,
 					showHandles: true,
 					showAngleBadge: false,
+					invertColors,
 				});
 			}
 		}
@@ -1950,7 +1952,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						const p2 = slicePxToScreenPx(worldMmToSlicePx(r.endMm, "sagittal", volume), transform);
 						const isSelected = selectedMeasurement?.id === r.id;
 						const activeH = hoveredMeasurementHandle?.id === r.id ? hoveredMeasurementHandle.handleIndex : (draggingMeasurementHandle?.id === r.id ? draggingMeasurementHandle.handleIndex : null);
-						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH);
+						drawCbctMeasurementRuler(ctx, p1, p2, r.distanceMm, isSelected, activeH, invertColors);
 					}
 				}
 				if (activeRuler && activeRuler.plane === "sagittal") {
@@ -1961,7 +1963,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						activeRuler.currentMm.y - activeRuler.startMm.y,
 						activeRuler.currentMm.z - activeRuler.startMm.z,
 					);
-					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null);
+					drawCbctMeasurementRuler(ctx, p1, p2, dist, true, null, invertColors);
 				}
 
 				// 4. Draw Angles on Sagittal in Screen Space
@@ -2012,6 +2014,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					hoveredHandle: hoveredHandle?.plane === "sagittal" ? hoveredHandle.handle : null,
 					showHandles: true,
 					showAngleBadge: false,
+					invertColors,
 				});
 			}
 		}
@@ -2341,6 +2344,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			showXAxis: false,
 			showYAxis: true,
 			showScaleBar: true,
+			scaleBarOffsetY: 38,
 			invertColors,
 			transform,
 		});
@@ -2376,63 +2380,82 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		// 3. Draw Numbered Cross-Section Slice Fan Ticks (#1..#N) in Screen Space
 		const fanTicks = getPanoramicSliceFanTicks(crossSections, panoramicData.widthPx, archCurve.totalArcLengthMm);
-		let lastDrawnTickX = -999;
+		let lastDrawnMajorTickX = -999;
+
+		// 3a. Draw Tick Marks along the Bottom Edge (Separated from Active Badge)
 		for (let i = 0; i < fanTicks.length; i++) {
 			const tick = fanTicks[i]!;
-			const isActive = i === activeCrossSectionIdx;
 			const tickXScreen = tick.panoX * transform.zoom + transform.panX;
+			if (tickXScreen < -20 || tickXScreen > canvas.width + 20) continue;
 
-			if (isActive) {
-				// Highlighted active slice line with vibrant Romexis Yellow
-				ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
-				ctx.lineWidth = 2.0;
-				ctx.beginPath();
-				ctx.moveTo(tickXScreen, 0);
-				ctx.lineTo(tickXScreen, canvas.height);
-				ctx.stroke();
-
-				// Active slice top/bottom badge
-				ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-				ctx.beginPath();
-				if (typeof ctx.roundRect === "function") {
-					ctx.roundRect(Math.max(2, tickXScreen - 16), canvas.height - 18, 32, 16, 4);
-				} else {
-					ctx.rect(Math.max(2, tickXScreen - 16), canvas.height - 18, 32, 16);
-				}
-				ctx.fill();
-				ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
-				ctx.lineWidth = 1;
-				ctx.stroke();
-				ctx.fillStyle = ROMEXIS_COLORS.crossSection;
-				ctx.font = "bold 9px monospace";
-				ctx.textAlign = "center";
-				ctx.textBaseline = "middle";
-				ctx.fillText(`#${tick.sliceIndex}`, Math.max(18, tickXScreen), canvas.height - 10);
-				lastDrawnTickX = tickXScreen;
-			} else if (tick.isMajor && (tick.sliceIndex === 60 || Math.abs(tickXScreen - lastDrawnTickX) >= 24)) {
-				// Major slice tick mark
-				ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
+			if (tick.isMajor) {
+				// Major slice tick line
+				ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
 				ctx.lineWidth = 1.0;
 				ctx.beginPath();
-				ctx.moveTo(tickXScreen, canvas.height - 10);
+				ctx.moveTo(tickXScreen, canvas.height - 7);
 				ctx.lineTo(tickXScreen, canvas.height);
 				ctx.stroke();
 
-				ctx.fillStyle = "rgba(148, 163, 184, 0.8)";
-				ctx.font = "8px monospace";
-				ctx.textAlign = "center";
-				ctx.textBaseline = "middle";
-				ctx.fillText(`${tick.sliceIndex}`, tickXScreen, canvas.height - 14);
-				lastDrawnTickX = tickXScreen;
+				// Major tick label (always show 1, 5, 10, 60 or spaced >= 18px to prevent overlap)
+				const isKeySlice = tick.sliceIndex === 1 || tick.sliceIndex === 5 || tick.sliceIndex === 10 || tick.sliceIndex === 60;
+				if (isKeySlice || Math.abs(tickXScreen - lastDrawnMajorTickX) >= 18) {
+					ctx.fillStyle = "rgba(148, 163, 184, 0.85)";
+					ctx.font = "8px monospace";
+					ctx.textAlign = "center";
+					ctx.textBaseline = "middle";
+					ctx.fillText(`${tick.sliceIndex}`, tickXScreen, canvas.height - 11);
+					lastDrawnMajorTickX = tickXScreen;
+				}
 			} else {
 				// Minor slice tick mark
 				ctx.strokeStyle = "rgba(100, 116, 139, 0.3)";
 				ctx.lineWidth = 1.0;
 				ctx.beginPath();
-				ctx.moveTo(tickXScreen, canvas.height - 4);
+				ctx.moveTo(tickXScreen, canvas.height - 3.5);
 				ctx.lineTo(tickXScreen, canvas.height);
 				ctx.stroke();
 			}
+		}
+
+		// 3b. Highlight Active Cross-Section Slice Line & Elevated Badge
+		if (activeCrossSectionIdx >= 0 && activeCrossSectionIdx < fanTicks.length) {
+			const activeTick = fanTicks[activeCrossSectionIdx]!;
+			const activeXScreen = activeTick.panoX * transform.zoom + transform.panX;
+
+			// Highlighted active slice vertical indicator line across the full canvas
+			ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
+			ctx.lineWidth = 2.0;
+			ctx.beginPath();
+			ctx.moveTo(activeXScreen, 0);
+			ctx.lineTo(activeXScreen, canvas.height);
+			ctx.stroke();
+
+			// Active slice badge elevated above the tick marks (y: canvas.height - 32)
+			// Ensures active badge #1 never obscures ticks 5, 10 or scale bar
+			const activeBadgeY = canvas.height - 32;
+			const activeBadgeH = 15;
+			const activeBadgeW = Math.max(30, 16 + String(activeTick.sliceIndex).length * 8);
+			const activeBadgeX = Math.max(2, Math.min(canvas.width - activeBadgeW - 2, activeXScreen - activeBadgeW / 2));
+
+			ctx.fillStyle = "rgba(9, 9, 11, 0.92)";
+			ctx.beginPath();
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(activeBadgeX, activeBadgeY, activeBadgeW, activeBadgeH, 3);
+			} else {
+				ctx.rect(activeBadgeX, activeBadgeY, activeBadgeW, activeBadgeH);
+			}
+			ctx.fill();
+
+			ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
+			ctx.lineWidth = 1.2;
+			ctx.stroke();
+
+			ctx.fillStyle = ROMEXIS_COLORS.crossSection;
+			ctx.font = "bold 9px monospace";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(`#${activeTick.sliceIndex}`, activeBadgeX + activeBadgeW / 2, activeBadgeY + activeBadgeH / 2);
 		}
 
 		// 4. Tooth FDI Tag above implant in Screen Space
@@ -3907,7 +3930,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const reportData = buildCbctReportData({
 			patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
 			clinicName: "Стоматологический центр DENTE",
-			doctorName: "Врач-стоматолог-хирург-имплантолог",
+			doctorName: "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.",
 			studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 			targetToothFdi: targetTooth,
 			implantPose: currentImplantPose,

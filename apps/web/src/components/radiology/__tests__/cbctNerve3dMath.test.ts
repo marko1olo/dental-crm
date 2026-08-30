@@ -353,7 +353,7 @@ describe("Domain 2: 3D Mandibular Canal (IAN) Spline & Distance Gating Suite", (
 			isDisposed: false,
 		};
 
-		it("guarantees at least 14px left margin for FDI #48 badge so '4' is not clipped", () => {
+		it("guarantees at least 16px left margin for FDI #48 badge so '4' is not clipped", () => {
 			const pano = reconstructPanoramicView(mockVolume, archCurve, {
 				heightPx: 220,
 			});
@@ -361,12 +361,12 @@ describe("Domain 2: 3D Mandibular Canal (IAN) Spline & Distance Gating Suite", (
 			assert.ok(pano.toothMarkersOnPano.length > 0);
 			const marker48 = pano.toothMarkersOnPano.find((m) => m.toothFdi === "48");
 			assert.ok(marker48, "Marker for tooth FDI 48 must exist");
-			assert.ok(marker48.xPx >= 14, `Marker 48 xPx (${marker48.xPx}) must be >= 14 to prevent clipping`);
+			assert.ok(marker48.xPx >= 16, `Marker 48 xPx (${marker48.xPx}) must be >= 16 to prevent clipping`);
 
-			// Verify all tooth markers respect the 14px boundary constraint
+			// Verify all tooth markers respect the 16px boundary constraint
 			for (const tm of pano.toothMarkersOnPano) {
-				assert.ok(tm.xPx >= 14, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be >= 14`);
-				assert.ok(tm.xPx <= pano.widthPx - 14, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be <= widthPx - 14`);
+				assert.ok(tm.xPx >= 16, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be >= 16`);
+				assert.ok(tm.xPx <= pano.widthPx - 16, `Tooth ${tm.toothFdi} xPx (${tm.xPx}) must be <= widthPx - 16`);
 			}
 		});
 	});

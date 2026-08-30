@@ -19,6 +19,8 @@ import {
 	type MeasurementObjectHit,
 	calculateAngleBetween3Points2D,
 	calculateAngleBetween3Points3D,
+	drawMeasurementDeleteButton,
+	drawCaliperDeleteButton,
 	hitTestMeasurementHandle,
 	hitTestMeasurementObject,
 } from "./cbctCaliperNerveMath";
@@ -34,6 +36,8 @@ export type { Point2D, Point3D, CbctAngleMeasurement, MeasurementHandleHit, Meas
 export {
 	calculateAngleBetween3Points2D,
 	calculateAngleBetween3Points3D,
+	drawMeasurementDeleteButton,
+	drawCaliperDeleteButton,
 	hitTestMeasurementHandle,
 	hitTestMeasurementObject,
 };
@@ -300,6 +304,8 @@ export interface RulerDrawingOptions {
 	readonly showGrid?: boolean | undefined;
 	readonly showScaleBar?: boolean | undefined;
 	readonly invertColors?: boolean | undefined;
+	readonly scaleBarOffsetX?: number | undefined;
+	readonly scaleBarOffsetY?: number | undefined;
 	readonly transform?: {
 		readonly panX?: number | undefined;
 		readonly panY?: number | undefined;
@@ -480,8 +486,8 @@ export function drawCalibratedMillimeterRulers(
 	// 4. Calibrated Scale Legend Bar (10 mm) in bottom corner
 	if (showScaleBar) {
 		const barWidthPx = 10.0 * pxPerMmX;
-		const barX = 14;
-		const barY = heightPx - 14;
+		const barX = options.scaleBarOffsetX ?? 14;
+		const barY = heightPx - (options.scaleBarOffsetY ?? 14);
 
 		ctx.save();
 		ctx.fillStyle = scaleBarBg;
@@ -528,11 +534,12 @@ export interface SlabCorridorParams {
 	readonly lengthPx: number;
 	readonly colorRgba: string;
 	readonly fillColorRgba?: string;
+	readonly invertColors?: boolean | undefined;
 }
 
 /**
  * Draws two parallel dashed bounding lines and a subtle fill corridor on intersecting planes
- * when slab thickness > 1 mm.
+ * when slab thickness > 1 mm. Supports WCAG AAA dark halo underlay on invert LUT.
  */
 export function drawRomexisSlabCorridor(
 	ctx: CanvasRenderingContext2D,
@@ -546,6 +553,7 @@ export function drawRomexisSlabCorridor(
 		lengthPx,
 		colorRgba,
 		fillColorRgba,
+		invertColors = false,
 	} = params;
 
 	if (thicknessMm <= 1.0 || pixelSpacingMm <= 0) return;
@@ -568,7 +576,12 @@ export function drawRomexisSlabCorridor(
 		}
 	}
 
-	// Two parallel dashed bounding lines
+	// Two parallel dashed bounding lines with dark halo underlay on inverted LUT
+	ctx.save();
+	if (invertColors) {
+		ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
+		ctx.shadowBlur = 4;
+	}
 	ctx.strokeStyle = colorRgba;
 	ctx.lineWidth = 1.0;
 	ctx.setLineDash([4, 3]);
@@ -588,21 +601,33 @@ export function drawRomexisSlabCorridor(
 		ctx.lineTo(maxPos, lengthPx);
 		ctx.stroke();
 	}
+	ctx.restore();
 
 	ctx.restore();
 }
 
 /**
- * Translates HU value to Russian anatomical tissue label.
+ * Translates HU value to Russian anatomical tissue label per clinical radiological norms (DEF-C08).
+ * Pure soft tissue zone 0..+150 HU is classified as "Мягкие ткани / Слизистая / Хрящ",
+ * ensuring palatal and mucosal probes are not mislabeled as pulp.
  */
 export function getTissueNameFromHU(hu: number): string {
 	if (hu >= 2000) return "Эмаль / Пломбировочный материал";
 	if (hu >= 1000) return "Кортикальная кость / Дентин";
 	if (hu >= 350) return "Трабекулярная губчатая кость";
 	if (hu >= 150) return "Мягкая губчатая кость (D4)";
-	if (hu >= 0) return "Мягкие ткани / Пульпа / Десна";
+	if (hu >= 0) return "Мягкие ткани / Слизистая / Хрящ";
 	if (hu >= -400) return "Жировая клетчатка / Экссудат";
 	return "Воздух / Синус / Дыхательные пути";
+}
+
+/**
+ * Formats a point HU probe measurement with anatomical tissue description.
+ */
+export function formatHuProbe(hu: number, tissueName?: string): string {
+	const tissue = tissueName || getTissueNameFromHU(hu);
+	const sign = hu > 0 ? "+" : "";
+	return `${sign}${Math.round(hu)} HU (${tissue})`;
 }
 
 /**
@@ -648,6 +673,7 @@ export function drawCbctMeasurementRuler(
 	distanceMm: number,
 	isActive = false,
 	selectedHandleIndex: number | null = null,
+	invertColors = false,
 ): void {
 	const dx = endPx.x - startPx.x;
 	const dy = endPx.y - startPx.y;
@@ -659,14 +685,16 @@ export function drawCbctMeasurementRuler(
 	const tickHalfLen = 5;
 
 	ctx.save();
-	const primaryColor = isActive ? "#f59e0b" : "#22d3ee";
+	const primaryColor = isActive
+		? (invertColors ? "#c2410c" : "#f59e0b")
+		: (invertColors ? "#0284c7" : "#22d3ee");
 
 	// 1. Active Amber Halo / Selection Glow when active
 	if (isActive) {
 		ctx.save();
-		ctx.strokeStyle = "rgba(245, 158, 11, 0.35)";
+		ctx.strokeStyle = invertColors ? "rgba(194, 65, 12, 0.4)" : "rgba(245, 158, 11, 0.35)";
 		ctx.lineWidth = 4.5;
-		ctx.shadowColor = "#f59e0b";
+		ctx.shadowColor = invertColors ? "#c2410c" : "#f59e0b";
 		ctx.shadowBlur = 8;
 		ctx.beginPath();
 		ctx.moveTo(startPx.x, startPx.y);
@@ -675,7 +703,10 @@ export function drawCbctMeasurementRuler(
 		ctx.restore();
 	}
 
-	// 2. Main connecting line
+	// 2. Main connecting line with dark halo underlay for WCAG AAA contrast
+	ctx.save();
+	ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
+	ctx.shadowBlur = 4;
 	ctx.strokeStyle = primaryColor;
 	ctx.lineWidth = isActive ? 2.0 : 1.5;
 	ctx.beginPath();
@@ -694,30 +725,31 @@ export function drawCbctMeasurementRuler(
 	ctx.moveTo(endPx.x + nx * tickHalfLen, endPx.y + ny * tickHalfLen);
 	ctx.lineTo(endPx.x - nx * tickHalfLen, endPx.y - ny * tickHalfLen);
 	ctx.stroke();
+	ctx.restore();
 
-	// 5. End anchor handles (start = 0, end = 1) — 6-8px Luminous Glowing Points (#22d3ee / #f59e0b)
+	// 5. End anchor handles (start = 0, end = 1) — 6-8px Luminous Glowing Points
 	const isStartActive = selectedHandleIndex === 0;
 	ctx.save();
-	ctx.shadowColor = isStartActive ? "#f59e0b" : isActive ? "#f59e0b" : "#22d3ee";
+	ctx.shadowColor = isStartActive ? primaryColor : isActive ? primaryColor : (invertColors ? "rgba(0, 0, 0, 0.95)" : "#22d3ee");
 	ctx.shadowBlur = isStartActive ? 8 : 6;
-	ctx.fillStyle = isStartActive ? "#f59e0b" : isActive ? "#f59e0b" : "#22d3ee";
+	ctx.fillStyle = isStartActive ? primaryColor : isActive ? primaryColor : (invertColors ? "#0284c7" : "#22d3ee");
 	ctx.beginPath();
 	ctx.arc(startPx.x, startPx.y, isStartActive ? 4.2 : 3.5, 0, Math.PI * 2);
 	ctx.fill();
-	ctx.strokeStyle = "#ffffff";
+	ctx.strokeStyle = invertColors ? "rgba(0, 0, 0, 0.95)" : "#ffffff";
 	ctx.lineWidth = 1.5;
 	ctx.stroke();
 	ctx.restore();
 
 	const isEndActive = selectedHandleIndex === 1;
 	ctx.save();
-	ctx.shadowColor = isEndActive ? "#f59e0b" : isActive ? "#f59e0b" : "#22d3ee";
+	ctx.shadowColor = isEndActive ? primaryColor : isActive ? primaryColor : (invertColors ? "rgba(0, 0, 0, 0.95)" : "#22d3ee");
 	ctx.shadowBlur = isEndActive ? 8 : 6;
-	ctx.fillStyle = isEndActive ? "#f59e0b" : isActive ? "#f59e0b" : "#22d3ee";
+	ctx.fillStyle = isEndActive ? primaryColor : isActive ? primaryColor : (invertColors ? "#0284c7" : "#22d3ee");
 	ctx.beginPath();
 	ctx.arc(endPx.x, endPx.y, isEndActive ? 4.2 : 3.5, 0, Math.PI * 2);
 	ctx.fill();
-	ctx.strokeStyle = "#ffffff";
+	ctx.strokeStyle = invertColors ? "rgba(0, 0, 0, 0.95)" : "#ffffff";
 	ctx.lineWidth = 1.5;
 	ctx.stroke();
 	ctx.restore();
@@ -729,15 +761,15 @@ export function drawCbctMeasurementRuler(
 
 	ctx.font = "bold 10px monospace";
 	const textWidth = ctx.measureText(distText).width;
-	const badgeW = isActive ? textWidth + 26 : textWidth + 12;
+	const badgeW = isActive ? textWidth + 30 : textWidth + 12;
 	const badgeH = 18;
 
-	// Contrast semi-transparent background (rgba(0, 0, 0, 0.85)) and bright cyan/amber border
+	// Contrast semi-transparent background (rgba(0, 0, 0, 0.88)) and bright cyan/amber border
 	ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
-	ctx.strokeStyle = isActive ? "#f59e0b" : "#22d3ee";
+	ctx.strokeStyle = isActive ? (invertColors ? "#c2410c" : "#f59e0b") : (invertColors ? "#0284c7" : "#22d3ee");
 	ctx.lineWidth = isActive ? 1.5 : 1.0;
 	if (isActive) {
-		ctx.shadowColor = "rgba(245, 158, 11, 0.5)";
+		ctx.shadowColor = invertColors ? "rgba(194, 65, 12, 0.5)" : "rgba(245, 158, 11, 0.5)";
 		ctx.shadowBlur = 6;
 	}
 	ctx.beginPath();
@@ -755,13 +787,11 @@ export function drawCbctMeasurementRuler(
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillText(distText, midX - badgeW / 2 + 5, midY);
+		ctx.fillText(distText, midX - badgeW / 2 + 6, midY);
 
-		// Fast Delete [×] Button Trigger
-		ctx.fillStyle = "#f87171";
-		ctx.font = "bold 11px sans-serif";
-		ctx.textAlign = "right";
-		ctx.fillText("×", midX + badgeW / 2 - 5, midY);
+		// Fast Delete [×] Button Trigger (DEF-D03: 18px diameter round badge with red tint, border #ef4444 and crisp white cross)
+		const delBtnX = midX + badgeW / 2 - 11;
+		drawMeasurementDeleteButton(ctx, delBtnX, midY, 9);
 	} else {
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "center";
@@ -916,7 +946,7 @@ export function drawCbctAngleMeasurement(
 	const angleText = `${angleDeg.toFixed(1)}°`;
 	ctx.font = "bold 10px monospace";
 	const textWidth = ctx.measureText(angleText).width;
-	const badgeW = isActive ? textWidth + 24 : textWidth + 12;
+	const badgeW = isActive ? textWidth + 30 : textWidth + 12;
 	const badgeH = 18;
 
 	// Contrast semi-transparent background (rgba(0, 0, 0, 0.85)) and bright cyan/amber border
@@ -941,12 +971,11 @@ export function drawCbctAngleMeasurement(
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillText(angleText, badgeX - badgeW / 2 + 5, badgeY);
+		ctx.fillText(angleText, badgeX - badgeW / 2 + 6, badgeY);
 
-		ctx.fillStyle = "#f87171";
-		ctx.font = "bold 11px sans-serif";
-		ctx.textAlign = "right";
-		ctx.fillText("×", badgeX + badgeW / 2 - 5, badgeY);
+		// Fast Delete [×] Button Trigger (DEF-D03)
+		const delBtnX = badgeX + badgeW / 2 - 11;
+		drawMeasurementDeleteButton(ctx, delBtnX, badgeY, 9);
 	} else {
 		ctx.fillStyle = "#ffffff";
 		ctx.textAlign = "center";
@@ -1011,7 +1040,7 @@ export function drawCbctProbeMarker(
 	const label = tissueName ? `${hu} HU · ${tissueName}` : `${hu} HU`;
 	ctx.font = "bold 9px monospace";
 	const textWidth = ctx.measureText(label).width;
-	const badgeW = isActive ? textWidth + 24 : textWidth + 8;
+	const badgeW = isActive ? textWidth + 28 : textWidth + 8;
 	const badgeH = 18;
 	const badgeX = posPx.x + 10;
 	const badgeY = posPx.y - 18;
@@ -1039,10 +1068,8 @@ export function drawCbctProbeMarker(
 		ctx.textBaseline = "middle";
 		ctx.fillText(label, badgeX + 4, badgeY + badgeH / 2);
 
-		ctx.fillStyle = "#f87171";
-		ctx.font = "bold 11px sans-serif";
-		ctx.textAlign = "right";
-		ctx.fillText("×", badgeX + badgeW - 4, badgeY + badgeH / 2);
+		const delBtnX = badgeX + badgeW - 10;
+		drawMeasurementDeleteButton(ctx, delBtnX, badgeY + badgeH / 2, 7.5);
 	} else {
 		ctx.fillStyle = "#38bdf8";
 		ctx.textAlign = "left";
@@ -1766,6 +1793,9 @@ export function calculateCrosshairDragWorldMm(
 }
 
 // ─── 5. FORWARDING RE-EXPORTS FOR OBLIQUE MPR ENGINE ────────────────────────
+import { drawObliqueCrosshairWithRotationHandles } from "./cbctObliqueMath";
 export * from "./cbctObliqueMath";
+export const drawMprCrosshair = drawObliqueCrosshairWithRotationHandles;
+export const drawCbctCrosshair = drawObliqueCrosshairWithRotationHandles;
 
 
