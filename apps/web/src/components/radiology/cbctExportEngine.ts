@@ -652,12 +652,12 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
 <style>
   @page {
     size: A4 portrait;
-    margin: 6mm 8mm;
+    margin: 5mm 8mm;
   }
   @media print {
     @page {
       size: A4 portrait;
-      margin: 6mm 8mm;
+      margin: 5mm 8mm;
     }
     html, body {
       background: #ffffff !important;
@@ -667,7 +667,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
       print-color-adjust: exact;
     }
     .cbct-report-page {
-      max-height: 275mm !important;
+      max-height: 260mm !important;
       overflow: hidden !important;
       page-break-inside: avoid !important;
       page-break-after: avoid !important;
@@ -682,15 +682,15 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #1e293b;
     background: #ffffff;
-    font-size: 10.5px;
-    line-height: 1.3;
+    font-size: 10px;
+    line-height: 1.25;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .cbct-report-page {
     width: 100%;
     max-width: 194mm;
-    max-height: 275mm;
+    max-height: 260mm;
     overflow: hidden;
     page-break-inside: avoid;
     margin: 0 auto;
@@ -704,28 +704,28 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .header-table {
     width: 100%;
     border-bottom: 2px solid #0284c7;
-    padding-bottom: 4px;
-    margin-bottom: 6px;
+    padding-bottom: 3px;
+    margin-bottom: 4px;
   }
   .clinic-title {
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 800;
     color: #0f172a;
     letter-spacing: -0.2px;
   }
   .clinic-sub {
-    font-size: 8.5px;
+    font-size: 8px;
     color: #64748b;
   }
   .doc-title {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 800;
     color: #0369a1;
     text-align: right;
     text-transform: uppercase;
   }
   .doc-meta {
-    font-size: 8.5px;
+    font-size: 8px;
     color: #64748b;
     text-align: right;
   }
@@ -738,16 +738,16 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 4px;
-    padding: 4px 8px;
-    margin-bottom: 6px;
+    padding: 3px 6px;
+    margin-bottom: 4px;
   }
   .info-group {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
   }
   .info-item {
-    font-size: 9.5px;
+    font-size: 9px;
   }
   .info-item b {
     color: #0f172a;
@@ -755,16 +755,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .right-badges {
     display: flex;
     align-items: center;
-    gap: 8px;
-  }
-  .toner-badge {
-    background: #f0fdf4;
-    color: #166534;
-    border: 1px solid #bbf7d0;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 8.5px;
-    font-weight: 700;
+    gap: 6px;
   }
   .tooth-pill {
     background: #0284c7;
@@ -772,7 +763,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     padding: 2px 6px;
     border-radius: 3px;
     font-weight: 800;
-    font-size: 10.5px;
+    font-size: 10px;
     letter-spacing: 0.5px;
   }
 
@@ -780,8 +771,8 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .mpr-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 5px;
-    margin-bottom: 6px;
+    gap: 4px;
+    margin-bottom: 4px;
   }
   .mpr-card {
     background: #ffffff;
@@ -789,7 +780,8 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     border-radius: 4px;
     overflow: hidden;
     position: relative;
-    height: 110px;
+    height: 105px;
+    max-height: 105px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -814,61 +806,63 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   }
   .mpr-empty {
     color: #64748b;
-    font-size: 8.5px;
+    font-size: 8px;
     text-align: center;
-    padding: 12px;
+    padding: 10px;
   }
 
   /* Structured Implants Table */
   .table-implants {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9px;
+    font-size: 8.5px;
   }
   .table-implants th {
     background: #f1f5f9;
     color: #334155;
     font-weight: 700;
     text-align: left;
-    padding: 3px 5px;
+    padding: 2px 4px;
     border-bottom: 1px solid #cbd5e1;
     font-size: 8px;
     text-transform: uppercase;
   }
   .table-implants td {
-    padding: 3px 5px;
+    padding: 2px 4px;
     border-bottom: 1px solid #f1f5f9;
     vertical-align: middle;
+    font-size: 8.5px;
   }
   .table-implants tr:nth-child(even) {
     background: #f8fafc;
   }
   .misch-pill {
     display: inline-block;
-    padding: 1px 4px;
+    padding: 1px 3px;
     border-radius: 3px;
     font-weight: 800;
     font-size: 7.5px;
     color: #ffffff;
-    margin-right: 4px;
+    margin-right: 3px;
   }
 
   /* Two Column Data Tables */
   .tables-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin-bottom: 6px;
+    gap: 4px;
+    margin-bottom: 4px;
   }
   .section-box {
     border: 1px solid #e2e8f0;
     border-radius: 4px;
     overflow: hidden;
+    margin-bottom: 4px;
   }
   .section-header {
     background: #f1f5f9;
-    padding: 3px 6px;
-    font-size: 9.5px;
+    padding: 2px 5px;
+    font-size: 9px;
     font-weight: 700;
     color: #1e293b;
     border-bottom: 1px solid #e2e8f0;
@@ -879,14 +873,15 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   .table-clean {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9px;
+    font-size: 8.5px;
   }
   .table-clean tr:nth-child(even) {
     background: #f8fafc;
   }
   .table-clean td {
-    padding: 2px 5px;
+    padding: 2px 4px;
     border-bottom: 1px solid #f1f5f9;
+    font-size: 8.5px;
   }
   .table-clean td:first-child {
     color: #64748b;
@@ -901,9 +896,9 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   /* Nerve & Safety Banner */
   .safety-banner {
     border-radius: 4px;
-    padding: 3px 6px;
-    margin-bottom: 6px;
-    font-size: 9px;
+    padding: 2px 5px;
+    margin-bottom: 4px;
+    font-size: 8.5px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -919,12 +914,12 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 4px;
-    padding: 4px 6px;
-    margin-bottom: 6px;
+    padding: 3px 5px;
+    margin-bottom: 4px;
     font-size: 8.5px;
   }
   .notes-box h4 {
-    font-size: 9px;
+    font-size: 8.5px;
     font-weight: 700;
     color: #0f172a;
     margin-bottom: 2px;
@@ -943,11 +938,11 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     background: #f8fafc;
     border: 1px solid #cbd5e1;
     border-radius: 4px;
-    padding: 5px 8px;
-    margin-bottom: 6px;
+    padding: 3px 6px;
+    margin-bottom: 4px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 9px;
-    line-height: 1.35;
+    font-size: 8.5px;
+    line-height: 1.25;
     color: #334155;
   }
   .diary-header {
@@ -955,75 +950,76 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 3px;
-    margin-bottom: 4px;
+    padding-bottom: 2px;
+    margin-bottom: 2px;
   }
   .diary-title {
-    font-size: 9px;
+    font-size: 8.5px;
     font-weight: 700;
     color: #0f172a;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
   }
   .diary-badge {
     background: #e0f2fe;
     color: #0369a1;
-    font-size: 7.5px;
+    font-size: 7px;
     font-weight: 700;
-    padding: 1px 4px;
+    padding: 1px 3px;
     border-radius: 3px;
     border: 0.5px solid #bae6fd;
     text-transform: uppercase;
   }
   .diary-content {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 9px;
-    line-height: 1.35;
+    font-size: 8.5px;
+    line-height: 1.25;
     color: #334155;
   }
   .diary-section-header {
     font-weight: 700;
     color: #0369a1;
-    margin-top: 3px;
+    margin-top: 2px;
     margin-bottom: 1px;
-    font-size: 9px;
+    font-size: 8.5px;
   }
   .diary-item {
-    padding-left: 10px;
+    padding-left: 8px;
     position: relative;
-    margin-bottom: 1px;
+    margin-bottom: 0.5px;
+    font-size: 8.5px;
   }
   .diary-item::before {
     content: "•";
     position: absolute;
-    left: 2px;
+    left: 1px;
     color: #0284c7;
     font-weight: bold;
   }
   .diary-meta-row {
-    font-size: 8px;
+    font-size: 7.5px;
     color: #64748b;
-    margin-bottom: 2px;
+    margin-bottom: 1.5px;
   }
 
   /* Signatures */
   .sig-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-top: 6px;
-    padding-top: 6px;
+    gap: 12px;
+    margin-top: 4px;
+    padding-top: 4px;
     border-top: 1px dashed #cbd5e1;
-    font-size: 9px;
+    font-size: 8.5px;
   }
   .sig-line {
     border-bottom: 1px solid #94a3b8;
-    margin-top: 12px;
+    margin-top: 8px;
     margin-bottom: 2px;
   }
   .sig-sub {
-    font-size: 8px;
+    font-size: 7.5px;
     color: #64748b;
     display: flex;
     justify-content: space-between;
@@ -1054,7 +1050,6 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
       <div class="info-item">Врач: <b>${escapeHtml(patient.doctorName || "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.")}</b></div>
     </div>
     <div class="right-badges">
-      ${isTonerSaving ? `<div class="toner-badge">Экономия тонера (Smart White Paper Inversion)</div>` : ""}
       <div class="tooth-pill">ЗУБ FDI #${targetToothFdi}</div>
     </div>
   </div>
@@ -1080,7 +1075,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   </div>
 
   <!-- Structured Implants Registry Table -->
-  <div class="section-box" style="margin-bottom: 8px;">
+  <div class="section-box">
     <div class="section-header">
       <span>Структурированная таблица установленных имплантатов</span>
       <span style="font-size: 8.5px; color: #64748b;">Всего запланировано: ${effectiveImplantsTable.length} шт.</span>

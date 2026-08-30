@@ -16,7 +16,9 @@ const BRAIN_DIRS = [
 	"C:/Users/Admin/.gemini/antigravity/brain/f4022228-ba69-42af-8708-1135386fd8c9",
 	"C:/Users/Admin/.gemini/antigravity/brain/f4022228-ba69-42af-8708-1135386fd8c9/.tempmediaStorage",
 	"C:/Users/Admin/.gemini/antigravity/brain/f8c447ec-776f-42c0-8d8e-291582e95013",
-	"C:/Users/Admin/.gemini/antigravity/brain/f8c447ec-776f-42c0-8d8e-291582e95013/.tempmediaStorage"
+	"C:/Users/Admin/.gemini/antigravity/brain/f8c447ec-776f-42c0-8d8e-291582e95013/.tempmediaStorage",
+	"C:/Users/Admin/.gemini/antigravity/brain/654b37a8-de2b-4e6d-b9ef-b1e955a3d010",
+	"C:/Users/Admin/.gemini/antigravity/brain/654b37a8-de2b-4e6d-b9ef-b1e955a3d010/.tempmediaStorage"
 ];
 
 function sleep(ms) {
@@ -159,15 +161,19 @@ async function run() {
 
 	async function restoreGrid() {
 		const restoreBtn = page.locator('[data-testid="cbct-restore-grid-btn"]').first();
-		if (await restoreBtn.isVisible().catch(() => false)) {
-			await restoreBtn.click().catch(() => {});
-			await flushCanvasRender(page, 500);
-		}
+		try {
+			if (await restoreBtn.isVisible().catch(() => false)) {
+				await restoreBtn.click().catch(() => {});
+				await sleep(200);
+				await flushCanvasRender(page, 500);
+			}
+		} catch {}
 	}
 
 	// ─── 01: MAXIMIZED AXIAL ──────────────────────────────────────────────────
 	console.log("[CBCT-E2E] 01: Maximized Axial Viewport...");
 	const maxAxialBtn = page.locator('[data-testid="cbct-maximize-axial-btn"]').first();
+	await maxAxialBtn.waitFor({ state: "visible", timeout: 5000 });
 	await maxAxialBtn.click();
 	await flushCanvasRender(page, 800);
 	await saveShot("01_maximized_axial.png", "Maximized Axial 100% viewport with real dentition and aligned dental arch");
@@ -176,6 +182,7 @@ async function run() {
 	// ─── 02: MAXIMIZED CORONAL ────────────────────────────────────────────────
 	console.log("[CBCT-E2E] 02: Maximized Coronal Viewport...");
 	const maxCoronalBtn = page.locator('[data-testid="cbct-maximize-coronal-btn"]').first();
+	await maxCoronalBtn.waitFor({ state: "visible", timeout: 5000 });
 	await maxCoronalBtn.click();
 	await flushCanvasRender(page, 800);
 	await saveShot("02_maximized_coronal.png", "Maximized Coronal 100% viewport showing incisors, crowns and roots");
@@ -184,6 +191,7 @@ async function run() {
 	// ─── 03: MAXIMIZED SAGITTAL ───────────────────────────────────────────────
 	console.log("[CBCT-E2E] 03: Maximized Sagittal Viewport...");
 	const maxSagittalBtn = page.locator('[data-testid="cbct-maximize-sagittal-btn"]').first();
+	await maxSagittalBtn.waitFor({ state: "visible", timeout: 5000 });
 	await maxSagittalBtn.click();
 	await flushCanvasRender(page, 800);
 	await saveShot("03_maximized_sagittal.png", "Maximized Sagittal 100% viewport showing profile, spine and hard palate");
@@ -296,7 +304,7 @@ async function run() {
 	const autoArchBtn = page.locator('[data-testid="cbct-btn-auto-arch"]').first();
 	await autoArchBtn.click();
 	await flushCanvasRender(page, 800);
-	await saveShot("09_auto_arch_detected.png", "Analytical auto-detected dental arch spline and 16 FDI tooth landmarks");
+	await saveShot("09_auto_arch_detected.png", "Analytical auto-detected dental arch spline and 16 FDI tooth landmarks", { keepToast: true });
 
 	// ─── 10: MANDIBULAR NERVE (IAN) TRACER (MULTI-POINT SPLINE) ───────────────
 	console.log("[CBCT-E2E] 10: Mandibular Nerve (IAN) Tracer...");
@@ -356,13 +364,11 @@ async function run() {
 	await slabToolBtn.click();
 	await sleep(300);
 
-	const slab15Btn = page.locator('[data-testid="cbct-slab-thickness-15"]').first();
+	const slab15Btn = page.locator('[data-testid="cbct-tool-slab-15mm"], [data-testid="cbct-slab-thickness-15"]').first();
 	if (await slab15Btn.isVisible().catch(() => false)) {
 		await slab15Btn.click().catch(() => {});
 	}
-	// Close slab popup by clicking outside
-	const modalHeader = modalContainer.locator("header").first();
-	await modalHeader.click();
+	await page.keyboard.press("Escape");
 	await flushCanvasRender(page, 800);
 	await saveShot("13_slab_mip_15mm.png", "15 mm Maximum Intensity Projection (MIP) volume slab with bounding corridors");
 
@@ -477,8 +483,15 @@ async function run() {
 	if (printPage) {
 		await printPage.waitForLoadState("domcontentloaded");
 		await sleep(800);
+		await printPage.setViewportSize({ width: 1200, height: 1450 });
+		await sleep(400);
 		const outPath = path.join(SCREENSHOT_DIR, "19_printable_pdf_report_white_background.png");
-		await printPage.screenshot({ path: outPath, fullPage: true });
+		const pageEl = await printPage.$(".cbct-report-page");
+		if (pageEl) {
+			await pageEl.screenshot({ path: outPath });
+		} else {
+			await printPage.screenshot({ path: outPath, fullPage: true });
+		}
 
 		for (const brainDir of BRAIN_DIRS) {
 			if (existsSync(brainDir)) {

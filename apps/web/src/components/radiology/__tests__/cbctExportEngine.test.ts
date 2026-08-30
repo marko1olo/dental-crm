@@ -349,7 +349,7 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 		assert.equal(reportData.tonerSavingEnabled, true);
 	});
 
-	it("8. renderCbctReportHtml renders the structured implants table and Smart Toner Saving badge", () => {
+	it("8. renderCbctReportHtml renders the structured implants table and purges technical toner badges", () => {
 		const reportData = buildCbctReportData({
 			patientName: "Васильев М.И.",
 			doctorName: "Д-р Кузнецов",
@@ -396,8 +396,8 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 
 		const html = renderCbctReportHtml(reportData, { tonerSaving: true });
 
-		// Toner Saving Badge
-		assert.ok(html.includes("Экономия тонера (Smart White Paper Inversion)"));
+		// Purge technical English badge from medical blank
+		assert.ok(!html.includes("Smart White Paper Inversion"));
 
 		// Structured Implants Table Title
 		assert.ok(html.includes("Структурированная таблица установленных имплантатов"));
@@ -545,8 +545,7 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 
 		// Proportional medical typography
 		assert.ok(html.includes("font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;"));
-		assert.ok(html.includes("font-size: 9px;"));
-		assert.ok(html.includes("line-height: 1.35;"));
+		assert.ok(html.includes("line-height: 1.25;"));
 		assert.ok(html.includes("diary-card"));
 		assert.ok(html.includes("diary-section-header"));
 		assert.ok(html.includes("diary-item"));
@@ -602,7 +601,7 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 		assert.ok(customAudit.form043DiaryText.includes("Пациент: Иванов И.И. | Клиника: Клиника ДЕНТЕ ПЛЮС | Зуб: FDI #46"));
 	});
 
-	it("12. DEF-19.1: Enforces guaranteed 1-page A4 print layout rules and 110px MPR height", () => {
+	it("12. DEF-19.1: Enforces guaranteed 1-page A4 print layout rules and 105px MPR height", () => {
 		const reportData = buildCbctReportData({
 			patientName: "Барабаш С.В.",
 			targetToothFdi: 46,
@@ -615,27 +614,31 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 
 		const html = renderCbctReportHtml(reportData);
 
-		// A4 print page geometry: margin 6mm 8mm
+		// A4 print page geometry: margin 5mm 8mm
 		assert.ok(html.includes("size: A4 portrait;"));
-		assert.ok(html.includes("margin: 6mm 8mm;"));
+		assert.ok(html.includes("margin: 5mm 8mm;"));
 
 		// Single-page containment CSS
 		assert.ok(html.includes(".cbct-report-page"));
-		assert.ok(html.includes("max-height: 275mm"));
+		assert.ok(html.includes("max-height: 260mm"));
 		assert.ok(html.includes("page-break-inside: avoid"));
 
 		// @media print block
 		assert.ok(html.includes("@media print"));
 
-		// MPR card height reduced from 140px to 110px
-		assert.ok(html.includes("height: 110px;"));
+		// MPR card height fixed at 105px
+		assert.ok(html.includes("height: 105px;"));
+		assert.ok(html.includes("max-height: 105px;"));
 		assert.ok(!html.includes("height: 140px;"));
+
+		// Compact table padding: 2px 4px
+		assert.ok(html.includes("padding: 2px 4px;"));
 
 		// Wrapper element has cbct-report-page class
 		assert.ok(html.includes('<div class="page cbct-report-page">'));
 	});
 
-	it("13. DEF-19.2: Strict medical blank without informal emojis", () => {
+	it("13. DEF-19.2: Strict medical blank without informal emojis or technical toner badges", () => {
 		const audit = performCbctPlanningAudit({
 			toothFdi: 46,
 			implantPose: mockPose,
@@ -666,8 +669,9 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 
 		const html = renderCbctReportHtml(reportData, { tonerSaving: true });
 
-		// Toner badge: clean text
-		assert.ok(html.includes("Экономия тонера (Smart White Paper Inversion)"));
+		// Purge technical English badge from header
+		assert.ok(!html.includes("Smart White Paper Inversion"));
+		assert.ok(!html.includes("Экономия тонера (Smart White Paper Inversion)"));
 		assert.ok(!html.includes("🌱"));
 
 		// Title & Warning: clean text
