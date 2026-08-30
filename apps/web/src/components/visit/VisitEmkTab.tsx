@@ -1152,7 +1152,7 @@ export function VisitEmkTab() {
 			<div className="visit-note-head flex items-center justify-between gap-3 flex-wrap">
 				<div>
 					<p className="eyebrow">ЭМК после диктовки</p>
-					<h3>
+					<h3 style={{ color: "var(--ink)" }}>
 						{draft
 							? "Проверьте черновик"
 							: isVisitNoteDirty
@@ -1168,7 +1168,7 @@ export function VisitEmkTab() {
 						data-testid="btn-schedule-next-stage"
 						title="Записать пациента на следующий этап лечения через 5-7 дней"
 					>
-						<span className="text-base">📅</span>
+						<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/></svg>
 						<span>Записать на след. этап (+5 дней)</span>
 					</button>
 					<button
@@ -1179,7 +1179,7 @@ export function VisitEmkTab() {
 						data-testid="btn-complete-visit-checkout"
 						title="1-клик сохранение дневника Формы 043/у, автоматическая сборка сметы и передача чека на кассу"
 					>
-						<span className="text-base">🏁</span>
+						<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
 						<span>{isCompletingVisit ? "Завершение приёма…" : "Завершить приём и сформировать чек"}</span>
 					</button>
 					<span className={draft || isVisitNoteDirty ? "ready" : ""}>
@@ -1200,7 +1200,7 @@ export function VisitEmkTab() {
 						</div>
 						<div>
 							<div className="text-xs font-bold text-[var(--ok-fg)] uppercase tracking-wider flex items-center gap-1.5">
-								<span>🏁</span>
+								<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
 								<span>Приём завершён • Дневник 043/у зафиксирован</span>
 							</div>
 							<div className="text-sm sm:text-base font-extrabold text-[var(--ink)]">
@@ -1222,7 +1222,7 @@ export function VisitEmkTab() {
 							title="Записать на повторный приём через 5-7 дней"
 						>
 							<Calendar size={16} />
-							<span>📅 След. приём (+5 дней)</span>
+							<span>След. приём (+5 дней)</span>
 						</button>
 						<button
 							type="button"
@@ -1299,15 +1299,26 @@ export function VisitEmkTab() {
 				className="my-2"
 			/>
 
-			{/* Быстрые клинические протоколы SOAP + МКБ-10 (1 клик) */}
-			<ClinicalQuickPresetsBar
-				activeTooth={activeSelectedTooth}
-				onSelectActiveTooth={(tooth) => setActiveSelectedTooth(tooth)}
-				onSelectPreset={(preset, chosenTooth) => handleApplyClinicalSoapPreset(preset, chosenTooth, "clean_replace")}
-				isLocked={Boolean(dashboard?.activeVisit?.status === "signed")}
-				onOpenPriceSearch={() => setIsPriceSearchModalOpen(true)}
-				onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
-			/>
+			{/* Быстрые клинические протоколы SOAP + МКБ-10 (Tier 2 Warm Context Accordion) */}
+			<details className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-2.5 text-xs my-2">
+				<summary className="flex items-center justify-between cursor-pointer font-bold text-xs select-none list-none text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
+					<div className="flex items-center gap-2">
+						<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
+						<span>Экспресс-протоколы SOAP и шаблоны СтАР (1 клик)</span>
+					</div>
+					<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
+				</summary>
+				<div className="pt-2">
+					<ClinicalQuickPresetsBar
+						activeTooth={activeSelectedTooth}
+						onSelectActiveTooth={(tooth) => setActiveSelectedTooth(tooth)}
+						onSelectPreset={(preset, chosenTooth) => handleApplyClinicalSoapPreset(preset, chosenTooth, "clean_replace")}
+						isLocked={Boolean(dashboard?.activeVisit?.status === "signed")}
+						onOpenPriceSearch={() => setIsPriceSearchModalOpen(true)}
+						onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
+					/>
+				</div>
+			</details>
 
 			{/* Компактные 32px вкладки (EMK Tabs) */}
 			<div className="emk-tabs-container flex items-center gap-1.5 flex-wrap my-2 pb-1 border-b border-[var(--line)]" role="tablist">
