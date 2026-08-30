@@ -177,8 +177,9 @@
 .emr043-nav-tabs {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 20px;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 16px;
   background: var(--paper-strong, #ffffff);
   border-bottom: 1px solid var(--glass-border, #e2e8f0);
   overflow-x: auto;
@@ -195,8 +196,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
-  padding: 8px 14px;
+  min-height: 38px;
+  padding: 6px 12px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;

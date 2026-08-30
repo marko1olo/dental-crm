@@ -1069,53 +1069,51 @@ export function SanpinRegisters() {
 						<span>{autoFilling ? "Оформление смены..." : "⚡ 1-Клик Автопилот смены СанПиН"}</span>
 					</button>
 
-					{/* Secondary: + Новый цикл */}
+					{/* Secondary: + Новый цикл (44px Touch Target) */}
 					<button
 						type="button"
 						onClick={() => setIsSterilizationModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
+						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{
-							minHeight: "34px",
-							height: "34px",
-							padding: "0.35rem 0.75rem",
+							minHeight: "44px",
+							padding: "0.4rem 0.85rem",
 							fontSize: "0.8125rem",
 							fontWeight: 600,
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "0.25rem",
+							gap: "0.35rem",
 							whiteSpace: "nowrap",
 						}}
 						data-testid="sanpin-new-cycle-secondary-btn"
 					>
-						<Plus size={14} /> <span>Новый цикл</span>
+						<Plus size={15} /> <span>Новый цикл</span>
 					</button>
 
-					{/* Dropdown: [⋮ Опции СанПиН] */}
+					{/* Dropdown: [⋮ Опции СанПиН] (44px Touch Target) */}
 					<div ref={exportMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
 						<button
 							type="button"
 							onClick={() => setIsExportMenuOpen((prev) => !prev)}
-							className="sanpin-btn sanpin-btn-secondary"
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 							style={{
-								minHeight: "34px",
-								height: "34px",
-								padding: "0.35rem 0.6rem",
+								minHeight: "44px",
+								padding: "0.4rem 0.75rem",
 								fontSize: "0.8125rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								display: "inline-flex",
 								alignItems: "center",
-								gap: "0.25rem",
+								gap: "0.35rem",
 								whiteSpace: "nowrap",
 							}}
 							aria-expanded={isExportMenuOpen}
 							title="Опции СанПиН: Закрытие смены, пакетный расчет, сшивы, ЭЦП и экспорт"
 							data-testid="sanpin-options-dropdown-btn"
 						>
-							<MoreVertical size={14} color="var(--brand-primary, #2563eb)" />
+							<MoreVertical size={15} color="var(--brand-primary, #2563eb)" />
 							<span>Опции</span>
-							<ChevronDown size={12} style={{ transform: isExportMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+							<ChevronDown size={13} style={{ transform: isExportMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
 						</button>
 
 						{isExportMenuOpen && (
@@ -1408,9 +1406,9 @@ export function SanpinRegisters() {
 				</div>
 			</div>
 
-			{/* Segmented Category & Tab Switcher (Miller's Law 7±2) */}
-			<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))", paddingBottom: "0.35rem" }}>
-				{/* 1. Category Switcher (3 Categories) */}
+			{/* Segmented Category & Tab Switcher (Miller's Law 7±2, 44px Touch Targets, Clean Interval) */}
+			<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))", paddingBottom: "0.5rem" }}>
+				{/* 1. Category Switcher (3 Categories with gap-2 and 44px touch target) */}
 				<div className="sanpin-category-nav" role="tablist" aria-label="Категории журналов СанПиН">
 					{SANPIN_CATEGORIES.map((cat) => {
 						const Icon = cat.icon;
@@ -1421,16 +1419,26 @@ export function SanpinRegisters() {
 								type="button"
 								role="tab"
 								aria-selected={isActive}
-								className={`sanpin-category-btn ${isActive ? "active" : ""}`}
+								className={`sanpin-category-btn touch-manipulation ${isActive ? "active" : ""}`}
+								style={{
+									minHeight: "44px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "0.5rem", // gap-2 to prevent sticky badge (Стерилизация 4)
+									padding: "0.4rem 0.85rem",
+									borderRadius: "8px",
+									cursor: "pointer",
+								}}
 								onClick={() => handleSelectCategory(cat.id)}
 								data-testid={`category-tab-${cat.id}`}
 							>
-								<Icon size={14} color={isActive ? "var(--teal-600, #0d9488)" : "currentColor"} />
-								<span>{cat.shortLabel}</span>
+								<Icon size={16} color={isActive ? "var(--teal-600, #0d9488)" : "currentColor"} />
+								<span className="font-semibold text-xs">{cat.shortLabel}</span>
 								<span
 									style={{
-										fontSize: "0.68rem",
-										padding: "0.1rem 0.35rem",
+										marginLeft: "0.25rem",
+										fontSize: "0.75rem",
+										padding: "0.15rem 0.45rem",
 										borderRadius: "9999px",
 										background: isActive ? "rgba(13, 148, 136, 0.15)" : "rgba(148, 163, 184, 0.15)",
 										color: isActive ? "var(--teal-600, #0d9488)" : "var(--muted, #64748b)",
@@ -1446,10 +1454,10 @@ export function SanpinRegisters() {
 
 				{/* 2. Sub-Tabs of Active Category */}
 				<div
-					className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 touch-pan-x min-w-0"
+					className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 touch-pan-x min-w-0"
 					style={{
 						display: "flex",
-						gap: "0.25rem",
+						gap: "0.35rem",
 						alignItems: "center",
 						overflowX: "auto",
 						whiteSpace: "nowrap",
@@ -1464,19 +1472,18 @@ export function SanpinRegisters() {
 								key={tab.id}
 								type="button"
 								onClick={() => handleSelectTab(tab.id)}
-								className={`sanpin-tab-btn ${isActive ? "active" : ""}`}
+								className={`sanpin-tab-btn touch-manipulation ${isActive ? "active" : ""}`}
 								style={{
-									minHeight: "28px",
-									height: "28px",
-									padding: "0.2rem 0.55rem",
-									fontSize: "0.75rem",
+									minHeight: "36px",
+									padding: "0.35rem 0.75rem",
+									fontSize: "0.78rem",
 									fontWeight: isActive ? 700 : 600,
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "0.25rem",
+									gap: "0.35rem",
 									flexShrink: 0,
 									cursor: "pointer",
-									borderRadius: "0.375rem",
+									borderRadius: "0.5rem",
 									border: "1px solid",
 									borderColor: isActive ? "var(--teal-600, #0d9488)" : "transparent",
 									background: isActive ? "var(--teal-600, #0d9488)" : "transparent",
@@ -1485,7 +1492,7 @@ export function SanpinRegisters() {
 								}}
 								data-testid={`tab-${tab.id}-btn`}
 							>
-								<Icon size={13} color={isActive ? "#ffffff" : "currentColor"} />
+								<Icon size={14} color={isActive ? "#ffffff" : "currentColor"} />
 								<span>{tab.shortLabel}</span>
 							</button>
 						);

@@ -509,11 +509,11 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 					</header>
 
 					{/* ── Навигационные вкладки ── */}
-					<nav className="emr043-nav-tabs" style={{ flexWrap: "nowrap", overflowX: "auto", width: "100%", padding: "8px 20px", gap: "6px" }}>
+					<nav className="emr043-nav-tabs" style={{ flexWrap: "wrap", width: "100%", padding: "8px 16px", gap: "6px" }}>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "overview" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("overview")}
 						>
 							<FileText className="w-4 h-4" />
@@ -522,7 +522,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "passport" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("passport")}
 						>
 							<User className="w-4 h-4" />
@@ -531,7 +531,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "anamnesis" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("anamnesis")}
 						>
 							<HeartPulse className="w-4 h-4" />
@@ -540,7 +540,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "odontogram" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("odontogram")}
 						>
 							<Activity className="w-4 h-4" />
@@ -549,7 +549,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "diaries" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("diaries")}
 						>
 							<Calendar className="w-4 h-4" />
@@ -559,7 +559,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "epicrisis" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "8px 16px" }}
+							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("epicrisis")}
 						>
 							<Award className="w-4 h-4" />

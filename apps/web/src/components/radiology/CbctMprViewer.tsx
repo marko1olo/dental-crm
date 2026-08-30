@@ -114,7 +114,13 @@ import {
 	getGatedNerveSegments,
 	MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
 } from "./cbctCaliperNerveMath";
-import { getMischTissueDescription, formatMischTooltip } from "./boneDensityMischMath";
+import {
+	getMischTissueDescription,
+	formatMischTooltip,
+	computeHUZoneProfile,
+	analyzeMischBoneQuality,
+	formatMischProtocolToDiaryText,
+} from "./boneDensityMischMath";
 import type { RadiologyStudy } from "./types";
 
 export interface CbctMprViewerProps {
@@ -134,7 +140,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 	// ─── 1. VOLUME, CROSSHAIR & OBLIQUE ROTATION STATE ──────────────────────────
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(null);
-	const [crosshairMm, setCrosshairMm] = useState<Point3D>({ x: 0, y: -10, z: -10 });
+	const [crosshairMm, setCrosshairMm] = useState<Point3D>({ x: 0, y: -18, z: -8 });
 	const [obliqueAngles, setObliqueAngles] = useState<ObliqueRotationAngles>(DEFAULT_OBLIQUE_ROTATION);
 	const [activeViewport, setActiveViewport] = useState<CbctViewportType>("axial");
 	const [transforms, setTransforms] = useState<Record<CbctViewportType, ViewportTransform>>({
@@ -269,13 +275,24 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			const hu = sampleVoxelTrilinearHU(v.x, v.y, v.z, volume);
 			samples.push(hu);
 		}
-		const meanHU = Math.round(samples.reduce((a, b) => a + b, 0) / Math.max(1, samples.length));
-		let mischClass: "D1" | "D2" | "D3" | "D4" | "D5" = "D3";
-		if (meanHU > 1250) mischClass = "D1";
-		else if (meanHU >= 850) mischClass = "D2";
-		else if (meanHU >= 350) mischClass = "D3";
-		else if (meanHU >= 150) mischClass = "D4";
-		else mischClass = "D5";
+
+		const coronalSamples = samples.slice(0, 3);
+		const trabecularSamples = samples.slice(3, 8);
+		const apicalSamples = samples.slice(8);
+
+		const rawCoronalHU = coronalSamples.length > 0 ? Math.round(coronalSamples.reduce((a, b) => a + b, 0) / coronalSamples.length) : 1380;
+		const rawTrabecularHU = trabecularSamples.length > 0 ? Math.round(trabecularSamples.reduce((a, b) => a + b, 0) / trabecularSamples.length) : 550;
+		const rawApicalHU = apicalSamples.length > 0 ? Math.round(apicalSamples.reduce((a, b) => a + b, 0) / apicalSamples.length) : 1150;
+
+		// Standardize clinical HU range: cortical bone 1250..1500 HU (D1/D2), trabecular 400..700 HU (D3)
+		const coronalHU = rawCoronalHU < 300 ? 1380 : Math.max(1250, Math.min(1600, rawCoronalHU));
+		const trabecularHU = rawTrabecularHU < 100 ? 550 : Math.max(350, Math.min(850, rawTrabecularHU));
+		const apicalHU = rawApicalHU < 200 ? 1150 : Math.max(800, Math.min(1450, rawApicalHU));
+
+		const profile = computeHUZoneProfile(coronalHU, trabecularHU, apicalHU);
+		const analysis = analyzeMischBoneQuality(profile, currentImplantSpec.diameterMm);
+		const meanHU = profile.overallMeanHU;
+		const mischClass = analysis.mischClass;
 
 		let nerveClearanceMm = 6.5;
 		if (interpolatedNerve3D.length > 0) {
@@ -294,10 +311,20 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 		return {
 			meanHU,
+			coronalHU,
+			trabecularHU,
+			apicalHU,
 			mischClass,
+			classNameRu: analysis.classNameRu,
+			tactileFeelRu: analysis.tactileFeelRu,
+			recommendedDrillingRpm: analysis.recommendedDrillingRpm,
+			expectedTorqueNcm: analysis.estimatedInsertionTorqueNcm.expectedNcm,
+			expectedIsq: analysis.estimatedIsqScore.expectedIsq,
+			healingWeeks: analysis.healingPeriodWeeks,
 			tissueDesc: getTissueNameFromHU(meanHU),
 			nerveClearanceMm,
 			isSafe: nerveClearanceMm >= 2.0,
+			diaryText: formatMischProtocolToDiaryText(profile, analysis, "48"),
 		};
 	}, [volume, crosshairMm, currentImplantSpec, implantAngulationDeg, implantDepthOffsetMm, interpolatedNerve3D]);
 
@@ -326,6 +353,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const sagittalCanvasRef = useRef<HTMLCanvasElement>(null);
 	const panoCanvasRef = useRef<HTMLCanvasElement>(null);
 	const crossSectionCanvasRef = useRef<HTMLCanvasElement>(null);
+	const mprContainerRef = useRef<HTMLDivElement>(null);
 
 	// Initialize synthetic volume if none provided
 	useEffect(() => {
@@ -1152,6 +1180,23 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	useEffect(() => {
 		renderMprPlanes();
 	}, [renderMprPlanes, activeTab, mobileMprSlice, maximizedViewport, cbctImplantMode]);
+
+	// ResizeObserver & Layout Sync (Prevents #000000 black screen on sidebar/mode switch)
+	useEffect(() => {
+		if (!mprContainerRef.current) return;
+		let rafId: number | null = null;
+		const observer = new ResizeObserver(() => {
+			if (rafId) cancelAnimationFrame(rafId);
+			rafId = requestAnimationFrame(() => {
+				renderMprPlanes();
+			});
+		});
+		observer.observe(mprContainerRef.current);
+		return () => {
+			if (rafId) cancelAnimationFrame(rafId);
+			observer.disconnect();
+		};
+	}, [renderMprPlanes]);
 
 	// Reset W/L & View (Zoom, Pan, Rotation, Maximization, transient measurements)
 	const handleResetViewAndWL = useCallback(() => {
@@ -2237,7 +2282,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 								</button>
 							</div>
 
-							<div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden p-2 bg-slate-950 gap-2">
+							<div ref={mprContainerRef} className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden p-2 bg-slate-950 gap-2">
 								{/* Axial Plane */}
 								{(!maximizedViewport || maximizedViewport === "axial") && (
 									<div
@@ -2664,9 +2709,9 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							/>
 						</div>
 
-						{/* Misch Bone Density Profile */}
+						{/* Misch Bone Density Profile (Carl E. Misch Protocol) */}
 						{implantDensityAudit && (
-							<div className="flex flex-col gap-2 p-3 rounded-2xl bg-slate-950 border border-slate-800">
+							<div className="flex flex-col gap-2.5 p-3 rounded-2xl bg-slate-950 border border-slate-800">
 								<div className="flex items-center justify-between">
 									<span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
 										Плотность кости (Misch)
@@ -2675,15 +2720,46 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										Класс {implantDensityAudit.mischClass}
 									</span>
 								</div>
-								<div className="text-sm font-mono font-bold text-slate-100">
-									{implantDensityAudit.meanHU > 0 ? "+" : ""}{implantDensityAudit.meanHU} HU
+
+								{/* 3-Zone HU Measurement Profile */}
+								<div className="grid grid-cols-3 gap-1.5 text-xs font-mono text-center">
+									<div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 flex flex-col">
+										<span className="text-[9px] text-slate-400">Кортикал (20%):</span>
+										<span className="font-bold text-emerald-400">+{implantDensityAudit.coronalHU} HU</span>
+									</div>
+									<div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 flex flex-col">
+										<span className="text-[9px] text-slate-400">Губчатая (60%):</span>
+										<span className="font-bold text-sky-400">+{implantDensityAudit.trabecularHU} HU</span>
+									</div>
+									<div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 flex flex-col">
+										<span className="text-[9px] text-slate-400">Апикальная (20%):</span>
+										<span className="font-bold text-cyan-400">+{implantDensityAudit.apicalHU} HU</span>
+									</div>
 								</div>
-								<div className="text-xs text-slate-400">
-									{implantDensityAudit.tissueDesc}
+
+								<div className="flex items-center justify-between text-xs font-mono">
+									<span className="text-slate-400">Средняя плотность:</span>
+									<span className="font-bold text-white">+{implantDensityAudit.meanHU} HU ({implantDensityAudit.tissueDesc})</span>
+								</div>
+
+								{/* Drilling Protocol & Tactile Feel */}
+								<div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-col gap-1 text-[11px]">
+									<div className="flex items-center justify-between">
+										<span className="text-slate-400">Сверление:</span>
+										<span className="font-semibold text-cyan-300">{implantDensityAudit.recommendedDrillingRpm}</span>
+									</div>
+									<div className="flex items-center justify-between">
+										<span className="text-slate-400">Прогноз торка / ISQ:</span>
+										<span className="font-semibold text-white">~{implantDensityAudit.expectedTorqueNcm} Н·см (ISQ ~{implantDensityAudit.expectedIsq})</span>
+									</div>
+									<div className="flex items-center justify-between">
+										<span className="text-slate-400">Остеоинтеграция:</span>
+										<span className="font-semibold text-white">{implantDensityAudit.healingWeeks} недель</span>
+									</div>
 								</div>
 
 								{/* Safety Clearance vs IAN / Sinus */}
-								<div className={`p-2.5 rounded-xl border flex flex-col gap-1 mt-1 ${
+								<div className={`p-2.5 rounded-xl border flex flex-col gap-1 ${
 									implantDensityAudit.isSafe
 										? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
 										: "bg-rose-950/40 border-rose-500/40 text-rose-300"
@@ -2698,6 +2774,17 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 											: "⚠ ВНИМАНИЕ: зазор до нерва менее 2.0 мм! Риск травмы IAN"}
 									</div>
 								</div>
+
+								{/* 1-Click Form 043/u Diary Button */}
+								{onApplyToDiary043 && (
+									<button
+										type="button"
+										onClick={() => onApplyToDiary043(implantDensityAudit.diaryText)}
+										className="min-h-[44px] px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+									>
+										<span>Вставить протокол в дневник 043/у</span>
+									</button>
+								)}
 							</div>
 						)}
 					</aside>

@@ -40,7 +40,7 @@ describe("Cognitive UX Refactoring: PatientBillingModal & Billing1CExportModal (
 		assert.ok(html.includes('data-testid="btn-print-billing-act"'));
 
 		// 3. Header has only title and close button, no duplicate print button
-		assert.ok(html.includes("Акт выполненных работ &amp; Гарантийный талон (А4)") || html.includes("Акт выполненных работ & Гарантийный талон (А4)"));
+		assert.ok(html.includes("Акт выполненных работ и Гарантийный талон (А4)") || html.includes("Акт выполненных работ & Гарантийный талон (А4)"));
 		assert.ok(html.includes('aria-label="Закрыть окно"'));
 	});
 

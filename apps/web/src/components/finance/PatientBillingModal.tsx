@@ -275,7 +275,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
 								<h3 className="text-lg font-bold text-slate-900 dark:text-white break-words m-0 leading-tight">
-									<span className="hidden sm:inline">Акт выполненных работ & Гарантийный талон (А4)</span>
+									<span className="hidden sm:inline">Акт выполненных работ и Гарантийный талон (А4)</span>
 									<span className="sm:hidden">Акт выполненных работ</span>
 								</h3>
 								<span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0 whitespace-nowrap">

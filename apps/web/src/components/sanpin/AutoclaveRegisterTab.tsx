@@ -652,74 +652,102 @@ export function AutoclaveRegisterTab() {
 							filteredLogs.map((log) => {
 								const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
 								return (
-									<tr key={log.id} style={{ minHeight: "56px" }}>
+									<tr key={log.id} style={{ height: "38px" }}>
 										<td>
-											<div style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--ink)" }}>
-												Цикл №{log.cycleNumber}
-											</div>
-											<div style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "2px" }}>
-												{new Date(log.timestamp).toLocaleString("ru-RU", {
-													day: "2-digit",
-													month: "2-digit",
-													year: "2-digit",
-													hour: "2-digit",
-													minute: "2-digit",
-												})}
+											<div style={{ display: "flex", alignItems: "center", gap: "0.35rem", whiteSpace: "nowrap" }}>
+												<span style={{ fontWeight: 700, fontSize: "0.825rem", color: "var(--ink)" }}>
+													№{log.cycleNumber}
+												</span>
+												<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+													{new Date(log.timestamp).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" })}{" "}
+													{new Date(log.timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+												</span>
 											</div>
 										</td>
 
-										<td style={{ fontWeight: 600, fontSize: "0.875rem" }}>
-											<div>{log.deviceName}</div>
-											{log.serialNumber && (
-												<div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
-													Зав. №{log.serialNumber}
-												</div>
-											)}
+										<td>
+											<div
+												className="truncate max-w-[140px]"
+												style={{ fontWeight: 600, fontSize: "0.8125rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+												title={`${log.deviceName}${log.serialNumber ? ` (Зав. №${log.serialNumber})` : ""}`}
+											>
+												{log.deviceName}
+											</div>
 										</td>
 
-										<td style={{ fontSize: "0.875rem", maxWidth: "220px" }}>
-											<div style={{ fontWeight: 500 }}>{log.itemsDescription || "Стоматологический набор"}</div>
+										<td>
+											<div
+												className="truncate max-w-[200px]"
+												style={{
+													fontSize: "0.8125rem",
+													fontWeight: 500,
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+													whiteSpace: "nowrap",
+													maxWidth: "200px",
+												}}
+												title={log.itemsDescription || "Стоматологический набор"}
+											>
+												{log.itemsDescription || "Стоматологический набор"}
+											</div>
 										</td>
 
-										<td style={{ fontSize: "0.85rem", color: "var(--ink)" }}>
-											{log.packagingType === "kraft_heat_sealed"
-												? "Крафт термосварной (365 дн)"
-												: log.packagingType === "kraft_self_adhesive"
-													? "Крафт самоклеящийся (50 сут)"
-													: log.packagingType === "laminated_heat_sealed"
-														? "Ламинированный пакет (180 дн)"
-														: log.packagingType === "metal_cassette"
-															? "Металл. кассета (72 ч)"
-															: log.packagingType === "bix_filter"
-																? "Бикс с фильтром (20 сут)"
-																: "Без упаковки (вскрыть сразу)"}
+										<td>
+											<div
+												className="truncate max-w-[140px]"
+												style={{ fontSize: "0.775rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+												title={
+													log.packagingType === "kraft_heat_sealed"
+														? "Крафт термосварной (365 дн)"
+														: log.packagingType === "kraft_self_adhesive"
+															? "Крафт самоклеящийся (50 сут)"
+															: log.packagingType === "laminated_heat_sealed"
+																? "Ламинированный пакет (180 дн)"
+																: log.packagingType === "metal_cassette"
+																	? "Металл. кассета (72 ч)"
+																	: log.packagingType === "bix_filter"
+																		? "Бикс с фильтром (20 сут)"
+																		: "Без упаковки (вскрыть сразу)"
+												}
+											>
+												{log.packagingType === "kraft_heat_sealed"
+													? "Крафт термосварной"
+													: log.packagingType === "kraft_self_adhesive"
+														? "Крафт самоклейка"
+														: log.packagingType === "laminated_heat_sealed"
+															? "Ламинир. пакет"
+															: log.packagingType === "metal_cassette"
+																? "Металл. кассета"
+																: log.packagingType === "bix_filter"
+																	? "Бикс с фильтром"
+																	: "Без упаковки"}
+											</div>
 										</td>
 
-										<td style={{ fontSize: "0.875rem" }}>
-											<span style={{ fontWeight: 700, color: "var(--ink)" }}>
-												{log.temperatureCelsius || 134}°C
-											</span>
-											{log.pressureBar && (
-												<span style={{ color: "var(--muted)", fontWeight: 500 }}> / {log.pressureBar} бар</span>
-											)}
-											{log.durationMin && (
-												<span style={{ color: "var(--muted)", fontWeight: 500 }}> / {log.durationMin} мин</span>
-											)}
+										<td>
+											<div style={{ fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
+												<span style={{ fontWeight: 700, color: "var(--ink)" }}>
+													{log.temperatureCelsius || 134}°C
+												</span>
+												<span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>
+													{" "}/ {log.pressureBar || 2.1}б / {log.durationMin || 5}м
+												</span>
+											</div>
 										</td>
 
 										<td>
 											{log.passedIndicator ? (
-												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
-													<CheckCircle2 size={14} /> {log.indicatorType === "class5_integrating" ? "Класс 5 (Норма)" : log.indicatorType === "class6_emulating" ? "Класс 6 (Эмулятор)" : log.indicatorType === "class4_multivariable" ? "Класс 4 (Многопарам.)" : log.indicatorType || "Класс 5"}
+												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap" }}>
+													<CheckCircle2 size={12} /> {log.indicatorType === "class5_integrating" ? "Класс 5" : log.indicatorType === "class6_emulating" ? "Класс 6" : log.indicatorType || "Класс 5"}
 												</span>
 											) : (
-												<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
-													<XCircle size={14} /> Не сработал (!)
+												<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap" }}>
+													<XCircle size={12} /> Брак
 												</span>
 											)}
 										</td>
 
-										<td style={{ fontSize: "0.85rem", whiteSpace: "nowrap", minWidth: "120px" }}>
+										<td style={{ fontSize: "0.8rem", whiteSpace: "nowrap" }}>
 											{log.expiresAt ? (
 												<span style={{ fontWeight: 600, color: "#059669" }}>
 													{new Date(log.expiresAt).toLocaleDateString("ru-RU")}
@@ -730,67 +758,65 @@ export function AutoclaveRegisterTab() {
 										</td>
 
 										<td>
-											{log.status === "passed" ? (
-												<div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-													<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.825rem", width: "fit-content" }}>
+											<div style={{ display: "flex", alignItems: "center", gap: "0.3rem", whiteSpace: "nowrap" }}>
+												{log.status === "passed" ? (
+													<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}>
 														Стерильно
 													</span>
-													{log.barcode && (
-														<span style={{ fontSize: "0.8rem", fontFamily: "monospace", color: "var(--muted)", fontWeight: 600 }}>
-															{log.barcode}
-														</span>
-													)}
-												</div>
-											) : (
-												<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.825rem" }}>
-													БРАК / КАРАНТИН
-												</span>
-											)}
+												) : (
+													<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}>
+														БРАК
+													</span>
+												)}
+												{log.barcode && (
+													<span style={{ fontSize: "0.75rem", fontFamily: "monospace", color: "var(--muted)", fontWeight: 600 }}>
+														{log.barcode.slice(-6)}
+													</span>
+												)}
+											</div>
 										</td>
 
 										<td>
-											<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-												<div style={{ fontSize: "0.85rem", fontWeight: 600 }}>
-													{log.operatorName || "Медсестра ЦСО"}
-												</div>
+											<div style={{ display: "flex", alignItems: "center", gap: "0.3rem", whiteSpace: "nowrap" }}>
+												<span className="truncate max-w-[85px]" style={{ fontSize: "0.775rem", fontWeight: 600 }} title={log.operatorName || "Медсестра"}>
+													{log.operatorName || "Медсестра"}
+												</span>
 
-												<div style={{ display: "flex", gap: "0.35rem", alignItems: "center", flexWrap: "wrap" }}>
-													{isStamped ? (
-														<span className="sanpin-badge-gov" style={{ fontSize: "0.8rem", padding: "0.2rem 0.5rem" }}>
-															<CheckCircle2 size={13} /> ЭЦП проставлена
-														</span>
-													) : (
-														<button
-															type="button"
-															onClick={() => handleStampVerification(log.id)}
-															className="sanpin-btn sanpin-btn-secondary"
-															style={{ minHeight: "44px", minWidth: "44px", padding: "0.3rem 0.6rem", fontSize: "0.825rem" }}
-															title="Поставить штамп заверки медсестры"
-														>
-															<Award size={14} color="var(--brand-primary)" /> Заверить
-														</button>
-													)}
-
+												{isStamped ? (
+													<span className="sanpin-badge-gov" style={{ minHeight: "22px", fontSize: "0.7rem", padding: "0.1rem 0.35rem" }}>
+														<CheckCircle2 size={11} /> ЭЦП
+													</span>
+												) : (
 													<button
 														type="button"
-														onClick={() => openKraftForLog(log)}
+														onClick={() => handleStampVerification(log.id)}
 														className="sanpin-btn sanpin-btn-secondary"
-														style={{ minHeight: "44px", padding: "0.3rem 0.65rem", fontSize: "0.825rem", color: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}
-														title="Сформировать партию термоэтикеток крафт-пакетов в студии"
+														style={{ minHeight: "24px", height: "24px", padding: "0.1rem 0.4rem", fontSize: "0.725rem", cursor: "pointer" }}
+														title="Поставить штамп заверки медсестры"
 													>
-														<QrCode size={14} /> Маркировка
+														<Award size={12} color="var(--brand-primary)" /> Заверить
 													</button>
+												)}
 
-													<button
-														type="button"
-														onClick={() => handlePrintSinglePouch(log)}
-														className="sanpin-btn sanpin-btn-secondary"
-														style={{ minHeight: "44px", minWidth: "44px", padding: "0.3rem 0.6rem", fontSize: "0.825rem" }}
-														title="Быстрая печать термоэтикетки (58x40 мм / DataMatrix)"
-													>
-														<Tag size={14} />
-													</button>
-												</div>
+												<button
+													type="button"
+													onClick={() => openKraftForLog(log)}
+													className="sanpin-btn sanpin-btn-secondary"
+													style={{ minHeight: "24px", height: "24px", padding: "0.1rem 0.4rem", fontSize: "0.725rem", color: "var(--brand-primary)", cursor: "pointer" }}
+													title="Сформировать партию термоэтикеток крафт-пакетов в студии"
+												>
+													<QrCode size={12} />
+												</button>
+
+												<button
+													type="button"
+													onClick={() => handlePrintSinglePouch(log)}
+													className="sanpin-btn sanpin-btn-secondary"
+													style={{ minHeight: "24px", height: "24px", width: "24px", padding: "0", fontSize: "0.725rem", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+													title="Быстрая печать термоэтикетки (58x40 мм / DataMatrix)"
+												>
+													<Tag size={12} />
+												</button>
 											</div>
 										</td>
 									</tr>

@@ -102,7 +102,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 min-w-0">
 					{/* Category Selector Tabs */}
 					<div
-						className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 shrink-0 gap-1"
+						className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 shrink-0 gap-2"
 						role="tablist"
 						aria-label="Категория ролей матрицы доступа"
 						data-testid="rbac-category-switcher"
@@ -112,14 +112,14 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							role="tab"
 							aria-selected={activeCategory === "clinical"}
 							onClick={() => handleCategoryChange("clinical")}
-							className={`px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation ${
+							className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer touch-manipulation ${
 								activeCategory === "clinical"
 									? "bg-white dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 shadow-xs border border-slate-200 dark:border-teal-700/60"
 									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
 							}`}
 							data-testid="rbac-category-clinical"
 						>
-							<Shield className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+							<Shield className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span>Клинический блок (4)</span>
 						</button>
 						<button
@@ -127,20 +127,20 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							role="tab"
 							aria-selected={activeCategory === "administrative"}
 							onClick={() => handleCategoryChange("administrative")}
-							className={`px-3 py-1.5 min-h-[34px] rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation ${
+							className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer touch-manipulation ${
 								activeCategory === "administrative"
 									? "bg-white dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 shadow-xs border border-slate-200 dark:border-teal-700/60"
 									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
 							}`}
 							data-testid="rbac-category-administrative"
 						>
-							<ShieldCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+							<ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span>Административный блок (4)</span>
 						</button>
 					</div>
 
 					{/* Module Filter Dropdown */}
-					<div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+					<div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
 						<label
 							htmlFor="rbac-module-filter"
 							className="text-xs font-semibold text-slate-700 dark:text-slate-300 shrink-0"
@@ -151,7 +151,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							id="rbac-module-filter"
 							value={selectedModuleFilter}
 							onChange={(e) => setSelectedModuleFilter(e.target.value)}
-							className="px-2.5 py-1.5 h-9 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer"
+							className="px-3 py-2 h-11 min-h-[44px] rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer touch-manipulation"
 							aria-label="Фильтр по функциональному модулю"
 						>
 							<option value="all">Все модули (22)</option>
@@ -169,9 +169,9 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 					</div>
 				</div>
 
-				{/* Level 2: Role Selector Tabs with Flex-Wrap (Zero Truncation Guarantee for 'Старший администратор') */}
+				{/* Level 2: Role Selector Tabs with Flex-Wrap (Zero Truncation Guarantee for 'Старший администратор' + 44px Touch Targets) */}
 				<div
-					className="flex flex-wrap items-center gap-1.5 py-0.5 min-w-0"
+					className="flex flex-wrap items-center gap-2 py-1 min-w-0"
 					role="tablist"
 					aria-label="Выбор роли для матрицы доступа"
 					data-testid="rbac-roles-scroll-strip"
@@ -187,7 +187,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 								role="tab"
 								aria-selected={isSelected}
 								onClick={() => handleRoleSelect(roleKey)}
-								className={`px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-semibold transition-all text-center whitespace-nowrap border cursor-pointer touch-manipulation flex items-center justify-center ${
+								className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-semibold transition-all text-center whitespace-nowrap border cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 ${
 									isSelected
 										? "bg-teal-500/15 dark:bg-teal-500/25 text-teal-800 dark:text-teal-200 border-teal-500/60 dark:border-teal-500 shadow-xs font-bold ring-1 ring-teal-500/40"
 										: "bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200/80 dark:hover:bg-slate-700"
@@ -202,7 +202,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 			</div>
 
 			{/* ACTIVE ROLE SUMMARY STRIP: Full Description without collision with P&L Isolation Badge */}
-			<div className="py-2 px-3 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 min-w-0 text-xs">
+			<div className="py-2.5 px-3.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 min-w-0 text-xs">
 				<div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
 					<div className="flex items-center gap-1.5 shrink-0">
 						<span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
@@ -296,33 +296,33 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 					return (
 						<div
 							key={`mobile-${perm.key}`}
-							className="p-2.5 flex flex-col gap-1 min-w-0 hover:bg-slate-50 dark:hover:bg-slate-800/30"
+							className="p-3 flex flex-col gap-2 min-w-0 hover:bg-slate-50 dark:hover:bg-slate-800/30 touch-manipulation"
 							data-testid={`perm-card-mobile-${perm.key}`}
 						>
-							<div className="flex items-start justify-between gap-2 min-w-0">
+							<div className="flex items-center justify-between gap-2 min-w-0">
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-1.5 flex-wrap">
 										<span className="font-bold text-xs text-slate-900 dark:text-white break-words">
 											{perm.title}
 										</span>
-										<span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+										<span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
 											{perm.module}
 										</span>
 									</div>
 								</div>
 								<span
-									className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${badge.badgeClass} ${badge.borderClass}`}
+									className={`shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg text-xs font-bold border touch-manipulation ${badge.badgeClass} ${badge.borderClass}`}
 									data-testid={`perm-badge-mobile-${perm.key}-${level}`}
 								>
 									{hasAccess ? (
-										<Check size={10} className="stroke-[3]" />
+										<Check size={14} className="stroke-[3]" />
 									) : (
-										<ShieldAlert size={10} />
+										<ShieldAlert size={14} />
 									)}
 									<span>{badge.label}</span>
 								</span>
 							</div>
-							<p className="text-[11px] text-slate-600 dark:text-slate-400 m-0 leading-tight break-words min-w-0">
+							<p className="text-xs text-slate-600 dark:text-slate-400 m-0 leading-normal break-words min-w-0">
 								{perm.description}
 							</p>
 						</div>

@@ -206,7 +206,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
   return (
     <div
-      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink,#0f172a)] pb-32 ${className}`.trim()}
+      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink,#0f172a)] pb-36 ${className}`.trim()}
       data-testid="treatment-plan-phased-4stage-view"
     >
       {/* Overview Banner */}
@@ -301,22 +301,22 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                 </div>
               </div>
 
-              {/* Items Body: Flat list without nested card-in-card container */}
+              {/* Items Body: Flat list directly on stage surface without inner card box */}
               {isExpanded && (
                 <div className="p-3 sm:p-3.5 space-y-2.5 bg-[var(--paper,#ffffff)] border-t border-[var(--border,#cbd5e1)]/50">
                   {items.length === 0 ? (
-                    <div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)]">
+                    <div className="py-3 text-center text-xs text-[var(--muted,#64748b)]">
                       <span>На данном этапе нет назначенных процедур (санация не требуется).</span>
                       <div className="mt-0.5 text-[11px] text-[var(--muted,#64748b)]">
                         Типичные услуги этапа: {meta.typicalServicesRu.join(', ')}.
                       </div>
                     </div>
                   ) : (
-                    <div className="max-h-64 sm:max-h-72 overflow-y-auto min-h-0 divide-y divide-slate-100 dark:divide-slate-800 rounded-xl text-xs bg-[var(--paper-soft,#f8fafc)]/50 border border-[var(--border,#cbd5e1)]/60">
+                    <div className="max-h-64 sm:max-h-72 overflow-y-auto min-h-0 divide-y divide-[var(--line,#e2e8f0)]/50 text-xs">
                       {items.map((it, itemIdx) => (
                         <div
                           key={it.id || itemIdx}
-                          className="p-2.5 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0"
+                          className="py-2.5 px-1 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-[var(--line,#e2e8f0)]/50 last:border-b-0"
                         >
                           <div className="flex items-start gap-2 min-w-0">
                             <span className="font-mono text-[10px] text-[var(--muted,#64748b)] mt-0.5 shrink-0">

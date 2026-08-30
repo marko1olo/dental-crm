@@ -94,9 +94,9 @@ describe("ScheduleGrid", () => {
 			}),
 		);
 
-		assert.ok(html.includes("title=\"Пришел\""), "должна быть кнопка статуса Пришел");
-		assert.ok(html.includes("title=\"В кресле\""), "должна быть кнопка статуса В кресле");
-		assert.ok(html.includes("title=\"Завершен\""), "должна быть кнопка статуса Завершен");
+		assert.ok(html.includes("Позвонить") || html.includes("Прием"), "должна быть кнопка Позвонить или Прием");
+		assert.ok(html.includes("Профиль"), "должна быть кнопка Профиль");
+		assert.ok(html.includes("Все действия и статусы визита") || html.includes("Дополнительные действия визита"), "должна быть кнопка меню действий визита");
 		assert.ok(html.includes("min-h-[44px]") || html.includes("min-h-[48px]"), "кнопки должны соответствовать touch target >=44px");
 	});
 

@@ -353,50 +353,58 @@ export function ProcedureMaterialDeductionModal({
 					</div>
 				</div>
 
-				{/* CRITICAL THRESHOLD & DEFICIT ALERT BAR (1-CLICK PURCHASE ORDER) */}
+				{/* CRITICAL THRESHOLD & DEFICIT ALERT BAR (COMPACT 32px INLINE STRIP) */}
 				{(summary.hasDeficit || summary.warningCount > 0) && (
 					<div
 						className={`inventory-alert-summary-bar ${summary.hasDeficit ? "has-deficit" : "has-warning"}`}
+						style={{
+							margin: "6px 20px 0",
+							padding: "3px 12px",
+							minHeight: "32px",
+							height: "32px",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							gap: "8px",
+						}}
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--ink)", fontWeight: 600 }}>
 							{summary.hasDeficit ? (
 								<ShieldAlert
-									size={20}
-									style={{ color: "var(--rust)", flexShrink: 0 }}
+									size={15}
+									style={{ color: "var(--rust, #dc2626)", flexShrink: 0 }}
 								/>
 							) : (
 								<AlertTriangle
-									size={20}
+									size={15}
 									style={{ color: "var(--amber, #f59e0b)", flexShrink: 0 }}
 								/>
 							)}
-							<div>
-								<div
-									style={{
-										fontSize: 13,
-										fontWeight: 700,
-										color: "var(--ink)",
-									}}
-								>
-									{summary.hasDeficit
-										? `Дефицит материалов: ${summary.criticalCount} поз. требуют пополнения!`
-										: `Внимание: ${summary.warningCount} поз. достигли критического неснижаемого остатка.`}
-								</div>
-								<div style={{ fontSize: 12, color: "var(--muted)" }}>
-									{summary.hasDeficit
-										? "Дефицитные позиции будут автоматически включены в заказ поставщику при списании без остановки приема."
-										: "Рекомендуется сформировать дозаказ поставщику для обеспечения бесперебойного приема."}
-								</div>
-							</div>
+							<span style={{ fontSize: "12px", fontWeight: 700 }}>
+								{summary.hasDeficit
+									? `Дефицит материалов: ${summary.criticalCount} поз. требуют пополнения!`
+									: `Внимание: ${summary.warningCount} поз. достигли критического неснижаемого остатка.`}
+							</span>
 						</div>
 
 						<button
 							type="button"
 							className="inventory-purchase-order-btn"
+							style={{
+								minHeight: "26px",
+								height: "26px",
+								padding: "0 10px",
+								fontSize: "11px",
+								fontWeight: 700,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								cursor: "pointer",
+							}}
 							onClick={() => setShowPoModal(true)}
 						>
-							<ShoppingCart size={16} />
-							Сформировать заказ поставщику (1 клик)
+							<ShoppingCart size={13} />
+							<span>Сформировать заказ поставщику (1 клик)</span>
 						</button>
 					</div>
 				)}
@@ -404,7 +412,7 @@ export function ProcedureMaterialDeductionModal({
 				{/* SEARCH & CATEGORY TOOLBAR */}
 				<div className="inventory-filter-toolbar">
 					<div className="inventory-search-wrap">
-						<Search size={18} className="inventory-search-icon" />
+						<Search size={16} className="inventory-search-icon" />
 						<input
 							type="text"
 							className="inventory-search-input"
@@ -466,7 +474,7 @@ export function ProcedureMaterialDeductionModal({
 										<th>Остаток склада</th>
 										<th style={{ textAlign: "center" }}>Списание (кол-во)</th>
 										<th style={{ textAlign: "right" }}>Себестоимость</th>
-										<th style={{ width: "38px" }}></th>
+										<th style={{ width: "32px" }}></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -495,65 +503,84 @@ export function ProcedureMaterialDeductionModal({
 															? "has-warning"
 															: ""
 												}`}
+												style={{ height: "38px" }}
 											>
 												{/* Name & Category */}
 												<td className="inventory-td-name">
-													<div className="inventory-name-cell">
-														<span className="inventory-material-name">
+													<div className="inventory-name-cell" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
+														<span
+															className="inventory-material-name truncate max-w-[220px]"
+															style={{
+																fontSize: "12px",
+																fontWeight: 700,
+																overflow: "hidden",
+																textOverflow: "ellipsis",
+																whiteSpace: "nowrap",
+															}}
+															title={line.materialName}
+														>
 															{line.materialName}
 														</span>
-														<div className="inventory-sub-meta">
-															<span
-																className="inventory-category-badge"
-																style={{
-																	background: catColor.bg,
-																	color: catColor.text,
-																	border: `1px solid ${catColor.border}`,
-																}}
-															>
-																{TECH_MAP_CATEGORY_LABELS[line.category]}
+														<span
+															className="inventory-category-badge"
+															style={{
+																padding: "1px 5px",
+																fontSize: "9px",
+																fontWeight: 700,
+																background: catColor.bg,
+																color: catColor.text,
+																border: `1px solid ${catColor.border}`,
+																flexShrink: 0,
+																whiteSpace: "nowrap",
+															}}
+														>
+															{TECH_MAP_CATEGORY_LABELS[line.category]}
+														</span>
+														{line.lotNumber && (
+															<span className="inventory-lot-tag" style={{ fontSize: "10px", color: "var(--muted)", flexShrink: 0 }}>
+																п. {line.lotNumber}
 															</span>
-															{line.lotNumber && (
-																<span className="inventory-lot-tag">Партия: {line.lotNumber}</span>
-															)}
-															{line.expirationDate && (
-																<span className="inventory-exp-tag">до {line.expirationDate}</span>
-															)}
-														</div>
+														)}
+														{line.expirationDate && (
+															<span className="inventory-exp-tag" style={{ fontSize: "10px", color: "var(--muted)", flexShrink: 0 }}>
+																до {line.expirationDate}
+															</span>
+														)}
 													</div>
 												</td>
 
 												{/* Standard Norm */}
-												<td className="inventory-td-norm">
+												<td className="inventory-td-norm" style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", whiteSpace: "nowrap" }}>
 													{formatQuantityWithUnitRu(line.standardQuantity, line.unit)}
 												</td>
 
 												{/* Stock Status */}
-												<td className="inventory-td-stock">
+												<td className="inventory-td-stock" style={{ whiteSpace: "nowrap" }}>
 													{stockStatus.severity === "critical" ? (
-														<span className="inventory-deficit-badge">
-															<AlertTriangle size={12} />
+														<span className="inventory-deficit-badge" style={{ fontSize: "10px", padding: "1px 5px" }}>
+															<AlertTriangle size={11} />
 															Дефицит {formatQuantityWithUnitRu(stockStatus.deficit, line.unit)} (склад: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)})
 														</span>
 													) : stockStatus.severity === "warning" ? (
-														<span className="inventory-stock-pill stock-warning">
-															<AlertTriangle size={12} />
+														<span className="inventory-stock-pill stock-warning" style={{ fontSize: "10px", padding: "1px 5px" }}>
+															<AlertTriangle size={11} />
 															Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
 														</span>
 													) : (
-														<span className="inventory-stock-pill stock-ok">
+														<span className="inventory-stock-pill stock-ok" style={{ fontSize: "10px", padding: "1px 5px" }}>
 															Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
 														</span>
 													)}
 												</td>
 
 												{/* Stepper / Input */}
-												<td className="inventory-td-stepper">
-													<div className="inventory-compact-stepper-wrap">
-														<div className="inventory-stepper-group">
+												<td className="inventory-td-stepper" style={{ whiteSpace: "nowrap" }}>
+													<div className="inventory-compact-stepper-wrap" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+														<div className="inventory-stepper-group" style={{ height: "26px" }}>
 															<button
 																type="button"
 																className="inventory-stepper-btn"
+																style={{ minWidth: "22px", width: "22px", height: "26px", fontSize: "12px" }}
 																onClick={() => handleStepQuantity(line.id, -1)}
 																disabled={line.quantity <= 0}
 																aria-label="Уменьшить количество"
@@ -563,6 +590,7 @@ export function ProcedureMaterialDeductionModal({
 															<input
 																type="text"
 																className="inventory-stepper-input"
+																style={{ width: "36px", height: "26px", fontSize: "12px", padding: "0 1px" }}
 																value={line.quantity}
 																onChange={(e) =>
 																	handleDirectQuantityChange(line.id, e.target.value)
@@ -571,6 +599,7 @@ export function ProcedureMaterialDeductionModal({
 															<button
 																type="button"
 																className="inventory-stepper-btn"
+																style={{ minWidth: "22px", width: "22px", height: "26px", fontSize: "12px" }}
 																onClick={() => handleStepQuantity(line.id, 1)}
 																aria-label="Увеличить количество"
 															>
@@ -580,6 +609,7 @@ export function ProcedureMaterialDeductionModal({
 														<button
 															type="button"
 															className="inventory-quick-chip"
+															style={{ height: "26px", padding: "0 6px", fontSize: "10px" }}
 															onClick={() => handleResetToStandard(line.id)}
 															title="Вернуть стандартную норму"
 														>
@@ -589,16 +619,16 @@ export function ProcedureMaterialDeductionModal({
 												</td>
 
 												{/* Cost */}
-												<td className="inventory-td-cost">
-													<div className="inventory-cost-cell">
-														<span className="inventory-cost-val">
+												<td className="inventory-td-cost" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+													<div className="inventory-cost-cell" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0" }}>
+														<span className="inventory-cost-val" style={{ fontSize: "12px", fontWeight: 700 }}>
 															{(lineCostKopecks / 100).toLocaleString("ru-RU", {
 																minimumFractionDigits: 2,
 																maximumFractionDigits: 2,
 															})}{" "}
 															₽
 														</span>
-														<span className="inventory-unit-price">
+														<span className="inventory-unit-price" style={{ fontSize: "9px" }}>
 															{(line.unitCostKopecks / 100).toLocaleString("ru-RU", {
 																minimumFractionDigits: 2,
 																maximumFractionDigits: 2,
@@ -609,14 +639,15 @@ export function ProcedureMaterialDeductionModal({
 												</td>
 
 												{/* Delete Action */}
-												<td className="inventory-td-action">
+												<td className="inventory-td-action" style={{ textAlign: "center" }}>
 													<button
 														type="button"
 														className="inventory-remove-line-btn"
+														style={{ width: "26px", height: "26px" }}
 														onClick={() => handleRemoveLine(line.id)}
 														aria-label="Удалить позицию"
 													>
-														<Trash2 size={16} />
+														<Trash2 size={13} />
 													</button>
 												</td>
 											</tr>

@@ -23,11 +23,11 @@
 /* Category Navigation (3 Segmented Categories - Miller's Law 7±2) */
 .sanpin-category-nav {
 	display: flex;
-	gap: 0.35rem;
+	gap: 0.5rem;
 	align-items: center;
 	background: var(--paper-soft, #f1f5f9);
-	padding: 3px;
-	border-radius: 8px;
+	padding: 4px;
+	border-radius: 10px;
 	border: 1px solid var(--line, #e2e8f0);
 }
 
@@ -40,16 +40,16 @@
 .sanpin-category-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35rem;
-	padding: 0.35rem 0.75rem;
+	gap: 0.5rem;
+	padding: 0.4rem 0.85rem;
 	font-size: 0.8125rem;
 	font-weight: 600;
-	border-radius: 6px;
+	border-radius: 8px;
 	border: 1px solid transparent;
 	background: transparent;
 	color: var(--muted, #64748b);
 	cursor: pointer;
-	min-height: 32px;
+	min-height: 44px;
 	transition: all 0.15s ease;
 	white-space: nowrap;
 }
@@ -515,10 +515,11 @@
 	background: var(--paper-soft, #f8fafc);
 	color: var(--muted, #475569);
 	font-weight: 700;
-	padding: 0.75rem 1rem;
+	padding: 0.35rem 0.65rem;
 	border-bottom: 1px solid var(--line, #e2e8f0);
 	white-space: nowrap;
-	font-size: 0.85rem;
+	font-size: 0.775rem;
+	height: 32px;
 }
 
 [data-theme="dark"] .sanpin-table th,
@@ -529,10 +530,12 @@
 }
 
 .sanpin-table td {
-	padding: 0.75rem 1rem;
+	padding: 0.35rem 0.65rem;
 	border-bottom: 1px solid var(--line, #f1f5f9);
 	color: var(--ink, #1e293b);
 	vertical-align: middle;
+	font-size: 0.8125rem;
+	height: 38px;
 }
 
 [data-theme="dark"] .sanpin-table td,

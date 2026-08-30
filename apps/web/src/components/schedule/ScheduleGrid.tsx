@@ -257,7 +257,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 			)}
 
 			<div
-				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm pb-28 pr-48 touch-pan-x"
+				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm pb-36 pr-4 sm:pb-28 sm:pr-48 touch-pan-x"
 				data-testid="schedule-grid-view"
 				role="region"
 				aria-label="Сетка расписания по креслам и времени"
@@ -592,12 +592,12 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																<a
 																	href={`tel:${patObj.phone}`}
 																	onClick={(e) => e.stopPropagation()}
-																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none"
+																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 																	title={`Позвонить ${pName}: ${patObj.phone}`}
 																	aria-label={`Позвонить ${pName}`}
 																>
 																	<Phone size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-																	<span className="hidden sm:inline">Позвонить</span>
+																	<span className="hidden sm:inline whitespace-nowrap">Позвонить</span>
 																</a>
 															) : (
 																<button
@@ -606,12 +606,12 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																		e.stopPropagation();
 																		onAppointmentClick(a);
 																	}}
-																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none"
+																	className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 																	title={`Открыть прием ${pName}`}
 																	aria-label={`Открыть прием ${pName}`}
 																>
 																	<User size={14} className="text-[var(--teal)] shrink-0" />
-																	<span className="hidden sm:inline">Прием</span>
+																	<span className="hidden sm:inline whitespace-nowrap">Прием</span>
 																</button>
 															)}
 
@@ -621,67 +621,13 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																	e.stopPropagation();
 																	onAppointmentClick(a);
 																}}
-																className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/40 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none"
+																className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/40 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 																title={`Открыть профиль ${pName}`}
 																aria-label={`Открыть профиль ${pName}`}
 															>
 																<User size={14} className="text-[var(--teal)] shrink-0" />
-																<span>Профиль</span>
+																<span className="whitespace-nowrap">Профиль</span>
 															</button>
-
-															{/* Quick status transitions right on the card for Tier 1 1-click ergonomics */}
-															{onQuickStatusChange && (
-																<div className="flex items-center gap-1">
-																	<button
-																		type="button"
-																		title="Пришел"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onQuickStatusChange(a.id, "arrived");
-																		}}
-																		className={`min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-																			a.status === "arrived"
-																				? "bg-emerald-500 text-white shadow-xs"
-																				: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30"
-																		}`}
-																	>
-																		<UserCheck size={13} />
-																		<span className="hidden sm:inline">Пришел</span>
-																	</button>
-																	<button
-																		type="button"
-																		title="В кресле"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onQuickStatusChange(a.id, "in_treatment");
-																		}}
-																		className={`min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-																			a.status === "in_treatment"
-																				? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-																				: "bg-[var(--teal-soft)] text-[var(--teal-dark)] hover:bg-[var(--teal-surface)] border border-[var(--teal)]/30"
-																		}`}
-																	>
-																		<CalendarCheck size={13} />
-																		<span className="hidden sm:inline">В кресле</span>
-																	</button>
-																	<button
-																		type="button"
-																		title="Завершен"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onQuickStatusChange(a.id, "completed");
-																		}}
-																		className={`min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-0 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-																			a.status === "completed"
-																				? "bg-slate-600 text-white shadow-xs"
-																				: "bg-slate-500/10 text-slate-700 dark:text-slate-300 hover:bg-slate-500/20 border border-slate-500/30"
-																		}`}
-																	>
-																		<CheckCircle2 size={13} />
-																		<span className="hidden sm:inline">Завершен</span>
-																	</button>
-																</div>
-															)}
 
 															{/* Overflow Actions Dropdown Menu (...) */}
 															<div className="relative ml-auto">

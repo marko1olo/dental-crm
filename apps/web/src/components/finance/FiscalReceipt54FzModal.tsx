@@ -627,7 +627,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: activeTab === "act"
 													? "Акт сдачи-приемки выполненных работ (804н)"
 													: activeTab === "oneC"
-														? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 & 54-ФЗ"
+														? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ"
 														: "Фискализация 54-ФЗ & Прием платежей"}
 								</h3>
 								<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">

@@ -834,7 +834,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveCaliperStart(null);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "pan"
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -856,7 +856,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setIsControlsExpanded((prev) => !prev);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								isControlsExpanded
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -880,7 +880,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setPendingLandmarkPos(null);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "ruler"
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -899,7 +899,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={() => setInvert((prev) => !prev)}
-							className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								invert
 									? "bg-amber-950/70 border-2 border-amber-400 text-amber-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -918,7 +918,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={handleResetAll}
-							className="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-950/40 border border-rose-800/50 text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+							className="min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center bg-rose-950/40 border border-rose-800/50 text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
 							title="[Сброс] — Сбросить все настройки снимка и положение (0)"
 							aria-label="Сброс всех настроек снимка"
 							data-testid="tool-reset-all-btn"
@@ -936,7 +936,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setIsFiltersMenuOpen((prev) => !prev);
 								setIsControlsExpanded(false);
 							}}
-							className={`w-8 h-8 rounded-lg flex flex-col items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex flex-col items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								isFiltersMenuOpen ||
 								activeTool === "caliper" ||
 								activeTool === "nerve_tracer" ||
@@ -967,10 +967,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setIsFiltersMenuOpen(false)}
-								className="p-0.5 rounded text-slate-400 hover:text-white cursor-pointer"
+								className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded text-slate-400 hover:text-white cursor-pointer"
 								aria-label="Закрыть меню фильтров"
 							>
-								<X className="w-3.5 h-3.5" />
+								<X className="w-4 h-4" />
 							</button>
 						</div>
 
@@ -1146,7 +1146,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setIsControlsExpanded(false)}
-								className="p-1 rounded-lg text-[var(--muted,#94a3b8)] hover:text-[var(--ink)]"
+								className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--muted,#94a3b8)] hover:text-[var(--ink)] cursor-pointer"
+								aria-label="Закрыть панель калибровки"
 							>
 								<X className="w-4 h-4" />
 							</button>
@@ -1223,7 +1224,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setPendingLandmarkPos(null)}
-								className="p-1 rounded-lg text-[var(--muted,#94a3b8)] hover:text-[var(--ink)]"
+								className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--muted,#94a3b8)] hover:text-[var(--ink)] cursor-pointer"
+								aria-label="Закрыть окно установки метки"
 							>
 								<X className="w-4 h-4" />
 							</button>
@@ -1402,13 +1404,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							)}
 						</div>
 					) : (
-						/* Image with Transformations and CSS Filters */
 						<div
 							className="relative transition-transform duration-75 origin-center will-change-transform"
 							style={{
-								transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${
-									flipH ? -1 : 1
-								}) scaleY(${flipV ? -1 : 1})`,
+								transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg)`,
 							}}
 						>
 							<img
@@ -1416,8 +1415,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								src={activeImageUrl}
 								alt={studyTitle}
 								draggable={false}
-								className="max-h-[85vh] max-w-[85vw] object-contain select-none pointer-events-none rounded-lg shadow-2xl"
+								className="max-h-[85vh] max-w-[85vw] object-contain select-none pointer-events-none rounded-lg shadow-2xl transition-transform duration-75 origin-center"
 								style={{
+									transform: `scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1})`,
 									filter: `brightness(${brightness}%) contrast(${contrast}%) ${
 										invert ? "invert(100%)" : ""
 									}`,
@@ -1882,7 +1882,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						}`}
 						data-testid="viewer-presets-bar"
 					>
-						<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-slate-300 whitespace-nowrap shrink-0">
+						<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[var(--ink,#f8fafc)] whitespace-nowrap shrink-0">
 							Пресеты WW/WL:
 						</span>
 						{DEFAULT_WW_WL_PRESETS.map((preset) => {
@@ -1893,10 +1893,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									type="button"
 									disabled={!isImageLoaded}
 									onClick={() => handleSelectPreset(preset)}
-									className={`h-8 min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
+									className={`min-h-[44px] sm:min-h-[32px] sm:h-8 min-w-max shrink-0 whitespace-nowrap px-3 py-2 sm:py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
 										isSelected
 											? "bg-teal-600 border border-teal-300 text-white shadow-md font-bold"
-											: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-600 font-bold"
+											: "bg-slate-800 text-[var(--ink,#f8fafc)] hover:text-white hover:bg-slate-700 border border-slate-600 font-bold"
 									}`}
 									title={preset.description}
 									data-testid={`preset-btn-${preset.id}`}

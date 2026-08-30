@@ -278,7 +278,7 @@ export function IncomingCallPopupModal({
 
 	return (
 		<div
-			className="incoming-call-modal-body flex flex-col gap-3 p-1 sm:p-2 text-[var(--ink,#0f172a)] animate-fade-in"
+			className="incoming-call-modal-body flex flex-col gap-3 p-1 sm:p-2 text-[var(--ink,#0f172a)] animate-fade-in max-h-[90vh] overflow-y-auto pb-6"
 			data-testid="incoming-call-modal-content"
 		>
 			{/* Top Caller Header Card */}

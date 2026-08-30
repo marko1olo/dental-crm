@@ -186,7 +186,7 @@ export const MedicalRadiologyDropzone: React.FC<
 			<h3 className="text-base sm:text-lg md:text-xl font-bold tracking-tight mb-2 text-white">
 				{title}
 			</h3>
-			<p className="text-xs sm:text-sm max-w-md leading-relaxed mb-6 font-medium text-slate-300">
+			<p className="text-xs sm:text-sm max-w-md leading-relaxed mb-6 font-medium text-slate-600 dark:text-slate-400">
 				{subtitle}
 			</p>
 

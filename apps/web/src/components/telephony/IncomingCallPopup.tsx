@@ -331,8 +331,8 @@ export function CallAudioPlayer({
 				</div>
 
 				<div className="flex items-center gap-1.5">
-					{/* Speed Toggle Pills (1x, 1.25x, 1.5x, 2x) with touch-targets >= 44x44px */}
-					<div className="flex items-center bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-xl p-1 border border-[var(--line,#e2e8f0)] gap-1">
+					{/* Speed Toggle Pills (1x, 1.25x, 1.5x, 2x) with touch-targets >= 44x44px and gap-2 */}
+					<div className="flex items-center bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-xl p-1 border border-[var(--line,#e2e8f0)] gap-2">
 						{speeds.map((s) => (
 							<button
 								key={s}

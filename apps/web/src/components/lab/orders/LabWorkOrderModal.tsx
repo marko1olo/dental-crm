@@ -360,7 +360,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 				</nav>
 
 				{/* Modal Body */}
-				<div className="lab-order-modal-body" style={{ paddingBottom: '3.5rem' }}>
+				<div className="lab-order-modal-body" style={{ paddingBottom: '4.5rem', maxHeight: '78vh', overflowY: 'auto' }}>
 					{/* TAB 1: SELECTION */}
 					{activeTab === 'selection' && (
 						<>
@@ -552,6 +552,8 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 									}}
 								/>
 							</div>
+
+							<div style={{ height: '24px', flexShrink: 0 }} aria-hidden="true" />
 						</>
 					)}
 

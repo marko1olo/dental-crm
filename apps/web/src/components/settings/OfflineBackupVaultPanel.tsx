@@ -329,7 +329,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 				overflowY: "auto",
 				overscrollBehavior: "contain",
 				gap: "20px",
-				padding: "12px 0 48px 0",
+				padding: "12px 0 64px 0",
 				boxSizing: "border-box",
 			}}
 		>
@@ -407,15 +407,15 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 					</div>
 				</div>
 
-				<div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+				<div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
 					<button
 						type="button"
 						onClick={() => runIntegrityCheck(false)}
 						disabled={isCheckingIntegrity}
-						className="secondary-button min-h-[38px] px-3.5 text-xs font-semibold inline-flex items-center gap-1.5"
+						className="secondary-button min-h-[44px] px-3.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
 					>
-						<RefreshCw size={14} className={isCheckingIntegrity ? "spin-animation" : ""} />
-						{isCheckingIntegrity ? "Проверка..." : "Сверить буфер"}
+						<RefreshCw size={15} className={isCheckingIntegrity ? "spin-animation" : ""} />
+						<span>{isCheckingIntegrity ? "Проверка..." : "Сверить буфер"}</span>
 					</button>
 
 					<button
@@ -423,9 +423,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 						onClick={handleCreateSnapshot}
 						disabled={isCreatingSnapshot}
 						style={{
-							height: "38px",
-							minHeight: "38px",
-							padding: "0 14px",
+							minHeight: "44px",
+							padding: "0 16px",
 							borderRadius: "8px",
 							background: "#0284c7",
 							color: "#ffffff",
@@ -441,58 +440,63 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							boxShadow: "0 1px 3px rgba(2,132,199,0.25)",
 							transition: "all 0.15s ease",
 						}}
+						className="touch-manipulation"
 					>
-						<Database size={14} />
-						{isCreatingSnapshot ? "Снимок..." : "Снимок БД (SHA-256)"}
+						<Database size={15} />
+						<span>{isCreatingSnapshot ? "Снимок..." : "Снимок БД (SHA-256)"}</span>
 					</button>
 				</div>
 			</div>
 
-			{/* NAVIGATION TABS */}
+			{/* NAVIGATION TABS (Miller's Law 7±2, Zero Text Truncation, 44px Touch Targets) */}
 			<div
 				style={{
 					display: "flex",
-					flexWrap: "nowrap",
+					flexWrap: "wrap",
 					overflowX: "auto",
-					gap: "4px",
+					gap: "6px",
 					borderBottom: "1px solid var(--glass-border, #e2e8f0)",
 					paddingBottom: "8px",
 					WebkitOverflowScrolling: "touch",
 				}}
+				className="min-w-0"
+				role="tablist"
+				aria-label="Вкладки автономного хранилища Vault"
 			>
 				{[
-					{ id: "export", label: "1-Клик Экспорт (.dente)", icon: <HardDrive size={14} /> },
-					{ id: "restore", label: "Восстановление и Dry-Run", icon: <UploadCloud size={14} /> },
-					{ id: "snapshots", label: "Снапшоты и SHA-256", icon: <Database size={14} /> },
-					{ id: "scheduler", label: "Автобэкап (Расписание)", icon: <Clock size={14} /> },
-					{ id: "integrity", label: "Целостность и Здоровье", icon: <ShieldCheck size={14} /> },
+					{ id: "export", label: "1-Клик Экспорт (.dente)", icon: <HardDrive size={15} /> },
+					{ id: "restore", label: "Восстановление и Dry-Run", icon: <UploadCloud size={15} /> },
+					{ id: "snapshots", label: "Снапшоты и SHA-256", icon: <Database size={15} /> },
+					{ id: "scheduler", label: "Автобэкап (Расписание)", icon: <Clock size={15} /> },
+					{ id: "integrity", label: "Целостность и Здоровье", icon: <ShieldCheck size={15} /> },
 				].map((tab) => (
 					<button
 						key={tab.id}
 						type="button"
+						role="tab"
+						aria-selected={activeSection === tab.id}
 						onClick={() => setActiveSection(tab.id as any)}
 						style={{
-							minHeight: "34px",
-							padding: "4px 10px",
-							borderRadius: "6px",
-							border: "none",
+							minHeight: "44px",
+							padding: "6px 14px",
+							borderRadius: "8px",
+							border: activeSection === tab.id ? "1px solid var(--teal, #0d9488)" : "1px solid transparent",
 							background: activeSection === tab.id ? "var(--paper-strong, #ffffff)" : "transparent",
-							color: activeSection === tab.id ? "#0284c7" : "var(--muted, #64748b)",
-							fontWeight: activeSection === tab.id ? "600" : "500",
+							color: activeSection === tab.id ? "var(--teal, #0d9488)" : "var(--muted, #64748b)",
+							fontWeight: activeSection === tab.id ? "700" : "500",
 							fontSize: "12px",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "5px",
-							whiteSpace: "nowrap",
-							flex: "1 0 auto",
+							gap: "6px",
 							boxShadow: activeSection === tab.id ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
 							transition: "all 0.15s ease",
 						}}
+						className="touch-manipulation break-words min-w-0"
 					>
 						{tab.icon}
-						{tab.label}
+						<span className="break-words min-w-0">{tab.label}</span>
 					</button>
 				))}
 			</div>
@@ -579,28 +583,15 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									value={exportPassphrase}
 									onChange={(e) => setExportPassphrase(e.target.value)}
 									placeholder="По умолчанию — защищенный ключ клиники"
-									className="w-full h-10 min-h-[40px] pl-3 pr-10 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
+									className="w-full h-11 min-h-[44px] pl-3 pr-12 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
 								/>
 								<button
 									type="button"
 									onClick={() => setShowExportPassphrase(!showExportPassphrase)}
-									style={{
-										position: "absolute",
-										right: "4px",
-										top: "50%",
-										transform: "translateY(-50%)",
-										width: "32px",
-										height: "32px",
-										background: "transparent",
-										border: "none",
-										cursor: "pointer",
-										color: "var(--muted, #64748b)",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-									}}
+									className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors flex items-center justify-center cursor-pointer touch-manipulation absolute right-0 top-1/2 -translate-y-1/2"
+									aria-label={showExportPassphrase ? "Скрыть мастер-пароль" : "Показать мастер-пароль"}
 								>
-									{showExportPassphrase ? <EyeOff size={16} /> : <Eye size={16} />}
+									{showExportPassphrase ? <EyeOff size={18} /> : <Eye size={18} />}
 								</button>
 							</div>
 						</div>
@@ -622,7 +613,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								value={exportNotes}
 								onChange={(e) => setExportNotes(e.target.value)}
 								placeholder="Например: Плановый бэкап перед закрытием смены"
-								className="w-full h-10 min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
+								className="w-full h-11 min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
 							/>
 						</div>
 					</div>
@@ -633,9 +624,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							onClick={() => handleExport(true)}
 							disabled={isExporting}
 							style={{
-								height: "40px",
-								minHeight: "40px",
-								padding: "0 16px",
+								minHeight: "44px",
+								padding: "0 18px",
 								borderRadius: "8px",
 								background: "#059669",
 								color: "#ffffff",
@@ -646,13 +636,14 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								display: "inline-flex",
 								alignItems: "center",
 								justifyContent: "center",
-								gap: "6px",
+								gap: "8px",
 								boxShadow: "0 1px 3px rgba(5,150,105,0.2)",
 								boxSizing: "border-box",
 							}}
+							className="touch-manipulation"
 						>
 							<Download size={16} />
-							{isExporting ? "Создание архива..." : "Выбрать диск / USB (.dente)"}
+							<span>{isExporting ? "Создание архива..." : "Выбрать диск / USB (.dente)"}</span>
 						</button>
 
 						<button
@@ -660,9 +651,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							onClick={() => handleExport(false)}
 							disabled={isExporting}
 							style={{
-								height: "40px",
-								minHeight: "40px",
-								padding: "0 14px",
+								minHeight: "44px",
+								padding: "0 16px",
 								borderRadius: "8px",
 								background: "var(--paper, #f1f5f9)",
 								color: "var(--ink, #334155)",
@@ -676,9 +666,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								gap: "6px",
 								boxSizing: "border-box",
 							}}
+							className="touch-manipulation"
 						>
 							<Download size={15} />
-							Скачать через браузер
+							<span>Скачать через браузер</span>
 						</button>
 					</div>
 
@@ -973,28 +964,15 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										value={importPassphrase}
 										onChange={(e) => handlePassphraseChangeForDryRun(e.target.value)}
 										placeholder="По умолчанию — ключ клиники"
-										className="w-full h-10 min-h-[40px] pl-3 pr-10 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
+										className="w-full h-11 min-h-[44px] pl-3 pr-12 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
 									/>
 									<button
 										type="button"
 										onClick={() => setShowImportPassphrase(!showImportPassphrase)}
-										style={{
-											position: "absolute",
-											right: "4px",
-											top: "50%",
-											transform: "translateY(-50%)",
-											width: "32px",
-											height: "32px",
-											background: "transparent",
-											border: "none",
-											cursor: "pointer",
-											color: "var(--muted, #64748b)",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-										}}
+										className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors flex items-center justify-center cursor-pointer touch-manipulation absolute right-0 top-1/2 -translate-y-1/2"
+										aria-label={showImportPassphrase ? "Скрыть мастер-пароль" : "Показать мастер-пароль"}
 									>
-										{showImportPassphrase ? <EyeOff size={16} /> : <Eye size={16} />}
+										{showImportPassphrase ? <EyeOff size={18} /> : <Eye size={18} />}
 									</button>
 								</div>
 							</div>

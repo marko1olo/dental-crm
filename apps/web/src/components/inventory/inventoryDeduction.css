@@ -42,26 +42,26 @@
 
 /* Header */
 .inventory-deduction-header {
-	padding: 20px 24px;
+	padding: 12px 20px;
 	background: var(--paper-strong);
 	border-bottom: 1px solid var(--line);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 16px;
+	gap: 12px;
 	flex-shrink: 0;
 }
 
 .inventory-deduction-title-wrap {
 	display: flex;
 	align-items: center;
-	gap: 14px;
+	gap: 12px;
 }
 
 .inventory-deduction-icon-badge {
-	width: 48px;
-	height: 48px;
-	border-radius: 14px;
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
 	background: var(--teal-soft);
 	color: var(--teal-dark);
 	display: flex;
@@ -72,25 +72,25 @@
 
 .inventory-deduction-title {
 	margin: 0;
-	font-size: 18px;
+	font-size: 16px;
 	font-weight: 700;
 	color: var(--ink);
 	line-height: 1.25;
 }
 
 .inventory-deduction-subtitle {
-	margin: 4px 0 0 0;
-	font-size: 13px;
+	margin: 2px 0 0 0;
+	font-size: 12px;
 	font-weight: 500;
 	color: var(--muted);
 }
 
 .inventory-deduction-close-btn {
-	min-width: 48px;
-	min-height: 48px;
-	width: 48px;
-	height: 48px;
-	border-radius: 12px;
+	min-width: 38px;
+	min-height: 38px;
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--muted);
@@ -108,16 +108,16 @@
 
 /* Tech Maps Quick Bar */
 .inventory-tech-maps-bar {
-	padding: 14px 24px;
+	padding: 8px 20px;
 	background: var(--paper-soft);
 	border-bottom: 1px solid var(--line);
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 6px;
 }
 
 .inventory-tech-maps-label {
-	font-size: 13px;
+	font-size: 11px;
 	font-weight: 700;
 	color: var(--muted);
 	text-transform: uppercase;
@@ -128,8 +128,8 @@
 	display: flex;
 	flex-wrap: nowrap;
 	overflow-x: auto;
-	padding-bottom: 4px;
-	gap: 8px;
+	padding-bottom: 2px;
+	gap: 6px;
 	scrollbar-width: none;
 }
 
@@ -145,17 +145,18 @@
 }
 
 .inventory-tech-map-chip {
-	min-height: 44px;
-	padding: 0 14px;
-	border-radius: 12px;
+	min-height: 32px;
+	height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	cursor: pointer;
 	flex-shrink: 0;
 	white-space: nowrap;
@@ -177,11 +178,11 @@
 
 /* Search and Category Filter Toolbar */
 .inventory-filter-toolbar {
-	padding: 12px 24px;
+	padding: 8px 20px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 16px;
+	gap: 12px;
 	border-bottom: 1px solid var(--line);
 	background: var(--paper);
 	flex-wrap: wrap;
@@ -190,12 +191,12 @@
 .inventory-search-wrap {
 	position: relative;
 	flex: 1;
-	min-width: 240px;
+	min-width: 200px;
 }
 
 .inventory-search-icon {
 	position: absolute;
-	left: 14px;
+	left: 12px;
 	top: 50%;
 	transform: translateY(-50%);
 	color: var(--muted);
@@ -204,13 +205,13 @@
 
 .inventory-search-input {
 	width: 100%;
-	height: 48px;
-	padding: 0 16px 0 44px;
-	border-radius: 12px;
+	height: 36px;
+	padding: 0 14px 0 36px;
+	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
 	color: var(--ink);
-	font-size: 14px;
+	font-size: 13px;
 	font-weight: 500;
 	box-sizing: border-box;
 	transition: border-color 0.15s ease;
@@ -224,23 +225,24 @@
 
 .inventory-category-tabs {
 	display: flex;
-	gap: 6px;
+	gap: 4px;
 	overflow-x: auto;
 	padding-bottom: 2px;
 }
 
 .inventory-category-tab {
-	min-height: 48px;
-	padding: 0 14px;
-	border-radius: 10px;
+	min-height: 36px;
+	height: 36px;
+	padding: 0 10px;
+	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
 	color: var(--muted);
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
+	gap: 4px;
 	cursor: pointer;
 	white-space: nowrap;
 	transition: all 0.15s ease;
@@ -263,10 +265,10 @@
 	min-height: 0;
 	overflow-y: auto;
 	overscroll-behavior: contain;
-	padding: 12px 20px 20px;
+	padding: 8px 20px 12px;
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 6px;
 }
 
 /* High-Density Medical Table Container */
@@ -274,14 +276,14 @@
 	width: 100%;
 	overflow-x: auto;
 	border: 1px solid var(--line);
-	border-radius: 12px;
+	border-radius: 10px;
 	background: var(--paper-strong);
 }
 
 .inventory-dense-table {
 	width: 100%;
 	border-collapse: collapse;
-	font-size: 13px;
+	font-size: 12px;
 	text-align: left;
 }
 
@@ -291,18 +293,20 @@
 }
 
 .inventory-dense-table th {
-	padding: 8px 12px;
-	font-size: 11px;
+	padding: 4px 10px;
+	font-size: 10px;
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.4px;
 	color: var(--muted);
 	white-space: nowrap;
+	height: 28px;
 }
 
 .inventory-table-row {
 	border-bottom: 1px solid var(--line);
 	transition: background-color 0.15s ease;
+	height: 38px;
 }
 
 .inventory-table-row:last-child {
@@ -324,8 +328,9 @@
 }
 
 .inventory-table-row td {
-	padding: 8px 12px;
+	padding: 4px 10px;
 	vertical-align: middle;
+	height: 38px;
 }
 
 .inventory-td-name {
@@ -880,14 +885,14 @@
 
 /* Alert Summary Bar */
 .inventory-alert-summary-bar {
-	margin: 12px 24px 0;
-	padding: 10px 16px;
-	border-radius: 12px;
+	margin: 6px 20px 0;
+	padding: 3px 12px;
+	border-radius: 8px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-	flex-wrap: wrap;
+	gap: 8px;
+	min-height: 32px;
 }
 
 .inventory-alert-summary-bar.has-deficit {
