@@ -310,6 +310,15 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 		}
 	};
 
+	// Map breakdown by appointment ID for exact piece-rate math display in cards
+	const earningsBreakdownsMap = useMemo(() => {
+		const map = new Map<string, (typeof earnings.appointmentBreakdowns)[number]>();
+		for (const b of earnings.appointmentBreakdowns) {
+			map.set(b.appointmentId, b);
+		}
+		return map;
+	}, [earnings.appointmentBreakdowns]);
+
 	return (
 		<div
 			className="doctor-cockpit-overlay"
@@ -332,8 +341,8 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 									{cabinetName}
 								</span>
 							</h2>
-							<div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-								<span className="font-bold text-slate-200">{doctorName}</span>
+							<div className="flex items-center gap-2 text-xs text-[var(--ink-2,#cbd5e1)] mt-0.5">
+								<span className="font-bold text-slate-100">{doctorName}</span>
 								<span>•</span>
 								<span>{doctorSpecialty}</span>
 							</div>
@@ -341,7 +350,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 					</div>
 
 					<div className="flex items-center gap-3">
-						<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300">
+						<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-200">
 							<Calendar size={14} className="text-teal-400" />
 							<span>29 авг 2026</span>
 							<span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-1" />
@@ -349,7 +358,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl bg-slate-900 text-slate-400 hover:text-slate-100 hover:bg-slate-800 flex items-center justify-center border border-slate-800 transition-colors cursor-pointer"
+							className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl bg-slate-900 text-[var(--ink-2,#cbd5e1)] hover:text-slate-100 hover:bg-slate-800 flex items-center justify-center border border-slate-800 transition-colors cursor-pointer"
 							aria-label="Закрыть кокпит смены"
 							data-testid="close-doctor-cockpit-btn"
 						>
@@ -358,16 +367,16 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 					</div>
 				</header>
 
-				{/* Navigation Sub-Tabs */}
-				<div className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-slate-800 bg-slate-950 text-xs">
-					<div className="flex items-center gap-2">
+				{/* Navigation Sub-Tabs with flex-wrap and safe gap */}
+				<div className="flex items-center justify-between flex-wrap gap-2 px-5 pt-3 pb-2 border-b border-slate-800 bg-slate-950 text-xs">
+					<div className="flex items-center gap-2 flex-wrap min-w-0" data-testid="doctor-tabs-container">
 						<button
 							type="button"
 							onClick={() => setActiveTab("cockpit")}
-							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
 								activeTab === "cockpit"
 									? "bg-teal-950/60 text-teal-300 border border-teal-800/80"
-									: "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+									: "text-[var(--ink-2,#cbd5e1)] hover:text-slate-100 hover:bg-slate-900"
 							}`}
 							data-testid="tab-cockpit-view"
 						>
@@ -376,27 +385,27 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 						<button
 							type="button"
 							onClick={() => setActiveTab("emr_journal")}
-							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 								activeTab === "emr_journal"
 									? "bg-teal-950/60 text-teal-300 border border-teal-800/80"
-									: "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+									: "text-[var(--ink-2,#cbd5e1)] hover:text-slate-100 hover:bg-slate-900"
 							}`}
 							data-testid="tab-emr-journal"
 						>
 							<span>ЭМК ф. 043/у</span>
 							{unsignedAppointments.length > 0 && (
-								<span className="px-1.5 py-0.2 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-extrabold">
-									{unsignedAppointments.length}
+								<span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-extrabold shrink-0" data-testid="tab-unsigned-badge">
+									Нужна подпись ({unsignedAppointments.length})
 								</span>
 							)}
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("earnings")}
-							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+							className={`min-h-[36px] px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
 								activeTab === "earnings"
 									? "bg-teal-950/60 text-teal-300 border border-teal-800/80"
-									: "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+									: "text-[var(--ink-2,#cbd5e1)] hover:text-slate-100 hover:bg-slate-900"
 							}`}
 							data-testid="tab-earnings"
 						>
@@ -404,7 +413,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 						</button>
 					</div>
 
-					<div className="text-xs text-slate-400 flex items-center gap-2">
+					<div className="text-xs text-[var(--ink-2,#cbd5e1)] flex items-center gap-2 shrink-0">
 						<ShieldCheck size={14} className="text-emerald-400" />
 						<span>Изоляция смены активна</span>
 					</div>
@@ -422,7 +431,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 							<div className="doctor-metric-value text-teal-300">
 								{earnings.completedAppointmentsCount} / {earnings.totalAppointmentsCount}
 							</div>
-							<div className="text-[11px] text-slate-400">
+							<div className="text-[11px] text-[var(--ink-2,#cbd5e1)]">
 								В кресле: {earnings.inChairAppointmentsCount} • В холле: {earnings.waitingAppointmentsCount}
 							</div>
 						</div>
@@ -435,7 +444,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 							<div className="doctor-metric-value text-emerald-400" data-testid="doctor-cockpit-earned-val">
 								{formatKopecksRu(earnings.totalEarnedDealKop)}
 							</div>
-							<div className="text-[11px] text-slate-400">
+							<div className="text-[11px] text-[var(--ink-2,#cbd5e1)]">
 								База сделки: {formatKopecksRu(earnings.netDealBaseKop)}
 							</div>
 						</div>
@@ -443,12 +452,12 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 						<div className="doctor-metric-card">
 							<div className="doctor-metric-label">
 								<span>Выручка смены</span>
-								<Activity size={14} className="text-slate-400" />
+								<Activity size={14} className="text-teal-400" />
 							</div>
 							<div className="doctor-metric-value text-slate-100">
 								{formatKopecksRu(earnings.grossRevenueKop)}
 							</div>
-							<div className="text-[11px] text-slate-400">
+							<div className="text-[11px] text-[var(--ink-2,#cbd5e1)]">
 								ЗТЛ: −{formatKopecksRu(earnings.totalLabDeductionsKop)} • Мат: −{formatKopecksRu(earnings.totalMaterialDeductionsKop)}
 							</div>
 						</div>
@@ -461,7 +470,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 							<div className="doctor-metric-value text-slate-100">
 								{earnings.signedEmr043Count} / {earnings.totalAppointmentsCount}
 							</div>
-							<div className="text-[11px] text-slate-400">
+							<div className="text-[11px] text-[var(--ink-2,#cbd5e1)]">
 								{unsignedAppointments.length > 0 ? (
 									<span className="text-amber-400 font-bold">Требуют ПЭП: {unsignedAppointments.length}</span>
 								) : (
@@ -472,380 +481,429 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 					</div>
 
 					{/* View Mode: Main Cockpit */}
-					{activeTab === "cockpit" && (
-						<div className="doctor-patient-showcase-grid">
-							{/* Left Column: Active Patient in Chair */}
-							<div className="doctor-active-patient-card" data-testid="active-patient-card">
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700 text-xs font-bold">
-											<span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-											<span>Пациент в кресле</span>
-										</span>
-										{activeAppointment && (
-											<span className="text-xs text-slate-400 font-semibold">
-												{activeAppointment.startsAtIso.split("T")[1]?.slice(0, 5)} — {activeAppointment.endsAtIso.split("T")[1]?.slice(0, 5)}
+					{activeTab === "cockpit" && (() => {
+						const activeBreakdown = activeAppointment ? earningsBreakdownsMap.get(activeAppointment.id) : null;
+						const activeGrossKop = activeBreakdown
+							? activeBreakdown.grossKop
+							: activeAppointment
+								? activeAppointment.services.reduce((acc, s) => acc + (s.finalRevenueKop || 0), 0)
+								: 0;
+						const activeDoctorEarnedKop = activeBreakdown
+							? activeBreakdown.earnedKop
+							: Math.round(activeGrossKop * 0.25);
+
+						const nextBreakdown = nextQueuedAppointment ? earningsBreakdownsMap.get(nextQueuedAppointment.id) : null;
+						const nextGrossKop = nextBreakdown
+							? nextBreakdown.grossKop
+							: nextQueuedAppointment
+								? nextQueuedAppointment.services.reduce((acc, s) => acc + (s.finalRevenueKop || 0), 0)
+								: 0;
+						const nextDoctorEarnedKop = nextBreakdown
+							? nextBreakdown.earnedKop
+							: Math.round(nextGrossKop * 0.25);
+
+						return (
+							<div className="doctor-patient-showcase-grid">
+								{/* Left Column: Active Patient in Chair */}
+								<div className="doctor-active-patient-card" data-testid="active-patient-card">
+									<div className="flex items-center justify-between flex-wrap gap-2">
+										<div className="flex items-center gap-2 flex-wrap">
+											<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700 text-xs font-bold shrink-0">
+												<span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+												<span>Пациент в кресле</span>
 											</span>
-										)}
+											{activeAppointment && (
+												<span className="text-xs text-[var(--ink-2,#cbd5e1)] font-semibold shrink-0">
+													{activeAppointment.startsAtIso.split("T")[1]?.slice(0, 5)} — {activeAppointment.endsAtIso.split("T")[1]?.slice(0, 5)}
+												</span>
+											)}
+											{activeAppointment && (
+												activeAppointment.emrCard043uStatus === "signed" ? (
+													<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700 text-xs font-bold shrink-0" data-testid="active-patient-emr-status">
+														<ShieldCheck size={13} className="text-emerald-400" />
+														<span>ЭМК 043/у: Заверена ПЭП</span>
+													</span>
+												) : (
+													<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-700 text-xs font-bold shrink-0" data-testid="active-patient-emr-status">
+														<FileBadge size={13} className="text-amber-400" />
+														<span>ЭМК 043/у: Требует подписи</span>
+													</span>
+												)
+											)}
+										</div>
+
+										{/* Live Countdown Timer & Overtime Pulsation */}
+										<div
+											className={`doctor-countdown-timer shrink-0 whitespace-nowrap tabular-nums ${timerState.isOvertime ? "overtime" : "normal"}`}
+											data-testid="doctor-countdown-timer"
+											role="timer"
+											aria-label={timerState.label}
+										>
+											<Clock size={16} className="shrink-0" />
+											<span className="whitespace-nowrap tabular-nums shrink-0">{timerState.formatted}</span>
+											{timerState.isOvertime && (
+												<span className="text-[11px] font-extrabold uppercase tracking-wide whitespace-nowrap shrink-0">
+													Овертайм
+												</span>
+											)}
+										</div>
 									</div>
 
-									{/* Live Countdown Timer & Overtime Pulsation */}
-									<div
-										className={`doctor-countdown-timer ${timerState.isOvertime ? "overtime" : "normal"}`}
-										data-testid="doctor-countdown-timer"
-										role="timer"
-										aria-label={timerState.label}
-									>
-										<Clock size={16} />
-										<span>{timerState.formatted}</span>
-										{timerState.isOvertime && (
-											<span className="text-[11px] font-extrabold uppercase tracking-wide">
-												Овертайм
-											</span>
-										)}
-									</div>
-								</div>
+									{activeAppointment ? (
+										<>
+											{/* Patient Identity & Somatic Risks */}
+											<div>
+												<div className="flex items-start justify-between gap-4">
+													<div>
+														<h3 className="text-lg font-extrabold text-slate-100 flex items-center gap-2" data-testid="active-patient-name">
+															<User className="text-teal-400 w-5 h-5 shrink-0" />
+															<span>{activeAppointment.patientFullName}</span>
+														</h3>
+														<div className="text-xs text-[var(--ink-2,#cbd5e1)] flex items-center gap-2 mt-1 flex-wrap">
+															<span>Карта: {activeAppointment.cardNumber}</span>
+															<span>•</span>
+															<span>1988 г.р. (38 лет)</span>
+															{activeAppointment.patientPhone && (
+																<>
+																	<span>•</span>
+																	<span className="flex items-center gap-1">
+																		<Phone size={11} />
+																		{activeAppointment.patientPhone}
+																	</span>
+																</>
+															)}
+														</div>
+													</div>
 
-								{activeAppointment ? (
-									<>
-										{/* Patient Identity & Somatic Risks */}
-										<div>
-											<div className="flex items-start justify-between gap-4">
-												<div>
-													<h3 className="text-lg font-extrabold text-slate-100 flex items-center gap-2" data-testid="active-patient-name">
-														<User className="text-teal-400 w-5 h-5 shrink-0" />
-														<span>{activeAppointment.patientFullName}</span>
-													</h3>
-													<div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
-														<span>Карта: {activeAppointment.cardNumber}</span>
-														<span>•</span>
-														<span>1988 г.р. (38 лет)</span>
-														{activeAppointment.patientPhone && (
-															<>
-																<span>•</span>
-																<span className="flex items-center gap-1">
-																	<Phone size={11} />
-																	{activeAppointment.patientPhone}
-																</span>
-															</>
-														)}
+													{/* Patient Balance & Doctor Earnings */}
+													<div className="text-right flex flex-col items-end">
+														<div className="text-[10px] uppercase font-bold text-[var(--ink-2,#cbd5e1)]">
+															Баланс: <span className="font-extrabold text-slate-100" data-testid="active-patient-balance">{formatKopecksRu(activeGrossKop)}</span>
+														</div>
+														<div className="text-sm font-extrabold text-emerald-400 flex items-center gap-1 mt-0.5" data-testid="active-doctor-earned">
+															<span className="text-[11px] font-bold text-[var(--ink-2,#cbd5e1)] uppercase">Врачу:</span>
+															<span>+{formatKopecksRu(activeDoctorEarnedKop)}</span>
+														</div>
 													</div>
 												</div>
 
-												{/* Patient Balance */}
-												<div className="text-right">
-													<div className="text-[10px] uppercase font-bold text-slate-400">
-														Баланс услуг
+												{/* Emergency Allergy & Somatic Risk Alert Badges (Zero Blinding White / Red Alert) */}
+												<div className="mt-3 flex flex-wrap gap-2" data-testid="somatic-risk-badges">
+													<div className="doctor-allergy-alert-badge" data-testid="allergy-alert-badge">
+														<ShieldAlert size={14} className="shrink-0 text-red-400" />
+														<span>
+															{/артикаин/i.test(activeAppointment.treatmentDescription || "")
+																? "Аллергия: Артикаин ⚠️"
+																: "Аллергия: Лидокаин, Новокаин (отек Квинке)"}
+														</span>
 													</div>
-													<div className="text-sm font-extrabold text-emerald-400" data-testid="active-patient-balance">
-														{formatKopecksRu(
-															activeAppointment.services.reduce(
-																(acc, s) => acc + (s.finalRevenueKop || 0),
-																0,
-															),
-														)}
+													<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/50 border border-amber-700/80 text-amber-300 text-[11px] font-bold" data-testid="somatic-risk-badge">
+														<AlertTriangle size={13} className="text-amber-400" />
+														<span>Соматический риск: Прием бисфосфонатов (BRONJ)</span>
 													</div>
 												</div>
 											</div>
 
-											{/* Emergency Allergy & Somatic Risk Alert Badges (Zero Blinding White / Red Alert) */}
-											<div className="mt-3 flex flex-wrap gap-2" data-testid="somatic-risk-badges">
-												<div className="doctor-allergy-alert-badge" data-testid="allergy-alert-badge">
-													<ShieldAlert size={14} className="shrink-0 text-red-400" />
-													<span>
-														{/артикаин/i.test(activeAppointment.treatmentDescription || "")
-															? "Аллергия: Артикаин ⚠️"
-															: "Аллергия: Лидокаин, Новокаин (отек Квинке)"}
+											{/* Clinical Diagnosis & Tooth Formula */}
+											<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col gap-1.5">
+												<div className="flex items-center justify-between text-xs">
+													<span className="font-extrabold text-teal-300">
+														{activeAppointment.diagnosisTooth ? `Зуб ${activeAppointment.diagnosisTooth}` : "Клинический осмотр"} • {activeAppointment.diagnosisIcd10 || "К04.0 Пульпит"}
+													</span>
+													<span className="text-[11px] text-[var(--ink-2,#cbd5e1)] font-medium">
+														{activeAppointment.services.length} услуг в плане
 													</span>
 												</div>
-												<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/50 border border-amber-700/80 text-amber-300 text-[11px] font-bold" data-testid="somatic-risk-badge">
-													<AlertTriangle size={13} className="text-amber-400" />
-													<span>Соматический риск: Прием бисфосфонатов (BRONJ)</span>
+												<p className="text-xs text-[var(--ink,#f8fafc)] leading-relaxed">
+													{activeAppointment.treatmentDescription || "Лечение кариеса дентина, инструментальная обработка каналов."}
+												</p>
+											</div>
+
+											{/* Quick Time Extension Controls */}
+											<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line,#334155)]">
+												<span className="text-[var(--ink-2,#cbd5e1)] font-medium">Продлить слот приема:</span>
+												<div className="flex items-center gap-2">
+													<button
+														type="button"
+														onClick={() => setTimerExtraMinutes((m) => m + 10)}
+														className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] font-bold transition-all cursor-pointer text-xs"
+														data-testid="btn-extend-10m"
+													>
+														+10 мин
+													</button>
+													<button
+														type="button"
+														onClick={() => setTimerExtraMinutes((m) => m + 15)}
+														className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] font-bold transition-all cursor-pointer text-xs"
+														data-testid="btn-extend-15m"
+													>
+														+15 мин
+													</button>
 												</div>
 											</div>
-										</div>
 
-										{/* Clinical Diagnosis & Tooth Formula */}
-										<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col gap-1.5">
-											<div className="flex items-center justify-between text-xs">
-												<span className="font-extrabold text-teal-300">
-													{activeAppointment.diagnosisTooth ? `Зуб ${activeAppointment.diagnosisTooth}` : "Клинический осмотр"} • {activeAppointment.diagnosisIcd10 || "К04.0 Пульпит"}
-												</span>
-												<span className="text-[11px] text-[var(--muted,#94a3b8)] font-medium">
-													{activeAppointment.services.length} услуг в плане
-												</span>
-											</div>
-											<p className="text-xs text-[var(--ink,#f8fafc)] leading-relaxed">
-												{activeAppointment.treatmentDescription || "Лечение кариеса дентина, инструментальная обработка каналов."}
-											</p>
-										</div>
-
-										{/* Quick Time Extension Controls */}
-										<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line,#334155)]">
-											<span className="text-[var(--muted,#94a3b8)] font-medium">Продлить слот приема:</span>
-											<div className="flex items-center gap-2">
+											{/* 0-Click Fast Action Buttons Bar */}
+											<div className="doctor-quick-actions-bar pt-1" data-testid="doctor-quick-actions-bar">
 												<button
 													type="button"
-													onClick={() => setTimerExtraMinutes((m) => m + 10)}
-													className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] font-bold transition-all cursor-pointer text-xs"
-													data-testid="btn-extend-10m"
+													onClick={() => handleQuickCall("odontogram")}
+													className="doctor-quick-btn flex items-center gap-1.5"
+													data-testid="btn-quick-odontogram"
+													aria-label="Открыть одонтограмму 043/у"
 												>
-													+10 мин
+													<FileText size={14} className="text-teal-400" />
+													<span>043/у</span>
 												</button>
 												<button
 													type="button"
-													onClick={() => setTimerExtraMinutes((m) => m + 15)}
-													className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] font-bold transition-all cursor-pointer text-xs"
-													data-testid="btn-extend-15m"
+													onClick={() => handleQuickCall("lab_order")}
+													className="doctor-quick-btn flex items-center gap-1.5"
+													data-testid="btn-quick-lab-order"
+													aria-label="Сформировать наряд-заказ в ЗТЛ"
 												>
-													+15 мин
+													<ClipboardList size={14} className="text-teal-400" />
+													<span>Наряд ЗТЛ</span>
 												</button>
-											</div>
-										</div>
-
-										{/* 0-Click Fast Action Buttons Bar */}
-										<div className="doctor-quick-actions-bar pt-1" data-testid="doctor-quick-actions-bar">
-											<button
-												type="button"
-												onClick={() => handleQuickCall("odontogram")}
-												className="doctor-quick-btn flex items-center gap-1.5"
-												data-testid="btn-quick-odontogram"
-												aria-label="Открыть одонтограмму 043/у"
-											>
-												<FileText size={14} className="text-teal-400" />
-												<span>043/у</span>
-											</button>
-											<button
-												type="button"
-												onClick={() => handleQuickCall("lab_order")}
-												className="doctor-quick-btn flex items-center gap-1.5"
-												data-testid="btn-quick-lab-order"
-												aria-label="Сформировать наряд-заказ в ЗТЛ"
-											>
-												<ClipboardList size={14} className="text-teal-400" />
-												<span>Наряд ЗТЛ</span>
-											</button>
-											<button
-												type="button"
-												onClick={() => handleQuickCall("imaging")}
-												className="doctor-quick-btn flex items-center gap-1.5"
-												data-testid="btn-quick-imaging"
-												aria-label="Просмотр КЛКТ и рентгенограмм"
-											>
-												<ImageIcon size={14} className="text-teal-400" />
-												<span>КЛКТ / Снимки</span>
-											</button>
-											<button
-												type="button"
-												onClick={() => handleQuickCall("consent")}
-												className="doctor-quick-btn flex items-center gap-1.5"
-												data-testid="btn-quick-consent"
-												aria-label="Информированное согласие ИДС"
-											>
-												<FileCheck2 size={14} className="text-teal-400" />
-												<span>ИДС</span>
-											</button>
-											<button
-												type="button"
-												onClick={() => handleQuickCall("assistant_call")}
-												className={`doctor-quick-btn ${isAssistantCalled ? "assistant-active" : ""}`}
-												data-testid="btn-quick-assistant"
-												aria-label="Вызов ассистента в кабинет"
-											>
-												{isAssistantCalled ? (
-													<>
-														<BellRing size={14} className="animate-bounce text-amber-400" />
-														<span>Ассистент вызван</span>
-													</>
-												) : (
-													<>
-														<Bell size={14} />
-														<span>Вызов ассистента</span>
-													</>
-												)}
-											</button>
-										</div>
-
-										{/* Assistant Alert Banner when active */}
-										{isAssistantCalled && !assistantAlertDismissed && (
-											<div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-600 text-xs text-amber-200 flex items-center justify-between">
-												<div className="flex items-center gap-2 font-bold">
-													<BellRing size={15} className="text-amber-400 animate-spin" />
-													<span>Вызов ассистента активен на пост дежурного</span>
-												</div>
 												<button
 													type="button"
-													onClick={() => setAssistantAlertDismissed(true)}
-													className="text-amber-400 hover:text-amber-100 text-xs font-bold cursor-pointer"
+													onClick={() => handleQuickCall("imaging")}
+													className="doctor-quick-btn flex items-center gap-1.5"
+													data-testid="btn-quick-imaging"
+													aria-label="Просмотр КЛКТ и рентгенограмм"
 												>
-													Скрыть
+													<ImageIcon size={14} className="text-teal-400" />
+													<span>КЛКТ / Снимки</span>
 												</button>
-											</div>
-										)}
-
-										{/* Hick's Law: Exactly 1 Dominant Primary CTA Action Button */}
-										<div className="pt-2 flex items-center gap-3">
-											<button
-												type="button"
-												onClick={handlePrimaryFinishAction}
-												className="doctor-primary-action-btn flex-1"
-												data-testid="btn-primary-finish-visit"
-											>
-												<CheckCircle2 size={18} />
-												<span>Завершить приём и сформировать наряд</span>
-											</button>
-
-											{/* Miller's Law: Secondary Actions in Menu */}
-											<div className="relative">
 												<button
 													type="button"
-													onClick={() => setShowSecondaryMenu((v) => !v)}
-													className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] flex items-center justify-center cursor-pointer transition-colors"
-													aria-label="Дополнительные действия приёма"
-													data-testid="btn-secondary-actions-menu"
+													onClick={() => handleQuickCall("consent")}
+													className="doctor-quick-btn flex items-center gap-1.5"
+													data-testid="btn-quick-consent"
+													aria-label="Информированное согласие ИДС"
 												>
-													<MoreHorizontal size={18} />
+													<FileCheck2 size={14} className="text-teal-400" />
+													<span>ИДС</span>
 												</button>
-
-												{showSecondaryMenu && (
-													<div className="absolute right-0 bottom-12 w-60 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs">
-														<button
-															type="button"
-															onClick={() => {
-																setShowSecondaryMenu(false);
-																showToast("Памятка пациенту отправлена на печать", "info");
-															}}
-															className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] font-semibold cursor-pointer flex items-center gap-2"
-														>
-															<Printer size={14} className="text-teal-400" />
-															<span>Печать памятки пациенту</span>
-														</button>
-														<button
-															type="button"
-															onClick={() => {
-																setShowSecondaryMenu(false);
-																showToast("Перенаправление на контрольный осмотр", "info");
-															}}
-															className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] font-semibold cursor-pointer flex items-center gap-2"
-														>
-															<Calendar size={14} className="text-teal-400" />
-															<span>Записать на повторный визит</span>
-														</button>
-														<button
-															type="button"
-															onClick={() => {
-																setShowSecondaryMenu(false);
-																showToast("Журнал стерилизации проверен", "success");
-															}}
-															className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] font-semibold cursor-pointer flex items-center gap-2"
-														>
-															<ShieldCheck size={14} className="text-teal-400" />
-															<span>Журнал стерилизации (СанПиН)</span>
-														</button>
-													</div>
-												)}
-											</div>
-										</div>
-									</>
-								) : (
-									<div className="p-8 text-center text-xs text-slate-400">
-										<Clock className="w-8 h-8 mx-auto mb-2 opacity-30 text-teal-400" />
-										<span>В кресле нет активного пациента. Выберите запись из списка очереди.</span>
-									</div>
-								)}
-							</div>
-
-							{/* Right Column: Next Patient in Queue Card */}
-							<div className="doctor-next-patient-card" data-testid="next-patient-card">
-								<div className="flex items-center justify-between">
-									<div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-										Следующий по очереди
-									</div>
-									{nextQueuedAppointment && (
-										<span className="text-xs font-extrabold text-teal-400">
-											{nextQueuedAppointment.startsAtIso.split("T")[1]?.slice(0, 5)} — {nextQueuedAppointment.endsAtIso.split("T")[1]?.slice(0, 5)}
-										</span>
-									)}
-								</div>
-
-								{nextQueuedAppointment ? (
-									<>
-										<div>
-											<div className="flex items-start justify-between gap-2">
-												<div>
-													<h4 className="text-base font-extrabold text-slate-100 flex items-center gap-1.5" data-testid="next-patient-name">
-														<User className="text-slate-400 w-4 h-4" />
-														<span>{nextQueuedAppointment.patientFullName}</span>
-													</h4>
-													<div className="text-xs text-slate-400 mt-0.5">
-														<span>Карта: {nextQueuedAppointment.cardNumber}</span>
-														{nextQueuedAppointment.patientPhone && (
-															<span> • {nextQueuedAppointment.patientPhone}</span>
-														)}
-													</div>
-												</div>
-
-												{/* Arrival Status Indicator */}
-												<span
-													className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-														nextQueuedAppointment.status === "waiting"
-															? "bg-emerald-950/80 text-emerald-300 border border-emerald-700"
-															: "bg-slate-800 text-slate-300 border border-slate-700"
-													}`}
-													data-testid="next-patient-arrival-badge"
+												<button
+													type="button"
+													onClick={() => handleQuickCall("assistant_call")}
+													className={`doctor-quick-btn ${isAssistantCalled ? "assistant-active" : ""}`}
+													data-testid="btn-quick-assistant"
+													aria-label="Вызов ассистента в кабинет"
 												>
-													{nextQueuedAppointment.status === "waiting" ? (
+													{isAssistantCalled ? (
 														<>
-															<UserCheck size={13} className="text-emerald-400" />
-															<span>В холле (прибыл)</span>
+															<BellRing size={14} className="animate-bounce text-amber-400" />
+															<span>Ассистент вызван</span>
 														</>
 													) : (
 														<>
-															<Clock size={13} />
-															<span>Ожидается по записи</span>
+															<Bell size={14} />
+															<span>Вызов ассистента</span>
 														</>
 													)}
-												</span>
+												</button>
 											</div>
 
-											{/* Allergy Preview */}
-											<div className="mt-2.5 flex items-center gap-2">
-												<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-950/40 text-amber-300 border border-amber-800/60 text-[11px] font-bold">
-													<ShieldAlert size={12} className="text-amber-400" />
-													<span>Аллергия: Артикаин ⚠️</span>
-												</span>
+											{/* Assistant Alert Banner when active */}
+											{isAssistantCalled && !assistantAlertDismissed && (
+												<div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-600 text-xs text-amber-200 flex items-center justify-between">
+													<div className="flex items-center gap-2 font-bold">
+														<BellRing size={15} className="text-amber-400 animate-spin" />
+														<span>Вызов ассистента активен на пост дежурного</span>
+													</div>
+													<button
+														type="button"
+														onClick={() => setAssistantAlertDismissed(true)}
+														className="text-amber-400 hover:text-amber-100 text-xs font-bold cursor-pointer"
+													>
+														Скрыть
+													</button>
+												</div>
+											)}
+
+											{/* Hick's Law: Exactly 1 Dominant Primary CTA Action Button */}
+											<div className="pt-2 flex items-center gap-3">
+												<button
+													type="button"
+													onClick={handlePrimaryFinishAction}
+													className="doctor-primary-action-btn flex-1"
+													data-testid="btn-primary-finish-visit"
+												>
+													<CheckCircle2 size={18} />
+													<span>Завершить приём и сформировать наряд</span>
+												</button>
+
+												{/* Miller's Law: Secondary Actions in Menu */}
+												<div className="relative">
+													<button
+														type="button"
+														onClick={() => setShowSecondaryMenu((v) => !v)}
+														className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] flex items-center justify-center cursor-pointer transition-colors"
+														aria-label="Дополнительные действия приёма"
+														data-testid="btn-secondary-actions-menu"
+													>
+														<MoreHorizontal size={18} />
+													</button>
+
+													{showSecondaryMenu && (
+														<div className="absolute right-0 bottom-12 w-60 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs">
+															<button
+																type="button"
+																onClick={() => {
+																	setShowSecondaryMenu(false);
+																	showToast("Памятка пациенту отправлена на печать", "info");
+																}}
+																className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] font-semibold cursor-pointer flex items-center gap-2"
+															>
+																<Printer size={14} className="text-teal-400" />
+																<span>Печать памятки пациенту</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => {
+																	setShowSecondaryMenu(false);
+																	showToast("Перенаправление на контрольный осмотр", "info");
+																}}
+																className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] font-semibold cursor-pointer flex items-center gap-2"
+															>
+																<Calendar size={14} className="text-teal-400" />
+																<span>Записать на повторный визит</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => {
+																	setShowSecondaryMenu(false);
+																	showToast("Журнал стерилизации проверен", "success");
+																}}
+																className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] font-semibold cursor-pointer flex items-center gap-2"
+															>
+																<ShieldCheck size={14} className="text-teal-400" />
+																<span>Журнал стерилизации (СанПиН)</span>
+															</button>
+														</div>
+													)}
+												</div>
 											</div>
+										</>
+									) : (
+										<div className="p-8 text-center text-xs text-[var(--ink-2,#cbd5e1)]">
+											<Clock className="w-8 h-8 mx-auto mb-2 opacity-30 text-teal-400" />
+											<span>В кресле нет активного пациента. Выберите запись из списка очереди.</span>
 										</div>
+									)}
+								</div>
 
-										{/* Planned Procedures */}
-										<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-1">
-											<div className="font-bold text-slate-200">
-												{nextQueuedAppointment.diagnosisTooth ? `Зуб ${nextQueuedAppointment.diagnosisTooth}` : "План лечения"}: {nextQueuedAppointment.diagnosisIcd10 || "К08.1"}
-											</div>
-											<div className="text-[11px] text-slate-400 leading-tight">
-												{nextQueuedAppointment.treatmentDescription || "Фиксация ортопедической конструкции."}
-											</div>
+								{/* Right Column: Next Patient in Queue Card */}
+								<div className="doctor-next-patient-card" data-testid="next-patient-card">
+									<div className="flex items-center justify-between">
+										<div className="text-xs font-bold text-[var(--ink-2,#cbd5e1)] uppercase tracking-wider">
+											Следующий по очереди
 										</div>
-
-										{/* 1-Click Invite to Chair */}
-										<button
-											type="button"
-											onClick={() => handleStatusTransition(nextQueuedAppointment.id, "in_chair")}
-											className="w-full min-h-[40px] rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
-											data-testid="btn-invite-next-to-chair"
-										>
-											<Activity size={14} />
-											<span>Пригласить в кресло</span>
-										</button>
-									</>
-								) : (
-									<div className="p-6 text-center text-xs text-slate-400">
-										<span>В очереди смены больше нет ожидающих пациентов.</span>
+										{nextQueuedAppointment && (
+											<span className="text-xs font-extrabold text-teal-400">
+												{nextQueuedAppointment.startsAtIso.split("T")[1]?.slice(0, 5)} — {nextQueuedAppointment.endsAtIso.split("T")[1]?.slice(0, 5)}
+											</span>
+										)}
 									</div>
-								)}
+
+									{nextQueuedAppointment ? (
+										<>
+											<div>
+												<div className="flex items-start justify-between gap-2">
+													<div>
+														<h4 className="text-base font-extrabold text-slate-100 flex items-center gap-1.5" data-testid="next-patient-name">
+															<User className="text-[var(--ink-2,#cbd5e1)] w-4 h-4" />
+															<span>{nextQueuedAppointment.patientFullName}</span>
+														</h4>
+														<div className="text-xs text-[var(--ink-2,#cbd5e1)] mt-0.5">
+															<span>Карта: {nextQueuedAppointment.cardNumber}</span>
+															{nextQueuedAppointment.patientPhone && (
+																<span> • {nextQueuedAppointment.patientPhone}</span>
+															)}
+														</div>
+													</div>
+
+													{/* Arrival Status Indicator */}
+													<span
+														className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${
+															nextQueuedAppointment.status === "waiting"
+																? "bg-emerald-950/80 text-emerald-300 border border-emerald-700"
+																: "bg-slate-800 text-slate-200 border border-slate-700"
+														}`}
+														data-testid="next-patient-arrival-badge"
+													>
+														{nextQueuedAppointment.status === "waiting" ? (
+															<>
+																<UserCheck size={13} className="text-emerald-400" />
+																<span>В холле (прибыл)</span>
+															</>
+														) : (
+															<>
+																<Clock size={13} />
+																<span>Ожидается по записи</span>
+															</>
+														)}
+													</span>
+												</div>
+
+												{/* Allergy Preview & EMR Status */}
+												<div className="mt-2.5 flex items-center gap-2 flex-wrap">
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-950/40 text-amber-300 border border-amber-800/60 text-[11px] font-bold">
+														<ShieldAlert size={12} className="text-amber-400" />
+														<span>Аллергия: Артикаин ⚠️</span>
+													</span>
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--paper-soft,#1e293b)] text-[var(--ink-2,#cbd5e1)] border border-[var(--line,#334155)] text-[11px] font-semibold" data-testid="next-patient-emr-status">
+														<FileText size={12} className="text-teal-400" />
+														<span>ЭМК 043/у: {nextQueuedAppointment.emrCard043uStatus === "signed" ? "Заверена ПЭП" : nextQueuedAppointment.emrCard043uStatus === "pending_signature" ? "Требует подписи" : "Ожидает приёма"}</span>
+													</span>
+												</div>
+											</div>
+
+											{/* Financial Deal Breakdown for Next Patient */}
+											<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex items-center justify-between text-xs">
+												<div>
+													<div className="text-[10px] uppercase font-bold text-[var(--ink-2,#cbd5e1)]">Смета услуг</div>
+													<div className="font-extrabold text-slate-100">{formatKopecksRu(nextGrossKop)}</div>
+												</div>
+												<div className="text-right">
+													<div className="text-[10px] uppercase font-bold text-[var(--ink-2,#cbd5e1)]">Врачу (расчет ЗП)</div>
+													<div className="font-extrabold text-emerald-400" data-testid="next-patient-doctor-earned">
+														+{formatKopecksRu(nextDoctorEarnedKop)}
+													</div>
+												</div>
+											</div>
+
+											{/* Planned Procedures */}
+											<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-1">
+												<div className="font-bold text-slate-100">
+													{nextQueuedAppointment.diagnosisTooth ? `Зуб ${nextQueuedAppointment.diagnosisTooth}` : "План лечения"}: {nextQueuedAppointment.diagnosisIcd10 || "К08.1"}
+												</div>
+												<div className="text-[11px] text-[var(--ink-2,#cbd5e1)] leading-tight">
+													{nextQueuedAppointment.treatmentDescription || "Фиксация ортопедической конструкции."}
+												</div>
+											</div>
+
+											{/* 1-Click Invite to Chair */}
+											<button
+												type="button"
+												onClick={() => handleStatusTransition(nextQueuedAppointment.id, "in_chair")}
+												className="w-full min-h-[40px] rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+												data-testid="btn-invite-next-to-chair"
+											>
+												<Activity size={14} />
+												<span>Пригласить в кресло</span>
+											</button>
+										</>
+									) : (
+										<div className="p-6 text-center text-xs text-[var(--ink-2,#cbd5e1)]">
+											<span>В очереди смены больше нет ожидающих пациентов.</span>
+										</div>
+									)}
+								</div>
 							</div>
-						</div>
-					)}
+						);
+					})()}
 
 					{/* View Mode: EMR Journal (043/у Quality & PEP Batch Signing) */}
 					{activeTab === "emr_journal" && (
@@ -901,8 +959,8 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 														{apt.startsAtIso.split("T")[1]?.slice(0, 5)}
 													</td>
 													<td className="font-semibold text-slate-100">{apt.patientFullName}</td>
-													<td className="text-slate-400">{apt.cardNumber}</td>
-													<td className="text-slate-300">
+													<td className="text-[var(--ink-2,#cbd5e1)]">{apt.cardNumber}</td>
+													<td className="text-slate-200">
 														{apt.diagnosisIcd10 || "К04.0"} ({apt.services.length} услуг)
 													</td>
 													<td>
@@ -954,12 +1012,12 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 						<div className="flex flex-col gap-4" data-testid="earnings-panel">
 							<div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
 								<div>
-									<div className="text-xs text-slate-400 uppercase font-bold">Итоговая выплата врачу за смену</div>
+									<div className="text-xs text-[var(--ink-2,#cbd5e1)] uppercase font-bold">Итоговая выплата врачу за смену</div>
 									<div className="text-2xl font-extrabold text-emerald-400 mt-1">
 										{formatKopecksRu(earnings.totalEarnedDealKop)}
 									</div>
 								</div>
-								<div className="text-right text-xs text-slate-400">
+								<div className="text-right text-xs text-[var(--ink-2,#cbd5e1)]">
 									<div>Выручка брутто: <strong className="text-slate-100">{formatKopecksRu(earnings.grossRevenueKop)}</strong></div>
 									<div>Вычет лаборатории ЗТЛ: <strong className="text-rose-400">−{formatKopecksRu(earnings.totalLabDeductionsKop)}</strong></div>
 									<div>Вычет материалов: <strong className="text-amber-400">−{formatKopecksRu(earnings.totalMaterialDeductionsKop)}</strong></div>
@@ -1015,9 +1073,10 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 								<button
 									type="button"
 									onClick={() => setSigningSession(null)}
-									className="w-8 h-8 rounded-full bg-slate-900 text-slate-400 hover:text-slate-100 flex items-center justify-center border border-slate-800 cursor-pointer"
+									className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl bg-slate-900 text-[var(--ink-2,#cbd5e1)] hover:text-slate-100 hover:bg-slate-800 flex items-center justify-center border border-slate-800 cursor-pointer"
+									aria-label="Закрыть окно подтверждения СМС"
 								>
-									<X size={16} />
+									<X size={18} />
 								</button>
 							</div>
 
@@ -1038,12 +1097,12 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 									data-testid="sms-code-input"
 									autoFocus
 								/>
-								<div className="mt-2 text-center text-[11px] text-slate-400">
+								<div className="mt-2 text-center text-[11px] text-[var(--ink-2,#cbd5e1)]">
 									Срок действия кода: <strong className="text-amber-400">{Math.floor(smsCountdown / 60)}:{(smsCountdown % 60).toString().padStart(2, "0")}</strong>
 								</div>
 							</div>
 
-							<div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[10px] text-slate-400 flex items-center gap-2">
+							<div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[10px] text-[var(--ink-2,#cbd5e1)] flex items-center gap-2">
 								<ShieldCheck size={14} className="text-emerald-400 shrink-0" />
 								<span>Статья 9 Федерального закона № 63-ФЗ и Приказ Минздрава РФ № 947н.</span>
 							</div>

@@ -163,6 +163,7 @@ import {
 	type MischClassificationResult,
 	classifyMischBoneQuality,
 	computeHUZoneProfile,
+	formatMischTooltip,
 } from "./boneDensityMischMath";
 import {
 	buildVolumeFromDicomFiles,
@@ -188,6 +189,7 @@ import {
 	hitTestNerveNodeOnAxialSlice,
 	buildMandibularNerve3DSpline,
 	drawMandibularNerveBadge,
+	calculateAngleBadgePosition,
 	type MandibularNerve3DSpline,
 	type NerveDistanceGatingResult,
 	type GatedNerveSegment3D,
@@ -4414,6 +4416,183 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	if (!isOpen) return null;
 
+	// Render crisp DOM HTML/CSS overlays (anti-pixelation badges for rulers, angles, probes, nerve)
+	const renderViewportOverlays = (plane: CbctViewportType) => {
+		if (!volume) return null;
+		const transform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+
+		return (
+			<div className="absolute inset-0 pointer-events-none z-20 overflow-hidden select-none">
+				{/* Rulers */}
+				{rulers
+					.filter((r) => r.plane === plane)
+					.map((r) => {
+						const p1Screen = slicePxToScreenPx(worldMmToSlicePx(r.startMm, plane as MprPlane, volume), transform);
+						const p2Screen = slicePxToScreenPx(worldMmToSlicePx(r.endMm, plane as MprPlane, volume), transform);
+						const midX = (p1Screen.x + p2Screen.x) / 2;
+						const midY = (p1Screen.y + p2Screen.y) / 2;
+						const isSelected = selectedMeasurement?.id === r.id;
+
+						return (
+							<div
+								key={r.id}
+								style={{ left: `${midX}px`, top: `${midY}px`, transform: "translate(-50%, -50%)" }}
+								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
+									isSelected
+										? "bg-slate-900/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
+										: "bg-slate-900/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+								}`}
+								data-testid={`cbct-ruler-overlay-badge-${r.id}`}
+							>
+								<span>{r.distanceMm.toFixed(1)} мм</span>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										setRulers((prev) => prev.filter((item) => item.id !== r.id));
+									}}
+									className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+									title="Удалить линейку [×]"
+									aria-label="Удалить линейку"
+								>
+									×
+								</button>
+							</div>
+						);
+					})}
+
+				{/* Angles */}
+				{angles
+					.filter((a) => a.plane === plane)
+					.map((a) => {
+						const p1Screen = slicePxToScreenPx(worldMmToSlicePx(a.startMm, plane as MprPlane, volume), transform);
+						const pvScreen = slicePxToScreenPx(worldMmToSlicePx(a.vertexMm, plane as MprPlane, volume), transform);
+						const p2Screen = slicePxToScreenPx(worldMmToSlicePx(a.endMm, plane as MprPlane, volume), transform);
+						const badgePos = calculateAngleBadgePosition(p1Screen, pvScreen, p2Screen);
+						const isSelected = selectedMeasurement?.id === a.id;
+
+						return (
+							<div
+								key={a.id}
+								style={{ left: `${badgePos.x}px`, top: `${badgePos.y}px`, transform: "translate(-50%, -50%)" }}
+								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
+									isSelected
+										? "bg-slate-900/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
+										: "bg-slate-900/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+								}`}
+								data-testid={`cbct-angle-overlay-badge-${a.id}`}
+							>
+								<span>{a.angleDeg.toFixed(1)}°</span>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										setAngles((prev) => prev.filter((item) => item.id !== a.id));
+									}}
+									className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+									title="Удалить угол [×]"
+									aria-label="Удалить угол"
+								>
+									×
+								</button>
+							</div>
+						);
+					})}
+
+				{/* Probes (HU) */}
+				{probeMarkers
+					.filter((p) => p.plane === plane)
+					.map((pm) => {
+						const pScreen = slicePxToScreenPx(worldMmToSlicePx(pm.worldMm, plane as MprPlane, volume), transform);
+						const isSelected = selectedMeasurement?.id === pm.id;
+
+						return (
+							<div
+								key={pm.id}
+								style={{ left: `${pScreen.x + 12}px`, top: `${pScreen.y - 12}px`, transform: "translate(0, -50%)" }}
+								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
+									isSelected
+										? "bg-slate-900/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
+										: "bg-slate-900/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+								}`}
+								title={formatMischTooltip(pm.hu)}
+								data-testid={`cbct-probe-overlay-badge-${pm.id}`}
+							>
+								<span>{pm.hu} HU · {pm.tissueName}</span>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										setProbeMarkers((prev) => prev.filter((item) => item.id !== pm.id));
+									}}
+									className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+									title="Удалить замер плотности [×]"
+									aria-label="Удалить замер плотности"
+								>
+									×
+								</button>
+							</div>
+						);
+					})}
+
+				{/* Floating Mandibular Nerve IAN Badge */}
+				{interpolatedNerve3D.length > 1 && (() => {
+					const visibleNodes = nervePoints.filter((pt) => {
+						if (plane === "axial") return Math.abs(pt.z - crosshairMm.z) <= 3.5;
+						if (plane === "coronal") return Math.abs(pt.y - crosshairMm.y) <= 3.5;
+						if (plane === "sagittal") return Math.abs(pt.x - crosshairMm.x) <= 3.5;
+						return false;
+					});
+					if (visibleNodes.length === 0) return null;
+					const midPt = visibleNodes[Math.floor(visibleNodes.length / 2)]!;
+					const pMidScreen = slicePxToScreenPx(worldMmToSlicePx(midPt, plane as MprPlane, volume), transform);
+					return (
+						<div
+							style={{ left: `${pMidScreen.x}px`, top: `${pMidScreen.y - 24}px`, transform: "translate(-50%, -50%)" }}
+							className="absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-slate-900/80 backdrop-blur text-amber-300 border border-amber-500/60 shadow-lg"
+							data-testid={`cbct-nerve-overlay-badge-${plane}`}
+						>
+							<span>Канал IAN (3D {nerveTotalLengthMm.toFixed(1)} мм · 2.0 мм буфер)</span>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									setNervePoints([]);
+									setSelectedNerveNodeIdx(null);
+								}}
+								className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+								title="Очистить трассировку нерва"
+								aria-label="Очистить трассировку нерва"
+							>
+								×
+							</button>
+						</div>
+					);
+				})()}
+
+				{/* FDI Tooth Badge on Cross-Section Viewport */}
+				{plane === "cross_section" && activeCrossSection?.nearestToothFdi && (
+					<div
+						className="absolute top-2 right-12 z-20 pointer-events-auto flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-slate-900/80 backdrop-blur text-teal-300 border border-slate-700/80 shadow-md"
+						data-testid="cbct-cross-section-fdi-badge"
+					>
+						<span>FDI #{activeCrossSection.nearestToothFdi}</span>
+					</div>
+				)}
+
+				{/* FDI Tooth Badge on Panoramic Viewport */}
+				{plane === "panoramic" && activeCrossSection?.nearestToothFdi && (
+					<div
+						className="absolute top-2 right-12 z-20 pointer-events-auto flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-slate-900/80 backdrop-blur text-teal-300 border border-slate-700/80 shadow-md"
+						data-testid="cbct-panoramic-fdi-badge"
+					>
+						<span>Зуб #{activeCrossSection.nearestToothFdi}</span>
+					</div>
+				)}
+			</div>
+		);
+	};
+
 	// Helper render functions for each viewport
 	const renderAxialViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
@@ -4454,7 +4633,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					zoomFactor={transforms.axial?.zoom}
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
-				/>
+				>
+					{renderViewportOverlays("axial")}
+				</CbctViewportHud>
 			</div>
 		</div>
 	);
@@ -4498,7 +4679,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					zoomFactor={transforms.coronal?.zoom}
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
-				/>
+				>
+					{renderViewportOverlays("coronal")}
+				</CbctViewportHud>
 			</div>
 		</div>
 	);
@@ -4542,7 +4725,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					zoomFactor={transforms.sagittal?.zoom}
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
-				/>
+				>
+					{renderViewportOverlays("sagittal")}
+				</CbctViewportHud>
 			</div>
 		</div>
 	);
@@ -4589,7 +4774,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					zoomFactor={transforms.panoramic?.zoom}
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
-				/>
+				>
+					{renderViewportOverlays("panoramic")}
+				</CbctViewportHud>
 			</div>
 		</div>
 	);
@@ -4638,7 +4825,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					zoomFactor={transforms.cross_section?.zoom}
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
-				/>
+				>
+					{renderViewportOverlays("cross_section")}
+				</CbctViewportHud>
 			</div>
 		</div>
 	);
@@ -5154,7 +5343,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							onToggleMaximize={() => handleToggleMaximize("cross_section")}
 							windowWidth={windowWidth}
 							windowLevel={windowLevel}
-						/>
+						>
+							{renderViewportOverlays("cross_section")}
+						</CbctViewportHud>
 
 						{/* Quick Ridge Measurements Badge (compact matte HUD) */}
 						<div className="absolute top-1.5 right-10 px-2 py-0.5 rounded bg-[#09090b]/90 backdrop-blur-sm text-[10px] text-zinc-400 border border-zinc-800 font-mono shadow-xs flex items-center gap-2">

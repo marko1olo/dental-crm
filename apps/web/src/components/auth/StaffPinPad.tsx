@@ -225,15 +225,6 @@ export function StaffPinPad({
 				return;
 			}
 
-			const greetingName =
-				typeof unlockedUser.fullName === "string" &&
-				unlockedUser.fullName.trim()
-					? unlockedUser.fullName.trim()
-					: typeof selectedUser.fullName === "string" &&
-							selectedUser.fullName.trim()
-						? selectedUser.fullName.trim()
-						: "коллега";
-			showToast(`Добро пожаловать, ${greetingName}!`, "success");
 			onUnlockSuccess(unlockedUser);
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {

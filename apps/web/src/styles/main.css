@@ -2,6 +2,7 @@
 @import "./modules/modals.css";
 @import "./modules/schedule.css";
 @import "./modules/odontogram.css";
+@import "../components/odontogram/odontogram.css";
 @import "./modules/patient-workspace.css";
 @import "./modules/mobile-touch.css";
 @import "../components/copilot/CopilotDrawer.css";
@@ -16798,8 +16799,14 @@ body.dark-mode .document-manual-override {
 .patient-workspace,
 .treatment-plan-module,
 .treatment-3tier-comparison,
-.treatment-plan-phased-view {
-	padding-bottom: 120px !important;
+.treatment-plan-phased-view,
+.visit-note-panel,
+.visit-view-layout,
+.doctor-cockpit-body,
+.clinical-presets-bar,
+.emk-tabs-container,
+.visit-fields {
+	padding-bottom: 128px !important;
 }
 
 @media (max-width: 640px) {
@@ -16813,7 +16820,13 @@ body.dark-mode .document-manual-override {
 	.patient-workspace,
 	.treatment-plan-module,
 	.treatment-3tier-comparison,
-	.treatment-plan-phased-view {
-		padding-bottom: calc(var(--bottom-nav-height, 64px) + 80px + env(safe-area-inset-bottom, 0px)) !important;
+	.treatment-plan-phased-view,
+	.visit-note-panel,
+	.visit-view-layout,
+	.doctor-cockpit-body,
+	.clinical-presets-bar,
+	.emk-tabs-container,
+	.visit-fields {
+		padding-bottom: calc(var(--bottom-nav-height, 64px) + 128px + env(safe-area-inset-bottom, 0px)) !important;
 	}
 }

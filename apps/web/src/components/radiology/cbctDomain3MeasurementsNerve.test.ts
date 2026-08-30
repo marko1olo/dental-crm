@@ -26,6 +26,7 @@ import {
 	calculateSplineLength3DMm,
 	calculateNerveDistanceGating,
 	getGatedNerveSegments,
+	calculateAngleBadgePosition,
 	formatRulerBadgeText,
 	formatAngleBadgeText,
 	formatProbeBadgeText,
@@ -202,4 +203,31 @@ describe("Wave 29 Domain 3 — Calipers, 3D Nerve & DOM Overlays Suite", () => {
 			assert.equal(straightAngle, 180.0);
 		});
 	});
+
+	// ─── 5. SCREEN-SPACE ANGLE BISECTOR BADGE POSITIONING ─────────────────────
+	describe("5. Screen-Space Angle Bisector Badge Positioning", () => {
+		it("places angle badge along bisector between orthogonal arms (90°)", () => {
+			const p1 = { x: 100, y: 0 };
+			const vertex = { x: 0, y: 0 };
+			const p2 = { x: 0, y: 100 };
+			const badgePos = calculateAngleBadgePosition(p1, vertex, p2);
+
+			// Bisector is at 45° (cos 45° ~ 0.707, sin 45° ~ 0.707)
+			assert.ok(badgePos.x > 15, "Badge x must be positive along bisector");
+			assert.ok(badgePos.y > 15, "Badge y must be positive along bisector");
+			assert.ok(Math.abs(badgePos.x - badgePos.y) < 1.0, "Badge x and y must be equal for symmetric 45° bisector");
+		});
+
+		it("handles single arm (in-progress measurement) gracefully", () => {
+			const p1 = { x: 50, y: 50 };
+			const vertex = { x: 0, y: 0 };
+			const p2 = { x: 0, y: 0 }; // Degenerate arm 2
+			const badgePos = calculateAngleBadgePosition(p1, vertex, p2);
+
+			assert.ok(!Number.isNaN(badgePos.x));
+			assert.ok(!Number.isNaN(badgePos.y));
+			assert.equal(badgePos.x, 25);
+		});
+	});
 });
+

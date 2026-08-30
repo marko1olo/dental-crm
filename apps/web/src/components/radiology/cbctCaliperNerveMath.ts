@@ -1534,3 +1534,42 @@ export function formatNerveBadgeText(
 	return `Канал IAN (3D ${totalLengthMm.toFixed(1)} мм · ${safetyMarginMm.toFixed(1)} мм буфер)`;
 }
 
+/**
+ * Расчет экранных координат плавающего DOM-бейджа угла по биссектрисе
+ */
+export function calculateAngleBadgePosition(
+	p1Screen: { readonly x: number; readonly y: number },
+	vertexScreen: { readonly x: number; readonly y: number },
+	p2Screen: { readonly x: number; readonly y: number },
+): { x: number; y: number } {
+	const dx1 = p1Screen.x - vertexScreen.x;
+	const dy1 = p1Screen.y - vertexScreen.y;
+	const dx2 = p2Screen.x - vertexScreen.x;
+	const dy2 = p2Screen.y - vertexScreen.y;
+	const len1 = Math.hypot(dx1, dy1);
+	const len2 = Math.hypot(dx2, dy2);
+
+	if (len1 >= 5 && len2 >= 5) {
+		const angle1 = Math.atan2(dy1, dx1);
+		const angle2 = Math.atan2(dy2, dx2);
+		let diff = angle2 - angle1;
+		while (diff > Math.PI) diff -= Math.PI * 2;
+		while (diff < -Math.PI) diff += Math.PI * 2;
+		const bisectorAngle = angle1 + diff / 2;
+		const badgeDist = Math.min(48, Math.max(26, Math.min(len1, len2) * 0.4 + 14));
+		return {
+			x: Number((vertexScreen.x + Math.cos(bisectorAngle) * badgeDist).toFixed(1)),
+			y: Number((vertexScreen.y + Math.sin(bisectorAngle) * badgeDist).toFixed(1)),
+		};
+	} else if (len1 >= 5) {
+		return {
+			x: Number(((vertexScreen.x + p1Screen.x) / 2).toFixed(1)),
+			y: Number(((vertexScreen.y + p1Screen.y) / 2 - 14).toFixed(1)),
+		};
+	}
+	return {
+		x: vertexScreen.x,
+		y: vertexScreen.y - 18,
+	};
+}
+

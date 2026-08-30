@@ -1151,8 +1151,18 @@ export function VisitEmkTab() {
 		>
 			<div className="visit-note-head flex items-center justify-between gap-3 flex-wrap">
 				<div>
-					<p className="eyebrow">ЭМК после диктовки</p>
-					<h3 style={{ color: "var(--ink)" }}>
+					<p
+						className="eyebrow text-[var(--ink-2,var(--muted,#cbd5e1))] dark:text-slate-200"
+						style={{ color: "var(--ink-2, var(--muted, #cbd5e1))" }}
+						data-testid="emk-section-eyebrow"
+					>
+						ЭМК после диктовки
+					</p>
+					<h3
+						className="text-slate-900 dark:text-slate-200 text-base font-extrabold"
+						style={{ color: "var(--ink, var(--ink-2, #f8fafc))" }}
+						data-testid="emk-section-title"
+					>
 						{draft
 							? "Проверьте черновик"
 							: isVisitNoteDirty

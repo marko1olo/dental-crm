@@ -1070,7 +1070,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		renderMprPlanes();
 	}, [renderMprPlanes]);
 
-	// Reset W/L & View (Zoom, Pan, Rotation, Maximization)
+	// Reset W/L & View (Zoom, Pan, Rotation, Maximization, transient measurements)
 	const handleResetViewAndWL = useCallback(() => {
 		setActivePresetId("bone_dense");
 		setWindowWidth(4400);
@@ -1089,6 +1089,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		setIsPanning(null);
 		setActiveRotationHandle(null);
 		setIsShiftRotating(null);
+		setRulers([]);
+		setActiveRuler(null);
+		setAngles([]);
+		setActiveAngle(null);
+		setProbeMarkers([]);
+		setActiveProbe(null);
+		setSelectedMeasurementId(null);
 	}, []);
 
 	const getCanvasCursor = useCallback((plane: MprPlane) => {

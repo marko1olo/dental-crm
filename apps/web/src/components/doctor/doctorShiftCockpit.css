@@ -1,0 +1,318 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DENTE Dental CRM — Doctor Shift Cockpit & Header Styles (Medical Density)
+ * Strict graphite aesthetics, ergonomic Fitts touch targets, and zero dark mode glare.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+/* Cockpit Modal Overlay */
+.doctor-cockpit-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(2, 6, 23, 0.82);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	padding: 16px;
+	overflow-y: auto;
+}
+
+/* Main Cockpit Container */
+.doctor-cockpit-container {
+	position: relative;
+	width: 100%;
+	max-width: 1120px;
+	max-height: 90vh;
+	background: var(--paper-strong, #09090b);
+	color: var(--ink, #f8fafc);
+	border: 1px solid var(--line-strong, #1e293b);
+	border-radius: 20px;
+	box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* Header & Status Bar */
+.doctor-cockpit-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	background: var(--paper, #09090b);
+	border-bottom: 1px solid var(--line, #1e293b);
+	gap: 16px;
+}
+
+.doctor-cockpit-title {
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--ink, #f8fafc);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.doctor-cockpit-body {
+	padding: 18px 20px 128px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+/* High-Density Metric Strip */
+.doctor-cockpit-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+}
+
+.doctor-metric-card {
+	background: var(--paper, #0f172a);
+	border: 1px solid var(--line, #1e293b);
+	border-radius: 12px;
+	padding: 10px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.doctor-metric-label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ink-2, var(--muted, #cbd5e1));
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.doctor-metric-value {
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--ink, #f8fafc);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Patient Showcase Grid */
+.doctor-patient-showcase-grid {
+	display: grid;
+	grid-template-columns: 1.4fr 1fr;
+	gap: 16px;
+}
+
+@media (max-width: 900px) {
+	.doctor-patient-showcase-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Active Patient Focus Card */
+.doctor-active-patient-card {
+	background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(9, 9, 11, 0.98) 100%);
+	border: 1px solid #14b8a6;
+	box-shadow: 0 0 20px -5px rgba(20, 184, 166, 0.2);
+	border-radius: 16px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+/* Next Patient in Queue Card */
+.doctor-next-patient-card {
+	background: var(--paper, #0f172a);
+	border: 1px solid var(--line, #1e293b);
+	border-radius: 16px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Live Countdown Timer Badge */
+.doctor-countdown-timer {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	border-radius: 10px;
+	font-size: 14px;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.02em;
+	transition: all 0.2s ease-in-out;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.doctor-countdown-timer.normal {
+	background: rgba(13, 148, 136, 0.15);
+	color: #2dd4bf;
+	border: 1px solid rgba(45, 212, 191, 0.35);
+}
+
+.doctor-countdown-timer.overtime {
+	background: rgba(225, 29, 72, 0.2);
+	color: #fb7185;
+	border: 1px solid rgba(244, 63, 94, 0.6);
+	animation: pulse-overtime 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-overtime {
+	0%, 100% {
+		opacity: 1;
+		box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+	}
+	50% {
+		opacity: 0.85;
+		box-shadow: 0 0 0 8px rgba(244, 63, 94, 0);
+	}
+}
+
+/* Emergency Red Allergy Badge */
+.doctor-allergy-alert-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 8px;
+	font-size: 11px;
+	font-weight: 800;
+	background: rgba(185, 28, 28, 0.25);
+	color: #fca5a5;
+	border: 1px solid rgba(239, 68, 68, 0.6);
+	letter-spacing: 0.01em;
+}
+
+/* 0-Click Quick Action Buttons Bar */
+.doctor-quick-actions-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.doctor-quick-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 6px 12px;
+	border-radius: 9px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink, #f1f5f9);
+	background: var(--paper, #1e293b);
+	border: 1px solid var(--line, #334155);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	user-select: none;
+}
+
+.doctor-quick-btn:hover {
+	background: #334155;
+	border-color: #475569;
+	color: #ffffff;
+}
+
+.doctor-quick-btn:active {
+	transform: scale(0.98);
+}
+
+.doctor-quick-btn.assistant-active {
+	background: rgba(217, 119, 6, 0.25);
+	border-color: #f59e0b;
+	color: #fde68a;
+	animation: pulse-assistant 1.8s infinite;
+}
+
+@keyframes pulse-assistant {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.75; }
+}
+
+/* Primary Action Button (Hick's Law 1 dominant CTA) */
+.doctor-primary-action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 40px;
+	padding: 8px 18px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 800;
+	background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+	color: #ffffff;
+	border: 1px solid #14b8a6;
+	box-shadow: 0 4px 14px -2px rgba(13, 148, 136, 0.45);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.doctor-primary-action-btn:hover {
+	background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+	box-shadow: 0 6px 20px -2px rgba(20, 184, 166, 0.6);
+}
+
+.doctor-primary-action-btn:active {
+	transform: translateY(1px);
+}
+
+/* Desktop Header Bar Styles */
+.doctor-desktop-header-strip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 44px;
+	padding: 4px 16px;
+	background: var(--paper-strong, #09090b);
+	border-bottom: 1px solid var(--line, #1e293b);
+	color: var(--ink, #f8fafc);
+	font-size: 12px;
+	gap: 12px;
+	position: sticky;
+	top: 0;
+	z-index: 40;
+}
+
+.doctor-desktop-header-section {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* Unsigned EMR Accordion List */
+.doctor-emr-list-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	font-size: 12px;
+}
+
+.doctor-emr-list-table th {
+	text-align: left;
+	padding: 8px 12px;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ink-2, var(--muted, #cbd5e1));
+	background: rgba(15, 23, 42, 0.6);
+	border-bottom: 1px solid var(--line, #1e293b);
+}
+
+.doctor-emr-list-table td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--line, #1e293b);
+	color: var(--ink, #f1f5f9);
+}
+
+.doctor-emr-list-table tr:hover td {
+	background: rgba(30, 41, 59, 0.4);
+}

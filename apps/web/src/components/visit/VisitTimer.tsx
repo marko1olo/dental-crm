@@ -60,7 +60,7 @@ export function VisitTimer({ createdAt }: { createdAt?: string | null }) {
 	return (
 		<div
 			role="timer"
-			className="visit-timer"
+			className="visit-timer whitespace-nowrap tabular-nums shrink-0"
 			style={{
 				display: "inline-flex",
 				alignItems: "center",
@@ -68,11 +68,14 @@ export function VisitTimer({ createdAt }: { createdAt?: string | null }) {
 				color: "var(--muted)",
 				fontSize: "14px",
 				fontWeight: 500,
+				whiteSpace: "nowrap",
+				fontVariantNumeric: "tabular-nums",
+				flexShrink: 0,
 			}}
 			aria-label="Время приёма"
 		>
-			<Clock size={16} />
-			<span>{elapsed}</span>
+			<Clock size={16} className="shrink-0" />
+			<span className="whitespace-nowrap tabular-nums shrink-0">{elapsed}</span>
 		</div>
 	);
 }

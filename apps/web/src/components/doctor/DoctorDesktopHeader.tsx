@@ -188,7 +188,7 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 									{effectiveCabinetName}
 								</span>
 							</div>
-							<span className="text-[10px] text-[var(--muted,#94a3b8)] leading-tight">
+							<span className="text-[10px] text-[var(--ink-2,var(--muted,#cbd5e1))] leading-tight">
 								{doctorSpecialty}
 							</span>
 						</div>
@@ -225,7 +225,7 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 						</div>
 					</div>
 				) : (
-					<div className="doctor-desktop-header-section flex-1 justify-center text-xs text-[var(--muted,#94a3b8)]">
+					<div className="doctor-desktop-header-section flex-1 justify-center text-xs text-[var(--ink-2,var(--muted,#cbd5e1))]">
 						<span>Нет активного приема в кресле</span>
 					</div>
 				)}
@@ -233,16 +233,16 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 				{/* 3. Middle-Right: Live Countdown Timer */}
 				<div className="doctor-desktop-header-section shrink-0">
 					<div
-						className={`doctor-countdown-timer !py-1 !px-2.5 !text-xs ${
+						className={`doctor-countdown-timer !py-1 !px-2.5 !text-xs whitespace-nowrap tabular-nums shrink-0 ${
 							timerState.isOvertime ? "overtime" : "normal"
 						}`}
 						data-testid="header-countdown-timer"
 						role="timer"
 					>
-						<Clock size={14} />
-						<span>{timerState.formatted}</span>
+						<Clock size={14} className="shrink-0" />
+						<span className="whitespace-nowrap tabular-nums shrink-0">{timerState.formatted}</span>
 						{timerState.isOvertime && (
-							<span className="text-[9px] font-extrabold uppercase">Овертайм</span>
+							<span className="text-[9px] font-extrabold uppercase whitespace-nowrap shrink-0">Овертайм</span>
 						)}
 					</div>
 				</div>
@@ -342,7 +342,7 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 						<button
 							type="button"
 							onClick={() => setShowSecondaryDropdown((v) => !v)}
-							className="w-9 h-9 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] flex items-center justify-center cursor-pointer transition-colors touch-manipulation"
+							className="w-9 h-9 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink-2,var(--muted,#cbd5e1))] hover:text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] flex items-center justify-center cursor-pointer transition-colors touch-manipulation"
 							aria-label="Дополнительные опции"
 							data-testid="header-secondary-dropdown-btn"
 						>
