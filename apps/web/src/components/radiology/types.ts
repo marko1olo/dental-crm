@@ -1,14 +1,20 @@
 import type { DentalRadiologyStudyType, RadiologyReferralGoal } from "@dental/shared";
 import type {
 	AlveolarRidgeCaliperMeasurement,
+	GatedNerveSegment3D,
 	MandibularNerveSpline,
+	MandibularNerve3DSpline,
+	NerveDistanceGatingResult,
 	Point2D,
 	Point3D,
 } from "./cbctCaliperNerveMath";
 
 export type {
 	AlveolarRidgeCaliperMeasurement,
+	GatedNerveSegment3D,
 	MandibularNerveSpline,
+	MandibularNerve3DSpline,
+	NerveDistanceGatingResult,
 	Point2D,
 	Point3D,
 };

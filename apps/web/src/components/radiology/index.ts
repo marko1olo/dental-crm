@@ -7,6 +7,7 @@ export * from "./RadiologyReferralModal";
 export * from "./RadiologyStudyList";
 export * from "./RadiologyViewerModal";
 export * from "./types";
+export * from "./cbctCaliperNerveMath";
 export * from "./boneDensityMischMath";
 export * from "./cbctMprMath";
 export * from "./cbctObliqueMath";
