@@ -5,16 +5,8 @@ import { chromium } from "playwright";
 const THEMES = ["light", "dark"];
 
 const OUT_DIRS = [
-	"C:/Clinic_MVP/dental-crm/docs/proofs/audit",
-	"C:/Clinic_MVP/dental-crm/docs/screenshots",
-	"C:/Users/Admin/.gemini/antigravity/brain/807464d6-3f48-4982-a0e5-1ab679e9f679",
-	"C:/Users/Admin/.gemini/antigravity/brain/20f790a1-5c06-42aa-85a4-6738dbe30aa6",
-	"C:/Users/Admin/.gemini/antigravity/brain/46a0d6d1-aaa9-4a6d-8bd6-c30138e73d80",
-	"C:/Users/Admin/.gemini/antigravity/brain/28922cfe-a09a-4693-aa79-8e62cf0bac22",
-	"C:/Users/Admin/.gemini/antigravity/brain/69ded610-4c1d-4d3f-8359-693851dbbfd7",
-	"C:/Users/Admin/.gemini/antigravity/brain/597374ff-ac94-40b8-8848-ea236f205038",
-	"C:/Users/Admin/.gemini/antigravity/brain/dff68eac-163e-4466-ad77-bb5c3a4c69cb",
-	"C:/Users/Admin/.gemini/antigravity/brain/f1d0a24f-0935-4ab8-8898-8e890e178c76",
+	path.join(process.cwd(), "docs/proofs/audit"),
+	path.join(process.cwd(), "docs/screenshots"),
 	process.env.BRAIN_DIR,
 ].filter(Boolean);
 
@@ -22,6 +14,21 @@ for (const dir of OUT_DIRS) {
 	if (!existsSync(dir)) {
 		mkdirSync(dir, { recursive: true });
 	}
+}
+
+const BASE_URL = process.env.APP_BASE || "http://127.0.0.1:5173";
+
+// ─── 1. Preflight Server Check ────────────────────────────────────────────────────
+
+try {
+	const res = await fetch(BASE_URL);
+	if (!res.ok && res.status !== 200 && res.status !== 304) {
+		throw new Error(`HTTP ${res.status}`);
+	}
+	console.log(`[PREFLIGHT] Live dev server reachable at ${BASE_URL} (HTTP ${res.status})`);
+} catch (e) {
+	console.error(`[FATAL] Dev server preflight failed: ${e.message}. Ensure Vite server is running on ${BASE_URL}`);
+	process.exit(1);
 }
 
 const possibleBrowserPaths = [
@@ -50,33 +57,27 @@ if (browserExecutable) {
 
 const browser = await chromium.launch(launchOptions);
 
-async function saveScreenshot(page, filename, retry = true) {
+async function saveScreenshot(page, filename) {
 	const primary = path.join(OUT_DIRS[0], filename);
 	try {
-		await page.screenshot({ path: primary, timeout: 5000, animations: "disabled" });
-	} catch {
-		try {
-			await page.screenshot({ path: primary, timeout: 5000 });
-		} catch (err) {
-			console.warn(`[WARN] screenshot failed for ${filename}:`, err?.message || err);
-			return;
-		}
+		await page.screenshot({ path: primary, timeout: 10000, animations: "disabled" });
+	} catch (err) {
+		console.error(`[FATAL] Screenshot capture failed for ${filename}: ${err.message}`);
+		process.exit(1);
 	}
 
-	// Verify non-empty screenshot
-	if (retry && existsSync(primary)) {
-		const size = statSync(primary).size;
-		if (size < 30000) {
-			await page.waitForTimeout(600);
-			return saveScreenshot(page, filename, false);
-		}
+	const size = statSync(primary).size;
+	if (size < 30000) {
+		console.error(`[FATAL] Screenshot ${filename} size is too small (${size} bytes < 30KB). Render failure or blank screen!`);
+		process.exit(1);
 	}
 
 	for (let i = 1; i < OUT_DIRS.length; i++) {
 		try {
 			copyFileSync(primary, path.join(OUT_DIRS[i], filename));
-		} catch {
-			/* ignore */
+		} catch (err) {
+			console.error(`[FATAL] Failed replicating screenshot to ${OUT_DIRS[i]}: ${err.message}`);
+			process.exit(1);
 		}
 	}
 }
@@ -93,12 +94,11 @@ async function applyTheme(page, theme) {
 			}
 			document.documentElement.style.colorScheme = isDark ? "dark" : "light";
 		}, theme);
-	} catch {
-		/* ignore navigation context changes */
+	} catch (err) {
+		console.error(`[FATAL] Failed applying theme ${theme}: ${err.message}`);
+		process.exit(1);
 	}
 }
-
-const BASE_URL = "http://127.0.0.1:5173";
 
 const MODAL_BUTTON_TEST_IDS = [
 	// Clinical Core Modals
@@ -181,40 +181,62 @@ for (const vp of VIEWPORTS) {
 		window.localStorage.setItem("dente_theme_mode", "dark");
 		window.localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
 		window.localStorage.setItem("dente_onboarding_completed", "true");
-		window.localStorage.setItem("dente_active_user", JSON.stringify({
-			id: "usr-doc-1",
-			name: "Д-р Смирнов Алексей Петрович",
-			role: "doctor",
-			organizationId: "c-1",
-		}));
+		window.localStorage.setItem(
+			"dente_active_user",
+			JSON.stringify({
+				id: "usr-doc-1",
+				name: "Д-р Смирнов Алексей Петрович",
+				role: "doctor",
+				organizationId: "c-1",
+			}),
+		);
 		window.localStorage.setItem("dente_offline_readiness_banner_dismissed_v1", "true");
 	});
 
 	// Warm up page
-	await page.goto(`${BASE_URL}/?standalone=clinical-modals-studio`, { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
+	try {
+		await page.goto(`${BASE_URL}/?standalone=clinical-modals-studio`, { waitUntil: "networkidle", timeout: 20000 });
+	} catch (err) {
+		console.error(`[FATAL] Warmup page goto failed: ${err.message}`);
+		process.exit(1);
+	}
 
 	for (const theme of THEMES) {
 		console.log(`\n[VIEWPORT] ${vp.name} | [THEME] ${theme}`);
 
 		for (const modal of MODAL_BUTTON_TEST_IDS) {
 			const targetUrl = `${BASE_URL}/?standalone=clinical-modals-studio&theme=${theme}&modal=${modal.name}#clinical-modals-studio?theme=${theme}&modal=${modal.name}`;
-			
-			// Isolated navigation: opening the targeted url directly mounts the requested modal and unmounts previous
-			await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 8000 }).catch(() => {});
+
+			try {
+				await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 15000 });
+			} catch (err) {
+				console.error(`[FATAL] Navigation failed for modal ${modal.name} at ${targetUrl}: ${err.message}`);
+				process.exit(1);
+			}
+
 			await applyTheme(page, theme);
 
 			// Check if modal dialog container is present in the DOM
 			const modalDialog = page.locator('[role="dialog"], [data-testid*="modal"], [data-testid*="drawer"]').first();
-			await modalDialog.waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
-			const isVisible = await modalDialog.isVisible().catch(() => false);
+			let isVisible = false;
+			try {
+				await modalDialog.waitFor({ state: "visible", timeout: 3000 });
+				isVisible = await modalDialog.isVisible();
+			} catch {
+				isVisible = false;
+			}
 
 			// Fallback: If not open via query parameter, click the dedicated trigger button
 			if (!isVisible) {
 				const trigger = page.locator(`[data-testid="${modal.id}"]`).or(page.locator(`[data-testid="${modal.altId}"]`)).first();
-				if (await trigger.isVisible().catch(() => false)) {
-					await trigger.click({ timeout: 1000, force: true }).catch(() => {});
+				try {
+					await trigger.waitFor({ state: "visible", timeout: 5000 });
+					await trigger.click({ timeout: 2000, force: true });
+					await modalDialog.waitFor({ state: "visible", timeout: 5000 });
+				} catch (err) {
+					console.error(`[FATAL] Failed to open modal ${modal.name} via trigger [${modal.id}]: ${err.message}`);
+					process.exit(1);
 				}
-				await modalDialog.waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
 			}
 
 			await page.waitForTimeout(300);
@@ -222,7 +244,9 @@ for (const vp of VIEWPORTS) {
 			const filename = `audit_modal_${modal.name}_${theme}_${vp.name}.png`;
 			await saveScreenshot(page, filename);
 			capturedCount++;
-			console.log(`  [CAPTURED ${capturedCount}/${VIEWPORTS.length * THEMES.length * MODAL_BUTTON_TEST_IDS.length}] ${filename}`);
+			console.log(
+				`  [CAPTURED ${capturedCount}/${VIEWPORTS.length * THEMES.length * MODAL_BUTTON_TEST_IDS.length}] ${filename}`,
+			);
 		}
 	}
 
@@ -231,5 +255,8 @@ for (const vp of VIEWPORTS) {
 
 await browser.close();
 const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(1);
-console.log(`\n[SUCCESS] Modal Visual Proof Completed: ${capturedCount} screenshots saved across ${OUT_DIRS.length} target directories in ${elapsedSec}s!`);
+console.log(
+	`\n[SUCCESS] Modal Visual Proof Completed: ${capturedCount} screenshots saved across ${OUT_DIRS.length} target directories in ${elapsedSec}s!`,
+);
+
 
