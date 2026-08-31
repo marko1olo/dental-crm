@@ -1,0 +1,62 @@
+/* Pediatric Mixed Dentition Modal & Timeline Styling */
+
+.pediatric-age-slider {
+	touch-action: none;
+	-webkit-tap-highlight-color: transparent;
+	padding: 10px 0;
+	margin: 6px 0;
+}
+
+.pediatric-age-slider::-webkit-slider-runnable-track {
+	height: 12px;
+	border-radius: 9999px;
+	background: var(--odontogram-border-subtle, var(--line, #e2e8f0));
+}
+
+.pediatric-age-slider::-webkit-slider-thumb {
+	appearance: none;
+	-webkit-appearance: none;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--teal, #0d9488);
+	border: 3px solid var(--paper-strong, var(--paper, #ffffff));
+	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(13, 148, 136, 0.4);
+	cursor: pointer;
+	margin-top: -10px;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+	position: relative;
+	z-index: 5;
+}
+
+.pediatric-age-slider::-webkit-slider-thumb:hover {
+	transform: scale(1.1);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4), 0 0 0 2px rgba(13, 148, 136, 0.6);
+}
+
+.pediatric-age-slider::-webkit-slider-thumb:active {
+	transform: scale(1.15);
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.5), 0 0 0 4px rgba(13, 148, 136, 0.3);
+}
+
+.pediatric-age-slider::-moz-range-track {
+	height: 12px;
+	border-radius: 9999px;
+	background: var(--odontogram-border-subtle, var(--line, #e2e8f0));
+}
+
+.pediatric-age-slider::-moz-range-thumb {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--teal, #0d9488);
+	border: 3px solid var(--paper-strong, var(--paper, #ffffff));
+	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(13, 148, 136, 0.4);
+	cursor: pointer;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pediatric-age-slider::-moz-range-thumb:active {
+	transform: scale(1.15);
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.5), 0 0 0 4px rgba(13, 148, 136, 0.3);
+}

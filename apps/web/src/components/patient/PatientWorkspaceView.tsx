@@ -277,7 +277,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						<div className="flex items-center gap-1.5 flex-wrap">
 							<button
 								type="button"
-								className="min-h-[34px] px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center"
+								className="min-h-[40px] sm:min-h-[34px] px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center active:scale-95"
 								onClick={() => setIsLoyaltyModalOpen(true)}
 								title="Программа лояльности и бонусы (54-ФЗ)"
 								aria-label="Программа лояльности и бонусы (54-ФЗ)"
@@ -288,7 +288,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 							</button>
 							<button
 								type="button"
-								className="min-h-[34px] px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center"
+								className="min-h-[40px] sm:min-h-[34px] px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center active:scale-95"
 								onClick={() => setIsDmsManagerOpen(true)}
 								title="Управление полисами ДМС и гарантийными письмами (СОГАЗ, Ингосстрах, РЕСО)"
 								aria-label="Управление полисами ДМС и гарантийными письмами (СОГАЗ, Ингосстрах, РЕСО)"
@@ -299,7 +299,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 							</button>
 							<button
 								type="button"
-								className="min-h-[34px] px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center"
+								className="min-h-[40px] sm:min-h-[34px] px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center active:scale-95"
 								onClick={() => setIsDmsRegistryOpen(true)}
 								title="Экспорт реестра услуг ДМС"
 							>
@@ -309,7 +309,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 							<div className="flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] flex-wrap">
 								<button
 									type="button"
-									className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+									className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
 										activeTab === "timeline"
 											? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
@@ -321,7 +321,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								</button>
 								<button
 									type="button"
-									className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+									className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
 										activeTab === "plans"
 											? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
@@ -333,7 +333,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								</button>
 								<button
 									type="button"
-									className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+									className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
 										activeTab === "visits"
 											? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"

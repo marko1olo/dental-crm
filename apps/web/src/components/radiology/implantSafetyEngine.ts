@@ -566,7 +566,7 @@ export function sampleCrossSectionHUProfile(
 		const apicalHU = calcAverageHU(apicalSamples);
 
 		if (coronalHU > -400 || trabecularHU > -400 || apicalHU > -400) {
-			const finalCoronal = coronalHU < 300 ? (isMandible ? (isPosterior ? 1350 : 1450) : 1250) : Math.max(1250, coronalHU);
+			const finalCoronal = coronalHU < 850 ? (isMandible ? (isPosterior ? 1350 : 1450) : 1250) : Math.max(1250, coronalHU);
 			const finalTrabecular = trabecularHU < 100 ? (isMandible ? 750 : 650) : Math.max(350, Math.min(850, trabecularHU));
 			const finalApical = apicalHU < 200 ? (isMandible ? 950 : 850) : Math.max(600, apicalHU);
 

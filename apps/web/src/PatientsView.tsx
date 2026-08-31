@@ -299,7 +299,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						onChange={(event: TextFieldChangeEvent) =>
 							setQuery(event.target.value)
 						}
-						placeholder="Поиск пациента по ФИО или телефону..."
+						placeholder="ФИО / тел."
 					/>
 					{query ? (
 						<button

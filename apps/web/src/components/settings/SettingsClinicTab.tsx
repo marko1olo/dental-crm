@@ -560,7 +560,7 @@ export function SettingsClinicTab({
 				</div>
 			</div>
 
-			<div role="toolbar" className="mode-grid grid grid-cols-2 lg:grid-cols-4 gap-3 w-full" aria-label="Режим продукта">
+			<div role="toolbar" className="mode-grid grid grid-cols-2 lg:grid-cols-4 gap-3 w-full border-t border-[var(--line)] pt-4" aria-label="Режим продукта">
 				{typedClinicModes.map((mode) => (
 					<button
 						className={`mode-card ${dashboard?.clinicSettings?.profile?.mode === mode ? "active" : ""}`}
@@ -570,14 +570,19 @@ export function SettingsClinicTab({
 						onClick={() => changeClinicMode(mode)}
 					>
 						<strong>{clinicModeLabels?.[mode]?.title}</strong>
-						<span>{clinicModeLabels?.[mode]?.detail}</span>
+						<span className="text-xs text-[var(--muted)] leading-normal break-words">{clinicModeLabels?.[mode]?.detail}</span>
 					</button>
 				))}
 			</div>
 
-			<div className="clinic-hints">
+			<div className="clinic-hints flex flex-col sm:flex-row gap-3 w-full">
 				{typedModeHints.map((hint) => (
-					<span key={hint}>{hint}</span>
+					<div
+						key={hint}
+						className="flex-1 border-l-4 border-teal-500 bg-teal-50/30 dark:bg-teal-950/20 p-3 rounded-r-lg text-xs sm:text-sm text-[var(--ink)] dark:text-slate-200 leading-normal break-words"
+					>
+						{hint}
+					</div>
 				))}
 			</div>
 

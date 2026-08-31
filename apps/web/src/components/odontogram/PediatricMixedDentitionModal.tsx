@@ -29,6 +29,7 @@ import { showToast } from "../GlobalToast";
 import { FranklBehaviorBadge, PediatricParentMemoModal } from "../pediatric";
 import { PediatricCariogramTab } from "./PediatricCariogramTab";
 import "./odontogram.css";
+import "./pediatricMixedDentition.css";
 
 const UPPER_PRIMARY_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
 const LOWER_PRIMARY_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
@@ -312,7 +313,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 
 				{/* Navigation Tabs (>= 44px Touch Targets) */}
 				<div
-					className="flex items-center gap-1.5 px-3 sm:px-4 pt-2 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap scrollbar-none shrink-0 touch-pan-x whitespace-nowrap w-full"
+					className="flex flex-wrap items-center gap-1.5 px-3 sm:px-4 pt-2 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 shrink-0 w-full"
 				>
 					<button
 						type="button"
@@ -406,7 +407,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 										step="0.1"
 										value={selectedAge}
 										onChange={(e) => setSelectedAge(Number.parseFloat(e.target.value))}
-										className="w-full h-3 bg-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] rounded-lg appearance-none cursor-pointer accent-[var(--teal,#0d9488)]"
+										className="pediatric-age-slider w-full h-3 bg-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] rounded-lg appearance-none cursor-pointer accent-[var(--teal,#0d9488)] touch-none select-none"
 										aria-label="Возраст ребенка для расчета смены прикуса"
 									/>
 									<div className="flex justify-between text-[11px] sm:text-xs md:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-mono font-bold select-none">
@@ -432,10 +433,10 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</h4>
 								</div>
 
-								<div className="w-full overflow-x-auto touch-pan-x min-w-0 pb-2">
-									<div className="min-w-[580px] space-y-4">
+								<div className="w-full overflow-x-auto touch-pan-x snap-x pb-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+									<div className="min-w-[640px] space-y-4">
 										{/* Upper Arch 12-column grid */}
-										<div className="space-y-1.5">
+										<div className="space-y-2">
 											<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
 												Верхняя челюсть (12 зубов):
 											</div>
@@ -446,7 +447,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													return (
 														<span
 															key={num}
-															className={`min-h-[48px] min-w-[44px] px-1 py-1 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all shrink-0 ${
+															className={`min-h-[52px] min-w-[48px] px-1 py-1.5 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-1 shadow-xs select-none transition-all shrink-0 snap-start ${
 																isErupting
 																	? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 																	: isPrim
@@ -456,7 +457,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 															title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 														>
 															<span className="text-sm font-bold font-mono leading-none">{num}</span>
-															<span className="text-[10px] font-medium font-sans opacity-90 leading-none">
+															<span className="text-[10px] font-semibold font-sans opacity-90 leading-none">
 																{isPrim ? "Мол." : "Пост."}
 															</span>
 														</span>
@@ -466,7 +467,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 										</div>
 
 										{/* Lower Arch 12-column grid */}
-										<div className="space-y-1.5">
+										<div className="space-y-2">
 											<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
 												Нижняя челюсть (12 зубов):
 											</div>
@@ -477,7 +478,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													return (
 														<span
 															key={num}
-															className={`min-h-[48px] min-w-[44px] px-1 py-1 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all shrink-0 ${
+															className={`min-h-[52px] min-w-[48px] px-1 py-1.5 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-1 shadow-xs select-none transition-all shrink-0 snap-start ${
 																isErupting
 																	? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 																	: isPrim
@@ -487,7 +488,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 															title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 														>
 															<span className="text-sm font-bold font-mono leading-none">{num}</span>
-															<span className="text-[10px] font-medium font-sans opacity-90 leading-none">
+															<span className="text-[10px] font-semibold font-sans opacity-90 leading-none">
 																{isPrim ? "Мол." : "Пост."}
 															</span>
 														</span>

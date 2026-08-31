@@ -7172,29 +7172,30 @@ section.imaging-panel {
 .mode-card span {
 	color: var(--muted);
 	font-size: 13px;
-	line-height: 1.35;
+	line-height: 1.4;
+	word-break: break-word;
+	overflow-wrap: break-word;
 }
 
 .clinic-hints {
-	display: grid;
-	gap: 7px;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	display: flex;
+	gap: 10px;
+	width: 100%;
 }
 
-/* Тот же дефект тем же механизмом: подсказки «Один кабинет: главный фокус…»
-   стояли на зашитом #eef8f5 с зашитым же #33534b. В тёмной и ночной теме это
-   светлые плашки посреди тёмного экрана. --teal-surface (полупрозрачная
-   бирюза/янтарь по теме) плюс --teal-dark сохраняют вид в светлой теме
-   (rgba(204,251,241,0.5) над панелью ≈ #e5fdf8 против прежнего #eef8f5) и
-   переворачиваются вместе с темой. */
-.clinic-hints span {
-	background: var(--teal-surface);
-	border: 1px solid var(--line);
-	border-radius: 8px;
-	color: var(--teal-dark);
+.clinic-hints > * {
+	flex: 1;
+	background: var(--teal-soft, rgba(20, 184, 166, 0.08));
+	border: none;
+	border-left: 4px solid var(--teal, #14b8a6);
+	border-radius: 0 8px 8px 0;
+	color: var(--ink);
 	font-size: 13px;
-	font-weight: 800;
-	padding: 9px 10px;
+	font-weight: 600;
+	padding: 10px 14px;
+	line-height: 1.45;
+	word-break: break-word;
+	overflow-wrap: break-word;
 }
 
 .mode-readiness {
