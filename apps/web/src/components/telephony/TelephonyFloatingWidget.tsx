@@ -1312,8 +1312,8 @@ export function TelephonyFloatingWidget({
 													)}
 												</div>
 
-												<div className="min-w-0">
-													<div className="font-bold text-[var(--ink,#0f172a)] truncate">
+												<div className="min-w-0 flex-1">
+													<div className="font-bold text-[var(--ink,#0f172a)] break-words line-clamp-1 leading-snug">
 														{item.patientName || formatPhoneDisplay(item.phone)}
 													</div>
 													<div className="text-[10px] font-mono text-[var(--muted,#64748b)]">

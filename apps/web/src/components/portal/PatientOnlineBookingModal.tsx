@@ -274,7 +274,7 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1.5 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#334155)] transition-all min-h-[40px] min-w-[40px] flex items-center justify-center"
+						className="p-1.5 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#334155)] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
 						data-testid="close-online-booking-btn"
 						aria-label="Закрыть окно онлайн-записи"
 					>
@@ -389,10 +389,10 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 												</div>
 
 												<div className="flex-1 min-w-0">
-													<div className="font-bold text-xs text-[var(--ink,#f8fafc)] truncate">
+													<div className="font-bold text-xs text-[var(--ink,#f8fafc)] break-words line-clamp-2 leading-tight">
 														{doc.fullName}
 													</div>
-													<div className="text-[11px] text-[var(--muted,#94a3b8)] truncate">
+													<div className="text-[11px] text-[var(--muted,#94a3b8)] break-words line-clamp-2 leading-tight">
 														{doc.specialtyRu}
 													</div>
 													<div className="flex items-center gap-2 mt-1 text-[10px]">

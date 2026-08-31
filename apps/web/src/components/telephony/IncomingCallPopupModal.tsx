@@ -294,7 +294,7 @@ export function IncomingCallPopupModal({
 						</div>
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
-								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] truncate">
+								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] break-words line-clamp-2 max-w-full">
 									{callerDisplayName}
 								</h3>
 								<span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)] border border-[var(--teal-soft,#99f6e4)] shrink-0">
@@ -358,7 +358,7 @@ export function IncomingCallPopupModal({
 							<CalendarCheck size={14} className="text-[var(--teal,#0d9488)]" />
 							<span className="font-medium">Визит:</span>
 						</div>
-						<span className="font-bold text-[var(--ink,#0f172a)] truncate max-w-[160px]">
+						<span className="font-bold text-[var(--ink,#0f172a)] break-words line-clamp-1 max-w-[160px]">
 							{upcomingAppointment
 								? `${upcomingAppointment.formattedDate} ${upcomingAppointment.formattedTime}`
 								: lastVisitSummary?.formattedLastVisit || "Первичный"}
@@ -370,7 +370,7 @@ export function IncomingCallPopupModal({
 				{resolvedPatient?.allergies && resolvedPatient.allergies.length > 0 && (
 					<div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center gap-2">
 						<AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
-						<span className="truncate">
+						<span className="break-words line-clamp-2 max-w-full">
 							Аллергии: {resolvedPatient.allergies.join(", ")}
 						</span>
 					</div>

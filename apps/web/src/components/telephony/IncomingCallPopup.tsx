@@ -996,11 +996,11 @@ export function IncomingCallPopup() {
 						<button
 							type="button"
 							onClick={handleSendWhatsAppConfirmation}
-							className="flex-1 min-h-[44px] h-11 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm shrink-0 truncate cursor-pointer"
+							className="flex-1 min-h-[44px] h-11 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm shrink-0 cursor-pointer"
 							title="Отправить сообщение с подтверждением записи в WhatsApp"
 						>
 							<MessageSquare size={14} className="shrink-0" />
-							<span className="truncate">{whatsappSent ? "Отправлено ✓" : "1-Click WhatsApp"}</span>
+							<span className="whitespace-nowrap">{whatsappSent ? "Отправлено ✓" : "1-Click WhatsApp"}</span>
 						</button>
 
 						{/* 1-Click SMS Copy/Trigger >= 44px */}

@@ -296,7 +296,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							<button
 								type="button"
 								onClick={handleLogout}
-								className="p-2 rounded-xl text-[var(--muted,#94a3b8)] hover:text-rose-400 hover:bg-[var(--paper-soft,#334155)] transition-all min-h-[40px] min-w-[40px] flex items-center justify-center"
+								className="p-2 rounded-xl text-[var(--muted,#94a3b8)] hover:text-rose-400 hover:bg-[var(--paper-soft,#334155)] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
 								title="Сменить номер телефона / Выйти"
 								data-testid="portal-logout-btn"
 							>
@@ -308,7 +308,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 						<button
 							type="button"
 							onClick={onClose}
-							className="p-1.5 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#334155)] transition-all min-h-[40px] min-w-[40px] flex items-center justify-center"
+							className="p-1.5 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#334155)] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
 							data-testid="close-patient-portal-btn"
 							aria-label="Закрыть личный кабинет"
 						>
@@ -933,7 +933,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 													key={mode}
 													type="button"
 													onClick={() => setScanFilter(mode)}
-													className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all min-h-[36px] ${
+													className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all min-h-[44px] flex items-center justify-center ${
 														scanFilter === mode
 															? "bg-[var(--teal-fill,#0d9488)] text-white"
 															: "text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
@@ -1079,7 +1079,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 											<button
 												type="button"
 												onClick={() => setShowTaxCertificate(true)}
-												className="min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/30 hover:bg-teal-500/20 transition-all flex items-center gap-1.5"
+												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/30 hover:bg-teal-500/20 transition-all flex items-center gap-1.5"
 												data-testid="generate-tax-certificate-btn"
 											>
 												<FileCheck2 className="w-3.5 h-3.5" />
@@ -1202,7 +1202,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							<button
 								type="button"
 								onClick={() => setSelectedScan(null)}
-								className="p-1 rounded-xl text-[var(--muted,#94a3b8)] hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+								className="p-1 rounded-xl text-[var(--muted,#94a3b8)] hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
 								data-testid="close-scan-viewer-btn"
 							>
 								<X className="w-5 h-5" />
@@ -1215,7 +1215,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 								<button
 									type="button"
 									onClick={() => setScanZoom((prev) => Math.min(prev + 0.25, 3))}
-									className="min-h-[40px] px-3 py-1 text-xs rounded bg-[var(--paper-soft,#334155)] hover:bg-[var(--teal,#0d9488)] flex items-center gap-1 font-bold"
+									className="min-h-[44px] min-w-[44px] px-3 py-1 text-xs rounded bg-[var(--paper-soft,#334155)] hover:bg-[var(--teal,#0d9488)] flex items-center justify-center gap-1 font-bold"
 									title="Увеличить масштаб"
 								>
 									<ZoomIn className="w-3.5 h-3.5" />
@@ -1224,7 +1224,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 								<button
 									type="button"
 									onClick={() => setScanZoom((prev) => Math.max(prev - 0.25, 0.75))}
-									className="min-h-[40px] px-3 py-1 text-xs rounded bg-[var(--paper-soft,#334155)] hover:bg-[var(--teal,#0d9488)] flex items-center gap-1 font-bold"
+									className="min-h-[44px] min-w-[44px] px-3 py-1 text-xs rounded bg-[var(--paper-soft,#334155)] hover:bg-[var(--teal,#0d9488)] flex items-center justify-center gap-1 font-bold"
 									title="Уменьшить масштаб"
 								>
 									<ZoomOut className="w-3.5 h-3.5" />
@@ -1233,7 +1233,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 								<button
 									type="button"
 									onClick={() => setScanInvert(!scanInvert)}
-									className={`min-h-[40px] px-3 py-1 text-xs rounded flex items-center gap-1 font-bold ${
+									className={`min-h-[44px] px-3 py-1 text-xs rounded flex items-center gap-1 font-bold ${
 										scanInvert ? "bg-teal-500 text-white" : "bg-[var(--paper-soft,#334155)] text-[var(--ink,#f8fafc)]"
 									}`}
 									title="Инвертировать рентгеновский контраст"
@@ -1286,7 +1286,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							<button
 								type="button"
 								onClick={() => setActiveFiscalReceipt(null)}
-								className="p-1 rounded-xl text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] hover:text-slate-900 dark:hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+								className="p-1 rounded-xl text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] hover:text-slate-900 dark:hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
 								data-testid="close-fiscal-receipt-btn"
 							>
 								<X className="w-4 h-4" />
@@ -1303,9 +1303,9 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 
 							<div className="space-y-1.5 my-2">
 								{activeFiscalReceipt.items.map((it, idx) => (
-									<div key={idx} className="flex justify-between">
-										<div className="truncate max-w-[180px]">{it.titleRu}</div>
-										<div className="font-bold">{it.totalRub.toFixed(2)}</div>
+									<div key={idx} className="flex justify-between items-start gap-2">
+										<div className="text-xs break-words flex-1 leading-snug">{it.titleRu}</div>
+										<div className="font-bold whitespace-nowrap">{it.totalRub.toFixed(2)}</div>
 									</div>
 								))}
 							</div>
@@ -1356,7 +1356,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							<button
 								type="button"
 								onClick={() => setPayingInvoice(null)}
-								className="p-1 rounded-xl text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] hover:text-slate-900 dark:hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+								className="p-1 rounded-xl text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] hover:text-slate-900 dark:hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
 								data-testid="close-sbp-modal-btn"
 							>
 								<X className="w-4 h-4" />
@@ -1433,7 +1433,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							<button
 								type="button"
 								onClick={() => setShowTaxCertificate(false)}
-								className="p-1 rounded-xl text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] hover:text-slate-900 dark:hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+								className="p-1 rounded-xl text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)] hover:text-slate-900 dark:hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
 								data-testid="close-tax-certificate-btn"
 							>
 								<X className="w-5 h-5" />
@@ -1502,7 +1502,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							<button
 								type="button"
 								onClick={() => setIsReceptionQrOpen(false)}
-								className="p-1 rounded-xl text-[var(--muted,#94a3b8)] hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+								className="p-1 rounded-xl text-[var(--muted,#94a3b8)] hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
 								data-testid="close-reception-qr-btn"
 							>
 								<X className="w-5 h-5" />

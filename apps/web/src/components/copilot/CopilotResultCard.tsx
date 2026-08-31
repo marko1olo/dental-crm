@@ -74,10 +74,18 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
     tool.includes('drug') ||
     tool.includes('interaction') ||
     tool.includes('allergy') ||
+    tool.includes('ddi') ||
+    obj.ddiAlert !== undefined ||
+    obj.alertType === 'ddi_allergy' ||
     Array.isArray(obj.interactions) ||
     Array.isArray(obj.contraindications) ||
     typeof obj.medical_advice === 'string'
   ) {
+    if (obj.ddiAlert || obj.alertType === 'ddi_allergy' || (obj.riskLevel && obj.primaryDrug)) {
+      const ddiData = (obj.ddiAlert || obj) as unknown as DdiSafetyAlertData;
+      return <CopilotDdiSafetyCard data={ddiData} />;
+    }
+
     const interactions: DrugInteractionItem[] = Array.isArray(obj.interactions)
       ? (obj.interactions as DrugInteractionItem[])
       : Array.isArray(obj.contraindications)
