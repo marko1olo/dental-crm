@@ -102,7 +102,7 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 
 @media (min-width: 768px) {
 	.dnt-telephony-floating {
-		bottom: 24px;
+		bottom: 84px;
 		right: 24px;
 		z-index: 40;
 		pointer-events: none !important;
