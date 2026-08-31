@@ -28,39 +28,39 @@ export interface LocalOllamaProviderOptions {
 	/**
 	 * Base URL for the OpenAI-compatible endpoint (e.g. http://127.0.0.1:11434/v1 or http://localhost:8000/v1)
 	 */
-	readonly baseUrl?: string;
+	readonly baseUrl?: string | undefined;
 	/**
 	 * Default local model identifier
 	 */
-	readonly defaultModel?: string;
+	readonly defaultModel?: string | undefined;
 	/**
 	 * Request timeout in milliseconds (default: 60,000 ms)
 	 */
-	readonly timeoutMs?: number;
+	readonly timeoutMs?: number | undefined;
 	/**
 	 * Optional API key or bearer token (for LM Studio / vLLM / authenticated gateways)
 	 */
-	readonly apiKey?: string;
+	readonly apiKey?: string | undefined;
 	/**
 	 * Enforce strict 152-FZ Air-Gap compliance (blocks non-local network egress)
 	 */
-	readonly airGapMode?: boolean;
+	readonly airGapMode?: boolean | undefined;
 	/**
 	 * Allowed hostnames/IPs when airGapMode is enabled
 	 */
-	readonly allowedHosts?: string[];
+	readonly allowedHosts?: string[] | undefined;
 	/**
 	 * Custom HTTP headers
 	 */
-	readonly customHeaders?: Record<string, string>;
+	readonly customHeaders?: Record<string, string> | undefined;
 	/**
 	 * Ollama keep_alive duration (e.g. "24h" to avoid GPU model unloading)
 	 */
-	readonly keepAlive?: string | number;
+	readonly keepAlive?: string | number | undefined;
 	/**
 	 * Custom fetch implementation (useful for unit tests or mocked gateways)
 	 */
-	readonly fetchFn?: typeof fetch;
+	readonly fetchFn?: typeof fetch | undefined;
 }
 
 export class LocalInferenceError extends Error {
@@ -132,12 +132,12 @@ export function isAirGapCompliantUrl(
 			}
 		}
 
-		// 3. Common internal clinic TLDs
+		// 3. Common internal private TLDs (RFC 6762 / RFC 8375 / internal)
 		if (
 			hostname.endsWith(".local") ||
 			hostname.endsWith(".lan") ||
 			hostname.endsWith(".internal") ||
-			hostname.endsWith(".clinic")
+			hostname.endsWith(".home.arpa")
 		) {
 			return { compliant: true };
 		}

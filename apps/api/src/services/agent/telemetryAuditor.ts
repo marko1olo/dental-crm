@@ -3,7 +3,7 @@
  *
  * SQUAD LAMBDA MANDATE:
  * 1. Exact integer kopeck financial accounting for all LLM / AI token expenditures (zero float loss).
- * 2. Multi-provider tariff matrix (OpenAI, Anthropic, Groq, DeepSeek, YandexGPT, GigaChat).
+ * 2. Multi-provider tariff matrix (OpenAI, Anthropic, Google Gemini, Groq, DeepSeek, OpenRouter Free, YandexGPT, GigaChat).
  * 3. PostgreSQL persistent storage with fail-closed RLS tenant isolation (withTenantCtx).
  * 4. Comprehensive organization usage analytics & breakdown (by model, by provider, errors, latency).
  * 5. In-memory buffer with write-through sync for zero-latency lookups & resilient test runner execution.
@@ -80,9 +80,13 @@ export interface OrganizationUsageStats {
  * Based on current tariffs with exact integer arithmetic.
  */
 export const DEFAULT_MODEL_TARIFFS: Record<string, ModelTariff> = {
-	// OpenAI Models
+	// OpenAI Frontier & Reasoning Models
 	"gpt-4o": { promptKopecksPer1M: 23125, completionKopecksPer1M: 92500 },
 	"gpt-4o-mini": { promptKopecksPer1M: 1388, completionKopecksPer1M: 5550 },
+	o1: { promptKopecksPer1M: 138750, completionKopecksPer1M: 555000 },
+	"o1-mini": { promptKopecksPer1M: 10175, completionKopecksPer1M: 40700 },
+	"o1-preview": { promptKopecksPer1M: 138750, completionKopecksPer1M: 555000 },
+	"o3-mini": { promptKopecksPer1M: 10175, completionKopecksPer1M: 40700 },
 	"gpt-4-turbo": { promptKopecksPer1M: 92500, completionKopecksPer1M: 277500 },
 	"gpt-4": { promptKopecksPer1M: 277500, completionKopecksPer1M: 555000 },
 	"gpt-3.5-turbo": { promptKopecksPer1M: 4625, completionKopecksPer1M: 13875 },
@@ -90,12 +94,26 @@ export const DEFAULT_MODEL_TARIFFS: Record<string, ModelTariff> = {
 	"text-embedding-3-large": { promptKopecksPer1M: 1200, completionKopecksPer1M: 0 },
 	"whisper-1": { promptKopecksPer1M: 5550, completionKopecksPer1M: 5550 },
 
-	// Anthropic Models
+	// Anthropic Claude Models
+	"claude-3-7-sonnet": { promptKopecksPer1M: 27750, completionKopecksPer1M: 138750 },
+	"claude-3.7-sonnet": { promptKopecksPer1M: 27750, completionKopecksPer1M: 138750 },
+	"claude-3-7-sonnet-20250219": { promptKopecksPer1M: 27750, completionKopecksPer1M: 138750 },
 	"claude-3-5-sonnet": { promptKopecksPer1M: 27750, completionKopecksPer1M: 138750 },
+	"claude-3.5-sonnet": { promptKopecksPer1M: 27750, completionKopecksPer1M: 138750 },
 	"claude-3-sonnet": { promptKopecksPer1M: 27750, completionKopecksPer1M: 138750 },
 	"claude-3-5-haiku": { promptKopecksPer1M: 7400, completionKopecksPer1M: 37000 },
+	"claude-3.5-haiku": { promptKopecksPer1M: 7400, completionKopecksPer1M: 37000 },
 	"claude-3-haiku": { promptKopecksPer1M: 2313, completionKopecksPer1M: 11563 },
 	"claude-3-opus": { promptKopecksPer1M: 138750, completionKopecksPer1M: 693750 },
+
+	// Google Gemini Models
+	"gemini-2.0-flash": { promptKopecksPer1M: 925, completionKopecksPer1M: 3700 },
+	"gemini-2.5-flash": { promptKopecksPer1M: 925, completionKopecksPer1M: 3700 },
+	"gemini-3.5-flash": { promptKopecksPer1M: 1200, completionKopecksPer1M: 4800 },
+	"gemini-1.5-flash": { promptKopecksPer1M: 694, completionKopecksPer1M: 2775 },
+	"gemini-1.5-pro": { promptKopecksPer1M: 11563, completionKopecksPer1M: 46250 },
+	"gemini-2.0-pro": { promptKopecksPer1M: 11563, completionKopecksPer1M: 46250 },
+	"gemini-3.5-transcribe-live": { promptKopecksPer1M: 1500, completionKopecksPer1M: 1500 },
 
 	// Groq Fast Inference
 	"llama-3.3-70b-versatile": { promptKopecksPer1M: 5458, completionKopecksPer1M: 7308 },
@@ -110,6 +128,11 @@ export const DEFAULT_MODEL_TARIFFS: Record<string, ModelTariff> = {
 	"deepseek-reasoner": { promptKopecksPer1M: 5088, completionKopecksPer1M: 20258 },
 	"deepseek-v3": { promptKopecksPer1M: 1295, completionKopecksPer1M: 2590 },
 	"deepseek-r1": { promptKopecksPer1M: 5088, completionKopecksPer1M: 20258 },
+
+	// Free OpenRouter / MiniMax / Community Free Tier (0 kopecks)
+	"openrouter/auto": { promptKopecksPer1M: 0, completionKopecksPer1M: 0 },
+	"openrouter/free": { promptKopecksPer1M: 0, completionKopecksPer1M: 0 },
+	"minimax/minimax-m3:free": { promptKopecksPer1M: 0, completionKopecksPer1M: 0 },
 
 	// Domestic Russian Models (ruble tariffs converted to kopecks)
 	yandexgpt: { promptKopecksPer1M: 20000, completionKopecksPer1M: 40000 },
@@ -141,16 +164,34 @@ export class TelemetryAuditor {
 
 	/**
 	 * Resolves the tariff for a given model and optional provider.
+	 * Automatically identifies free models (:free suffix, openrouter/auto, etc.) with 0 cost.
 	 */
 	public getTariff(modelName: string, provider?: string): ModelTariff {
 		const normModel = modelName.toLowerCase();
+
+		// Universal recognition of free tier models (e.g. meta-llama/llama-3.3-70b-instruct:free)
+		if (
+			normModel.endsWith(":free") ||
+			normModel === "openrouter/free" ||
+			normModel === "openrouter/auto" ||
+			(normModel.includes("free") && (provider?.toLowerCase() === "openrouter" || normModel.startsWith("openrouter/")))
+		) {
+			return { promptKopecksPer1M: 0, completionKopecksPer1M: 0 };
+		}
+
 		if (this.tariffs.has(normModel)) {
 			return this.tariffs.get(normModel)!;
 		}
 
-		// Check prefix matches (e.g. gpt-4o-2024-08-06 -> gpt-4o)
+		// Normalize dots in model name (e.g. claude-3.7-sonnet -> claude-3-7-sonnet)
+		const dashedModel = normModel.replace(/\./g, "-");
+		if (this.tariffs.has(dashedModel)) {
+			return this.tariffs.get(dashedModel)!;
+		}
+
+		// Check prefix matches (e.g. gpt-4o-2024-08-06 -> gpt-4o, claude-3-7-sonnet-20250219 -> claude-3-7-sonnet)
 		for (const [key, tariff] of this.tariffs.entries()) {
-			if (key !== "default" && normModel.startsWith(key)) {
+			if (key !== "default" && (normModel.startsWith(key) || dashedModel.startsWith(key))) {
 				return tariff;
 			}
 		}
@@ -186,6 +227,11 @@ export class TelemetryAuditor {
 		}
 
 		const tariff = this.getTariff(modelName, provider);
+
+		// If free tier, cost is strictly 0
+		if (tariff.promptKopecksPer1M === 0 && tariff.completionKopecksPer1M === 0) {
+			return 0;
+		}
 
 		// Compute kopecks per token exact numerator
 		const promptKopecks = Math.ceil((pTokens * tariff.promptKopecksPer1M) / 1_000_000);

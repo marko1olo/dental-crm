@@ -3,13 +3,14 @@
  *
  * SQUAD LAMBDA VERIFICATION SUITE:
  * 1. Exact integer kopeck cost calculations across LLM providers (zero float loss).
- * 2. Multi-model tariff resolution & prefix matching (OpenAI, Anthropic, Groq, DeepSeek, Domestic).
- * 3. Custom tariff registration and fallback behavior.
- * 4. Usage recording (success, error, latency, token tallies).
- * 5. Organization usage aggregation & analytics (by model, by provider, totals, average latency).
- * 6. Tenant isolation (Org A telemetry completely isolated from Org B).
- * 7. Period window filtering (today, custom date range).
- * 8. Dialogue history compaction & context window management.
+ * 2. Multi-model tariff resolution & prefix matching (OpenAI, Anthropic Claude 3.7, Gemini 2.0/2.5/3.5, Groq, DeepSeek, Domestic).
+ * 3. Free tier model detection (OpenRouter :free suffix, auto, 0 kopecks).
+ * 4. Custom tariff registration and fallback behavior.
+ * 5. Usage recording (success, error, latency, token tallies).
+ * 6. Organization usage aggregation & analytics (by model, by provider, totals, average latency).
+ * 7. Tenant isolation (Org A telemetry completely isolated from Org B).
+ * 8. Period window filtering (today, custom date range).
+ * 9. Dialogue history compaction & context window management.
  */
 
 import assert from "node:assert";
@@ -53,18 +54,103 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 			assert.strictEqual(cost, 9);
 		});
 
-		test("claude-3-5-sonnet tariff calculation", () => {
-			// claude-3-5-sonnet: prompt 27750 kopecks/1M, completion 138750 kopecks/1M
+		test("o1 and o3-mini reasoning model tariff calculations", () => {
+			// o1: prompt 138750 kopecks/1M, completion 555000 kopecks/1M
+			// 1000 prompt -> ceil(138.75) = 139 kopecks
+			// 1000 completion -> ceil(555) = 555 kopecks
+			// Total: 139 + 555 = 694 kopecks (6.94 RUB)
+			const o1Cost = auditor.calculateCostKopecks("openai", "o1", 1000, 1000);
+			assert.strictEqual(o1Cost, 694);
+
+			// o3-mini: prompt 10175 kopecks/1M, completion 40700 kopecks/1M
+			// 2000 prompt -> ceil(20.35) = 21 kopecks
+			// 1000 completion -> ceil(40.7) = 41 kopecks
+			// Total: 21 + 41 = 62 kopecks
+			const o3Cost = auditor.calculateCostKopecks("openai", "o3-mini", 2000, 1000);
+			assert.strictEqual(o3Cost, 62);
+		});
+
+		test("claude-3-7-sonnet and claude-3-5-sonnet tariff calculations", () => {
+			// claude-3-7-sonnet: prompt 27750 kopecks/1M, completion 138750 kopecks/1M
 			// 4000 prompt tokens -> ceil(4000 * 27750 / 1e6) = ceil(111) = 111 kopecks
 			// 1000 completion tokens -> ceil(1000 * 138750 / 1e6) = ceil(138.75) = 139 kopecks
 			// Total: 111 + 139 = 250 kopecks (2.50 RUB)
-			const cost = auditor.calculateCostKopecks(
+			const costSonnet37 = auditor.calculateCostKopecks(
 				"anthropic",
-				"claude-3-5-sonnet",
+				"claude-3-7-sonnet",
 				4000,
 				1000,
 			);
-			assert.strictEqual(cost, 250);
+			assert.strictEqual(costSonnet37, 250);
+
+			const costDotted = auditor.calculateCostKopecks(
+				"anthropic",
+				"claude-3.7-sonnet",
+				4000,
+				1000,
+			);
+			assert.strictEqual(costDotted, 250);
+		});
+
+		test("google gemini 2.0 / 2.5 / 3.5 flash tariff calculations", () => {
+			// gemini-2.0-flash: prompt 925 kopecks/1M, completion 3700 kopecks/1M
+			// 10000 prompt -> ceil(9.25) = 10 kopecks
+			// 2000 completion -> ceil(7.4) = 8 kopecks
+			// Total: 18 kopecks
+			const costGemini20 = auditor.calculateCostKopecks(
+				"google",
+				"gemini-2.0-flash",
+				10000,
+				2000,
+			);
+			assert.strictEqual(costGemini20, 18);
+
+			// gemini-2.5-flash
+			const costGemini25 = auditor.calculateCostKopecks(
+				"google",
+				"gemini-2.5-flash",
+				10000,
+				2000,
+			);
+			assert.strictEqual(costGemini25, 18);
+
+			// gemini-3.5-flash: prompt 1200 kopecks/1M, completion 4800 kopecks/1M
+			// 10000 prompt -> ceil(12) = 12 kopecks
+			// 5000 completion -> ceil(24) = 24 kopecks
+			// Total: 36 kopecks
+			const costGemini35 = auditor.calculateCostKopecks(
+				"google",
+				"gemini-3.5-flash",
+				10000,
+				5000,
+			);
+			assert.strictEqual(costGemini35, 36);
+		});
+
+		test("openrouter free models yield strictly 0 kopecks", () => {
+			const freeModel1 = auditor.calculateCostKopecks(
+				"openrouter",
+				"meta-llama/llama-3.3-70b-instruct:free",
+				50000,
+				10000,
+			);
+			assert.strictEqual(freeModel1, 0);
+
+			const freeModel2 = auditor.calculateCostKopecks(
+				"openrouter",
+				"deepseek/deepseek-r1:free",
+				25000,
+				5000,
+			);
+			assert.strictEqual(freeModel2, 0);
+
+			const freeAuto = auditor.calculateCostKopecks(
+				"openrouter",
+				"openrouter/auto",
+				10000,
+				2000,
+			);
+			assert.strictEqual(freeAuto, 0);
 		});
 
 		test("groq llama-3.3-70b-versatile fast inference pricing", () => {
@@ -102,10 +188,10 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 				DEFAULT_MODEL_TARIFFS["gpt-4o"]!.promptKopecksPer1M,
 			);
 
-			const tariff2 = auditor.getTariff("claude-3-5-sonnet-20241022");
+			const tariff2 = auditor.getTariff("claude-3-7-sonnet-20250219");
 			assert.strictEqual(
 				tariff2.promptKopecksPer1M,
-				DEFAULT_MODEL_TARIFFS["claude-3-5-sonnet"]!.promptKopecksPer1M,
+				DEFAULT_MODEL_TARIFFS["claude-3-7-sonnet"]!.promptKopecksPer1M,
 			);
 		});
 
@@ -197,7 +283,7 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 			const auditor = new TelemetryAuditor();
 			auditor.clearInMemory();
 
-			// Record 3 events for Org A
+			// Record events for Org A
 			await auditor.recordUsage({
 				organizationId: ORG_A,
 				modelName: "gpt-4o",
@@ -210,8 +296,8 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 
 			await auditor.recordUsage({
 				organizationId: ORG_A,
-				modelName: "gpt-4o",
-				provider: "openai",
+				modelName: "claude-3-7-sonnet",
+				provider: "anthropic",
 				promptTokens: 2000,
 				completionTokens: 1000,
 				latencyMs: 1000,
@@ -246,10 +332,14 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 
 			// Breakdown by Model
 			assert.ok(stats.byModel["gpt-4o"]);
-			assert.strictEqual(stats.byModel["gpt-4o"].requests, 2);
-			assert.strictEqual(stats.byModel["gpt-4o"].promptTokens, 3000);
-			assert.strictEqual(stats.byModel["gpt-4o"].completionTokens, 1500);
-			assert.strictEqual(stats.byModel["gpt-4o"].totalTokens, 4500);
+			assert.strictEqual(stats.byModel["gpt-4o"].requests, 1);
+			assert.strictEqual(stats.byModel["gpt-4o"].promptTokens, 1000);
+			assert.strictEqual(stats.byModel["gpt-4o"].completionTokens, 500);
+			assert.strictEqual(stats.byModel["gpt-4o"].totalTokens, 1500);
+
+			assert.ok(stats.byModel["claude-3-7-sonnet"]);
+			assert.strictEqual(stats.byModel["claude-3-7-sonnet"].requests, 1);
+			assert.strictEqual(stats.byModel["claude-3-7-sonnet"].totalTokens, 3000);
 
 			assert.ok(stats.byModel["deepseek-chat"]);
 			assert.strictEqual(stats.byModel["deepseek-chat"].requests, 1);
@@ -257,8 +347,12 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 
 			// Breakdown by Provider
 			assert.ok(stats.byProvider.openai);
-			assert.strictEqual(stats.byProvider.openai.requests, 2);
-			assert.strictEqual(stats.byProvider.openai.totalTokens, 4500);
+			assert.strictEqual(stats.byProvider.openai.requests, 1);
+			assert.strictEqual(stats.byProvider.openai.totalTokens, 1500);
+
+			assert.ok(stats.byProvider.anthropic);
+			assert.strictEqual(stats.byProvider.anthropic.requests, 1);
+			assert.strictEqual(stats.byProvider.anthropic.totalTokens, 3000);
 
 			assert.ok(stats.byProvider.deepseek);
 			assert.strictEqual(stats.byProvider.deepseek.requests, 1);
@@ -269,6 +363,7 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 			assert.strictEqual(
 				stats.totalCostKopecks,
 				stats.byModel["gpt-4o"].costKopecks +
+					stats.byModel["claude-3-7-sonnet"].costKopecks +
 					stats.byModel["deepseek-chat"].costKopecks,
 			);
 		});
@@ -289,7 +384,7 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 			// Org B event
 			await auditor.recordUsage({
 				organizationId: ORG_B,
-				modelName: "claude-3-5-sonnet",
+				modelName: "claude-3-7-sonnet",
 				provider: "anthropic",
 				promptTokens: 5000,
 				completionTokens: 2000,
@@ -300,7 +395,7 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 
 			assert.strictEqual(statsA.totalRequests, 1);
 			assert.strictEqual(statsA.totalTokens, 1500);
-			assert.strictEqual(statsA.byModel["claude-3-5-sonnet"], undefined);
+			assert.strictEqual(statsA.byModel["claude-3-7-sonnet"], undefined);
 
 			assert.strictEqual(statsB.totalRequests, 1);
 			assert.strictEqual(statsB.totalTokens, 7000);

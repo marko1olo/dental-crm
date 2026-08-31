@@ -139,10 +139,15 @@ const SENSITIVE_CONTEXT_KEYS = new Set([
  * Prompt injection patterns aimed at role manipulation or security bypass.
  */
 const PROMPT_INJECTION_PATTERNS: readonly RegExp[] = [
-	/(?:system\s+override|grant\s+role|ignore\s+(?:previous\s+)?instructions|override\s+rbac|escalate\s+privileges)/i,
-	/(?:you\s+are\s+now\s+(?:owner|admin|chief_doctor|superuser)|act\s+as\s+owner)/i,
-	/(?:elevate\s+to\s+admin|bypass\s+permissions|sudo\s+mode|disable\s+guardrails)/i,
+	/(?:system\s+override|grant\s+role|ignore\s+(?:all\s+)?(?:previous\s+)?instructions|override\s+rbac|escalate\s+privileges)/i,
+	/(?:you\s+are\s+now\s+(?:owner|admin|chief_doctor|superuser)|act\s+as\s+owner|jailbreak|dan\s+mode|developer\s+mode)/i,
+	/(?:elevate\s+to\s+admin|bypass\s+permissions|sudo\s+mode|disable\s+guardrails|disregard\s+rules)/i,
 	/(?:set_role\s*\(\s*['"]owner['"]\s*\)|role\s*:\s*['"]owner['"])/i,
+	// Russian injection & privilege escalation patterns:
+	/(?:игнорируй\s+(?:все\s+)?(?:предыдущие\s+)?инструкции|забудь\s+(?:все\s+)?правила|отмени\s+(?:все\s+)?ограничения)/i,
+	/(?:ты\s+теперь\s+(?:главный\s+врач|администратор|владелец|суперпользователь)|действуй\s+как\s+(?:главный\s+врач|владелец|admin))/i,
+	/(?:отключи\s+(?:все\s+)?проверки\s+доступа|повысь\s+права\s+до|режим\s+разработчика|включи\s+режим\s+dan)/i,
+	/(?:сними\s+ограничения\s+rbac|дай\s+полный\s+доступ|выполни\s+от\s+имени\s+главного\s+врача)/i,
 ];
 
 export interface AiRbacDecision {

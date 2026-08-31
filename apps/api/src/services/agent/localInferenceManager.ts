@@ -109,14 +109,14 @@ export interface LocalInferenceProbeResult {
 }
 
 export interface LocalInferenceConfig {
-	readonly baseUrl?: string;
-	readonly defaultModel?: string;
-	readonly airGapMode?: boolean;
-	readonly timeoutMs?: number;
-	readonly allowedHosts?: string[];
-	readonly apiKey?: string;
-	readonly keepAlive?: string | number;
-	readonly fetchFn?: typeof fetch;
+	readonly baseUrl?: string | undefined;
+	readonly defaultModel?: string | undefined;
+	readonly airGapMode?: boolean | undefined;
+	readonly timeoutMs?: number | undefined;
+	readonly allowedHosts?: string[] | undefined;
+	readonly apiKey?: string | undefined;
+	readonly keepAlive?: string | number | undefined;
+	readonly fetchFn?: typeof fetch | undefined;
 }
 
 export class LocalInferenceManager {
@@ -222,7 +222,7 @@ export class LocalInferenceManager {
 				apiKey: this.apiKey,
 				airGapMode: this.airGapMode,
 				allowedHosts: this.allowedHosts,
-				keepAlive: this.keepAlive,
+				...(this.keepAlive !== undefined ? { keepAlive: this.keepAlive } : {}),
 				fetchFn: this.fetchFn,
 			});
 		}
@@ -241,10 +241,10 @@ export class LocalInferenceManager {
 		}
 
 		// 2. Semantic family match
-		if (target.includes("saiga")) {
+		if (target.includes("saiga") && LOCAL_MODEL_PROFILES[OPEN_MODEL_SAIGA_8B]) {
 			return LOCAL_MODEL_PROFILES[OPEN_MODEL_SAIGA_8B];
 		}
-		if (target.includes("qwen")) {
+		if (target.includes("qwen") && LOCAL_MODEL_PROFILES[OPEN_MODEL_QWEN_7B]) {
 			return LOCAL_MODEL_PROFILES[OPEN_MODEL_QWEN_7B];
 		}
 		if (target.includes("mistral") || target.includes("nemo")) {
@@ -333,17 +333,17 @@ export class LocalInferenceManager {
 
 				if (res.ok) {
 					const latencyMs = Math.round(performance.now() - t0);
-					const body = await res.json();
+					const body = (await res.json()) as Record<string, unknown>;
 					const models: string[] = [];
 
 					if (candidate.type === "ollama" && body && Array.isArray(body.models)) {
-						for (const m of body.models) {
+						for (const m of body.models as Array<{ name?: string }>) {
 							if (typeof m.name === "string") {
 								models.push(m.name);
 							}
 						}
 					} else if (body && Array.isArray(body.data)) {
-						for (const m of body.data) {
+						for (const m of body.data as Array<{ id?: string }>) {
 							if (typeof m.id === "string") {
 								models.push(m.id);
 							}

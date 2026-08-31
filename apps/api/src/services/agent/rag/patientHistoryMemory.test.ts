@@ -13,6 +13,7 @@ import {
 	cosineSimilarity,
 	extractFdiTeethFromText,
 	extractNormalizedKeywords,
+	extractTimestampFromUuidV7,
 	type MemoryMatchResult,
 	parseClinicalHistoryQuery,
 	type PatientHistoryMemoryChunk,
@@ -250,6 +251,28 @@ describe("1. Dental Morphology, Stemmer & Tokenizer", () => {
 		assert.ok(!keywords.includes("в"), "Should filter stop word 'в'");
 		assert.ok(!keywords.includes("с"), "Should filter stop word 'с'");
 		assert.ok(!keywords.includes("зуб"), "Should filter generic stop word 'зуб'");
+	});
+
+	test("extractTimestampFromUuidV7 accurately extracts milliseconds timestamp from RFC 9562 UUIDv7", () => {
+		// Timestamp: 1711200000000 ms (2024-03-23T13:20:00.000Z)
+		// Hex: (1711200000000).toString(16) -> "18e69d78f00" -> padded 12 chars "018e69d78f00"
+		const testUuidV7 = "018e69d7-8f00-7000-8000-000000000000";
+		const extractedDate = extractTimestampFromUuidV7(testUuidV7);
+
+		assert.ok(extractedDate !== null, "Extracted date must not be null");
+		assert.strictEqual(extractedDate?.getTime(), 1711172718336);
+		assert.strictEqual(
+			extractedDate?.toISOString(),
+			"2024-03-23T05:45:18.336Z",
+		);
+
+		// Invalid or non-UUIDv7 inputs return null
+		assert.strictEqual(extractTimestampFromUuidV7(null), null);
+		assert.strictEqual(extractTimestampFromUuidV7(""), null);
+		assert.strictEqual(
+			extractTimestampFromUuidV7("00000000-0000-4000-8000-000000000000"), // UUIDv4
+			null,
+		);
 	});
 });
 

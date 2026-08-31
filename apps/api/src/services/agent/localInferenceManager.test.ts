@@ -76,15 +76,15 @@ describe("152-FZ Air-Gap Security Boundary & URL Validation", () => {
 		assert.strictEqual(isAirGapCompliantUrl("http://169.254.12.34:11434/v1").compliant, true);
 	});
 
-	test("allows on-prem internal clinic domain suffixes (.local, .lan, .internal, .clinic)", () => {
+	test("allows on-prem internal clinic domain suffixes (.local, .lan, .internal, .home.arpa)", () => {
 		assert.strictEqual(isAirGapCompliantUrl("http://ollama-gpu.clinic.local:11434").compliant, true);
 		assert.strictEqual(isAirGapCompliantUrl("http://ai-server.dental.lan:8000").compliant, true);
 		assert.strictEqual(isAirGapCompliantUrl("http://saiga-inference.internal:11434").compliant, true);
-		assert.strictEqual(isAirGapCompliantUrl("http://node1.dente.clinic:11434").compliant, true);
+		assert.strictEqual(isAirGapCompliantUrl("http://node1.home.arpa:11434").compliant, true);
 	});
 
 	test("allows explicitly configured custom on-prem hostnames", () => {
-		const allowed = ["custom-ai-rig", "hospital-server"];
+		const allowed = ["custom-ai-rig", "hospital-server", "node1.dente.clinic"];
 		assert.strictEqual(
 			isAirGapCompliantUrl("http://custom-ai-rig:11434", allowed).compliant,
 			true,
@@ -93,13 +93,21 @@ describe("152-FZ Air-Gap Security Boundary & URL Validation", () => {
 			isAirGapCompliantUrl("http://hospital-server:8000", allowed).compliant,
 			true,
 		);
+		assert.strictEqual(
+			isAirGapCompliantUrl("http://node1.dente.clinic:11434", allowed).compliant,
+			true,
+		);
 	});
 
-	test("strictly rejects public external IP addresses and cloud LLM endpoints", () => {
+	test("strictly rejects public external IP addresses, public gTLDs, and cloud LLM endpoints", () => {
 		// Public IPv4
 		assert.strictEqual(isAirGapCompliantUrl("http://8.8.8.8:11434/v1").compliant, false);
 		assert.strictEqual(isAirGapCompliantUrl("http://93.184.216.34:11434/v1").compliant, false);
 		assert.strictEqual(isAirGapCompliantUrl("http://172.32.0.1:11434/v1").compliant, false);
+
+		// Public gTLDs (.clinic, .com, .io) without explicit whitelist
+		assert.strictEqual(isAirGapCompliantUrl("http://node1.dente.clinic:11434").compliant, false);
+		assert.strictEqual(isAirGapCompliantUrl("http://ai.dental-hospital.com:11434").compliant, false);
 
 		// Cloud endpoints
 		assert.strictEqual(
