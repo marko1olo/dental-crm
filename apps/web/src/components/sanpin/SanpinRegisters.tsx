@@ -97,7 +97,7 @@ export interface SanpinCategoryDef {
 export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 	{
 		id: "sterilization",
-		label: "🧼 Стерилизация и автоклавы",
+		label: "Стерилизация и автоклавы",
 		shortLabel: "Стерилизация",
 		icon: Flame,
 		tabs: [
@@ -109,7 +109,7 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 	},
 	{
 		id: "disinfection",
-		label: "🧴 Дезинфекция и уборка",
+		label: "Дезинфекция и уборка",
 		shortLabel: "Дезинфекция",
 		icon: Sparkles,
 		tabs: [
@@ -121,7 +121,7 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 	},
 	{
 		id: "waste_climate",
-		label: "🌡️ Отходы и климат",
+		label: "Отходы и климат",
 		shortLabel: "Отходы и климат",
 		icon: Recycle,
 		tabs: [
@@ -1040,7 +1040,7 @@ export function SanpinRegisters() {
 				</div>
 
 				<div className="sanpin-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}>
-					{/* SOLE DOMINANT PRIMARY ACTION: ⚡ 1-Клик Автопилот смены СанПиН */}
+					{/* SOLE DOMINANT PRIMARY ACTION: 1-Клик Автопилот смены СанПиН */}
 					<button
 						type="button"
 						onClick={handleAutofillShift}
@@ -1065,7 +1065,7 @@ export function SanpinRegisters() {
 						title="1-Клик Автопилот смены: мгновенно фиксирует пробы ПСО, азопирам, фенолфталеин, циклы 134°C, Дезар и журнал T°"
 					>
 						<Sparkles size={15} />
-						<span>{autoFilling ? "Оформление смены..." : "⚡ 1-Клик Автопилот смены СанПиН"}</span>
+						<span>{autoFilling ? "Оформление смены..." : "1-Клик Автопилот смены СанПиН"}</span>
 					</button>
 
 					{/* Secondary: + Новый цикл (44px Touch Target) */}

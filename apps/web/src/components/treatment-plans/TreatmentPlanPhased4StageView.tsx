@@ -206,7 +206,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
   return (
     <div
-      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink,#0f172a)] pb-44 sm:pb-36 ${className}`.trim()}
+      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink,#0f172a)] ${className}`.trim()}
       data-testid="treatment-plan-phased-4stage-view"
     >
       {/* Overview Banner */}
@@ -221,7 +221,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
             </span>
           </div>
           <p className="text-xs text-[var(--muted,#64748b)] mt-1 m-0">
-            Последовательный клинический протокол DENTE & Минздрава РФ с точной финансовой разбивкой по этапам.
+            Последовательный клинический протокол DENTE и Минздрава РФ с точной финансовой разбивкой по этапам.
           </p>
         </div>
 
@@ -422,7 +422,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
               title="Студия поэтапной оплаты и эскроу"
             >
               <Coins size={13} className="text-amber-500" />
-              <span>Этапы & Эскроу</span>
+              <span>Этапы и эскроу</span>
             </button>
           )}
 

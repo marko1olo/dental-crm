@@ -113,7 +113,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								3-Tier Сравнение планов (Эконом / Оптимум / Премиум)
 							</span>
 							<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20 whitespace-nowrap">
-								СтАР & 804н
+								СтАР / 804н
 							</span>
 						</div>
 						<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 truncate max-w-xl">
@@ -217,7 +217,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							title="Открыть студию поэтапной оплаты и эскроу-депозитов"
 						>
 							<Coins size={13} className="text-amber-500" />
-							<span>Эскроу & Этапы</span>
+							<span>Эскроу и этапы</span>
 						</button>
 					)}
 
@@ -391,7 +391,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 									)}
 								</div>
 
-								{/* Flat Warranty & Visits Strip */}
+								{/* Flat Warranty and Visits Strip */}
 								<div className="grid grid-cols-2 gap-2 text-xs py-1">
 									<div className="flex flex-col justify-between">
 										<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
@@ -406,7 +406,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 									<div className="flex flex-col justify-between">
 										<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
-											<Calendar size={11} /> Сроки & Визиты
+											<Calendar size={11} /> Сроки и визиты
 										</span>
 										<strong className="text-[11px] text-[var(--ink,#0f172a)] mt-0.5">
 											{tier.durationVisits} виз. ({tier.durationWeeks} нед.)
