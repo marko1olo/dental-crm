@@ -402,7 +402,7 @@ describe("3. verify_kraft_pack: SanPiN 3.3686-21 Statutory Shelf Life & Cycle Ru
 		assert.strictEqual(res.isValid, false);
 		assert.strictEqual(res.status, "unverified");
 		assert.strictEqual(res.packDetails, null);
-		assert.ok(res.warnings[0].includes("не найдены в электронном журнале ЦСО"));
+		assert.ok(res.warnings[0]?.includes("не найдены в электронном журнале ЦСО"));
 	});
 });
 
