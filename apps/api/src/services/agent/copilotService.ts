@@ -355,11 +355,34 @@ export function createDefaultLlmProvider(): LLMProvider {
 				lower.includes("слот") ||
 				lower.includes("запис")
 			) {
+				const now = new Date();
+				const startOfDay = new Date(
+					now.getFullYear(),
+					now.getMonth(),
+					now.getDate(),
+					0,
+					0,
+					0,
+					0,
+				);
+				const endOfDay = new Date(
+					now.getFullYear(),
+					now.getMonth(),
+					now.getDate(),
+					23,
+					59,
+					59,
+					999,
+				);
 				yield {
 					type: "tool_use",
 					id: `call_schedule_${Date.now()}`,
-					name: "clinical.get_day_overview",
-					input: { date: new Date().toISOString().slice(0, 10) },
+					name: "clinical.get_doctor_schedule",
+					input: {
+						doctorUserId: "00000000-0000-7000-8000-000000000002",
+						dateFrom: startOfDay.toISOString(),
+						dateTo: endOfDay.toISOString(),
+					},
 				};
 				yield { type: "done", stopReason: "tool_use" };
 				return;

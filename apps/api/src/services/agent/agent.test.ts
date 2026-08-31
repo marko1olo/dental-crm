@@ -16,8 +16,11 @@ import {
 	resetGuardrailCounters,
 } from "./guardrails.js";
 import {
+	AgentOrchestrator,
 	TokenBudgetGuard,
+	compactHistory,
 	runTurn,
+	summarizeHistorySegment,
 } from "./orchestrator.js";
 import { Redactor, SymbolTable } from "./redaction.js";
 import {
@@ -1128,6 +1131,99 @@ describe("Agent Orchestrator Loop & Turn Suspension", () => {
 		}
 
 		assert.strictEqual(events[0]?.type, "budget_exceeded");
+	});
+
+	test("compactHistory preserves history if message count <= maxMessages", () => {
+		const history: ProviderMessage[] = [
+			{ role: "user", content: "Привет" },
+			{ role: "assistant", content: [{ type: "text", text: "Здравствуйте!" }] },
+		];
+		const compacted = compactHistory(history, 20, 10);
+		assert.strictEqual(compacted.length, 2);
+		assert.deepStrictEqual(compacted, history);
+	});
+
+	test("compactHistory compacts intermediate tool calls and turns when > 20 messages", () => {
+		const history: ProviderMessage[] = [];
+		// Build 24 messages (12 turns of user/assistant/tools)
+		for (let i = 1; i <= 8; i++) {
+			history.push({ role: "user", content: `Запрос ${i}` });
+			history.push({
+				role: "assistant",
+				content: [
+					{
+						type: "tool_use",
+						id: `call_${i}`,
+						name: "clinical.find_patient",
+						input: { query: `Пациент_${i}` },
+					},
+				],
+			});
+			history.push({
+				role: "tool",
+				content: [
+					{
+						type: "tool_result",
+						toolCallId: `call_${i}`,
+						content: { patientId: `P-${i}`, name: `Пациент ${i}` },
+					},
+				],
+			});
+		}
+		// 8 * 3 = 24 messages
+		assert.strictEqual(history.length, 24);
+
+		const compacted = compactHistory(history, 20, 10);
+		// Compacted should have summary messages (2) + retained recent messages (approx 10..12) <= 15
+		assert.ok(compacted.length <= 15, `Expected <= 15 messages after compaction, got ${compacted.length}`);
+		assert.strictEqual(compacted[0]?.role, "user");
+		const summaryText = String(compacted[0]?.content);
+		assert.ok(summaryText.includes("[Сводка предыдущих шагов диалога"));
+		assert.ok(summaryText.includes("clinical.find_patient"));
+		assert.strictEqual(compacted[1]?.role, "assistant");
+
+		// Recent messages must start with a clean user turn
+		assert.strictEqual(compacted[2]?.role, "user");
+	});
+
+	test("runTurn triggers automatic sliding window compaction during multi-turn dialogue", async () => {
+		const ctx = createMockContext();
+		const history: ProviderMessage[] = [];
+		for (let i = 1; i <= 22; i++) {
+			history.push({ role: i % 2 === 1 ? "user" : "assistant", content: `Сообщение ${i}` });
+		}
+		assert.strictEqual(history.length, 22);
+
+		const mockProvider: LLMProvider = {
+			async *complete(params) {
+				// Provider should receive compacted messages
+				assert.ok(params.messages.length <= 15, `Expected <= 15 messages received by provider, got ${params.messages.length}`);
+				yield { type: "text_delta", text: "Ответ сжатого контекста" };
+				yield { type: "done", stopReason: "stop" };
+			},
+		};
+
+		const events: any[] = [];
+		for await (const ev of runTurn({
+			ctx,
+			provider: mockProvider,
+			system: "Dental Copilot",
+			history,
+			toolNames: [],
+			maxHistoryMessages: 20,
+			retainedRecentMessages: 10,
+		})) {
+			events.push(ev);
+		}
+
+		const fullText = events
+			.filter((e) => e.type === "token")
+			.map((e) => e.text)
+			.join("");
+		assert.ok(fullText.includes("Ответ сжатого контекста"));
+		assert.ok(events.some((e) => e.type === "final"));
+		// History in-place array should have been compacted
+		assert.ok(history.length <= 16, `History should be compacted in-place, got ${history.length}`);
 	});
 });
 

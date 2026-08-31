@@ -176,7 +176,7 @@ describe("Copilot & Agent Subsystem Routes (E2E Integration)", () => {
 			assert.ok(finalFrame, "Must emit final/done SSE event");
 		});
 
-		test("streams SSE events and executes clinical.get_day_overview for schedule query", async () => {
+		test("streams SSE events and executes clinical.get_doctor_schedule for schedule query", async () => {
 			const sessionId = "sess_sched_202";
 			const res = await app.inject({
 				method: "POST",
@@ -192,6 +192,14 @@ describe("Copilot & Agent Subsystem Routes (E2E Integration)", () => {
 
 			const frames = parseSseStream(res.body);
 			assert.ok(frames.length >= 1);
+
+			const toolStarted = frames.find(
+				(f) => f.event === "tool_call_started" || f.event === "tool_call",
+			);
+			if (toolStarted) {
+				const startData = toolStarted.data as Record<string, unknown>;
+				assert.strictEqual(startData.name, "clinical.get_doctor_schedule");
+			}
 
 			const finalFrame = frames.find(
 				(f) => f.event === "final" || f.event === "done",
