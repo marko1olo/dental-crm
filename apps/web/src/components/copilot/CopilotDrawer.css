@@ -3,28 +3,16 @@
  * Fully theme-harmonized across Light, Dark, Night, Ocean, Sakura, Emerald, Cyber X-Ray, Contrast
  */
 
-/* Backdrop */
+/* Non-blocking Backdrop (Disabled to allow simultaneous clinical operations) */
 .copilot-backdrop,
 .copilot-drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  z-index: 99998;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
+  display: none !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
 
-.copilot-backdrop.open,
-.copilot-drawer-backdrop.open,
-.copilot-drawer-backdrop {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Main Drawer Shell */
+/* Main Drawer Shell (Non-blocking Right Dock / Split-View) */
 .copilot-drawer,
 .copilot-drawer-panel {
   position: fixed;
@@ -38,8 +26,8 @@
   background-color: var(--paper, #ffffff);
   color: var(--ink, #0f172a);
   border-left: 1px solid var(--line, rgba(15, 118, 110, 0.15));
-  box-shadow: -8px 0 32px -4px rgba(0, 0, 0, 0.18);
-  z-index: 99999;
+  box-shadow: -4px 0 24px -2px rgba(0, 0, 0, 0.12);
+  z-index: 9000;
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
@@ -47,6 +35,7 @@
   word-break: break-word;
   overflow-wrap: break-word;
   box-sizing: border-box;
+  pointer-events: auto;
 }
 
 .copilot-drawer.open,
@@ -97,9 +86,9 @@
 }
 
 .copilot-header-badge {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 9999px;
   background-color: var(--teal-soft, #ccfbf1);
   color: var(--teal-dark, #0f766e);
@@ -177,9 +166,9 @@
 }
 
 .copilot-badge-count {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 9999px;
   background: var(--rust, #b91c1c);
   color: #ffffff;
@@ -314,7 +303,7 @@
 }
 
 .copilot-nudge-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -322,7 +311,7 @@
 }
 
 .copilot-nudge-text {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--ink, #0f172a);
   margin: 0 0 10px 0;
@@ -343,7 +332,7 @@
   background-color: var(--teal, #0d9488);
   color: #ffffff;
   border: none;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -383,14 +372,14 @@
 }
 
 .copilot-patient-avatar {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background-color: var(--teal-soft, #ccfbf1);
   color: var(--teal, #0d9488);
   border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.5));
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -398,13 +387,13 @@
 }
 
 .copilot-patient-name {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink, #0f172a);
 }
 
 .copilot-patient-meta {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted, #6b7280);
   display: flex;
   align-items: center;
@@ -415,12 +404,12 @@
 .copilot-card-btn {
   min-height: 44px;
   min-width: 44px;
-  padding: 0 12px;
+  padding: 0 14px;
   border-radius: 6px;
   background-color: var(--paper, #ffffff);
   border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
   color: var(--ink, #0f172a);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -444,7 +433,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted, #6b7280);
 }
 
@@ -467,13 +456,13 @@
 }
 
 .copilot-appt-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink, #0f172a);
 }
 
 .copilot-appt-time {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--teal, #0d9488);
   margin-top: 2px;
@@ -483,7 +472,7 @@
 }
 
 .copilot-status-badge {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 9999px;
@@ -515,7 +504,7 @@
 }
 
 .copilot-slots-header {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -539,13 +528,13 @@
 }
 
 .copilot-slot-time {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink, #0f172a);
 }
 
 .copilot-slot-meta {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted, #6b7280);
   display: flex;
   align-items: center;
@@ -561,7 +550,7 @@
   background-color: var(--teal, #0d9488);
   color: #ffffff;
   border: none;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -616,14 +605,14 @@
 }
 
 .copilot-confirm-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink, #0f172a);
   margin: 0;
 }
 
 .copilot-confirm-warning {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted, #6b7280);
   margin: 3px 0 0 0;
   line-height: 1.4;
@@ -644,12 +633,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 13px;
   gap: 8px;
 }
 
 .copilot-confirm-label {
   color: var(--muted, #6b7280);
+  font-size: 13px;
 }
 
 .copilot-confirm-val {
@@ -660,6 +650,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13px;
 }
 
 .copilot-confirm-actions {
@@ -678,7 +669,7 @@
   background-color: var(--paper, #ffffff);
   border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
   color: var(--muted, #6b7280);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -702,7 +693,7 @@
   background-color: var(--rust, #b91c1c);
   color: #ffffff;
   border: none;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -716,6 +707,30 @@
 
 .copilot-btn-destructive:hover {
   background-color: #991b1b;
+}
+
+.copilot-btn-primary {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.copilot-btn-primary:hover {
+  background-color: var(--teal-dark, #0f766e);
 }
 
 /* Tool execution status block */
@@ -735,7 +750,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .copilot-tool-name {
@@ -745,13 +760,14 @@
   font-family: monospace;
   font-weight: 700;
   color: var(--ink, #0f172a);
+  font-size: 13px;
 }
 
 .copilot-tool-status {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -795,7 +811,7 @@
 }
 
 .copilot-hero-sub {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted, #6b7280);
   margin: 4px auto 0 auto;
   max-width: 280px;
@@ -812,7 +828,7 @@
 }
 
 .copilot-suggestion-category {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -839,7 +855,7 @@
   background-color: var(--paper-strong, #fafcfa);
   border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
   color: var(--ink, #0f172a);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -891,7 +907,7 @@
   border: none;
   outline: none;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   color: var(--ink, #0f172a);
   resize: none;
@@ -907,7 +923,7 @@
 .copilot-send-btn {
   min-width: 44px;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 14px;
   border-radius: 8px;
   background-color: var(--teal, #0d9488);
   color: #ffffff;
@@ -918,7 +934,7 @@
   justify-content: center;
   gap: 4px;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13px;
   transition: all 0.15s ease;
   box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
   box-sizing: border-box;
@@ -938,7 +954,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted, #6b7280);
   padding: 0 4px;
   gap: 8px;
@@ -954,7 +970,7 @@
 .copilot-kbd {
   display: inline-block;
   padding: 1px 5px;
-  font-size: 10px;
+  font-size: 12px;
   font-family: monospace;
   font-weight: 700;
   border-radius: 4px;

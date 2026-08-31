@@ -90,7 +90,7 @@ export const CopilotConfirmCard: React.FC<CopilotConfirmCardProps> = ({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
             <h4 className="copilot-confirm-title">{actionTitle}</h4>
-            <span className="copilot-header-badge" style={{ fontSize: '9px' }}>
+            <span className="copilot-header-badge" style={{ fontSize: '12px', fontWeight: 700 }}>
               {resolved ? (resolved === 'confirm' ? 'Подтверждено' : 'Отклонено') : 'Требуется подтверждение'}
             </span>
           </div>
@@ -128,7 +128,7 @@ export const CopilotConfirmCard: React.FC<CopilotConfirmCardProps> = ({
               <button
                 type="button"
                 onClick={() => handleDecision('confirm')}
-                className={action.type === 'cancel_appointment' ? 'copilot-btn-destructive' : 'copilot-btn-primary'}
+                className={isDestructive ? 'copilot-btn-destructive' : 'copilot-btn-primary'}
               >
                 <Check size={14} />
                 <span>Подтвердить</span>

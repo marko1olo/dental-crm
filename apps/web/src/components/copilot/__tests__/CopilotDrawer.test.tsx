@@ -251,12 +251,13 @@ describe('Copilot Core Cards & SSR Rendering', () => {
 
   it('renders CopilotComposer with dictation and trust note', () => {
     const html = renderToString(
-      <CopilotComposer value="Тест" busy={false} onChange={() => {}} onSubmit={() => {}} />
+      <CopilotComposer value="Тест" busy={false} onChange={() => {}} onSubmit={() => {}} onReset={() => {}} />
     );
     assert.ok(html.includes('Данные защищены') || html.includes('Ctrl+K'));
+    assert.ok(html.includes('Сброс'));
   });
 
-  it('renders full CopilotDrawer with chat messages and tabs', () => {
+  it('renders full CopilotDrawer with non-blocking split-view dock and tabs', () => {
     const html = renderToString(
       <CopilotDrawer
         isOpen={true}
@@ -279,5 +280,8 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     assert.ok(html.includes('Привет, доктор!'));
     assert.ok(html.includes('Чат'));
     assert.ok(html.includes('Задачи'));
+    assert.ok(html.includes('Split-View'));
+    // Ensure no blocking backdrop element
+    assert.ok(!html.includes('copilot-backdrop'));
   });
 });

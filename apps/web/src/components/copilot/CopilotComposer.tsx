@@ -17,6 +17,9 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
   onReset,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isListening, setIsListening] = React.useState(false);
+  const recognitionRef = useRef<any>(null);
+  const baseTextRef = useRef<string>('');
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -25,6 +28,20 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
     }
   }, [value]);
 
+  // Clean up speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -32,12 +49,31 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
     }
   };
 
-  const [isListening, setIsListening] = React.useState(false);
-  const recognitionRef = useRef<any>(null);
+  const handleTextChange = (newText: string) => {
+    onChange(newText);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        if (newText.trim()) {
+          localStorage.setItem('dente_copilot_draft_text', newText);
+        } else {
+          localStorage.removeItem('dente_copilot_draft_text');
+        }
+      }
+    } catch {
+      // ignore storage access errors
+    }
+  };
 
   const toggleVoice = () => {
     if (isListening) {
-      recognitionRef.current?.stop();
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
       setIsListening(false);
       return;
     }
@@ -56,24 +92,47 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
       recognition.continuous = true;
       recognition.interimResults = true;
 
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
+      baseTextRef.current = value || '';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        recognitionRef.current = null;
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+        recognitionRef.current = null;
+      };
 
       recognition.onresult = (event: any) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+        let sessionFinal = '';
+        let sessionInterim = '';
+
+        for (let i = 0; i < event.results.length; i++) {
+          const res = event.results[i];
+          const transcriptChunk = res?.[0]?.transcript || '';
+          if (res.isFinal) {
+            sessionFinal += transcriptChunk;
+          } else {
+            sessionInterim += transcriptChunk;
+          }
         }
-        if (transcript.trim()) {
-          onChange(value ? `${value} ${transcript.trim()}` : transcript.trim());
-        }
+
+        const base = baseTextRef.current.trim();
+        const spoken = `${sessionFinal} ${sessionInterim}`.trim();
+        const combined = base ? (spoken ? `${base} ${spoken}` : base) : spoken;
+        handleTextChange(combined);
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch {
       setIsListening(false);
+      recognitionRef.current = null;
     }
   };
 
@@ -83,7 +142,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
         <textarea
           ref={textareaRef}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleTextChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={isListening ? 'Идет запись речи... Говорите...' : 'Спросите ассистента или отдайте команду...'}
           disabled={busy}
@@ -95,12 +154,13 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
           type="button"
           onClick={toggleVoice}
           className={`copilot-icon-btn ${isListening ? 'animate-pulse' : ''}`}
-          title={isListening ? 'Остановить запись' : 'Голосовой ввод'}
+          title={isListening ? 'Остановить запись речи' : 'Голосовой ввод (надиктовка)'}
           style={{
-            minWidth: '40px',
-            minHeight: '40px',
-            color: isListening ? '#ef4444' : undefined,
-            backgroundColor: isListening ? 'rgba(239, 68, 68, 0.15)' : undefined,
+            minWidth: '44px',
+            minHeight: '44px',
+            color: isListening ? 'var(--rust, #b91c1c)' : undefined,
+            backgroundColor: isListening ? 'var(--rust-soft, rgba(254, 226, 226, 0.4))' : undefined,
+            borderColor: isListening ? 'var(--rust, #b91c1c)' : undefined,
           }}
         >
           <Mic size={18} />
@@ -119,7 +179,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
 
       <div className="copilot-composer-footer">
         <div className="copilot-trust-note">
-          <ShieldCheck size={14} style={{ color: 'var(--teal)' }} />
+          <ShieldCheck size={15} style={{ color: 'var(--teal)' }} />
           <span>Данные защищены 152-ФЗ</span>
         </div>
 
@@ -130,10 +190,10 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
               type="button"
               onClick={onReset}
               className="copilot-icon-btn"
-              style={{ minWidth: '28px', minHeight: '28px', padding: '2px 6px', fontSize: '11px', height: 'auto' }}
+              style={{ minWidth: '36px', minHeight: '32px', padding: '4px 8px', fontSize: '12px', height: 'auto' }}
               title="Очистить диалог"
             >
-              <RotateCcw size={12} style={{ marginRight: '4px' }} />
+              <RotateCcw size={13} style={{ marginRight: '4px' }} />
               Сброс
             </button>
           )}
