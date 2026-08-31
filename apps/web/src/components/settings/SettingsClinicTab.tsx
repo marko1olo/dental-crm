@@ -314,11 +314,8 @@ function StaffCredentialsEditor({
 		<div
 			className="staff-credentials-editor"
 			style={{
-				marginTop: 12,
-				padding: "12px",
-				background: "rgba(0,0,0,0.02)",
-				borderRadius: 6,
-				border: "1px solid var(--slate-200, #e2e8f0)",
+				marginTop: 8,
+				padding: "6px 0",
 			}}
 		>
 			<button
@@ -1212,7 +1209,7 @@ export function SettingsClinicTab({
 						</div>
 					) : null}
 
-					<div className="staff-list">
+					<div className="staff-list divide-y divide-slate-100 dark:divide-slate-800">
 						{typedStaffMembers.map((member) => {
 							const scheduleDraft =
 								staffScheduleDrafts[member.id] ??
@@ -1231,7 +1228,7 @@ export function SettingsClinicTab({
 										? "Ждет автосохранения"
 										: "Сохранено";
 							return (
-								<div className="staff-row" key={member.id}>
+								<div className="staff-row !border-0 !bg-transparent !shadow-none py-3" key={member.id}>
 									<span style={{ background: member.color }} />
 									<div>
 										<strong>{member.fullName}</strong>
@@ -1452,7 +1449,7 @@ export function SettingsClinicTab({
 							Хирургия
 						</button>
 					</div>
-					<div className="staff-list">
+					<div className="staff-list divide-y divide-slate-100 dark:divide-slate-800">
 						{typedChairs.map((chair) => {
 							const scheduleDraft =
 								chairScheduleDrafts[chair.id] ??
@@ -1471,7 +1468,7 @@ export function SettingsClinicTab({
 										? "Ждет автосохранения"
 										: "Сохранено";
 							return (
-								<div className="staff-row" key={chair.id}>
+								<div className="staff-row !border-0 !bg-transparent !shadow-none py-3" key={chair.id}>
 									<CalendarDays aria-hidden="true" />
 									<div>
 										<strong>{chair.name}</strong>

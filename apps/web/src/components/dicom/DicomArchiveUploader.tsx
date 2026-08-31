@@ -328,7 +328,7 @@ export function DicomArchiveUploader({
 			}}
 			onDragLeave={() => setIsDragging(false)}
 			onDrop={onDrop}
-			className={`w-full flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition-all dicom-dropzone ${
+			className={`w-full flex flex-col items-center justify-center p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl transition-all dicom-dropzone ${
 				isDragging ? "dicom-dropzone--dragging" : ""
 			}`}
 			style={{
@@ -337,7 +337,7 @@ export function DicomArchiveUploader({
 					: "var(--paper, rgba(255,255,255,0.05))",
 				borderColor: isDragging
 					? "var(--teal, #14b8a6)"
-					: "var(--line, rgba(0,0,0,0.15))",
+					: undefined,
 				color: "var(--ink, #0f172a)",
 			}}
 		>
@@ -371,12 +371,15 @@ export function DicomArchiveUploader({
 				}}
 			/>
 
-			<div className="flex items-center gap-2 mb-2">
+			<div className="flex flex-col items-center gap-2 mb-2">
+				<div className="w-12 h-12 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-1 shrink-0">
+					<Archive size={24} />
+				</div>
 				<div
 					style={{
 						color: "var(--ink)",
-						fontWeight: 600,
-						fontSize: "14px",
+						fontWeight: 700,
+						fontSize: "15px",
 						textAlign: "center",
 					}}
 				>

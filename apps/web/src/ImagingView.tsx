@@ -1380,14 +1380,7 @@ export function ImagingView(props: ImagingViewProps) {
 							)}
 						</>
 					) : (
-						<div className="w-full h-full flex flex-col items-center justify-center gap-4 p-8">
-							<EmptyState
-								icon={<ImageIcon size={36} />}
-								title="Снимков по пациенту нет"
-								description="Загрузите архивы DICOM/КТ или выберите снимки из системы."
-								glass={true}
-								style={{ margin: "16px 0" }}
-							/>
+						<div className="w-full h-full flex flex-col items-center justify-center p-6 sm:p-10">
 							<div className="w-full max-w-2xl">
 								<DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
 							</div>

@@ -1981,7 +1981,6 @@ details summary:hover {
 
 /* Единые адаптивные формы и карточки во всех видах */
 .patients-panel,
-.finance-panel,
 .documents-panel,
 .settings-panel,
 .visit-panel,
@@ -1991,6 +1990,14 @@ details summary:hover {
 	border-radius: 14px;
 	padding: 20px;
 	box-shadow: var(--shadow-1);
+}
+
+.finance-panel {
+	background: transparent !important;
+	border: none !important;
+	border-radius: 0 !important;
+	padding: 0 !important;
+	box-shadow: none !important;
 }
 
 input,

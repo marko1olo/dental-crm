@@ -1559,7 +1559,7 @@ export function VisitEmkTab() {
 							</div>
 							{/* Компактный 32px тулбар форматирования текста медицинского протокола */}
 							<div
-								className="flex items-center justify-between gap-1 h-8 px-2 py-0.5 rounded-t-lg border border-b-0 border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--muted)]"
+								className="flex items-center justify-between gap-1 h-8 px-2 py-0.5 rounded-t-lg border border-b border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--muted)]"
 								role="toolbar"
 								aria-label={`Форматирование текста: ${field.label}`}
 							>
@@ -1652,7 +1652,7 @@ export function VisitEmkTab() {
 								textareaRef={(el) => {
 									textareaRefs.current[field.key] = el;
 								}}
-								className="min-h-[110px] rounded-b-lg rounded-t-none p-3 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
+								className="min-h-[110px] rounded-b-lg rounded-t-none p-3 border border-t-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
 							/>
 
 							{/* Горизонтальный скролл быстрых чипов 32px под textarea */}

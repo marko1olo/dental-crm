@@ -39,7 +39,7 @@ export function VisitMainTabs({
 				type="button"
 				role="tab"
 				aria-selected={visitSubViewTab === "emk"}
-				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "emk" ? "active" : ""}`}
+				className={`secondary-button shrink-0 flex-shrink-0 min-w-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "emk" ? "active" : ""}`}
 				style={{
 					background:
 						visitSubViewTab === "emk" ? "var(--teal-dark)" : undefined,
@@ -48,13 +48,13 @@ export function VisitMainTabs({
 				onClick={() => setVisitSubViewTab("emk")}
 			>
 				<FileText size={15} className="shrink-0" />
-				<span>ЭМК и Диктовка</span>
+				<span className="whitespace-nowrap flex-shrink-0">ЭМК и Диктовка</span>
 			</button>
 			<button
 				type="button"
 				role="tab"
 				aria-selected={visitSubViewTab === "odontogram"}
-				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "odontogram" ? "active" : ""}`}
+				className={`secondary-button shrink-0 flex-shrink-0 min-w-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "odontogram" ? "active" : ""}`}
 				style={{
 					background:
 						visitSubViewTab === "odontogram" ? "var(--teal-dark)" : undefined,
@@ -64,13 +64,13 @@ export function VisitMainTabs({
 				onClick={() => setVisitSubViewTab("odontogram")}
 			>
 				<Activity size={15} className="shrink-0" />
-				<span>Зубная формула и Дневник</span>
+				<span className="whitespace-nowrap flex-shrink-0">Зубная формула и Дневник</span>
 			</button>
 			<button
 				type="button"
 				role="tab"
 				aria-selected={visitSubViewTab === "anamnesis"}
-				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "anamnesis" ? "active" : ""}`}
+				className={`secondary-button shrink-0 flex-shrink-0 min-w-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "anamnesis" ? "active" : ""}`}
 				style={{
 					background:
 						visitSubViewTab === "anamnesis" ? "var(--teal-dark)" : undefined,
@@ -80,13 +80,13 @@ export function VisitMainTabs({
 				onClick={() => setVisitSubViewTab("anamnesis")}
 			>
 				<Stethoscope size={15} className="shrink-0" />
-				<span>Анамнез и Жалобы</span>
+				<span className="whitespace-nowrap flex-shrink-0">Анамнез и Жалобы</span>
 			</button>
 			<button
 				type="button"
 				role="tab"
 				aria-selected={visitSubViewTab === "perio"}
-				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "perio" ? "active" : ""}`}
+				className={`secondary-button shrink-0 flex-shrink-0 min-w-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "perio" ? "active" : ""}`}
 				style={{
 					background:
 						visitSubViewTab === "perio" ? "var(--teal-dark)" : undefined,
@@ -96,13 +96,13 @@ export function VisitMainTabs({
 				onClick={() => setVisitSubViewTab("perio")}
 			>
 				<BarChart2 size={15} className="shrink-0" />
-				<span>Пародонтология и Зондирование</span>
+				<span className="whitespace-nowrap flex-shrink-0">Пародонтология и Зондирование</span>
 			</button>
 			<button
 				type="button"
 				role="tab"
 				aria-selected={visitSubViewTab === "diagnostics"}
-				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
+				className={`secondary-button shrink-0 flex-shrink-0 min-w-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
 				style={{
 					background:
 						visitSubViewTab === "diagnostics" ? "var(--teal-dark)" : undefined,
@@ -112,7 +112,7 @@ export function VisitMainTabs({
 				onClick={() => setVisitSubViewTab("diagnostics")}
 			>
 				<ImageIcon size={15} className="shrink-0" />
-				<span>Рентгены и Диагностика</span>
+				<span className="whitespace-nowrap flex-shrink-0">Рентгены и Диагностика</span>
 			</button>
 		</div>
 	);
