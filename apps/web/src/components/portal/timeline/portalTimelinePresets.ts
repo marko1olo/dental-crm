@@ -49,7 +49,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 		shortBadge: "Здоров",
 		descriptionRu: "Эмаль крепкая, признаков кариеса нет. Регулярная гигиена раз в 6 месяцев.",
 		badgeClass: "badge-healthy",
-		icon: "✨",
+		icon: "sparkles",
 		colorHex: "#10b981", // Emerald Green
 	},
 	caries_cured: {
@@ -59,7 +59,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 		descriptionRu:
 			"Установлена высокоэстетичная световая реставрация с точным восстановлением анатомических бугров.",
 		badgeClass: "badge-cured",
-		icon: "💎",
+		icon: "diamond",
 		colorHex: "#06b6d4", // Cyan
 	},
 	endo_microscope: {
@@ -69,7 +69,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 		descriptionRu:
 			"Корневые каналы бережно очищены с оптическим увеличением 25x и герметично запечатаны.",
 		badgeClass: "badge-endo",
-		icon: "🔬",
+		icon: "microscope",
 		colorHex: "#8b5cf6", // Purple
 	},
 	crown_zirconia: {
@@ -79,7 +79,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 		descriptionRu:
 			"Сверхпрочная и неотличимая от своего зуба коронка из японского циркония Katana.",
 		badgeClass: "badge-crown",
-		icon: "👑",
+		icon: "crown",
 		colorHex: "#f59e0b", // Amber
 	},
 	veneer_emax: {
@@ -88,7 +88,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 		shortBadge: "Винир E.max",
 		descriptionRu: "Ультратонкая керамическая накладка для идеальной формы и цвета улыбки.",
 		badgeClass: "badge-veneer",
-		icon: "🌟",
+		icon: "smile",
 		colorHex: "#ec4899", // Pink
 	},
 	implant_integrated: {
@@ -98,7 +98,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 		descriptionRu:
 			"Швейцарский/корейский титановый корень надежно интегрировался в костную ткань.",
 		badgeClass: "badge-implant",
-		icon: "🔩",
+		icon: "implant",
 		colorHex: "#0d9488", // DENTE Teal
 	},
 	implant_crown_loaded: {
@@ -107,7 +107,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 		shortBadge: "Готовый зуб на импланте",
 		descriptionRu: "Финальная винтовая фиксация циркониевой коронки. Функция зуба восстановлена на 100%.",
 		badgeClass: "badge-loaded",
-		icon: "🛡️",
+		icon: "shield",
 		colorHex: "#14b8a6", // Teal
 	},
 	scheduled_treatment: {
@@ -116,7 +116,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 		shortBadge: "В плане",
 		descriptionRu: "Зуб включен в текущий план реабилитации, лечение будет выполнено в ближайшие визиты.",
 		badgeClass: "badge-scheduled",
-		icon: "⏳",
+		icon: "clock",
 		colorHex: "#f97316", // Orange
 	},
 	missing_to_restore: {
@@ -125,7 +125,7 @@ export const PLAIN_LANGUAGE_TOOTH_STATUSES: Readonly<
 		shortBadge: "Отсутствует",
 		descriptionRu: "Зуб удален ранее, рекомендована дентальная имплантация для защиты соседних зубов.",
 		badgeClass: "badge-missing",
-		icon: "⚪",
+		icon: "circle",
 		colorHex: "#64748b", // Slate
 	},
 };

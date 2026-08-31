@@ -963,8 +963,9 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 													}}
 												>
 													<img src={scan.imageUrl} alt={scan.modalityLabel} loading="lazy" />
-													<div className="radiology-dose-tag">
-														⚡ {scan.effectiveDoseMicrosv} мкЗв
+													<div className="radiology-dose-tag flex items-center gap-1">
+														<Sparkles className="w-3 h-3 text-amber-400" />
+														<span>{scan.effectiveDoseMicrosv} мкЗв</span>
 													</div>
 												</div>
 

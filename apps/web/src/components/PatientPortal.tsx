@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { countLabel, money } from "../AppHelpers";
 import { actionFailureToast } from "../lib/panelStateText";
 import {
@@ -470,7 +470,7 @@ export const PatientPortal: React.FC = () => {
 		window.open(url, "_blank");
 	}, [patientData?.patient?.fullName]);
 
-	const nextApptCountdown = useCallback(() => {
+	const nextApptCountdown = useMemo(() => {
 		const targetMs = new Date("2026-09-01T14:30:00+03:00").getTime();
 		const nowMs = Date.now();
 		const diffMs = targetMs - nowMs;
@@ -481,13 +481,15 @@ export const PatientPortal: React.FC = () => {
 		const remHours = diffHours % 24;
 		if (diffDays > 0) return `${diffDays} д ${remHours} ч ${diffMins} мин`;
 		return `${diffHours} ч ${diffMins} мин`;
-	}, [])();
+	}, []);
 
 	if (!isAuthenticated) {
 		return (
 			<div className="portal-auth-container">
 				<div className="portal-auth-card">
-					<div className="portal-auth-logo">🦷</div>
+					<div className="portal-auth-logo flex items-center justify-center">
+						<Sparkles size={28} className="text-teal-600" />
+					</div>
 					<h2 className="portal-auth-title">Кабинет пациента</h2>
 
 					{/* Третье состояние входа: пропуск сохранён, но кабинет ещё читается.

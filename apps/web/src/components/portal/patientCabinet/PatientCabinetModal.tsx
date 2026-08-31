@@ -960,10 +960,13 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 															alert.severity === "danger"
 																? "var(--pc-danger)"
 																: "var(--pc-warning)",
+														display: "flex",
+														alignItems: "center",
+														gap: "6px",
 													}}
 												>
-													{alert.severity === "danger" ? "🚨 " : "⚠️ "}
-													{alert.title}
+													<AlertTriangle size={14} style={{ color: alert.severity === "danger" ? "var(--pc-danger)" : "var(--pc-warning)" }} />
+													<span>{alert.title}</span>
 												</strong>
 												<p style={{ margin: "2px 0 0 0", color: "var(--pc-text-main)" }}>
 													{alert.message}
@@ -1345,7 +1348,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 								{/* Header Banner Pill */}
 								<div className="pc-tax-banner-pill" data-testid="tax-refund-header-banner">
-									<span>💰</span>
+									<DollarSign size={16} style={{ color: "var(--pc-primary)" }} />
 									<span>{taxDeductionCalc.headerBannerTextRu}</span>
 								</div>
 
@@ -1394,7 +1397,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												}}
 											>
 												<Download size={14} />
-												<span>📑 Заказать справку КНД 1151156 с печатью в 1 клик</span>
+												<span>Заказать справку КНД 1151156 с печатью в 1 клик</span>
 											</button>
 										</div>
 									</div>
@@ -1998,7 +2001,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									</div>
 
 									<div className="pc-tax-banner-pill">
-										<span>💰</span>
+										<DollarSign size={16} style={{ color: "var(--pc-primary)" }} />
 										<span>{taxDeductionCalc.headerBannerTextRu}</span>
 									</div>
 
@@ -2014,7 +2017,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											}}
 										>
 											<Download size={16} />
-											<span>📑 Заказать справку КНД 1151156 с печатью в 1 клик</span>
+											<span>Заказать справку КНД 1151156 с печатью в 1 клик</span>
 										</button>
 										<button
 											type="button"
@@ -2471,7 +2474,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									</ul>
 									<div style={{ marginTop: "8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
 										<span style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
-											📞 Клиника: <strong>{careMemo.clinicPhone}</strong> &bull; 🚨 Дежурный врач (круглосуточно): <strong>{careMemo.clinicEmergencyPhone}</strong>
+											Клиника: <strong>{careMemo.clinicPhone}</strong> &bull; Дежурный врач (круглосуточно): <strong>{careMemo.clinicEmergencyPhone}</strong>
 										</span>
 										<a
 											href={`tel:${careMemo.clinicEmergencyPhone?.replace(/\D/g, "")}`}
@@ -2530,8 +2533,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									</div>
 								</div>
 
-								<span className="pc-status-badge paid" style={{ fontSize: "0.875rem", padding: "6px 12px" }}>
-									🛡️ Гарантия DENTE активна
+								<span className="pc-status-badge paid" style={{ fontSize: "0.875rem", padding: "6px 12px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+									<ShieldCheck size={14} />
+									<span>Гарантия DENTE активна</span>
 								</span>
 							</div>
 
@@ -2854,8 +2858,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									<strong style={{ fontSize: "0.9375rem", display: "block", marginTop: "2px" }}>
 										{reschedulingApt.titleRu}
 									</strong>
-									<div style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", marginTop: "4px" }}>
-										📅 {reschedulingApt.dateIso} в {reschedulingApt.timeRu} &bull; Врач: {reschedulingApt.doctorName} ({reschedulingApt.roomNumber})
+									<div style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", marginTop: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+										<Calendar size={13} style={{ color: "var(--pc-primary)" }} />
+										<span>{reschedulingApt.dateIso} в {reschedulingApt.timeRu} &bull; Врач: {reschedulingApt.doctorName} ({reschedulingApt.roomNumber})</span>
 									</div>
 								</div>
 
@@ -3077,8 +3082,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									<div style={{ fontSize: "0.8125rem", color: "var(--muted, #334155)" }}>
 										Врач: <strong>{summary.nextAppointment.doctorName}</strong>
 									</div>
-									<div style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--teal, #0d9488)", marginTop: "2px" }}>
-										📍 {summary.nextAppointment.roomNumber}
+									<div style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--teal, #0d9488)", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
+										<MapPin size={14} />
+										<span>{summary.nextAppointment.roomNumber}</span>
 									</div>
 								</div>
 							)}

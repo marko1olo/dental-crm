@@ -12,11 +12,14 @@
 import type React from "react";
 import { useMemo, useState } from "react";
 import {
+	Activity,
+	Award,
 	Calendar,
 	Camera,
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
+	Circle,
 	Clock,
 	DollarSign,
 	FileText,
@@ -312,7 +315,15 @@ export const PatientPortalTimelineModal: React.FC<PatientPortalTimelineModalProp
 									gap: "4px",
 								}}
 							>
-								<span>{selectedToothInfo.statusInfo.icon}</span>
+								{selectedToothInfo.statusInfo.icon === "sparkles" && <Sparkles size={14} />}
+								{selectedToothInfo.statusInfo.icon === "diamond" && <Award size={14} />}
+								{selectedToothInfo.statusInfo.icon === "microscope" && <Activity size={14} />}
+								{selectedToothInfo.statusInfo.icon === "crown" && <Award size={14} />}
+								{selectedToothInfo.statusInfo.icon === "smile" && <Smile size={14} />}
+								{selectedToothInfo.statusInfo.icon === "implant" && <Activity size={14} />}
+								{selectedToothInfo.statusInfo.icon === "shield" && <Shield size={14} />}
+								{selectedToothInfo.statusInfo.icon === "clock" && <Clock size={14} />}
+								{selectedToothInfo.statusInfo.icon === "circle" && <Circle size={14} />}
 								<span>{selectedToothInfo.statusInfo.shortBadge}</span>
 							</div>
 						</div>
