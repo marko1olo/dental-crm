@@ -192,7 +192,19 @@ export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
     return (first.charAt(0) + second.charAt(0)).toUpperCase();
   }, [patient.fullName]);
 
-  const rawBalance = patient.balanceRub ?? (patient.depositRub ? patient.depositRub : patient.debtRub ? -patient.debtRub : 0);
+  const rawBalance = useMemo(() => {
+    if (typeof patient.balanceRub === 'number' && Number.isFinite(patient.balanceRub)) {
+      return patient.balanceRub;
+    }
+    if (typeof patient.depositRub === 'number' && Number.isFinite(patient.depositRub)) {
+      return patient.depositRub;
+    }
+    if (typeof patient.debtRub === 'number' && Number.isFinite(patient.debtRub)) {
+      return -patient.debtRub;
+    }
+    return 0;
+  }, [patient.balanceRub, patient.depositRub, patient.debtRub]);
+
   const isPositive = rawBalance >= 0;
   const statusLower = (patient.status || 'active').toLowerCase();
 
@@ -574,19 +586,19 @@ export const Prescription107Card: React.FC<Prescription107CardProps> = ({
         </div>
       )}
 
-      {/* Drug List (Rp: items in Latin + Signa in Russian) */}
+      {/* Drug List (Rp: items in Latin + Signa in Russian per Order 1094n) */}
       <div className="copilot-rx-drug-list">
         {prescription.drugs.map((drug, idx) => (
           <div key={drug.id || idx} className="copilot-rx-drug-item">
             <div className="copilot-rx-latin-line">
-              {`Rp.: ${drug.latinName || drug.mnn} ${drug.dosage || ''} ${drug.quantity || ''}`.trim()}
+              {`Rp.: ${drug.latinName || drug.mnn} ${drug.dosage || ''}`.trim()}
             </div>
             <div className="copilot-rx-signa-line">
-              <strong>D.S.</strong> {drug.signa}
+              <strong>D.t.d.</strong> N {drug.quantity || '1'} • <strong>D.S.</strong> {drug.signa}
             </div>
             {drug.tradeName && (
-              <div className="text-[10px] text-[var(--muted)]">
-                Торговое наим.: {drug.tradeName} ({drug.dosageForm})
+              <div className="text-xs text-[var(--muted)] mt-0.5">
+                Торговое наименование: {drug.tradeName} ({drug.dosageForm})
               </div>
             )}
           </div>
@@ -676,9 +688,7 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
   const [appliedTierKey, setAppliedTierKey] = useState<string | null>(null);
 
   const tiers = useMemo(() => {
-    if (data.tiers && data.tiers.length > 0) return data.tiers;
-    // Fallback standard tier specs
-    return [
+    const rawTiers = data.tiers && data.tiers.length > 0 ? data.tiers : [
       {
         tierKey: 'economy' as const,
         tierName: 'Тариф «Эконом»',
@@ -719,6 +729,29 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
         keyAdvantages: ['Максимальная биосовместимость', 'Персональный куратор лечения', 'Пожизненная гарантия'],
       },
     ];
+
+    return rawTiers.map((t) => {
+      const total = typeof t.totalRub === 'number' && Number.isFinite(t.totalRub) ? t.totalRub : 0;
+      const taxDeduction = typeof t.taxDeductionRub === 'number' && Number.isFinite(t.taxDeductionRub)
+        ? t.taxDeductionRub
+        : Math.round(total * 0.13);
+      const netCost = typeof t.netCostAfterDeductionRub === 'number' && Number.isFinite(t.netCostAfterDeductionRub)
+        ? t.netCostAfterDeductionRub
+        : Math.max(0, total - taxDeduction);
+      const months = typeof t.installmentMonths === 'number' && t.installmentMonths > 0 ? t.installmentMonths : 12;
+      const installment = typeof t.monthlyInstallmentRub === 'number' && Number.isFinite(t.monthlyInstallmentRub)
+        ? t.monthlyInstallmentRub
+        : Math.round(total / months);
+
+      return {
+        ...t,
+        totalRub: total,
+        taxDeductionRub: taxDeduction,
+        netCostAfterDeductionRub: netCost,
+        monthlyInstallmentRub: installment,
+        installmentMonths: months,
+      };
+    });
   }, [data.tiers]);
 
   const activeTierObj = useMemo(() => {

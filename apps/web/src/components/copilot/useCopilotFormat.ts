@@ -38,6 +38,14 @@ export function formatTime(iso?: string | null, locale: string = 'ru-RU'): strin
   return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(d);
 }
 
-export function formatMoney(value: number, currency: string = 'RUB', locale: string = 'ru-RU'): string {
-  return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 2 }).format(value);
+export function formatMoney(value?: number | string | null, currency: string = 'RUB', locale: string = 'ru-RU'): string {
+  let num = 0;
+  if (typeof value === 'number') {
+    num = Number.isFinite(value) ? value : 0;
+  } else if (typeof value === 'string') {
+    const cleaned = value.replace(/\s+/g, '').replace(',', '.');
+    const parsed = parseFloat(cleaned);
+    num = Number.isFinite(parsed) ? parsed : 0;
+  }
+  return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 2 }).format(num);
 }
