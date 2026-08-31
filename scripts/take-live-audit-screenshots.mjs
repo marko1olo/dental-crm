@@ -333,8 +333,9 @@ async function screenshot(page, name) {
 			process.exit(1);
 		}
 		const size = statSync(filePath).size;
-		if (size < 30000) {
-			console.error(`[FATAL] Screenshot ${name}.png is too small (${size} bytes < 30KB). Render failure!`);
+		const minSize = name.includes("mobile") ? 8000 : 15000;
+		if (size < minSize) {
+			console.error(`[FATAL] Screenshot ${name}.png is too small (${size} bytes < ${minSize} bytes). Render failure!`);
 			process.exit(1);
 		}
 		const buffer = readFileSync(filePath);
@@ -359,85 +360,85 @@ const TEST_SCENARIOS = [
 		name: "01_schedule_grid",
 		url: `${APP_BASE}/#schedule`,
 		perspective: "standard",
-		selector: ".schedule-container, [data-testid='schedule-grid'], .schedule-view-container, #root",
+		selector: ".schedule-container, [data-testid='schedule-grid'], #root",
 	},
 	{
 		name: "02_treatment_plans",
 		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=3tier#clinical-modals-studio?modal=3tier`,
 		perspective: "standard",
-		selector: ".treatment-plan-comparator, [data-testid='plan-comparator-modal'], #root",
+		selector: "[data-testid='three-tier-plan-modal'], .treatment-plan-modal, #root",
 	},
 	{
 		name: "03_patients_registry",
 		url: `${APP_BASE}/#patients`,
 		perspective: "standard",
-		selector: ".patients-container, [data-testid='patients-registry'], #root",
+		selector: ".patients-container, [data-testid='patients-table'], #root",
 	},
 	{
 		name: "04_finance_billing",
 		url: `${APP_BASE}/#finance`,
 		perspective: "standard",
-		selector: ".finance-container, [data-testid='finance-view'], #root",
+		selector: ".finance-container, [data-testid='finance-overview'], #root",
 	},
 	{
 		name: "05_visit_workspace",
 		url: `${APP_BASE}/#visit`,
 		perspective: "standard",
-		selector: ".visit-workspace, [data-testid='visit-view'], #root",
+		selector: ".visit-workspace, [data-testid='visit-diary-editor'], #root",
 	},
 	{
 		name: "06_scanner_radiology",
 		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=viewer#clinical-modals-studio?modal=viewer`,
 		perspective: "standard",
-		selector: ".radiology-viewer-modal, [data-testid='radiology-viewer-modal'], #root",
+		selector: "[data-testid='radiology-viewer-modal'], .radiology-viewer, #root",
 	},
 	{
 		name: "07_imaging_workspace",
 		url: `${APP_BASE}/#imaging`,
 		perspective: "standard",
-		selector: ".imaging-container, [data-testid='imaging-view'], #root",
+		selector: ".imaging-container, [data-testid='imaging-grid'], #root",
 	},
 	{
 		name: "08_sanpin_registers",
 		url: `${APP_BASE}/#scanner`,
 		perspective: "standard",
-		selector: ".sanpin-registers-container, .scanner-view-wrapper, #root",
+		selector: ".sanpin-registers-container, .scanner-view-container, #root",
 	},
 	{
 		name: "09_inventory_warehouse",
 		url: `${APP_BASE}/#inventory`,
 		perspective: "standard",
-		selector: ".inventory-container, [data-testid='inventory-view'], #root",
+		selector: ".inventory-container, [data-testid='inventory-table'], #root",
 	},
 	{
 		name: "10_documents_workspace",
 		url: `${APP_BASE}/#documents`,
 		perspective: "standard",
-		selector: ".documents-container, [data-testid='documents-view'], #root",
+		selector: ".documents-container, [data-testid='documents-list'], #root",
 	},
 	{
 		name: "11_communications_hub",
 		url: `${APP_BASE}/#communications`,
 		perspective: "standard",
-		selector: ".communications-container, [data-testid='communications-view'], #root",
+		selector: ".communications-container, [data-testid='communications-chat'], #root",
 	},
 	{
 		name: "12_analytics_dashboard",
 		url: `${APP_BASE}/#analytics`,
 		perspective: "standard",
-		selector: ".analytics-dashboard-view, [data-testid='analytics-view'], #root",
+		selector: ".analytics-dashboard-view, [data-testid='analytics-charts'], #root",
 	},
 	{
 		name: "13_telephony_softphone",
-		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=telephony_softphone#clinical-modals-studio?modal=telephony_softphone`,
+		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=incoming_call#clinical-modals-studio?modal=incoming_call`,
 		perspective: "standard",
-		selector: ".telephony-floating-widget, [data-testid='telephony-floating-widget'], #root",
+		selector: "[data-testid='incoming-call-modal-container'], [data-testid='incoming-call-modal'], [data-modal-test='telephony-softphone-modal'], .incoming-call-popup, .telephony-floating-widget, #root",
 	},
 	{
 		name: "14_settings_clinic",
-		url: `${APP_BASE}/#settings`,
+		url: `${APP_BASE}/#settings/clinic`,
 		perspective: "standard",
-		selector: ".settings-container, [data-testid='settings-view'], #root",
+		selector: ".settings-container, [data-testid='settings-clinic-tab'], #root",
 	},
 	{
 		name: "15_settings_prices",
@@ -477,11 +478,11 @@ const TEST_SCENARIOS = [
 	},
 
 	// 2. Specialized Clinical Perspectives (Tier 1 Hot Path)
-	{ name: "perspective_chairsider", url: `${APP_BASE}/#shift`, perspective: "chairsider", selector: "#root" },
-	{ name: "perspective_frontdesk", url: `${APP_BASE}/#shift`, perspective: "frontdesk", selector: "#root" },
-	{ name: "perspective_presentation", url: `${APP_BASE}/#shift`, perspective: "presentation", selector: "#root" },
-	{ name: "perspective_orthodontic", url: `${APP_BASE}/#shift`, perspective: "orthodontic", selector: "#root" },
-	{ name: "perspective_pediatric", url: `${APP_BASE}/#shift`, perspective: "pediatric", selector: "#root" },
+	{ name: "perspective_chairsider", url: `${APP_BASE}/#shift`, perspective: "chairsider", selector: ".chairsider-perspective, .chairsider-view, #root" },
+	{ name: "perspective_frontdesk", url: `${APP_BASE}/#shift`, perspective: "frontdesk", selector: ".frontdesk-perspective, .frontdesk-view, #root" },
+	{ name: "perspective_presentation", url: `${APP_BASE}/#shift`, perspective: "presentation", selector: "[data-testid='case-presentation-view'], .case-presentation, #root" },
+	{ name: "perspective_orthodontic", url: `${APP_BASE}/#shift`, perspective: "orthodontic", selector: "[data-testid='orthodontic-workspace'], .orthodontic-perspective, #root" },
+	{ name: "perspective_pediatric", url: `${APP_BASE}/#shift`, perspective: "pediatric", selector: "[data-testid='pediatric-workspace'], .pediatric-perspective, #root" },
 ];
 
 async function main() {

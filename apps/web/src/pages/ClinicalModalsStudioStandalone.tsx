@@ -910,6 +910,23 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					if (requestedModal === "radiology_referral" || requestedModal === "referral" || requestedModal === "radiology_referral_modal") {
 						setIsRadiologyOpen(true);
 					}
+					if (
+						requestedModal === "telephony_incoming" ||
+						requestedModal === "incoming_call" ||
+						requestedModal === "incoming_call_popup" ||
+						requestedModal === "telephony_softphone" ||
+						requestedModal === "softphone"
+					) {
+						useTelephonyStore.getState().triggerIncomingCall({
+							phone: "+7 (926) 555-12-34",
+							patientName: "Смирнова Екатерина Васильевна",
+							patientId: "PAT-001",
+							provider: "mango",
+							status: "ringing",
+							timestamp: new Date().toISOString(),
+						});
+						setIsIncomingCallOpen(true);
+					}
 					if (requestedModal === "schedule_roster" || requestedModal === "roster") {
 						setIsDoctorShiftRosterOpen(true);
 					}
@@ -4117,6 +4134,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					role="dialog"
 					aria-modal="true"
 					data-testid="incoming-call-modal-container"
+					data-modal-test="telephony-softphone-modal"
 				>
 					<div className="relative w-full max-w-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
 						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
