@@ -31,8 +31,12 @@ test("Round 85: Patient Portal Mobile Reception QR Suite (375px)", async (t) => 
 		assert.ok(result.receptionInstructionsRu.includes("ресепшен"));
 	});
 
+	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
+		? path.resolve(process.cwd(), "apps/web/src")
+		: path.resolve(process.cwd(), "src");
+
 	await t.test("2. PatientCabinetModal contains Reception QR Banner and 'Показать администратору' button", () => {
-		const modalPath = path.resolve(process.cwd(), "src/components/portal/patientCabinet/PatientCabinetModal.tsx");
+		const modalPath = path.resolve(srcDir, "components/portal/patientCabinet/PatientCabinetModal.tsx");
 		const modalSrc = fs.readFileSync(modalPath, "utf-8");
 
 		assert.ok(modalSrc.includes("data-testid=\"reception-qr-banner\""), "Must render reception-qr-banner in Overview tab");
@@ -42,14 +46,14 @@ test("Round 85: Patient Portal Mobile Reception QR Suite (375px)", async (t) => 
 	});
 
 	await t.test("3. Nearest visit card highlights time with 20px bold font and cabinet room number", () => {
-		const modalPath = path.resolve(process.cwd(), "src/components/portal/patientCabinet/PatientCabinetModal.tsx");
+		const modalPath = path.resolve(srcDir, "components/portal/patientCabinet/PatientCabinetModal.tsx");
 		const modalSrc = fs.readFileSync(modalPath, "utf-8");
 
 		assert.ok(modalSrc.includes("pc-next-visit-time"), "Must use pc-next-visit-time class");
 		assert.ok(modalSrc.includes("pc-next-visit-room"), "Must use pc-next-visit-room class");
 		assert.ok(modalSrc.includes("data-testid=\"next-appt-qr-btn\""), "Next appointment card must have reception QR button");
 
-		const cssPath = path.resolve(process.cwd(), "src/components/portal/patientCabinet/patientCabinet.css");
+		const cssPath = path.resolve(srcDir, "components/portal/patientCabinet/patientCabinet.css");
 		const cssSrc = fs.readFileSync(cssPath, "utf-8");
 
 		assert.ok(cssSrc.includes(".pc-next-visit-time"), "CSS must define .pc-next-visit-time");
@@ -58,12 +62,12 @@ test("Round 85: Patient Portal Mobile Reception QR Suite (375px)", async (t) => 
 	});
 
 	await t.test("4. Touch targets >= 48px and zero horizontal overflow compliance for 375px mobile viewports", () => {
-		const cssPath = path.resolve(process.cwd(), "src/components/portal/patientCabinet/patientCabinet.css");
+		const cssPath = path.resolve(srcDir, "components/portal/patientCabinet/patientCabinet.css");
 		const cssSrc = fs.readFileSync(cssPath, "utf-8");
 
 		assert.ok(cssSrc.includes(".pc-reception-qr-card"), "CSS must style .pc-reception-qr-card");
 
-		const touchCssPath = path.resolve(process.cwd(), "src/styles/touch-targets.css");
+		const touchCssPath = path.resolve(srcDir, "styles/touch-targets.css");
 		const touchCssSrc = fs.readFileSync(touchCssPath, "utf-8");
 
 		assert.ok(touchCssSrc.includes("overflow-x: hidden"), "touch-targets.css must enforce zero horizontal scroll");

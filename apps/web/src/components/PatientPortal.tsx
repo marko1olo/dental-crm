@@ -829,7 +829,10 @@ export const PatientPortal: React.FC = () => {
 					{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 					{(patientData?.documents || [])?.map((doc: any) => (
 						<div key={doc.id} className="doc-item">
-							<span>📄 {doc.title}</span>
+							<span className="flex items-center gap-1.5">
+								<FileText size={16} className="text-[var(--teal)] flex-shrink-0" />
+								<span>{doc.title}</span>
+							</span>
 							<button
 								type="button"
 								className="btn-download"
