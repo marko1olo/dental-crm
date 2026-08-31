@@ -9,6 +9,7 @@ import { checkGuardrails, permissionMatches } from "../guardrails.js";
 import { checkAiRbacGuard } from "../security/aiRbacGuard.js";
 import { registerClinicalNotesTools } from "./clinicalNotesTool.js";
 import { registerClinicalTools } from "./clinicalTools.js";
+import { registerContextTools } from "./contextTools.js";
 import { registerRagTools } from "./ragTools.js";
 import { registerSanpinTools } from "./sanpinTools.js";
 import { toolToAnthropicSchema, toolToOpenAiSchema } from "./schemaSerializer.js";
@@ -233,6 +234,7 @@ export function createDefaultToolRegistry(): ToolRegistry {
 	registerClinicalNotesTools(registry, "clinical_notes");
 	registerSanpinTools(registry, "sanpin");
 	registerRagTools(registry, "internal");
+	registerContextTools(registry, "ui_context");
 	return registry;
 }
 
