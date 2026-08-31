@@ -740,10 +740,39 @@ html.dark .sidebar .nav-item.active,
 .nav-copy small {
 	font-size: 10.5px;
 	font-weight: 500;
-	color: var(--muted);
+	color: var(--muted, #64748b);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	transition: color 0.15s ease;
+}
+
+[data-theme="dark"] .sidebar .nav-copy small,
+[data-theme="dark"] .nav-copy small,
+html.dark .sidebar .nav-copy small,
+html.dark .nav-copy small,
+.dark .sidebar .nav-copy small,
+.dark .nav-copy small {
+	color: var(--ink-muted, #94a3b8) !important;
+}
+
+[data-theme="night"] .sidebar .nav-copy small,
+[data-theme="night"] .nav-copy small {
+	color: var(--ink-muted, #a1a1aa) !important;
+}
+
+[data-theme="dark"] .sidebar .nav-item:hover .nav-copy small,
+[data-theme="night"] .sidebar .nav-item:hover .nav-copy small,
+html.dark .sidebar .nav-item:hover .nav-copy small,
+.dark .sidebar .nav-item:hover .nav-copy small {
+	color: var(--ink, #f8fafc) !important;
+}
+
+[data-theme="dark"] .sidebar .nav-item.active .nav-copy small,
+[data-theme="night"] .sidebar .nav-item.active .nav-copy small,
+html.dark .sidebar .nav-item.active .nav-copy small,
+.dark .sidebar .nav-item.active .nav-copy small {
+	color: var(--teal, #2dd4bf) !important;
 }
 
 /* футер сайдбара & переключатель тем */
@@ -880,8 +909,18 @@ html.dark .sidebar .nav-item.active,
 	font-size: 10.5px;
 	font-weight: 700;
 	letter-spacing: 0.08em;
-	color: var(--muted);
+	color: var(--muted, #64748b);
 	white-space: nowrap;
+}
+
+[data-theme="dark"] .topbar .eyebrow,
+html.dark .topbar .eyebrow,
+.dark .topbar .eyebrow {
+	color: var(--ink-muted, #94a3b8) !important;
+}
+
+[data-theme="night"] .topbar .eyebrow {
+	color: var(--ink-muted, #a1a1aa) !important;
 }
 .topbar-selectors {
 	display: inline-flex;
