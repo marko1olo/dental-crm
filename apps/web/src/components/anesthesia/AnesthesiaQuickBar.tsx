@@ -280,7 +280,7 @@ export function AnesthesiaQuickBar({
 								</span>
 								{isCardioSuggested && (
 									<span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 shrink-0">
-										★ ССЗ выбор
+										ССЗ выбор
 									</span>
 								)}
 								{isSulfiteRisky && (
