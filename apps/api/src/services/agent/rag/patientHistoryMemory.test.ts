@@ -390,7 +390,7 @@ describe("4. 5-Year Semantic Memory Search Engine (Hybrid Cosine + BM25 + FDI)",
 		assert.strictEqual(result.patientId, PATIENT_ID);
 		assert.ok(result.matchesCount >= 1);
 
-		const topMatch = result.matches[0];
+		const topMatch = result.matches[0]!;
 		assert.strictEqual(topMatch.toothNumber, 36);
 		assert.strictEqual(topMatch.doctorFullName, "Барабаш С.В.");
 		assert.strictEqual(topMatch.diagnosis?.code, "K04.0");
@@ -492,7 +492,7 @@ describe("4. 5-Year Semantic Memory Search Engine (Hybrid Cosine + BM25 + FDI)",
 		});
 
 		assert.ok(result.matchesCount >= 1);
-		const top = result.matches[0];
+		const top = result.matches[0]!;
 		assert.strictEqual(top.category, "imaging_xray");
 		assert.ok(top.summary.includes("КЛКТ"));
 		assert.ok(top.summary.includes("20.01.2024"));

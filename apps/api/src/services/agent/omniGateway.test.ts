@@ -458,8 +458,8 @@ describe("OmniLlmGateway Circuit Breaker & Failover Suite", () => {
 
 		assert.ok(caughtError, "Should throw OmniGatewayExhaustedError");
 		assert.strictEqual(caughtError.attemptedProviders.length, 2);
-		assert.strictEqual(caughtError.attemptedProviders[0].providerId, "groq");
-		assert.strictEqual(caughtError.attemptedProviders[1].providerId, "openai");
+		assert.strictEqual(caughtError.attemptedProviders[0]!.providerId, "groq");
+		assert.strictEqual(caughtError.attemptedProviders[1]!.providerId, "openai");
 	});
 
 	test("9. Bridge asLlmProvider adapts to standard LLMProvider interface", async () => {
@@ -482,7 +482,7 @@ describe("OmniLlmGateway Circuit Breaker & Failover Suite", () => {
 			fetchFn: mockFetch,
 		});
 
-		const events = [];
+		const events: any[] = [];
 		for await (const ev of provider.complete({
 			system: "You are a clinical assistant",
 			messages: sampleMessages,
@@ -688,10 +688,10 @@ describe("OmniLlmGateway Circuit Breaker & Failover Suite", () => {
 
 			const candidates = getProviderKeyCandidates("gemini");
 			assert.strictEqual(candidates.length, 1);
-			const candidate = candidates[0];
+			const candidate = candidates[0]!;
 
 			// 1st failure (429) -> consecutive = 1 -> backoff = base * 2^0 = 1x
-			const err429 = new LlmProviderError("Rate limit", { statusCode: 429 });
+			const err429 = new LlmProviderError("Rate limit", { providerId: "gemini", statusCode: 429 });
 			recordProviderKeyFailure("gemini", candidate, err429);
 
 			const tried = new Set<string>();

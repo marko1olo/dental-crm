@@ -302,18 +302,18 @@ describe("LocalOllamaProvider Message & Request Formatting", () => {
 
 		const formatted = formatMessagesForOpenAi("Вы — ассистент DENTE.", messages);
 		assert.strictEqual(formatted.length, 4);
-		assert.strictEqual(formatted[0].role, "system");
-		assert.strictEqual(formatted[0].content, "Вы — ассистент DENTE.");
+		assert.strictEqual(formatted[0]!.role, "system");
+		assert.strictEqual(formatted[0]!.content, "Вы — ассистент DENTE.");
 
-		assert.strictEqual(formatted[1].role, "user");
-		assert.strictEqual(formatted[1].content, "Привет, найди карту пациента Иванова");
+		assert.strictEqual(formatted[1]!.role, "user");
+		assert.strictEqual(formatted[1]!.content, "Привет, найди карту пациента Иванова");
 
-		assert.strictEqual(formatted[2].role, "assistant");
-		assert.strictEqual(formatted[2].content, "Ищу пациента в базе данных клиники...");
-		assert.ok(Array.isArray(formatted[2].tool_calls));
+		assert.strictEqual(formatted[2]!.role, "assistant");
+		assert.strictEqual(formatted[2]!.content, "Ищу пациента в базе данных клиники...");
+		assert.ok(Array.isArray(formatted[2]!.tool_calls));
 
-		assert.strictEqual(formatted[3].role, "tool");
-		assert.strictEqual(formatted[3].tool_call_id, "call_123");
+		assert.strictEqual(formatted[3]!.role, "tool");
+		assert.strictEqual(formatted[3]!.tool_call_id, "call_123");
 	});
 
 	test("normalizes base URLs properly", () => {
@@ -340,7 +340,7 @@ describe("LocalOllamaProvider Streaming & Tool Calling", () => {
 			fetchFn: mockFetch,
 		});
 
-		const events = [];
+		const events: any[] = [];
 		for await (const event of provider.complete({
 			system: "Тестовая система",
 			messages: [{ role: "user", content: "Привет" }],
@@ -405,7 +405,7 @@ describe("LocalOllamaProvider Streaming & Tool Calling", () => {
 			fetchFn: mockFetch,
 		});
 
-		const events = [];
+		const events: any[] = [];
 		for await (const event of provider.complete({
 			system: "Тест инструментов",
 			messages: [{ role: "user", content: "Найди Иванова" }],
@@ -423,13 +423,13 @@ describe("LocalOllamaProvider Streaming & Tool Calling", () => {
 		}
 
 		assert.strictEqual(events.length, 2);
-		assert.strictEqual(events[0].type, "tool_use");
-		if (events[0].type === "tool_use") {
-			assert.strictEqual(events[0].id, "call_abc");
-			assert.strictEqual(events[0].name, "clinical.find_patient");
-			assert.deepStrictEqual(events[0].input, { query: "Иванов" });
+		assert.strictEqual(events[0]!.type, "tool_use");
+		if (events[0]!.type === "tool_use") {
+			assert.strictEqual(events[0]!.id, "call_abc");
+			assert.strictEqual(events[0]!.name, "clinical.find_patient");
+			assert.deepStrictEqual(events[0]!.input, { query: "Иванов" });
 		}
-		assert.deepStrictEqual(events[1], { type: "done", stopReason: "tool_calls" });
+		assert.deepStrictEqual(events[1]!, { type: "done", stopReason: "tool_calls" });
 	});
 
 	test("handles connection errors when local inference server is not running", async () => {
@@ -549,7 +549,7 @@ describe("AgentOrchestrator Integration with LocalOllamaProvider & Air-Gap", () 
 			{ role: "user", content: "Найди данные пациента Петров" },
 		];
 
-		const turnEvents = [];
+		const turnEvents: any[] = [];
 		for await (const event of AgentOrchestrator.runTurnStream({
 			ctx,
 			provider: localProvider,
@@ -573,9 +573,9 @@ describe("AgentOrchestrator Integration with LocalOllamaProvider & Air-Gap", () 
 
 		// History must contain assistant tool use, tool result, and final assistant message
 		assert.strictEqual(history.length, 4);
-		assert.strictEqual(history[0].role, "user");
-		assert.strictEqual(history[1].role, "assistant");
-		assert.strictEqual(history[2].role, "tool");
-		assert.strictEqual(history[3].role, "assistant");
+		assert.strictEqual(history[0]!.role, "user");
+		assert.strictEqual(history[1]!.role, "assistant");
+		assert.strictEqual(history[2]!.role, "tool");
+		assert.strictEqual(history[3]!.role, "assistant");
 	});
 });
