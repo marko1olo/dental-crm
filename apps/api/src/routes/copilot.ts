@@ -14,32 +14,12 @@ import {
 	AgentOrchestrator,
 	defaultCopilotActionManager,
 	defaultLlmProvider,
+	defaultSessionStore,
 	defaultToolRegistry,
 	formatSseEvent,
-	Redactor,
 	type AgentContext,
-	type ProviderMessage,
 	type TurnEvent,
 } from "../services/agent/index.js";
-
-interface SessionState {
-	history: ProviderMessage[];
-	redactor: Redactor;
-	updatedAt: number;
-}
-
-const sessionStore = new Map<string, SessionState>();
-
-// Periodic session GC: remove sessions older than 24 hours
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
-function cleanupStaleSessions(): void {
-	const now = Date.now();
-	for (const [id, session] of sessionStore.entries()) {
-		if (now - session.updatedAt > SESSION_TTL_MS) {
-			sessionStore.delete(id);
-		}
-	}
-}
 
 const messageBodySchema = z.object({
 	content: z.string().optional(),
@@ -60,8 +40,8 @@ const DENTE_COPILOT_SYSTEM_PROMPT = `Вы — высококвалифициро
 export const copilotRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
-	// Periodic GC
-	cleanupStaleSessions();
+	// Periodic GC for expired sessions (TTL 24 hours)
+	defaultSessionStore.cleanupStaleSessions().catch(() => {});
 
 	// POST /api/v1/copilot/sessions/:sessionId/messages — Stream conversation turn
 	server.post<{
@@ -105,17 +85,13 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			const userId =
 				identity.userId ?? "00000000-0000-7000-8000-000000000001";
 
-			// Get or initialize session state
-			let session = sessionStore.get(sessionId);
-			if (!session) {
-				session = {
-					history: [],
-					redactor: new Redactor(),
-					updatedAt: Date.now(),
-				};
-				sessionStore.set(sessionId, session);
-			}
-			session.updatedAt = Date.now();
+			// Get or initialize persistent session state from PostgreSQL / L1 cache
+			const session = await defaultSessionStore.getOrCreate(
+				sessionId,
+				resolvedOrgId,
+				userId,
+				resolvedOrgId,
+			);
 
 			// Append user message to history
 			session.history.push({
@@ -159,6 +135,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 							event.callId,
 							event.name,
 							event.arguments,
+							{ organizationId: resolvedOrgId, userId },
 						);
 					}
 					const chunk = formatSseEvent(event);
@@ -173,6 +150,10 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				reply.raw.write(formatSseEvent(errorEvent));
 				reply.raw.write(formatSseEvent({ type: "final", stopReason: "error" }));
 			} finally {
+				// Persist updated session history and redactor symbol table to PostgreSQL
+				await defaultSessionStore
+					.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
+					.catch(() => {});
 				reply.raw.end();
 			}
 		},
@@ -180,7 +161,13 @@ export const copilotRoutes: FastifyPluginAsync = async (
 
 	// POST /api/v1/copilot/chat — Unified SSE conversation endpoint
 	server.post<{
-		Body: { conversationId?: string; sessionId?: string; content?: string; message?: string; text?: string };
+		Body: {
+			conversationId?: string;
+			sessionId?: string;
+			content?: string;
+			message?: string;
+			text?: string;
+		};
 	}>(
 		"/api/v1/copilot/chat",
 		{ config: { tenantTxSelfManaged: true } },
@@ -193,7 +180,8 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			if (!resolvedOrgId) return;
 
 			const body = request.body ?? {};
-			const sessionId = body.conversationId ?? body.sessionId ?? `sess_${Date.now()}`;
+			const sessionId =
+				body.conversationId ?? body.sessionId ?? `sess_${Date.now()}`;
 			const userText = (body.content ?? body.message ?? body.text ?? "").trim();
 
 			if (!userText) {
@@ -204,18 +192,15 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			}
 
 			const identity = getRequestIdentity(request);
-			const userId = identity.userId ?? "00000000-0000-7000-8000-000000000001";
+			const userId =
+				identity.userId ?? "00000000-0000-7000-8000-000000000001";
 
-			let session = sessionStore.get(sessionId);
-			if (!session) {
-				session = {
-					history: [],
-					redactor: new Redactor(),
-					updatedAt: Date.now(),
-				};
-				sessionStore.set(sessionId, session);
-			}
-			session.updatedAt = Date.now();
+			const session = await defaultSessionStore.getOrCreate(
+				sessionId,
+				resolvedOrgId,
+				userId,
+				resolvedOrgId,
+			);
 
 			session.history.push({
 				role: "user",
@@ -256,6 +241,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 							event.callId,
 							event.name,
 							event.arguments,
+							{ organizationId: resolvedOrgId, userId },
 						);
 					}
 					const chunk = formatSseEvent(event);
@@ -270,11 +256,13 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				reply.raw.write(formatSseEvent(errorEvent));
 				reply.raw.write(formatSseEvent({ type: "final", stopReason: "error" }));
 			} finally {
+				await defaultSessionStore
+					.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
+					.catch(() => {});
 				reply.raw.end();
 			}
 		},
 	);
-
 
 	// POST /api/v1/copilot/sessions/:sessionId/confirmations/:callId — Doctor confirmation/rejection
 	server.post<{
@@ -314,7 +302,10 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			reply.raw.flushHeaders?.();
 
 			if (decision === "confirm") {
-				const pending = defaultCopilotActionManager.getPending(callId);
+				const pending = await defaultCopilotActionManager.resolvePending(
+					callId,
+					resolvedOrgId,
+				);
 				if (!pending) {
 					reply.raw.write(
 						formatSseEvent({
@@ -379,9 +370,10 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			}
 
 			// decision === "reject"
-			const rejection = defaultCopilotActionManager.rejectAction(
+			const rejection = await defaultCopilotActionManager.rejectActionAsync(
 				callId,
 				reason ?? "Отклонено пользователем",
+				resolvedOrgId,
 			);
 			reply.raw.write(
 				formatSseEvent({
@@ -398,7 +390,12 @@ export const copilotRoutes: FastifyPluginAsync = async (
 
 	// POST /api/v1/copilot/confirm — Alias endpoint for backwards compatibility
 	server.post<{
-		Body: { sessionId?: string; callId: string; decision: "confirm" | "reject"; reason?: string };
+		Body: {
+			sessionId?: string;
+			callId: string;
+			decision: "confirm" | "reject";
+			reason?: string;
+		};
 	}>(
 		"/api/v1/copilot/confirm",
 		{ config: { tenantTxSelfManaged: true } },
@@ -415,21 +412,29 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			if (!parsedBody.success || !callId) {
 				return reply.code(400).send({
 					error: "ValidationError",
-					message: "Некорректный формат: укажите callId и decision ('confirm' | 'reject')",
+					message:
+						"Некорректный формат: укажите callId и decision ('confirm' | 'reject')",
 				});
 			}
 
 			const identity = getRequestIdentity(request);
-			const userId = identity.userId ?? "00000000-0000-7000-8000-000000000001";
-			const sessionId = (request.body as { sessionId?: string })?.sessionId ?? "default-session";
+			const userId =
+				identity.userId ?? "00000000-0000-7000-8000-000000000001";
+			const sessionId =
+				(request.body as { sessionId?: string })?.sessionId ??
+				"default-session";
 			const { decision, reason } = parsedBody.data;
 
 			if (decision === "confirm") {
-				const pending = defaultCopilotActionManager.getPending(callId);
+				const pending = await defaultCopilotActionManager.resolvePending(
+					callId,
+					resolvedOrgId,
+				);
 				if (!pending) {
 					return reply.code(404).send({
 						error: "NotFound",
-						message: "Запрос на действие не найден или истек срок ожидания (15 минут)",
+						message:
+							"Запрос на действие не найден или истек срок ожидания (15 минут)",
 					});
 				}
 
@@ -444,12 +449,27 @@ export const copilotRoutes: FastifyPluginAsync = async (
 					db,
 				};
 
-				const result = await defaultCopilotActionManager.confirmAction(ctx, callId);
-				return reply.code(200).send({ ok: result.ok, result: result.ok ? result.data : undefined, error: result.error });
+				const result = await defaultCopilotActionManager.confirmAction(
+					ctx,
+					callId,
+				);
+				return reply.code(200).send({
+					ok: result.ok,
+					result: result.ok ? result.data : undefined,
+					error: result.error,
+				});
 			}
 
-			const rejection = defaultCopilotActionManager.rejectAction(callId, reason ?? "Отклонено пользователем");
-			return reply.code(200).send({ ok: true, rejected: true, reason: rejection.reason });
+			const rejection = await defaultCopilotActionManager.rejectActionAsync(
+				callId,
+				reason ?? "Отклонено пользователем",
+				resolvedOrgId,
+			);
+			return reply.code(200).send({
+				ok: true,
+				rejected: true,
+				reason: rejection.reason,
+			});
 		},
 	);
 

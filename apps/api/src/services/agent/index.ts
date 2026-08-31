@@ -16,4 +16,5 @@ export * from "./tools/clinicalNotesTool.js";
 export * from "./tools/sanpinTools.js";
 export * from "./orchestrator.js";
 export * from "./copilotService.js";
+export * from "./sessionStore.js";
 

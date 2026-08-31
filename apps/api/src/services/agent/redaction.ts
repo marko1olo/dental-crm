@@ -250,6 +250,22 @@ export class SymbolTable {
 		this.toToken.clear();
 		this.toReal.clear();
 	}
+
+	public exportState(): { mappings: [string, string][] } {
+		return {
+			mappings: Array.from(this.toToken.entries()),
+		};
+	}
+
+	public importState(state?: { mappings?: [string, string][] } | null): void {
+		if (!state?.mappings) return;
+		for (const [real, token] of state.mappings) {
+			if (real && token) {
+				this.toToken.set(real, token);
+				this.toReal.set(token, real);
+			}
+		}
+	}
 }
 
 /**
@@ -263,6 +279,26 @@ export class Redactor {
 	constructor(options: { enabled?: boolean; table?: SymbolTable } = {}) {
 		this.enabled = options.enabled ?? true;
 		this.table = options.table ?? new SymbolTable();
+	}
+
+	public exportState(): { enabled: boolean; mappings: [string, string][] } {
+		return {
+			enabled: this.enabled,
+			mappings: this.table.exportState().mappings,
+		};
+	}
+
+	public static fromState(
+		state?: { enabled?: boolean; mappings?: [string, string][] } | null,
+	): Redactor {
+		const table = new SymbolTable();
+		if (state?.mappings) {
+			table.importState({ mappings: state.mappings });
+		}
+		return new Redactor({
+			enabled: state?.enabled ?? true,
+			table,
+		});
 	}
 
 	public seed(context: Record<string, unknown> | null | undefined): void {
