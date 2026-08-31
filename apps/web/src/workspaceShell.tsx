@@ -395,7 +395,7 @@ export function WorkspaceSidebar({
       */}
 			{modeExplanation && !collapsed ? (
 				<p
-					className="mt-[0.75rem] text-[0.6875rem] leading-[1.4] opacity-70 max-[1140px]:hidden"
+					className="mt-[0.75rem] text-[0.6875rem] leading-[1.4] text-[var(--ink-muted,var(--muted))] max-[1140px]:hidden font-medium"
 					title={modeExplanation}
 				>
 					Режим «{modeTitle}» — скрыты разделы: {hiddenSectionNames}.{" "}
