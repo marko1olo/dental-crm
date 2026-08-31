@@ -105,8 +105,9 @@ export async function getAllImagingStudies(
 export async function getImagingStudyById(
 	organizationId: string,
 	id: string,
+	targetDb: typeof db = db,
 ): Promise<ImagingStudy | null> {
-	const [record] = await db
+	const [record] = await targetDb
 		.select()
 		.from(schema.imagingStudies)
 		.where(
@@ -269,8 +270,9 @@ export async function updateImagingStudyAiSummaryInDb(
 	organizationId: string,
 	id: string,
 	summary: string,
+	targetDb: typeof db = db,
 ): Promise<ImagingStudy> {
-	const [record] = await db
+	const [record] = await targetDb
 		.update(schema.imagingStudies)
 		.set({ aiSummary: summary })
 		.where(

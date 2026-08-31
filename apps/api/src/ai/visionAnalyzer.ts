@@ -373,18 +373,33 @@ function extractJson(text: string): any {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Main export
+// Main exports
 // ──────────────────────────────────────────────────────────────────────────────
-export async function analyzeImagingStudy(imageBase64: string): Promise<{
+export interface RadiographAnalysisOptions {
+	toothCode?: string | null | undefined;
+	clinicalQuestion?: string | null | undefined;
+}
+
+export interface ToothFindingUpdate {
+	code: string;
+	state: string;
+	diagnosisOrFinding: string;
+	notes?: string;
+}
+
+export interface RadiographAnalysisResult {
 	summary: string;
-	toothUpdates: Array<{
-		code: string;
-		state: string;
-		diagnosisOrFinding: string;
-		notes?: string;
-	}>;
-	_meta?: { pass1Model: string; pass2Model: string | null };
-}> {
+	toothUpdates: ToothFindingUpdate[];
+	_meta?: {
+		pass1Model: string;
+		pass2Model: string | null;
+	};
+}
+
+export async function analyzeImagingStudy(
+	imageBase64: string,
+	options?: RadiographAnalysisOptions,
+): Promise<RadiographAnalysisResult> {
 	// Check we have at least one key available
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const groqKeys = getProviderKeyCandidates(GROQ_PROVIDER_ID as any);
@@ -422,6 +437,19 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 		);
 	}
 
+	// Clinical context lines for prompt injection
+	const contextLines: string[] = [];
+	if (options?.toothCode) {
+		contextLines.push(`Зуб / область интереса (FDI): ${options.toothCode}`);
+	}
+	if (options?.clinicalQuestion) {
+		contextLines.push(`Клинический вопрос врача: ${options.clinicalQuestion}`);
+	}
+	const pass1ExtraText =
+		contextLines.length > 0
+			? `Контекст клинического запроса:\n${contextLines.join("\n")}`
+			: undefined;
+
 	// ── PASS 1: Primary analysis ──────────────────────────────────────────────
 	const pass1Slots: ProviderSlot[] = [
 		{ provider: "groq", model: GROQ_VISION_MODEL },
@@ -432,7 +460,7 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 		pass1Slots,
 		PASS1_PROMPT,
 		processedBase64,
-		undefined,
+		pass1ExtraText,
 		80,
 	);
 	if (!pass1) {
@@ -470,7 +498,12 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 		typeof pass1Parsed.summary === "string"
 			? pass1Parsed.summary
 			: JSON.stringify(pass1Parsed);
-	const pass2ExtraText = `Вот первичный анализ, который нужно критически проверить и улучшить:\n\n${pass1Summary}`;
+	const pass2ExtraText = [
+		`Вот первичный анализ, который нужно критически проверить и улучшить:\n\n${pass1Summary}`,
+		contextLines.length > 0
+			? `\n\nКонтекст клинического запроса:\n${contextLines.join("\n")}`
+			: "",
+	].join("");
 
 	const pass2 = await runCascade(
 		pass2Slots,
@@ -506,7 +539,7 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 
 	// ── Normalise output ──────────────────────────────────────────────────────
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const toothUpdates: any[] = Array.isArray(finalResult.toothUpdates)
+	const toothUpdates: ToothFindingUpdate[] = Array.isArray(finalResult.toothUpdates)
 		? // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			finalResult.toothUpdates.map((u: any) => ({
 				code: String(u.code ?? "unknown"),
@@ -527,4 +560,15 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
 			pass2Model: pass2ModelName,
 		},
 	};
+}
+
+export async function analyzeRadiographBuffer(
+	buffer: Buffer,
+	mimeType = "image/png",
+	options?: RadiographAnalysisOptions,
+): Promise<RadiographAnalysisResult> {
+	const base64Data = buffer.toString("base64");
+	const normalizedMime = mimeType || "image/png";
+	const dataUrl = `data:${normalizedMime};base64,${base64Data}`;
+	return analyzeImagingStudy(dataUrl, options);
 }
