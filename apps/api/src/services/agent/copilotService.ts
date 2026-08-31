@@ -375,7 +375,7 @@ export function createDefaultLlmProvider(): LLMProvider {
 				yield {
 					type: "tool_use",
 					id: `call_notes_${Date.now()}`,
-					name: "clinical_notes.parse_dictation",
+					name: "clinical_notes.parse_voice_dictation",
 					input: { transcript: userText, specialty: "therapist" },
 				};
 				yield { type: "done", stopReason: "tool_use" };

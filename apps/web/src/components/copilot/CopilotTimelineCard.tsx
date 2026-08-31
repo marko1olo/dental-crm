@@ -33,8 +33,8 @@ const TYPE_ICONS: Record<string, { icon: React.ReactNode; bg: string; fg: string
   },
   lab_order: {
     icon: <Package className="w-3.5 h-3.5" />,
-    bg: 'amber-100',
-    fg: 'amber-800',
+    bg: 'var(--warn-bg)',
+    fg: 'var(--warn-fg)',
   },
 };
 

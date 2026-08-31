@@ -160,7 +160,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 
 	// 2. Список записей журнала
 	const [records, setRecords] = useState<MedicalWasteJournalRecord[]>(() =>
-		initialRecords && initialRecords.length > 0 ? [...initialRecords] : DEFAULT_DEMO_WASTE_RECORDS
+		initialRecords && initialRecords.length > 0 ? [...initialRecords] : []
 	);
 
 	// 3. Состояние акта передачи
@@ -595,7 +595,18 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 										</tr>
 									</thead>
 									<tbody>
-										{records.map((r) => {
+										{records.length === 0 ? (
+											<tr>
+												<td colSpan={10} className="text-center py-8 text-muted">
+													<div className="flex flex-col items-center gap-2">
+														<ShieldCheck size={32} className="text-muted opacity-50" />
+														<div className="font-semibold text-ink text-sm">В журнале пока нет записей медотходов</div>
+														<div className="text-xs text-muted max-w-sm">Зафиксируйте первый пакет или емкость с отходами классов А, Б, В или Г на вкладке «Фиксация отходов».</div>
+													</div>
+												</td>
+											</tr>
+										) : (
+											records.map((r) => {
 											const classDef = getMedicalWasteClass(r.wasteClass);
 											const storageCheck = validateStorageDuration(r.timestamp, r.storageLocation);
 
@@ -655,7 +666,8 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 													</td>
 												</tr>
 											);
-										})}
+										})
+									)}
 									</tbody>
 								</table>
 							</div>

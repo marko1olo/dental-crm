@@ -21,8 +21,12 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
     if (onAction) {
       onAction(nudge);
     } else if (onAct) {
-      const title = (nudge.payload?.title as string) || (nudge.payload?.text as string) || 'Рекомендация по расписанию';
-      onAct(title);
+      const promptText =
+        (nudge.payload?.actionPrompt as string) ||
+        (nudge.payload?.description as string) ||
+        (nudge.payload?.text as string) ||
+        'Помоги обработать рекомендацию клиники';
+      onAct(promptText);
     }
   };
 

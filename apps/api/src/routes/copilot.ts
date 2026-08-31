@@ -396,6 +396,63 @@ export const copilotRoutes: FastifyPluginAsync = async (
 		},
 	);
 
+	// POST /api/v1/copilot/confirm — Alias endpoint for backwards compatibility
+	server.post<{
+		Body: { sessionId?: string; callId: string; decision: "confirm" | "reject"; reason?: string };
+	}>(
+		"/api/v1/copilot/confirm",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot action confirmation alias",
+			);
+			if (!resolvedOrgId) return;
+
+			const parsedBody = confirmationBodySchema.safeParse(request.body ?? {});
+			const callId = (request.body as { callId?: string })?.callId;
+			if (!parsedBody.success || !callId) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат: укажите callId и decision ('confirm' | 'reject')",
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const userId = identity.userId ?? "00000000-0000-7000-8000-000000000001";
+			const sessionId = (request.body as { sessionId?: string })?.sessionId ?? "default-session";
+			const { decision, reason } = parsedBody.data;
+
+			if (decision === "confirm") {
+				const pending = defaultCopilotActionManager.getPending(callId);
+				if (!pending) {
+					return reply.code(404).send({
+						error: "NotFound",
+						message: "Запрос на действие не найден или истек срок ожидания (15 минут)",
+					});
+				}
+
+				const ctx: AgentContext = {
+					organizationId: resolvedOrgId,
+					clinicId: resolvedOrgId,
+					userId,
+					sessionId,
+					mode: "autonomous",
+					permissions: [...PERMISSIONS],
+					tools: defaultToolRegistry,
+					db,
+				};
+
+				const result = await defaultCopilotActionManager.confirmAction(ctx, callId);
+				return reply.code(200).send({ ok: result.ok, result: result.ok ? result.data : undefined, error: result.error });
+			}
+
+			const rejection = defaultCopilotActionManager.rejectAction(callId, reason ?? "Отклонено пользователем");
+			return reply.code(200).send({ ok: true, rejected: true, reason: rejection.reason });
+		},
+	);
+
 	// GET /api/v1/copilot/nudges — Proactive clinic nudges and recommendations
 	server.get("/api/v1/copilot/nudges", async (request, reply) => {
 		const resolvedOrgId = await requireResolvedOrganizationId(

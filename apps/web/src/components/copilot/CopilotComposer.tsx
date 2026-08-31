@@ -32,6 +32,51 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
     }
   };
 
+  const [isListening, setIsListening] = React.useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const toggleVoice = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Голосовой ввод не поддерживается данным браузером. Используйте Chrome или Edge.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ru-RU';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript.trim()) {
+          onChange(value ? `${value} ${transcript.trim()}` : transcript.trim());
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  };
+
   return (
     <div className="copilot-composer">
       <div className="copilot-composer-box">
@@ -40,7 +85,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Спросите ассистента или отдайте команду..."
+          placeholder={isListening ? 'Идет запись речи... Говорите...' : 'Спросите ассистента или отдайте команду...'}
           disabled={busy}
           rows={1}
           className="copilot-textarea"
@@ -48,9 +93,15 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
 
         <button
           type="button"
-          className="copilot-icon-btn"
-          title="Голосовой ввод"
-          style={{ minWidth: '40px', minHeight: '40px' }}
+          onClick={toggleVoice}
+          className={`copilot-icon-btn ${isListening ? 'animate-pulse' : ''}`}
+          title={isListening ? 'Остановить запись' : 'Голосовой ввод'}
+          style={{
+            minWidth: '40px',
+            minHeight: '40px',
+            color: isListening ? '#ef4444' : undefined,
+            backgroundColor: isListening ? 'rgba(239, 68, 68, 0.15)' : undefined,
+          }}
         >
           <Mic size={18} />
         </button>

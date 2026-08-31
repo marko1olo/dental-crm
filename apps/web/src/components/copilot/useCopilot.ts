@@ -267,13 +267,15 @@ export function useCopilot(options: UseCopilotOptions = {}) {
 
       try {
         const token = readDenteClinicToken() || readDenteStaffToken() || '';
-        await fetch(`${apiBaseUrl}/api/v1/copilot/confirm`, {
+        const sessId = conversationId || 'default-session';
+        const url = `${apiBaseUrl}/api/v1/copilot/sessions/${sessId}/confirmations/${callId}`;
+        await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: token ? `Bearer ${token}` : '',
           },
-          body: JSON.stringify({ callId, decision }),
+          body: JSON.stringify({ decision }),
         });
       } catch (e) {
         console.error('Error confirming copilot action:', e);
@@ -281,7 +283,7 @@ export function useCopilot(options: UseCopilotOptions = {}) {
       setBusy(false);
       setPhase(null);
     },
-    [apiBaseUrl, busy]
+    [apiBaseUrl, busy, conversationId]
   );
 
   const reset = useCallback(() => {

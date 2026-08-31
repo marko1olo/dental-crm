@@ -128,7 +128,7 @@ export const CopilotConfirmCard: React.FC<CopilotConfirmCardProps> = ({
               <button
                 type="button"
                 onClick={() => handleDecision('confirm')}
-                className="copilot-btn-destructive"
+                className={action.type === 'cancel_appointment' ? 'copilot-btn-destructive' : 'copilot-btn-primary'}
               >
                 <Check size={14} />
                 <span>Подтвердить</span>
