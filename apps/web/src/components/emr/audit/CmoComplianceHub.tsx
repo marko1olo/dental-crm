@@ -623,14 +623,16 @@ export function CmoComplianceHub({
 				<table className="cmo-hub-table">
 					<thead>
 						<tr>
-							<th style={{ width: "44px", textAlign: "center" }}>
-								<input
-									type="checkbox"
-									checked={selectedVisitIds.size === filteredVisits.length && filteredVisits.length > 0}
-									onChange={handleToggleSelectAll}
-									className="cmo-hub-checkbox"
-									aria-label="Выбрать все приёмы"
-								/>
+							<th style={{ width: "48px", textAlign: "center" }}>
+								<label style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "44px", minHeight: "44px", cursor: "pointer", margin: 0 }}>
+									<input
+										type="checkbox"
+										checked={selectedVisitIds.size === filteredVisits.length && filteredVisits.length > 0}
+										onChange={handleToggleSelectAll}
+										className="cmo-hub-checkbox"
+										aria-label="Выбрать все приёмы"
+									/>
+								</label>
 							</th>
 							<th>Дата / Время</th>
 							<th>Карта 043/у</th>
@@ -671,13 +673,15 @@ export function CmoComplianceHub({
 										style={item.isOverdue24h && item.egiszStatus !== "accepted" ? { background: "rgba(239, 68, 68, 0.04)" } : {}}
 									>
 										<td style={{ textAlign: "center" }}>
-											<input
-												type="checkbox"
-												checked={isSelected}
-												onChange={() => handleToggleSelectOne(item.id)}
-												className="cmo-hub-checkbox"
-												aria-label={`Выбрать прием ${item.medicalCardNumber}`}
-											/>
+											<label style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "44px", minHeight: "44px", cursor: "pointer", margin: 0 }}>
+												<input
+													type="checkbox"
+													checked={isSelected}
+													onChange={() => handleToggleSelectOne(item.id)}
+													className="cmo-hub-checkbox"
+													aria-label={`Выбрать прием ${item.medicalCardNumber}`}
+												/>
+											</label>
 										</td>
 										<td>
 											<div style={{ fontWeight: 600 }}>{item.visitDate}</div>

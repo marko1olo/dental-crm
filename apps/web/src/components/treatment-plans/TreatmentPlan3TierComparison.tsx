@@ -533,7 +533,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 									key={m}
 									type="button"
 									onClick={() => setInstallmentMonths(m as 3 | 6 | 12 | 24)}
-									className={`min-h-[44px] sm:min-h-[36px] px-3 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer ${
+									className={`min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-3 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
 										installmentMonths === m
 											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
