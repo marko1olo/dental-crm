@@ -55,6 +55,7 @@ import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { KraftPackageModal } from "./KraftPackageModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
+import { SterilizerFleetManager } from "./SterilizerFleetManager";
 import {
 	generateSanpinConsolidatedInspectionHtml,
 	exportSanpinConsolidatedArchiveToCsv,
@@ -67,6 +68,7 @@ export type SanpinRegisterTab =
 	| "cabinet_readiness"
 	| "pso"
 	| "autoclave"
+	| "sterilizers"
 	| "bactericidal"
 	| "cleaning"
 	| "waste"
@@ -102,9 +104,10 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 		icon: Flame,
 		tabs: [
 			{ id: "autoclave", label: "Автоклавы (Форма 257/у)", shortLabel: "Автоклавы 257/у", category: "sterilization", icon: Flame },
+			{ id: "sterilizers", label: "Парк стерилизаторов клиники", shortLabel: "Парк оборудования", category: "sterilization", icon: Gauge },
 			{ id: "pso", label: "ПСО и Азопирамовая проба (Форма 366/у)", shortLabel: "ПСО / Азопирам", category: "sterilization", icon: FlaskConical },
 			{ id: "cabinet_readiness", label: "Фенолфталеиновая проба и готовность", shortLabel: "Фенолфталеин", category: "sterilization", icon: ShieldCheck },
-			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар", category: "sterilization", icon: Gauge },
+			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар", category: "sterilization", icon: Sparkles },
 		],
 	},
 	{
@@ -1628,11 +1631,12 @@ export function SanpinRegisters() {
 				</div>
 			)}
 
-			{/* Tab Views: All 12 Statutory Registers */}
+			{/* Tab Views: All 13 Statutory Registers */}
 			{activeTab === "retroactive_batch" && <RetroactiveBatchTab />}
 			{activeTab === "cabinet_readiness" && <CabinetReadinessTab />}
 			{activeTab === "pso" && <PsoRegisterTab />}
 			{activeTab === "autoclave" && <AutoclaveRegisterTab />}
+			{activeTab === "sterilizers" && <SterilizerFleetManager />}
 			{activeTab === "bactericidal" && <BactericidalRegisterTab />}
 			{activeTab === "cleaning" && <GeneralCleaningRegisterTab />}
 			{activeTab === "waste" && <MedicalWasteRegisterTab />}

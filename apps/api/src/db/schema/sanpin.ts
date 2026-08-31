@@ -19,6 +19,44 @@ import { patients } from "./patients.js";
 // ─── 2. Автоклавы и сухожары (Форма № 257/у) ─────────────────────────────────
 // sterilizationLogs и autoclaveDailyTests объявлены в inventory.ts и реэкспортируются
 
+export const sterilizerEquipments = pgTable(
+	"sterilizer_equipments",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		name: text("name").notNull(),
+		brandModel: text("brand_model").notNull(),
+		serialNumber: text("serial_number").notNull(),
+		inventoryNumber: text("inventory_number"),
+		deviceType: text("device_type").notNull().default("autoclave_steam"), // autoclave_steam | dry_heat | plasma | gas_eo
+		deviceClass: text("device_class").notNull().default("autoclave_class_b"), // autoclave_class_b | autoclave_class_s | autoclave_class_n | dry_heat_air | plasma
+		chamberVolumeLiters: numeric("chamber_volume_liters", { precision: 8, scale: 2 })
+			.notNull()
+			.default("22.00"),
+		locationRoom: text("location_room").notNull().default("ЦСО (Стерилизационная)"),
+		verificationExpiryDate: date("verification_expiry_date", { mode: "string" }),
+		lastMaintenanceDate: date("last_maintenance_date", { mode: "string" }),
+		nextMaintenanceDate: date("next_maintenance_date", { mode: "string" }),
+		commissioningDate: date("commissioning_date", { mode: "string" }),
+		decommissioningDate: date("decommissioning_date", { mode: "string" }),
+		status: text("status").notNull().default("active"), // active | in_maintenance | decommissioned
+		isCommissioned: boolean("is_commissioned").notNull().default(true),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgIdx: index("sterilizer_equipments_org_idx").on(t.organizationId),
+		statusIdx: index("sterilizer_equipments_status_idx").on(t.status),
+	}),
+);
+
 // ─── 3. Бактерицидные облучатели и рециркуляторы (Р 3.5.1904-04) ──────────────
 
 export const bactericidalEquipments = pgTable(

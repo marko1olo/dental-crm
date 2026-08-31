@@ -56,6 +56,9 @@ import {
 	type RetroactiveDayRecord,
 	type RetroactiveGenerationOptions,
 } from "./retroactiveSanpinEngine.js";
+import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
+import { POPULAR_STERILIZER_BRAND_PRESETS, type SterilizerEquipment } from "@dental/shared";
+import { loadSavedClinicAutoclaves } from "./AutoclaveEquipmentModal";
 
 export function RetroactiveBatchTab() {
 	// Period Selection State
@@ -81,8 +84,64 @@ export function RetroactiveBatchTab() {
 		"steam_134_5min" | "steam_134_20min" | "steam_121_20min" | "dry_heat_180_60min"
 	>("steam_134_5min");
 	const [sterilizerModel, setSterilizerModel] = useState("Melag Vacuklav 23B+ (B-класс)");
+	const [availableSterilizers, setAvailableSterilizers] = useState<Array<{ id: string; label: string; modelName: string }>>([]);
+	const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
 	const [excludeSundays, setExcludeSundays] = useState(true);
 	const [averageVisitsPerCab, setAverageVisitsPerCab] = useState(6);
+
+	// Fetch clinic sterilizer equipments
+	const fetchSterilizers = async () => {
+		try {
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const res = await fetch("/api/registers/sterilizers/equipments", {
+				headers: {
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+			}).catch(() => null);
+
+			if (res && res.ok) {
+				const data: SterilizerEquipment[] = await res.json();
+				if (Array.isArray(data) && data.length > 0) {
+					const activeList = data.filter((d) => d.status === "active");
+					const mapped = (activeList.length > 0 ? activeList : data).map((d) => ({
+						id: d.id,
+						label: `${d.name} (${d.chamberVolumeLiters} л, Зав. №${d.serialNumber})`,
+						modelName: d.brandModel || d.name,
+					}));
+					setAvailableSterilizers(mapped);
+					if (mapped[0]) {
+						setSterilizerModel(mapped[0].modelName);
+					}
+					return;
+				}
+			}
+		} catch (err) {
+			console.error("Failed to load sterilizers for batch tab", err);
+		}
+
+		// Fallback to local storage or presets
+		const localDevs = loadSavedClinicAutoclaves();
+		if (localDevs.length > 0) {
+			const mapped = localDevs.map((d) => ({
+				id: d.id,
+				label: `${d.brandModelRu} (${d.chamberVolumeLiters} л, Зав. №${d.serialNumber})`,
+				modelName: d.brandModelRu,
+			}));
+			setAvailableSterilizers(mapped);
+			if (mapped[0]) setSterilizerModel(mapped[0].modelName);
+		} else {
+			// Presets as standard choices
+			const mapped = POPULAR_STERILIZER_BRAND_PRESETS.map((p) => ({
+				id: p.id,
+				label: `${p.brandModel} (${p.chamberVolumeLiters} л — ${p.descriptionRu})`,
+				modelName: `${p.brandModel} (${p.deviceClass === "autoclave_class_b" ? "B-класс" : "Сухожар"})`,
+			}));
+			setAvailableSterilizers(mapped);
+			if (mapped[0]) setSterilizerModel(mapped[0].modelName);
+		}
+	};
 
 	// Generated Records State
 	const [generatedDays, setGeneratedDays] = useState<RetroactiveDayRecord[]>([]);
@@ -100,8 +159,9 @@ export function RetroactiveBatchTab() {
 		return calculatePeriodDateRange(periodPreset, customStartDate, customEndDate);
 	}, [periodPreset, customStartDate, customEndDate]);
 
-	// Auto-generate on initial mount for current month
+	// Auto-generate on initial mount for current month & load sterilizers
 	useEffect(() => {
+		fetchSterilizers();
 		handleGenerateBatch();
 	}, []);
 
@@ -537,6 +597,45 @@ export function RetroactiveBatchTab() {
 							<option value="Петрова Елена Сергеевна">Петрова Елена Сергеевна (Старшая медсестра)</option>
 							<option value="Иванова Мария Павловна">Иванова Мария Павловна (Медсестра стерилизационной)</option>
 							<option value="Воронова Марина Алексеевна">Воронова Марина Алексеевна (Главная медсестра)</option>
+						</select>
+					</div>
+
+					{/* Sterilizer Apparatus Selection */}
+					<div className="sanpin-form-group">
+						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+							<label className="sanpin-form-label" style={{ fontWeight: 700 }}>
+								Аппарат стерилизатора клиники:
+							</label>
+							<button
+								type="button"
+								onClick={() => setIsEquipmentModalOpen(true)}
+								style={{
+									background: "none",
+									border: "none",
+									color: "var(--brand-primary, #2563eb)",
+									fontSize: "0.75rem",
+									cursor: "pointer",
+									padding: 0,
+									textDecoration: "underline",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "0.2rem",
+								}}
+							>
+								<Plus size={12} /> + Добавить аппарат
+							</button>
+						</div>
+						<select
+							value={sterilizerModel}
+							onChange={(e) => setSterilizerModel(e.target.value)}
+							className="sanpin-select"
+							style={{ minHeight: "44px" }}
+						>
+							{availableSterilizers.map((s) => (
+								<option key={s.id} value={s.modelName}>
+									{s.label}
+								</option>
+							))}
 						</select>
 					</div>
 
@@ -1096,6 +1195,15 @@ export function RetroactiveBatchTab() {
 					</table>
 				</div>
 			)}
+
+			<SterilizerEquipmentModal
+				isOpen={isEquipmentModalOpen}
+				onClose={() => {
+					setIsEquipmentModalOpen(false);
+					fetchSterilizers();
+				}}
+				onSuccess={fetchSterilizers}
+			/>
 		</div>
 	);
 }

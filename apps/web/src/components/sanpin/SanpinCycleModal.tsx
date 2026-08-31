@@ -3,6 +3,7 @@ import {
 	type SterilizationDeviceType,
 	type SterilizerIndicatorClass,
 	type SterilizerPackagingType,
+	type SterilizerEquipment,
 	computePackagingExpirationDate,
 } from "@dental/shared";
 import {
@@ -125,6 +126,28 @@ export function SanpinCycleModal({
 	const [nurseName, setNurseName] = useState("Медсестра ЦСО");
 	const [notes, setNotes] = useState("");
 	const [submitting, setSubmitting] = useState(false);
+	const [clinicEquipments, setClinicEquipments] = useState<SterilizerEquipment[]>([]);
+
+	useEffect(() => {
+		if (isOpen) {
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			fetch("/api/registers/sterilizers/equipments", {
+				headers: {
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+			})
+				.then((res) => (res.ok ? res.json() : []))
+				.then((data) => {
+					if (Array.isArray(data)) {
+						const activeOnly = data.filter((d: SterilizerEquipment) => d.status === "active");
+						setClinicEquipments(activeOnly.length > 0 ? activeOnly : data);
+					}
+				})
+				.catch(() => {});
+		}
+	}, [isOpen]);
 
 	useEffect(() => {
 		if (suggestedCycleNumber) {
@@ -144,6 +167,25 @@ export function SanpinCycleModal({
 	}, [cycleNumber, packagingType]);
 
 	if (!isOpen) return null;
+
+	const handleEquipmentSelect = (eq: SterilizerEquipment) => {
+		setDeviceName(eq.brandModel || eq.name);
+		setSerialNumber(eq.serialNumber);
+		setSterilizerType(eq.deviceType);
+		if (eq.deviceType === "dry_heat") {
+			setTemperatureCelsius(180);
+			setPressureBar(null);
+			setDurationMin(60);
+			setIndicatorType("class4_multivariable");
+			setPackagingType("kraft_self_adhesive");
+		} else {
+			setTemperatureCelsius(134);
+			setPressureBar(2.15);
+			setDurationMin(5);
+			setIndicatorType("class5_integrating");
+			setPackagingType("kraft_heat_sealed");
+		}
+	};
 
 	const handlePresetSelect = (preset: (typeof APPARATUS_PRESETS)[0]) => {
 		setDeviceName(preset.name);
@@ -310,42 +352,76 @@ export function SanpinCycleModal({
 						{/* Quick Apparatus Presets */}
 						<div>
 							<div style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.5rem", color: "var(--ink)" }}>
-								Быстрый выбор аппарата ЦСО:
+								{clinicEquipments.length > 0 ? "Стерилизатор клиники (ЦСО):" : "Быстрый выбор аппарата ЦСО:"}
 							</div>
 							<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-								{APPARATUS_PRESETS.map((p) => {
-									const isSelected = deviceName === p.name && sterilizerType === p.type;
-									return (
-										<button
-											type="button"
-											key={p.name}
-											onClick={() => handlePresetSelect(p)}
-											className={`sanpin-preset-chip ${isSelected ? "active" : ""}`}
-											style={{
-												minHeight: "44px",
-												padding: "0.5rem 0.9rem",
-												borderRadius: "0.5rem",
-												border: isSelected
-													? "2px solid var(--brand-primary, #2563eb)"
-													: "1px solid var(--glass-border)",
-												background: isSelected
-													? "rgba(37, 99, 235, 0.12)"
-													: "var(--paper-subtle)",
-												color: isSelected ? "var(--brand-primary, #2563eb)" : "var(--ink)",
-												fontWeight: isSelected ? 700 : 500,
-												fontSize: "0.85rem",
-												cursor: "pointer",
-												display: "flex",
-												alignItems: "center",
-												gap: "0.35rem",
-												transition: "all 0.15s ease",
-											}}
-										>
-											{isSelected && <Check size={16} />}
-											{p.label}
-										</button>
-									);
-								})}
+								{clinicEquipments.length > 0
+									? clinicEquipments.map((eq) => {
+											const isSelected = (deviceName === eq.name || deviceName === eq.brandModel) && serialNumber === eq.serialNumber;
+											return (
+												<button
+													type="button"
+													key={eq.id}
+													onClick={() => handleEquipmentSelect(eq)}
+													className={`sanpin-preset-chip ${isSelected ? "active" : ""}`}
+													style={{
+														minHeight: "44px",
+														padding: "0.5rem 0.9rem",
+														borderRadius: "0.5rem",
+														border: isSelected
+															? "2px solid var(--brand-primary, #2563eb)"
+															: "1px solid var(--glass-border)",
+														background: isSelected
+															? "rgba(37, 99, 235, 0.12)"
+															: "var(--paper-subtle)",
+														color: isSelected ? "var(--brand-primary, #2563eb)" : "var(--ink)",
+														fontWeight: isSelected ? 700 : 500,
+														fontSize: "0.85rem",
+														cursor: "pointer",
+														display: "flex",
+														alignItems: "center",
+														gap: "0.35rem",
+														transition: "all 0.15s ease",
+													}}
+												>
+													{isSelected && <Check size={16} />}
+													<span>{eq.name} ({eq.chamberVolumeLiters} л)</span>
+												</button>
+											);
+										})
+									: APPARATUS_PRESETS.map((p) => {
+											const isSelected = deviceName === p.name && sterilizerType === p.type;
+											return (
+												<button
+													type="button"
+													key={p.name}
+													onClick={() => handlePresetSelect(p)}
+													className={`sanpin-preset-chip ${isSelected ? "active" : ""}`}
+													style={{
+														minHeight: "44px",
+														padding: "0.5rem 0.9rem",
+														borderRadius: "0.5rem",
+														border: isSelected
+															? "2px solid var(--brand-primary, #2563eb)"
+															: "1px solid var(--glass-border)",
+														background: isSelected
+															? "rgba(37, 99, 235, 0.12)"
+															: "var(--paper-subtle)",
+														color: isSelected ? "var(--brand-primary, #2563eb)" : "var(--ink)",
+														fontWeight: isSelected ? 700 : 500,
+														fontSize: "0.85rem",
+														cursor: "pointer",
+														display: "flex",
+														alignItems: "center",
+														gap: "0.35rem",
+														transition: "all 0.15s ease",
+													}}
+												>
+													{isSelected && <Check size={16} />}
+													{p.label}
+												</button>
+											);
+										})}
 							</div>
 						</div>
 

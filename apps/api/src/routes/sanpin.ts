@@ -8,6 +8,8 @@ import {
 	createMedicalWasteLogDtoSchema,
 	createPsoCleaningLogDtoSchema,
 	createSterilizationLogDtoSchema,
+	createSterilizerEquipmentDtoSchema,
+	updateSterilizerEquipmentDtoSchema,
 	createTemperatureHumidityEquipmentDtoSchema,
 	createTemperatureHumidityLogDtoSchema,
 	type SterilizationPackagingType,
@@ -29,6 +31,7 @@ import {
 	medicalWasteLogs,
 	preSterilizationCleaningLogs,
 	sterilizationLogs,
+	sterilizerEquipments,
 	temperatureHumidityEquipments,
 	temperatureHumidityLogs,
 	users,
@@ -65,7 +68,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 				),
 			);
 
-		// 2. Sterilization cycles today
+		// 2. Sterilization cycles today & equipment fleet stats
 		const [sterilStats] = await db
 			.select({
 				totalCyclesToday: sql<number>`count(*)::int`,
@@ -78,6 +81,17 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					gte(sterilizationLogs.timestamp, startOfDay),
 				),
 			);
+
+		const [sterilizerFleetStats] = await db
+			.select({
+				totalEquipments: sql<number>`count(*)::int`,
+				activeEquipments: sql<number>`count(*) filter (where ${sterilizerEquipments.status} = 'active')::int`,
+				inMaintenance: sql<number>`count(*) filter (where ${sterilizerEquipments.status} = 'in_maintenance')::int`,
+				decommissioned: sql<number>`count(*) filter (where ${sterilizerEquipments.status} = 'decommissioned')::int`,
+				verificationExpired: sql<number>`count(*) filter (where ${sterilizerEquipments.verificationExpiryDate} < ${todayStr} and ${sterilizerEquipments.status} = 'active')::int`,
+			})
+			.from(sterilizerEquipments)
+			.where(eq(sterilizerEquipments.organizationId, organizationId));
 
 		// 3. Lamps warning / expired
 		const [lampStats] = await db
@@ -143,6 +157,13 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 			sterilization: {
 				totalCyclesToday: sterilStats?.totalCyclesToday || 0,
 				passedToday: sterilStats?.passedToday || 0,
+				fleet: {
+					totalEquipments: sterilizerFleetStats?.totalEquipments || 0,
+					activeEquipments: sterilizerFleetStats?.activeEquipments || 0,
+					inMaintenance: sterilizerFleetStats?.inMaintenance || 0,
+					decommissioned: sterilizerFleetStats?.decommissioned || 0,
+					verificationExpired: sterilizerFleetStats?.verificationExpired || 0,
+				},
 			},
 			bactericidal: {
 				totalEquipments: lampStats?.totalEquipments || 0,
@@ -392,6 +413,277 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 
 		return reply.code(201).send(log);
 	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 2.1. ПАРК СТЕРИЛИЗАТОРОВ И АВТОКЛАВОВ (ОБОРУДОВАНИЕ ЦСО)
+	// ─────────────────────────────────────────────────────────────────────────
+
+	const handleGetSterilizerEquipments = async (req: any, reply: any) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sterilizer equipments read",
+		);
+		if (!organizationId) return;
+
+		const list = await db
+			.select()
+			.from(sterilizerEquipments)
+			.where(eq(sterilizerEquipments.organizationId, organizationId))
+			.orderBy(sterilizerEquipments.name);
+
+		const todayStr = new Date().toISOString().slice(0, 10);
+		const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+		return list.map((row) => {
+			const isVerificationExpired = Boolean(row.verificationExpiryDate && row.verificationExpiryDate < todayStr);
+			const isVerificationDueSoon = Boolean(
+				row.verificationExpiryDate &&
+				row.verificationExpiryDate >= todayStr &&
+				row.verificationExpiryDate <= in30Days,
+			);
+
+			return {
+				...row,
+				chamberVolumeLiters: Number(row.chamberVolumeLiters),
+				isVerificationExpired,
+				isVerificationDueSoon,
+			};
+		});
+	};
+
+	app.get("/api/registers/sterilizers/equipments", handleGetSterilizerEquipments);
+	app.get("/api/registers/sterilizer/equipments", handleGetSterilizerEquipments);
+
+	const handleCreateSterilizerEquipment = async (req: any, reply: any) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sterilizer equipment create",
+		);
+		if (!organizationId) return;
+
+		const parsed = createSterilizerEquipmentDtoSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsed.error.issues[0]?.message ?? "Некорректные параметры аппарата.",
+			});
+		}
+		const data = parsed.data;
+
+		const [created] = await db
+			.insert(sterilizerEquipments)
+			.values({
+				organizationId,
+				name: data.name,
+				brandModel: data.brandModel,
+				serialNumber: data.serialNumber,
+				inventoryNumber: data.inventoryNumber ?? null,
+				deviceType: data.deviceType,
+				deviceClass: data.deviceClass,
+				chamberVolumeLiters: String(data.chamberVolumeLiters),
+				locationRoom: data.locationRoom,
+				verificationExpiryDate: data.verificationExpiryDate ?? null,
+				lastMaintenanceDate: data.lastMaintenanceDate ?? null,
+				nextMaintenanceDate: data.nextMaintenanceDate ?? null,
+				commissioningDate: data.commissioningDate ?? new Date().toISOString().slice(0, 10),
+				status: data.status ?? "active",
+				isCommissioned: data.status !== "decommissioned",
+				notes: data.notes ?? null,
+			})
+			.returning();
+
+		if (!created) {
+			return reply.code(500).send({
+				error: "InternalError",
+				message: "Не удалось сохранить оборудование стерилизации.",
+			});
+		}
+
+		return reply.code(201).send({
+			...created,
+			chamberVolumeLiters: Number(created.chamberVolumeLiters),
+		});
+	};
+
+	app.post("/api/registers/sterilizers/equipments", handleCreateSterilizerEquipment);
+	app.post("/api/registers/sterilizer/equipments", handleCreateSterilizerEquipment);
+
+	const handleUpdateSterilizerEquipment = async (req: any, reply: any) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sterilizer equipment update",
+		);
+		if (!organizationId) return;
+
+		const { id } = req.params as { id: string };
+		const parsed = updateSterilizerEquipmentDtoSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsed.error.issues[0]?.message ?? "Некорректные параметры обновления.",
+			});
+		}
+		const body = parsed.data;
+		const today = new Date().toISOString().slice(0, 10);
+
+		if (body.action === "put_in_maintenance") {
+			const [updated] = await db
+				.update(sterilizerEquipments)
+				.set({
+					status: "in_maintenance",
+					lastMaintenanceDate: today,
+					notes: body.notes !== undefined ? body.notes : undefined,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(sterilizerEquipments.id, id),
+						eq(sterilizerEquipments.organizationId, organizationId),
+					),
+				)
+				.returning();
+
+			if (!updated) {
+				return reply.code(404).send({ error: "NotFound", message: "Аппарат не найден" });
+			}
+			return { ...updated, chamberVolumeLiters: Number(updated.chamberVolumeLiters) };
+		}
+
+		if (body.action === "return_to_service") {
+			const next6Months = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+			const [updated] = await db
+				.update(sterilizerEquipments)
+				.set({
+					status: "active",
+					isCommissioned: true,
+					lastMaintenanceDate: today,
+					nextMaintenanceDate: next6Months,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(sterilizerEquipments.id, id),
+						eq(sterilizerEquipments.organizationId, organizationId),
+					),
+				)
+				.returning();
+
+			if (!updated) {
+				return reply.code(404).send({ error: "NotFound", message: "Аппарат не найден" });
+			}
+			return { ...updated, chamberVolumeLiters: Number(updated.chamberVolumeLiters) };
+		}
+
+		if (body.action === "decommission") {
+			const [updated] = await db
+				.update(sterilizerEquipments)
+				.set({
+					status: "decommissioned",
+					isCommissioned: false,
+					decommissioningDate: body.decommissioningDate || today,
+					notes: body.notes || (body.decommissionReason ? `Списан: ${body.decommissionReason}` : undefined),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(sterilizerEquipments.id, id),
+						eq(sterilizerEquipments.organizationId, organizationId),
+					),
+				)
+				.returning();
+
+			if (!updated) {
+				return reply.code(404).send({ error: "NotFound", message: "Аппарат не найден" });
+			}
+			return { ...updated, chamberVolumeLiters: Number(updated.chamberVolumeLiters) };
+		}
+
+		if (body.action === "recommission") {
+			const [updated] = await db
+				.update(sterilizerEquipments)
+				.set({
+					status: "active",
+					isCommissioned: true,
+					decommissioningDate: null,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(sterilizerEquipments.id, id),
+						eq(sterilizerEquipments.organizationId, organizationId),
+					),
+				)
+				.returning();
+
+			if (!updated) {
+				return reply.code(404).send({ error: "NotFound", message: "Аппарат не найден" });
+			}
+			return { ...updated, chamberVolumeLiters: Number(updated.chamberVolumeLiters) };
+		}
+
+		const [updated] = await db
+			.update(sterilizerEquipments)
+			.set({
+				...(body.name ? { name: body.name } : {}),
+				...(body.brandModel ? { brandModel: body.brandModel } : {}),
+				...(body.serialNumber ? { serialNumber: body.serialNumber } : {}),
+				...(body.inventoryNumber !== undefined ? { inventoryNumber: body.inventoryNumber } : {}),
+				...(body.deviceType ? { deviceType: body.deviceType } : {}),
+				...(body.deviceClass ? { deviceClass: body.deviceClass } : {}),
+				...(body.chamberVolumeLiters ? { chamberVolumeLiters: String(body.chamberVolumeLiters) } : {}),
+				...(body.locationRoom ? { locationRoom: body.locationRoom } : {}),
+				...(body.verificationExpiryDate !== undefined ? { verificationExpiryDate: body.verificationExpiryDate } : {}),
+				...(body.lastMaintenanceDate !== undefined ? { lastMaintenanceDate: body.lastMaintenanceDate } : {}),
+				...(body.nextMaintenanceDate !== undefined ? { nextMaintenanceDate: body.nextMaintenanceDate } : {}),
+				...(body.commissioningDate !== undefined ? { commissioningDate: body.commissioningDate } : {}),
+				...(body.status ? { status: body.status, isCommissioned: body.status !== "decommissioned" } : {}),
+				...(body.notes !== undefined ? { notes: body.notes } : {}),
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(sterilizerEquipments.id, id),
+					eq(sterilizerEquipments.organizationId, organizationId),
+				),
+			)
+			.returning();
+
+		if (!updated) {
+			return reply.code(404).send({ error: "NotFound", message: "Аппарат не найден" });
+		}
+
+		return { ...updated, chamberVolumeLiters: Number(updated.chamberVolumeLiters) };
+	};
+
+	app.put("/api/registers/sterilizers/equipments/:id", handleUpdateSterilizerEquipment);
+	app.put("/api/registers/sterilizer/equipments/:id", handleUpdateSterilizerEquipment);
+
+	const handleDeleteSterilizerEquipment = async (req: any, reply: any) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sterilizer equipment delete",
+		);
+		if (!organizationId) return;
+
+		const { id } = req.params as { id: string };
+		await db
+			.delete(sterilizerEquipments)
+			.where(
+				and(
+					eq(sterilizerEquipments.id, id),
+					eq(sterilizerEquipments.organizationId, organizationId),
+				),
+			);
+
+		return { success: true };
+	};
+
+	app.delete("/api/registers/sterilizers/equipments/:id", handleDeleteSterilizerEquipment);
+	app.delete("/api/registers/sterilizer/equipments/:id", handleDeleteSterilizerEquipment);
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// 3. ЖУРНАЛ РЕЦИРКУЛЯТОРОВ И ОБЛУЧАТЕЛЕЙ (Р 3.5.1904-04)

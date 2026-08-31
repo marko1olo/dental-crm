@@ -7,9 +7,7 @@ import {
 	sterilizerEquipmentStatusSchema,
 	type SterilizerEquipment,
 } from "@dental/shared";
-import {
-	type ClinicAutoclaveDevice,
-} from "../AutoclaveEquipmentModal";
+import type { ClinicAutoclaveDevice } from "../AutoclaveEquipmentModal";
 
 describe("SanPiN 3.3686-21 — Clinic Sterilizer Equipment Fleet Management", () => {
 	it("provides popular sterilizer presets (Melag 23B/43B, Euronda E9/E10, DAC Universal, ГП-20 СПУ, DGM AND-20/24)", () => {

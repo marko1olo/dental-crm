@@ -154,7 +154,188 @@ export const createSterilizationLogDtoSchema = z.object({
 });
 export type CreateSterilizationLogDto = z.input<typeof createSterilizationLogDtoSchema>;
 
-// ─── 3. Журнал работы бактерицидных облучателей и рециркуляторов ──────────────
+// ─── 2.1. Парк стерилизаторов и автоклавов (Учет оборудования ЦСО) ────────────
+
+export const sterilizerDeviceClassSchema = z.enum([
+	"autoclave_class_b",
+	"autoclave_class_s",
+	"autoclave_class_n",
+	"dry_heat_air",
+	"plasma",
+]);
+export type SterilizerDeviceClass = z.infer<typeof sterilizerDeviceClassSchema>;
+
+export const sterilizerEquipmentStatusSchema = z.enum([
+	"active",
+	"in_maintenance",
+	"decommissioned",
+]);
+export type SterilizerEquipmentStatus = z.infer<typeof sterilizerEquipmentStatusSchema>;
+
+export const sterilizerEquipmentSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	name: z.string().min(1, "Наименование аппарата обязательно"),
+	brandModel: z.string().min(1, "Марка/модель обязательна"),
+	serialNumber: z.string().min(1, "Заводской серийный номер обязателен"),
+	inventoryNumber: z.string().nullable().optional(),
+	deviceType: sterilizationDeviceTypeSchema.default("autoclave_steam"),
+	deviceClass: sterilizerDeviceClassSchema.default("autoclave_class_b"),
+	chamberVolumeLiters: z.number().min(0.1).default(22),
+	locationRoom: z.string().default("ЦСО (Стерилизационная)"),
+	verificationExpiryDate: z.string().nullable().optional(),
+	lastMaintenanceDate: z.string().nullable().optional(),
+	nextMaintenanceDate: z.string().nullable().optional(),
+	commissioningDate: z.string().nullable().optional(),
+	decommissioningDate: z.string().nullable().optional(),
+	status: sterilizerEquipmentStatusSchema.default("active"),
+	isCommissioned: z.boolean().default(true),
+	isVerificationExpired: z.boolean().optional(),
+	isVerificationDueSoon: z.boolean().optional(),
+	notes: z.string().nullable().optional(),
+	createdAt: z.string(),
+	updatedAt: z.string(),
+});
+export type SterilizerEquipment = z.infer<typeof sterilizerEquipmentSchema>;
+
+export const createSterilizerEquipmentDtoSchema = z.object({
+	name: z.string().trim().min(1, "Укажите наименование аппарата"),
+	brandModel: z.string().trim().min(1, "Укажите марку/модель аппарата"),
+	serialNumber: z.string().trim().min(1, "Укажите заводской серийный номер"),
+	inventoryNumber: z.string().trim().max(80).optional().nullable(),
+	deviceType: sterilizationDeviceTypeSchema.default("autoclave_steam"),
+	deviceClass: sterilizerDeviceClassSchema.default("autoclave_class_b"),
+	chamberVolumeLiters: z.number().min(0.5, "Объем камеры должен быть не менее 0.5 л").max(500, "Объем камеры не может превышать 500 л").default(22),
+	locationRoom: z.string().trim().min(1, "Укажите помещение/кабинет").default("ЦСО (Стерилизационная)"),
+	verificationExpiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Формат даты поверки: ГГГГ-ММ-ДД").optional().nullable(),
+	lastMaintenanceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Формат даты ТО: ГГГГ-ММ-ДД").optional().nullable(),
+	nextMaintenanceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Формат даты след. ТО: ГГГГ-ММ-ДД").optional().nullable(),
+	commissioningDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Формат даты ввода: ГГГГ-ММ-ДД").optional().nullable(),
+	status: sterilizerEquipmentStatusSchema.default("active"),
+	notes: z.string().trim().max(500).optional().nullable(),
+});
+export type CreateSterilizerEquipmentDto = z.input<typeof createSterilizerEquipmentDtoSchema>;
+
+export const updateSterilizerEquipmentDtoSchema = createSterilizerEquipmentDtoSchema.partial().extend({
+	action: z.enum(["put_in_maintenance", "return_to_service", "decommission", "recommission", "update_verification"]).optional(),
+	decommissioningDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+	decommissionReason: z.string().max(300).optional().nullable(),
+});
+export type UpdateSterilizerEquipmentDto = z.input<typeof updateSterilizerEquipmentDtoSchema>;
+
+export interface PopularSterilizerBrandPreset {
+	readonly id: string;
+	readonly brandModel: string;
+	readonly manufacturerRu: string;
+	readonly deviceType: SterilizationDeviceType;
+	readonly deviceClass: SterilizerDeviceClass;
+	readonly chamberVolumeLiters: number;
+	readonly descriptionRu: string;
+	readonly recommendedNameRu: string;
+}
+
+export const POPULAR_STERILIZER_BRAND_PRESETS: readonly PopularSterilizerBrandPreset[] = [
+	{
+		id: "melag_vacuklav_23b",
+		brandModel: "Melag Vacuklav 23 B+",
+		manufacturerRu: "MELAG Medizintechnik (Германия)",
+		deviceType: "autoclave_steam",
+		deviceClass: "autoclave_class_b",
+		chamberVolumeLiters: 22,
+		descriptionRu: "Автоклав B-класса с глубоким фракционированным вакуумом (22 л)",
+		recommendedNameRu: "Автоклав Melag Vacuklav 23 B+ (№1)",
+	},
+	{
+		id: "melag_vacuklav_43b",
+		brandModel: "Melag Vacuklav 43 B+ Evolution",
+		manufacturerRu: "MELAG Medizintechnik (Германия)",
+		deviceType: "autoclave_steam",
+		deviceClass: "autoclave_class_b",
+		chamberVolumeLiters: 22,
+		descriptionRu: "Скоростной B-автоклав с технологией DRYtelligence и двойной камерой",
+		recommendedNameRu: "Автоклав Melag Vacuklav 43 B+ Evolution (№2)",
+	},
+	{
+		id: "euronda_e9_next",
+		brandModel: "Euronda E9 Next",
+		manufacturerRu: "Euronda S.p.A. (Италия)",
+		deviceType: "autoclave_steam",
+		deviceClass: "autoclave_class_b",
+		chamberVolumeLiters: 24,
+		descriptionRu: "Интеллектуальный B-автоклав со встроенным термопринтером (24 л)",
+		recommendedNameRu: "Автоклав Euronda E9 Next (№1)",
+	},
+	{
+		id: "euronda_e10",
+		brandModel: "Euronda E10",
+		manufacturerRu: "Euronda S.p.A. (Италия)",
+		deviceType: "autoclave_steam",
+		deviceClass: "autoclave_class_b",
+		chamberVolumeLiters: 24,
+		descriptionRu: "Флагманский B-автоклав с сенсорным экраном E-Touch и Wi-Fi (24 л)",
+		recommendedNameRu: "Автоклав Euronda E10 (№2)",
+	},
+	{
+		id: "dentsply_dac_universal",
+		brandModel: "Dentsply Sirona DAC Universal S",
+		manufacturerRu: "Dentsply Sirona (Германия)",
+		deviceType: "autoclave_steam",
+		deviceClass: "autoclave_class_s",
+		chamberVolumeLiters: 6,
+		descriptionRu: "Комбинированный автоклав для промывки, смазки и стерилизации 6 наконечников",
+		recommendedNameRu: "Автоклав наконечников DAC Universal S",
+	},
+	{
+		id: "dryheat_gp20",
+		brandModel: "ГП-20 СПУ",
+		manufacturerRu: "ОАО «Смоленское СКТБ СПУ» (Россия)",
+		deviceType: "dry_heat",
+		deviceClass: "dry_heat_air",
+		chamberVolumeLiters: 20,
+		descriptionRu: "Воздушный сухожаровой стерилизатор 180°C (20 л) для боров и цельнометаллических инструментов",
+		recommendedNameRu: "Сухожаровой шкаф ГП-20 СПУ",
+	},
+	{
+		id: "dgm_and_20",
+		brandModel: "DGM AND-20",
+		manufacturerRu: "DGM Pharma-Apparate Handel AG (Швейцария)",
+		deviceType: "autoclave_steam",
+		deviceClass: "autoclave_class_b",
+		chamberVolumeLiters: 20,
+		descriptionRu: "Надежный автоклав B-класса для стоматологических лотков и пакетов",
+		recommendedNameRu: "Автоклав DGM AND-20",
+	},
+	{
+		id: "dgm_and_24",
+		brandModel: "DGM AND-24",
+		manufacturerRu: "DGM Pharma-Apparate Handel AG (Швейцария)",
+		deviceType: "autoclave_steam",
+		deviceClass: "autoclave_class_b",
+		chamberVolumeLiters: 24,
+		descriptionRu: "Вместительный автоклав B-класса (24 л) для стерилизационной ЦСО",
+		recommendedNameRu: "Автоклав DGM AND-24",
+	},
+	{
+		id: "wh_lisa_500",
+		brandModel: "W&H Lisa 500",
+		manufacturerRu: "W&H Dentalwerk (Австрия)",
+		deviceType: "autoclave_steam",
+		deviceClass: "autoclave_class_b",
+		chamberVolumeLiters: 22,
+		descriptionRu: "B-автоклав с системой оптимизации расхода воды Eco Dry",
+		recommendedNameRu: "Автоклав W&H Lisa 500",
+	},
+	{
+		id: "tau_clave_3000",
+		brandModel: "Tau Clave 3000",
+		manufacturerRu: "Tau Steril (Италия)",
+		deviceType: "dry_heat",
+		deviceClass: "dry_heat_air",
+		chamberVolumeLiters: 17,
+		descriptionRu: "Сухожаровой шкаф 180°C для щипцов и элеваторов",
+		recommendedNameRu: "Сухожар Tau Clave 3000",
+	},
+];
 
 export const bactericidalDeviceTypeSchema = z.enum([
 	"recirculator_closed",
