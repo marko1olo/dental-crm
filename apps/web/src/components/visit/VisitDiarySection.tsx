@@ -41,6 +41,7 @@ import {
 	VisitDiaryPhotoUpload,
 } from "../VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "../VisitDiaryTemplateSelector";
+import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
 import { ToothAnesthesiaCalculator } from "../diagnostic/ToothAnesthesiaCalculator";
 import {
 	generatePediatricCariogramDiaryText,
@@ -109,6 +110,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		diaryDoctorFullName,
 		diaryDoctorSpecialty,
 		lastSavedAt,
+		localDraftSavedAt,
 		revisionCount,
 		diaryRevisions,
 		isSaving,
@@ -601,10 +603,24 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							Клинический дневник SOAP · Форма 043/у
 						</h2>
 						<div className="vde-043__meta">
+							{localDraftSavedAt && (
+								<span
+									className="vde-043__meta-item text-emerald-600 dark:text-emerald-400 font-medium"
+									title="Автосохранение черновика при каждом вводе в IndexedDB и LocalStorage"
+								>
+									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0 inline-block" />
+									Черновик сохранён:{" "}
+									{localDraftSavedAt.toLocaleTimeString("ru-RU", {
+										hour: "2-digit",
+										minute: "2-digit",
+										second: "2-digit",
+									})}
+								</span>
+							)}
 							{lastSavedAt && (
 								<span className="vde-043__meta-item">
 									<Clock className="w-3 h-3" />
-									Сохранено{" "}
+									Сервер:{" "}
 									{lastSavedAt.toLocaleTimeString("ru-RU", {
 										hour: "2-digit",
 										minute: "2-digit",
@@ -832,55 +848,47 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</details>
 			)}
 
-			{/* ── Anesthesia Quick Logger & Dosage Calculator Accordion (Tier 2 Warm Context) ── */}
+			{/* ── Anesthesia Quick Bar & Dosage Calculator (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (
 				<details
-					className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3 text-xs mb-2"
+					open
+					className="group rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] p-3.5 text-xs mb-2 shadow-xs"
 					data-testid="anesthesia-quick-logger-bar"
 				>
 					<summary className="cursor-pointer font-bold text-xs text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none list-none">
 						<span className="flex items-center gap-1.5">
 							<Syringe className="w-4 h-4 text-blue-500 shrink-0" />
-							<span>Калькулятор дозировок анестезии и карпул (СтАР)...</span>
+							<span>Местная анестезия (МДД по массе тела, 1-клик протокол)</span>
 						</span>
 						<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
 					</summary>
-					<div className="pt-2.5 flex flex-col gap-2">
-						<div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
-							<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-								<Syringe className="w-4 h-4 text-blue-500 shrink-0" />
-								Анестезия:
-							</span>
-							<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 sm:pb-0 scrollbar-none flex-1 overscroll-x-contain min-w-0">
-								{ANESTHESIA_QUICK_PRESETS.map((ane) => (
-									<button
-										key={ane.id}
-										type="button"
-										onClick={() => applyAnesthesiaPreset(ane.textToInsert)}
-										className="inline-flex items-center gap-1.5 px-3.5 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-blue-500/10 border border-[var(--line)] hover:border-blue-500/30 text-xs sm:text-sm font-bold text-[var(--ink)] transition-colors shrink-0 touch-manipulation min-w-0 break-words cursor-pointer"
-										title={ane.textToInsert}
-										data-testid={`anesthesia-btn-${ane.id}`}
-									>
-										<Plus className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-										<span className="min-w-0 break-words">{ane.label}</span>
-										<span className="text-xs text-[var(--muted)] shrink-0 font-normal">
-											({ane.volume})
-										</span>
-									</button>
-								))}
-							</div>
-						</div>
-						<div className="pt-2 border-t border-[var(--line)]/50">
-							<ToothAnesthesiaCalculator
-								toothNumber={typeof diary.diagnosisTooth === "number" ? diary.diagnosisTooth : Number.parseInt(String(diary.diagnosisTooth ?? 16), 10) || 16}
-								hasCardioRisk={diary.comorbidities?.toLowerCase().includes("сердц") || diary.comorbidities?.toLowerCase().includes("давлен")}
-								hasSulfiteAllergy={diary.comorbidities?.toLowerCase().includes("сульфит")}
-								hasAsthma={diary.comorbidities?.toLowerCase().includes("астм")}
-								onInsertToProtocol={(text) => {
-									applyAnesthesiaPreset(text);
-								}}
-							/>
-						</div>
+					<div className="pt-2.5">
+						<AnesthesiaQuickBar
+							patientWeightKg={70}
+							targetToothNumberFdi={diary.diagnosisTooth || 16}
+							hasCardiovascularRisk={
+								diary.comorbidities?.toLowerCase().includes("сердц") ||
+								diary.comorbidities?.toLowerCase().includes("давлен") ||
+								diary.comorbidities?.toLowerCase().includes("ибс") ||
+								diary.comorbidities?.toLowerCase().includes("гипертон")
+							}
+							hasSulfiteAllergy={
+								diary.comorbidities?.toLowerCase().includes("сульфит") ||
+								diary.comorbidities?.toLowerCase().includes("аллерги")
+							}
+							hasBronchialAsthma={
+								diary.comorbidities?.toLowerCase().includes("астм") ||
+								diary.comorbidities?.toLowerCase().includes("бронх")
+							}
+							isPregnantOrLactating={
+								diary.comorbidities?.toLowerCase().includes("беремен") ||
+								diary.comorbidities?.toLowerCase().includes("лактац")
+							}
+							disabled={fieldsDisabled}
+							onApplyAnesthesia={(text) => {
+								applyAnesthesiaPreset(text);
+							}}
+						/>
 					</div>
 				</details>
 			)}

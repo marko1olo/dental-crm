@@ -1,57 +1,30 @@
-import React, { useState } from 'react';
-import { Syringe, ShieldAlert, CheckCircle2, SlidersHorizontal, AlertTriangle } from 'lucide-react';
-import { AnestheticDrugId, DENTAL_ANESTHETICS, InjectionTechniqueId } from './anesthesiaCatalog';
-import { calculateAnesthesiaSafety, AnesthesiaCalculationResult, AsaPhysicalStatus } from './anesthesiaEngine';
-import { AnesthesiaProtocolModal } from './AnesthesiaProtocolModal';
-
-export interface AnesthesiaQuickPreset {
-	id: string;
-	labelRu: string;
-	subLabelRu: string;
-	drugId: AnestheticDrugId;
-	carpulesCount: number;
-	techniqueId: InjectionTechniqueId;
-	badgeType: 'default' | 'strong' | 'safe_cardio';
-}
-
-export const STANDARD_QUICK_PRESETS: AnesthesiaQuickPreset[] = [
-	{
-		id: 'preset_ultracain_std',
-		labelRu: 'Ультракаин Д-С',
-		subLabelRu: '1 карп (1.7 мл) • 1:200к',
-		drugId: 'articaine_1_200k',
-		carpulesCount: 1.0,
-		techniqueId: 'infiltration',
-		badgeType: 'default'
-	},
-	{
-		id: 'preset_ultracain_forte',
-		labelRu: 'Ультракаин Форте',
-		subLabelRu: '1 карп (1.7 мл) • 1:100к',
-		drugId: 'articaine_1_100k',
-		carpulesCount: 1.0,
-		techniqueId: 'mandibular_torus',
-		badgeType: 'strong'
-	},
-	{
-		id: 'preset_scandonest_cardio',
-		labelRu: 'Скандонест 3%',
-		subLabelRu: '1 карп (1.7 мл) • Без адреналина',
-		drugId: 'mepivacaine_plain',
-		carpulesCount: 1.0,
-		techniqueId: 'infiltration',
-		badgeType: 'safe_cardio'
-	},
-	{
-		id: 'preset_ultracain_2carp',
-		labelRu: 'Ультракаин 2 карп',
-		subLabelRu: '3.4 мл • Проводниковая',
-		drugId: 'articaine_1_200k',
-		carpulesCount: 2.0,
-		techniqueId: 'mandibular_torus',
-		badgeType: 'default'
-	}
-];
+import type React from "react";
+import { useState, useMemo } from "react";
+import {
+	Syringe,
+	ShieldAlert,
+	ShieldCheck,
+	CheckCircle2,
+	SlidersHorizontal,
+	AlertTriangle,
+	Heart,
+	Sparkles,
+	Plus,
+	Scale,
+	Activity,
+} from "lucide-react";
+import {
+	type AnestheticDrugId,
+	DENTAL_ANESTHETICS,
+	type InjectionTechniqueId,
+	INJECTION_TECHNIQUES,
+} from "./anesthesiaCatalog";
+import {
+	calculateAnesthesiaSafety,
+	type AnesthesiaCalculationResult,
+	type AsaPhysicalStatus,
+} from "./anesthesiaEngine";
+import { AnesthesiaProtocolModal } from "./AnesthesiaProtocolModal";
 
 export interface AnesthesiaQuickBarProps {
 	patientWeightKg?: number | undefined;
@@ -65,8 +38,48 @@ export interface AnesthesiaQuickBarProps {
 	disabled?: boolean | undefined;
 }
 
+export const WEIGHT_QUICK_PRESETS: readonly number[] = [15, 30, 50, 70, 85, 100];
+
+export const PRIMARY_ANESTHETIC_DRUGS: readonly {
+	id: AnestheticDrugId;
+	labelRu: string;
+	subLabelRu: string;
+	activeSubstanceRu: string;
+	vasoRatio: string;
+	isAdrenalineFree: boolean;
+	isCardioRecommended: boolean;
+}[] = [
+	{
+		id: "articaine_1_200k",
+		labelRu: "Ультракаин Д-С (1:200 000)",
+		subLabelRu: "Артикаин 4% • Щадящий адреналин • МДД 7 мг/кг",
+		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:200 000",
+		vasoRatio: "1:200 000",
+		isAdrenalineFree: false,
+		isCardioRecommended: false,
+	},
+	{
+		id: "articaine_1_100k",
+		labelRu: "Ультракаин Форте (1:100 000)",
+		subLabelRu: "Артикаин 4% • Глубокая анестезия • МДД 7 мг/кг",
+		activeSubstanceRu: "Артикаин 4% + Эпинефрин 1:100 000",
+		vasoRatio: "1:100 000",
+		isAdrenalineFree: false,
+		isCardioRecommended: false,
+	},
+	{
+		id: "mepivacaine_plain",
+		labelRu: "Скандонест 3% (Без адреналина)",
+		subLabelRu: "Мепивакаин 3% • Кардио-защита • Без сульфитов • МДД 4.4 мг/кг",
+		activeSubstanceRu: "Мепивакаин 3% (чистый)",
+		vasoRatio: "Без адреналина",
+		isAdrenalineFree: true,
+		isCardioRecommended: true,
+	},
+];
+
 export function AnesthesiaQuickBar({
-	patientWeightKg = 70,
+	patientWeightKg: initialWeightKg = 70,
 	patientAgeYears = 35,
 	hasCardiovascularRisk = false,
 	hasSulfiteAllergy = false,
@@ -74,20 +87,29 @@ export function AnesthesiaQuickBar({
 	isPregnantOrLactating = false,
 	targetToothNumberFdi,
 	onApplyAnesthesia,
-	disabled = false
+	disabled = false,
 }: AnesthesiaQuickBarProps) {
+	const [patientWeightKg, setPatientWeightKg] = useState<number>(
+		initialWeightKg > 0 ? initialWeightKg : 70,
+	);
+	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(() => {
+		if (hasSulfiteAllergy || hasBronchialAsthma) return "mepivacaine_plain";
+		if (hasCardiovascularRisk) return "mepivacaine_plain";
+		return "articaine_1_200k";
+	});
+	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
 	const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
 	const [activeToastMessage, setActiveToastMessage] = useState<string | null>(null);
 	const [safetyWarning, setSafetyWarning] = useState<{ title: string; text: string } | null>(null);
+	const [isWeightAdjustOpen, setIsWeightAdjustOpen] = useState(false);
 
-	const handleFastClick = (preset: AnesthesiaQuickPreset) => {
-		if (disabled) return;
+	const asaStatus: AsaPhysicalStatus = hasCardiovascularRisk ? "asa_3" : "asa_1";
 
-		const asaStatus: AsaPhysicalStatus = hasCardiovascularRisk ? 'asa_3' : 'asa_1';
-
-		const result = calculateAnesthesiaSafety({
-			drugId: preset.drugId,
-			carpulesCount: preset.carpulesCount,
+	// Live calculation for 1 carpule (1.7 ml)
+	const singleCarpuleResult = useMemo(() => {
+		return calculateAnesthesiaSafety({
+			drugId: selectedDrugId,
+			carpulesCount: 1.0,
 			patientWeightKg,
 			patientAgeYears,
 			asaStatus,
@@ -95,76 +117,242 @@ export function AnesthesiaQuickBar({
 			hasSulfiteAllergy,
 			hasBronchialAsthma,
 			isPregnantOrLactating,
-			techniqueId: preset.techniqueId,
-			needleType: 'g30_short_21mm',
+			techniqueId,
+			needleType: "g30_short_21mm",
 			targetToothNumberFdi,
-			aspirationNegativeConfirmed: true
+			aspirationNegativeConfirmed: true,
+		});
+	}, [
+		selectedDrugId,
+		patientWeightKg,
+		patientAgeYears,
+		asaStatus,
+		hasCardiovascularRisk,
+		hasSulfiteAllergy,
+		hasBronchialAsthma,
+		isPregnantOrLactating,
+		techniqueId,
+		targetToothNumberFdi,
+	]);
+
+	const selectedDrugInfo = DENTAL_ANESTHETICS[selectedDrugId] ?? DENTAL_ANESTHETICS.articaine_1_200k;
+	const maxSafeCarpules = singleCarpuleResult.maxSafeCarpulesCount;
+
+	const handleApplyCarpules = (carpulesCount: number) => {
+		if (disabled) return;
+
+		const result = calculateAnesthesiaSafety({
+			drugId: selectedDrugId,
+			carpulesCount,
+			patientWeightKg,
+			patientAgeYears,
+			asaStatus,
+			hasCardiovascularRisk,
+			hasSulfiteAllergy,
+			hasBronchialAsthma,
+			isPregnantOrLactating,
+			techniqueId,
+			needleType: "g30_short_21mm",
+			targetToothNumberFdi,
+			aspirationNegativeConfirmed: true,
 		});
 
-		// If dangerous contraindications triggered, block instant apply and show alert
+		// Check critical contraindications
 		if (result.contraindicationsTriggered.length > 0 || result.isOverdose || result.isEpinephrineOverdose) {
 			setSafetyWarning({
-				title: 'Соматический риск / Превышение дозы',
-				text: result.contraindicationsTriggered[0] || result.warnings[0] || 'Обнаружен риск при введении препарата'
+				title: "Соматический риск / Превышение МДД",
+				text: result.contraindicationsTriggered[0] || result.warnings[0] || "Обнаружен риск при введении препарата",
 			});
 			return;
 		}
 
-		// 1-Click instant success
 		onApplyAnesthesia(result.diaryEntryRu, result);
-		setActiveToastMessage(`Зафиксировано: ${preset.labelRu} (${preset.carpulesCount * 1.7} мл)`);
-		setTimeout(() => setActiveToastMessage(null), 3000);
+		setActiveToastMessage(
+			`Зафиксировано: ${selectedDrugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
+		);
+		setTimeout(() => setActiveToastMessage(null), 3500);
 	};
 
 	return (
-		<div className="anesthesia-quick-bar">
+		<div className="anesthesia-quick-bar" data-testid="anesthesia-quick-bar">
+			{/* ── Top Bar: Title & Somatic Tags & Weight & Configure ── */}
 			<div className="anesthesia-quick-bar-header">
 				<div className="anesthesia-quick-bar-title">
-					<Syringe size={16} className="anesthesia-icon-accent" />
-					<span>Быстрая анестезия (1 клик):</span>
+					<Syringe size={16} className="anesthesia-icon-accent shrink-0" />
+					<span className="font-bold text-xs sm:text-sm">Анестезия (МДД по массе тела {patientWeightKg} кг):</span>
 					{hasCardiovascularRisk && (
-						<span className="anesthesia-cardio-tag">
-							<ShieldAlert size={12} /> ССЗ: Скандонест
+						<span className="anesthesia-cardio-tag" title="Кардиоваскулярный риск: лимит адреналина 0.04 мг">
+							<Heart size={12} className="text-amber-500" />
+							<span>ССЗ: Скандонест / лимит 0.04 мг</span>
 						</span>
 					)}
-					{hasSulfiteAllergy && (
-						<span className="anesthesia-allergy-tag">
-							<AlertTriangle size={12} /> Аллергия на сульфиты
+					{(hasSulfiteAllergy || hasBronchialAsthma) && (
+						<span className="anesthesia-allergy-tag" title="Аллергия на сульфиты / астма: запрещены растворы с адреналином (E223)">
+							<AlertTriangle size={12} className="text-red-500" />
+							<span>Без сульфитов (E223)</span>
 						</span>
 					)}
 				</div>
 
-				<button
-					type="button"
-					className="anesthesia-btn-customize"
-					onClick={() => setIsCustomModalOpen(true)}
-					title="Открыть детальный расчет МДД и выбор иглы"
-					aria-label="Настроить анестезию"
-				>
-					<SlidersHorizontal size={14} />
-					<span>Настроить...</span>
-				</button>
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => setIsWeightAdjustOpen((prev) => !prev)}
+						className="anesthesia-btn-customize text-xs"
+						title="Изменить массу тела пациента для пересчета МДД"
+					>
+						<Scale size={13} />
+						<span>{patientWeightKg} кг</span>
+					</button>
+
+					<button
+						type="button"
+						className="anesthesia-btn-customize text-xs"
+						onClick={() => setIsCustomModalOpen(true)}
+						title="Открыть расширенный калькулятор анестезии и выбор иглы"
+						aria-label="Настроить анестезию"
+					>
+						<SlidersHorizontal size={13} />
+						<span>Настроить...</span>
+					</button>
+				</div>
 			</div>
 
-			{/* 1-Click Quick Preset Buttons */}
-			<div className="anesthesia-quick-presets-grid">
-				{STANDARD_QUICK_PRESETS.map((preset) => {
-					const isCardioRecommended = hasCardiovascularRisk && preset.drugId === 'mepivacaine_plain';
-					const isCardioRisky = hasCardiovascularRisk && preset.drugId === 'articaine_1_100k';
+			{/* ── Inline Weight Quick Adjuster Accordion ── */}
+			{isWeightAdjustOpen && (
+				<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-1.5 animate-in fade-in duration-150">
+					<div className="flex items-center justify-between text-xs font-semibold text-[var(--muted)]">
+						<span>Масса тела пациента для расчета МДД:</span>
+						<strong className="text-[var(--ink)] text-sm">{patientWeightKg} кг</strong>
+					</div>
+					<div className="flex items-center gap-1.5 flex-wrap">
+						{WEIGHT_QUICK_PRESETS.map((w) => (
+							<button
+								key={w}
+								type="button"
+								onClick={() => setPatientWeightKg(w)}
+								className={`px-2.5 py-1 text-xs font-bold rounded-md border transition-all ${
+									patientWeightKg === w
+										? "bg-[var(--teal-surface)] text-[var(--teal-dark)] border-[var(--teal)]"
+										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+								}`}
+							>
+								{w} кг
+							</button>
+						))}
+						<input
+							type="range"
+							min={10}
+							max={140}
+							value={patientWeightKg}
+							onChange={(e) => setPatientWeightKg(Number(e.target.value))}
+							className="flex-1 min-w-[120px] h-1.5 accent-[var(--teal)] cursor-pointer ml-2"
+						/>
+					</div>
+				</div>
+			)}
+
+			{/* ── Drug Selection Chips (3 Primary Drugs) ── */}
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+				{PRIMARY_ANESTHETIC_DRUGS.map((drug) => {
+					const isSelected = selectedDrugId === drug.id;
+					const isCardioSuggested = hasCardiovascularRisk && drug.isAdrenalineFree;
+					const isSulfiteRisky = (hasSulfiteAllergy || hasBronchialAsthma) && !drug.isAdrenalineFree;
 
 					return (
 						<button
-							key={preset.id}
+							key={drug.id}
 							type="button"
 							disabled={disabled}
-							onClick={() => handleFastClick(preset)}
-							className={`anesthesia-quick-btn ${preset.badgeType} ${isCardioRecommended ? 'recommended' : ''} ${isCardioRisky ? 'risky' : ''}`}
+							onClick={() => {
+								setSelectedDrugId(drug.id);
+								setSafetyWarning(null);
+							}}
+							className={`flex flex-col items-start p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+								isSelected
+									? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-xs"
+									: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)]"
+							} ${isSulfiteRisky ? "opacity-60 border-red-300 dark:border-red-900" : ""}`}
 						>
-							<span className="quick-btn-main">{preset.labelRu}</span>
-							<span className="quick-btn-sub">{preset.subLabelRu}</span>
+							<div className="flex items-center justify-between w-full gap-1">
+								<span className="font-bold text-xs sm:text-sm text-[var(--ink)] truncate">
+									{drug.labelRu}
+								</span>
+								{isCardioSuggested && (
+									<span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 shrink-0">
+										★ ССЗ выбор
+									</span>
+								)}
+								{isSulfiteRisky && (
+									<span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-red-500/20 text-red-700 dark:text-red-300 shrink-0">
+										Сульфиты!
+									</span>
+								)}
+							</div>
+							<span className="text-[11px] text-[var(--muted)] mt-0.5 line-clamp-1">
+								{drug.subLabelRu}
+							</span>
 						</button>
 					);
 				})}
+			</div>
+
+			{/* ── 1-Click Dose Selection Row & MRD Gauge ── */}
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-[var(--line)]/50">
+				{/* 1-Click Action Buttons */}
+				<div className="flex items-center gap-2 flex-wrap">
+					<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1 shrink-0">
+						<Plus size={13} className="text-[var(--teal)]" />
+						Ввести дозу (1 клик):
+					</span>
+
+					<button
+						type="button"
+						disabled={disabled}
+						onClick={() => handleApplyCarpules(1.0)}
+						className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="Ввести 1 карпулу (1.7 мл) в протокол дневника"
+						data-testid="anesthesia-dose-1carp"
+					>
+						<Plus size={14} className="text-[var(--teal)] shrink-0" />
+						<span>1 карпула (1.7 мл)</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={disabled || maxSafeCarpules < 2.0}
+						onClick={() => handleApplyCarpules(2.0)}
+						className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="Ввести 2 карпулы (3.4 мл) — для проводниковых анестезий"
+						data-testid="anesthesia-dose-2carp"
+					>
+						<Plus size={14} className="text-[var(--teal)] shrink-0" />
+						<span>2 карпулы (3.4 мл)</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={disabled}
+						onClick={() => handleApplyCarpules(0.5)}
+						className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="Ввести 0.5 карпулы (0.85 мл) — для интралигаментарной или нёбной анестезии"
+						data-testid="anesthesia-dose-halfcarp"
+					>
+						<Plus size={14} className="text-[var(--teal)] shrink-0" />
+						<span>½ карп. (0.85 мл)</span>
+					</button>
+				</div>
+
+				{/* Maximum Safe Carpules Badge */}
+				<div className="flex items-center gap-2 text-xs text-[var(--muted)] font-medium shrink-0">
+					<Activity size={14} className="text-[var(--teal)]" />
+					<span>
+						МДД для {patientWeightKg} кг:{" "}
+						<strong className="text-[var(--ink)] font-bold">
+							до {maxSafeCarpules} карп. ({(maxSafeCarpules * 1.7).toFixed(1)} мл)
+						</strong>
+					</span>
+				</div>
 			</div>
 
 			{/* Feedback Toast */}
@@ -179,7 +367,7 @@ export function AnesthesiaQuickBar({
 			{safetyWarning && (
 				<div className="anesthesia-safety-stopper-alert">
 					<div className="stopper-alert-content">
-						<ShieldAlert size={20} className="stopper-icon" />
+						<ShieldAlert size={20} className="stopper-icon shrink-0" />
 						<div>
 							<div className="stopper-title">{safetyWarning.title}</div>
 							<div className="stopper-text">{safetyWarning.text}</div>
@@ -191,13 +379,11 @@ export function AnesthesiaQuickBar({
 							className="stopper-btn-switch"
 							onClick={() => {
 								setSafetyWarning(null);
-								const scandonestPreset = STANDARD_QUICK_PRESETS.find((p) => p.drugId === 'mepivacaine_plain');
-								if (scandonestPreset) {
-									handleFastClick(scandonestPreset);
-								}
+								setSelectedDrugId("mepivacaine_plain");
+								handleApplyCarpules(1.0);
 							}}
 						>
-							Ввести Скандонест (безопасно)
+							Ввести Скандонест 3% (безопасно)
 						</button>
 						<button
 							type="button"
@@ -210,7 +396,7 @@ export function AnesthesiaQuickBar({
 				</div>
 			)}
 
-			{/* Full Modal fallback for rare custom cases */}
+			{/* Full Modal fallback for detailed technique & needle choices */}
 			{isCustomModalOpen && (
 				<AnesthesiaProtocolModal
 					isOpen={isCustomModalOpen}
@@ -228,3 +414,4 @@ export function AnesthesiaQuickBar({
 		</div>
 	);
 }
+

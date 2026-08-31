@@ -242,6 +242,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const [icdSearch, setIcdSearch] = useState("");
 	const [showPreview, setShowPreview] = useState(false);
 	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+	const [localDraftSavedAt, setLocalDraftSavedAt] = useState<Date | null>(null);
 	const [revisionCount, setRevisionCount] = useState(0);
 	/*
 	 * Forensic 043/у: полный список ревизий, не только length.
@@ -694,6 +695,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					visitId,
 					diary,
 				);
+				setLocalDraftSavedAt(new Date());
 			}
 		};
 
@@ -2011,6 +2013,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		diaryDoctorFullName,
 		diaryDoctorSpecialty,
 		lastSavedAt,
+		localDraftSavedAt,
 		revisionCount,
 		diaryRevisions,
 		isSaving,

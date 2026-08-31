@@ -334,41 +334,50 @@ html.dark .vde-043__letter--p {
 .vde-043__ta,
 .vde-043__input {
 	width: 100%;
-	min-height: 96px;
-	padding: 0.85rem 1rem;
-	border-radius: 0.75rem;
+	min-height: 100px;
+	padding: 0.9rem 1.1rem;
+	border-radius: 0.875rem;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
 	color: var(--ink);
-	font-size: 0.875rem;
-	line-height: 1.45;
+	font-size: 0.9375rem;
+	line-height: 1.55;
 	resize: none;
 	outline: none;
+	hyphens: auto;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
 	transition:
-		border-color 0.15s,
-		box-shadow 0.15s;
+		border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .vde-043__input {
 	min-height: 44px;
+	line-height: 1.35;
 }
 
 .vde-043__ta:focus,
 .vde-043__input:focus {
 	border-color: var(--teal);
-	box-shadow: 0 0 0 2px var(--teal-glow, rgba(13, 148, 136, 0.25));
+	background: var(--paper);
+	box-shadow: 0 0 0 3px var(--teal-glow, rgba(13, 148, 136, 0.2));
 }
 
 .vde-043__ta:disabled,
 .vde-043__input:disabled {
-	opacity: 0.55;
+	opacity: 0.65;
 	cursor: not-allowed;
+	background: var(--paper-soft);
 }
 
 .vde-043__ta::placeholder,
 .vde-043__input::placeholder {
 	color: var(--muted);
-	opacity: 0.85;
+	opacity: 0.8;
+	font-weight: 400;
 }
 
 .vde-043__assessment {
