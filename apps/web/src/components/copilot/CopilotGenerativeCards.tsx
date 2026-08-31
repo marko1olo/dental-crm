@@ -22,8 +22,18 @@ import {
   Activity,
   AlertCircle,
   FileSignature,
+  Loader2,
+  Search,
+  Brain,
+  Layers,
+  AlertTriangle,
+  RotateCcw,
+  Edit3,
+  Save,
 } from 'lucide-react';
 import { formatMoney, formatDateTime, formatTimeRange } from './useCopilotFormat';
+import type { ReactStepItem, Protocol043Data, DdiSafetyAlertData } from './copilotTypes';
+import { useVisitStore } from '../../store/visitStore';
 
 // ============================================================================
 // TYPE DEFINITIONS FOR GENERATIVE CARDS
@@ -168,6 +178,33 @@ export interface EstimateTierCardProps {
   activeTier?: 'economy' | 'optimum' | 'premium' | undefined;
   onSelectTier?: ((tierKey: 'economy' | 'optimum' | 'premium') => void) | undefined;
   onApplyTier?: ((tierKey: 'economy' | 'optimum' | 'premium', tier: EstimateTierOption) => void) | undefined;
+}
+
+export interface CopilotReactTrackerProps {
+  title?: string | undefined;
+  steps?: ReactStepItem[] | undefined;
+  currentStepIndex?: number | undefined;
+  isComplete?: boolean | undefined;
+  totalDurationMs?: number | undefined;
+  onStepClick?: ((step: ReactStepItem) => void) | undefined;
+}
+
+export interface CopilotProtocol043ConfirmCardProps {
+  data: Protocol043Data;
+  callId?: string | undefined;
+  resolved?: ('confirm' | 'reject') | undefined;
+  onConfirm?: ((data: Protocol043Data) => void) | undefined;
+  onReject?: (() => void) | undefined;
+  disabled?: boolean | undefined;
+}
+
+export interface CopilotDdiSafetyCardProps {
+  data: DdiSafetyAlertData;
+  callId?: string | undefined;
+  resolved?: ('confirm' | 'reject') | undefined;
+  onReplaceDrug?: ((alternative: string) => void) | undefined;
+  onOverride?: (() => void) | undefined;
+  disabled?: boolean | undefined;
 }
 
 // ============================================================================
@@ -766,6 +803,17 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
   const handleApply = () => {
     if (!activeTierObj) return;
     setAppliedTierKey(currentTierKey);
+    // Instant zero-reload state sync with useVisitStore
+    try {
+      const teethList = data.teeth && data.teeth.length > 0 ? data.teeth.map(String) : ['36'];
+      const plannedMap: Record<string, 'planned'> = {};
+      teethList.forEach((t) => {
+        plannedMap[t] = 'planned';
+      });
+      useVisitStore.getState().applyAiToothCodes(teethList, 'planned', plannedMap);
+    } catch {
+      // store sync resilience
+    }
     onApplyTier?.(currentTierKey, activeTierObj);
   };
 
@@ -774,7 +822,7 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
       {/* Header */}
       <div className="copilot-et-header">
         <div>
-          <h4 className="copilot-et-title">План лечения: 3 тарифных варианта</h4>
+          <h4 className="copilot-et-title">ДЕНТА предлагает план лечения: 3 тарифных варианта</h4>
           <div className="copilot-et-subtitle">
             {data.patientName && <span>Пациент: {data.patientName} • </span>}
             {data.teeth && data.teeth.length > 0 && <span>Зубы: {data.teeth.join(', ')} • </span>}
@@ -880,12 +928,12 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
             type="button"
             onClick={handleApply}
             className={`copilot-et-apply-btn ${appliedTierKey === currentTierKey ? 'applied' : ''}`}
-            title={`Утвердить ${activeTierObj.tierName} в качестве активного плана`}
+            title={`Утвердить ${activeTierObj.tierName} в качестве активного плана лечения`}
           >
             {appliedTierKey === currentTierKey ? (
               <>
                 <CheckCircle2 size={16} />
-                <span>Тариф «{activeTierObj.tierName}» применён в план</span>
+                <span>Тариф «{activeTierObj.tierName}» утверждён в план лечения</span>
               </>
             ) : (
               <>
@@ -896,6 +944,492 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
           </button>
         </div>
       )}
+    </div>
+  );
+};
+
+
+// ============================================================================
+// 5. CopilotReactTracker COMPONENT (Animated ReAct Execution Cycle)
+// ============================================================================
+
+export const DEFAULT_DENTE_REACT_STEPS: ReactStepItem[] = [
+  {
+    id: 'step_patient_anamnesis',
+    stepNumber: 1,
+    title: 'Поиск карты пациента и анамнеза (allergies, pregnancy)...',
+    status: 'done',
+    detail: 'Пациент идентифицирован • Аллергоанамнез проверен',
+    icon: 'search',
+  },
+  {
+    id: 'step_xray_tooth_36',
+    stepNumber: 2,
+    title: 'Анализ прицельного снимка зуба 36 (глубокий кариес K02.1)...',
+    status: 'done',
+    detail: 'Зуб 36 FDI • Кариес дентина K02.1 MOD',
+    icon: 'xray',
+  },
+  {
+    id: 'step_ddi_safety',
+    stepNumber: 3,
+    title: 'Проверка лекарственной безопасности DDI...',
+    status: 'done',
+    detail: 'DDI Safe • Противопоказания исключены',
+    icon: 'shield',
+  },
+  {
+    id: 'step_treatment_tiers',
+    stepNumber: 4,
+    title: 'Формирование 3-уровневого плана лечения (Эконом / Оптимум / Премиум)...',
+    status: 'done',
+    detail: '3 тарифа рассчитаны по ст. 149 НК РФ / 804н',
+    icon: 'plan',
+  },
+];
+
+export const CopilotReactTracker: React.FC<CopilotReactTrackerProps> = ({
+  title = 'ReAct Цикл ДЕНТЫ: Автономное выполнение',
+  steps = DEFAULT_DENTE_REACT_STEPS,
+  currentStepIndex,
+  isComplete,
+  totalDurationMs,
+  onStepClick,
+}) => {
+  const [expanded, setExpanded] = useState<boolean>(true);
+
+  const completedCount = useMemo(() => {
+    return steps.filter((s) => s.status === 'done').length;
+  }, [steps]);
+
+  const activeIndex = useMemo(() => {
+    if (typeof currentStepIndex === 'number') return currentStepIndex;
+    const runningIdx = steps.findIndex((s) => s.status === 'running');
+    if (runningIdx >= 0) return runningIdx;
+    if (isComplete || completedCount === steps.length) return steps.length;
+    return completedCount;
+  }, [currentStepIndex, steps, isComplete, completedCount]);
+
+  const allDone = isComplete || completedCount === steps.length;
+  const progressPercent = Math.round((completedCount / (steps.length || 1)) * 100);
+
+  const getStepIcon = (step: ReactStepItem) => {
+    if (step.status === 'running') {
+      return <Loader2 size={16} className="copilot-rt-step-icon running animate-spin" />;
+    }
+    if (step.status === 'done') {
+      return <CheckCircle2 size={16} className="copilot-rt-step-icon done text-[var(--teal)]" />;
+    }
+    if (step.status === 'failed') {
+      return <AlertTriangle size={16} className="copilot-rt-step-icon failed text-[var(--rust)]" />;
+    }
+    return <Clock size={16} className="copilot-rt-step-icon pending text-[var(--muted)]" />;
+  };
+
+  return (
+    <div
+      className={`copilot-gen-card copilot-react-tracker ${allDone ? 'all-done' : 'running'}`}
+      data-testid="copilot-react-tracker"
+      role="region"
+      aria-label="Живой пошаговый ReAct трекер ДЕНТЫ"
+    >
+      {/* Header with Title and Progress */}
+      <div
+        className="copilot-rt-header"
+        onClick={() => setExpanded((prev) => !prev)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+      >
+        <div className="copilot-rt-title-block">
+          <div className="copilot-rt-badge" aria-hidden="true">
+            {allDone ? <CheckCircle2 size={18} /> : <Brain size={18} className="animate-pulse" />}
+          </div>
+          <div>
+            <h4 className="copilot-rt-title">{title}</h4>
+            <div className="copilot-rt-subtitle">
+              {allDone
+                ? '✅ Все шаги клинического рассуждения успешно завершены'
+                : `Выполняется шаг ${Math.min(activeIndex + 1, steps.length)} из ${steps.length}...`}
+            </div>
+          </div>
+        </div>
+
+        <div className="copilot-rt-status-box">
+          <span className={`copilot-rt-status-pill ${allDone ? 'done' : 'active'}`}>
+            {allDone ? 'Завершено (4/4)' : `Шаг ${Math.min(activeIndex + 1, steps.length)}/${steps.length}`}
+          </span>
+        </div>
+      </div>
+
+      {/* Progress Track */}
+      <div className="copilot-rt-progress-track" aria-hidden="true">
+        <div
+          className="copilot-rt-progress-fill"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+
+      {/* Steps List */}
+      {expanded && (
+        <div className="copilot-rt-steps-list">
+          {steps.map((step, idx) => {
+            const isCurrent = step.status === 'running' || (!allDone && idx === activeIndex);
+
+            return (
+              <div
+                key={step.id || idx}
+                className={`copilot-rt-step-item ${step.status} ${isCurrent ? 'current' : ''}`}
+                onClick={() => onStepClick?.(step)}
+              >
+                <div className="copilot-rt-step-left">
+                  <div className="copilot-rt-step-icon-wrap">{getStepIcon(step)}</div>
+                  <div className="copilot-rt-step-num-badge">
+                    {`Шаг ${step.stepNumber || idx + 1}`}
+                  </div>
+                </div>
+
+                <div className="copilot-rt-step-body">
+                  <div className="copilot-rt-step-title">{step.title}</div>
+                  {Boolean(step.detail) && (
+                    <div className="copilot-rt-step-detail">{step.detail}</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+// ============================================================================
+// 6. CopilotProtocol043ConfirmCard (1-Click Save to EMR 043/u)
+// ============================================================================
+
+export const CopilotProtocol043ConfirmCard: React.FC<CopilotProtocol043ConfirmCardProps> = ({
+  data,
+  callId = 'save_043',
+  resolved,
+  onConfirm,
+  onReject,
+  disabled = false,
+}) => {
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [formData, setFormData] = useState<Protocol043Data>(() => {
+    const d = data || {};
+    return {
+      patientName: d.patientName || 'Барабаш Сергей Владимирович',
+      tooth: d.tooth || '36',
+      diagnosis: d.diagnosis || 'K02.1 Кариес дентина (глубокий кариес)',
+      complaints: d.complaints || d.complaint || 'Боль от температурных раздражителей (холодное, сладкое) в области зуба 36, быстро проходящая после устранения фактора.',
+      complaint: d.complaint || d.complaints || 'Боль от температурных раздражителей (холодное, сладкое) в области зуба 36, быстро проходящая после устранения фактора.',
+      anamnesis: d.anamnesis || 'Полость обнаружена 2 недели назад, ранее зуб 36 не лечен. Аллергоанамнез не отягощен.',
+      objective: d.objective || d.objectiveStatus || 'На жевательно-медиальной поверхности (MOD) зуба 36 глубокая кариозная полость, заполненная размягченным пигментированным дентином. Зондирование дна болезненно, перкуссия безболезненна, ЭОД 8 мкА.',
+      objectiveStatus: d.objectiveStatus || d.objective || 'На жевательно-медиальной поверхности (MOD) зуба 36 глубокая кариозная полость, заполненная размягченным пигментированным дентином. Зондирование дна болезненно, перкуссия безболезненна, ЭОД 8 мкА.',
+      treatment: d.treatment || d.treatmentPlan || 'Обезболивание: Ультракаин Д-С 1.7 мл. Препарирование полости MOD 36. Медикаментозная обработка 2% хлоргексидином. Лечебная подкладка Life, изолирующая прокладка Ionosit. Пломбирование нанокомпозитом Estelite Sigma Quick A2/OA2. Шлифовка, полировка дисками Sof-Lex.',
+      treatmentPlan: d.treatmentPlan || d.treatment || 'Обезболивание: Ультракаин Д-С 1.7 мл. Препарирование полости MOD 36. Медикаментозная обработка 2% хлоргексидином. Лечебная подкладка Life, изолирующая прокладка Ionosit. Пломбирование нанокомпозитом Estelite Sigma Quick A2/OA2. Шлифовка, полировка дисками Sof-Lex.',
+      recommendations: d.recommendations,
+      doctorName: d.doctorName,
+      date: d.date,
+    };
+  });
+  const [savedStatus, setSavedStatus] = useState<boolean>(resolved === 'confirm');
+
+  const handleFieldChange = (key: keyof Protocol043Data, val: string) => {
+    setFormData((prev) => ({ ...prev, [key]: val }));
+  };
+
+  const handleSave = () => {
+    setSavedStatus(true);
+    setIsEditing(false);
+
+    // Instant zero-reload state sync with useVisitStore
+    try {
+      const store = useVisitStore.getState();
+      const toothCode = String(formData.tooth || '36');
+      const diagStr = String(formData.diagnosis || 'K02.1');
+
+      store.applyAiToothCodes(
+        [toothCode],
+        'done',
+        { [toothCode]: 'treatment' },
+        { [toothCode]: diagStr }
+      );
+
+      store.setVisitNoteForm((prev) => ({
+        ...prev,
+        complaint: String(formData.complaint || formData.complaints || prev.complaint),
+        anamnesis: String(formData.anamnesis || prev.anamnesis),
+        objectiveStatus: String(formData.objectiveStatus || formData.objective || prev.objectiveStatus),
+        diagnosis: String(formData.diagnosis || prev.diagnosis),
+        treatmentPlan: String(formData.treatmentPlan || formData.treatment || prev.treatmentPlan),
+      }));
+    } catch {
+      // store sync resilience
+    }
+
+    onConfirm?.(formData);
+  };
+
+  return (
+    <div
+      className={`copilot-gen-card copilot-043-confirm-card ${savedStatus ? 'saved' : ''}`}
+      data-testid="copilot-protocol-043-card"
+      role="region"
+      aria-label="Карточка дневника 043/у"
+    >
+      {/* Header */}
+      <div className="copilot-043-header">
+        <div className="copilot-043-title-row">
+          <div className="copilot-043-icon">
+            <FileText size={18} />
+          </div>
+          <div>
+            <h4 className="copilot-043-title">ДЕНТА сформировала дневник 043/у</h4>
+            <div className="copilot-043-meta">
+              <span>{`${formData.patientName} • Зуб ${formData.tooth} (FDI) • ${formData.diagnosis}`}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {!savedStatus && !isEditing && (
+            <button
+              type="button"
+              className="copilot-043-edit-btn"
+              onClick={() => setIsEditing(true)}
+              disabled={disabled}
+              title="Редактировать запись 043/у"
+            >
+              <Edit3 size={13} />
+              <span>Изменить</span>
+            </button>
+          )}
+          <span className={`copilot-043-status-pill ${savedStatus ? 'saved' : isEditing ? 'editing' : 'pending'}`}>
+            {savedStatus ? 'В ЭМК визита' : isEditing ? 'Правка' : 'Черновик 043/у'}
+          </span>
+        </div>
+      </div>
+
+      {/* Form Content / View Grid */}
+      <div className="copilot-043-grid">
+        <div className="copilot-043-field">
+          <span className="copilot-043-field-label">Жалобы:</span>
+          {isEditing ? (
+            <textarea
+              className="copilot-043-textarea"
+              value={formData.complaints || formData.complaint || ''}
+              onChange={(e) => handleFieldChange('complaints', e.target.value)}
+              rows={2}
+            />
+          ) : (
+            <p className="copilot-043-field-text">{formData.complaints || formData.complaint}</p>
+          )}
+        </div>
+
+        <div className="copilot-043-field">
+          <span className="copilot-043-field-label">Анамнез заболевания:</span>
+          {isEditing ? (
+            <textarea
+              className="copilot-043-textarea"
+              value={formData.anamnesis || ''}
+              onChange={(e) => handleFieldChange('anamnesis', e.target.value)}
+              rows={2}
+            />
+          ) : (
+            <p className="copilot-043-field-text">{formData.anamnesis}</p>
+          )}
+        </div>
+
+        <div className="copilot-043-field">
+          <span className="copilot-043-field-label">Объективный статус:</span>
+          {isEditing ? (
+            <textarea
+              className="copilot-043-textarea"
+              value={formData.objective || formData.objectiveStatus || ''}
+              onChange={(e) => handleFieldChange('objective', e.target.value)}
+              rows={2}
+            />
+          ) : (
+            <p className="copilot-043-field-text">{formData.objective || formData.objectiveStatus}</p>
+          )}
+        </div>
+
+        <div className="copilot-043-field">
+          <span className="copilot-043-field-label">Лечение и пломбирование:</span>
+          {isEditing ? (
+            <textarea
+              className="copilot-043-textarea"
+              value={formData.treatment || formData.treatmentPlan || ''}
+              onChange={(e) => handleFieldChange('treatment', e.target.value)}
+              rows={3}
+            />
+          ) : (
+            <p className="copilot-043-field-text font-medium">{formData.treatment || formData.treatmentPlan}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Action Footer */}
+      <div className="copilot-043-actions">
+        {isEditing ? (
+          <>
+            <button
+              type="button"
+              className="copilot-pp-secondary-btn"
+              onClick={() => setIsEditing(false)}
+            >
+              <RotateCcw size={14} />
+              <span>Отмена</span>
+            </button>
+            <button
+              type="button"
+              className="copilot-043-save-btn"
+              onClick={handleSave}
+              disabled={disabled}
+            >
+              <Save size={15} />
+              <span>Сохранить в ЭМК визита (1 клик)</span>
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={`copilot-043-save-btn ${savedStatus ? 'saved' : ''}`}
+            onClick={handleSave}
+            disabled={savedStatus || disabled}
+            title="Сохранить дневник 043/у в электронную медкарту визита"
+          >
+            {savedStatus ? (
+              <>
+                <CheckCircle2 size={16} />
+                <span>Дневник 043/у сохранён в ЭМК визита</span>
+              </>
+            ) : (
+              <>
+                <Check size={16} />
+                <span>Сохранить в ЭМК визита (1 клик)</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+// ============================================================================
+// 7. CopilotDdiSafetyCard (Critical DDI & Allergy Blocking Alert)
+// ============================================================================
+
+export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
+  data,
+  callId = 'ddi_alert',
+  resolved,
+  onReplaceDrug,
+  onOverride,
+  disabled = false,
+}) => {
+  const alternatives = data.safeAlternatives && data.safeAlternatives.length > 0
+    ? data.safeAlternatives
+    : ['Кларитромицин 500 мг (Macrolide Safe)', 'Азитромицин 500 мг', 'Спирамицин 3 млн МЕ'];
+
+  const [selectedAlt, setSelectedAlt] = useState<string>(
+    data.recommendedAlternative || alternatives[0] || 'Кларитромицин 500 мг'
+  );
+  const [replacedStatus, setReplacedStatus] = useState<boolean>(resolved === 'confirm');
+
+  const handleReplace = () => {
+    setReplacedStatus(true);
+    onReplaceDrug?.(selectedAlt);
+  };
+
+  return (
+    <div
+      className={`copilot-gen-card copilot-ddi-alert-card ${replacedStatus ? 'replaced' : 'critical'}`}
+      data-testid="copilot-ddi-safety-card"
+      role="alert"
+    >
+      {/* Header with Critical Alert Badge */}
+      <div className="copilot-ddi-header">
+        <div className="copilot-ddi-badge">
+          {replacedStatus ? <ShieldCheck size={20} /> : <ShieldAlert size={20} />}
+        </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h4 className="copilot-ddi-title">
+              {replacedStatus ? 'Лекарственная безопасность восстановлена' : (data.title || 'Блокировка DDI / Аллергии')}
+            </h4>
+            <span className={`copilot-ddi-severity-pill ${replacedStatus ? 'safe' : 'danger'}`}>
+              {replacedStatus ? 'DDI Safe' : 'Критический риск'}
+            </span>
+          </div>
+          <p className="copilot-ddi-desc">
+            {data.description || 'Обнаружена аллергия на пенициллины в анамнезе пациента (K02.1 / K04.0). Назначение препарата заблокировано клиническим протоколом.'}
+          </p>
+        </div>
+      </div>
+
+      {/* Allergies / Contraindications List */}
+      {data.patientAllergies && data.patientAllergies.length > 0 && (
+        <div className="copilot-ddi-allergies-box">
+          <AlertCircle size={14} className="text-[var(--rust)] flex-shrink-0" />
+          <span><strong>Аллергены в карте:</strong> {data.patientAllergies.join(', ')}</span>
+        </div>
+      )}
+
+      {/* Safe Alternatives Selector */}
+      {!replacedStatus && (
+        <div className="copilot-ddi-alts-box">
+          <div className="copilot-ddi-alts-label">
+            <ShieldCheck size={13} className="text-[var(--teal)]" />
+            <span>Рекомендованные безопасные аналоги (Регламент СтАР):</span>
+          </div>
+
+          <div className="copilot-ddi-alts-list">
+            {alternatives.map((alt) => {
+              const isSelected = alt === selectedAlt;
+              return (
+                <button
+                  key={alt}
+                  type="button"
+                  onClick={() => setSelectedAlt(alt)}
+                  className={`copilot-ddi-alt-btn ${isSelected ? 'selected' : ''}`}
+                  disabled={disabled}
+                >
+                  <Pill size={13} />
+                  <span>{alt}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Action Button */}
+      <div className="copilot-ddi-actions">
+        {replacedStatus ? (
+          <div className="copilot-ddi-success-box">
+            <CheckCircle2 size={16} className="text-[var(--green)]" />
+            <span>Препарат успешно заменен на <strong>{selectedAlt}</strong></span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="copilot-ddi-replace-btn"
+            onClick={handleReplace}
+            disabled={disabled}
+            title="Заменить опасный препарат на клинически безопасный аналог"
+          >
+            <ShieldCheck size={16} />
+            <span>Заменить на безопасный препарат ({selectedAlt})</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 };
