@@ -3,6 +3,7 @@ export * from './useCopilotFormat';
 export * from './useCopilot';
 export * from './CopilotMarkdown';
 export * from './CopilotActionConfirm';
+export * from './CopilotActionConfirmation';
 export * from './CopilotConfirmCard';
 export * from './CopilotPatientCard';
 export * from './CopilotAppointmentCard';

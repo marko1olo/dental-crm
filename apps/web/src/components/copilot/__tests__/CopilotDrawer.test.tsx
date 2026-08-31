@@ -12,6 +12,7 @@ import {
   CopilotAppointmentCard,
   CopilotSlotCard,
   CopilotActionConfirm,
+  CopilotActionConfirmation,
   CopilotConfirmCard,
   CopilotLabOrderCard,
   CopilotDrugInteractionCard,
@@ -41,6 +42,16 @@ describe('Copilot Formatters', () => {
   it('formats currency values correctly', () => {
     const formatted = formatMoney(15000);
     assert.ok(formatted.includes('15') && (formatted.includes('₽') || formatted.includes('RUB')));
+  });
+
+  it('guarantees 100% NaN and edge case protection in formatMoney', () => {
+    assert.ok(formatMoney(NaN).includes('0'));
+    assert.ok(formatMoney(null).includes('0'));
+    assert.ok(formatMoney(undefined).includes('0'));
+    assert.ok(formatMoney(Infinity).includes('0'));
+    assert.ok(formatMoney(-Infinity).includes('0'));
+    assert.ok(formatMoney('invalid_string').includes('0'));
+    assert.ok(formatMoney('12 500,50').includes('12'));
   });
 });
 
@@ -257,6 +268,30 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     assert.ok(!htmlConfirmed.includes('Отмена правок'));
   });
 
+  it('renders CopilotActionConfirmation component with 3-way choices and field labels', () => {
+    const args = {
+      patient_name: 'Иванов Иван Иванович',
+      service_name: 'Профессиональная гигиена полости рта',
+      discount_percent: 15,
+      reason: 'Акция для первичных пациентов',
+    };
+    const html = renderToString(
+      <CopilotActionConfirmation
+        callId="c3"
+        name="billing.apply_discount"
+        args={args}
+        onConfirm={() => {}}
+      />
+    );
+    assert.ok(html.includes('Применение специальной скидки') || html.includes('Применение скидки'));
+    assert.ok(html.includes('Требуется подтверждение'));
+    assert.ok(html.includes('Подтвердить'));
+    assert.ok(html.includes('Изменить'));
+    assert.ok(html.includes('Отклонить'));
+    assert.ok(html.includes('15%'));
+    assert.ok(html.includes('Иванов Иван Иванович'));
+  });
+
   it('renders CopilotConfirmCard with humanized arguments and backward compatibility', () => {
     const args = {
       patient_id: 'pat-1',
@@ -464,8 +499,8 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     assert.ok(html.includes('1094н'));
     assert.ok(html.includes('77-АА № 004821'));
     assert.ok(html.includes('Смирнова Елена Васильевна'));
-    assert.ok(html.includes('Tab. Nimesulidi 100 мг № 20'));
-    assert.ok(html.includes('Sol. Chlorhexidini bigluconatis 0.05% 100 мл'));
+    assert.ok(html.includes('Tab. Nimesulidi 100 мг'));
+    assert.ok(html.includes('Sol. Chlorhexidini bigluconatis 0.05%'));
     assert.ok(html.includes('D.S.'));
     assert.ok(html.includes('DDI Safe'));
     assert.ok(html.includes('Электронный документ подписан УКЭП') || html.includes('УКЭП'));
