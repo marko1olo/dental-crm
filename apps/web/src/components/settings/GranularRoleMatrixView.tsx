@@ -102,7 +102,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 min-w-0">
 					{/* Category Selector Tabs */}
 					<div
-						className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 shrink-0 gap-2"
+						className="flex flex-wrap items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 shrink-0 gap-2"
 						role="tablist"
 						aria-label="Категория ролей матрицы доступа"
 						data-testid="rbac-category-switcher"
@@ -112,7 +112,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							role="tab"
 							aria-selected={activeCategory === "clinical"}
 							onClick={() => handleCategoryChange("clinical")}
-							className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer touch-manipulation ${
+							className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation flex-1 sm:flex-initial ${
 								activeCategory === "clinical"
 									? "bg-white dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 shadow-xs border border-slate-200 dark:border-teal-700/60"
 									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -127,7 +127,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							role="tab"
 							aria-selected={activeCategory === "administrative"}
 							onClick={() => handleCategoryChange("administrative")}
-							className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer touch-manipulation ${
+							className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation flex-1 sm:flex-initial ${
 								activeCategory === "administrative"
 									? "bg-white dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 shadow-xs border border-slate-200 dark:border-teal-700/60"
 									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -187,7 +187,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 								role="tab"
 								aria-selected={isSelected}
 								onClick={() => handleRoleSelect(roleKey)}
-								className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-semibold transition-all text-center whitespace-nowrap border cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 ${
+								className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-semibold transition-all text-center whitespace-normal break-words sm:whitespace-nowrap border cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 ${
 									isSelected
 										? "bg-teal-500/15 dark:bg-teal-500/25 text-teal-800 dark:text-teal-200 border-teal-500/60 dark:border-teal-500 shadow-xs font-bold ring-1 ring-teal-500/40"
 										: "bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200/80 dark:hover:bg-slate-700"

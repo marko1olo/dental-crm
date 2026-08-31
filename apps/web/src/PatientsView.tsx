@@ -475,7 +475,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									type="button"
 									className="primary-button"
 									onClick={() => setIsCreateModalOpen(true)}
-									style={{ minHeight: "40px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+									style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", gap: "6px" }}
 									data-testid="empty-state-create-patient-btn"
 								>
 									<Plus size={16} aria-hidden="true" />

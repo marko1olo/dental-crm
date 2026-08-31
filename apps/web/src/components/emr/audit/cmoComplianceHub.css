@@ -418,7 +418,8 @@
   gap: 10px;
   flex-wrap: wrap;
   flex: 1;
-  min-width: 280px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .cmo-hub-search-input {
@@ -431,7 +432,8 @@
   font-size: 13px;
   flex: 1;
   width: 100%;
-  min-width: 300px;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 [data-theme="dark"] .cmo-hub-search-input,

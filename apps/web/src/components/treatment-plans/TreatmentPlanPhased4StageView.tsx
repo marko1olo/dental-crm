@@ -206,7 +206,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
   return (
     <div
-      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink,#0f172a)] ${className}`.trim()}
+      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink,#0f172a)] pb-32 ${className}`.trim()}
       data-testid="treatment-plan-phased-4stage-view"
     >
       {/* Overview Banner */}
@@ -312,11 +312,11 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                       </div>
                     </div>
                   ) : (
-                    <div className="max-h-64 sm:max-h-72 overflow-y-auto min-h-0 divide-y divide-[var(--line,#e2e8f0)]/50 text-xs">
+                    <div className="max-h-64 sm:max-h-72 overflow-y-auto min-h-0 divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                       {items.map((it, itemIdx) => (
                         <div
                           key={it.id || itemIdx}
-                          className="py-2.5 px-1 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-[var(--line,#e2e8f0)]/50 last:border-b-0"
+                          className="py-2.5 px-1 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0"
                         >
                           <div className="flex items-start gap-2 min-w-0">
                             <span className="font-mono text-[10px] text-[var(--muted,#64748b)] mt-0.5 shrink-0">

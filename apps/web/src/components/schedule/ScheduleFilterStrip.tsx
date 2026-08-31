@@ -194,7 +194,7 @@ export function ScheduleFilterStrip({
 				{/* "Все записи" filter chip */}
 				<button
 					type="button"
-					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} h-7 px-2.5 min-w-fit whitespace-nowrap text-xs font-semibold shrink-0 cursor-pointer rounded-lg`}
+					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-fit whitespace-nowrap text-xs font-semibold shrink-0 cursor-pointer rounded-lg inline-flex items-center justify-center`}
 					onClick={resetScheduleFilters}
 				>
 					Все записи
@@ -212,7 +212,7 @@ export function ScheduleFilterStrip({
 							<button
 								key={member.id}
 								type="button"
-								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} h-7 min-w-fit shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg`}
+								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center`}
 								onClick={() =>
 									setScheduleDoctorFilterId(
 										scheduleDoctorFilterId === member.id ? null : member.id,
@@ -240,7 +240,7 @@ export function ScheduleFilterStrip({
 						<button
 							key={chair.id}
 							type="button"
-							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} h-7 min-w-fit shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg flex items-center gap-1`}
+							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1`}
 							onClick={() =>
 								setScheduleChairFilterId(
 									scheduleChairFilterId === chair.id ? null : chair.id,

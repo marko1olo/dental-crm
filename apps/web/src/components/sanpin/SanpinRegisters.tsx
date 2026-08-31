@@ -1475,7 +1475,7 @@ export function SanpinRegisters() {
 								aria-selected={isActive}
 								className={`sanpin-category-btn touch-manipulation ${isActive ? "active" : ""}`}
 								style={{
-									minHeight: "40px",
+									minHeight: "44px",
 									display: "inline-flex",
 									alignItems: "center",
 									gap: "0.45rem",
@@ -1524,7 +1524,7 @@ export function SanpinRegisters() {
 								onClick={() => handleSelectTab(tab.id)}
 								className={`sanpin-tab-btn touch-manipulation ${isActive ? "active" : ""}`}
 								style={{
-									minHeight: "38px",
+									minHeight: "44px",
 									padding: "0.35rem 0.75rem",
 									fontSize: "0.78rem",
 									fontWeight: isActive ? 700 : 600,

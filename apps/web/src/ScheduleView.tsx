@@ -1112,11 +1112,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			id="schedule"
 			data-testid="schedule-view"
 		>
-			<div className="panel-heading flex items-center justify-between gap-3 min-w-0 py-1.5 mb-1">
-				<h2 className="truncate min-w-0 text-base font-bold text-[var(--ink)]">Расписание приемов</h2>
-			</div>
-
-			{/* STRICTLY 1 COMPACT 36px TOOLBAR ROW */}
+			{/* STRICTLY 1 MONOLITHIC 44px TOOLBAR ROW */}
 			<ScheduleFilterStrip
 				scheduleDateFilter={scheduleDateFilter}
 				setScheduleDateFilter={setScheduleDateFilter}

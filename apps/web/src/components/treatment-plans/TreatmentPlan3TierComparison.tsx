@@ -98,7 +98,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 	return (
 		<div
-			className={`treatment-3tier-comparison flex flex-col gap-4 sm:gap-6 w-full ${className}`.trim()}
+			className={`treatment-3tier-comparison flex flex-col gap-4 sm:gap-6 w-full pb-32 ${className}`.trim()}
 			data-testid="treatment-3tier-comparison"
 		>
 			{/* Top Control Bar: Installments, Modes & Studio Triggers */}
@@ -565,8 +565,8 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 				if (!activeTier || !activeTier.stages || activeTier.stages.length === 0) return null;
 
 				return (
-					<section className="p-4 sm:p-5 rounded-3xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] shadow-xs space-y-3">
-						<div className="flex items-center justify-between gap-3 flex-wrap">
+					<section className="rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs overflow-hidden">
+						<div className="flex items-center justify-between gap-3 flex-wrap p-3.5 sm:p-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)]">
 							<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink,#0f172a)] flex items-center gap-2 m-0">
 								<Clock size={16} className="text-[var(--teal,var(--brand-primary))]" />
 								<span>
@@ -578,7 +578,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							</span>
 						</div>
 
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-700 bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-700 bg-[var(--paper-strong,var(--paper,#ffffff))]">
 							{activeTier.stages.map((stg) => (
 								<div key={stg.stageNumber} className="p-3 sm:p-3.5 space-y-2">
 									<div className="flex items-center justify-between gap-2">

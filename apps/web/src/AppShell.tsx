@@ -47,7 +47,7 @@ export function AppShell() {
 				<DentalWorkspace />
 			</Suspense>
 			<GlobalToast />
-			<DiagnosticDrawer />
+			<DiagnosticDrawer showTriggerButton={false} />
 			<CopilotGlobalHost />
 		</BootErrorBoundary>
 	);

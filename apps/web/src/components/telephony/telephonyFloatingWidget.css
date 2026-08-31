@@ -102,7 +102,7 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 
 @media (min-width: 768px) {
 	.dnt-telephony-floating {
-		bottom: 84px;
+		bottom: 24px;
 		right: 24px;
 		z-index: 40;
 		pointer-events: none !important;
@@ -113,7 +113,7 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 	}
 }
 
-/* Collapsed Launcher Button */
+/* Collapsed Launcher Button (Sleek 44x44px circular FAB) */
 .dnt-telephony-launcher {
 	width: 44px;
 	height: 44px;
@@ -135,13 +135,13 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 }
 
 .dnt-telephony-launcher:hover {
-	transform: scale(1.04);
+	transform: scale(1.06);
 	border-color: var(--teal, #0d9488);
 	box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.25), 0 0 16px 2px rgba(15, 118, 110, 0.2);
 }
 
 .dnt-telephony-launcher:active {
-	transform: scale(0.96);
+	transform: scale(0.94);
 }
 
 .dnt-telephony-launcher--active {
@@ -153,27 +153,7 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 
 .dnt-telephony-launcher-text,
 .dnt-telephony-launcher-chevron {
-	display: none;
-}
-
-@media (min-width: 768px) {
-	.dnt-telephony-launcher {
-		width: auto;
-		height: auto;
-		min-height: 38px;
-		padding: 5px 12px 5px 8px;
-		border-radius: 9999px;
-		gap: 8px;
-	}
-	.dnt-telephony-launcher-text {
-		display: flex;
-		flex-direction: column;
-		text-align: left;
-		min-width: 0;
-	}
-	.dnt-telephony-launcher-chevron {
-		display: block;
-	}
+	display: none !important;
 }
 
 /* Expanded Softphone Card */

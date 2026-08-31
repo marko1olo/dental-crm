@@ -638,7 +638,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 							Пациентов по выбранным критериям риска не найдено.
 						</div>
 					) : (
-						<div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+						<div className="space-y-2 max-h-96 overflow-y-auto pr-1 pb-16">
 							{filteredPatients.map((patient) => {
 								const days =
 									typeof patient?.daysSinceLastVisit === "number" &&
