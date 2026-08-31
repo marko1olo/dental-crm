@@ -146,12 +146,12 @@ export const DEFAULT_DOCTOR_KPI_TIERS: readonly DoctorKpiTier[] = [
 	{
 		minRevenueKop: 100000000, // 1,000,000.00 RUB
 		bonusPercentage: 5,
-		badgeRu: "🌟 Топ-выручка (+5% KPI премия)",
+		badgeRu: "Топ-выручка (+5% KPI премия)",
 	},
 	{
 		minRevenueKop: 50000000, // 500,000.00 RUB
 		bonusPercentage: 2,
-		badgeRu: "🚀 План перевыполнен (+2% KPI премия)",
+		badgeRu: "План перевыполнен (+2% KPI премия)",
 	},
 	{
 		minRevenueKop: 0,

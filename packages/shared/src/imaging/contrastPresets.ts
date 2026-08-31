@@ -92,6 +92,11 @@ export function huToGrayscale8Bit(
 
 	let byteVal = Math.round(normalized);
 	if (invert) {
+		// Air & ambient background voxels (HU <= -600) map to dark graphite #090d16 (byte intensity 10)
+		// to eliminate white background blinding on inversion
+		if (hu <= -600) {
+			return 10;
+		}
 		byteVal = 255 - byteVal;
 	}
 	return byteVal;

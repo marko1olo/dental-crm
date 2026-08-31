@@ -44,12 +44,15 @@ body:has(.sanpin-modal-overlay) .dnt-telephony-floating,
 body:has(.sber-pos-modal-overlay) .dnt-telephony-floating,
 body:has(.quick-booking-drawer) .dnt-telephony-floating,
 body:has([data-testid="quick-booking-drawer"]) .dnt-telephony-floating,
+body:has(.dnt-quick-booking-drawer) .dnt-telephony-floating,
 body:has(.appointment-modal) .dnt-telephony-floating,
 body:has([data-testid="appointment-modal"]) .dnt-telephony-floating,
 body:has(.waitlist-drawer) .dnt-telephony-floating,
 body:has([data-testid="waitlist-drawer"]) .dnt-telephony-floating,
 body:has(.doctor-shift-roster-modal) .dnt-telephony-floating,
 body:has([data-testid="doctor-shift-roster-modal"]) .dnt-telephony-floating,
+body:has(.doctor-shift-cockpit-modal) .dnt-telephony-floating,
+body:has([data-testid="doctor-shift-cockpit-modal"]) .dnt-telephony-floating,
 body:has([data-modal-open="true"]) .dnt-telephony-floating,
 body:has([data-drawer-open="true"]) .dnt-telephony-floating,
 body:has([data-sheet-open="true"]) .dnt-telephony-floating,
@@ -89,14 +92,31 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 
 @media (max-width: 640px) {
 	.dnt-telephony-floating {
-		bottom: calc(var(--bottom-nav-height, 64px) + 36px + env(safe-area-inset-bottom, 0px));
-		right: 16px;
+		bottom: calc(var(--bottom-nav-height, 64px) + 96px + env(safe-area-inset-bottom, 0px));
+		right: 8px;
 		z-index: 35;
 		pointer-events: none !important;
 	}
 	.dnt-telephony-floating .dnt-telephony-launcher,
 	.dnt-telephony-floating .dnt-telephony-card {
 		pointer-events: auto !important;
+	}
+	.dnt-telephony-launcher {
+		width: 38px;
+		height: 38px;
+		min-width: 38px;
+		min-height: 38px;
+		box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.25), 0 0 8px 1px rgba(15, 118, 110, 0.15);
+	}
+	.dnt-telephony-launcher svg {
+		width: 16px;
+		height: 16px;
+	}
+	.dnt-telephony-card {
+		width: calc(100vw - 16px);
+		max-width: calc(100vw - 16px);
+		max-height: calc(100dvh - var(--bottom-nav-height, 64px) - 110px);
+		margin-right: 0;
 	}
 }
 

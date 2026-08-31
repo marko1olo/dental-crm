@@ -484,14 +484,14 @@ export function TelephonyFloatingWidget({
 					aria-label={activeCall ? "Активный вызов телефонии" : "Открыть софтфон телефонии"}
 				>
 					<div
-						className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+						className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
 							activeCall ? "bg-white/20 text-white" : "bg-[var(--teal-surface)] text-[var(--teal)]"
 						}`}
 					>
 						{activeCall ? (
-							<PhoneIncoming size={18} className="animate-bounce" />
+							<PhoneIncoming size={16} className="animate-bounce sm:w-[18px] sm:h-[18px]" />
 						) : (
-							<Phone size={18} />
+							<Phone size={16} className="sm:w-[18px] sm:h-[18px]" />
 						)}
 					</div>
 

@@ -64,12 +64,12 @@ export const KPI_BONUS_TIERS = [
     {
         minRevenueKop: 100000000, // 1,000,000 RUB
         bonusPercentage: 5,
-        badgeLabelRu: "🌟 Топ-выручка (+5% премия)",
+        badgeLabelRu: "Топ-выручка (+5% премия)",
     },
     {
         minRevenueKop: 50000000, // 500,000 RUB
         bonusPercentage: 2,
-        badgeLabelRu: "🚀 Личный план выполнен (+2% премия)",
+        badgeLabelRu: "Личный план выполнен (+2% премия)",
     },
     {
         minRevenueKop: 0,

@@ -173,6 +173,12 @@ describe("DICOM / PACS Panoramic MPR & 3D Dental Imaging Engine (Parser, Voxel A
 		const byteCenter = huToGrayscale8Bit(500, 2000, 500);
 		assert.equal(byteCenter, 128);
 
+		// Inverted HU mapping: air (-1000 HU <= -600 HU) maps to 10 (#090d16 dark graphite)
+		const byteAirInverted = huToGrayscale8Bit(-1000, 2000, 500, true);
+		assert.equal(byteAirInverted, 10);
+		const byteBoneInverted = huToGrayscale8Bit(1600, 2000, 500, true);
+		assert.equal(byteBoneInverted, 0);
+
 		// LUT generation with Invert (0..255 index mapped to 0..255 output)
 		const lutInverted = buildContrastLUT({ windowWidth: 256, windowCenter: 128, invert: true });
 		assert.equal(lutInverted.length, 256);

@@ -7,13 +7,26 @@ import puppeteer from "puppeteer";
 import path from "path";
 import fs from "fs";
 
-const API_BASE = "http://127.0.0.1:4100";
-const APP_BASE = "http://127.0.0.1:5173";
-const CHROME_PATH = "C:/Program Files/Google/Chrome/Application/chrome.exe";
-const OUT_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\0284cf50-cf45-4b19-be4c-f6f53b03120f\\real_crm_shots";
+const API_BASE = process.env.API_BASE || "http://127.0.0.1:4100";
+const APP_BASE = process.env.APP_BASE || "http://127.0.0.1:5173";
 
-if (!fs.existsSync(OUT_DIR)) {
-  fs.mkdirSync(OUT_DIR, { recursive: true });
+const possibleBrowserPaths = [
+  "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+  "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+  "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
+  process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, "Google/Chrome/Application/chrome.exe") : null,
+  process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, "Microsoft/Edge/Application/msedge.exe") : null,
+].filter(Boolean);
+
+const CHROME_PATH = possibleBrowserPaths.find((p) => fs.existsSync(p)) || "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const OUT_DIR = process.env.OUT_DIR || path.join(process.cwd(), "docs/screenshots/live_views");
+const BRAIN_DIR = process.env.BRAIN_DIR ? path.join(process.env.BRAIN_DIR, "real_crm_shots") : null;
+
+for (const d of [OUT_DIR, BRAIN_DIR].filter(Boolean)) {
+  if (!fs.existsSync(d)) {
+    fs.mkdirSync(d, { recursive: true });
+  }
 }
 
 async function provisionTestClinic() {
@@ -112,7 +125,18 @@ async function applyTheme(page, mode) {
 async function screenshot(page, name) {
   const p = path.join(OUT_DIR, `${name}.png`);
   await page.screenshot({ path: p, fullPage: false });
-  console.log(`[SAVED] ${name}.png`);
+  const size = fs.statSync(p).size;
+  if (size < 30000) {
+    console.warn(`[WARN] Screenshot ${name}.png size is small: ${size} bytes`);
+  }
+  if (BRAIN_DIR && fs.existsSync(BRAIN_DIR)) {
+    try {
+      fs.copyFileSync(p, path.join(BRAIN_DIR, `${name}.png`));
+    } catch (e) {
+      console.warn(`[WARN] Could not copy to brain dir: ${e.message}`);
+    }
+  }
+  console.log(`[SAVED] ${name}.png (${(size / 1024).toFixed(1)} KB)`);
   return p;
 }
 

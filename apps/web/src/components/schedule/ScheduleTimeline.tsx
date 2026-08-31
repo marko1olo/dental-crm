@@ -214,7 +214,8 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 	return (
 		<div
 			ref={timelineContainerRef}
-			className="schedule-timeline timeline focus:outline-none pb-32 sm:pb-8"
+			className="schedule-timeline timeline focus:outline-none pb-56 sm:pb-20 pr-2 sm:pr-0"
+			style={{ scrollPaddingBottom: "224px" }}
 			data-testid="schedule-timeline-container"
 			tabIndex={-1}
 		>
@@ -307,21 +308,21 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 											}
 										}
 									}}
-									className="schedule-day-gap group my-2 ml-3 p-2.5 rounded-xl border border-dashed border-[var(--teal)]/40 hover:border-[var(--teal)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] transition-all cursor-pointer flex items-center justify-between gap-3 text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-h-[44px]"
+									className="schedule-day-gap group my-2 ml-3 pr-2 sm:pr-0 p-2.5 rounded-xl border border-dashed border-[var(--teal)]/40 hover:border-[var(--teal)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] transition-all cursor-pointer flex items-center justify-between gap-3 text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-h-[44px]"
 									data-testid="schedule-day-gap"
 									aria-label={`Свободное окно: ${formatMinutesForHumans(row.minutes)}. Нажмите для быстрой записи`}
 								>
-									<div className="flex items-center gap-2">
+									<div className="flex items-center gap-2 min-w-0 flex-1">
 										<Clock size={14} className="text-[var(--teal)] shrink-0" />
-										<span>
+										<span className="truncate">
 											Свободно {formatMinutesForHumans(row.minutes)}
 											{gapStartLabel && gapEndLabel
 												? ` (${gapStartLabel} - ${gapEndLabel})`
 												: ""}
 										</span>
 									</div>
-									<span className="min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--teal-dark)] text-white text-xs font-bold flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
-										<Plus size={14} />
+									<span className="min-h-[36px] min-w-[76px] px-2.5 py-1 rounded-lg bg-[var(--teal-dark)] text-white text-xs font-bold flex items-center justify-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity shrink-0 whitespace-nowrap">
+										<Plus size={14} className="shrink-0" />
 										<span>Записать</span>
 									</span>
 								</div>
@@ -344,7 +345,7 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 							return (
 								<div
 									key={`overlap-${group.dateKey}-${row.withAppointmentId}`}
-									className="schedule-day-overlap my-2 ml-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
+									className="schedule-day-overlap my-2 ml-3 pr-2 sm:pr-0 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
 									data-testid="schedule-day-overlap"
 									role="alert"
 								>

@@ -237,24 +237,39 @@ const TARGET_SCREENS = [
 		name: "02. 4-Stage Clinical Treatment Plan (Hygiene, Endo, Surgery, Ortho)",
 		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=phased4#clinical-modals-studio?modal=phased4`,
 		setup: async (page) => {
-			const btn = page.locator('[data-testid="open-plan-phased4-preview-btn"]').or(page.locator('[data-testid="open-plan-comparator-modal-btn"]')).first();
-			await btn.waitFor({ state: "visible", timeout: 8000 });
-			await btn.scrollIntoViewIfNeeded();
-			await btn.click({ force: true });
-			await page.waitForTimeout(700);
+			await page.waitForTimeout(800);
+			const modalDialog = page.locator('[data-testid="plan-phased4-preview-modal"], [data-testid="treatment-plan-phased4-stage-view"]').first();
+			let isVis = false;
+			try {
+				await modalDialog.waitFor({ state: "visible", timeout: 3000 });
+				isVis = await modalDialog.isVisible();
+			} catch {
+				isVis = false;
+			}
+			if (!isVis) {
+				const btn = page.locator('[data-testid="open-plan-phased4-preview-btn"]').or(page.locator('[data-testid="open-plan-comparator-modal-btn"]')).first();
+				await btn.waitFor({ state: "visible", timeout: 8000 });
+				await btn.scrollIntoViewIfNeeded();
+				await btn.click({ force: true });
+				await modalDialog.waitFor({ state: "visible", timeout: 8000 });
+			}
+			await page.waitForTimeout(800);
 		},
 		all4States: true,
 	},
 	{
 		prefix: "02_treatment_plan_3tier",
 		name: "02. 3-Tier Treatment Plan Comparison (Economy, Optimum, Premium)",
-		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=3tier#clinical-modals-studio?modal=3tier`,
+		url: `${APP_BASE}/?standalone=clinical-modals-studio#clinical-modals-studio`,
 		setup: async (page) => {
-			const btn = page.locator('[data-testid="open-plan-3tier-preview-btn"]').or(page.locator('[data-testid="open-plan-comparator-modal-btn"]')).first();
-			await btn.waitFor({ state: "visible", timeout: 8000 });
+			await page.waitForTimeout(1000);
+			const btn = page.locator('[data-testid="open-plan-3tier-preview-btn"]').first();
+			await btn.waitFor({ state: "visible", timeout: 10000 });
 			await btn.scrollIntoViewIfNeeded();
 			await btn.click({ force: true });
-			await page.waitForTimeout(700);
+			const modalDialog = page.locator('[data-testid="plan-3tier-preview-modal"]').first();
+			await modalDialog.waitFor({ state: "visible", timeout: 10000 });
+			await page.waitForTimeout(800);
 		},
 		all4States: true,
 	},
@@ -361,6 +376,22 @@ const TARGET_SCREENS = [
 		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=viewer#clinical-modals-studio?modal=viewer`,
 		setup: async (page) => {
 			await page.waitForTimeout(800);
+			const modalDialog = page.locator('[data-testid="radiology-viewer-modal"]').first();
+			let isVis = false;
+			try {
+				await modalDialog.waitFor({ state: "visible", timeout: 3000 });
+				isVis = await modalDialog.isVisible();
+			} catch {
+				isVis = false;
+			}
+			if (!isVis) {
+				const trigger = page.locator('[data-testid="open-viewer-modal-btn"]').first();
+				await trigger.waitFor({ state: "visible", timeout: 5000 });
+				await trigger.click({ force: true });
+				await modalDialog.waitFor({ state: "visible", timeout: 5000 });
+			}
+			await page.waitForSelector('[data-testid="radiology-viewer-modal"], canvas, img, [data-testid="dicom-metadata-overlay"]', { timeout: 8000 });
+			await page.waitForTimeout(800);
 		},
 		all4States: true,
 	},
@@ -369,6 +400,22 @@ const TARGET_SCREENS = [
 		name: "08. 2D Dental Radiology Dropzone (Dark Graphite Radiation Protection Theme)",
 		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=dropzone#clinical-modals-studio?modal=dropzone`,
 		setup: async (page) => {
+			await page.waitForTimeout(800);
+			const modalDialog = page.locator('[data-testid="radiology-viewer-modal"]').first();
+			let isVis = false;
+			try {
+				await modalDialog.waitFor({ state: "visible", timeout: 3000 });
+				isVis = await modalDialog.isVisible();
+			} catch {
+				isVis = false;
+			}
+			if (!isVis) {
+				const trigger = page.locator('[data-testid="open-dropzone-viewer-btn"]').first();
+				await trigger.waitFor({ state: "visible", timeout: 5000 });
+				await trigger.click({ force: true });
+				await modalDialog.waitFor({ state: "visible", timeout: 5000 });
+			}
+			await page.waitForSelector('[data-testid="radiology-viewer-modal"], [data-testid="viewer-dropzone-wrapper"]', { timeout: 8000 });
 			await page.waitForTimeout(800);
 		},
 		all4States: true,
@@ -770,6 +817,26 @@ for (const screen of screensToRun) {
 
 		const page = await context.newPage();
 
+		page.on("pageerror", (err) => console.error(`  [PAGE ERROR ${cfg.key}]:`, err.message));
+		page.on("console", (msg) => {
+			if (msg.type() === "error") {
+				console.error(`  [CONSOLE ERROR ${cfg.key}]:`, msg.text());
+			}
+		});
+		page.on("response", (res) => {
+			if (res.status() >= 400) {
+				console.error(`  [RES ${res.status()} ${cfg.key}]:`, res.url());
+			}
+		});
+
+		// Mock external fonts to prevent hanging in sandboxed/offline environments
+		await page.route("**/*fonts.googleapis.com/**", (route) =>
+			route.fulfill({ status: 200, contentType: "text/css", body: "" }),
+		);
+		await page.route("**/*fonts.gstatic.com/**", (route) =>
+			route.fulfill({ status: 200, contentType: "font/woff2", body: "" }),
+		);
+
 		// Mock all critical routes to guarantee robust rendering
 		await page.route("**/api/auth/user/me**", (route) => {
 			route.fulfill({
@@ -880,6 +947,14 @@ for (const screen of screensToRun) {
 			});
 		});
 
+		await page.route("**/api/registers/**", (route) => {
+			route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({ registers: [], summary: { activeCycles: 0, completedToday: 0 } }),
+			});
+		});
+
 		await page.addInitScript(() => {
 			window.localStorage.setItem("dente_organization_id", "c-1");
 			window.localStorage.setItem("dente_clinic_token", "dev_token_sample_clinic");
@@ -944,7 +1019,7 @@ for (const screen of screensToRun) {
 
 			const fileName = `${screen.prefix}_${cfg.key}.png`;
 			const filePath = path.join(DOCS_SCREENSHOTS_DIR, fileName);
-			await page.screenshot({ path: filePath, fullPage: false });
+			await page.screenshot({ path: filePath, fullPage: false, animations: "disabled", timeout: 20000 });
 
 			const size = statSync(filePath).size;
 			if (size < 30000) {
@@ -978,4 +1053,5 @@ await browser.close();
 console.log(`\n=============================================================`);
 console.log(`[DONE] Captured ${capturedFiles.length} unique 4-state screenshots successfully!`);
 console.log(`=============================================================`);
+process.exit(0);
 

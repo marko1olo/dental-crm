@@ -104,7 +104,7 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 			{ id: "autoclave", label: "Автоклавы (Форма 257/у)", shortLabel: "Автоклавы 257/у", category: "sterilization", icon: Flame },
 			{ id: "pso", label: "ПСО и Азопирамовая проба (Форма 366/у)", shortLabel: "ПСО / Азопирам", category: "sterilization", icon: FlaskConical },
 			{ id: "cabinet_readiness", label: "Фенолфталеиновая проба и готовность", shortLabel: "Фенолфталеин", category: "sterilization", icon: ShieldCheck },
-			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар / Пакет", category: "sterilization", icon: Rocket },
+			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар", category: "sterilization", icon: Rocket },
 		],
 	},
 	{
@@ -1103,7 +1103,7 @@ export function SanpinRegisters() {
 						title="1-Клик Автопилот смены: мгновенно фиксирует пробы ПСО, азопирам, фенолфталеин, циклы 134°C, Дезар и журнал T°"
 					>
 						<Sparkles size={16} />
-						<span>{autoFilling ? "Оформление смены..." : "⚡ 1-Клик Автопилот смены СанПиН"}</span>
+						<span>{autoFilling ? "Оформление смены..." : "1-Клик Автопилот смены СанПиН"}</span>
 					</button>
 
 					{/* Dropdown: [⋮ Опции СанПиН] — All secondary actions aggregated cleanly */}
