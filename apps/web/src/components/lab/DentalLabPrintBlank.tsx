@@ -173,7 +173,7 @@ export function DentalLabPrintBlank({
 
 				{/* Disinfection & SanPiN Mark */}
 				<div className="p-2.5 border border-dashed border-slate-300 rounded text-xs flex justify-between items-center text-slate-600">
-					<span>✓ Оттиски / прикусные шаблоны дезинфицированы в соответствии с СанПиН</span>
+					<span>[СанПиН 3.3686-21] Оттиски / прикусные шаблоны дезинфицированы в дез. растворе</span>
 					<span className="font-bold">Стоимость наряда: {money(totalLabPriceRub)}</span>
 				</div>
 

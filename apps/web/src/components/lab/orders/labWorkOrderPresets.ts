@@ -11,7 +11,7 @@ export type ProstheticTypeId =
 	| 'crown_zirconia_monolithic'    // Диоксид циркония Prettau / Katana ML
 	| 'crown_emax_press'             // Пресс-керамика IPS e.max Press
 	| 'veneer_refractory'            // Керамический винир на рефракторе / полевошпатная керамика
-	| 'implant_screw_retained_crown' // Коронка на имплантате с винтовой фиксацией (Ti-base + ZrO2)
+	| 'implant_screw_retained_crown' // Коронка на имплантате с винтовой фиксацией (Ti-base + ZrO₂)
 	| 'removable_clasp_prosthesis'   // Бюгельный протез с кламмерной/замковой фиксацией Bredent
 	| 'all_on_4_hybrid'              // Условно-съемный протез на титановой балке All-on-4 / All-on-6
 	| 'surgical_guide_3d';           // Навигационный хирургический шаблон с титановыми втулками
@@ -45,7 +45,7 @@ export const PROSTHETIC_TYPES: Record<ProstheticTypeId, ProstheticTypeDefinition
 	crown_zirconia_monolithic: {
 		id: 'crown_zirconia_monolithic',
 		nameRu: 'Диоксид циркония Prettau / Katana ML (Multilayer)',
-		shortNameRu: 'Коронка ZrO2 (Katana ML)',
+		shortNameRu: 'Коронка ZrO₂ (Katana ML)',
 		category: 'fixed',
 		categoryNameRu: 'Несъемное протезирование',
 		descriptionRu: 'Анатомическая монолитная коронка из многослойного диоксида циркония с плавным градиентом цвета и прочности (Katana / Prettau).',
@@ -92,7 +92,7 @@ export const PROSTHETIC_TYPES: Record<ProstheticTypeId, ProstheticTypeDefinition
 	},
 	implant_screw_retained_crown: {
 		id: 'implant_screw_retained_crown',
-		nameRu: 'Коронка на имплантате с винтовой фиксацией (Ti-base + ZrO2)',
+		nameRu: 'Коронка на имплантате с винтовой фиксацией (Ti-base + ZrO₂)',
 		shortNameRu: 'Коронка на имплантате (Винтовая)',
 		category: 'implant',
 		categoryNameRu: 'Протезирование на имплантатах',
@@ -196,7 +196,7 @@ export const LAB_MATERIALS: Record<string, DentalLabMaterial> = {
 	},
 	zirconia_tibase: {
 		id: 'zirconia_tibase',
-		nameRu: 'ZrO2 на титановом основании (Ti-Base / Medentika)',
+		nameRu: 'ZrO₂ на титановом основании (Ti-Base / Medentika)',
 		manufacturerRu: 'Straumann / Medentika / Zirkonzahn',
 		strengthMpa: 1200,
 		indicationsRu: 'Одиночные и мостовидные коронки с винтовой фиксацией на дентальных имплантатах.',

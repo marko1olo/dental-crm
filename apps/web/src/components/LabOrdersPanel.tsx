@@ -11,8 +11,10 @@ import {
 	Layers,
 	Link,
 	Loader2,
+	Palette,
 	Plus,
 	RefreshCw,
+	Send,
 	Sparkles,
 	Trash2,
 	X,
@@ -31,6 +33,9 @@ import {
 	buildLabAppointmentDraft,
 	MATERIALS,
 	VITA_CLASSICAL_SHADES,
+	VITA_3D_MASTER_SHADES,
+	VITA_BLEACH_SHADES,
+	SHADE_SWATCH_MAP,
 	STUMP_NATURAL_DIE_SHADES,
 	calculateMaterialTotalCostKopecks,
 } from "./lab/labMath";
@@ -105,6 +110,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
 	const [restorationType, setRestorationType] = useState("single_crown");
 	const [material, setMaterial] = useState("zirconia_multilayer");
+	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master" | "bleach">("classical");
 	const [colorVita, setColorVita] = useState("A2");
 	const [stumpShade, setStumpShade] = useState<string>("");
 	const [cementGap, setCementGap] = useState(30);
@@ -159,16 +165,26 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 		);
 	};
 
+	const selectQuadrant = (teeth: number[]) => {
+		setSelectedTeeth((prev) => {
+			const allSelected = teeth.every((t) => prev.includes(t));
+			if (allSelected) {
+				return prev.filter((t) => !teeth.includes(t));
+			}
+			return Array.from(new Set([...prev, ...teeth])).sort((a, b) => a - b);
+		});
+	};
+
 	// 1-Click Status Transition Handler
 	const handleStatusTransition = async (orderId: string, targetStatus: CanonicalLabOrderStatus) => {
 		// Map canonical status to API status
 		const apiStatusMap: Record<CanonicalLabOrderStatus, string> = {
 			sent: "sent",
-			fitting: "fitting",
 			ready: "received",
+			fitting: "fitting",
 			completed: "completed",
 		};
-		const statusToSend = apiStatusMap[targetStatus];
+		const statusToSend = apiStatusMap[targetStatus] || "sent";
 
 		// Optimistic update
 		const previousOrders = orders;
@@ -264,11 +280,21 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			return;
 		}
 
+		if (selectedTeeth.length === 0) {
+			showToast("Выберите хотя бы один зуб в зубной формуле", "warning");
+			return;
+		}
+
 		setSubmitting(true);
 		try {
-			const toothFdiStr = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : null;
+			const isBridge = restorationType === "bridge" && selectedTeeth.length > 1;
+			const toothFdiStr = isBridge
+				? `${selectedTeeth[0]}–${selectedTeeth[selectedTeeth.length - 1]} (мост, ${selectedTeeth.length} ед.: ${selectedTeeth.join(", ")})`
+				: selectedTeeth.join(", ");
+
 			const fullNotes = [
 				clinicalNotes,
+				`Шкала: ${shadeSystem === "3d_master" ? "VITA 3D-Master" : shadeSystem === "bleach" ? "Bleach" : "VITA Classical"}`,
 				stumpShade ? `Культя: ${stumpShade}` : null,
 				`Зазор: ${cementGap} мкм`,
 			]
@@ -346,7 +372,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						Зуботехническая лаборатория (CAD/CAM ЗТЛ)
 					</h3>
 					<div className="text-xs text-[var(--muted)] mt-0.5">
-						Наряды ЗТЛ, материалы, расцветка VITA и точный учет себестоимости
+						Наряды ЗТЛ, материалы, расцветка VITA Classical / 3D-Master и точный учет себестоимости
 					</div>
 				</div>
 
@@ -399,20 +425,47 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						</span>
 					</div>
 
-					{/* Tooth Selection Quadrant Buttons */}
+					{/* Tooth Selection FDI formula with Upper / Lower / Bridge / Reset */}
 					<div className="space-y-1.5">
-						<div className="flex justify-between text-xs text-[var(--muted)]">
-							<span>Зубы по FDI: {selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "не выбрано"}</span>
-							{selectedTeeth.length > 0 && (
+						<div className="flex items-center justify-between text-xs text-[var(--muted)] flex-wrap gap-1">
+							<span className="font-medium">
+								Зубы по FDI:{" "}
+								<strong className="text-[var(--ink)]">
+									{selectedTeeth.length > 0
+										? restorationType === "bridge" && selectedTeeth.length > 1
+											? `${selectedTeeth[0]}–${selectedTeeth[selectedTeeth.length - 1]} (мост, ${selectedTeeth.length} ед.: ${selectedTeeth.join(", ")})`
+											: selectedTeeth.join(", ")
+										: "не выбрано"}
+								</strong>
+							</span>
+							<div className="flex items-center gap-1.5">
 								<button
 									type="button"
-									onClick={() => setSelectedTeeth([])}
-									className="text-xs text-rose-600 hover:underline font-bold"
+									onClick={() => selectQuadrant([18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28])}
+									className="px-2 py-0.5 rounded text-[11px] font-bold border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] transition-colors"
 								>
-									Сбросить
+									Верхняя
 								</button>
-							)}
+								<button
+									type="button"
+									onClick={() => selectQuadrant([48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38])}
+									className="px-2 py-0.5 rounded text-[11px] font-bold border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] transition-colors"
+								>
+									Нижняя
+								</button>
+								{selectedTeeth.length > 0 && (
+									<button
+										type="button"
+										onClick={() => setSelectedTeeth([])}
+										className="px-2 py-0.5 rounded text-[11px] font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+									>
+										Сбросить
+									</button>
+								)}
+							</div>
 						</div>
+
+						{/* Upper Jaw */}
 						<div className="flex flex-wrap gap-1">
 							{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
 								<button
@@ -421,14 +474,17 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									onClick={() => toggleTooth(t)}
 									className={`min-h-[28px] h-7 px-1.5 rounded-md text-xs font-bold font-mono border transition-all ${
 										selectedTeeth.includes(t)
-											? "bg-[var(--teal)] text-white border-[var(--teal-dark)]"
+											? "bg-[var(--teal)] text-white border-[var(--teal-dark)] shadow-xs"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
 									}`}
+									title={`Зуб ${t}`}
 								>
 									{t}
 								</button>
 							))}
 						</div>
+
+						{/* Lower Jaw */}
 						<div className="flex flex-wrap gap-1">
 							{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
 								<button
@@ -437,9 +493,10 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									onClick={() => toggleTooth(t)}
 									className={`min-h-[28px] h-7 px-1.5 rounded-md text-xs font-bold font-mono border transition-all ${
 										selectedTeeth.includes(t)
-											? "bg-[var(--teal)] text-white border-[var(--teal-dark)]"
+											? "bg-[var(--teal)] text-white border-[var(--teal-dark)] shadow-xs"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
 									}`}
+									title={`Зуб ${t}`}
 								>
 									{t}
 								</button>
@@ -447,10 +504,11 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						</div>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+					{/* Construction Type and Material */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 						<div>
 							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
-								Конструкция
+								Вид конструкции
 							</label>
 							<select
 								value={restorationType}
@@ -481,25 +539,163 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								))}
 							</select>
 						</div>
-
-						<div>
-							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
-								Цвет (Шкала VITA)
-							</label>
-							<select
-								value={colorVita}
-								onChange={(e) => setColorVita(e.target.value)}
-								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
-							>
-								{VITA_CLASSICAL_SHADES.map((s) => (
-									<option key={s} value={s}>
-										VITA {s}
-									</option>
-								))}
-							</select>
-						</div>
 					</div>
 
+					{/* Interactive VITA Shade Palette with Tone Previews */}
+					<div className="space-y-2 p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<div className="flex items-center gap-1.5">
+								<span className="text-[11px] font-bold text-[var(--ink)]">
+									Цвет керамики VITA:
+								</span>
+								<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal)] border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
+									{colorVita}
+								</span>
+							</div>
+
+							{/* Shade Scale Tabs */}
+							<div className="flex items-center gap-1">
+								<button
+									type="button"
+									onClick={() => {
+										setShadeSystem("classical");
+										if (!VITA_CLASSICAL_SHADES.includes(colorVita as any)) setColorVita("A2");
+									}}
+									className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+										shadeSystem === "classical"
+											? "bg-[var(--teal)] text-white border-[var(--teal)]"
+											: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+									}`}
+								>
+									VITA Classical
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setShadeSystem("3d_master");
+										if (!VITA_3D_MASTER_SHADES.includes(colorVita as any)) setColorVita("2M2");
+									}}
+									className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+										shadeSystem === "3d_master"
+											? "bg-[var(--teal)] text-white border-[var(--teal)]"
+											: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+									}`}
+								>
+									3D-Master
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setShadeSystem("bleach");
+										if (!VITA_BLEACH_SHADES.includes(colorVita as any)) setColorVita("BL2");
+									}}
+									className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+										shadeSystem === "bleach"
+											? "bg-[var(--teal)] text-white border-[var(--teal)]"
+											: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+									}`}
+								>
+									Bleach
+								</button>
+							</div>
+						</div>
+
+						{/* Swatch Chips Grid with Tone Previews */}
+						{shadeSystem === "classical" && (
+							<div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 pt-1">
+								{VITA_CLASSICAL_SHADES.map((s) => {
+									const swatch = SHADE_SWATCH_MAP[s];
+									const isSelected = colorVita === s;
+									return (
+										<button
+											key={s}
+											type="button"
+											onClick={() => setColorVita(s)}
+											className={`h-7 px-1.5 rounded-md border text-[11px] font-bold font-mono flex items-center justify-center gap-1.5 transition-all ${
+												isSelected
+													? "bg-[var(--teal)] text-white border-[var(--teal-dark)] ring-1 ring-[var(--teal)] shadow-xs"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+											}`}
+											title={`VITA ${s}: ${swatch?.desc || ""}`}
+										>
+											<span
+												className="w-2.5 h-2.5 rounded-full shrink-0 border"
+												style={{
+													backgroundColor: swatch?.bg || "#efe2d0",
+													borderColor: swatch?.border || "#ccc",
+												}}
+											/>
+											<span>{s}</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
+
+						{shadeSystem === "3d_master" && (
+							<div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-9 gap-1.5 pt-1 max-h-36 overflow-y-auto pr-1">
+								{VITA_3D_MASTER_SHADES.map((s) => {
+									const swatch = SHADE_SWATCH_MAP[s];
+									const isSelected = colorVita === s;
+									return (
+										<button
+											key={s}
+											type="button"
+											onClick={() => setColorVita(s)}
+											className={`h-7 px-1.5 rounded-md border text-[10px] font-bold font-mono flex items-center justify-center gap-1 transition-all ${
+												isSelected
+													? "bg-[var(--teal)] text-white border-[var(--teal-dark)] ring-1 ring-[var(--teal)] shadow-xs"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+											}`}
+											title={`3D-Master ${s}: ${swatch?.desc || ""}`}
+										>
+											<span
+												className="w-2 h-2 rounded-full shrink-0 border"
+												style={{
+													backgroundColor: swatch?.bg || "#efe2d0",
+													borderColor: swatch?.border || "#ccc",
+												}}
+											/>
+											<span>{s}</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
+
+						{shadeSystem === "bleach" && (
+							<div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 pt-1">
+								{VITA_BLEACH_SHADES.map((s) => {
+									const swatch = SHADE_SWATCH_MAP[s];
+									const isSelected = colorVita === s;
+									return (
+										<button
+											key={s}
+											type="button"
+											onClick={() => setColorVita(s)}
+											className={`h-7 px-1.5 rounded-md border text-[11px] font-bold font-mono flex items-center justify-center gap-1.5 transition-all ${
+												isSelected
+													? "bg-[var(--teal)] text-white border-[var(--teal-dark)] ring-1 ring-[var(--teal)] shadow-xs"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+											}`}
+											title={`Bleach ${s}: ${swatch?.desc || ""}`}
+										>
+											<span
+												className="w-2.5 h-2.5 rounded-full shrink-0 border"
+												style={{
+													backgroundColor: swatch?.bg || "#ffffff",
+													borderColor: swatch?.border || "#eee",
+												}}
+											/>
+											<span>{s}</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
+					</div>
+
+					{/* Deadline & Clinical Notes */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 						<div>
 							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
@@ -540,7 +736,8 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 							disabled={submitting}
 							className="lab-btn-32 is-primary"
 						>
-							{submitting ? "Оформление..." : "🚀 Отправить заказ в ЗТЛ"}
+							<Send className="w-3.5 h-3.5" />
+							{submitting ? "Оформление..." : "Отправить наряд в ЗТЛ"}
 						</button>
 					</div>
 				</form>

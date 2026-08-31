@@ -4,6 +4,8 @@ import {
 	CONSTRUCTION_TYPES,
 	LAB_MATERIALS,
 	VITA_CLASSICAL_SHADES,
+	VITA_3D_MASTER_SHADES,
+	VITA_BLEACH_SHADES,
 	SHADE_SWATCH_MAP,
 	OCCLUSAL_SCHEMES,
 	CONTACT_TIGHTNESS_OPTIONS,
@@ -24,8 +26,14 @@ export interface DentalLabRestorationTabProps {
 	clinicalNotes: string;
 	setClinicalNotes: (notes: string) => void;
 	// Tier 1 Hot Path Shade Props
+	shadeSystem?: "classical" | "3d_master" | "bleach";
+	setShadeSystem?: (system: "classical" | "3d_master" | "bleach") => void;
 	shadeClassical?: string;
 	setShadeClassical?: (shade: string) => void;
+	shade3dMaster?: string;
+	setShade3dMaster?: (shade: string) => void;
+	shadeBleach?: string;
+	setShadeBleach?: (shade: string) => void;
 	shadeBody?: string;
 	setShadeBody?: (shade: string) => void;
 	onOpenAdvancedShades?: () => void;
@@ -53,8 +61,14 @@ export function DentalLabRestorationTab({
 	setDueDate,
 	clinicalNotes,
 	setClinicalNotes,
+	shadeSystem = "classical",
+	setShadeSystem,
 	shadeClassical = "A2",
 	setShadeClassical,
+	shade3dMaster = "2M2",
+	setShade3dMaster,
+	shadeBleach = "BL2",
+	setShadeBleach,
 	shadeBody,
 	setShadeBody,
 	onOpenAdvancedShades,
@@ -390,53 +404,161 @@ export function DentalLabRestorationTab({
 				</div>
 			</div>
 
-			{/* VITA Classical (A1–D4) Quick Shade Selector — Tier 1 Hot Path */}
+			{/* VITA Ceramic Shade Selector (Classical, 3D-Master, Bleach) — Tier 1 Hot Path */}
 			<div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 sm:p-5 space-y-3">
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-2">
 						<Palette className="w-4 h-4 text-[var(--teal)]" />
 						<label className="text-sm font-bold text-slate-900 dark:text-slate-100">
-							Расцветка VITA Classical (A1–D4)
+							Расцветка керамики VITA:
 						</label>
 						<span className="text-xs px-2.5 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] font-bold">
-							Выбран: {shadeClassical}
+							{shadeSystem === "3d_master" ? (shade3dMaster || "2M2") : shadeSystem === "bleach" ? (shadeBleach || "BL2") : (shadeClassical || "A2")}
 						</span>
 					</div>
-					{onOpenAdvancedShades && (
-						<button
-							type="button"
-							onClick={onOpenAdvancedShades}
-							className="text-xs font-bold text-[var(--teal)] hover:underline cursor-pointer flex items-center gap-1"
-						>
-							<span>Расширенная расцветка (3D-Master / Bleach / Культя) →</span>
-						</button>
-					)}
-				</div>
 
-				<div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-					{VITA_CLASSICAL_SHADES.map((shade) => {
-						const isSelected = shadeClassical === shade;
-						const swatch = SHADE_SWATCH_MAP[shade];
-						return (
+					{/* Shade System Switcher Tabs */}
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<div className="flex items-center gap-1 bg-slate-200/60 dark:bg-slate-800 p-1 rounded-xl border border-slate-300 dark:border-slate-700">
 							<button
-								key={shade}
 								type="button"
 								onClick={() => {
-									setShadeClassical?.(shade);
-									setShadeBody?.(shade);
+									setShadeSystem?.("classical");
+									setShadeBody?.(shadeClassical);
 								}}
-								className={`vita-shade-chip ${isSelected ? "is-selected" : ""}`}
-								title={`Оттенок VITA ${shade}`}
+								className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+									shadeSystem === "classical"
+										? "bg-[var(--teal)] text-white shadow-xs"
+										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+								}`}
 							>
-								<div
-									className="vita-swatch-dot"
-									style={{ backgroundColor: swatch?.bg || "#f0eae0", borderColor: swatch?.border || "#ccc" }}
-								/>
-								<span>{shade}</span>
+								VITA Classical
 							</button>
-						);
-					})}
+							<button
+								type="button"
+								onClick={() => {
+									setShadeSystem?.("3d_master");
+									setShadeBody?.(shade3dMaster);
+								}}
+								className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+									shadeSystem === "3d_master"
+										? "bg-[var(--teal)] text-white shadow-xs"
+										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+								}`}
+							>
+								3D-Master
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShadeSystem?.("bleach");
+									setShadeBody?.(shadeBleach);
+								}}
+								className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+									shadeSystem === "bleach"
+										? "bg-[var(--teal)] text-white shadow-xs"
+										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+								}`}
+							>
+								Bleach
+							</button>
+						</div>
+
+						{onOpenAdvancedShades && (
+							<button
+								type="button"
+								onClick={onOpenAdvancedShades}
+								className="text-xs font-bold text-[var(--teal)] hover:underline cursor-pointer flex items-center gap-1"
+							>
+								<span>3-Зонная стратификация и Культя →</span>
+							</button>
+						)}
+					</div>
 				</div>
+
+				{/* VITA Classical Swatches */}
+				{shadeSystem === "classical" && (
+					<div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+						{VITA_CLASSICAL_SHADES.map((shade) => {
+							const isSelected = shadeClassical === shade;
+							const swatch = SHADE_SWATCH_MAP[shade];
+							return (
+								<button
+									key={shade}
+									type="button"
+									onClick={() => {
+										setShadeClassical?.(shade);
+										setShadeBody?.(shade);
+									}}
+									className={`vita-shade-chip ${isSelected ? "is-selected" : ""}`}
+									title={`Оттенок VITA ${shade}: ${swatch?.desc || ""}`}
+								>
+									<div
+										className="vita-swatch-dot"
+										style={{ backgroundColor: swatch?.bg || "#f0eae0", borderColor: swatch?.border || "#ccc" }}
+									/>
+									<span>{shade}</span>
+								</button>
+							);
+						})}
+					</div>
+				)}
+
+				{/* VITA 3D-Master Swatches */}
+				{shadeSystem === "3d_master" && (
+					<div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-9 gap-2 max-h-48 overflow-y-auto pr-1">
+						{VITA_3D_MASTER_SHADES.map((shade) => {
+							const isSelected = shade3dMaster === shade;
+							const swatch = SHADE_SWATCH_MAP[shade];
+							return (
+								<button
+									key={shade}
+									type="button"
+									onClick={() => {
+										setShade3dMaster?.(shade);
+										setShadeBody?.(shade);
+									}}
+									className={`vita-shade-chip ${isSelected ? "is-selected" : ""}`}
+									title={`3D-Master ${shade}: ${swatch?.desc || ""}`}
+								>
+									<div
+										className="vita-swatch-dot"
+										style={{ backgroundColor: swatch?.bg || "#f0eae0", borderColor: swatch?.border || "#ccc" }}
+									/>
+									<span>{shade}</span>
+								</button>
+							);
+						})}
+					</div>
+				)}
+
+				{/* VITA Bleach Swatches */}
+				{shadeSystem === "bleach" && (
+					<div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+						{VITA_BLEACH_SHADES.map((shade) => {
+							const isSelected = shadeBleach === shade;
+							const swatch = SHADE_SWATCH_MAP[shade];
+							return (
+								<button
+									key={shade}
+									type="button"
+									onClick={() => {
+										setShadeBleach?.(shade);
+										setShadeBody?.(shade);
+									}}
+									className={`vita-shade-chip ${isSelected ? "is-selected" : ""}`}
+									title={`Bleach ${shade}: ${swatch?.desc || ""}`}
+								>
+									<div
+										className="vita-swatch-dot"
+										style={{ backgroundColor: swatch?.bg || "#ffffff", borderColor: swatch?.border || "#eee" }}
+									/>
+									<span>{shade}</span>
+								</button>
+							);
+						})}
+					</div>
+				)}
 			</div>
 
 			{/* Due Date & General Clinical Notes */}

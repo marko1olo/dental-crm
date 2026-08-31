@@ -28,6 +28,7 @@ import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { SanpinCycleModal } from "./SanpinCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
+import { KraftPackageModal } from "./KraftPackageModal";
 import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
@@ -640,7 +641,7 @@ export function AutoclaveRegisterTab() {
 							<th style={{ fontSize: "0.825rem", width: "120px", minWidth: "115px", whiteSpace: "nowrap" }}>Режим (T°, P, t)</th>
 							<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }}>Индикатор</th>
 							<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }}>Срок годности</th>
-							<th style={{ fontSize: "0.825rem", width: "150px", minWidth: "145px", whiteSpace: "nowrap" }}>Штрихкод / Статус</th>
+							<th style={{ fontSize: "0.825rem", width: "175px", minWidth: "165px", whiteSpace: "nowrap" }}>Штрихкод / Статус</th>
 							<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "135px", whiteSpace: "nowrap" }}>Заверка / Оператор</th>
 						</tr>
 					</thead>
@@ -783,21 +784,35 @@ export function AutoclaveRegisterTab() {
 											)}
 										</td>
 
-										<td style={{ width: "150px", minWidth: "145px" }}>
+										<td style={{ width: "175px", minWidth: "165px" }}>
 											<div style={{ display: "flex", alignItems: "center", gap: "0.35rem", whiteSpace: "nowrap" }}>
-												{log.status === "passed" ? (
-													<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }}>
-														Стерильно
+												{(log.status as string) === "passed" || (log.status as string) === "sterile" ? (
+													<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }} title="Стерилизация завершена успешно, контроль пройден">
+														<CheckCircle2 size={12} /> Стерильно
 													</span>
 												) : (
-													<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }}>
-														БРАК
+													<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }} title="Нарушение параметров стерилизации — брак!">
+														<XCircle size={12} /> БРАК
 													</span>
 												)}
-												{log.barcode && (
-													<span style={{ fontSize: "0.725rem", fontFamily: "monospace", color: "var(--muted)", fontWeight: 600, whiteSpace: "nowrap" }} title={log.barcode}>
-														{log.barcode.length > 12 ? `...${log.barcode.slice(-8)}` : log.barcode}
+												{log.barcode ? (
+													<span
+														style={{
+															fontSize: "0.75rem",
+															fontFamily: "monospace",
+															color: "var(--brand-primary, #2563eb)",
+															fontWeight: 700,
+															background: "rgba(37, 99, 235, 0.08)",
+															padding: "0.15rem 0.4rem",
+															borderRadius: "4px",
+															whiteSpace: "nowrap",
+														}}
+														title={`Штрихкод крафт-пакета: ${log.barcode}`}
+													>
+														{log.barcode}
 													</span>
+												) : (
+													<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>—</span>
 												)}
 											</div>
 										</td>

@@ -524,9 +524,21 @@ export function DentalLabOrderModal({
 							setDueDate={setDueDate}
 							clinicalNotes={clinicalNotes}
 							setClinicalNotes={setClinicalNotes}
+							shadeSystem={shadeSystem}
+							setShadeSystem={setShadeSystem}
 							shadeClassical={shadeClassical}
 							setShadeClassical={(s) => {
 								setShadeClassical(s);
+								setShadeBody(s);
+							}}
+							shade3dMaster={shade3dMaster}
+							setShade3dMaster={(s) => {
+								setShade3dMaster(s);
+								setShadeBody(s);
+							}}
+							shadeBleach={shadeBleach}
+							setShadeBleach={(s) => {
+								setShadeBleach(s);
 								setShadeBody(s);
 							}}
 							shadeBody={shadeBody}
@@ -839,3 +851,6 @@ export function DentalLabOrderModal({
 		? createPortal(modalContent, document.body)
 		: modalContent;
 }
+
+export { DentalLabOrderModal as DentalLabWorkOrderModal };
+
