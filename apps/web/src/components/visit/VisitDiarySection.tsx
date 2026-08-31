@@ -858,7 +858,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					<summary className="cursor-pointer font-bold text-xs text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none list-none">
 						<span className="flex items-center gap-1.5">
 							<Syringe className="w-4 h-4 text-blue-500 shrink-0" />
-							<span>Местная анестезия (МДД по массе тела, 1-клик протокол)</span>
+							<span>Местная анестезия (быстрый выбор препарата и дозы)</span>
 						</span>
 						<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
 					</summary>

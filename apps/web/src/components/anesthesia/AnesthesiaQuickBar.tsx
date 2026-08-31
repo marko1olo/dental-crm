@@ -2,15 +2,12 @@ import type React from "react";
 import { useState, useMemo } from "react";
 import {
 	Syringe,
-	ShieldAlert,
-	ShieldCheck,
-	CheckCircle2,
-	SlidersHorizontal,
 	AlertTriangle,
 	Heart,
 	Sparkles,
 	Plus,
-	Scale,
+	CheckCircle2,
+	ShieldAlert,
 	Activity,
 } from "lucide-react";
 import {
@@ -24,7 +21,6 @@ import {
 	type AnesthesiaCalculationResult,
 	type AsaPhysicalStatus,
 } from "./anesthesiaEngine";
-import { AnesthesiaProtocolModal } from "./AnesthesiaProtocolModal";
 
 export interface AnesthesiaQuickBarProps {
 	patientWeightKg?: number | undefined;
@@ -98,10 +94,8 @@ export function AnesthesiaQuickBar({
 		return "articaine_1_200k";
 	});
 	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
-	const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
 	const [activeToastMessage, setActiveToastMessage] = useState<string | null>(null);
 	const [safetyWarning, setSafetyWarning] = useState<{ title: string; text: string } | null>(null);
-	const [isWeightAdjustOpen, setIsWeightAdjustOpen] = useState(false);
 
 	const asaStatus: AsaPhysicalStatus = hasCardiovascularRisk ? "asa_3" : "asa_1";
 
@@ -195,62 +189,9 @@ export function AnesthesiaQuickBar({
 				</div>
 
 				<div className="flex items-center gap-2">
-					<button
-						type="button"
-						onClick={() => setIsWeightAdjustOpen((prev) => !prev)}
-						className="anesthesia-btn-customize text-xs"
-						title="Изменить массу тела пациента для пересчета МДД"
-					>
-						<Scale size={13} />
-						<span>{patientWeightKg} кг</span>
-					</button>
-
-					<button
-						type="button"
-						className="anesthesia-btn-customize text-xs"
-						onClick={() => setIsCustomModalOpen(true)}
-						title="Открыть расширенный калькулятор анестезии и выбор иглы"
-						aria-label="Настроить анестезию"
-					>
-						<SlidersHorizontal size={13} />
-						<span>Настроить...</span>
-					</button>
+					<span className="text-[11px] text-[var(--muted)]">1-клик выбор дозировки</span>
 				</div>
 			</div>
-
-			{/* ── Inline Weight Quick Adjuster Accordion ── */}
-			{isWeightAdjustOpen && (
-				<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-1.5 animate-in fade-in duration-150">
-					<div className="flex items-center justify-between text-xs font-semibold text-[var(--muted)]">
-						<span>Масса тела пациента для расчета МДД:</span>
-						<strong className="text-[var(--ink)] text-sm">{patientWeightKg} кг</strong>
-					</div>
-					<div className="flex items-center gap-1.5 flex-wrap">
-						{WEIGHT_QUICK_PRESETS.map((w) => (
-							<button
-								key={w}
-								type="button"
-								onClick={() => setPatientWeightKg(w)}
-								className={`px-2.5 py-1 text-xs font-bold rounded-md border transition-all ${
-									patientWeightKg === w
-										? "bg-[var(--teal-surface)] text-[var(--teal-dark)] border-[var(--teal)]"
-										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-								}`}
-							>
-								{w} кг
-							</button>
-						))}
-						<input
-							type="range"
-							min={10}
-							max={140}
-							value={patientWeightKg}
-							onChange={(e) => setPatientWeightKg(Number(e.target.value))}
-							className="flex-1 min-w-[120px] h-1.5 accent-[var(--teal)] cursor-pointer ml-2"
-						/>
-					</div>
-				</div>
-			)}
 
 			{/* ── Drug Selection Chips (3 Primary Drugs) ── */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -394,22 +335,6 @@ export function AnesthesiaQuickBar({
 						</button>
 					</div>
 				</div>
-			)}
-
-			{/* Full Modal fallback for detailed technique & needle choices */}
-			{isCustomModalOpen && (
-				<AnesthesiaProtocolModal
-					isOpen={isCustomModalOpen}
-					onClose={() => setIsCustomModalOpen(false)}
-					initialPatientWeightKg={patientWeightKg}
-					initialPatientAgeYears={patientAgeYears}
-					initialHasCardioRisk={hasCardiovascularRisk}
-					initialToothNumber={targetToothNumberFdi}
-					onApplyToDiary={(diaryText, result) => {
-						onApplyAnesthesia(diaryText, result);
-						setIsCustomModalOpen(false);
-					}}
-				/>
 			)}
 		</div>
 	);
