@@ -49,7 +49,11 @@ import {
 	ShieldCheck,
 	Smartphone,
 	Sparkles,
-	Star,
+	Activity,
+	Pill,
+	Stethoscope,
+	Layers,
+	Utensils,
 	Trash2,
 	User,
 	X,
@@ -237,6 +241,21 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const summary: PatientCabinetSummary = useMemo(() => {
 		return calculateCabinetSummary(data);
 	}, [data]);
+
+	const nextApptCountdown = useMemo(() => {
+		if (!summary.nextAppointment) return null;
+		const targetDateStr = `${summary.nextAppointment.dateIso}T14:30:00+03:00`;
+		const targetMs = new Date(targetDateStr).getTime() || new Date("2026-09-01T14:30:00+03:00").getTime();
+		const nowMs = Date.now();
+		const diffMs = targetMs - nowMs;
+		if (diffMs <= 0) return "Приём начался";
+		const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+		const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+		const diffDays = Math.floor(diffHours / 24);
+		const remHours = diffHours % 24;
+		if (diffDays > 0) return `${diffDays} д ${remHours} ч ${diffMins} мин`;
+		return `${diffHours} ч ${diffMins} мин`;
+	}, [summary.nextAppointment]);
 
 	// Индекс здоровья зубов
 	const healthIndex: DentalHealthIndexResult = useMemo(() => {
@@ -1119,6 +1138,12 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												<strong style={{ fontSize: "1.0625rem", color: "var(--pc-text-main)" }}>
 													{summary.nextAppointment.dateIso} &bull; {summary.nextAppointment.titleRu}
 												</strong>
+												{nextApptCountdown && (
+													<span className="pc-status-badge unpaid" style={{ fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+														<Clock size={12} />
+														<span>До приёма: {nextApptCountdown}</span>
+													</span>
+												)}
 											</div>
 											<div style={{ fontSize: "0.875rem", color: "var(--pc-text-muted)" }}>
 												Врач: <strong>{summary.nextAppointment.doctorName}</strong> ({summary.nextAppointment.doctorSpecialtyRu})
@@ -2208,14 +2233,14 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								{/* Chips row */}
 								<div className="pc-intervention-chips-grid" data-testid="intervention-type-chips">
 									{[
-										{ id: "caries", label: "🦷 Лечение кариеса", short: "Кариес" },
-										{ id: "extraction", label: "🩹 Удаление зуба", short: "Удаление" },
-										{ id: "sinus_lift", label: "💨 Синус-лифтинг", short: "Синус-лифтинг" },
-										{ id: "implantation", label: "🔩 Имплантация", short: "Имплантация" },
-										{ id: "endodontics", label: "👑 Эндодонтия (каналы)", short: "Эндодонтия" },
-										{ id: "whitening", label: "🥛 Отбеливание ZOOM", short: "Отбеливание" },
-										{ id: "orthodontics", label: "📐 Ортодонтия", short: "Ортодонтия" },
-										{ id: "hygiene", label: "🪥 Профгигиена", short: "Гигиена" },
+										{ id: "caries", label: "Лечение кариеса", short: "Кариес" },
+										{ id: "extraction", label: "Удаление зуба", short: "Удаление" },
+										{ id: "sinus_lift", label: "Синус-лифтинг", short: "Синус-лифтинг" },
+										{ id: "implantation", label: "Имплантация", short: "Имплантация" },
+										{ id: "endodontics", label: "Эндодонтия (каналы)", short: "Эндодонтия" },
+										{ id: "whitening", label: "Отбеливание ZOOM", short: "Отбеливание" },
+										{ id: "orthodontics", label: "Ортодонтия", short: "Ортодонтия" },
+										{ id: "hygiene", label: "Профгигиена", short: "Гигиена" },
 									].map((chip) => {
 										const isSelected = selectedInterventionType === chip.id;
 										return (
@@ -2409,7 +2434,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
 								<div className="pc-card" style={{ background: "var(--pc-surface)" }}>
 									<h4 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 800, color: "var(--pc-text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
-										<span>🍲</span>
+										<Utensils size={15} style={{ color: "var(--pc-primary)" }} />
 										<span>Режим питания и диета:</span>
 									</h4>
 									<ul style={{ margin: "4px 0 0 0", paddingLeft: "18px", fontSize: "0.8125rem", color: "var(--pc-text-muted)", lineHeight: 1.45 }}>
@@ -2421,7 +2446,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 								<div className="pc-card" style={{ background: "var(--pc-surface)" }}>
 									<h4 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 800, color: "var(--pc-text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
-										<span>🪥</span>
+										<ShieldCheck size={15} style={{ color: "var(--pc-primary)" }} />
 										<span>Гигиена полости рта:</span>
 									</h4>
 									<ul style={{ margin: "4px 0 0 0", paddingLeft: "18px", fontSize: "0.8125rem", color: "var(--pc-text-muted)", lineHeight: 1.45 }}>

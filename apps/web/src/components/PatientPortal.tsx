@@ -470,6 +470,19 @@ export const PatientPortal: React.FC = () => {
 		window.open(url, "_blank");
 	}, [patientData?.patient?.fullName]);
 
+	const nextApptCountdown = useCallback(() => {
+		const targetMs = new Date("2026-09-01T14:30:00+03:00").getTime();
+		const nowMs = Date.now();
+		const diffMs = targetMs - nowMs;
+		if (diffMs <= 0) return "Приём начался";
+		const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+		const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+		const diffDays = Math.floor(diffHours / 24);
+		const remHours = diffHours % 24;
+		if (diffDays > 0) return `${diffDays} д ${remHours} ч ${diffMins} мин`;
+		return `${diffHours} ч ${diffMins} мин`;
+	}, [])();
+
 	if (!isAuthenticated) {
 		return (
 			<div className="portal-auth-container">
@@ -605,13 +618,17 @@ export const PatientPortal: React.FC = () => {
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3">
 					<div className="space-y-1.5">
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-2 flex-wrap">
 							<span className="px-2.5 py-1 rounded-lg bg-[var(--teal-soft)] text-[var(--teal)] font-mono font-bold text-xs">
 								14:30 – 15:30
 							</span>
 							<strong className="text-sm text-[var(--ink)]">
 								Вторник, 1 сентября 2026
 							</strong>
+							<span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1">
+								<Clock size={13} className="text-amber-500" />
+								<span>До приёма: {nextApptCountdown}</span>
+							</span>
 						</div>
 						<div className="text-xs text-[var(--muted)]">
 							Врач: <strong className="text-[var(--ink)]">Д-р Смирнова Елена Владимировна</strong> (Терапевт-эндодонтист)

@@ -160,6 +160,19 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 		return scans.filter((s) => s.modality === scanFilter);
 	}, [scans, scanFilter]);
 
+	const nextApptCountdown = useMemo(() => {
+		const targetMs = new Date("2026-09-01T14:30:00+03:00").getTime();
+		const nowMs = Date.now();
+		const diffMs = targetMs - nowMs;
+		if (diffMs <= 0) return "Приём начался";
+		const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+		const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+		const diffDays = Math.floor(diffHours / 24);
+		const remHours = diffHours % 24;
+		if (diffDays > 0) return `${diffDays} д ${remHours} ч ${diffMins} мин`;
+		return `${diffHours} ч ${diffMins} мин`;
+	}, []);
+
 	if (!isOpen) return null;
 
 	// SMS Authentication Handlers
@@ -572,6 +585,10 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 													<strong className="text-sm text-[var(--ink,#f8fafc)]">
 														Вторник, 1 сентября 2026
 													</strong>
+													<span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1">
+														<Clock className="w-3 h-3 text-amber-400" />
+														<span>До приёма: {nextApptCountdown}</span>
+													</span>
 												</div>
 												<div className="text-[var(--muted,#94a3b8)]">
 													Врач: <strong className="text-[var(--ink,#f8fafc)]">{profile.curatingDoctor}</strong> ({profile.curatingDoctorSpecialty})
@@ -1300,8 +1317,15 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 
 							<div className="fiscal-receipt-qr">
 								<div className="p-2 bg-white rounded border border-slate-300 flex flex-col items-center">
-									<QrCode className="w-24 h-24 text-slate-900" />
-									<div className="text-[9px] font-mono mt-1 text-slate-500">Проверка в ФНС РФ</div>
+									<div
+										dangerouslySetInnerHTML={{
+											__html: generateQrCodeSvg(
+												`https://receipt.nalog.ru/v1/check?fn=${activeFiscalReceipt.fnNumber}&fd=${activeFiscalReceipt.fdNumber}&fpd=${activeFiscalReceipt.fpdNumber}&sum=${Math.round(activeFiscalReceipt.totalAmountRub * 100)}`,
+												{ size: 110, color: "#0f172a", background: "#ffffff" },
+											),
+										}}
+									/>
+									<div className="text-[9px] font-mono mt-1 text-slate-500 font-bold">Проверка в ФНС РФ (54-ФЗ)</div>
 								</div>
 							</div>
 

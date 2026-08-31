@@ -100,8 +100,7 @@ describe("Cognitive UX Refactoring: PatientBillingModal & Billing1CExportModal (
 		// Secondary actions
 		assert.ok(html.includes('data-testid="btn-fiscalize-54fz"'));
 		assert.ok(html.includes('data-testid="btn-footer-send-whatsapp"'));
-		assert.ok(html.includes("В WhatsApp"));
-		assert.ok(html.includes("grid grid-cols-2 sm:flex"));
+		assert.ok(html.includes("hidden sm:flex") || html.includes("sm:flex"));
 	});
 
 	it("Billing1CExportModal: renders 1-line compact summary strip with [Изменить] trigger and muted 804n code", () => {

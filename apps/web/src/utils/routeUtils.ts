@@ -47,7 +47,7 @@ export const viewHints: Record<AppView, string> = {
 	analytics: "отчеты и воронки",
 	communications: "сообщения и задачи",
 	inventory: "материалы, остатки и сроки",
-	scanner: "журналы ПСО, автоклава, отходов и ламп",
+	scanner: "журналы ПСО, автоклава, отходов",
 	leads: "звонки и заявки до записи",
 	settings: "клиника, импорт и доступы",
 	marketing: "продвижение и отзывы",

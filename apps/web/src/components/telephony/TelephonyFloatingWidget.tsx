@@ -247,6 +247,18 @@ export function TelephonyFloatingWidget({
 		);
 	}, [activeCall?.callId, activeCall?.phone, audioDuration]);
 
+	// Escape key to collapse expanded softphone
+	useEffect(() => {
+		if (!isExpanded) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setIsExpanded(false);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isExpanded]);
+
 	// Audio Playback Handlers
 	const togglePlayAudio = () => {
 		if (!audioRef.current) return;

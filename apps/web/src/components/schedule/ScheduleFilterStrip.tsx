@@ -126,10 +126,19 @@ export function ScheduleFilterStrip({
 				setIsOptionsMenuOpen(false);
 			}
 		};
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setIsOptionsMenuOpen(false);
+			}
+		};
 		if (isOptionsMenuOpen) {
 			document.addEventListener("mousedown", handleOutside);
+			document.addEventListener("keydown", handleKeyDown);
 		}
-		return () => document.removeEventListener("mousedown", handleOutside);
+		return () => {
+			document.removeEventListener("mousedown", handleOutside);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
 	}, [isOptionsMenuOpen]);
 
 	// Real selected date formatted as dd.MM.yyyy

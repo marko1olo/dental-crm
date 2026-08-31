@@ -81,6 +81,8 @@ import { FiscalReceipt54FzModal } from "../components/finance/FiscalReceipt54FzM
 import { Billing1CExportModal } from "../components/finance/Billing1CExportModal";
 import { OneCCommerceMlModal } from "../components/finance/one-c/OneCCommerceMlModal";
 import { PatientBillingModal } from "../components/finance/PatientBillingModal";
+import { CashRegisterModal } from "../components/finance/CashRegisterModal";
+import { FamilyWalletModal } from "../components/finance/FamilyWalletModal";
 import { PatientInstallmentScheduleModal } from "../components/finance/PatientInstallmentScheduleModal";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { SanpinRegisters } from "../components/sanpin/SanpinRegisters";
@@ -541,6 +543,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isFiscalOpen, setIsFiscalOpen] = useState(false);
 	const [isBilling1cExportOpen, setIsBilling1cExportOpen] = useState(false);
 	const [isPatientBillingOpen, setIsPatientBillingOpen] = useState(false);
+	const [isCashRegisterOpen, setIsCashRegisterOpen] = useState(false);
+	const [isFamilyWalletOpen, setIsFamilyWalletOpen] = useState(false);
 	const [isPatientInstallmentOpen, setIsPatientInstallmentOpen] = useState(false);
 	const [isPediatricOpen, setIsPediatricOpen] = useState(false);
 	const [isConsentOpen, setIsConsentOpen] = useState(false);
@@ -1235,6 +1239,54 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<FileCheck2 size={15} />
 							<span>Открыть понятный счет А4</span>
+						</button>
+					</div>
+
+					{/* 2b. Cash Register 54-FZ Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Receipt className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Кассовый терминал 54-ФЗ
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								ФФД 1.2 касса: оплата картой, СБП QR, наличными со сдачей в копейках, депозитом и смешанной оплатой.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsCashRegisterOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-cash-register-modal-btn"
+						>
+							<Receipt size={15} />
+							<span>Открыть кассу 54-ФЗ</span>
+						</button>
+					</div>
+
+					{/* 2c. Family Wallet Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Coins className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Семейный кошелек
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Распределение семейного баланса, 1-клик лимиты (детям по 10 000 ₽), история списаний и пополнение СБП.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsFamilyWalletOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-family-wallet-modal-btn"
+						>
+							<Coins size={15} />
+							<span>Открыть семейный кошелек</span>
 						</button>
 					</div>
 
@@ -3492,6 +3544,28 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						fullName: "Д-р Смирнов Алексей Петрович",
 						specialty: "Врач-стоматолог терапевт-эндодонтист",
 					}}
+				/>
+			)}
+
+			{isCashRegisterOpen && (
+				<CashRegisterModal
+					isOpen={isCashRegisterOpen}
+					onClose={() => setIsCashRegisterOpen(false)}
+					totalAmountRub={62700}
+					patientName={SAMPLE_PATIENT.fullName}
+					patientPhone={SAMPLE_PATIENT.phone}
+					patientDepositRub={5000}
+					patientFamilyBalanceRub={15000}
+				/>
+			)}
+
+			{isFamilyWalletOpen && (
+				<FamilyWalletModal
+					isOpen={isFamilyWalletOpen}
+					onClose={() => setIsFamilyWalletOpen(false)}
+					headPayerName={SAMPLE_PATIENT.fullName}
+					headPayerPhone={SAMPLE_PATIENT.phone}
+					initialTotalBalanceRub={45000}
 				/>
 			)}
 

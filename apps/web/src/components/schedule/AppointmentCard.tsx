@@ -339,11 +339,22 @@ export function AppointmentCard(props: AppointmentCardProps) {
 				setIsCardMenuOpen(false);
 			}
 		};
-		if (isCardMenuOpen) {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setIsCardMenuOpen(false);
+				setIsMobileSheetOpen(false);
+				setIsHoverPreviewOpen(false);
+			}
+		};
+		if (isCardMenuOpen || isMobileSheetOpen || isHoverPreviewOpen) {
 			document.addEventListener("mousedown", handleClickOutside);
+			document.addEventListener("keydown", handleKeyDown);
 		}
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isCardMenuOpen]);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isCardMenuOpen, isMobileSheetOpen, isHoverPreviewOpen]);
 
 	const allergyAlert = useMemo(() => {
 		const rawAllergies =

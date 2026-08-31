@@ -386,7 +386,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						</button>
 					</div>
 
-					<div className="flex items-center gap-1.5 shrink-0">
+					<div className="hidden sm:flex items-center gap-1.5 shrink-0">
 						{patient?.phone && (
 							<a
 								href={`tel:+${patient.phone.replace(/\D/g, "")}`}
@@ -480,7 +480,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										<div className="flex items-center gap-2">
 											<Sparkles className="w-5 h-5 text-[var(--teal,#0d9488)] shrink-0" />
 											<h4 className="text-base font-extrabold text-[var(--ink)] m-0">
-												Понятная расшифровка счета для {patient?.fullName || actParams.patient.fullName || "пациента"}
+												Понятная расшифровка счета • Пациент: {patient?.fullName || actParams.patient.fullName || "Пациент"}
 											</h4>
 										</div>
 										<p className="text-xs text-[var(--muted)] m-0 mt-1">
@@ -1098,7 +1098,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				{/* Bottom Footer Actions (Fixed Sticky Bar — Hick's & Fitts's Laws) */}
 				<div className="sticky bottom-0 z-50 bg-[var(--paper)] border-t border-[var(--line)] px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 shrink-0 shadow-lg max-w-full">
 					{/* Desktop Left Group: Secondary Actions (Print A4, 1C, WhatsApp, Refund) */}
-					<div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+					<div className="hidden sm:flex sm:items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
 						{/* Secondary: Print A4 (GOST) */}
 						<button
 							type="button"

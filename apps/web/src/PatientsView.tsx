@@ -619,7 +619,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								onChange={(event: TextFieldChangeEvent) =>
 									updatePatientCoreDraft("email", event.target.value)
 								}
-								placeholder="ivanov@example.ru"
+								placeholder="patient@mail.ru"
 							/>
 						</label>
 						<div

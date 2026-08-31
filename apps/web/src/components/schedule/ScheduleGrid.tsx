@@ -140,11 +140,22 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 		const handleGlobalClick = () => {
 			setActiveMenuApptId(null);
 		};
-		if (activeMenuApptId) {
+		const handleGlobalKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setActiveMenuApptId(null);
+				setSelectedMobileAppt(null);
+				setHoveredApptId(null);
+			}
+		};
+		if (activeMenuApptId || selectedMobileAppt) {
 			window.addEventListener("click", handleGlobalClick);
+			window.addEventListener("keydown", handleGlobalKeyDown);
 		}
-		return () => window.removeEventListener("click", handleGlobalClick);
-	}, [activeMenuApptId]);
+		return () => {
+			window.removeEventListener("click", handleGlobalClick);
+			window.removeEventListener("keydown", handleGlobalKeyDown);
+		};
+	}, [activeMenuApptId, selectedMobileAppt]);
 
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
