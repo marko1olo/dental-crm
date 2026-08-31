@@ -109,13 +109,13 @@ html.dark,
 	--slate-50: #1e293b;
 	--slate-100: #1e293b;
 	--slate-200: #334155;
-	--slate-300: #475569;
-	--slate-400: #64748b;
-	--slate-500: #94a3b8;
-	--slate-600: #cbd5e1;
-	--slate-700: #e2e8f0;
-	--slate-800: #f1f5f9;
-	--slate-900: #f8fafc;
+	--slate-300: #64748b;
+	--slate-400: #94a3b8;
+	--slate-500: #cbd5e1;
+	--slate-600: #e2e8f0;
+	--slate-700: #f1f5f9;
+	--slate-800: #f8fafc;
+	--slate-900: #ffffff;
 	--slate-950: #ffffff;
 
 	/* Surface tokens */
@@ -2081,7 +2081,9 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .dark .save-state-error,
-[data-theme="dark"] .save-state-error {
+[data-theme="dark"] .save-state-error,
+[data-theme="night"] .save-state-error,
+[data-theme="oled"] .save-state-error {
 	background: rgba(239, 68, 68, 0.15);
 	color: #fca5a5;
 }
@@ -2092,7 +2094,9 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .dark .save-state-saved,
-[data-theme="dark"] .save-state-saved {
+[data-theme="dark"] .save-state-saved,
+[data-theme="night"] .save-state-saved,
+[data-theme="oled"] .save-state-saved {
 	background: rgba(34, 197, 94, 0.15);
 	color: #86efac;
 }
