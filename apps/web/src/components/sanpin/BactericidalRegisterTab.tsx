@@ -318,30 +318,58 @@ export function BactericidalRegisterTab() {
 				})}
 			</div>
 
-			{/* Session Logs Section */}
-			<div className="sanpin-control-bar" style={{ marginTop: "1rem" }}>
-				<div className="sanpin-filter-group">
-					<span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Фильтр сеансов:</span>
-					<select
-						value={selectedEquipId}
-						onChange={(e) => setSelectedEquipId(e.target.value)}
-						className="sanpin-select"
+			{/* Session Logs Table with Integrated Compact Filter Header */}
+			<div className="sanpin-table-wrapper" style={{ marginTop: "0.5rem" }}>
+				<div
+					className="sanpin-table-toolbar"
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "0.5rem",
+						padding: "0.35rem 0.65rem",
+						background: "var(--paper-soft, #f8fafc)",
+						borderBottom: "1px solid var(--line, #e2e8f0)",
+						flexWrap: "wrap",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+						<span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--muted, #64748b)" }}>Фильтр:</span>
+						<select
+							value={selectedEquipId}
+							onChange={(e) => setSelectedEquipId(e.target.value)}
+							className="sanpin-select"
+							style={{ minHeight: "32px", height: "32px", fontSize: "0.78rem", padding: "0.2rem 0.5rem", borderRadius: "6px" }}
+						>
+							<option value="all">Все облучатели клиники</option>
+							{equipments.map((e) => (
+								<option key={e.id} value={e.id}>
+									{e.roomName} ({e.deviceBrand})
+								</option>
+							))}
+						</select>
+					</div>
+					<button
+						type="button"
+						onClick={() => window.print()}
+						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+						style={{
+							minHeight: "32px",
+							height: "32px",
+							padding: "0.2rem 0.65rem",
+							fontSize: "0.78rem",
+							fontWeight: 600,
+							cursor: "pointer",
+							whiteSpace: "nowrap",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.25rem",
+							borderRadius: "6px",
+						}}
 					>
-						<option value="all">Все облучатели клиники</option>
-						{equipments.map((e) => (
-							<option key={e.id} value={e.id}>
-								{e.roomName} ({e.deviceBrand})
-							</option>
-						))}
-					</select>
+						<Printer size={13} /> <span>Печать журнала наработки</span>
+					</button>
 				</div>
-				<button type="button" onClick={() => window.print()} className="sanpin-btn sanpin-btn-secondary">
-					<Printer size={15} /> Печать журнала наработки
-				</button>
-			</div>
-
-			{/* Session Logs Table */}
-			<div className="sanpin-table-wrapper">
 				<table className="sanpin-table">
 					<thead>
 						<tr>

@@ -1027,8 +1027,8 @@ export function SanpinRegisters() {
 
 	return (
 		<div className="sanpin-container">
-			{/* Top Header — Compact Medical Density (<= 42px) */}
-			<div className="sanpin-header" style={{ padding: "0.25rem 0 0.4rem", borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+			{/* Top Header — Clean 1-Row Layout */}
+			<div className="sanpin-header" style={{ padding: "0.25rem 0 0.4rem", borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap" }}>
 				<div className="sanpin-title-block" style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexShrink: 0 }}>
 					<h1 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "0.45rem", color: "var(--ink)" }}>
 						<ShieldCheck size={20} color="var(--brand-primary, #2563eb)" />
@@ -1037,18 +1037,56 @@ export function SanpinRegisters() {
 					<span className="sanpin-badge-gov" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
 						<CheckCircle2 size={12} /> 2026 Норма
 					</span>
+
+					{/* Consolidated 1-chip KPI status summary (Clickable to toggle detailed KPI grid) */}
+					{summary && (
+						<button
+							type="button"
+							onClick={() => setShowExpandedKpi((p) => !p)}
+							className="sanpin-kpi-summary-chip touch-manipulation"
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.4rem",
+								padding: "0.2rem 0.55rem",
+								borderRadius: "6px",
+								background: "var(--paper-soft, #f1f5f9)",
+								border: "1px solid var(--line, #e2e8f0)",
+								fontSize: "0.75rem",
+								fontWeight: 600,
+								color: "var(--ink, #334155)",
+								cursor: "pointer",
+								minHeight: "28px",
+								transition: "all 0.15s ease",
+							}}
+							title="Нажмите, чтобы развернуть подробные KPI карточки смены"
+							data-testid="sanpin-kpi-consolidated-chip"
+						>
+							<span style={{ color: "var(--teal-600, #0d9488)", fontWeight: 700 }}>
+								Смена: ПСО {summary.pso?.approvedToday ?? 0}
+							</span>
+							<span style={{ color: "var(--muted, #94a3b8)" }}>·</span>
+							<span style={{ color: "var(--teal-600, #0d9488)", fontWeight: 700 }}>
+								АК {summary.sterilization?.passedToday ?? 0}
+							</span>
+							<span style={{ color: "var(--muted, #94a3b8)" }}>·</span>
+							<span style={{ color: (summary.temperature?.deviationsToday ?? 0) > 0 ? "#dc2626" : "#059669", fontWeight: 700 }}>
+								T° {summary.temperature?.deviationsToday ? `${summary.temperature.deviationsToday} откл.` : "Норма"}
+							</span>
+						</button>
+					)}
 				</div>
 
-				<div className="sanpin-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}>
+				<div className="sanpin-header-actions" style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0 }}>
 					{/* SOLE DOMINANT PRIMARY ACTION: 1-Клик Автопилот смены СанПиН */}
 					<button
 						type="button"
 						onClick={handleAutofillShift}
 						disabled={autoFilling}
-						className="sanpin-btn sanpin-btn-primary"
+						className="sanpin-btn sanpin-btn-primary touch-manipulation"
 						style={{
 							minHeight: "44px",
-							padding: "0.5rem 1rem",
+							padding: "0.5rem 1.1rem",
 							fontSize: "0.85rem",
 							fontWeight: 700,
 							background: "var(--teal-600, #0d9488)",
@@ -1058,39 +1096,17 @@ export function SanpinRegisters() {
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "0.35rem",
+							gap: "0.4rem",
 							whiteSpace: "nowrap",
 						}}
 						data-testid="sanpin-1click-autopilot-primary-btn"
 						title="1-Клик Автопилот смены: мгновенно фиксирует пробы ПСО, азопирам, фенолфталеин, циклы 134°C, Дезар и журнал T°"
 					>
-						<Sparkles size={15} />
-						<span>{autoFilling ? "Оформление смены..." : "1-Клик Автопилот смены СанПиН"}</span>
+						<Sparkles size={16} />
+						<span>{autoFilling ? "Оформление смены..." : "⚡ 1-Клик Автопилот смены СанПиН"}</span>
 					</button>
 
-					{/* Secondary: + Новый цикл (44px Touch Target) */}
-					<button
-						type="button"
-						onClick={() => setIsSterilizationModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary touch-manipulation min-h-[44px] min-w-[44px]"
-						style={{
-							minHeight: "44px",
-							minWidth: "44px",
-							padding: "0.4rem 0.85rem",
-							fontSize: "0.8125rem",
-							fontWeight: 600,
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.35rem",
-							whiteSpace: "nowrap",
-						}}
-						data-testid="sanpin-new-cycle-secondary-btn"
-					>
-						<Plus size={15} /> <span>Новый цикл</span>
-					</button>
-
-					{/* Dropdown: [⋮ Опции СанПиН] (44px Touch Target) */}
+					{/* Dropdown: [⋮ Опции СанПиН] — All secondary actions aggregated cleanly */}
 					<div ref={exportMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
 						<button
 							type="button"
@@ -1108,10 +1124,10 @@ export function SanpinRegisters() {
 								whiteSpace: "nowrap",
 							}}
 							aria-expanded={isExportMenuOpen}
-							title="Опции СанПиН: Закрытие смены, пакетный расчет, сшивы, ЭЦП и экспорт"
+							title="Опции СанПиН: Новый цикл, Закрытие смены, пакетный расчет, сшивы, ЭЦП и экспорт"
 							data-testid="sanpin-options-dropdown-btn"
 						>
-							<MoreVertical size={15} color="var(--brand-primary, #2563eb)" />
+							<MoreVertical size={16} color="var(--brand-primary, #2563eb)" />
 							<span>Опции</span>
 							<ChevronDown size={13} style={{ transform: isExportMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
 						</button>
@@ -1122,7 +1138,7 @@ export function SanpinRegisters() {
 									position: "absolute",
 									right: 0,
 									top: "calc(100% + 4px)",
-									minWidth: "270px",
+									minWidth: "280px",
 									background: "var(--paper-strong, #ffffff)",
 									border: "1px solid var(--line, #e2e8f0)",
 									borderRadius: "10px",
@@ -1134,6 +1150,65 @@ export function SanpinRegisters() {
 									gap: "0.2rem",
 								}}
 							>
+								{/* + Новый цикл */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										setIsSterilizationModalOpen(true);
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="sanpin-new-cycle-dropdown-btn"
+								>
+									<Plus size={15} color="#0d9488" />
+									<span>+ Зафиксировать новый цикл (257/у)</span>
+								</button>
+
+								{/* Обновить сводку */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										fetchSummary();
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+								>
+									<RotateCcw size={15} color="#2563eb" />
+									<span>Обновить сводку смены</span>
+								</button>
+
+								<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "0.2rem 0" }} />
+
 								{/* Закрыть смену */}
 								<button
 									type="button"
@@ -1160,7 +1235,7 @@ export function SanpinRegisters() {
 									}}
 								>
 									<Sparkles size={15} color="#0d9488" />
-									<span>{autoFilling ? "Оформление..." : "Закрыть смену (1 клик)"}</span>
+									<span>{autoFilling ? "Оформление..." : "Закрыть смену СанПиН (1 клик)"}</span>
 								</button>
 
 								{/* Пакетное закрытие */}
@@ -1368,49 +1443,27 @@ export function SanpinRegisters() {
 							</div>
 						)}
 					</div>
-
-					{/* Mini KPI summary strip */}
-					{summary && (
-						<div className="sanpin-kpi-summary-inline">
-							<span className="sanpin-kpi-chip">
-								ПСО: {summary.pso?.approvedToday ?? 0} OK
-							</span>
-							<span className="sanpin-kpi-chip">
-								АК: {summary.sterilization?.passedToday ?? 0} циклов
-							</span>
-							<span className="sanpin-kpi-chip" style={{ color: (summary.temperature?.deviationsToday ?? 0) > 0 ? "#dc2626" : undefined }}>
-								T°: {summary.temperature?.deviationsToday ? `${summary.temperature.deviationsToday} откл.` : "Норма"}
-							</span>
-							<button
-								type="button"
-								onClick={() => setShowExpandedKpi((p) => !p)}
-								className="sanpin-btn"
-								style={{ minHeight: "24px", height: "24px", padding: "0 0.35rem", fontSize: "0.72rem", border: "none", background: "none", color: "var(--muted, #64748b)", cursor: "pointer" }}
-								title="Развернуть/свернуть подробные KPI карточки"
-							>
-								{showExpandedKpi ? "Свернуть" : "+ Карточки"}
-							</button>
-						</div>
-					)}
-
-					{/* Refresh / Reset Button (44px Touch Target) */}
-					<button
-						type="button"
-						onClick={fetchSummary}
-						className="sanpin-btn sanpin-btn-secondary touch-manipulation min-h-[44px] min-w-[44px]"
-						style={{ minHeight: "44px", minWidth: "44px", width: "44px", height: "44px", padding: "0.5rem", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-						title="Обновить сводку"
-						aria-label="Обновить сводку"
-					>
-						<RotateCcw size={16} />
-					</button>
 				</div>
 			</div>
 
-			{/* Segmented Category & Tab Switcher (Miller's Law 7±2, 44px Touch Targets, Clean Interval) */}
-			<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))", paddingBottom: "0.5rem" }}>
-				{/* 1. Category Switcher (3 Categories with gap-2 and 44px touch target) */}
-				<div className="sanpin-category-nav flex items-center gap-2 flex-wrap" role="tablist" aria-label="Категории журналов СанПиН">
+			{/* Unified 2-in-1 Category & Sub-Tab Navigation Bar (Miller's Law 7±2, <= 52px, 0 Visual Collision) */}
+			<div
+				className="sanpin-unified-nav"
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					gap: "0.75rem",
+					borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))",
+					padding: "0.35rem 0",
+					overflowX: "auto",
+					whiteSpace: "nowrap",
+					WebkitOverflowScrolling: "touch",
+					minHeight: "48px",
+				}}
+			>
+				{/* 1. Category Switcher (3 Segments) */}
+				<div className="sanpin-category-nav flex items-center gap-1 shrink-0" role="tablist" aria-label="Категории журналов СанПиН">
 					{SANPIN_CATEGORIES.map((cat) => {
 						const Icon = cat.icon;
 						const isActive = activeCategory === cat.id;
@@ -1422,24 +1475,24 @@ export function SanpinRegisters() {
 								aria-selected={isActive}
 								className={`sanpin-category-btn touch-manipulation ${isActive ? "active" : ""}`}
 								style={{
-									minHeight: "44px",
+									minHeight: "40px",
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "0.5rem", // gap-2 to prevent sticky badge
-									padding: "0.4rem 0.85rem",
+									gap: "0.45rem",
+									padding: "0.35rem 0.75rem",
 									borderRadius: "8px",
 									cursor: "pointer",
 								}}
 								onClick={() => handleSelectCategory(cat.id)}
 								data-testid={`category-tab-${cat.id}`}
 							>
-								<Icon size={16} color={isActive ? "var(--teal-600, #0d9488)" : "currentColor"} />
+								<Icon size={15} color={isActive ? "var(--teal-600, #0d9488)" : "currentColor"} />
 								<span className="font-semibold text-xs whitespace-nowrap">{cat.shortLabel}</span>
 								<span
 									style={{
-										marginLeft: "0.5rem", // 8px separation guarantees zero collision for 'Отходы и климат 4'
-										fontSize: "0.75rem",
-										padding: "0.15rem 0.45rem",
+										marginLeft: "0.35rem",
+										fontSize: "0.7rem",
+										padding: "0.1rem 0.4rem",
 										borderRadius: "9999px",
 										background: isActive ? "rgba(13, 148, 136, 0.15)" : "rgba(148, 163, 184, 0.15)",
 										color: isActive ? "var(--teal-600, #0d9488)" : "var(--muted, #64748b)",
@@ -1454,17 +1507,11 @@ export function SanpinRegisters() {
 					})}
 				</div>
 
-				{/* 2. Sub-Tabs with horizontal scroll and whitespace-nowrap (Zero clipping for 'Фенолфталеин') */}
+				<div style={{ width: "1px", height: "24px", background: "var(--line, rgba(148, 163, 184, 0.3))", flexShrink: 0 }} />
+
+				{/* 2. Sub-Tabs for Active Category */}
 				<div
-					className="w-full sm:w-auto flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide gap-1.5 touch-pan-x min-w-0 pb-1"
-					style={{
-						display: "flex",
-						gap: "0.35rem",
-						alignItems: "center",
-						overflowX: "auto",
-						whiteSpace: "nowrap",
-						WebkitOverflowScrolling: "touch",
-					}}
+					className="flex-1 flex items-center overflow-x-auto whitespace-nowrap scrollbar-none gap-1 touch-pan-x min-w-0"
 					data-testid="sanpin-active-category-subtabs"
 				>
 					{(SANPIN_CATEGORIES.find((c) => c.id === activeCategory)?.tabs || SANPIN_CATEGORIES[0]!.tabs).map((tab) => {
@@ -1477,7 +1524,7 @@ export function SanpinRegisters() {
 								onClick={() => handleSelectTab(tab.id)}
 								className={`sanpin-tab-btn touch-manipulation ${isActive ? "active" : ""}`}
 								style={{
-									minHeight: "36px",
+									minHeight: "38px",
 									padding: "0.35rem 0.75rem",
 									fontSize: "0.78rem",
 									fontWeight: isActive ? 700 : 600,
@@ -1489,9 +1536,9 @@ export function SanpinRegisters() {
 									cursor: "pointer",
 									borderRadius: "0.5rem",
 									border: "1px solid",
-									borderColor: isActive ? "var(--teal-600, #0d9488)" : "transparent",
-									background: isActive ? "var(--teal-600, #0d9488)" : "transparent",
-									color: isActive ? "#ffffff" : "var(--muted, #64748b)",
+									borderColor: isActive ? "var(--teal-600, #0d9488)" : "var(--line, rgba(148, 163, 184, 0.2))",
+									background: isActive ? "var(--teal-600, #0d9488)" : "var(--paper-soft, rgba(255, 255, 255, 0.05))",
+									color: isActive ? "#ffffff" : "var(--ink, #334155)",
 									transition: "all 0.15s ease",
 								}}
 								data-testid={`tab-${tab.id}-btn`}

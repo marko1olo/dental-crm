@@ -334,57 +334,91 @@ export function PsoRegisterTab() {
 				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»</p>
 			</div>
 
-			<div className="sanpin-control-bar">
-				<div className="sanpin-filter-group">
-					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={18} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
+			{/* Table of logs with Integrated Compact Header */}
+			<div className="sanpin-table-wrapper">
+				<div
+					className="sanpin-table-toolbar"
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "0.5rem",
+						padding: "0.35rem 0.65rem",
+						background: "var(--paper-soft, #f8fafc)",
+						borderBottom: "1px solid var(--line, #e2e8f0)",
+						flexWrap: "wrap",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: "1 1 200px", minWidth: "160px", maxWidth: "340px", position: "relative" }}>
+						<Search size={14} style={{ position: "absolute", left: "0.6rem", color: "var(--muted, #94a3b8)" }} />
 						<input
 							type="text"
 							placeholder="Поиск по инструментарию, моющему средству, оператору..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="sanpin-input"
-							style={{ paddingLeft: "2.3rem", minWidth: "300px", minHeight: "44px", fontSize: "0.9rem" }}
+							style={{ paddingLeft: "1.9rem", minHeight: "32px", height: "32px", fontSize: "0.78rem", width: "100%", borderRadius: "6px" }}
 						/>
 					</div>
-					<select
-						value={testFilter}
-						onChange={(e) => setTestFilter(e.target.value)}
-						className="sanpin-select"
-						style={{ minHeight: "44px", fontSize: "0.9rem" }}
-					>
-						<option value="all">Все пробы ПСО</option>
-						<option value="approved">Партия допущена (Проба отрицательная)</option>
-						<option value="rejected">Брак / Повторная очистка</option>
-					</select>
+
+					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+						<select
+							value={testFilter}
+							onChange={(e) => setTestFilter(e.target.value)}
+							className="sanpin-select"
+							style={{ minHeight: "32px", height: "32px", fontSize: "0.78rem", padding: "0.2rem 0.5rem", borderRadius: "6px" }}
+						>
+							<option value="all">Все пробы ПСО</option>
+							<option value="approved">Партия допущена (Проба отрицательная)</option>
+							<option value="rejected">Брак / Повторная очистка</option>
+						</select>
+
+						<button
+							type="button"
+							onClick={handleGenerateMonthlyForm366}
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+							style={{
+								minHeight: "32px",
+								height: "32px",
+								padding: "0.2rem 0.65rem",
+								fontSize: "0.78rem",
+								fontWeight: 600,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.25rem",
+								borderRadius: "6px",
+							}}
+							title="Автоматическое формирование и печать нормативного журнала ПСО (Форма 366/у) за текущий месяц"
+							data-testid="generate-monthly-form366-btn"
+						>
+							<Sparkles size={13} color="#0d9488" />
+							<span>Форма 366/у за месяц</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setIsModalOpen(true)}
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+							style={{
+								minHeight: "32px",
+								height: "32px",
+								padding: "0.2rem 0.65rem",
+								fontSize: "0.78rem",
+								fontWeight: 600,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.25rem",
+								borderRadius: "6px",
+							}}
+						>
+							<Plus size={13} /> <span>Внести пробу ПСО</span>
+						</button>
+					</div>
 				</div>
-
-				<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-					<button
-						type="button"
-						onClick={handleGenerateMonthlyForm366}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1.1rem", fontSize: "0.9rem", fontWeight: 800, background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)", color: "#fff", border: "none", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)", cursor: "pointer" }}
-						title="Автоматическое формирование и печать нормативного журнала ПСО (Форма 366/у) за текущий месяц"
-						data-testid="generate-monthly-form366-btn"
-					>
-						<Sparkles size={18} />
-						<span>Сгенерировать Форму 366/у за месяц</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setIsModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer" }}
-					>
-						<Plus size={18} /> Внести пробу ПСО
-					</button>
-				</div>
-			</div>
-
-			{/* Table of logs */}
-			<div className="sanpin-table-wrapper">
 				<table className="sanpin-table">
 					<thead>
 						<tr>
