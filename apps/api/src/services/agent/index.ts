@@ -14,7 +14,12 @@ export * from "./tools/clinicalNoteTemplates.js";
 export * from "./tools/voiceDictationParser.js";
 export * from "./tools/clinicalNotesTool.js";
 export * from "./tools/sanpinTools.js";
+export * from "./tools/ragTools.js";
 export * from "./orchestrator.js";
 export * from "./copilotService.js";
 export * from "./sessionStore.js";
-
+export * from "./security/aiRbacGuard.js";
+export * from "./rag/index.js";
+export * from "./telemetryAuditor.js";
+export * from "./proxyDispatcher.js";
+export * from "./omniGateway.js";

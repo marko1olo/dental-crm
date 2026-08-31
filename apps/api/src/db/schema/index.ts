@@ -12,3 +12,5 @@ export * from "./system.js";
 export * from "./sanpin.js";
 export * from "./sync.js";
 export * from "./copilot.js";
+export * from "./rag.js";
+export * from "./aiTelemetry.js";
