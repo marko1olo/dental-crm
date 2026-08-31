@@ -29,6 +29,7 @@ import {
 	UserPlus,
 	Users,
 } from "lucide-react";
+import { ClinicControlPill } from "./components/Header";
 import { IncomingCallPopup } from "./components/telephony/IncomingCallPopup";
 import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
@@ -632,7 +633,7 @@ export function WorkspaceTopbar({
 						<div className="role-switcher-options">
 							{availableRoles.map((role) => (
 								<button
-									className={selectedWorkspaceRole === role ? "active" : ""}
+									className={`min-h-[44px] flex items-center px-3 py-2 text-left w-full ${selectedWorkspaceRole === role ? "active" : ""}`}
 									key={role}
 									type="button"
 									aria-pressed={selectedWorkspaceRole === role}
@@ -651,6 +652,7 @@ export function WorkspaceTopbar({
 					</details>
 					<PerspectiveSwitcher />
 					<RecentPatientHistoryWidget compactDropdown />
+					<ClinicControlPill onLockSession={onLockSession} />
 				</div>
 			</div>
 			{/*

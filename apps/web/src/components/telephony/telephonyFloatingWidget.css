@@ -1,15 +1,92 @@
 /* ============================================================
-   Telephony & Incoming Call Popup Multi-Theme & Mobile Styles
+   Telephony & Incoming Call Dynamic Island & Multi-Theme Styles
    ============================================================ */
 
-.dnt-telephony-floating {
+/* Top Dynamic Island / Call Banner Container */
+.dnt-telephony-island-container {
 	position: fixed;
-	bottom: calc(var(--bottom-nav-height, 64px) + 36px + env(safe-area-inset-bottom, 0px));
-	right: 16px;
-	z-index: 35;
+	top: 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 9999;
 	display: flex;
 	flex-direction: column;
-	align-items: flex-end;
+	align-items: center;
+	pointer-events: auto;
+	font-family: inherit;
+	transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	width: auto;
+	max-width: calc(100vw - 24px);
+}
+
+/* Compact Dynamic Island Pill */
+.dnt-telephony-island-pill {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	border-radius: 9999px;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
+	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px rgba(13, 148, 136, 0.2);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	animation: dnt-island-drop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	user-select: none;
+}
+
+@keyframes dnt-island-drop {
+	0% {
+		opacity: 0;
+		transform: translateY(-24px) scale(0.92);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+/* Expanded Dynamic Island Panel */
+.dnt-telephony-island-expanded {
+	width: 520px;
+	max-width: calc(100vw - 24px);
+	max-height: calc(100dvh - 32px);
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border-radius: 24px;
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	box-shadow: 0 28px 56px -12px rgba(0, 0, 0, 0.4), 0 0 30px 4px rgba(13, 148, 136, 0.22);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	backdrop-filter: blur(24px);
+	-webkit-backdrop-filter: blur(24px);
+	animation: dnt-island-expand 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+}
+
+@keyframes dnt-island-expand {
+	0% {
+		opacity: 0;
+		transform: scale(0.94);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+/* Legacy Floating Fallback Support */
+.dnt-telephony-floating {
+	position: fixed;
+	top: 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 9999;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 	gap: 8px;
 	font-family: inherit;
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -18,269 +95,54 @@
 
 .dnt-telephony-floating > *,
 .dnt-telephony-floating .dnt-telephony-launcher,
-.dnt-telephony-floating .dnt-telephony-card {
+.dnt-telephony-floating .dnt-telephony-card,
+.dnt-telephony-floating .dnt-telephony-island-pill,
+.dnt-telephony-floating .dnt-telephony-island-expanded {
 	pointer-events: auto !important;
 }
 
-/* Auto-hide telephony floating launcher when any modal, drawer, bottom sheet, or incoming call popup is active */
-body:has(.dnt-incoming-call-popup) .dnt-telephony-floating,
-body:has([data-testid="incoming-call-popup"]) .dnt-telephony-floating,
-body:has(.modal-overlay) .dnt-telephony-floating,
-body:has(.modal-backdrop) .dnt-telephony-floating,
-body:has(dialog[open]) .dnt-telephony-floating,
-body:has([role="dialog"]) .dnt-telephony-floating,
-body:has([aria-modal="true"]) .dnt-telephony-floating,
-body:has(.fixed.inset-0) .dnt-telephony-floating,
-body:has(._ccm-overlay) .dnt-telephony-floating,
-body:has(.treatment-plan-modal) .dnt-telephony-floating,
-body:has(.treatment-comparator-modal) .dnt-telephony-floating,
-body:has([data-testid="treatment-comparator-modal"]) .dnt-telephony-floating,
-body:has(.stage-payment-modal) .dnt-telephony-floating,
-body:has([data-testid="stage-payment-modal"]) .dnt-telephony-floating,
-body:has(.price-validator-modal) .dnt-telephony-floating,
-body:has([data-testid="price-validator-modal"]) .dnt-telephony-floating,
-body:has(.dnt-modal-overlay) .dnt-telephony-floating,
-body:has(.sanpin-modal-overlay) .dnt-telephony-floating,
-body:has(.sber-pos-modal-overlay) .dnt-telephony-floating,
-body:has(.quick-booking-drawer) .dnt-telephony-floating,
-body:has([data-testid="quick-booking-drawer"]) .dnt-telephony-floating,
-body:has(.dnt-quick-booking-drawer) .dnt-telephony-floating,
-body:has(.appointment-modal) .dnt-telephony-floating,
-body:has([data-testid="appointment-modal"]) .dnt-telephony-floating,
-body:has(.waitlist-drawer) .dnt-telephony-floating,
-body:has([data-testid="waitlist-drawer"]) .dnt-telephony-floating,
-body:has(.doctor-shift-roster-modal) .dnt-telephony-floating,
-body:has([data-testid="doctor-shift-roster-modal"]) .dnt-telephony-floating,
-body:has(.doctor-shift-cockpit-modal) .dnt-telephony-floating,
-body:has([data-testid="doctor-shift-cockpit-modal"]) .dnt-telephony-floating,
-body:has([data-modal-open="true"]) .dnt-telephony-floating,
-body:has([data-drawer-open="true"]) .dnt-telephony-floating,
-body:has([data-sheet-open="true"]) .dnt-telephony-floating,
-body:has([data-studio-open="true"]) .dnt-telephony-floating,
-body.modal-open .dnt-telephony-floating,
-body.drawer-open .dnt-telephony-floating,
-body.sheet-open .dnt-telephony-floating,
-body.studio-open .dnt-telephony-floating,
 .dnt-telephony-floating--hidden {
 	display: none !important;
 	opacity: 0 !important;
 	pointer-events: none !important;
 	visibility: hidden !important;
-	transform: scale(0.8) translateY(20px) !important;
 }
 
-/* Prevent obscuring settings checkboxes, authority toggles, and forms */
-body:has(.settings-access-grid) .dnt-telephony-floating,
-body:has([data-testid="rbac-mobile-cards"]) .dnt-telephony-floating,
-body:has([data-testid="staff-authority-panel"]) .dnt-telephony-floating,
-body:has([data-testid="staff-commissions-panel"]) .dnt-telephony-floating,
-body:has(.access-settings) .dnt-telephony-floating,
-body:has(.rbac-card) .dnt-telephony-floating {
-	opacity: 0.25;
-	pointer-events: none;
-	transition: opacity 0.2s ease;
-}
-body:has(.settings-access-grid) .dnt-telephony-floating:hover,
-body:has([data-testid="rbac-mobile-cards"]) .dnt-telephony-floating:hover,
-body:has([data-testid="staff-authority-panel"]) .dnt-telephony-floating:hover,
-body:has([data-testid="staff-commissions-panel"]) .dnt-telephony-floating:hover,
-body:has(.access-settings) .dnt-telephony-floating:hover,
-body:has(.rbac-card) .dnt-telephony-floating:hover {
-	opacity: 1;
-	pointer-events: auto;
-}
-
-@media (max-width: 640px) {
-	.dnt-telephony-floating {
-		bottom: calc(var(--bottom-nav-height, 64px) + 96px + env(safe-area-inset-bottom, 0px));
-		right: 8px;
-		z-index: 35;
-		pointer-events: none !important;
-	}
-	.dnt-telephony-floating .dnt-telephony-launcher,
-	.dnt-telephony-floating .dnt-telephony-card {
-		pointer-events: auto !important;
-	}
-	.dnt-telephony-launcher {
-		width: 38px;
-		height: 38px;
-		min-width: 38px;
-		min-height: 38px;
-		box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.25), 0 0 8px 1px rgba(15, 118, 110, 0.15);
-	}
-	.dnt-telephony-launcher svg {
-		width: 16px;
-		height: 16px;
-	}
-	.dnt-telephony-card {
-		width: calc(100vw - 16px);
-		max-width: calc(100vw - 16px);
-		max-height: calc(100dvh - var(--bottom-nav-height, 64px) - 110px);
-		margin-right: 0;
-	}
-}
-
-@media (min-width: 768px) {
-	.dnt-telephony-floating {
-		bottom: 84px;
-		right: 24px;
-		z-index: 40;
-		pointer-events: none !important;
-	}
-	.dnt-telephony-floating .dnt-telephony-launcher,
-	.dnt-telephony-floating .dnt-telephony-card {
-		pointer-events: auto !important;
-	}
-}
-
-/* Collapsed Launcher Button (Sleek 44x44px circular FAB) */
-.dnt-telephony-launcher {
-	width: 44px;
-	height: 44px;
-	min-width: 44px;
+/* Touch Targets Strict Minimum >= 44x44px */
+.dnt-telephony-card button,
+.dnt-telephony-island-pill button,
+.dnt-telephony-island-expanded button,
+.dnt-incoming-call-popup button {
 	min-height: 44px;
-	padding: 0;
-	border-radius: 50%;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	position: relative;
-	background: var(--paper-strong, var(--paper, #ffffff));
-	color: var(--teal, #0d9488);
-	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
-	box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.2), 0 0 12px 1px rgba(15, 118, 110, 0.12);
-	cursor: pointer;
-	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-	user-select: none;
 }
 
-.dnt-telephony-launcher:hover {
-	transform: scale(1.06);
-	border-color: var(--teal, #0d9488);
-	box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.25), 0 0 16px 2px rgba(15, 118, 110, 0.2);
+.min-touch-btn {
+	min-height: 44px;
+	min-width: 44px;
 }
 
-.dnt-telephony-launcher:active {
-	transform: scale(0.94);
-}
-
-.dnt-telephony-launcher--active {
-	background: linear-gradient(135deg, var(--teal-fill, #0d9488), var(--teal-dark, #0f766e));
-	color: #ffffff;
-	border-color: var(--teal-ring, rgba(45, 212, 191, 0.6));
-	animation: dnt-pulse-ring 2s infinite;
-}
-
-.dnt-telephony-launcher-text,
-.dnt-telephony-launcher-chevron {
-	display: none !important;
+.large-touch-btn {
+	min-height: 48px;
+	min-width: 48px;
 }
 
 /* Expanded Softphone Card */
 .dnt-telephony-card {
 	width: calc(100vw - 24px);
-	max-width: 420px;
-	max-height: calc(100vh - 84px);
+	max-width: 460px;
+	max-height: calc(100vh - 40px);
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
-	border-radius: 16px;
+	border-radius: 20px;
 	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
 	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4), 0 0 24px 2px rgba(13, 148, 136, 0.2);
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	backdrop-filter: blur(16px);
-	-webkit-backdrop-filter: blur(16px);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
 	animation: dnt-slide-in-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 	box-sizing: border-box;
-}
-
-@media (min-width: 768px) {
-	.dnt-telephony-card {
-		width: 420px;
-		max-height: 85vh;
-	}
-}
-
-/* Incoming Call Fullscreen Overlay */
-.dnt-incoming-call-overlay {
-	position: fixed;
-	inset: 0;
-	z-index: 9999;
-	background: rgba(0, 0, 0, 0.6);
-	backdrop-filter: blur(4px);
-	-webkit-backdrop-filter: blur(4px);
-	display: flex;
-	align-items: flex-end;
-	justify-content: center;
-	padding: 12px;
-	padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
-	box-sizing: border-box;
-	pointer-events: auto;
-}
-
-@media (min-width: 640px) {
-	.dnt-incoming-call-overlay {
-		background: transparent;
-		backdrop-filter: none;
-		-webkit-backdrop-filter: none;
-		align-items: flex-end;
-		justify-content: flex-end;
-		padding: 24px;
-		pointer-events: none;
-	}
-	.dnt-incoming-call-overlay > * {
-		pointer-events: auto;
-	}
-}
-
-/* Incoming Call Popup Master Styling */
-.dnt-incoming-call-popup {
-	position: relative;
-	width: 100%;
-	max-width: calc(100vw - 24px);
-	max-height: 90dvh;
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	border-radius: 16px;
-	padding: 16px;
-	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.35), 0 0 24px 2px rgba(15, 118, 110, 0.2);
-	backdrop-filter: blur(16px);
-	-webkit-backdrop-filter: blur(16px);
-	animation: dnt-slide-in-up 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-	box-sizing: border-box;
-	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
-	background: var(--paper-strong, var(--paper, #ffffff));
-	color: var(--ink, #0f172a);
-	overflow: hidden;
-}
-
-@media (min-width: 640px) {
-	.dnt-incoming-call-popup {
-		width: 460px;
-		max-width: 460px;
-		max-height: 90dvh;
-		padding: 20px;
-	}
-}
-
-/* Touch Targets Strict Minimum */
-.dnt-telephony-card button,
-.dnt-incoming-call-popup button {
-	min-height: 44px;
-}
-
-.dnt-telephony-card .min-touch-btn,
-.dnt-incoming-call-popup .min-touch-btn {
-	min-height: 44px;
-	min-width: 44px;
-}
-
-.dnt-telephony-card .large-touch-btn,
-.dnt-incoming-call-popup .large-touch-btn {
-	min-height: 48px;
-	min-width: 48px;
 }
 
 /* Animations */
@@ -315,7 +177,8 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
    ============================================================ */
 
 /* 1. Dark Theme (Slate) */
-[data-theme="dark"] .dnt-telephony-launcher,
+[data-theme="dark"] .dnt-telephony-island-pill,
+[data-theme="dark"] .dnt-telephony-island-expanded,
 [data-theme="dark"] .dnt-telephony-card,
 [data-theme="dark"] .dnt-incoming-call-popup {
 	background: var(--paper-strong, #0f172a);
@@ -325,7 +188,8 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 }
 
 /* 2. Night Theme (OLED Warm Dark) */
-[data-theme="night"] .dnt-telephony-launcher,
+[data-theme="night"] .dnt-telephony-island-pill,
+[data-theme="night"] .dnt-telephony-island-expanded,
 [data-theme="night"] .dnt-telephony-card,
 [data-theme="night"] .dnt-incoming-call-popup {
 	background: var(--paper-strong, #181512);
@@ -335,7 +199,8 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 }
 
 /* 3. Ocean Theme (Deep Sapphire) */
-[data-theme="ocean"] .dnt-telephony-launcher,
+[data-theme="ocean"] .dnt-telephony-island-pill,
+[data-theme="ocean"] .dnt-telephony-island-expanded,
 [data-theme="ocean"] .dnt-telephony-card,
 [data-theme="ocean"] .dnt-incoming-call-popup {
 	background: var(--paper-strong, #0a192f);
@@ -345,7 +210,8 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 }
 
 /* 4. Emerald Theme (Forest Green) */
-[data-theme="emerald"] .dnt-telephony-launcher,
+[data-theme="emerald"] .dnt-telephony-island-pill,
+[data-theme="emerald"] .dnt-telephony-island-expanded,
 [data-theme="emerald"] .dnt-telephony-card,
 [data-theme="emerald"] .dnt-incoming-call-popup {
 	background: var(--paper-strong, #062016);
@@ -355,7 +221,8 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 }
 
 /* 5. Cyber X-Ray Theme (CT Visio Neon) */
-[data-theme="cyber_xray"] .dnt-telephony-launcher,
+[data-theme="cyber_xray"] .dnt-telephony-island-pill,
+[data-theme="cyber_xray"] .dnt-telephony-island-expanded,
 [data-theme="cyber_xray"] .dnt-telephony-card,
 [data-theme="cyber_xray"] .dnt-incoming-call-popup {
 	background: var(--paper-strong, #030712);
@@ -365,7 +232,8 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 }
 
 /* 6. High Contrast Theme (WCAG AAA) */
-[data-theme="contrast"] .dnt-telephony-launcher,
+[data-theme="contrast"] .dnt-telephony-island-pill,
+[data-theme="contrast"] .dnt-telephony-island-expanded,
 [data-theme="contrast"] .dnt-telephony-card,
 [data-theme="contrast"] .dnt-incoming-call-popup {
 	background: #000000;
@@ -374,13 +242,9 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 	box-shadow: 0 0 0 2px #000000, 0 0 30px 4px rgba(255, 255, 255, 0.35);
 }
 
-[data-theme="contrast"] .dnt-telephony-card button,
-[data-theme="contrast"] .dnt-incoming-call-popup button {
-	border-width: 2px;
-}
-
 /* 7. Calm Teal Theme (Mint / Maritime) */
-[data-theme="calm_teal"] .dnt-telephony-launcher,
+[data-theme="calm_teal"] .dnt-telephony-island-pill,
+[data-theme="calm_teal"] .dnt-telephony-island-expanded,
 [data-theme="calm_teal"] .dnt-telephony-card,
 [data-theme="calm_teal"] .dnt-incoming-call-popup {
 	background: var(--paper-strong, #f0fdfa);
@@ -390,7 +254,8 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 }
 
 /* 8. Sakura Theme (Pediatric / Aesthetics) */
-[data-theme="sakura"] .dnt-telephony-launcher,
+[data-theme="sakura"] .dnt-telephony-island-pill,
+[data-theme="sakura"] .dnt-telephony-island-expanded,
 [data-theme="sakura"] .dnt-telephony-card,
 [data-theme="sakura"] .dnt-incoming-call-popup {
 	background: var(--paper-strong, #fdf2f8);
@@ -400,7 +265,8 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 }
 
 /* 9. Warm Sand Theme (Ceramic Warm) */
-[data-theme="warm_sand"] .dnt-telephony-launcher,
+[data-theme="warm_sand"] .dnt-telephony-island-pill,
+[data-theme="warm_sand"] .dnt-telephony-island-expanded,
 [data-theme="warm_sand"] .dnt-telephony-card,
 [data-theme="warm_sand"] .dnt-incoming-call-popup {
 	background: var(--paper-strong, #fefce8);
@@ -410,7 +276,8 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 }
 
 /* 10. Light Theme (Default Clinical Light) */
-[data-theme="light"] .dnt-telephony-launcher,
+[data-theme="light"] .dnt-telephony-island-pill,
+[data-theme="light"] .dnt-telephony-island-expanded,
 [data-theme="light"] .dnt-telephony-card,
 [data-theme="light"] .dnt-incoming-call-popup {
 	background: var(--paper-strong, #ffffff);
@@ -418,4 +285,3 @@ body:has(.rbac-card) .dnt-telephony-floating:hover {
 	color: var(--ink, #0f172a);
 	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 0 0 20px 2px rgba(15, 118, 110, 0.12);
 }
-

@@ -1,0 +1,230 @@
+/* ============================================================
+   macOS HIG Clinic Control Pill & Control Center Capsule Styles
+   ============================================================ */
+
+.dnt-clinic-control-wrapper {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+}
+
+/* Unified Clinic Status Capsule (Menu Extra Pill) */
+.dnt-clinic-control-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	min-height: 36px;
+	border-radius: 9999px;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
+	color: var(--ink, #0f172a);
+	font-size: 11px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+}
+
+.dnt-clinic-control-pill:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper-subtle, var(--paper-soft, #f8fafc));
+	box-shadow: 0 4px 12px -2px rgba(13, 148, 136, 0.15);
+	transform: translateY(-1px);
+}
+
+.dnt-clinic-control-pill:active {
+	transform: translateY(0) scale(0.98);
+}
+
+.dnt-clinic-control-pill--open {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.25));
+}
+
+/* Indicator Segments */
+.dnt-pill-segment {
+	display: inline-flex;
+	align-items: center;
+	gap: 4.5px;
+	white-space: nowrap;
+}
+
+.dnt-pill-divider {
+	width: 1px;
+	height: 12px;
+	background: var(--line, #e2e8f0);
+	opacity: 0.8;
+}
+
+.dnt-pill-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.dnt-pill-dot--online {
+	background: #10b981;
+	box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.dnt-pill-dot--busy {
+	background: #ef4444;
+	box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+
+.dnt-pill-dot--pause {
+	background: #f59e0b;
+	box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+.dnt-pill-dot--offline {
+	background: #94a3b8;
+}
+
+/* macOS Control Center Popover (Flyout Panel) */
+.dnt-control-center-popover {
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	width: 380px;
+	max-width: calc(100vw - 24px);
+	max-height: calc(100vh - 80px);
+	overflow-y: auto;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	border-radius: 20px;
+	padding: 16px;
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.25), 0 0 24px 2px rgba(13, 148, 136, 0.12);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	z-index: 50;
+	animation: dnt-cc-popover-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+}
+
+@keyframes dnt-cc-popover-in {
+	0% {
+		opacity: 0;
+		transform: translateY(-8px) scale(0.97);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+/* Popover Sections */
+.dnt-cc-section {
+	background: var(--paper-subtle, var(--paper-soft, #f8fafc));
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	padding: 12px;
+	margin-bottom: 10px;
+	transition: border-color 0.2s ease;
+}
+
+.dnt-cc-section:last-child {
+	margin-bottom: 0;
+}
+
+.dnt-cc-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.dnt-cc-section-title {
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted, #64748b);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Touch friendly buttons inside popover */
+.dnt-cc-btn {
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 8px 12px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 700;
+	transition: all 0.18s ease;
+	cursor: pointer;
+	border: 1px solid transparent;
+}
+
+.dnt-cc-btn--primary {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 2px 8px -1px rgba(13, 148, 136, 0.4);
+}
+
+.dnt-cc-btn--primary:hover {
+	opacity: 0.92;
+	transform: translateY(-1px);
+}
+
+.dnt-cc-btn--secondary {
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #e2e8f0);
+}
+
+.dnt-cc-btn--secondary:hover {
+	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--line-strong, #cbd5e1);
+}
+
+/* Responsive constraints */
+@media (max-width: 640px) {
+	.dnt-clinic-control-pill {
+		padding: 4px 8px;
+		font-size: 10px;
+		min-height: 38px;
+	}
+	.dnt-control-center-popover {
+		position: fixed;
+		top: calc(var(--topbar-height, 56px) + 8px);
+		left: 8px;
+		right: 8px;
+		width: calc(100vw - 16px);
+		max-width: calc(100vw - 16px);
+	}
+}
+
+/* Multi-theme support for Control Center */
+[data-theme="dark"] .dnt-clinic-control-pill,
+[data-theme="dark"] .dnt-control-center-popover {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line-strong, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="night"] .dnt-clinic-control-pill,
+[data-theme="night"] .dnt-control-center-popover {
+	background: var(--paper-strong, #181512);
+	border-color: var(--line-strong, #2d261e);
+	color: var(--ink, #f5efe6);
+}
+
+[data-theme="contrast"] .dnt-clinic-control-pill,
+[data-theme="contrast"] .dnt-control-center-popover {
+	background: #000000;
+	border: 2px solid #ffffff;
+	color: #ffffff;
+}
