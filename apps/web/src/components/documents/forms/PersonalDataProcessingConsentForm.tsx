@@ -1,6 +1,7 @@
 import { PERSONAL_DATA_EGISZ_CONSENT_PRESET } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../AppConstants";
 import React, { useMemo } from "react";
+import { Lock } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import {
@@ -181,7 +182,7 @@ export const PersonalDataProcessingConsentForm = React.memo(
 				<div style={{ marginBottom: "14px" }}>
 					<button
 						type="button"
-						className="secondary-button"
+						className="secondary-button inline-flex items-center gap-1.5"
 						style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 						onClick={() => {
 							setPersonalDataPurposes(PERSONAL_DATA_EGISZ_CONSENT_PRESET.purposes.join("\n"));
@@ -192,7 +193,8 @@ export const PersonalDataProcessingConsentForm = React.memo(
 							setPersonalDataRevocationChannel(PERSONAL_DATA_EGISZ_CONSENT_PRESET.revocationChannel);
 						}}
 					>
-						🔒 1 клик: Заполнить формулировки 152-ФЗ + ЕГИСЗ Минздрава (Постановление № 140)
+						<Lock size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+						<span>1 клик: Заполнить формулировки 152-ФЗ + ЕГИСЗ Минздрава (Постановление № 140)</span>
 					</button>
 				</div>
 				<label>

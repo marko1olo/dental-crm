@@ -881,6 +881,9 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	flex-shrink: 0;
 	min-height: 60px;
 	box-sizing: border-box;
+	position: sticky;
+	top: 0;
+	z-index: 25;
 }
 .topbar-context {
 	display: flex;
@@ -1534,6 +1537,9 @@ button[data-tooth-state="missing"] {
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
+		min-height: 44px;
+		min-width: 44px;
+		box-sizing: border-box;
 	}
 	[data-theme="dark"] .workspace-role-switcher > summary,
 	[data-theme="night"] .workspace-role-switcher > summary {
@@ -1553,10 +1559,15 @@ button[data-tooth-state="missing"] {
 		flex-wrap: nowrap;
 	}
 	.top-actions .primary-button {
-		padding: 6px 10px;
+		padding: 6px 12px;
 		font-size: 12px;
 		white-space: nowrap;
-		min-height: 36px;
+		min-height: 44px;
+		min-width: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
 	}
 	.top-actions .secondary-button,
 	.top-actions .daily-top-button,
@@ -1590,9 +1601,11 @@ button[data-tooth-state="missing"] {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		gap: 3px;
 		padding: 6px 4px;
-		min-width: 0;
+		min-width: 44px;
+		min-height: 44px;
 		flex: 1;
 		max-width: 76px;
 		border-radius: 10px;
@@ -1600,6 +1613,7 @@ button[data-tooth-state="missing"] {
 		font-size: 10.5px;
 		font-weight: 600;
 		transition: color 0.15s;
+		box-sizing: border-box;
 	}
 	.dnt-bottom-nav a svg {
 		width: 20px;
@@ -1840,21 +1854,31 @@ button[data-tooth-state="missing"] {
    замеренные 64px с запасом 8px и не зависят от настроек шрифта. */
 @media (max-width: 840px) {
 	.app-shell.dente-redesign {
-		flex-direction: column;
+		display: grid;
+		grid-template-rows: 1fr auto;
+		grid-template-columns: 100%;
+		height: 100dvh;
+		max-height: 100dvh;
+		overflow: hidden;
 	}
 	.app-shell.dente-redesign .workspace {
-		padding-bottom: calc(72px + env(safe-area-inset-bottom));
+		min-height: 0;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior-y: contain;
+		padding-bottom: 24px;
 	}
 	.dnt-bottom-nav {
 		display: flex;
-		position: fixed;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		z-index: 9999;
-		background: var(--paper);
-		border-top: 1px solid var(--line);
-		padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+		position: relative;
+		left: auto;
+		right: auto;
+		bottom: auto;
+		z-index: 25;
+		grid-row: 2;
+		background: var(--paper-strong);
+		border-top: 1px solid var(--line-subtle, var(--line));
+		padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
 	}
 }
 

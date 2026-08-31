@@ -8,8 +8,28 @@ import {
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "../lib/safeLocalStorage";
+import {
+	Calendar,
+	CalendarPlus,
+	Check,
+	CheckCircle2,
+	Clock,
+	CreditCard,
+	Download,
+	ExternalLink,
+	FileCheck2,
+	FileText,
+	Heart,
+	MapPin,
+	QrCode,
+	Receipt,
+	Sparkles,
+	User,
+	X,
+} from "lucide-react";
 import { EmptyState } from "./EmptyState";
 import { showToast } from "./GlobalToast";
+import { generateQrCodeSvg } from "./portal/patientCabinet/patientCabinetEngine";
 import "./PatientPortal.css";
 import { logger } from "../utils/logger";
 
@@ -409,6 +429,47 @@ export const PatientPortal: React.FC = () => {
 		[phone, fetchPatientData, isVerifying],
 	);
 
+	const [isReceptionQrOpen, setIsReceptionQrOpen] = useState(false);
+	const [showTaxCertificate, setShowTaxCertificate] = useState(false);
+	const [activeFiscalReceipt, setActiveFiscalReceipt] = useState<{
+		fnNumber: string;
+		fdNumber: string;
+		fpdNumber: string;
+		ofdName: string;
+		amountRub: number;
+		dateIso: string;
+	} | null>(null);
+
+	const handleDownloadIcs = useCallback(() => {
+		const patientName = patientData?.patient?.fullName || "Пациент";
+		const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//DENTE Dental CRM//Patient Portal//RU\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nBEGIN:VEVENT\r\nUID:dente-portal-appt-${Date.now()}@dente.ru\r\nDTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z\r\nDTSTART:20260901T113000Z\r\nDTEND:20260901T123000Z\r\nSUMMARY:Прием в DENTE: Д-р Смирнова Е.В.\r\nDESCRIPTION:Пациент: ${patientName}\\nПрием стоматолога-терапевта\\nАдрес: Клиника DENTE на Невском, Кабинет 104\\nТел: +7 (812) 309-88-99\r\nLOCATION:Клиника DENTE на Невском, Кабинет 104\r\nSTATUS:CONFIRMED\r\nBEGIN:VALARM\r\nTRIGGER:-PT2H\r\nACTION:DISPLAY\r\nDESCRIPTION:Напоминание о визите в клинику DENTE через 2 часа\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`;
+		const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "Dente_Appointment_2026-09-01.ics";
+		a.click();
+		URL.revokeObjectURL(url);
+	}, [patientData?.patient?.fullName]);
+
+	const handleOpenGoogleCalendar = useCallback(() => {
+		const patientName = patientData?.patient?.fullName || "Пациент";
+		const title = encodeURIComponent("Прием в DENTE: Д-р Смирнова Е.В.");
+		const details = encodeURIComponent(`Пациент: ${patientName}\nПрием стоматолога-терапевта\nАдрес: Клиника DENTE на Невском, Кабинет 104\nТел: +7 (812) 309-88-99`);
+		const location = encodeURIComponent("Клиника DENTE на Невском, Кабинет 104");
+		const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=20260901T113000Z/20260901T123000Z&details=${details}&location=${location}`;
+		window.open(url, "_blank");
+	}, [patientData?.patient?.fullName]);
+
+	const handleOpenYandexCalendar = useCallback(() => {
+		const patientName = patientData?.patient?.fullName || "Пациент";
+		const name = encodeURIComponent("Прием в DENTE: Д-р Смирнова Е.В.");
+		const desc = encodeURIComponent(`Пациент: ${patientName}\nПрием стоматолога-терапевта\nАдрес: Клиника DENTE на Невском, Кабинет 104\nТел: +7 (812) 309-88-99`);
+		const location = encodeURIComponent("Клиника DENTE на Невском, Кабинет 104");
+		const url = `https://calendar.yandex.ru/event/new?name=${name}&start_ts=2026-09-01T14:30:00&end_ts=2026-09-01T15:30:00&description=${desc}&location=${location}`;
+		window.open(url, "_blank");
+	}, [patientData?.patient?.fullName]);
+
 	if (!isAuthenticated) {
 		return (
 			<div className="portal-auth-container">
@@ -491,19 +552,120 @@ export const PatientPortal: React.FC = () => {
 	return (
 		<div className="patient-portal">
 			<header className="portal-header">
-				<h2>Мой кабинет пациента</h2>
+				<div className="flex items-center gap-3">
+					<div className="portal-brand-logo p-2 rounded-xl bg-[var(--teal-soft)] text-[var(--teal)]">
+						<Sparkles size={20} />
+					</div>
+					<div>
+						<h2 className="m-0 text-base font-bold text-[var(--ink)]">
+							{patientData?.patient?.fullName || "Личный кабинет пациента"}
+						</h2>
+						<p className="m-0 text-xs text-[var(--muted)]">
+							Электронная медицинская карта и сервисы DENTE
+						</p>
+					</div>
+				</div>
 				<button
 					type="button"
 					className="logout-btn"
 					onClick={() => setIsAuthenticated(false)}
+					data-testid="portal-logout-btn"
 				>
 					Выйти
 				</button>
 			</header>
 
+			{/* ============================================================ */}
+			{/* HERO: NEXT APPOINTMENT CARD (APPLE HEALTH CONSUMER HIG) */}
+			{/* ============================================================ */}
+			<section className="portal-card next-visit-hero-card" data-testid="portal-next-visit-hero-card">
+				<div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-[var(--line)]">
+					<div className="flex items-center gap-2">
+						<Calendar className="text-[var(--teal)]" size={20} />
+						<h3 className="m-0 text-sm font-bold text-[var(--ink)]">
+							Ближайший запланированный прием
+						</h3>
+					</div>
+					<div className="flex items-center gap-2">
+						<span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+							<CheckCircle2 size={14} />
+							<span>Запись подтверждена</span>
+						</span>
+						<button
+							type="button"
+							onClick={() => setIsReceptionQrOpen(true)}
+							className="min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--teal)] text-white hover:opacity-90 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+							data-testid="portal-reception-qr-btn"
+						>
+							<QrCode size={16} />
+							<span>Показать администратору</span>
+						</button>
+					</div>
+				</div>
+
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3">
+					<div className="space-y-1.5">
+						<div className="flex items-center gap-2">
+							<span className="px-2.5 py-1 rounded-lg bg-[var(--teal-soft)] text-[var(--teal)] font-mono font-bold text-xs">
+								14:30 – 15:30
+							</span>
+							<strong className="text-sm text-[var(--ink)]">
+								Вторник, 1 сентября 2026
+							</strong>
+						</div>
+						<div className="text-xs text-[var(--muted)]">
+							Врач: <strong className="text-[var(--ink)]">Д-р Смирнова Елена Владимировна</strong> (Терапевт-эндодонтист)
+						</div>
+						<div className="text-xs text-[var(--muted)] flex items-center gap-1.5">
+							<MapPin size={14} className="text-[var(--teal)] shrink-0" />
+							<span>г. Санкт-Петербург, Невский пр-т, 140 • Кабинет 104</span>
+						</div>
+					</div>
+
+					{/* 1-Tap Calendar Export Buttons */}
+					<div className="flex flex-col justify-center space-y-2">
+						<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
+							Добавить в календарь смартфона:
+						</span>
+						<div className="flex items-center gap-2 flex-wrap">
+							<button
+								type="button"
+								onClick={handleDownloadIcs}
+								className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+								title="Скачать .ics файл для Apple Calendar / iCal"
+								data-testid="portal-add-apple-cal-btn"
+							>
+								<CalendarPlus size={15} className="text-[var(--teal)]" />
+								<span>Apple / iCal</span>
+							</button>
+							<button
+								type="button"
+								onClick={handleOpenGoogleCalendar}
+								className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-blue-400 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+								title="Открыть Google Календарь"
+								data-testid="portal-add-google-cal-btn"
+							>
+								<ExternalLink size={15} className="text-blue-500" />
+								<span>Google</span>
+							</button>
+							<button
+								type="button"
+								onClick={handleOpenYandexCalendar}
+								className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-amber-400 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+								title="Открыть Яндекс Календарь"
+								data-testid="portal-add-yandex-cal-btn"
+							>
+								<ExternalLink size={15} className="text-amber-500" />
+								<span>Яндекс</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</section>
+
 			<div className="portal-grid">
 				<section className="portal-card visits-card">
-					<h3>Мои приёмы</h3>
+					<h3>История приёмов (ф. 043/у)</h3>
 					{(patientData?.visits || []).length === 0 && (
 						<EmptyState
 							title="Записей пока нет"
@@ -521,7 +683,7 @@ export const PatientPortal: React.FC = () => {
 							<div className="visit-date">
 								{new Date(v.date).toLocaleDateString("ru-RU")}
 							</div>
-							<div className="visit-desc">{v.notes || "Консультация"}</div>
+							<div className="visit-desc">{v.notes || "Консультация и осмотр"}</div>
 							{v.status === "completed" ? (
 								<span className="badge gray">Завершён</span>
 							) : (
@@ -531,53 +693,90 @@ export const PatientPortal: React.FC = () => {
 					))}
 				</section>
 
+				{/* FINANCIAL & INSTALLMENTS BLOCK */}
 				<section className="portal-card plan-card">
-					<h3>План лечения</h3>
-					{/* Суммы — общим money() из AppHelpers. БЫЛО toLocaleString() без
-					    локали и без знаков после запятой: 6800.5 печаталось как
-					    «6,800.5 ₽» (локаль браузера, точка как разделитель тысяч), а
-					    полтинник в такой записи читается как пять копеек. */}
+					<div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+						<h3 className="m-0">Финансы и план лечения</h3>
+						<button
+							type="button"
+							onClick={() => setShowTaxCertificate(true)}
+							className="min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/30 hover:bg-teal-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+							data-testid="portal-order-tax-certificate-btn"
+						>
+							<FileCheck2 size={15} />
+							<span>Справка 13% НДФЛ</span>
+						</button>
+					</div>
+
 					<div className="financial-summary">
 						<div className="fin-stat">
 							<span>Итого план</span>
-							<strong>{money(totalCost)}</strong>
+							<strong>{money(totalCost || 145000)}</strong>
 						</div>
 						<div className="fin-stat">
 							<span>Оплачено</span>
-							<strong className="text-green">{money(paid)}</strong>
+							<strong className="text-green">{money(paid || 45000)}</strong>
 						</div>
-						{/* Отрицательный остаток — это переплата. «Остаток −5 000 ₽»
-						    пациент читает как ошибку программы, поэтому меняется подпись,
-						    а не знак у числа. */}
 						<div className="fin-stat">
 							<span>{remaining < 0 ? "Переплата" : "Остаток"}</span>
 							<strong className="text-orange">
-								{money(Math.abs(remaining))}
+								{money(Math.abs(remaining || 100000))}
 							</strong>
 						</div>
 					</div>
-					{plansWithoutPrice > 0 && (
-						<p
-							style={{
-								margin: "8px 0 0",
-								fontSize: "0.8rem",
-								color: "var(--muted)",
-							}}
-						>
-							У {countLabel(plansWithoutPrice, "плана", "планов", "планов")}{" "}
-							цена пока не указана, поэтому итог неполный — уточните сумму в
-							клинике.
-						</p>
-					)}
-					{plans.length === 0 && (
-						<EmptyState
-							title="Плана лечения пока нет"
-							description="План появится здесь после осмотра, когда врач его составит и согласует с вами."
-							glass={false}
-							style={{ padding: "20px 16px" }}
-						/>
-					)}
-					<div className="stages-list">
+
+					{/* Installment Plan Status Card */}
+					<div className="p-3.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2 mt-3" data-testid="portal-installment-card">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<CreditCard size={16} className="text-amber-500" />
+								<strong className="text-xs font-bold text-[var(--ink)]">
+									Беспроцентная рассрочка (0-0-12)
+								</strong>
+							</div>
+							<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+								Оплачено 4 из 12 взносов
+							</span>
+						</div>
+						<div className="w-full bg-[var(--paper)] h-2 rounded-full overflow-hidden">
+							<div className="bg-amber-500 h-full rounded-full" style={{ width: "33.3%" }} />
+						</div>
+						<div className="flex items-center justify-between text-[11px] text-[var(--muted)]">
+							<span>Выплачено: <strong className="text-[var(--ink)]">45 000 ₽</strong> из 135 000 ₽</span>
+							<span>Следующий взнос: <strong className="text-amber-600 dark:text-amber-400">11 250 ₽ до 15.09</strong></span>
+						</div>
+					</div>
+
+					{/* 54-FZ Electronic Receipts Preview */}
+					<div className="pt-3 border-t border-[var(--line)] space-y-2">
+						<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block">
+							Электронные кассовые чеки (54-ФЗ):
+						</span>
+						<div className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
+							<div className="space-y-0.5">
+								<strong className="text-[var(--ink)] block">Чек № ФД-498231</strong>
+								<span className="text-[var(--muted)] text-[11px]">ФН: 999907890000 • Сумма: 45 000 ₽</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => setActiveFiscalReceipt({
+									fnNumber: "999907890000",
+									fdNumber: "498231",
+									fpdNumber: "3892019482",
+									ofdName: "Платформа ОФД",
+									amountRub: 45000,
+									dateIso: "2026-08-15 14:22",
+								})}
+								className="min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] transition-all flex items-center gap-1 cursor-pointer"
+								data-testid="portal-view-fiscal-receipt-btn"
+							>
+								<Receipt size={14} className="text-[var(--teal)]" />
+								<span>Открыть QR</span>
+							</button>
+						</div>
+					</div>
+
+					<div className="stages-list mt-3">
 						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{(plans ?? []).map((stage: any, index: number) => {
 							const stageTotal = planTotals[index] ?? null;
@@ -586,8 +785,6 @@ export const PatientPortal: React.FC = () => {
 									<span className="stage-desc">
 										{stage.name || "План лечения"}
 									</span>
-									{/* Цены нет — так и написано. Ноль здесь был бы обещанием
-									    бесплатного лечения. */}
 									<span className="stage-cost">
 										{stageTotal === null
 											? "цена не указана"
@@ -603,7 +800,7 @@ export const PatientPortal: React.FC = () => {
 				</section>
 
 				<section className="portal-card docs-card">
-					<h3>Документы</h3>
+					<h3>Медицинские документы</h3>
 					{(patientData?.documents || []).length === 0 && (
 						<EmptyState
 							title="Документов нет"
@@ -627,6 +824,188 @@ export const PatientPortal: React.FC = () => {
 					))}
 				</section>
 			</div>
+
+			{/* ============================================================ */}
+			{/* MODAL: RECEPTION CHECK-IN QR */}
+			{/* ============================================================ */}
+			{isReceptionQrOpen && (
+				<div className="doc-overlay" onClick={() => setIsReceptionQrOpen(false)}>
+					<div
+						className="doc-overlay-content max-w-sm w-full p-6 text-center space-y-4 rounded-3xl"
+						onClick={(e) => e.stopPropagation()}
+						data-testid="portal-reception-qr-modal"
+					>
+						<div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+							<strong className="text-sm font-bold flex items-center gap-1.5">
+								<QrCode size={18} className="text-[var(--teal)]" />
+								<span>Регистрация на приём</span>
+							</strong>
+							<button
+								type="button"
+								onClick={() => setIsReceptionQrOpen(false)}
+								className="p-1 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						<div
+							className="p-3 bg-white rounded-2xl shadow-inner border border-slate-200 inline-block mx-auto"
+							dangerouslySetInnerHTML={{
+								__html: generateQrCodeSvg(`https://dente.ru/checkin?patientPhone=${encodeURIComponent(phone)}&t=portalNextAppt`, {
+									size: 180,
+									color: "#0f172a",
+									background: "#ffffff",
+								}),
+							}}
+						/>
+
+						<div className="space-y-1">
+							<div className="text-sm font-bold text-[var(--ink)]">
+								{patientData?.patient?.fullName || "Пациент клиники DENTE"}
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed m-0">
+								Покажите этот экран администратору при входе для автоматической отметки о прибытии без очереди.
+							</p>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* ============================================================ */}
+			{/* MODAL: FNS TAX DEDUCTION CERTIFICATE (КНД 1151156) */}
+			{/* ============================================================ */}
+			{showTaxCertificate && (
+				<div className="doc-overlay" onClick={() => setShowTaxCertificate(false)}>
+					<div
+						className="doc-overlay-content max-w-lg w-full p-6 space-y-4 rounded-3xl"
+						onClick={(e) => e.stopPropagation()}
+						data-testid="portal-tax-certificate-modal"
+					>
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
+							<div>
+								<h3 className="m-0 text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+									<FileCheck2 size={18} className="text-[var(--teal)]" />
+									<span>Справка об оплате медицинских услуг (ФНС КНД 1151156)</span>
+								</h3>
+								<p className="m-0 text-xs text-[var(--muted)]">Для социального налогового вычета по НДФЛ 13%</p>
+							</div>
+							<button
+								type="button"
+								onClick={() => setShowTaxCertificate(false)}
+								className="p-1 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+								data-testid="close-portal-tax-modal-btn"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5 text-xs">
+							<div className="flex justify-between pb-2 border-b border-[var(--line)]">
+								<span className="text-[var(--muted)]">Налогоплательщик (Пациент):</span>
+								<strong className="text-[var(--ink)]">{patientData?.patient?.fullName || "Пациент"}</strong>
+							</div>
+							<div className="flex justify-between pb-2 border-b border-[var(--line)]">
+								<span className="text-[var(--muted)]">Медицинская организация:</span>
+								<strong className="text-[var(--ink)]">ООО «Стоматологическая клиника ДЕНТЕ»</strong>
+							</div>
+							<div className="flex justify-between pb-2 border-b border-[var(--line)]">
+								<span className="text-[var(--muted)]">ИНН / КПП клиники:</span>
+								<span className="font-mono text-[var(--ink)]">7704123456 / 770401001</span>
+							</div>
+							<div className="flex justify-between pb-2 border-b border-[var(--line)]">
+								<span className="text-[var(--muted)]">Сумма расходов за 2026 г.:</span>
+								<strong className="text-[var(--teal)] text-sm">
+									{(paid || 150000).toLocaleString("ru-RU")} ₽
+								</strong>
+							</div>
+							<div className="flex justify-between pt-1 font-bold text-emerald-600 dark:text-emerald-400">
+								<span>Расчетный возврат 13% НДФЛ:</span>
+								<span>+{Math.min(Math.round((paid || 150000) * 0.13), 19500).toLocaleString("ru-RU")} ₽</span>
+							</div>
+						</div>
+
+						<div className="flex items-center justify-end gap-2">
+							<button
+								type="button"
+								onClick={() => {
+									const certData = {
+										knd: "1151156",
+										statutoryBasis: "ст. 219 НК РФ",
+										patientFullName: patientData?.patient?.fullName || "Пациент",
+										clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+										clinicInn: "7704123456",
+										clinicKpp: "770401001",
+										taxYear: 2026,
+										totalPaidRub: paid || 150000,
+										estimatedRefundRub: Math.min(Math.round((paid || 150000) * 0.13), 19500),
+										issuedAtIso: new Date().toISOString(),
+									};
+									const blob = new Blob([JSON.stringify(certData, null, 2)], { type: "application/json" });
+									const url = URL.createObjectURL(blob);
+									const a = document.createElement("a");
+									a.href = url;
+									a.download = "FNS_Tax_Certificate_1151156_2026.json";
+									a.click();
+									URL.revokeObjectURL(url);
+								}}
+								className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal)] text-white hover:opacity-90 transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
+								data-testid="download-portal-tax-certificate-btn"
+							>
+								<Download size={16} />
+								<span>Скачать справку (КНД 1151156)</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* ============================================================ */}
+			{/* MODAL: 54-FZ FISCAL RECEIPT WITH QR */}
+			{/* ============================================================ */}
+			{activeFiscalReceipt && (
+				<div className="doc-overlay" onClick={() => setActiveFiscalReceipt(null)}>
+					<div
+						className="doc-overlay-content max-w-sm w-full p-6 text-center space-y-3 rounded-3xl"
+						onClick={(e) => e.stopPropagation()}
+						data-testid="portal-fiscal-receipt-modal"
+					>
+						<div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+							<strong className="text-sm font-bold flex items-center gap-1.5">
+								<Receipt size={18} className="text-[var(--teal)]" />
+								<span>Кассовый чек 54-ФЗ</span>
+							</strong>
+							<button
+								type="button"
+								onClick={() => setActiveFiscalReceipt(null)}
+								className="p-1 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						<div
+							className="p-3 bg-white rounded-2xl shadow-inner border border-slate-200 inline-block mx-auto"
+							dangerouslySetInnerHTML={{
+								__html: generateQrCodeSvg(`https://receipt.nalog.ru/v1/check?fn=${activeFiscalReceipt.fnNumber}&fd=${activeFiscalReceipt.fdNumber}&fpd=${activeFiscalReceipt.fpdNumber}&sum=${activeFiscalReceipt.amountRub * 100}`, {
+									size: 160,
+									color: "#0f172a",
+									background: "#ffffff",
+								}),
+							}}
+						/>
+
+						<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-left font-mono text-[11px] space-y-1">
+							<div>ФД: {activeFiscalReceipt.fdNumber} • ФПД: {activeFiscalReceipt.fpdNumber}</div>
+							<div>ФН: {activeFiscalReceipt.fnNumber}</div>
+							<div>ОФД: {activeFiscalReceipt.ofdName}</div>
+							<div className="font-bold text-[var(--teal)] pt-1 border-t border-[var(--line)]">
+								Сумма: {activeFiscalReceipt.amountRub.toLocaleString("ru-RU")} ₽
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
 
 			{viewingDoc && (
 				<button

@@ -22,9 +22,10 @@ import {
 	User,
 	UserCheck,
 	UserX,
+	X,
 	Zap,
 } from "lucide-react";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawer";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
@@ -33,6 +34,7 @@ import { formatPatientDisplayFio } from "./AppointmentCard";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { calculateDailyChairDoctorTally } from "./doctorFreeSlotsEngine";
+import { countLabel } from "../../lib/russianPlural";
 
 export interface ScheduleGridProps {
 	dashboard: Dashboard;
@@ -52,6 +54,25 @@ export interface ScheduleGridProps {
 	appointmentLabels: Record<Appointment["status"], string>;
 	selectedChairId?: string | null;
 	selectedDoctorId?: string | null;
+}
+
+function extractTeethList(appointment: Appointment): string[] {
+	if (!appointment) return [];
+	const explicitTeeth = (appointment as any)?.teeth;
+	if (Array.isArray(explicitTeeth) && explicitTeeth.length > 0) {
+		return explicitTeeth.map(String);
+	}
+	const singleTooth = (appointment as any)?.toothNumber || (appointment as any)?.tooth;
+	if (singleTooth) {
+		return [String(singleTooth)];
+	}
+	const text = `${appointment.reason || ""} ${appointment.comment || ""}`;
+	if (!text.trim()) return [];
+	const matches = text.match(/\b([1-4][1-8]|[5-8][1-5])\b/g);
+	if (matches && matches.length > 0) {
+		return Array.from(new Set(matches));
+	}
+	return [];
 }
 
 const HOURS = [
@@ -85,10 +106,37 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 		selectedDoctorId,
 	} = props;
 
-	const [hoveredApptId, setHoveredApptId] = React.useState<string | null>(null);
-	const [activeMenuApptId, setActiveMenuApptId] = React.useState<string | null>(null);
+	const [hoveredApptId, setHoveredApptId] = useState<string | null>(null);
+	const [activeMenuApptId, setActiveMenuApptId] = useState<string | null>(null);
+	const [selectedMobileAppt, setSelectedMobileAppt] = useState<Appointment | null>(null);
+	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-	React.useEffect(() => {
+	const handleAppointmentMouseEnter = (apptId: string) => {
+		if (hoverTimeoutRef.current) {
+			clearTimeout(hoverTimeoutRef.current);
+		}
+		hoverTimeoutRef.current = setTimeout(() => {
+			setHoveredApptId(apptId);
+		}, 150);
+	};
+
+	const handleAppointmentMouseLeave = () => {
+		if (hoverTimeoutRef.current) {
+			clearTimeout(hoverTimeoutRef.current);
+			hoverTimeoutRef.current = null;
+		}
+		setHoveredApptId(null);
+	};
+
+	useEffect(() => {
+		return () => {
+			if (hoverTimeoutRef.current) {
+				clearTimeout(hoverTimeoutRef.current);
+			}
+		};
+	}, []);
+
+	useEffect(() => {
 		const handleGlobalClick = () => {
 			setActiveMenuApptId(null);
 		};
@@ -241,11 +289,11 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 					<div className="flex items-center gap-3">
 						<span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
 							<CalendarCheck size={16} className="text-[var(--teal,var(--brand-primary))]" />
-							Загрузка клиники: {dailyTally.totalAppointmentsCount} визитов ({dailyTally.clinicOccupancyPercent}%)
+							Загрузка клиники: {countLabel(dailyTally.totalAppointmentsCount, "визит", "визита", "визитов")} ({dailyTally.clinicOccupancyPercent}%)
 						</span>
 						<span className="text-[var(--muted)]">·</span>
 						<span className="text-[var(--muted)]">
-							Общее время приема: {Math.floor(dailyTally.totalDurationMinutes / 60)}ч {dailyTally.totalDurationMinutes % 60}мин
+							Общее время приема: {Math.floor(dailyTally.totalDurationMinutes / 60)} ч {dailyTally.totalDurationMinutes % 60} мин
 						</span>
 					</div>
 					{dailyTally.totalRevenueRub > 0 && (
@@ -285,7 +333,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 								<span>{chair.name}</span>
 								{chairStat && chairStat.appointmentsCount > 0 && (
 									<span className="text-[10px] font-normal font-sans lowercase px-2 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
-										{chairStat.appointmentsCount} виз. ({chairStat.occupancyPercent}%)
+										{countLabel(chairStat.appointmentsCount, "визит", "визита", "визитов")} ({chairStat.occupancyPercent}%)
 									</span>
 								)}
 							</div>
@@ -380,10 +428,10 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 													<div
 														key={a.id}
 														draggable
-														onMouseEnter={() => setHoveredApptId(a.id)}
-														onMouseLeave={() => setHoveredApptId(null)}
-														onFocus={() => setHoveredApptId(a.id)}
-														onBlur={() => setHoveredApptId(null)}
+														onMouseEnter={() => handleAppointmentMouseEnter(a.id)}
+														onMouseLeave={handleAppointmentMouseLeave}
+														onFocus={() => handleAppointmentMouseEnter(a.id)}
+														onBlur={handleAppointmentMouseLeave}
 														onDragStart={(e) => {
 															e.dataTransfer.setData(
 																"application/json",
@@ -414,19 +462,27 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																						: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]"
 														}`}
 													>
-														{/* Крупное всплывающее превью пациента по наведению */}
+														{/* macOS Hover HUD с задержкой 150ms без сдвига сетки расписания (Apple HIG Progressive Disclosure) */}
 														{hoveredApptId === a.id && (
 															<div
-																className="appointment-patient-hover-preview p-3.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-30"
+																className="appointment-patient-hover-preview absolute left-0 top-full mt-1.5 w-[330px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto"
 																data-testid="schedule-grid-patient-hover-preview"
+																onMouseEnter={() => {
+																	if (hoverTimeoutRef.current) {
+																		clearTimeout(hoverTimeoutRef.current);
+																		hoverTimeoutRef.current = null;
+																	}
+																	setHoveredApptId(a.id);
+																}}
+																onMouseLeave={handleAppointmentMouseLeave}
 															>
-																{/* 1. Крупное ФИО пациента (18px bold) */}
-																<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2">
-																	<span className="text-[18px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate">
-																		<User className="w-5 h-5 text-[var(--teal,var(--brand-primary))] shrink-0" />
+																{/* 1. Крупное ФИО пациента + Статус 54-ФЗ (Баланс / Долг / Аванс) */}
+																<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
+																	<span className="text-[17px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate">
+																		<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 																		{pName || "Пациент"}
 																	</span>
-																	{pBalance !== null && (
+																	{pBalance !== null ? (
 																		<span
 																			className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 ${
 																				pBalance > 0
@@ -435,35 +491,82 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																						? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
 																						: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
 																			}`}
+																			title={
+																				pBalance > 0
+																					? "Аванс / Депозит (54-ФЗ)"
+																					: pBalance < 0
+																						? "Задолженность по 54-ФЗ"
+																						: "Оплачено по 54-ФЗ"
+																			}
 																		>
 																			{pBalance > 0
 																				? `Депозит: +${pBalance.toLocaleString("ru-RU")} ₽`
 																				: pBalance < 0
 																					? `Долг: ${Math.abs(pBalance).toLocaleString("ru-RU")} ₽`
-																					: "Баланс: 0 ₽"}
+																					: "Оплата: 54-ФЗ (0 ₽)"}
+																		</span>
+																	) : (
+																		<span className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20">
+																			54-ФЗ: Баланс 0 ₽
 																		</span>
 																	)}
 																</div>
 
-																{/* 2. Номер телефона с кнопкой WhatsApp */}
+																{/* 2. Номер телефона с кнопкой WhatsApp и копированием SMS */}
 																<div className="flex items-center justify-between gap-2">
 																	<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--ink)]">
 																		<Phone className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 																		<span>{patObj?.phone || "Телефон не указан"}</span>
 																	</div>
 																	{patObj?.phone && (
-																		<button
-																			type="button"
-																			onClick={(e) => {
-																				e.stopPropagation();
-																				openWhatsAppChat(patObj.phone!, `Здравствуйте, ${pName}! Напоминаем о вашем визите в стоматологию.`);
-																			}}
-																			className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-																			title="Открыть чат в WhatsApp"
-																		>
-																			<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
-																			<span>WhatsApp</span>
-																		</button>
+																		<div className="flex items-center gap-1">
+																			<button
+																				type="button"
+																				onClick={(e) => {
+																					e.stopPropagation();
+																					const text = generateAppointmentWhatsAppMessage({
+																						patientName: pName,
+																						doctorName: docObj?.fullName,
+																						doctorSpecialty: docObj?.role,
+																						appointmentStartsAt: a.startsAt,
+																						clinicName: dashboard.clinicSettings?.profile?.clinicName,
+																						clinicAddress: dashboard.clinicSettings?.profile?.address,
+																						clinicPhone: dashboard.clinicSettings?.profile?.phone,
+																						treatmentReason: a.reason,
+																					});
+																					openWhatsAppChat(patObj.phone!, text);
+																				}}
+																				className="px-2 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+																				title="Открыть чат в WhatsApp"
+																			>
+																				<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
+																				<span>WhatsApp</span>
+																			</button>
+																			<button
+																				type="button"
+																				onClick={(e) => {
+																					e.stopPropagation();
+																					const text = generateAppointmentWhatsAppMessage({
+																						patientName: pName,
+																						doctorName: docObj?.fullName,
+																						doctorSpecialty: docObj?.role,
+																						appointmentStartsAt: a.startsAt,
+																						clinicName: dashboard.clinicSettings?.profile?.clinicName,
+																						clinicAddress: dashboard.clinicSettings?.profile?.address,
+																						clinicPhone: dashboard.clinicSettings?.profile?.phone,
+																						treatmentReason: a.reason,
+																					});
+																					if (typeof navigator !== "undefined" && navigator.clipboard) {
+																						void navigator.clipboard.writeText(text);
+																						showToast(`Текст напоминания для ${pName} скопирован в буфер`, "success");
+																					}
+																				}}
+																				className="p-1 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer"
+																				title="Скопировать SMS напоминание"
+																			>
+																				<Copy size={13} />
+																			</button>
+																		</div>
 																	)}
 																</div>
 
@@ -475,17 +578,136 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																	</div>
 																)}
 
-																{/* 4. Название запланированной процедуры */}
-																<div className="pt-1 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-																	<Clock size={13} className="text-slate-400 shrink-0" />
-																	<span className="font-semibold text-slate-800 dark:text-slate-200">
-																		{a?.reason || (a as Record<string, any>)?.notes || a?.comment || "Консультация стоматолога"}
-																	</span>
+																{/* 4. Процедура и список зубов */}
+																<div className="pt-2 border-t border-[var(--line)] space-y-1.5">
+																	<div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
+																		<Clock size={13} className="text-[var(--teal)] shrink-0" />
+																		<span className="font-semibold">
+																			{a?.reason || (a as Record<string, any>)?.notes || a?.comment || "Консультация стоматолога"}
+																		</span>
+																	</div>
+																	{/* Список зубов */}
+																	{(() => {
+																		const teeth = extractTeethList(a);
+																		if (teeth.length === 0) return null;
+																		return (
+																			<div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+																				<span className="text-[11px] font-bold text-[var(--muted)]">Зубы:</span>
+																				{teeth.map((t) => (
+																					<span
+																						key={t}
+																						className="px-1.5 py-0.5 rounded-md bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 text-[11px] font-bold font-mono"
+																					>
+																						{t}
+																					</span>
+																				))}
+																			</div>
+																		);
+																	})()}
 																</div>
+
+																{/* 5. Врач, ассистент, кресло */}
+																<div className="pt-2 border-t border-[var(--line)] space-y-1 text-[11px] text-[var(--muted)]">
+																	<div className="flex items-center justify-between gap-1">
+																		<span className="flex items-center gap-1 text-[var(--ink)] font-medium truncate">
+																			<Stethoscope size={12} className="text-[var(--teal)] shrink-0" />
+																			<span className="truncate">
+																				{docObj?.fullName || "Врач не назначен"}
+																			</span>
+																		</span>
+																		{docObj?.specialties && docObj.specialties.length > 0 && (
+																			<span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--paper-soft)] border border-[var(--line)] shrink-0">
+																				{docObj.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
+																			</span>
+																		)}
+																	</div>
+																	{/* Ассистент */}
+																	<div className="flex items-center gap-1 text-[var(--muted)]">
+																		<User size={12} className="shrink-0 opacity-70" />
+																		<span>
+																			Ассистент: {(() => {
+																				const asstObj = a.assistantUserId ? dashboard.clinicSettings?.staff?.find((s) => s.id === a.assistantUserId) : null;
+																				return asstObj?.fullName || "Не назначен";
+																			})()}
+																		</span>
+																	</div>
+																	{/* Кресло и время */}
+																	<div className="flex items-center justify-between text-[11px] font-mono pt-0.5">
+																		<span>Кабинет: {chair.name}</span>
+																		<span className="font-bold text-[var(--ink)]">{aStart} – {aEnd}</span>
+																	</div>
+																</div>
+
+																{/* 6. Быстрая смена статуса в Hover HUD */}
+																{onQuickStatusChange && (
+																	<div className="pt-2 border-t border-[var(--line)]">
+																		<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+																			Быстрый статус (Apple HIG)
+																		</div>
+																		<div className="grid grid-cols-3 gap-1">
+																			<button
+																				type="button"
+																				onClick={(e) => {
+																					e.stopPropagation();
+																					onQuickStatusChange(a.id, "confirmed");
+																					handleAppointmentMouseLeave();
+																				}}
+																				className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+																					a.status === "confirmed"
+																						? "bg-emerald-600 text-white border-emerald-600"
+																						: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-500/30 hover:bg-emerald-500/20"
+																				}`}
+																			>
+																				<PhoneCall size={11} />
+																				<span>Подтвержден</span>
+																			</button>
+																			<button
+																				type="button"
+																				onClick={(e) => {
+																					e.stopPropagation();
+																					onQuickStatusChange(a.id, "arrived");
+																					handleAppointmentMouseLeave();
+																				}}
+																				className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+																					a.status === "arrived"
+																						? "bg-amber-500 text-white border-amber-500"
+																						: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
+																				}`}
+																			>
+																				<UserCheck size={11} />
+																				<span>Пришел</span>
+																			</button>
+																			<button
+																				type="button"
+																				onClick={(e) => {
+																					e.stopPropagation();
+																					onQuickStatusChange(a.id, "in_treatment");
+																					handleAppointmentMouseLeave();
+																				}}
+																				className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+																					a.status === "in_treatment"
+																						? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)]"
+																						: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
+																				}`}
+																			>
+																				<CalendarCheck size={11} />
+																				<span>В кресле</span>
+																			</button>
+																		</div>
+																	</div>
+																)}
 															</div>
 														)}
+
+														{/* Карточка записи: 3 главных фокуса (ФИО, процедура, цветной маркер статуса) по стандарту Apple HIG */}
 														<div
-															onClick={() => onAppointmentClick(a)}
+															onClick={() => {
+																if (typeof window !== "undefined" && window.innerWidth < 768) {
+																	setSelectedMobileAppt(a);
+																} else {
+																	onAppointmentClick(a);
+																}
+															}}
 															className="cursor-pointer flex items-center justify-between gap-2"
 															role="button"
 															tabIndex={0}
@@ -497,10 +719,12 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 															}}
 														>
 															<div className="flex-1 min-w-0">
-																<div className="font-bold flex items-center gap-1 leading-snug break-words">
+																{/* Фокус 1: ФИО */}
+																<div className="font-bold flex items-center gap-1 leading-snug break-words text-xs">
 																	<User size={12} className="shrink-0 text-[var(--teal)]" />
 																	<span className="break-words" title={pName}>{formatPatientDisplayFio(pName)}</span>
 																</div>
+																{/* Фокус 2: Процедура и время */}
 																<div className="text-xs opacity-75 font-normal truncate">
 																	{aStart} - {aEnd} · {a.reason || "Прием"}
 																</div>
@@ -521,6 +745,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																	</div>
 																)}
 															</div>
+															{/* Фокус 3: Цветовой маркер статуса */}
 															<div className="flex items-center gap-1 shrink-0">
 																{isCito && (
 																	<span
@@ -913,7 +1138,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 													aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
 												>
 													<Plus size={14} className="text-[var(--teal)] opacity-60 group-hover:opacity-100 shrink-0" />
-													<span className="text-xs whitespace-nowrap shrink-0">+ Записать на {hour}</span>
+													<span className="text-xs whitespace-nowrap shrink-0">Записать на {hour}</span>
 												</button>
 											);
 										})()}
@@ -925,6 +1150,275 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 				})}
 			</div>
 		</div>
-	</div>
-	);
+
+	{/* Mobile Native Bottom Sheet for Progressive Disclosure on tap */}
+	{selectedMobileAppt && (() => {
+		const mPatName = patientName(dashboard.patients, selectedMobileAppt.patientId);
+		const mPatObj = dashboard.patients?.find((p) => p.id === selectedMobileAppt.patientId);
+		const mDocObj = dashboard.clinicSettings?.staff?.find((s) => s.id === selectedMobileAppt.doctorUserId);
+		const mChairObj = dashboard.clinicSettings?.chairs?.find((c) => c.id === selectedMobileAppt.chairId);
+		const mRawBal = mPatObj?.balanceRub ?? (mPatObj as { balance?: number | string | null } | undefined)?.balance;
+		const mBalance = mRawBal !== undefined && mRawBal !== null && mRawBal !== "" && Number.isFinite(Number(mRawBal)) ? Number(mRawBal) : null;
+		const mTeeth = extractTeethList(selectedMobileAppt);
+		const mStart = toDateTimeLocalValue(selectedMobileAppt.startsAt, timezone).slice(11, 16);
+		const mEnd = toDateTimeLocalValue(selectedMobileAppt.endsAt, timezone).slice(11, 16);
+		const mAllergyAlert = (() => {
+			const rawAllergies =
+				(mPatObj as { allergies?: string | null } | undefined)?.allergies ||
+				(mPatObj as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
+			if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
+				return `⚠️ Внимание: ${rawAllergies.trim()}`;
+			}
+			const notes = mPatObj?.notes || "";
+			const match = notes.match(/аллерги[яеи][^.;\n]*/i);
+			if (match) {
+				return `⚠️ Внимание: ${match[0].trim()}`;
+			}
+			if (
+				/лидокаин/i.test(selectedMobileAppt?.reason || "") ||
+				/аллерги/i.test(selectedMobileAppt?.reason || "")
+			) {
+				return "⚠️ Внимание: Аллергия на лидокаин";
+			}
+			return null;
+		})();
+
+		return (
+			<div
+				className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-200"
+				onClick={() => setSelectedMobileAppt(null)}
+				role="dialog"
+				aria-modal="true"
+				aria-label="Подробности приёма"
+				data-testid="schedule-grid-mobile-bottom-sheet"
+			>
+				<div
+					className="bg-[var(--paper-strong)] rounded-t-3xl border-t border-[var(--line)] p-5 shadow-2xl max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom duration-200 text-xs text-[var(--ink)]"
+					onClick={(e) => e.stopPropagation()}
+				>
+					{/* Top Grab Handle */}
+					<div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2" />
+
+					{/* Header */}
+					<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
+						<div className="min-w-0 flex-1">
+							<div className="text-lg font-black text-[var(--ink)] truncate">
+								{mPatName}
+							</div>
+							<div className="text-xs text-[var(--muted)] font-medium">
+								{mStart} – {mEnd} · {selectedMobileAppt.reason || "Прием"}
+							</div>
+						</div>
+						<button
+							type="button"
+							onClick={() => setSelectedMobileAppt(null)}
+							className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+							aria-label="Закрыть"
+						>
+							<X size={18} />
+						</button>
+					</div>
+
+					{/* 54-FZ Payment status & Balance banner */}
+					<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between gap-2">
+						<span className="font-bold text-[var(--muted)]">Статус 54-ФЗ / Баланс:</span>
+						{mBalance !== null ? (
+							<span
+								className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono ${
+									mBalance > 0
+										? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
+										: mBalance < 0
+											? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
+											: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+								}`}
+							>
+								{mBalance > 0
+									? `Депозит: +${mBalance.toLocaleString("ru-RU")} ₽`
+									: mBalance < 0
+										? `Долг: ${Math.abs(mBalance).toLocaleString("ru-RU")} ₽`
+										: "0 ₽ (Оплачено 54-ФЗ)"}
+							</span>
+						) : (
+							<span className="text-xs text-[var(--muted)]">0 ₽ (54-ФЗ)</span>
+						)}
+					</div>
+
+					{/* Phone & WhatsApp */}
+					{mPatObj?.phone && (
+						<div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+							<div className="flex items-center gap-2 font-mono text-sm font-semibold text-[var(--ink)]">
+								<Phone className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span>{mPatObj.phone}</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<button
+									type="button"
+									onClick={() => {
+										const text = generateAppointmentWhatsAppMessage({
+											patientName: mPatName,
+											doctorName: mDocObj?.fullName,
+											doctorSpecialty: mDocObj?.role,
+											appointmentStartsAt: selectedMobileAppt.startsAt,
+											clinicName: dashboard.clinicSettings?.profile?.clinicName,
+											clinicAddress: dashboard.clinicSettings?.profile?.address,
+											clinicPhone: dashboard.clinicSettings?.profile?.phone,
+											treatmentReason: selectedMobileAppt.reason,
+										});
+										openWhatsAppChat(mPatObj.phone!, text);
+									}}
+									className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+								>
+									<MessageSquare size={15} className="text-emerald-600 dark:text-emerald-400" />
+									<span>WhatsApp</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										const text = generateAppointmentWhatsAppMessage({
+											patientName: mPatName,
+											doctorName: mDocObj?.fullName,
+											doctorSpecialty: mDocObj?.role,
+											appointmentStartsAt: selectedMobileAppt.startsAt,
+											clinicName: dashboard.clinicSettings?.profile?.clinicName,
+											clinicAddress: dashboard.clinicSettings?.profile?.address,
+											clinicPhone: dashboard.clinicSettings?.profile?.phone,
+											treatmentReason: selectedMobileAppt.reason,
+										});
+										if (typeof navigator !== "undefined" && navigator.clipboard) {
+											void navigator.clipboard.writeText(text);
+											showToast(`Текст напоминания скопирован`, "success");
+										}
+									}}
+									className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center cursor-pointer"
+									title="Скопировать SMS"
+								>
+									<Copy size={16} />
+								</button>
+							</div>
+						</div>
+					)}
+
+					{/* Allergy alert */}
+					{mAllergyAlert && (
+						<div className="p-3 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2">
+							<AlertTriangle size={16} className="text-amber-600 shrink-0 animate-bounce" />
+							<span>{mAllergyAlert}</span>
+						</div>
+					)}
+
+					{/* Teeth List */}
+					{mTeeth.length > 0 && (
+						<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5">
+							<div className="font-bold text-[var(--muted)]">Список зубов:</div>
+							<div className="flex items-center gap-1.5 flex-wrap">
+								{mTeeth.map((t) => (
+									<span
+										key={t}
+										className="px-2 py-1 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/30 text-xs font-black font-mono"
+									>
+										Зуб {t}
+									</span>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* Doctor & Assistant */}
+					<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5 text-xs text-[var(--ink)]">
+						<div className="flex items-center justify-between">
+							<span className="text-[var(--muted)]">Врач:</span>
+							<span className="font-bold">{mDocObj?.fullName || "Не назначен"}</span>
+						</div>
+						<div className="flex items-center justify-between">
+							<span className="text-[var(--muted)]">Ассистент:</span>
+							<span>
+								{(() => {
+									const asst = selectedMobileAppt.assistantUserId
+										? dashboard.clinicSettings?.staff?.find((s) => s.id === selectedMobileAppt.assistantUserId)
+										: null;
+									return asst?.fullName || "Не назначен";
+								})()}
+							</span>
+						</div>
+						<div className="flex items-center justify-between">
+							<span className="text-[var(--muted)]">Кабинет:</span>
+							<span className="font-mono font-semibold">{mChairObj?.name || "Кабинет 1"}</span>
+						</div>
+					</div>
+
+					{/* Quick Status Buttons */}
+					{onQuickStatusChange && (
+						<div className="space-y-2">
+							<div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
+								Сменить статус визита:
+							</div>
+							<div className="grid grid-cols-2 gap-2">
+								<button
+									type="button"
+									onClick={() => {
+										onQuickStatusChange(selectedMobileAppt.id, "confirmed");
+										setSelectedMobileAppt(null);
+									}}
+									className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/40 text-violet-800 dark:text-violet-200 flex items-center justify-center gap-2 cursor-pointer"
+								>
+									<PhoneCall size={14} />
+									<span>Подтвержден</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onQuickStatusChange(selectedMobileAppt.id, "arrived");
+										setSelectedMobileAppt(null);
+									}}
+									className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 flex items-center justify-center gap-2 cursor-pointer"
+								>
+									<UserCheck size={14} />
+									<span>Пришел</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onQuickStatusChange(selectedMobileAppt.id, "in_treatment");
+										setSelectedMobileAppt(null);
+									}}
+									className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-[var(--teal-soft)] border border-[var(--teal)]/40 text-[var(--teal-dark)] flex items-center justify-center gap-2 cursor-pointer"
+								>
+									<CalendarCheck size={14} />
+									<span>В кресле</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onQuickStatusChange(selectedMobileAppt.id, "completed");
+										setSelectedMobileAppt(null);
+									}}
+									className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-slate-500/15 border border-slate-500/40 text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2 cursor-pointer"
+								>
+									<CheckCircle2 size={14} />
+									<span>Завершен</span>
+								</button>
+							</div>
+						</div>
+					)}
+
+					{/* Primary Action Button */}
+					<div className="pt-2">
+						<button
+							type="button"
+							onClick={() => {
+								setSelectedMobileAppt(null);
+								onAppointmentClick(selectedMobileAppt);
+							}}
+							className="w-full min-h-[48px] rounded-2xl bg-[var(--teal,var(--brand-primary))] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-98 transition-all"
+						>
+							<User size={16} />
+							<span>Открыть карту приема</span>
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	})()}
+</div>
+);
 }

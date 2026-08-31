@@ -193,7 +193,7 @@ html.light,
 	--error-color: #b91c1c;
 }
 
-/* 🌌 TRUE OLED NIGHT THEME */
+/* TRUE OLED NIGHT THEME */
 :root[data-theme="night"],
 :root[data-theme="oled"],
 [data-theme="night"],
@@ -263,7 +263,7 @@ html.light,
 		0 10px 40px -10px rgba(0, 0, 0, 0.8), 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-/* 🌊 CALM NORDIC TEAL THEME (Patient-Friendly & Pediatric) */
+/* CALM NORDIC TEAL THEME (Patient-Friendly & Pediatric) */
 :root[data-theme="calm_teal"],
 [data-theme="calm_teal"] {
 	color: #134e4a;
@@ -332,7 +332,7 @@ html.light,
 		0 1px 3px rgba(15, 118, 110, 0.05);
 }
 
-/* 👓 HIGH CONTRAST CLINICAL WCAG AAA (7:1 Contrast) */
+/* HIGH CONTRAST CLINICAL WCAG AAA (7:1 Contrast) */
 :root[data-theme="contrast"],
 [data-theme="contrast"] {
 	color: #000000;
@@ -399,7 +399,7 @@ html.light,
 	--shadow-premium: none;
 }
 
-/* 🌸 SAKURA THEME (Aesthetic & Relaxing Rose) */
+/* SAKURA THEME (Aesthetic & Relaxing Rose) */
 :root[data-theme="sakura"],
 [data-theme="sakura"] {
 	color: #4c0519;
@@ -470,7 +470,7 @@ html.light,
 		0 1px 3px rgba(219, 39, 119, 0.05);
 }
 
-/* 🌊 OCEAN THEME (Deep Sapphire Navy) */
+/* OCEAN THEME (Deep Sapphire Navy) */
 :root[data-theme="ocean"],
 [data-theme="ocean"] {
 	color: #f0f9ff;
@@ -541,7 +541,7 @@ html.light,
 		0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* 🌲 EMERALD THEME (Forest Restorative) */
+/* EMERALD THEME (Forest Restorative) */
 :root[data-theme="emerald"],
 [data-theme="emerald"] {
 	color: #ecfdf5;
@@ -612,7 +612,7 @@ html.light,
 		0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* ⚡ CYBER_XRAY THEME (Neon Cyberpunk CT) */
+/* CYBER_XRAY THEME (Neon Cyberpunk CT) */
 :root[data-theme="cyber_xray"],
 [data-theme="cyber_xray"] {
 	color: #e0f2fe;
@@ -683,7 +683,7 @@ html.light,
 		0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-/* 🏜️ WARM_SAND THEME (Cozy Boutique Ceramic) */
+/* WARM_SAND THEME (Cozy Boutique Ceramic) */
 :root[data-theme="warm_sand"],
 [data-theme="warm_sand"] {
 	color: #451a03;
@@ -16889,7 +16889,7 @@ body.dark-mode .document-manual-override {
 	.doctor-cockpit-body,
 	.doctor-cockpit-container,
 	.visit-fields {
-		padding-bottom: calc(var(--bottom-nav-height, 64px) + 128px + env(safe-area-inset-bottom, 0px)) !important;
+		padding-bottom: 24px !important;
 	}
 }
 

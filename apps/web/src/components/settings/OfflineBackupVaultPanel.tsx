@@ -507,11 +507,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			{activeSection === "export" && (
 				<div
 					style={{
-						background: "var(--paper-strong, #ffffff)",
-						border: "1px solid var(--glass-border, rgba(0,0,0,0.08))",
-						borderRadius: "12px",
-						padding: "24px",
-						boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+						background: "transparent",
+						border: "none",
+						padding: "16px 0",
+						boxShadow: "none",
 					}}
 				>
 					<div
@@ -745,11 +744,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			{activeSection === "restore" && (
 				<div
 					style={{
-						background: "var(--paper-strong, #ffffff)",
-						border: "1px solid var(--glass-border, rgba(0,0,0,0.08))",
-						borderRadius: "12px",
-						padding: "24px",
-						boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+						background: "transparent",
+						border: "none",
+						padding: "16px 0",
+						boxShadow: "none",
 					}}
 				>
 					<div
@@ -1098,11 +1096,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			{activeSection === "snapshots" && (
 				<div
 					style={{
-						background: "var(--paper-strong, #ffffff)",
-						border: "1px solid var(--glass-border, rgba(0,0,0,0.08))",
-						borderRadius: "12px",
-						padding: "24px",
-						boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+						background: "transparent",
+						border: "none",
+						padding: "16px 0",
+						boxShadow: "none",
 					}}
 				>
 					<div
@@ -1265,11 +1262,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			{activeSection === "scheduler" && (
 				<div
 					style={{
-						background: "var(--paper-strong, #ffffff)",
-						border: "1px solid var(--glass-border, rgba(0,0,0,0.08))",
-						borderRadius: "12px",
-						padding: "24px",
-						boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+						background: "transparent",
+						border: "none",
+						padding: "16px 0",
+						boxShadow: "none",
 					}}
 				>
 					<div
@@ -1464,11 +1460,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			{activeSection === "integrity" && (
 				<div
 					style={{
-						background: "var(--paper-strong, #ffffff)",
-						border: "1px solid var(--glass-border, rgba(0,0,0,0.08))",
-						borderRadius: "12px",
-						padding: "24px",
-						boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+						background: "transparent",
+						border: "none",
+						padding: "16px 0",
+						boxShadow: "none",
 					}}
 				>
 					<div

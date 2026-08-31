@@ -1,4 +1,5 @@
 import React from "react";
+import { FileEdit } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 
 interface TreatmentPlanDocumentFormProps {
@@ -136,9 +137,13 @@ export const TreatmentPlanDocumentForm: React.FC<
 						fontWeight: 600,
 						color: "var(--brand-700)",
 						userSelect: "none",
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "6px",
 					}}
 				>
-					✏️ Ручная корректировка полей (развернуть)
+					<FileEdit size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
+					<span>Ручная корректировка полей (развернуть)</span>
 				</summary>
 				<div
 					className="document-payload-collapsed-content"

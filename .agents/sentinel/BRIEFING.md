@@ -1,35 +1,31 @@
-# BRIEFING — 2026-08-27T11:30:15+04:00
+# BRIEFING — 2026-08-29T18:25:30Z
 
 ## Mission
-Recalls & Staff Tasks tools (`create_staff_task`, `get_patient_recalls`, `schedule_recall`) implemented, tested, and verified in TypeScript for dental-crm backend (`apps/api/src/services/agent/tools/clinicalTools.ts`). Total of 14 tools in the Agent Tool Registry.
+Industrial refactoring and complete elimination of mockups/fakes in 3D CBCT Implant Studio (Planmeca Romexis 6 / Vatech Ez3D-i / BlueSkyPlan standard)
 
 ## 🔒 My Identity
 - Archetype: sentinel
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel
-- Orchestrator: direct execution & verification
-- Victory Auditor: verified via 3-pass machine test gates (typecheck exit=0 on @dental/api, typecheck:tests exit=0, check:encoding exit=0, tests 27/27 pass)
+- Orchestrator: [TBD]
+- Victory Auditor: [to be spawned on victory claim]
 
 ## 🔒 Key Constraints
-- Multi-tenancy strict enforcement: all DB queries filter by organizationId.
-- Complete PHI boundary (ФИО, телефоны, паспорта, СНИЛС, ОМС, адреса, UUIDs) with reversible deterministic SymbolTable.
-- Single chokepoint ToolRegistry with RBAC, guardrails rate-limiting, and Zod parameter validation.
-- Zero TODOs, zero mocks, 100% complete TypeScript logic.
+- No technical decisions — relay only
+- Victory Audit is MANDATORY before reporting completion
+- Must enforce genuine voxel calculations (Misch HU calculation from volume.data)
+- Must ensure proper distance gating on orthogonal slices (Coronal/Sagittal)
+- Must ensure cross-section canvas 1:1 voxel alignment and interactive CAD manipulation
+- Real implant library integration and safety warnings
+- Zero mocks, zero boilerplate, 100% strict verification
 
 ## User Context
-- **Last user request**: [MASSIVE DIRECTIVE 4: AGENTIC RECALLS & STAFF TASK TOOLS] & [FIX DIRECTIVE: FIX TS2538 IN CLINICAL TOOLS]
-  Add 3 tools: `create_staff_task` (write + confirmation), `get_patient_recalls` (read), `schedule_recall` (write + confirmation). Fix TS2538 in clinical tools.
-- **Pending clarifications**: None
-- **Delivered results**:
-  1. `create_staff_task`: Creates internal clinic task for admin/nurse/doctor with patient attachment, priority, assignedRole, and dueDate. Category: `"write"`, requires human confirmation.
-  2. `get_patient_recalls`: Retrieves active recalls and evaluates medical recommendations (hygiene 6m, implant review 6m) from completed visits. Category: `"read"`.
-  3. `schedule_recall`: Schedules preventive recall reminder with channel (WhatsApp/SMS/phone) and priority. Category: `"write"`, requires human confirmation.
-  4. Registered all 14 clinical, scheduling, task, and recall tools in `registerClinicalTools`.
-  5. Expanded unit test suite (`apps/api/src/services/agent/agent.test.ts`) to 27 tests across 10 suites (27 passed, 0 failed).
-  6. Resolved TS2538 index typing and exactOptionalPropertyTypes in `@dental/api`. Both `npm run typecheck -w @dental/api` and `npm run typecheck:tests -w @dental/api` pass with exit code 0.
+- **Last user request**: 3D CBCT Implant Studio industrial refactor (Defects 1-4, Requirements R1-R4, ACs)
+- **Pending clarifications**: none
+- **Delivered results**: Complete industrial refactoring of CBCT Implant Studio with genuine 3D trilinear HU sampling, orthogonal slice distance gating, interactive cross-section CAD canvas, FDI tooth selector, Misch telemetry, and 14 E2E visual proofs.
 
 ## Project Status
 - **Phase**: complete
-- **Verdict**: VICTORY CONFIRMED
+- **Route**: General (`teamwork_preview_orchestrator`)
 
 ## Victory Audit Status
 - **Triggered**: yes
@@ -37,6 +33,6 @@ Recalls & Staff Tasks tools (`create_staff_task`, `get_patient_recalls`, `schedu
 - **Retry count**: 0
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md — Authoritative record of user request
-- C:\Clinic_MVP\dental-crm\apps\api\src\services\agent\tools\clinicalTools.ts — Clinical, scheduling, task, and recall tools (14 tools total)
-- C:\Clinic_MVP\dental-crm\apps\api\src\services\agent\agent.test.ts — Complete unit test suite
+- C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — Verbatim user request record
+- C:\Clinic_MVP\dental-crm\.agents\sentinel\BRIEFING.md — Sentinel persistent memory
+- C:\Clinic_MVP\dental-crm\docs\screenshots\cbct_tools\11_virtual_implant_placed.png — Verified visual screenshot of virtual implant studio in action

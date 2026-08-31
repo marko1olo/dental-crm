@@ -230,8 +230,9 @@ export function SurgicalPackageModal({
 								Сформировать хирургический пакет ({missingKinds.length}) в 1 клик
 							</button>
 						) : (
-							<span style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
-								✓ Полный хирургический комплект документов сформирован
+							<span className="inline-flex items-center gap-1.5" style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
+								<CheckCircle2 size={16} aria-hidden="true" />
+								Полный хирургический комплект документов сформирован
 							</span>
 						)}
 					</div>

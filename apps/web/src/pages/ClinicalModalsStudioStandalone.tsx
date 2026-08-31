@@ -1340,7 +1340,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<div className="flex items-center gap-2 text-[var(--teal)]">
 								<Scan className="w-5 h-5" />
 								<span className="font-bold text-sm text-[var(--ink)]">
-									Визиограф & DICOM Viewer
+									Визиограф и DICOM Viewer
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)] leading-relaxed">
@@ -2438,7 +2438,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Наряд в лабораторию: 7 конструкций (ZrO2 Katana, E.max), расцветка VITA/ND, 7 этапов с примеркой, расчет маржи и бланк А4.
+								Наряд в лабораторию: 7 конструкций (ZrO₂ Katana, E.max), расцветка VITA/ND, 7 этапов с примеркой, расчет маржи и бланк А4.
 							</p>
 						</div>
 						<div className="flex gap-2 flex-wrap">
@@ -3738,13 +3738,14 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					<div className="bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl p-4 sm:p-6">
 						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-3">
 							<h3 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)]">
-								4 Клинических этапа (Поэтапная смета): Смирнова Е. В.
+								4 клинических этапа (Поэтапная смета): Смирнова Е. В.
 							</h3>
 							<button
 								type="button"
 								onClick={() => setIsPhased4PreviewOpen(false)}
-								className="p-1.5 rounded-xl hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-2 rounded-xl hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
 								data-testid="close-phased4-preview-btn"
+								aria-label="Закрыть окно сметы"
 							>
 								✕
 							</button>
@@ -4242,7 +4243,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								</div>
 								<div>
 									<h3 className="text-base font-bold text-[var(--ink)]">
-										Центр аудита ЭМК начмеда & Реестр РЭМД ЕГИСЗ
+										Центр аудита ЭМК начмеда и реестр РЭМД ЕГИСЗ
 									</h3>
 									<p className="text-xs text-[var(--muted)]">
 										Пакетное подписание УКЭП (КриптоПро), валидация по Приказу 203н, экспорт реестров в РЭМД

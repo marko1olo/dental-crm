@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import React from "react";
+import { FileEdit } from "lucide-react";
 
 /**
  * Карточка формы документа: заголовок, пояснение и складной блок ручной правки.
@@ -49,7 +50,10 @@ export function DocumentPayloadCard({
 			</div>
 			{notice ?? null}
 			<details className="document-manual-override">
-				<summary>✏️ Ручная корректировка полей (развернуть)</summary>
+				<summary className="inline-flex items-center gap-1.5 cursor-pointer">
+					<FileEdit size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
+					<span>Ручная корректировка полей (развернуть)</span>
+				</summary>
 				<div className="document-payload-collapsed-content">{children}</div>
 			</details>
 		</article>

@@ -398,16 +398,16 @@ export function SickLeaveElnModal({
 							<h3 className="sick-leave-header-title">Электронный листок нетрудоспособности (ЭЛН)</h3>
 							<div className="sick-leave-header-badges">
 								<span className="sick-leave-eln-number-badge">№ {formState.elnNumber}</span>
-								<span className={`sick-leave-limit-badge ${validation.singleDoctorLimitExceeded ? 'vk-required' : 'safe'}`}>
+								<span className={`sick-leave-limit-badge whitespace-nowrap ${validation.singleDoctorLimitExceeded ? 'vk-required' : 'safe'}`}>
 									{validation.singleDoctorLimitExceeded ? (
 										<>
 											<AlertTriangle size={12} />
-											{validation.totalDays} дн. (Лимит &gt;15 дн. — требуется ВК)
+											<span>{validation.totalDays}{"\u00A0"}дн. (Лимит &gt;15{"\u00A0"}дн. — требуется ВК)</span>
 										</>
 									) : (
 										<>
 											<ShieldCheck size={12} />
-											{validation.totalDays} дн. (Единолично врачом &le;15 дн.)
+											<span>{validation.totalDays}{"\u00A0"}дн. (Единолично врачом &le;15{"\u00A0"}дн.)</span>
 										</>
 									)}
 								</span>

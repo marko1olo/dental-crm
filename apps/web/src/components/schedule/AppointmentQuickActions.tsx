@@ -291,7 +291,7 @@ export function AppointmentQuickActions({
 								e.stopPropagation();
 								void handleAction(action.targetStatus, action.noteAppend);
 							}}
-							className={`quick-action-pill h-7.5 px-2 py-0.5 rounded-md border text-xs font-medium flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 ${
+							className={`quick-action-pill min-h-[44px] sm:min-h-0 sm:h-7.5 min-w-[44px] sm:min-w-0 px-2.5 py-1 sm:py-0.5 rounded-md border text-xs font-medium flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-[var(--teal)] focus:outline-none ${
 								isCurrent
 									? action.activeClass
 									: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-soft)]"
@@ -311,7 +311,7 @@ export function AppointmentQuickActions({
 								</span>
 							)}
 							{isCurrent && (
-								<Check size={11} className="shrink-0 text-current ml-0.5 opacity-90" />
+								<Check size={12} className="shrink-0 text-current ml-0.5 opacity-90" />
 							)}
 						</button>
 					);
@@ -327,11 +327,11 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							handleSendWhatsApp("reminder_24h");
 						}}
-						className="quick-action-pill h-7.5 px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-emerald-500/10 hover:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center justify-center gap-1 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none select-none min-w-0"
+						className="quick-action-pill min-h-[44px] sm:min-h-0 sm:h-7.5 min-w-[44px] sm:min-w-0 px-2.5 py-1 sm:py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-emerald-500/10 hover:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none select-none"
 						title={`Отправить напоминание за 24ч с памяткой в WhatsApp (${patientName})`}
 						aria-label={`WhatsApp напоминание: ${patientName}`}
 					>
-						<MessageSquare size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+						<MessageSquare size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
 						{showLabels && (
 							<span className="break-words leading-none text-center">
 								{compact ? "WA" : "💬 WA: 24ч"}
@@ -345,11 +345,11 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							handleCopySmsReminder("reminder_24h");
 						}}
-						className="h-7.5 px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] text-[var(--ink)] text-xs font-medium transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+						className="min-h-[44px] sm:min-h-0 sm:h-7.5 min-w-[44px] sm:min-w-0 px-2.5 py-1 sm:py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] text-[var(--ink)] text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 touch-manipulation"
 						title={`Скопировать текст напоминания (SMS/мессенджер) для ${patientName}`}
 						aria-label={`Скопировать SMS: ${patientName}`}
 					>
-						<Copy size={12} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />
+						<Copy size={13} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />
 						<span>SMS</span>
 					</button>
 
@@ -359,11 +359,11 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							handleSendWhatsApp("confirmation");
 						}}
-						className="h-7.5 px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-violet-500/10 text-violet-700 dark:text-violet-300 text-xs font-medium transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+						className="min-h-[44px] sm:min-h-0 sm:h-7.5 min-w-[44px] sm:min-w-0 px-2.5 py-1 sm:py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-violet-500/10 text-violet-700 dark:text-violet-300 text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 touch-manipulation"
 						title={`Отправить подтверждение визита в WhatsApp (${patientName})`}
 						aria-label={`WhatsApp подтверждение: ${patientName}`}
 					>
-						<CheckCircle2 size={12} className="shrink-0 text-violet-500" />
+						<CheckCircle2 size={13} className="shrink-0 text-violet-500" />
 						<span className="hidden sm:inline">Подтвердить</span>
 					</button>
 
@@ -373,11 +373,11 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							handleSendWhatsApp("time_shift", 15);
 						}}
-						className="h-7.5 px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-medium transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+						className="min-h-[44px] sm:min-h-0 sm:h-7.5 min-w-[44px] sm:min-w-0 px-2.5 py-1 sm:py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 touch-manipulation"
 						title={`Отправить уведомление о переносе времени (+15 мин) в WhatsApp (${patientName})`}
 						aria-label={`WhatsApp перенос: ${patientName}`}
 					>
-						<Clock size={12} className="shrink-0 text-amber-500" />
+						<Clock size={13} className="shrink-0 text-amber-500" />
 						<span className="hidden sm:inline">Перенос</span>
 					</button>
 				</div>

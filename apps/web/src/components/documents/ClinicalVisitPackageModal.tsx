@@ -108,7 +108,7 @@ export function ClinicalVisitPackageModal({
 			<div className="document-package-modal-content">
 				<div className="document-package-modal-header">
 					<h3 className="document-package-modal-title" id="clinical-package-modal-title">
-						<span>🩺</span>
+						<Stethoscope size={18} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
 						<span>Клинический пакет приёма врача</span>
 					</h3>
 					<button
@@ -214,8 +214,9 @@ export function ClinicalVisitPackageModal({
 								Сформировать недостающие ({missingKinds.length}) в 1 клик
 							</button>
 						) : (
-							<span style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
-								✓ Полный клинический комплект приёма оформлен
+							<span className="inline-flex items-center gap-1.5" style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
+								<CheckCircle2 size={16} aria-hidden="true" />
+								Полный клинический комплект приёма оформлен
 							</span>
 						)}
 					</div>

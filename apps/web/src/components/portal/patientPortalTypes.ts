@@ -11,6 +11,7 @@ export interface PatientPortalProfile {
 	birthDate: string;
 	cardNumber: string; // e.g. "043/у-2026/891"
 	curatingDoctor: string;
+	curatingDoctorName?: string;
 	curatingDoctorSpecialty: string;
 	curatingDoctorAvatar?: string;
 	depositBalanceRub: number;

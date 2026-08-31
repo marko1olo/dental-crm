@@ -1,5 +1,6 @@
 import { MEDICAL_REFUSAL_COMPLICATIONS_PRESET } from "@dental/shared";
 import React from "react";
+import { Activity, FileEdit, Zap } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
 import { appendChipToText } from "../documentChipText";
@@ -125,18 +126,20 @@ export const MedicalInterventionRefusalForm = React.memo(
 					</p>
 				</div>
 				<details className="document-manual-override bg-[var(--surface-100,#f8fafc)] p-3 rounded-lg border border-[var(--line,#e2e8f0)] mt-4">
-					<summary className="cursor-pointer font-semibold text-[var(--brand-700,#0f766e)] select-none hover:opacity-80 transition-opacity">
-						✏️ Ручная корректировка полей (развернуть)
+					<summary className="cursor-pointer font-semibold text-[var(--brand-700,#0f766e)] select-none hover:opacity-80 transition-opacity inline-flex items-center gap-1.5">
+						<FileEdit size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
+						<span>Ручная корректировка полей (развернуть)</span>
 					</summary>
 					<div className="document-payload-collapsed-content mt-4 flex flex-col gap-4">
 						<div style={{ marginBottom: "8px" }}>
-							<span style={{ fontSize: "12px", color: "var(--muted, #64748b)", display: "block", marginBottom: "6px" }}>
-								⚡ Пресеты клинических осложнений отказа (1 клик):
+							<span style={{ fontSize: "12px", color: "var(--muted, #64748b)", display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px" }}>
+								<Zap size={13} className="text-amber-500 shrink-0" aria-hidden="true" />
+								<span>Пресеты клинических осложнений отказа (1 клик):</span>
 							</span>
 							<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
 								<button
 									type="button"
-									className="secondary-button"
+									className="secondary-button inline-flex items-center gap-1"
 									style={{ fontSize: "11.5px", padding: "3px 8px" }}
 									onClick={() => {
 										const p = MEDICAL_REFUSAL_COMPLICATIONS_PRESET.caries_endo_refusal;
@@ -147,7 +150,8 @@ export const MedicalInterventionRefusalForm = React.memo(
 										setRefusalUrgentWarningSigns(p.urgentWarningSigns.join("\n"));
 									}}
 								>
-									🦷 Отказ от терапии/эндодонтии
+									<Activity size={12} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+									<span>Отказ от терапии/эндодонтии</span>
 								</button>
 								<button
 									type="button"

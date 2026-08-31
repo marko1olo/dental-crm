@@ -147,6 +147,23 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		renderScene();
 	}, [renderScene]);
 
+	// Responsive resize sync on window/container changes
+	useEffect(() => {
+		if (!containerRef.current) return;
+		let rafId: number | null = null;
+		const observer = new ResizeObserver(() => {
+			if (rafId) cancelAnimationFrame(rafId);
+			rafId = requestAnimationFrame(() => {
+				renderScene();
+			});
+		});
+		observer.observe(containerRef.current);
+		return () => {
+			if (rafId) cancelAnimationFrame(rafId);
+			observer.disconnect();
+		};
+	}, [renderScene]);
+
 	// Cleanup WebGL on unmount to prevent GPU leaks
 	useEffect(() => {
 		return () => {
@@ -224,7 +241,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				height: "100%",
 				position: "relative",
 				overflow: "hidden",
-				backgroundColor: "#0f172a",
+				backgroundColor: "#020617",
 				touchAction: "none",
 				userSelect: "none",
 			}}
@@ -267,13 +284,28 @@ function drawRulerOnContext(
 	ctx.lineTo(p2.x + Math.cos(perp) * tickLen, p2.y + Math.sin(perp) * tickLen);
 	ctx.stroke();
 
-	// Draw text label
+	// Draw pill backdrop and text label
 	const midX = (p1.x + p2.x) / 2;
 	const midY = (p1.y + p2.y) / 2;
-	ctx.fillStyle = "#ffffff";
-	ctx.font = "bold 12px sans-serif";
-	ctx.shadowColor = "#000000";
-	ctx.shadowBlur = 4;
-	ctx.fillText(label, midX + 6, midY - 6);
+	ctx.font = "bold 12px monospace";
+	const textWidth = ctx.measureText(label).width;
+	const padX = 6;
+	const padY = 3;
+
+	ctx.fillStyle = "rgba(2, 6, 23, 0.85)";
+	ctx.strokeStyle = "rgba(51, 65, 85, 0.8)";
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	if (typeof ctx.roundRect === "function") {
+		ctx.roundRect(midX + 4, midY - 18, textWidth + padX * 2, 20, 4);
+	} else {
+		ctx.rect(midX + 4, midY - 18, textWidth + padX * 2, 20);
+	}
+	ctx.fill();
+	ctx.stroke();
+
+	ctx.fillStyle = "#38bdf8";
+	ctx.textBaseline = "middle";
+	ctx.fillText(label, midX + 4 + padX, midY - 8);
 	ctx.restore();
 }

@@ -255,7 +255,7 @@ export function Billing1CExportModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-2 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer shrink-0"
+						className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer shrink-0"
 						aria-label="Закрыть модальное окно"
 					>
 						<X size={20} />
@@ -268,7 +268,7 @@ export function Billing1CExportModal({
 						<button
 							type="button"
 							onClick={() => setActiveSubTab("items")}
-							className={`h-8 px-2.5 sm:px-3 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
 								activeSubTab === "items"
 									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
 									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
@@ -280,7 +280,7 @@ export function Billing1CExportModal({
 						<button
 							type="button"
 							onClick={() => setActiveSubTab("xml")}
-							className={`h-8 px-2.5 sm:px-3 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
 								activeSubTab === "xml"
 									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
 									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
@@ -292,7 +292,7 @@ export function Billing1CExportModal({
 						<button
 							type="button"
 							onClick={() => setActiveSubTab("requisites")}
-							className={`h-8 px-2.5 sm:px-3 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[36px] px-3 sm:px-3.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
 								activeSubTab === "requisites"
 									? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 shadow-xs"
 									: "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
@@ -451,7 +451,7 @@ export function Billing1CExportModal({
 													<td className="py-2.5 px-3 text-right font-mono whitespace-nowrap">
 														{formatMoney(it.priceRub)}
 													</td>
-													<td className="py-2.5 px-3 text-right font-mono text-amber-600 dark:text-amber-400 whitespace-nowrap">
+													<td className="py-2.5 px-3 text-right font-mono font-bold text-amber-700 dark:text-amber-400 whitespace-nowrap">
 														{disc > 0 ? `-${formatMoney(disc)}` : "—"}
 													</td>
 													<td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">

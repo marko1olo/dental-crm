@@ -1,5 +1,5 @@
 # AGENTS.md — Clinic MVP / DENTE Dental CRM
-
+"C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md"  - абсолютное парвило, обзяательно к чтению
 ## 📖 AGENT DOCUMENTATION INDEX
 Before starting any development or refactoring, you MUST load and read the following modular directories:
 - **[Documentation Index](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Entry point to the system.
@@ -77,6 +77,7 @@ Use these exclusively. Blind terminal navigation is banned.
 - Commit before reporting. Start a report with the real `HEAD: <hash>`.
 - "Compiles" is not "works". Prove behaviour with numbers and observed output, not a passing typecheck.
 - Never present plausible as verified. Split every report into `ПРОВЕРЕНО` and `НЕ ПРОВЕРЕНО`.
+- **ПОБУКВЕННЫЕ ПОЛНЫЕ ОТЧЕТЫ СУБАГЕНТОВ (VERBATIM REPORTING):** Агенты других уровней, когда отчитываются, ОБЯЗАНЫ в отчете ПОБУКВЕННО приводить полные оригинальные отчеты своих субагентов с их критикой, дефект-листами и комментариями к ним. Запрещено купировать, сглаживать или пересказывать чужие отчеты.
 - `git add` per file only. Never sweep up another agent's unfinished work.
 - Money and legal documents are exact to the kopeck.
 - A migration is complete only as `.sql` + journal + snapshot, proven against a clean database.
@@ -95,6 +96,18 @@ Use these exclusively. Blind terminal navigation is banned.
 - **Interactive State Visual Audit:** Screenshots must audit open Hover HUDs, open radial context menus, and modals. Check for long Russian text overflow (`min-w-0`, `truncate`, `break-words`).
 - **Anatomical Color & Geometry Fidelity:** No neon/fantasy colors (pulp is anatomically red `#ef4444`). Root canals in incisors/canines (11–43) must run continuously to the root apex.
 - **Ban on Intermediate Idle Stalls:** Never stop turns with messages like "Waiting for build...". Run through to empirical proof.
+
+**8d. MAXIMUM ADVERSARIAL CRITICISM & ZERO-CLUTTER LAW (ПРЕЗУМПЦИЯ БРАКА И БОРЬБА СО СВАЛКОЙ)**:
+- **Презумпция брака:** Любой экран изначально считается БРАКОМ и СВАЛКОЙ, пока субагент-критик не докажет обратное попиксельным разбором.
+- **Запрет на псевдо-аппрувы:** Субагентам категорически ЗАПРЕЩЕНО ставить вердикты «[ПРИНЯТО]», если на экране есть:
+  * Тулбар > 1 строки (частокол из 10+ кнопок перед контентом).
+  * Карточка записи с >2 кнопками прямого действия (все 15+ действий обязаны быть в `...`).
+  * Вылет кнопок или текста за границы модальных окон (обрезание рамкой).
+  * Мультяшные эмодзи в медицинских и финансовых документах (разрешены только строгие векторные иконки Lucide).
+  * Плавающие виджеты (софтфон, бейджи), перекрывающие текст карточек или таблицы.
+- **Стандарт уставшего стоматолога (12-Hour Shift Eye):** Интерфейс должен быть кристально чистым, не требовать лишних кликов и не перегружать мозг врача визуальным шумом.
+- **Штраф за сикофантию:** Любой критик, выдавший одобрение на замусоренном экране, немедленно дисквалифицируется, а задача отправляется на жесткий рефакторинг.
+- **Жёсткая критика на каждом уровне (All-Tier Adversarial Inquisition):** Требование максимальной критики действует на ВСЕХ уровнях без исключения (L1 Orchestrator, L2 Leads, L3 Workers, Red Team Critics). Каждый уровень обязан непрерывно и беспощадно критиковать результаты работы, искать уязвимости, наезды и свалку, а при отчете — побуквенно транслировать сырые отчеты и критику нижестоящих агентов с собственными замечаниями.
 
 **9. WORKSPACE HYGIENE & GIT (THE NATIVE-FIRST LAW)**
 - **ZERO CRUTCH SCRIPTS:** You are ABSOLUTELY FORBIDDEN from creating Python, Bash, Node, or PowerShell wrapper scripts (`_patch_*.py`, `_wire_*.py`, `test.py`, `temp.js`, etc.) in the project root to edit, append, test, or generate code.

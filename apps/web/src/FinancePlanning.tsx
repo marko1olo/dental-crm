@@ -1,6 +1,7 @@
 import type { Dashboard } from "@dental/shared";
 import { ChevronDown, ChevronUp, ClipboardList } from "lucide-react";
 import React, { useState } from "react";
+import { FinanceTaxDeductionCard } from "./components/finance/FinanceTaxDeductionCard";
 
 type TreatmentPlanScenario = Dashboard["treatmentPlanScenarios"][number];
 type ServiceCatalogItem = Dashboard["serviceCatalog"][number];
@@ -159,17 +160,10 @@ export function FinancePlanningOverview({
 							: financeSummaryUnknownLabel}
 					</p>
 				</article>
-				<article className="pb-3 flex flex-col justify-between">
-					<div>
-						<span>Вычет</span>
-						<strong className="block mt-1">
-							{billingSummary
-								? money(billingSummary.taxDeductionEligibleRub)
-								: "—"}
-						</strong>
-					</div>
-					<p className="leading-relaxed text-xs mt-1">медицинские услуги, пригодные для справки</p>
-				</article>
+				<FinanceTaxDeductionCard
+					taxDeductionEligibleRub={billingSummary ? billingSummary.taxDeductionEligibleRub : null}
+					money={money}
+				/>
 			</section>
 
 			{(scenarios ?? []).length > 0 && (

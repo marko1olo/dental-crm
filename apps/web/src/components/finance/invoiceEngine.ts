@@ -477,7 +477,7 @@ export function generateCompletedActAndWarrantyHtml(params: CompletedWorksActPar
 
 	<!-- Гарантийный талон и обязательства клиники -->
 	<div class="warranty-box">
-		<div class="warranty-title">🛡️ ГАРАНТИЙНЫЙ ТАЛОН И ОБЯЗАТЕЛЬСТВА КЛИНИКИ (СтАР & Закон РФ № 2300-1)</div>
+		<div class="warranty-title">ГАРАНТИЙНЫЙ ТАЛОН И ОБЯЗАТЕЛЬСТВА КЛИНИКИ (СтАР и Закон РФ № 2300-1)</div>
 		<table class="items-table" style="margin-bottom: 4px; background: #fff;">
 			<thead>
 				<tr>

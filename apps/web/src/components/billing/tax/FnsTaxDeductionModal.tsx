@@ -322,7 +322,7 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Код 01 (лимит 150 000 ₽) • Код 02 (дорогостоящее без лимита по ПП РФ № 458) • QR-код • Выгрузка XML
+								Код 01 (лимит 150{"\u00A0"}000{"\u00A0"}₽) • Код 02 (дорогостоящее без лимита по ПП РФ № 458) • QR-код • Выгрузка XML
 							</p>
 						</div>
 					</div>
@@ -401,8 +401,8 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 											<Calendar size={14} className="text-teal-600" />
 											Отчетный год:
 										</span>
-										<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-300">
-											Лимит Кода 01: {selectedYear >= 2024 ? "150 000 ₽" : "120 000 ₽"}
+										<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-300 whitespace-nowrap">
+											Лимит Кода 01: {selectedYear >= 2024 ? "150\u00A0000\u00A0₽" : "120\u00A0000\u00A0₽"}
 										</span>
 									</div>
 									<div className="flex gap-2">

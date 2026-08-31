@@ -62,7 +62,7 @@ const documentsView = read("DocumentsView.tsx");
 const redesignCss = read("styles/dente-redesign.css");
 
 /** Сводка складного блока — одна на все карточки документов. */
-const MANUAL_OVERRIDE_SUMMARY = "✏️ Ручная корректировка полей (развернуть)";
+const MANUAL_OVERRIDE_SUMMARY = "Ручная корректировка полей (развернуть)";
 
 /** Вынесенные формы и то, как их подключает DocumentsView.tsx. */
 const extractedForms = [

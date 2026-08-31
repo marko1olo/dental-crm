@@ -181,7 +181,7 @@ export const DEFAULT_WW_WL_PRESETS: readonly WindowLevelPreset[] = [
 	},
 	{
 		id: "negative_invert",
-		label: "Негатив / Инверсия",
+		label: "Инверсия",
 		description: "Инвертированное рентгеновское отображение для обнаружения микротрещин",
 		brightness: 100,
 		contrast: 120,

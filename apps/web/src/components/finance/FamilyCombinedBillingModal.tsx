@@ -484,28 +484,28 @@ ${certs
 								</div>
 							</div>
 
-							{/* Список позиций по членам семьи */}
-							<div className="space-y-2.5">
+							{/* Список позиций по членам семьи — Монолитный плоский список */}
+							<div className="rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] overflow-hidden shadow-xs divide-y divide-[var(--line,#e2e8f0)]">
 								{initialItems.map((item) => {
 									const isSelected = selectedItemIds.has(item.id);
 									return (
 										<div
 											key={item.id}
 											onClick={() => handleToggleItem(item.id)}
-											className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
+											className={`p-3.5 sm:p-4 transition-colors cursor-pointer flex items-start justify-between gap-3 ${
 												isSelected
-													? "bg-[var(--paper,#ffffff)] border-teal-500/50 shadow-xs ring-1 ring-teal-500/20"
-													: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] opacity-60 hover:opacity-100"
+													? "bg-teal-50/40 dark:bg-teal-950/20"
+													: "bg-[var(--paper,#ffffff)] opacity-60 hover:opacity-100 hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
 											}`}
 										>
-											<div className="flex items-start gap-3">
+											<div className="flex items-start gap-3 min-w-0 flex-1">
 												<input
 													type="checkbox"
 													checked={isSelected}
 													onChange={() => handleToggleItem(item.id)}
-													className="mt-1 w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+													className="mt-1 w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer shrink-0"
 												/>
-												<div>
+												<div className="min-w-0 flex-1">
 													<div className="flex items-center gap-2 flex-wrap">
 														<span className="font-extrabold text-xs sm:text-sm text-[var(--ink,#0f172a)]">
 															{item.patientFullName}

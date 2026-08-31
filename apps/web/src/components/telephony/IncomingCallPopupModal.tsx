@@ -376,11 +376,11 @@ export function IncomingCallPopupModal({
 					</div>
 				)}
 
-				{/* Call Audio Player with 1.0x / 1.5x Speed Controls & STT Transcript */}
+				{/* Плеер записи звонка с регулировкой скорости и STT расшифровкой */}
 				<div className="space-y-1">
 					<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
 						<Sparkles size={11} className="text-[var(--teal,#0d9488)]" />
-						Аудиозапись разговора & AI STT расшифровка:
+						Аудиозапись разговора и AI STT расшифровка:
 					</span>
 					<CallAudioPlayer
 						recordingUrl={effectiveRecordingUrl}

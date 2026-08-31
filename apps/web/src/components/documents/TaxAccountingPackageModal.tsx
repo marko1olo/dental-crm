@@ -294,8 +294,9 @@ export function TaxAccountingPackageModal({
 								Сформировать недостающие ({missingKinds.length}) в 1 клик
 							</button>
 						) : (
-							<span style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
-								✓ Все документы налогового пакета сформированы
+							<span className="inline-flex items-center gap-1.5" style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
+								<CheckCircle2 size={16} aria-hidden="true" />
+								Все документы налогового пакета сформированы
 							</span>
 						)}
 					</div>

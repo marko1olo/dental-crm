@@ -383,24 +383,25 @@ export const StaffAuthorityPanel: React.FC = () => {
 				) : null}
 
 				{rows.length > 0 ? (
-					<ul
-						className="m-0 p-0 list-none flex flex-col gap-2.5"
-						data-testid="staff-authority-list"
-					>
-						{rows.map((row) => {
-							const open = expandedId === row.staffId;
-							const grantCount = staffAuthorityFlagKeys.filter(
-								(k) => row.effective[k],
-							).length;
-							const isPiiFull = canAccessFullPatientPii(row.role);
-							const isPnlVisible = canViewFinancialReports(row.role);
+					<div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+						<ul
+							className="m-0 p-0 list-none divide-y divide-slate-200 dark:divide-slate-800"
+							data-testid="staff-authority-list"
+						>
+							{rows.map((row) => {
+								const open = expandedId === row.staffId;
+								const grantCount = staffAuthorityFlagKeys.filter(
+									(k) => row.effective[k],
+								).length;
+								const isPiiFull = canAccessFullPatientPii(row.role);
+								const isPnlVisible = canViewFinancialReports(row.role);
 
-							return (
-								<li
-									key={row.staffId}
-									className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 transition-all"
-									data-testid={`staff-authority-row-${row.staffId}`}
-								>
+								return (
+									<li
+										key={row.staffId}
+										className="bg-white dark:bg-slate-900 transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+										data-testid={`staff-authority-row-${row.staffId}`}
+									>
 									<button
 										type="button"
 										className="w-full text-left px-3.5 py-3 flex flex-wrap items-center justify-between gap-2 bg-transparent border-0 cursor-pointer"
@@ -534,7 +535,8 @@ export const StaffAuthorityPanel: React.FC = () => {
 								</li>
 							);
 						})}
-					</ul>
+						</ul>
+					</div>
 				) : null}
 
 				{save.kind === "failed" ? (

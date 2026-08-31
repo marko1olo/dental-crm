@@ -146,19 +146,21 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 				</div>
 			</div>
 
-			{/* Stage Body */}
+			{/* Stage Body — Monolithic Flat Panel (Anti-Matryoshka) */}
 			{isExpanded && (
-				<div className="p-4 space-y-3 bg-[var(--paper-soft,var(--paper,#ffffff))]">
-					{/* Clinical Goal Banner */}
-					<div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs text-[var(--muted,#64748b)]">
-						<Activity size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-						<span className="font-medium">
-							<strong>Клиническая цель:</strong> {stage.clinicalGoal}
-						</span>
-					</div>
+				<div className="flex flex-col bg-[var(--paper-strong,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)]">
+					{/* Clinical Goal Strip */}
+					{stage.clinicalGoal && (
+						<div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)]/60 text-xs text-[var(--muted,#64748b)]">
+							<Activity size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+							<span className="font-medium">
+								<strong>Клиническая цель:</strong> {stage.clinicalGoal}
+							</span>
+						</div>
+					)}
 
-					{/* Procedure Items Flat List (Anti-Matryoshka: no nested card boxes) */}
-					<div className="rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)]/60 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+					{/* Procedure Items Flat Monolithic List */}
+					<div className="divide-y divide-slate-100 dark:divide-slate-800">
 						{stage.items.length === 0 ? (
 							<div className="p-4 text-center text-xs text-[var(--muted,#64748b)]">
 								В данном этапе нет запланированных процедур.
@@ -167,7 +169,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							stage.items.map((item, idx) => (
 								<div
 									key={item.id || idx}
-									className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-2.5 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0"
+									className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors"
 								>
 									<div className="flex flex-col gap-0.5 min-w-0 flex-1">
 										<div className="flex items-center gap-1.5 flex-wrap">
@@ -239,12 +241,12 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						)}
 					</div>
 
-					{/* Materials & Profitability Expandable Section */}
-					<div className="rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] overflow-hidden">
+					{/* Materials & Profitability Monolithic Accordion */}
+					<div className="border-t border-[var(--border,#cbd5e1)]">
 						<button
 							type="button"
 							onClick={() => setShowMaterials((prev) => !prev)}
-							className="w-full flex items-center justify-between p-3 text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors cursor-pointer"
+							className="w-full flex items-center justify-between px-4 py-3 text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
 						>
 							<div className="flex items-center gap-2">
 								<Package size={15} className="text-[var(--teal,var(--brand-primary))]" />
@@ -268,7 +270,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						</button>
 
 						{showMaterials && (
-							<div className="p-3 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-3 text-xs">
+							<div className="p-4 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-3 text-xs">
 								<div className="overflow-x-auto">
 									<table className="w-full border-collapse text-[11px]">
 										<thead>
@@ -319,10 +321,10 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									</table>
 								</div>
 
-								{/* Margins breakdown */}
-								<div className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[11px]">
+								{/* Margins breakdown strip without nested card */}
+								<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-strong,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] text-[11px]">
 									<div>
-										<span className="text-[var(--muted,#64748b)]">Выручка за этап: </span>
+										<span className="text-[var(--muted,#64748b)]">Выручка: </span>
 										<strong className="font-mono text-[var(--ink,#0f172a)]">
 											{materialSummary.serviceRevenueRub.toLocaleString("ru-RU")} ₽
 										</strong>

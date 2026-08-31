@@ -8,6 +8,8 @@ import { useEffect, useId, useMemo, useState } from "react";
 import {
 	AlertCircle,
 	Calendar,
+	CalendarPlus,
+	Check,
 	CheckCircle2,
 	ChevronDown,
 	ChevronRight,
@@ -15,12 +17,14 @@ import {
 	Contrast,
 	CreditCard,
 	Download,
+	ExternalLink,
 	Eye,
 	FileBadge,
 	FileCheck2,
 	FileText,
 	Layers,
 	LogOut,
+	MapPin,
 	Monitor,
 	Phone,
 	QrCode,
@@ -124,6 +128,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 	const [payingInvoice, setPayingInvoice] = useState<PortalInvoiceItem | null>(null);
 	const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
 	const [showTaxCertificate, setShowTaxCertificate] = useState<boolean>(false);
+	const [isReceptionQrOpen, setIsReceptionQrOpen] = useState<boolean>(false);
 
 	// 60-second SMS resend countdown timer
 	useEffect(() => {
@@ -199,6 +204,33 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 			setPayingInvoice(null);
 			setPaymentSuccess(false);
 		}, 1800);
+	};
+
+	const handleDownloadIcs = () => {
+		const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//DENTE Dental CRM//Mobile Portal//RU\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nBEGIN:VEVENT\r\nUID:dente-appt-next-${Date.now()}@dente.ru\r\nDTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z\r\nDTSTART:20260901T113000Z\r\nDTEND:20260901T123000Z\r\nSUMMARY:Прием в DENTE: ${profile.curatingDoctor || "Д-р Смирнова Е.В."}\r\nDESCRIPTION:Плановый прием: ${profile.curatingDoctorSpecialty || "Стоматолог-терапевт"}\\nАдрес: Клиника DENTE на Невском, Кабинет 104\\nТел: +7 (812) 309-88-99\r\nLOCATION:Клиника DENTE на Невском, Кабинет 104\r\nSTATUS:CONFIRMED\r\nBEGIN:VALARM\r\nTRIGGER:-PT2H\r\nACTION:DISPLAY\r\nDESCRIPTION:Напоминание о приеме в клинике DENTE через 2 часа\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`;
+		const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "Dente_Appointment_2026-09-01.ics";
+		a.click();
+		URL.revokeObjectURL(url);
+	};
+
+	const handleOpenGoogleCalendar = () => {
+		const title = encodeURIComponent(`Прием в DENTE: ${profile.curatingDoctor || "Д-р Смирнова Е.В."}`);
+		const details = encodeURIComponent(`Плановый прием: ${profile.curatingDoctorSpecialty || "Стоматолог-терапевт"}\nАдрес: Клиника DENTE на Невском, Кабинет 104\nТел: +7 (812) 309-88-99`);
+		const location = encodeURIComponent("Клиника DENTE на Невском, Кабинет 104");
+		const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=20260901T113000Z/20260901T123000Z&details=${details}&location=${location}`;
+		window.open(url, "_blank");
+	};
+
+	const handleOpenYandexCalendar = () => {
+		const name = encodeURIComponent(`Прием в DENTE: ${profile.curatingDoctor || "Д-р Смирнова Е.В."}`);
+		const desc = encodeURIComponent(`Плановый прием: ${profile.curatingDoctorSpecialty || "Стоматолог-терапевт"}\nАдрес: Клиника DENTE на Невском, Кабинет 104\nТел: +7 (812) 309-88-99`);
+		const location = encodeURIComponent("Клиника DENTE на Невском, Кабинет 104");
+		const url = `https://calendar.yandex.ru/event/new?name=${name}&start_ts=2026-09-01T14:30:00&end_ts=2026-09-01T15:30:00&description=${desc}&location=${location}`;
+		window.open(url, "_blank");
 	};
 
 	return (
@@ -500,6 +532,92 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							{/* ============================================================ */}
 							{activeTab === "visits" && (
 								<div className="space-y-4" data-testid="portal-tab-visits-content">
+									{/* Apple Health Consumer Next Appointment Hero Card */}
+									<div className="p-4 rounded-2xl bg-[var(--paper-soft,#1e293b)] border-2 border-teal-500/40 shadow-lg space-y-3" data-testid="next-appointment-hero-card">
+										<div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-[var(--line,rgba(255,255,255,0.08))]">
+											<div className="flex items-center gap-2">
+												<Calendar className="w-5 h-5 text-teal-400" />
+												<strong className="text-sm text-[var(--ink,#f8fafc)]">Ближайший запланированный прием</strong>
+											</div>
+											<div className="flex items-center gap-2">
+												<span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+													<CheckCircle2 className="w-3.5 h-3.5" />
+													<span>Запись подтверждена</span>
+												</span>
+												<button
+													type="button"
+													onClick={() => setIsReceptionQrOpen(true)}
+													className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-500 text-white hover:opacity-90 transition-all flex items-center gap-1.5 shadow-md"
+													data-testid="show-reception-qr-btn"
+												>
+													<QrCode className="w-3.5 h-3.5" />
+													<span>QR для ресепшена</span>
+												</button>
+											</div>
+										</div>
+
+										<div className="flex items-start gap-3">
+											{profile.curatingDoctorAvatar && (
+												<img
+													src={profile.curatingDoctorAvatar}
+													alt={profile.curatingDoctor}
+													className="w-12 h-12 rounded-full object-cover border-2 border-teal-400 shrink-0"
+												/>
+											)}
+											<div className="space-y-1 text-xs flex-1 min-w-0">
+												<div className="flex items-center gap-2 flex-wrap">
+													<span className="px-2 py-0.5 rounded-lg bg-teal-500/20 text-teal-300 font-mono font-bold text-xs">
+														14:30 – 15:30
+													</span>
+													<strong className="text-sm text-[var(--ink,#f8fafc)]">
+														Вторник, 1 сентября 2026
+													</strong>
+												</div>
+												<div className="text-[var(--muted,#94a3b8)]">
+													Врач: <strong className="text-[var(--ink,#f8fafc)]">{profile.curatingDoctor}</strong> ({profile.curatingDoctorSpecialty})
+												</div>
+												<div className="text-[var(--muted,#94a3b8)] flex items-center gap-1">
+													<MapPin className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+													<span>Клиника DENTE на Невском, Кабинет 104</span>
+												</div>
+											</div>
+										</div>
+
+										{/* 1-Tap Calendar Export Buttons */}
+										<div className="pt-2 border-t border-[var(--line,rgba(255,255,255,0.08))] flex items-center gap-2 flex-wrap">
+											<span className="text-[11px] text-[var(--muted,#94a3b8)] font-bold">
+												В календарь:
+											</span>
+											<button
+												type="button"
+												onClick={handleDownloadIcs}
+												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.1))] hover:border-teal-400 transition-all flex items-center gap-1.5 shadow-xs"
+												data-testid="add-apple-cal-btn"
+											>
+												<CalendarPlus className="w-3.5 h-3.5 text-teal-400" />
+												<span>Apple / iCal (.ics)</span>
+											</button>
+											<button
+												type="button"
+												onClick={handleOpenGoogleCalendar}
+												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.1))] hover:border-blue-400 transition-all flex items-center gap-1.5 shadow-xs"
+												data-testid="add-google-cal-btn"
+											>
+												<ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+												<span>Google</span>
+											</button>
+											<button
+												type="button"
+												onClick={handleOpenYandexCalendar}
+												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.1))] hover:border-amber-400 transition-all flex items-center gap-1.5 shadow-xs"
+												data-testid="add-yandex-cal-btn"
+											>
+												<ExternalLink className="w-3.5 h-3.5 text-amber-400" />
+												<span>Яндекс</span>
+											</button>
+										</div>
+									</div>
+
 									<div className="flex items-center justify-between">
 										<h3 className="text-sm font-bold text-[var(--ink,#f8fafc)] flex items-center gap-2">
 											<Clock className="w-4 h-4 text-teal-400" />
@@ -914,6 +1032,26 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 										</div>
 									</div>
 
+									{/* Installment Plan Status Card */}
+									<div className="p-4 rounded-2xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,rgba(255,255,255,0.1))] space-y-2.5" data-testid="installment-plan-card">
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-2">
+												<CreditCard className="w-4 h-4 text-amber-400" />
+												<strong className="text-xs font-bold text-[var(--ink,#f8fafc)]">Беспроцентная рассрочка клиники (0-0-12)</strong>
+											</div>
+											<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+												Активна: 4 из 12 взносов
+											</span>
+										</div>
+										<div className="w-full bg-[var(--paper-strong,#0f172a)] h-2 rounded-full overflow-hidden">
+											<div className="bg-amber-400 h-full rounded-full" style={{ width: "33.3%" }} />
+										</div>
+										<div className="flex items-center justify-between text-[11px] text-[var(--muted,#94a3b8)]">
+											<span>Выплачено: <strong className="text-[var(--ink,#f8fafc)]">45 000 ₽</strong> из 135 000 ₽</span>
+											<span>Следующий платёж: <strong className="text-amber-400">11 250 ₽ до 15.09</strong></span>
+										</div>
+									</div>
+
 									{/* Invoices & 54-FZ Checks List */}
 									<div className="space-y-3">
 										<div className="flex items-center justify-between">
@@ -1320,6 +1458,50 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 								<Download className="w-3.5 h-3.5" />
 								<span>Скачать справку (КНД 1151156)</span>
 							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* ============================================================ */}
+			{/* SUB-MODAL: RECEPTION CHECK-IN QR */}
+			{/* ============================================================ */}
+			{isReceptionQrOpen && (
+				<div className="patient-portal-overlay z-50" data-testid="reception-qr-modal">
+					<div className="bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)] border border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.15))] rounded-2xl p-5 max-w-sm w-full flex flex-col items-center text-center gap-3 shadow-2xl">
+						<div className="flex items-center justify-between w-full pb-2 border-b border-[var(--border,#e2e8f0)] dark:border-[var(--line,rgba(255,255,255,0.1))]">
+							<strong className="text-sm font-bold flex items-center gap-1.5">
+								<QrCode className="w-4 h-4 text-teal-400" />
+								<span>Быстрая регистрация</span>
+							</strong>
+							<button
+								type="button"
+								onClick={() => setIsReceptionQrOpen(false)}
+								className="p-1 rounded-xl text-[var(--muted,#94a3b8)] hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+								data-testid="close-reception-qr-btn"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+
+						<div
+							className="p-3 bg-white rounded-2xl shadow-inner border border-slate-200"
+							dangerouslySetInnerHTML={{
+								__html: generateQrCodeSvg(`https://dente.ru/checkin?patientId=${profile.cardNumber}&t=nextAppt`, {
+									size: 180,
+									color: "#0f172a",
+									background: "#ffffff",
+								}),
+							}}
+						/>
+
+						<div className="space-y-1">
+							<div className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-[var(--ink,#f8fafc)]">
+								{profile.fullName} ({profile.cardNumber})
+							</div>
+							<p className="text-[11px] text-[var(--muted,#64748b)] dark:text-[var(--muted,#94a3b8)]">
+								Покажите этот экран администратору при входе для автоматической отметки о прибытии на приём без очереди.
+							</p>
 						</div>
 					</div>
 				</div>

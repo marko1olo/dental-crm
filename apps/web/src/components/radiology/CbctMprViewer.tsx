@@ -705,8 +705,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 								style={{ left: `${midX}px`, top: `${midY}px`, transform: "translate(-50%, -50%)" }}
 								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
 									isSelected
-										? "bg-slate-900/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
-										: "bg-slate-900/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+										? "bg-slate-950/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
+										: "bg-slate-950/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
 								}`}
 								data-testid={`cbct-ruler-overlay-badge-${r.id}`}
 							>
@@ -743,8 +743,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 								style={{ left: `${badgePos.x}px`, top: `${badgePos.y}px`, transform: "translate(-50%, -50%)" }}
 								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
 									isSelected
-										? "bg-slate-900/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
-										: "bg-slate-900/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+										? "bg-slate-950/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
+										: "bg-slate-950/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
 								}`}
 								data-testid={`cbct-angle-overlay-badge-${a.id}`}
 							>
@@ -778,8 +778,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 								style={{ left: `${pScreen.x + 12}px`, top: `${pScreen.y - 12}px`, transform: "translate(0, -50%)" }}
 								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
 									isSelected
-										? "bg-slate-900/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
-										: "bg-slate-900/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+										? "bg-slate-950/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
+										: "bg-slate-950/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
 								}`}
 								title={formatMischTooltip(pm.hu)}
 								data-testid={`cbct-probe-overlay-badge-${pm.id}`}
@@ -815,7 +815,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					return (
 						<div
 							style={{ left: `${pMidScreen.x}px`, top: `${pMidScreen.y - 24}px`, transform: "translate(-50%, -50%)" }}
-							className="absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-slate-900/80 backdrop-blur text-amber-300 border border-amber-500/60 shadow-lg"
+							className="absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-slate-950/80 backdrop-blur text-amber-300 border border-amber-500/60 shadow-lg"
 							data-testid={`cbct-nerve-overlay-badge-${plane}`}
 						>
 							<span>Канал IAN (3D {nerveTotalLengthMm.toFixed(1)} мм · 2.0 мм буфер)</span>

@@ -298,10 +298,10 @@
 .cmo-hub-tabs-bar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   overflow-x: auto;
-  padding: 3px 2px;
+  padding: 4px 2px;
   border-bottom: 2px solid var(--glass-border, #e2e8f0);
 }
 
@@ -311,18 +311,18 @@
 }
 
 .cmo-hub-tab-btn {
-  min-height: 34px;
-  padding: 4px 10px;
+  min-height: 36px;
+  padding: 4px 12px;
   border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted, #64748b);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   white-space: nowrap;
   shrink: 0;
   transition: all 0.15s ease;
@@ -357,14 +357,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
+  min-width: 22px;
+  height: 22px;
   padding: 0 6px;
-  border-radius: 10px;
+  border-radius: 9999px;
   font-size: 11px;
   font-weight: 700;
   background: var(--paper, #e2e8f0);
   color: var(--ink, #334155);
+  flex-shrink: 0;
 }
 
 [data-theme="dark"] .cmo-hub-tab-count,
@@ -605,28 +606,37 @@
   max-width: 220px;
 }
 
-/* ── Floating Batch Action HUD Bar ── */
+/* ── Fixed Bottom Batch Action HUD Bar / Footer ── */
 .cmo-hub-batch-bar {
-  position: sticky;
-  bottom: 16px;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 14px 20px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  padding: 12px 24px;
   background: var(--paper-strong, #ffffff);
-  border: 2px solid var(--teal, #0d9488);
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  border-top: 2px solid var(--teal, #0d9488);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   animation: cmoHubSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
 [data-theme="dark"] .cmo-hub-batch-bar,
 .dark .cmo-hub-batch-bar {
   background: var(--paper-strong, #0f172a);
-  border-color: var(--teal, #0d9488);
+  border-top-color: var(--teal, #0d9488);
+  box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.5);
+}
+
+.cmo-hub-batch-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 @keyframes cmoHubSlideUp {

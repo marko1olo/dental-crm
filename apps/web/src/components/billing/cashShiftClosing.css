@@ -113,9 +113,9 @@
 }
 
 .cash-shift-status-pill.warning {
-	background-color: #fef3c7;
-	color: #92400e;
-	border-color: #fcd34d;
+	background-color: var(--warn-bg, #fef3c7);
+	color: var(--warn-fg, #92400e);
+	border-color: rgba(245, 158, 11, 0.3);
 }
 
 .cash-shift-status-pill.critical {
@@ -149,9 +149,9 @@
 }
 
 .cash-shift-24h-alert.warning {
-	background-color: #fffbeb;
-	color: #92400e;
-	border-bottom-color: #fde68a;
+	background-color: var(--warn-bg, #fffbeb);
+	color: var(--warn-fg, #92400e);
+	border-bottom-color: rgba(245, 158, 11, 0.3);
 }
 
 /* Navigation Tabs */
@@ -205,7 +205,7 @@
 }
 
 .cash-shift-nav-btn.action-blue {
-	color: #0284c7;
+	color: var(--info-fg, #0284c7);
 }
 
 .cash-shift-nav-btn.action-blue:hover {
@@ -213,8 +213,8 @@
 }
 
 .cash-shift-nav-btn.action-blue.active {
-	background-color: #f0f9ff;
-	color: #0284c7;
+	background-color: var(--info-bg, rgba(14, 165, 233, 0.12));
+	color: var(--info-fg, #0284c7);
 	border: 1px solid rgba(14, 165, 233, 0.3);
 }
 

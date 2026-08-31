@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { FileEdit } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { money } from "../../../utils/financeUtils";
 import { appendChipToText } from "../documentChipText";
@@ -239,12 +240,15 @@ export const PaidServiceContractForm = React.memo(
 					fieldsBlockTitle={PAID_CONTRACT_FIELDS_BLOCK_TITLE}
 				/>
 				<details className="document-manual-override">
-					<summary>
-						✏️ {PAID_CONTRACT_FIELDS_BLOCK_TITLE}
-						{review.missing.length
-							? ` — не хватает ${review.missing.length}`
-							: " — всё заполнено"}
-						{" (развернуть)"}
+					<summary className="inline-flex items-center gap-1.5 cursor-pointer">
+						<FileEdit size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
+						<span>
+							{PAID_CONTRACT_FIELDS_BLOCK_TITLE}
+							{review.missing.length
+								? ` — не хватает ${review.missing.length}`
+								: " — всё заполнено"}
+							{" (развернуть)"}
+						</span>
 					</summary>
 					<div className="document-payload-collapsed-content">
 						<div className="document-payload-row">

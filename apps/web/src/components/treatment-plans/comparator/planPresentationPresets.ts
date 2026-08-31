@@ -220,7 +220,7 @@ export const DEFAULT_TREATMENT_PLAN_PRESETS: Readonly<
 			"Самый популярный и клинически сбалансированный план. Надежные имплантаты Osstem TS III (Южная Корея), " +
 			"циркониевые коронки на индивидуальных титановых абатментах и высокоэстетичные пломбы Estelite.",
 		implantSystem: "Osstem TS III / Dentium SuperLine (Южная Корея)",
-		crownMaterial: "Диоксид циркония ZrO2 на индивидуальном титановом абатменте",
+		crownMaterial: "Диоксид циркония ZrO₂ на индивидуальном титановом абатменте",
 		aestheticMaterial: "Светоотверждаемый нанокомпозит Estelite Asteria / Tokuyama",
 		warrantyYears: 3,
 		estimatedServiceLifeYears: 15,

@@ -233,7 +233,7 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		);
 
 		// 2. Buttons with min-w-max and full non-truncated Russian labels
-		assert.ok(html.includes("Негатив / Инверсия"), "Contains full 'Негатив / Инверсия' label");
+		assert.ok(html.includes("Инверсия"), "Contains full 'Инверсия' label");
 		assert.ok(html.includes("Кость / Эндодонтия"), "Contains full 'Кость / Эндодонтия' label");
 		assert.ok(html.includes("Эмаль / Дентин"), "Contains full 'Эмаль / Дентин' label");
 		assert.ok(html.includes("Импланты / Металл"), "Contains full 'Импланты / Металл' label");

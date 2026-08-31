@@ -116,7 +116,7 @@ describe('TreatmentPlanPhased4StageView Component', () => {
     );
 
     assert.ok(html.includes('data-testid="treatment-plan-phased-4stage-view"'));
-    assert.ok(html.includes('4 Клинических этапа'));
+    assert.ok(html.includes("4 клинических этапа"));
     assert.ok(html.includes('phased-stage-card-hygiene_sanitation'));
     assert.ok(html.includes('phased-stage-card-endo_therapy'));
     assert.ok(html.includes('phased-stage-card-surgery_implant'));

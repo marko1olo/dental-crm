@@ -67,7 +67,7 @@ describe("ScheduleGrid", () => {
 		assert.ok(html.includes("Кабинет Хирургии"), "должен быть заголовок Кабинет Хирургии");
 		assert.ok(html.includes("data-testid=\"schedule-grid-view\""), "должен быть testid");
 		assert.ok(html.includes("Иванов Иван"), "должно быть имя пациента на карточке");
-		assert.ok(html.includes("+ Записать на"), "должна быть кнопка быстрой записи на пустом слоте");
+		assert.ok(html.includes("Записать на"), "должна быть кнопка быстрой записи на пустом слоте");
 	});
 
 	it("renders quick status buttons and WhatsApp trigger with >=44px touch targets in grid", () => {

@@ -1,5 +1,6 @@
 import { BASE_INFORMED_CONSENT_PRESET } from "@dental/shared";
 import React, { useMemo } from "react";
+import { ClipboardList } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import { informedConsentBlockersReview } from "../informedConsentBlockers";
@@ -183,7 +184,7 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 			<div style={{ marginBottom: "14px" }}>
 				<button
 					type="button"
-					className="secondary-button"
+					className="secondary-button inline-flex items-center gap-1.5"
 					style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 					onClick={() => {
 						setInformedConsentIntervention(BASE_INFORMED_CONSENT_PRESET.intervention);
@@ -196,7 +197,8 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 						setInformedConsentAftercare(BASE_INFORMED_CONSENT_PRESET.aftercareRequirements.join("\n"));
 					}}
 				>
-					📋 1 клик: Первичный осмотр, консультация и рентген-диагностика (Приказ № 1051н)
+					<ClipboardList size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+					<span>1 клик: Первичный осмотр, консультация и рентген-диагностика (Приказ № 1051н)</span>
 				</button>
 			</div>
 			<label>

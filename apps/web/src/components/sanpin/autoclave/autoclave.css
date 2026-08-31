@@ -341,6 +341,120 @@
 	border-color: var(--bad, #ef4444);
 }
 
+/* ── Dark Mode & OLED Night Overrides (WCAG AA >= 4.5:1) ── */
+[data-theme="dark"] .autoclave-modal-container,
+[data-theme="night"] .autoclave-modal-container,
+[data-theme="oled"] .autoclave-modal-container,
+html.dark .autoclave-modal-container {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .autoclave-modal-header,
+[data-theme="night"] .autoclave-modal-header,
+[data-theme="oled"] .autoclave-modal-header,
+html.dark .autoclave-modal-header {
+	background: var(--paper-strong, #1e293b);
+	border-bottom-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .autoclave-header-title,
+[data-theme="night"] .autoclave-header-title,
+[data-theme="oled"] .autoclave-header-title,
+html.dark .autoclave-header-title {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .autoclave-cycle-card,
+[data-theme="night"] .autoclave-cycle-card,
+[data-theme="oled"] .autoclave-cycle-card,
+html.dark .autoclave-cycle-card {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .cycle-card-title,
+[data-theme="night"] .cycle-card-title,
+[data-theme="oled"] .cycle-card-title,
+html.dark .cycle-card-title {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .cycle-spec-pill,
+[data-theme="night"] .cycle-spec-pill,
+[data-theme="oled"] .cycle-spec-pill,
+html.dark .cycle-spec-pill {
+	background: var(--surface, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .autoclave-gauges-container,
+[data-theme="night"] .autoclave-gauges-container,
+[data-theme="oled"] .autoclave-gauges-container,
+html.dark .autoclave-gauges-container {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .gauge-val-display,
+[data-theme="night"] .gauge-val-display,
+[data-theme="oled"] .gauge-val-display,
+html.dark .gauge-val-display {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .sterile-packs-table th,
+[data-theme="night"] .sterile-packs-table th,
+[data-theme="oled"] .sterile-packs-table th,
+html.dark .sterile-packs-table th {
+	background: var(--surface, #1e293b);
+	color: var(--muted, #94a3b8);
+	border-bottom-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .sterile-packs-table td,
+[data-theme="night"] .sterile-packs-table td,
+[data-theme="oled"] .sterile-packs-table td,
+html.dark .sterile-packs-table td {
+	color: var(--ink, #f8fafc);
+	border-bottom-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .kraft-label-card,
+[data-theme="night"] .kraft-label-card,
+[data-theme="oled"] .kraft-label-card,
+html.dark .kraft-label-card {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .kraft-label-barcode,
+[data-theme="night"] .kraft-label-barcode,
+[data-theme="oled"] .kraft-label-barcode,
+html.dark .kraft-label-barcode {
+	background: var(--surface, #0f172a);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .autoclave-btn,
+[data-theme="night"] .autoclave-btn,
+[data-theme="oled"] .autoclave-btn,
+html.dark .autoclave-btn {
+	background: var(--paper-strong, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .autoclave-btn:hover,
+[data-theme="night"] .autoclave-btn:hover,
+[data-theme="oled"] .autoclave-btn:hover,
+html.dark .autoclave-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+}
+
 /* Print Rules */
 @media print {
 	.autoclave-modal-overlay {

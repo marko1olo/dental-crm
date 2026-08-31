@@ -201,3 +201,67 @@ html.dark .workspace-continuity-strip.offline small {
 	color: #fde68a;
 }
 
+/* --- 9. Медицинские бланки и документы в темных темах (Dark / Night / OLED) ---
+ * Обеспечение контраста WCAG AA (>= 4.5:1) для бланков, аккордеонов и предупреждений
+ */
+[data-theme="dark"] .document-manual-override,
+[data-theme="night"] .document-manual-override,
+[data-theme="oled"] .document-manual-override,
+html.dark .document-manual-override {
+	background: var(--surface-100, #1e293b) !important;
+	border-color: var(--line, #334155) !important;
+}
+
+[data-theme="dark"] .document-manual-override summary,
+[data-theme="night"] .document-manual-override summary,
+[data-theme="oled"] .document-manual-override summary,
+html.dark .document-manual-override summary {
+	color: var(--brand-500, #38bdf8) !important;
+}
+
+[data-theme="dark"] .document-operator-requisites-missing,
+[data-theme="night"] .document-operator-requisites-missing,
+[data-theme="oled"] .document-operator-requisites-missing,
+html.dark .document-operator-requisites-missing {
+	background: rgba(69, 26, 3, 0.88);
+	border-color: rgba(245, 158, 11, 0.45);
+	color: #fde68a;
+}
+
+[data-theme="dark"] .document-operator-requisites-missing strong,
+[data-theme="night"] .document-operator-requisites-missing strong,
+[data-theme="oled"] .document-operator-requisites-missing strong,
+html.dark .document-operator-requisites-missing strong {
+	color: #fbbf24;
+}
+
+[data-theme="dark"] .document-package-patient-card,
+[data-theme="night"] .document-package-patient-card,
+[data-theme="oled"] .document-package-patient-card,
+html.dark .document-package-patient-card {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .document-package-item-card,
+[data-theme="night"] .document-package-item-card,
+[data-theme="oled"] .document-package-item-card,
+html.dark .document-package-item-card {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .document-package-item-title,
+[data-theme="night"] .document-package-item-title,
+[data-theme="oled"] .document-package-item-title,
+html.dark .document-package-item-title {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .document-package-item-sub,
+[data-theme="night"] .document-package-item-sub,
+[data-theme="oled"] .document-package-item-sub,
+html.dark .document-package-item-sub {
+	color: var(--muted, #94a3b8);
+}
+

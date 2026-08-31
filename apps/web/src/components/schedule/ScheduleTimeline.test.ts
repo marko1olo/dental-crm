@@ -156,5 +156,7 @@ describe("ScheduleTimeline", () => {
 		assert.ok(html.includes("Свободно"), "должен быть блок свободного окна");
 		assert.ok(html.includes("data-timeline-focusable=\"true\""), "элементы таймлайна должны иметь data-timeline-focusable=true для навигации стрелками");
 		assert.ok(html.includes("min-h-[44px]"), "свободные окна должны иметь min-h-[44px] touch target");
+		assert.ok(html.includes("pb-36"), "контейнер таймлайна должен иметь безопасный мобильный отступ pb-36 (144px)");
+		assert.ok(html.includes("scroll-padding-bottom: 144px") || html.includes("scrollPaddingBottom") || html.includes("144px"), "контейнер должен иметь scroll-padding-bottom 144px");
 	});
 });

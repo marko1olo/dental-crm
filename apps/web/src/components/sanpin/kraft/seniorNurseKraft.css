@@ -274,11 +274,11 @@
 }
 
 .snk-status-card.valid .snk-status-title {
-	color: #065f46;
+	color: var(--ok-fg, #065f46);
 }
 
 .snk-status-card.expired .snk-status-title {
-	color: #991b1b;
+	color: var(--bad-fg, #991b1b);
 }
 
 .snk-package-info-grid {
@@ -363,6 +363,105 @@
 
 .snk-btn-secondary:hover {
 	background: var(--paper-soft, #f1f5f9);
+}
+
+/* ── Dark Mode & OLED Night Overrides (WCAG AA >= 4.5:1) ── */
+[data-theme="dark"] .snk-modal,
+[data-theme="night"] .snk-modal,
+[data-theme="oled"] .snk-modal,
+html.dark .snk-modal {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .snk-header,
+[data-theme="night"] .snk-header,
+[data-theme="oled"] .snk-header,
+html.dark .snk-header {
+	background: var(--paper-soft, #1e293b);
+	border-bottom-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .snk-title,
+[data-theme="night"] .snk-title,
+[data-theme="oled"] .snk-title,
+html.dark .snk-title {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .snk-close-btn,
+[data-theme="night"] .snk-close-btn,
+[data-theme="oled"] .snk-close-btn,
+html.dark .snk-close-btn {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .snk-close-btn:hover,
+[data-theme="night"] .snk-close-btn:hover,
+[data-theme="oled"] .snk-close-btn:hover,
+html.dark .snk-close-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .snk-test-chip,
+[data-theme="night"] .snk-test-chip,
+[data-theme="oled"] .snk-test-chip,
+html.dark .snk-test-chip {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .snk-text-input,
+[data-theme="night"] .snk-text-input,
+[data-theme="oled"] .snk-text-input,
+html.dark .snk-text-input {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .snk-package-info-grid,
+[data-theme="night"] .snk-package-info-grid,
+[data-theme="oled"] .snk-package-info-grid,
+html.dark .snk-package-info-grid {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .snk-info-val,
+[data-theme="night"] .snk-info-val,
+[data-theme="oled"] .snk-info-val,
+html.dark .snk-info-val {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .snk-footer,
+[data-theme="night"] .snk-footer,
+[data-theme="oled"] .snk-footer,
+html.dark .snk-footer {
+	background: var(--paper-soft, #1e293b);
+	border-top-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .snk-btn-secondary,
+[data-theme="night"] .snk-btn-secondary,
+[data-theme="oled"] .snk-btn-secondary,
+html.dark .snk-btn-secondary {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .snk-btn-secondary:hover,
+[data-theme="night"] .snk-btn-secondary:hover,
+[data-theme="oled"] .snk-btn-secondary:hover,
+html.dark .snk-btn-secondary:hover {
+	background: rgba(255, 255, 255, 0.08);
 }
 
 @keyframes snkFadeIn {

@@ -6,7 +6,26 @@ import type {
 	ScheduleSuggestion,
 } from "@dental/shared";
 import React, { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Check, Clock, Copy, CreditCard, MessageSquare, MoreVertical, Phone, Scan, User, Zap } from "lucide-react";
+import {
+	AlertTriangle,
+	CalendarCheck,
+	Check,
+	CheckCircle2,
+	Clock,
+	Copy,
+	CreditCard,
+	MessageSquare,
+	MoreVertical,
+	Phone,
+	PhoneCall,
+	Scan,
+	Stethoscope,
+	User,
+	UserCheck,
+	UserX,
+	X,
+	Zap,
+} from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
@@ -16,6 +35,25 @@ import { openWhatsAppChat } from "../../store/telephonyStore";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+
+export function extractTeethList(appointment: Appointment): string[] {
+	if (!appointment) return [];
+	const explicitTeeth = (appointment as any)?.teeth;
+	if (Array.isArray(explicitTeeth) && explicitTeeth.length > 0) {
+		return explicitTeeth.map(String);
+	}
+	const singleTooth = (appointment as any)?.toothNumber || (appointment as any)?.tooth;
+	if (singleTooth) {
+		return [String(singleTooth)];
+	}
+	const text = `${appointment.reason || ""} ${appointment.comment || ""}`;
+	if (!text.trim()) return [];
+	const matches = text.match(/\b([1-4][1-8]|[5-8][1-5])\b/g);
+	if (matches && matches.length > 0) {
+		return Array.from(new Set(matches));
+	}
+	return [];
+}
 
 /**
  * Formats full patient FIO into a readable, non-truncated medical card string:
@@ -265,8 +303,35 @@ export function AppointmentCard(props: AppointmentCardProps) {
 	const [isQuickStatusUpdating, setIsQuickStatusUpdating] = useState(false);
 	const [optimisticStatus, setOptimisticStatus] = useState<Appointment["status"] | null>(null);
 	const [isHoverPreviewOpen, setIsHoverPreviewOpen] = useState(false);
+	const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
 	const [isCardMenuOpen, setIsCardMenuOpen] = useState(false);
 	const cardMenuRef = useRef<HTMLDivElement>(null);
+	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	const handleCardMouseEnter = () => {
+		if (hoverTimeoutRef.current) {
+			clearTimeout(hoverTimeoutRef.current);
+		}
+		hoverTimeoutRef.current = setTimeout(() => {
+			setIsHoverPreviewOpen(true);
+		}, 150);
+	};
+
+	const handleCardMouseLeave = () => {
+		if (hoverTimeoutRef.current) {
+			clearTimeout(hoverTimeoutRef.current);
+			hoverTimeoutRef.current = null;
+		}
+		setIsHoverPreviewOpen(false);
+	};
+
+	useEffect(() => {
+		return () => {
+			if (hoverTimeoutRef.current) {
+				clearTimeout(hoverTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
@@ -545,10 +610,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					data-appointment-id={appointment.id}
 					tabIndex={0}
 					onKeyDown={handleCardKeyDown}
-					onMouseEnter={() => setIsHoverPreviewOpen(true)}
-					onMouseLeave={() => setIsHoverPreviewOpen(false)}
-					onFocus={() => setIsHoverPreviewOpen(true)}
-					onBlur={() => setIsHoverPreviewOpen(false)}
+					onMouseEnter={handleCardMouseEnter}
+					onMouseLeave={handleCardMouseLeave}
+					onFocus={handleCardMouseEnter}
+					onBlur={handleCardMouseLeave}
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
 					className={`appointment-card mode-fit-card glass-panel rounded-xl p-3 mb-2 shadow-xs transition-all focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 max-w-full relative ${
 						patientBalance !== null && patientBalance < 0 ? "border-l-4 border-l-rose-500" : ""
@@ -576,19 +641,27 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						boxSizing: "border-box",
 					}}
 				>
-					{/* Крупное всплывающее превью пациента по наведению */}
+					{/* macOS Hover HUD с задержкой 150ms без сдвига сетки (Apple HIG Progressive Disclosure) */}
 					{isHoverPreviewOpen && !appointmentEditing && (
 						<div
-							className="appointment-patient-hover-preview p-3.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-30"
+							className="appointment-patient-hover-preview absolute left-0 top-full mt-1.5 w-[340px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto"
 							data-testid="appointment-patient-hover-preview"
+							onMouseEnter={() => {
+								if (hoverTimeoutRef.current) {
+									clearTimeout(hoverTimeoutRef.current);
+									hoverTimeoutRef.current = null;
+								}
+								setIsHoverPreviewOpen(true);
+							}}
+							onMouseLeave={handleCardMouseLeave}
 						>
-							{/* 1. Крупное ФИО пациента (18px bold) */}
-							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2">
-								<span className="text-[18px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate">
-									<User className="w-5 h-5 text-[var(--teal,var(--brand-primary))] shrink-0" />
+							{/* 1. Крупное ФИО пациента + Статус 54-ФЗ (Баланс / Долг / Аванс) */}
+							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
+								<span className="text-[17px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate">
+									<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 									{appointmentPatientName || "Пациент"}
 								</span>
-								{patientBalance !== null && (
+								{patientBalance !== null ? (
 									<span
 										className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 ${
 											patientBalance > 0
@@ -597,35 +670,72 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													? "bg-rose-500/20 text-rose-800 dark:text-rose-100 border border-rose-500"
 													: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
 										}`}
+										title={
+											patientBalance > 0
+												? "Аванс / Депозит (54-ФЗ)"
+												: patientBalance < 0
+													? "Задолженность по 54-ФЗ"
+													: "Оплачено по 54-ФЗ"
+										}
 									>
 										{patientBalance > 0
 											? `Депозит: +${patientBalance.toLocaleString("ru-RU")} ₽`
 											: patientBalance < 0
 												? `Долг: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
-												: "Баланс: 0 ₽"}
+												: "Оплата: 54-ФЗ (0 ₽)"}
+									</span>
+								) : (
+									<span className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20">
+										54-ФЗ: Баланс 0 ₽
 									</span>
 								)}
 							</div>
 
-							{/* 2. Номер телефона с кнопкой WhatsApp */}
+							{/* 2. Номер телефона с кнопкой WhatsApp и копированием SMS */}
 							<div className="flex items-center justify-between gap-2">
 								<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--ink)]">
 									<Phone className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 									<span>{appointmentPatient?.phone || "Телефон не указан"}</span>
 								</div>
 								{appointmentPatient?.phone && (
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											openWhatsAppChat(appointmentPatient.phone!, `Здравствуйте, ${appointmentPatientName}! Напоминаем о вашем визите в стоматологию.`);
-										}}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-										title="Открыть чат в WhatsApp"
-									>
-										<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
-										<span>WhatsApp</span>
-									</button>
+									<div className="flex items-center gap-1">
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												openWhatsAppChat(appointmentPatient.phone!, `Здравствуйте, ${appointmentPatientName}! Напоминаем о вашем визите в стоматологию.`);
+											}}
+											className="min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+											title="Открыть чат в WhatsApp"
+										>
+											<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
+											<span>WhatsApp</span>
+										</button>
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												const text = generateAppointmentWhatsAppMessage({
+													patientName: appointmentPatientName,
+													doctorName: appointmentDoctor?.fullName,
+													doctorSpecialty: appointmentDoctor?.role,
+													appointmentStartsAt: appointment.startsAt,
+													clinicName: dashboard.clinicSettings?.profile?.clinicName,
+													clinicAddress: dashboard.clinicSettings?.profile?.address,
+													clinicPhone: dashboard.clinicSettings?.profile?.phone,
+													treatmentReason: appointment.reason,
+												});
+												if (typeof navigator !== "undefined" && navigator.clipboard) {
+													void navigator.clipboard.writeText(text);
+													showToast(`Текст напоминания для ${appointmentPatientName} скопирован в буфер`, "success");
+												}
+											}}
+											className="p-1 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer"
+											title="Скопировать SMS напоминание"
+										>
+											<Copy size={13} />
+										</button>
+									</div>
 								)}
 							</div>
 
@@ -637,12 +747,118 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								</div>
 							)}
 
-							{/* 4. Название запланированной процедуры */}
-							<div className="pt-1 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-								<Clock size={13} className="text-slate-400 shrink-0" />
-								<span className="font-semibold text-slate-800 dark:text-slate-200">
-									{appointment?.reason || (appointment as Record<string, any>)?.notes || (appointment as Record<string, any>)?.comment || "Консультация стоматолога"}
-								</span>
+							{/* 4. Процедура и список зубов */}
+							<div className="pt-2 border-t border-[var(--line)] space-y-1.5">
+								<div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
+									<Clock size={13} className="text-[var(--teal)] shrink-0" />
+									<span className="font-semibold">
+										{appointment?.reason || (appointment as Record<string, any>)?.notes || (appointment as Record<string, any>)?.comment || "Консультация стоматолога"}
+									</span>
+								</div>
+								{/* Список зубов */}
+								{(() => {
+									const teeth = extractTeethList(appointment);
+									if (teeth.length === 0) return null;
+									return (
+										<div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+											<span className="text-[11px] font-bold text-[var(--muted)]">Зубы:</span>
+											{teeth.map((t) => (
+												<span
+													key={t}
+													className="px-1.5 py-0.5 rounded-md bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 text-[11px] font-bold font-mono"
+												>
+													{t}
+												</span>
+											))}
+										</div>
+									);
+								})()}
+							</div>
+
+							{/* 5. Врач, ассистент, кресло */}
+							<div className="pt-2 border-t border-[var(--line)] space-y-1 text-[11px] text-[var(--muted)]">
+								<div className="flex items-center justify-between gap-1">
+									<span className="flex items-center gap-1 text-[var(--ink)] font-medium truncate">
+										<Stethoscope size={12} className="text-[var(--teal)] shrink-0" />
+										<span className="truncate">
+											{appointmentDoctor?.fullName || "Врач не назначен"}
+										</span>
+									</span>
+									{appointmentDoctor?.specialties && appointmentDoctor.specialties.length > 0 && (
+										<span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--paper-soft)] border border-[var(--line)] shrink-0">
+											{appointmentDoctor.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
+										</span>
+									)}
+								</div>
+								{/* Ассистент */}
+								<div className="flex items-center gap-1 text-[var(--muted)]">
+									<User size={12} className="shrink-0 opacity-70" />
+									<span>
+										Ассистент: {appointmentAssistant?.fullName || "Не назначен"}
+									</span>
+								</div>
+								{/* Кресло и время */}
+								<div className="flex items-center justify-between text-[11px] font-mono pt-0.5">
+									<span>Кабинет: {appointmentChair?.name || "Кабинет 1"}</span>
+									<span className="font-bold text-[var(--ink)]">{formatTime(appointment.startsAt)} – {formatTime(appointment.endsAt)}</span>
+								</div>
+							</div>
+
+							{/* 6. Быстрая смена статуса в Hover HUD */}
+							<div className="pt-2 border-t border-[var(--line)]">
+								<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+									Быстрый статус (Apple HIG)
+								</div>
+								<div className="grid grid-cols-3 gap-1">
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											void handleQuickStatusChange("confirmed");
+											handleCardMouseLeave();
+										}}
+										className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+											displayStatus === "confirmed"
+												? "bg-emerald-600 text-white border-emerald-600"
+												: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-500/30 hover:bg-emerald-500/20"
+										}`}
+									>
+										<PhoneCall size={11} />
+										<span>Подтвержден</span>
+									</button>
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											void handleQuickStatusChange("arrived");
+											handleCardMouseLeave();
+										}}
+										className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+											displayStatus === "arrived"
+												? "bg-amber-500 text-white border-amber-500"
+												: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
+										}`}
+									>
+										<UserCheck size={11} />
+										<span>Пришел</span>
+									</button>
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											void handleQuickStatusChange("in_treatment");
+											handleCardMouseLeave();
+										}}
+										className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+											displayStatus === "in_treatment"
+												? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)]"
+												: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
+										}`}
+									>
+										<CalendarCheck size={11} />
+										<span>В кресле</span>
+									</button>
+								</div>
 							</div>
 						</div>
 					)}
@@ -657,7 +873,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						<div className="flex items-center gap-1.5 flex-wrap min-w-0">
 							{/* Unified Interactive Status Selector with Color Indication */}
 							<div
-								className={`appointment-status-badge-selector relative inline-flex items-center gap-1.5 h-7 px-2 py-0.5 rounded-lg text-xs font-bold border transition-colors shrink-0 ${
+								className={`appointment-status-badge-selector relative inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors shrink-0 ${
 									displayStatus === "in_treatment"
 										? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/40"
 										: displayStatus === "confirmed"
@@ -691,7 +907,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									/>
 								)}
 								<select
-									className="appointment-status-select bg-transparent text-current font-bold text-xs cursor-pointer outline-none border-none p-0 pr-0.5 appearance-none"
+									className="appointment-status-select bg-transparent text-current font-bold text-xs cursor-pointer outline-none border-none p-0 pr-0.5 appearance-none min-h-[44px] sm:min-h-0"
 									value={displayStatus}
 									disabled={
 										isQuickStatusUpdating ||
@@ -780,7 +996,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							<div className="relative inline-flex items-center shrink-0" ref={cardMenuRef}>
 								<button
 									type="button"
-									className="secondary-button appointment-context-menu-btn h-7 w-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] flex items-center justify-center cursor-pointer transition-colors shrink-0"
+									className="secondary-button appointment-context-menu-btn min-h-[44px] min-w-[44px] w-11 h-11 sm:w-7 sm:h-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
 									onClick={(e) => {
 										e.stopPropagation();
 										setIsCardMenuOpen((prev) => !prev);
@@ -794,7 +1010,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 								{isCardMenuOpen && (
 									<div
-										className="appointment-card-context-menu absolute right-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[220px] animate-in fade-in zoom-in-95 duration-100 text-xs"
+										className="appointment-card-context-menu absolute right-0 top-full mt-1 z-50 flex flex-col gap-1 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[240px] animate-in fade-in zoom-in-95 duration-100 text-xs"
 										role="menu"
 										onClick={(e) => e.stopPropagation()}
 									>
@@ -804,7 +1020,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										</div>
 										<button
 											type="button"
-											className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 											role="menuitem"
 											onClick={() => {
 												setIsCardMenuOpen(false);
@@ -826,7 +1042,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												}
 											}}
 										>
-											<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
+											<MessageSquare size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 											<span>Напомнить в WhatsApp / СМС</span>
 										</button>
 
@@ -844,7 +1060,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 														setIsCardMenuOpen(false);
 														void handleShiftAppointmentTime(m);
 													}}
-													className="h-7 px-1.5 py-0.5 rounded-md border border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center whitespace-nowrap"
+													className="min-h-[44px] min-w-[44px] px-1.5 py-1 rounded-md border border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center whitespace-nowrap"
 													title={`Сдвинуть на +${m} минут`}
 												>
 													+{m}м
@@ -858,7 +1074,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										</div>
 										<button
 											type="button"
-											className="secondary-button appointment-repeat-button w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+											className="secondary-button appointment-repeat-button w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
 											role="menuitem"
 											onClick={() => {
 												setIsCardMenuOpen(false);
@@ -873,7 +1089,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										{copyAppointmentToBuffer ? (
 											<button
 												type="button"
-												className="secondary-button appointment-buffer-button w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+												className="secondary-button appointment-buffer-button w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
 												role="menuitem"
 												onClick={() => {
 													setIsCardMenuOpen(false);
@@ -888,7 +1104,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 										<button
 											type="button"
-											className="secondary-button appointment-edit-button w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+											className="secondary-button appointment-edit-button w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
 											role="menuitem"
 											onClick={() => {
 												setIsCardMenuOpen(false);
@@ -906,7 +1122,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										</div>
 										<button
 											type="button"
-											className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
 											role="menuitem"
 											data-testid="appointment-open-cbct-radiology-btn"
 											onClick={() => {
@@ -919,7 +1135,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											title="Открыть рентген и 3D КТ (Клавиша X)"
 										>
 											<div className="flex items-center gap-2">
-												<Scan size={13} className="text-cyan-600 dark:text-cyan-400" />
+												<Scan size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
 												<span>[ 📷 КТ / Рентген снимки ]</span>
 											</div>
 											<span className="text-[10px] font-mono opacity-70">X</span>
@@ -932,9 +1148,15 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 					<div className="appointment-card-body min-w-0 max-w-full">
 						<h3
-							className="text-base font-semibold break-words leading-snug whitespace-normal"
+							className="text-base font-semibold break-words leading-snug whitespace-normal cursor-pointer hover:text-[var(--teal)] transition-colors"
 							style={{ color: "var(--ink)", minWidth: 0, maxWidth: "100%" }}
 							title={appointmentPatientName}
+							onClick={(e) => {
+								if (typeof window !== "undefined" && window.innerWidth < 768) {
+									e.stopPropagation();
+									setIsMobileSheetOpen(true);
+								}
+							}}
 						>
 							{formatPatientDisplayFio(appointmentPatientName)}
 						</h3>
@@ -1164,7 +1386,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													<button
 														key={patient.id}
 														type="button"
-														className={`quick-chip max-w-full truncate ${appointmentDraft.patientId === patient.id ? "active" : ""}`}
+														className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.patientId === patient.id ? "active" : ""}`}
 														title={patient.fullName}
 														onClick={() =>
 															updateAppointmentScheduleDraft(
@@ -1199,7 +1421,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													e.target.value,
 												)
 											}
-											className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none truncate"
+											className="w-full min-h-[44px] p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none truncate"
 										>
 											<option value="">-- Выберите врача --</option>
 											{(dashboard.clinicSettings?.staff ?? [])
@@ -1227,7 +1449,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													<button
 														key={member.id}
 														type="button"
-														className={`quick-chip max-w-full truncate ${appointmentDraft.doctorUserId === member.id ? "active" : ""}`}
+														className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.doctorUserId === member.id ? "active" : ""}`}
 														title={member.fullName}
 														onClick={() =>
 															updateAppointmentScheduleDraft(
@@ -1259,7 +1481,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													<button
 														key={member.id}
 														type="button"
-														className={`quick-chip max-w-full truncate ${appointmentDraft.assistantUserId === member.id ? "active" : ""}`}
+														className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.assistantUserId === member.id ? "active" : ""}`}
 														title={member.fullName}
 														onClick={() =>
 															updateAppointmentScheduleDraft(
@@ -1289,7 +1511,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												<button
 													key={chair.id}
 													type="button"
-													className={`quick-chip max-w-full truncate ${appointmentDraft.chairId === chair.id ? "active" : ""}`}
+													className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.chairId === chair.id ? "active" : ""}`}
 													title={chair.name}
 													onClick={() =>
 														updateAppointmentScheduleDraft(
@@ -1310,7 +1532,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										Статус приема
 									</span>
 									<select
-										className="appointment-status-select w-full max-w-xs h-8 px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] cursor-pointer outline-none hover:border-[var(--teal,var(--brand-primary))] transition-colors"
+										className="appointment-status-select w-full max-w-xs min-h-[44px] px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] cursor-pointer outline-none hover:border-[var(--teal,var(--brand-primary))] transition-colors"
 										value={String(appointmentDraft?.status || appointment.status)}
 										onChange={(e) => {
 											updateAppointmentScheduleDraft(
@@ -1427,7 +1649,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													newVal,
 												);
 											}}
-											className="quick-chip quick-chip--sm max-w-full truncate"
+											className="quick-chip quick-chip--sm max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center"
 										>
 											+ {chip}
 										</button>
@@ -1472,7 +1694,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													newVal,
 												);
 											}}
-											className="quick-chip quick-chip--sm max-w-full truncate"
+											className="quick-chip quick-chip--sm max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center"
 										>
 											+ {chip}
 										</button>
@@ -1529,7 +1751,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 														: "Изменений нет"}
 									</span>
 									<button
-										className="secondary-button h-8 px-4 py-1 text-xs font-semibold cursor-pointer shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors"
+										className="secondary-button min-h-[44px] min-w-[44px] px-4 py-2 text-xs font-semibold cursor-pointer shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors inline-flex items-center justify-center"
 										type="button"
 										disabled={appointmentSaveState === "saving"}
 										aria-busy={appointmentSaveState === "saving" || undefined}
@@ -1548,7 +1770,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										Закрыть
 									</button>
 									<button
-										className="primary-button h-8 px-4.5 py-1 text-xs font-bold cursor-pointer shrink-0 rounded-lg bg-[var(--teal-dark)] text-white hover:brightness-110 active:scale-95 transition-all shadow-2xs border border-transparent"
+										className="primary-button min-h-[44px] min-w-[44px] px-4.5 py-2 text-xs font-bold cursor-pointer shrink-0 rounded-lg bg-[var(--teal-dark)] text-white hover:brightness-110 active:scale-95 transition-all shadow-2xs border border-transparent inline-flex items-center justify-center"
 										type="button"
 										onClick={() => void saveAppointmentSchedule(appointment.id)}
 										disabled={
@@ -1571,6 +1793,238 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</section>
 					) : null}
 				</article>
+
+				{/* Mobile Native Bottom Sheet for Progressive Disclosure on tap */}
+				{isMobileSheetOpen && (
+					<div
+						className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-200"
+						onClick={() => setIsMobileSheetOpen(false)}
+						role="dialog"
+						aria-modal="true"
+						aria-label="Подробности приёма"
+						data-testid="appointment-mobile-bottom-sheet"
+					>
+						<div
+							className="bg-[var(--paper-strong)] rounded-t-3xl border-t border-[var(--line)] p-5 shadow-2xl max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom duration-200 text-xs text-[var(--ink)]"
+							onClick={(e) => e.stopPropagation()}
+						>
+							{/* Top Grab Handle */}
+							<div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2" />
+
+							{/* Header */}
+							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
+								<div className="min-w-0 flex-1">
+									<div className="text-lg font-black text-[var(--ink)] truncate">
+										{appointmentPatientName}
+									</div>
+									<div className="text-xs text-[var(--muted)] font-medium">
+										{formatTime(appointment.startsAt)} – {formatTime(appointment.endsAt)} · {appointment.reason || "Прием"}
+									</div>
+								</div>
+								<button
+									type="button"
+									onClick={() => setIsMobileSheetOpen(false)}
+									className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+									aria-label="Закрыть"
+								>
+									<X size={18} />
+								</button>
+							</div>
+
+							{/* 54-FZ Payment status & Balance banner */}
+							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between gap-2">
+								<span className="font-bold text-[var(--muted)]">Статус 54-ФЗ / Баланс:</span>
+								{patientBalance !== null ? (
+									<span
+										className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono ${
+											patientBalance > 0
+												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
+												: patientBalance < 0
+													? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
+													: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+										}`}
+									>
+										{patientBalance > 0
+											? `Депозит: +${patientBalance.toLocaleString("ru-RU")} ₽`
+											: patientBalance < 0
+												? `Долг: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
+												: "0 ₽ (Оплачено 54-ФЗ)"}
+									</span>
+								) : (
+									<span className="text-xs text-[var(--muted)]">0 ₽ (54-ФЗ)</span>
+								)}
+							</div>
+
+							{/* Phone & WhatsApp */}
+							{appointmentPatient?.phone && (
+								<div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+									<div className="flex items-center gap-2 font-mono text-sm font-semibold text-[var(--ink)]">
+										<Phone className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+										<span>{appointmentPatient.phone}</span>
+									</div>
+									<div className="flex items-center gap-1.5">
+										<button
+											type="button"
+											onClick={() => {
+												const text = generateAppointmentWhatsAppMessage({
+													patientName: appointmentPatientName,
+													doctorName: appointmentDoctor?.fullName,
+													doctorSpecialty: appointmentDoctor?.role,
+													appointmentStartsAt: appointment.startsAt,
+													clinicName: dashboard.clinicSettings?.profile?.clinicName,
+													clinicAddress: dashboard.clinicSettings?.profile?.address,
+													clinicPhone: dashboard.clinicSettings?.profile?.phone,
+													treatmentReason: appointment.reason,
+												});
+												openWhatsAppChat(appointmentPatient.phone!, text);
+											}}
+											className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+										>
+											<MessageSquare size={15} className="text-emerald-600 dark:text-emerald-400" />
+											<span>WhatsApp</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												const text = generateAppointmentWhatsAppMessage({
+													patientName: appointmentPatientName,
+													doctorName: appointmentDoctor?.fullName,
+													doctorSpecialty: appointmentDoctor?.role,
+													appointmentStartsAt: appointment.startsAt,
+													clinicName: dashboard.clinicSettings?.profile?.clinicName,
+													clinicAddress: dashboard.clinicSettings?.profile?.address,
+													clinicPhone: dashboard.clinicSettings?.profile?.phone,
+													treatmentReason: appointment.reason,
+												});
+												if (typeof navigator !== "undefined" && navigator.clipboard) {
+													void navigator.clipboard.writeText(text);
+													showToast(`Текст напоминания скопирован`, "success");
+												}
+											}}
+											className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center cursor-pointer"
+											title="Скопировать SMS"
+										>
+											<Copy size={16} />
+										</button>
+									</div>
+								</div>
+							)}
+
+							{/* Allergy alert */}
+							{allergyAlert && (
+								<div className="p-3 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2">
+									<AlertTriangle size={16} className="text-amber-600 shrink-0 animate-bounce" />
+									<span>{allergyAlert}</span>
+								</div>
+							)}
+
+							{/* Teeth List */}
+							{(() => {
+								const teeth = extractTeethList(appointment);
+								if (teeth.length === 0) return null;
+								return (
+									<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5">
+										<div className="font-bold text-[var(--muted)]">Список зубов:</div>
+										<div className="flex items-center gap-1.5 flex-wrap">
+											{teeth.map((t) => (
+												<span
+													key={t}
+													className="px-2 py-1 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/30 text-xs font-black font-mono"
+												>
+													Зуб {t}
+												</span>
+											))}
+										</div>
+									</div>
+								);
+							})()}
+
+							{/* Doctor & Assistant */}
+							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5 text-xs text-[var(--ink)]">
+								<div className="flex items-center justify-between">
+									<span className="text-[var(--muted)]">Врач:</span>
+									<span className="font-bold">{appointmentDoctor?.fullName || "Не назначен"}</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span className="text-[var(--muted)]">Ассистент:</span>
+									<span>{appointmentAssistant?.fullName || "Не назначен"}</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span className="text-[var(--muted)]">Кабинет:</span>
+									<span className="font-mono font-semibold">{appointmentChair?.name || "Кабинет 1"}</span>
+								</div>
+							</div>
+
+							{/* Quick Status Buttons */}
+							<div className="space-y-2">
+								<div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
+									Сменить статус визита:
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											void handleQuickStatusChange("confirmed");
+											setIsMobileSheetOpen(false);
+										}}
+										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/40 text-violet-800 dark:text-violet-200 flex items-center justify-center gap-2 cursor-pointer"
+									>
+										<PhoneCall size={14} />
+										<span>Подтвержден</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											void handleQuickStatusChange("arrived");
+											setIsMobileSheetOpen(false);
+										}}
+										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 flex items-center justify-center gap-2 cursor-pointer"
+									>
+										<UserCheck size={14} />
+										<span>Пришел</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											void handleQuickStatusChange("in_treatment");
+											setIsMobileSheetOpen(false);
+										}}
+										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-[var(--teal-soft)] border border-[var(--teal)]/40 text-[var(--teal-dark)] flex items-center justify-center gap-2 cursor-pointer"
+									>
+										<CalendarCheck size={14} />
+										<span>В кресле</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											void handleQuickStatusChange("completed");
+											setIsMobileSheetOpen(false);
+										}}
+										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-slate-500/15 border border-slate-500/40 text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2 cursor-pointer"
+									>
+										<CheckCircle2 size={14} />
+										<span>Завершен</span>
+									</button>
+								</div>
+							</div>
+
+							{/* Primary Action Button */}
+							<div className="pt-2 space-y-2">
+								<button
+									type="button"
+									onClick={() => {
+										setIsMobileSheetOpen(false);
+										openAppointmentEditor(appointment);
+									}}
+									className="w-full min-h-[48px] rounded-2xl bg-[var(--teal,var(--brand-primary))] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-98 transition-all"
+								>
+									<User size={16} />
+									<span>Настроить запись</span>
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

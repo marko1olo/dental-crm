@@ -2,7 +2,7 @@
  * TreatmentPlanModule.tsx — главный модуль управления планами лечения и финансовой оценки DENTE CRM.
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
 	Award,
 	Calculator,
@@ -15,6 +15,7 @@ import {
 	FileText,
 	FlaskConical,
 	Layers,
+	MoreVertical,
 	PenTool,
 	Printer,
 	Receipt,
@@ -96,6 +97,20 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = useState<boolean>(false);
 	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
 	const [selectedInstallmentStage, setSelectedInstallmentStage] = useState<TreatmentPlanStage | null>(null);
+	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(false);
+	const optionsMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleOutside = (e: MouseEvent) => {
+			if (optionsMenuRef.current && !optionsMenuRef.current.contains(e.target as Node)) {
+				setIsOptionsMenuOpen(false);
+			}
+		};
+		if (isOptionsMenuOpen) {
+			document.addEventListener("mousedown", handleOutside);
+		}
+		return () => document.removeEventListener("mousedown", handleOutside);
+	}, [isOptionsMenuOpen]);
 
 	const [selectedLabTeeth, setSelectedLabTeeth] = useState<number[] | undefined>(undefined);
 	const [selectedActStage, setSelectedActStage] = useState<TreatmentPlanStage | null>(null);
@@ -378,9 +393,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					</div>
 				</div>
 
-				{/* Global Buttons: View Toggles & Actions */}
+				{/* Global Buttons: View Toggles, Clean Hick's/Miller's Toolbar & Actions */}
 				<div className="flex flex-wrap items-center gap-2">
-					{/* Tab Switcher: 3 Tiers vs Stages */}
+					{/* Tab Switcher: 3 Tiers vs Stages vs 4 Phases */}
 					<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]">
 						<button
 							type="button"
@@ -391,7 +406,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							3 Варианта (Сравнение)
+							3 Варианта
 						</button>
 						<button
 							type="button"
@@ -402,7 +417,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							Поэтапный план (I, II, III)
+							Поэтапный (I, II, III)
 						</button>
 						<button
 							type="button"
@@ -413,44 +428,11 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							4 Клинических этапа
+							4 Этапа
 						</button>
 					</div>
 
-					{/* 3-Tier Comparator Studio Trigger */}
-					<button
-						type="button"
-						onClick={() => setIsComparatorModalOpen(true)}
-						className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shadow-xs"
-						title="Открыть полноэкранную презентационную 3-Tier Студию с дифференциальным анализом"
-					>
-						<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Студия 3-Tier</span>
-					</button>
-
-					{/* Stage Payment Studio Trigger */}
-					<button
-						type="button"
-						onClick={() => setIsStagePaymentModalOpen(true)}
-						className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-colors shadow-xs"
-						title="Открыть студию поэтапной оплаты, эскроу-депозитов и актов (ГК РФ ст. 709/711)"
-					>
-						<Coins size={14} className="text-amber-600 dark:text-amber-400" />
-						<span>Эскроу & Этапы</span>
-					</button>
-
-					{/* Price & Star Protocols Validator Trigger */}
-					<button
-						type="button"
-						onClick={() => setIsPriceValidatorModalOpen(true)}
-						className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors shadow-xs"
-						title="Проверить соответствие сметы прайс-листу и протоколам СтАР"
-					>
-						<FileCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
-						<span>Валидатор СтАР</span>
-					</button>
-
-					{/* Digital Signature Indicator / Button */}
+					{/* Secondary 1: Digital Signature Indicator / Button */}
 					{signedAgreement ? (
 						<div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold">
 							<ShieldCheck size={16} />
@@ -468,30 +450,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						</button>
 					)}
 
-					{/* Contract & Print Form Button */}
-					<button
-						type="button"
-						onClick={() => setIsContractPrintOpen(true)}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] shadow-xs cursor-pointer transition-colors"
-						title="Открыть договор на оказание платных медицинских услуг, спецификацию и смету с QR-кодом"
-					>
-						<FileText size={15} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Договор (QR)</span>
-					</button>
-
-					{/* Lab Work Order in Dental Laboratory Trigger */}
-					<button
-						type="button"
-						onClick={() => handleOpenLabOrder()}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 shadow-xs cursor-pointer transition-colors"
-						title="Оформить наряд-заказ в зуботехническую лабораторию"
-						data-testid="lab-work-order-btn"
-					>
-						<FlaskConical size={15} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Наряд-заказ</span>
-					</button>
-
-					{/* Export to Cashier Button */}
+					{/* Secondary 2: Export to Cashier Button */}
 					<button
 						type="button"
 						onClick={handleExportCashier}
@@ -502,25 +461,116 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<span>Счет в кассу</span>
 					</button>
 
-					{/* 54-FZ Fiscal Receipt & Split Payment Modal */}
+					{/* Secondary 3: 54-FZ Fiscal Receipt & Split Payment Modal */}
 					<button
 						type="button"
 						onClick={() => setIsFiscalModalOpen(true)}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 cursor-pointer transition-all"
+						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 shadow-xs cursor-pointer transition-all"
 						title="Принять оплату (карты, СБП QR, наличные) и пробить фискальный чек 54-ФЗ"
 					>
-						<ShieldCheck size={15} />
+						<ShieldCheck size={15} className="text-[var(--teal,var(--brand-primary))]" />
 						<span>Чек 54-ФЗ</span>
 					</button>
 
-					{/* Save to DB */}
+					{/* Secondary 4: Overflow Dropdown Menu [⋮ Опции] */}
+					<div className="relative inline-flex items-center" ref={optionsMenuRef}>
+						<button
+							type="button"
+							onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
+							className="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors"
+							title="Дополнительные студии, валидация и печать"
+							aria-label="Опции плана лечения"
+							aria-expanded={isOptionsMenuOpen}
+						>
+							<MoreVertical size={15} className="text-[var(--teal,var(--brand-primary))]" />
+							<span className="hidden sm:inline">Опции</span>
+						</button>
+
+						{isOptionsMenuOpen && (
+							<div
+								className="absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl shadow-2xl min-w-[240px] animate-in fade-in zoom-in-95 duration-100 text-xs"
+								role="menu"
+							>
+								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+									Специализированные студии
+								</div>
+								<button
+									type="button"
+									onClick={() => {
+										setIsComparatorModalOpen(true);
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Студия 3-Tier сравнения</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsStagePaymentModalOpen(true);
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-200 transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<Coins size={14} className="text-amber-500" />
+									<span>Эскроу & Поэтапная оплата</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsPriceValidatorModalOpen(true);
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<FileCheck size={14} className="text-emerald-600" />
+									<span>Валидатор СтАР & 804н</span>
+								</button>
+
+								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] border-t border-[var(--border,#cbd5e1)] mt-1 pt-1.5">
+									Документы и производство
+								</div>
+								<button
+									type="button"
+									onClick={() => {
+										setIsContractPrintOpen(true);
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<FileText size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Договор и смета (QR)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										handleOpenLabOrder();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+									data-testid="lab-work-order-btn"
+								>
+									<FlaskConical size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Наряд-заказ в ЗТЛ</span>
+								</button>
+							</div>
+						)}
+					</div>
+
+					{/* STRICTLY 1 DOMINANT PRIMARY ACTION: Save to DB */}
 					<button
 						type="button"
 						onClick={handleSavePlanToDatabase}
 						disabled={isSaving}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] disabled:opacity-50 cursor-pointer transition-colors shadow-sm"
+						className="min-h-[40px] flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] disabled:opacity-50 cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto"
 					>
-						<Save size={14} />
+						<Save size={15} />
 						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
 					</button>
 				</div>

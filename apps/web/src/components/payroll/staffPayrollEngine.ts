@@ -391,10 +391,10 @@ export function calculateDoctorStaffPayroll(
 	let kpiBadge = "Базовая ставка";
 	if (totalGross >= 100000000) { // >= 1,000,000 RUB
 		revenueKpiPercent = 5;
-		kpiBadge = "🌟 Топ-выручка (+5% премия)";
+		kpiBadge = "Топ-выручка (+5% премия)";
 	} else if (totalGross >= 50000000) { // >= 500,000 RUB
 		revenueKpiPercent = 2;
-		kpiBadge = "🚀 План выполнен (+2% премия)";
+		kpiBadge = "План выполнен (+2% премия)";
 	}
 
 	const revenueKpiBonusKop = Math.round((totalNetBase * revenueKpiPercent) / 100);

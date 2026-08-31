@@ -50,5 +50,9 @@ BE PROACTIVE. EXECUTE.
 4. **MANDATORY PIXEL INSPECTION**: The agent MUST open every PNG file using `view_file` and inspect the visual pixels with its own eyes BEFORE describing it in the report. The report caption MUST accurately state the exact pixel content. Describing uninspected or broken screenshots is treated as evidence fabrication.
 5. **TRUTH IN REPORTING**: 1 honest screenshot > 9 fake/cloned screenshots. If a UI feature cannot be visually captured or rendered, log it honestly as a DEBT item. Never pass off an unrendered screen as working.
 
+## 🔨 МАКСИМАЛЬНАЯ КРИТИКА НА КАЖДОМ УРОВНЕ И ПОБУКВЕННЫЕ ОТЧЕТЫ (THE HAMMER INQUISITION)
+1. **ЖЕСТКАЯ КРИТИКА НА КАЖДОМ УРОВНЕ:** Требование максимальной критики действует на ВСЕХ уровнях без исключения (L1 Orchestrator, L2 Leads, L3 Workers, Red Team Critics). Каждый уровень обязан непрерывно критиковать входящий и собственный код, искать скрытые дефекты, проверять законы дизайна (Хик, Миллер, Фиттс, Якоб) и презумпцию брака.
+2. **ПОБУКВЕННЫЕ ОТЧЕТЫ БЕЗ КУПЮР:** Агенты других уровней, когда отчитываются, ОБЯЗАНЫ в отчете ПОБУКВЕННО приводить полные оригинальные отчеты своих субагентов с их критикой, дефект-листами и комментариями к ним. Запрещено умалчивать, обрезать или пересказывать отчеты субагентов.
+
 
 

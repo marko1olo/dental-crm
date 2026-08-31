@@ -18,13 +18,12 @@ import {
 	FileText,
 	Flame,
 	FlaskConical,
+	Gauge,
 	Layers,
-	MoreHorizontal,
 	MoreVertical,
 	Plus,
 	Printer,
 	QrCode,
-	Radio,
 	Recycle,
 	Rocket,
 	RotateCcw,
@@ -54,6 +53,7 @@ import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { SanpinCycleModal } from "./SanpinCycleModal";
 import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
+import { KraftPackageModal } from "./KraftPackageModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import {
 	generateSanpinConsolidatedInspectionHtml,
@@ -104,7 +104,7 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 			{ id: "autoclave", label: "Автоклавы (Форма 257/у)", shortLabel: "Автоклавы 257/у", category: "sterilization", icon: Flame },
 			{ id: "pso", label: "ПСО и Азопирамовая проба (Форма 366/у)", shortLabel: "ПСО / Азопирам", category: "sterilization", icon: FlaskConical },
 			{ id: "cabinet_readiness", label: "Фенолфталеиновая проба и готовность", shortLabel: "Фенолфталеин", category: "sterilization", icon: ShieldCheck },
-			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар", category: "sterilization", icon: Rocket },
+			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар", category: "sterilization", icon: Gauge },
 		],
 	},
 	{
@@ -1263,7 +1263,7 @@ export function SanpinRegisters() {
 									}}
 									data-testid="open-retroactive-batch-header-btn"
 								>
-									<Rocket size={15} color="#2563eb" />
+									<Gauge size={15} color="#2563eb" />
 									<span>Пакетное закрытие (за период)</span>
 								</button>
 
@@ -1756,8 +1756,8 @@ export function SanpinRegisters() {
 				</div>
 			)}
 
-			{/* Kraft Package Barcode Studio Modal */}
-			<KraftPackageBarcodeModal
+			{/* Kraft Package Barcode Studio Modal (Azov / DGM 1-Click) */}
+			<KraftPackageModal
 				isOpen={isKraftModalOpen}
 				onClose={() => setIsKraftModalOpen(false)}
 			/>

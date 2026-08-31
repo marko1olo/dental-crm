@@ -17,17 +17,18 @@ export const FinanceTaxDeductionCard: React.FC<FinanceTaxDeductionCardProps> = (
 	className = "",
 	onOpenCertificateModal,
 }) => {
+	const displayValue =
+		taxDeductionEligibleRub !== null && taxDeductionEligibleRub !== undefined
+			? money(taxDeductionEligibleRub)
+			: "—";
+
 	return (
 		<article
 			className={`finance-tax-deduction-card pb-3 flex flex-col justify-between ${className}`.trim()}
 			data-testid="finance-tax-deduction-card"
 		>
-			<div>
-				<span className="text-xs font-semibold text-[var(--muted,#64748b)]">Вычет</span>
-				<strong className="block mt-1 text-2xl font-bold font-mono text-[var(--ink,#0f172a)]">
-					{money(taxDeductionEligibleRub)}
-				</strong>
-			</div>
+			<span>Вычет</span>
+			<strong>{displayValue}</strong>
 			<p className="leading-relaxed text-xs text-[var(--muted,#64748b)] mt-1.5 m-0">
 				медицинские услуги, пригодные для справки
 			</p>

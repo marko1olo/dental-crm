@@ -529,3 +529,25 @@
 	text-align: center;
 	color: var(--muted);
 }
+
+/* Next Appointment Hero Card (Apple Health Consumer HIG) */
+.next-visit-hero-card {
+	background: var(--paper-strong);
+	border: 1.5px solid var(--teal);
+	box-shadow: 0 10px 30px rgba(13, 148, 136, 0.08);
+	border-radius: 20px;
+	padding: 20px;
+	margin-bottom: 20px;
+	transition: all 0.2s ease-out;
+}
+
+@media (max-width: 640px) {
+	.next-visit-hero-card {
+		padding: 16px;
+		border-radius: 16px;
+	}
+	.next-visit-hero-card .grid {
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+}

@@ -17,6 +17,7 @@ import {
 	AlertTriangle,
 	Award,
 	Calendar,
+	CalendarPlus,
 	Check,
 	CheckCircle2,
 	ChevronDown,
@@ -1127,6 +1128,61 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												<strong style={{ color: "var(--pc-text-main)" }}>
 													{summary.nextAppointment.clinicName} &bull; {summary.nextAppointment.roomNumber}
 												</strong>
+											</div>
+
+											{/* 1-Tap Calendar Export Buttons */}
+											<div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "8px" }}>
+												<button
+													type="button"
+													className="pc-btn-secondary"
+													style={{ minHeight: "44px", padding: "6px 12px", fontSize: "0.8125rem", fontWeight: 600 }}
+													onClick={() => {
+														const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//DENTE Dental CRM//Patient Cabinet//RU\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nBEGIN:VEVENT\r\nUID:dente-appt-${Date.now()}@dente.ru\r\nDTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z\r\nDTSTART:20260901T113000Z\r\nDTEND:20260901T123000Z\r\nSUMMARY:Прием в DENTE: ${summary.nextAppointment?.doctorName || "Врач"}\r\nDESCRIPTION:Прием: ${summary.nextAppointment?.titleRu || "Консультация"}\\nАдрес: ${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}\r\nLOCATION:${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}\r\nSTATUS:CONFIRMED\r\nBEGIN:VALARM\r\nTRIGGER:-PT2H\r\nACTION:DISPLAY\r\nDESCRIPTION:Напоминание о приеме в клинике DENTE через 2 часа\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`;
+														const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+														const url = URL.createObjectURL(blob);
+														const a = document.createElement("a");
+														a.href = url;
+														a.download = `Dente_Appointment_${summary.nextAppointment?.dateIso || "2026-09-01"}.ics`;
+														a.click();
+														URL.revokeObjectURL(url);
+													}}
+													data-testid="next-appt-apple-cal-btn"
+												>
+													<CalendarPlus size={14} style={{ color: "var(--pc-primary)" }} />
+													<span>Apple / iCal (.ics)</span>
+												</button>
+												<button
+													type="button"
+													className="pc-btn-secondary"
+													style={{ minHeight: "44px", padding: "6px 12px", fontSize: "0.8125rem", fontWeight: 600 }}
+													onClick={() => {
+														const title = encodeURIComponent(`Прием в DENTE: ${summary.nextAppointment?.doctorName || "Врач"}`);
+														const details = encodeURIComponent(`Прием: ${summary.nextAppointment?.titleRu || "Консультация"}\nАдрес: ${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}`);
+														const location = encodeURIComponent(`${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}`);
+														const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=20260901T113000Z/20260901T123000Z&details=${details}&location=${location}`;
+														window.open(url, "_blank");
+													}}
+													data-testid="next-appt-google-cal-btn"
+												>
+													<ExternalLink size={14} style={{ color: "#3b82f6" }} />
+													<span>Google Календарь</span>
+												</button>
+												<button
+													type="button"
+													className="pc-btn-secondary"
+													style={{ minHeight: "44px", padding: "6px 12px", fontSize: "0.8125rem", fontWeight: 600 }}
+													onClick={() => {
+														const name = encodeURIComponent(`Прием в DENTE: ${summary.nextAppointment?.doctorName || "Врач"}`);
+														const desc = encodeURIComponent(`Прием: ${summary.nextAppointment?.titleRu || "Консультация"}\nАдрес: ${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}`);
+														const location = encodeURIComponent(`${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}`);
+														const url = `https://calendar.yandex.ru/event/new?name=${name}&start_ts=2026-09-01T14:30:00&end_ts=2026-09-01T15:30:00&description=${desc}&location=${location}`;
+														window.open(url, "_blank");
+													}}
+													data-testid="next-appt-yandex-cal-btn"
+												>
+													<ExternalLink size={14} style={{ color: "#f59e0b" }} />
+													<span>Яндекс Календарь</span>
+												</button>
 											</div>
 										</div>
 									</div>

@@ -345,7 +345,7 @@ export interface ToothVisualProps {
 	canalGlow?: string;
 }
 
-const getToothColors = (
+export const getToothColors = (
 	state: ToothState,
 	material?: RestorativeMaterialKey,
 ): ToothVisualProps => {
@@ -366,32 +366,32 @@ const getToothColors = (
 				fill: "url(#dente-caries-grad)",
 				crownFill: "url(#dente-caries-grad)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#991b1b",
+				stroke: "#b45309",
 				opacity: "1",
-				badgeColor: "#ef4444",
-				badgeBg: "rgba(239, 68, 68, 0.15)",
-				badgeText: "#b91c1c",
+				badgeColor: "#b45309",
+				badgeBg: "rgba(180, 83, 9, 0.15)",
+				badgeText: "#92400e",
 			};
 		case "Pulpitis":
 			return {
 				fill: "url(#dente-pulpitis-grad)",
 				crownFill: "url(#dente-pulpitis-grad)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#991b1b",
+				stroke: "#ef4444",
 				opacity: "1",
 				badgeColor: "#ef4444",
 				badgeBg: "rgba(239, 68, 68, 0.15)",
-				badgeText: "#991b1b",
+				badgeText: "#b91c1c",
 			};
 		case "Periodontitis":
 			return {
 				fill: "url(#dente-periodontitis-grad)",
 				crownFill: "url(#dente-periodontitis-grad)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#c2410c",
+				stroke: "#ea580c",
 				opacity: "1",
-				badgeColor: "#f97316",
-				badgeBg: "rgba(249, 115, 22, 0.15)",
+				badgeColor: "#ea580c",
+				badgeBg: "rgba(234, 88, 12, 0.15)",
 				badgeText: "#c2410c",
 			};
 		case "Filled":
@@ -435,11 +435,11 @@ const getToothColors = (
 				fill: "url(#composite-fill-gradient)",
 				crownFill: "url(#composite-fill-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#0f766e",
+				stroke: "#94a3b8",
 				opacity: "1",
-				badgeColor: "#10b981",
-				badgeBg: "rgba(16, 185, 129, 0.15)",
-				badgeText: "#0f766e",
+				badgeColor: "#94a3b8",
+				badgeBg: "rgba(148, 163, 184, 0.15)",
+				badgeText: "#475569",
 			};
 		case "Crown":
 			if (material === "gold") {
@@ -485,19 +485,19 @@ const getToothColors = (
 				fill: "url(#zirconia-crown-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#60a5fa",
+				stroke: "#38bdf8",
 				collarFill: "url(#dente-cervical-collar)",
 				opacity: "1",
-				badgeColor: "#3b82f6",
-				badgeBg: "rgba(59, 130, 246, 0.15)",
-				badgeText: "#1d4ed8",
+				badgeColor: "#38bdf8",
+				badgeBg: "rgba(56, 189, 248, 0.15)",
+				badgeText: "#0284c7",
 			};
 		case "Implant":
 			return {
-				fill: "url(#gold-crown-gradient)",
+				fill: "url(#titanium-implant-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#titanium-implant-gradient)",
-				stroke: "#334155",
+				stroke: "#64748b",
 				opacity: "1",
 				badgeColor: "#64748b",
 				badgeBg: "rgba(100, 116, 139, 0.15)",
@@ -505,15 +505,15 @@ const getToothColors = (
 			};
 		case "Planned_Implant":
 			return {
-				fill: "url(#gold-crown-gradient)",
+				fill: "url(#titanium-implant-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#titanium-implant-gradient)",
-				stroke: "#6366f1",
+				stroke: "#64748b",
 				opacity: "1",
 				isPulsing: true,
-				badgeColor: "#6366f1",
-				badgeBg: "rgba(99, 102, 241, 0.15)",
-				badgeText: "#4f46e5",
+				badgeColor: "#64748b",
+				badgeBg: "rgba(100, 116, 139, 0.15)",
+				badgeText: "#475569",
 			};
 		case "Missing":
 			return {
@@ -790,10 +790,10 @@ export const DenteToothSvgDefs: React.FC = () => (
 
 			{/* 15. Pathology Diagnostics Gradients */}
 			<radialGradient id="dente-caries-grad" cx="50%" cy="50%" r="65%">
-				<stop offset="0%" stopColor="#f87171" stopOpacity="1" />
-				<stop offset="50%" stopColor="#ef4444" stopOpacity="1" />
-				<stop offset="85%" stopColor="#dc2626" stopOpacity="1" />
-				<stop offset="100%" stopColor="#991b1b" stopOpacity="1" />
+				<stop offset="0%" stopColor="#f59e0b" stopOpacity="1" />
+				<stop offset="35%" stopColor="#d97706" stopOpacity="1" />
+				<stop offset="70%" stopColor="#b45309" stopOpacity="1" />
+				<stop offset="100%" stopColor="#78350f" stopOpacity="1" />
 			</radialGradient>
 
 			{/* Natural Living Pulp Gradient (Vital Vascular Soft Tissue) */}
@@ -3145,3 +3145,9 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		</div>
 	);
 };
+
+export { ToothSVG, splitArchAtMidline, type RootResorptionStage };
+export * from "./AdultToothChart";
+export * from "./PediatricToothChart";
+export * from "./ToothRadialMenu";
+export * from "./OdontogramToolbar";

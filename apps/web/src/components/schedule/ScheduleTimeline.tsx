@@ -214,8 +214,8 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 	return (
 		<div
 			ref={timelineContainerRef}
-			className="schedule-timeline timeline focus:outline-none pb-56 sm:pb-20 pr-2 sm:pr-0"
-			style={{ scrollPaddingBottom: "224px" }}
+			className="schedule-timeline timeline focus:outline-none pb-36 sm:pb-20 pr-2 sm:pr-0"
+			style={{ scrollPaddingBottom: "144px" }}
 			data-testid="schedule-timeline-container"
 			tabIndex={-1}
 		>

@@ -375,16 +375,15 @@ export function WaitlistDrawer(props: Props) {
 	 */
 	if (isMinimized) {
 		const minimizedContent = (
-			<div className="fixed bottom-4 right-4 z-50">
+			<div className="fixed top-3.5 right-4 z-50 animate-in fade-in-50 duration-150">
 				<button
 					type="button"
 					onClick={() => setIsMinimized(false)}
-					className="bg-[var(--paper)] border border-[var(--line-strong)] shadow-xl rounded-lg p-3 flex items-center gap-3 hover:bg-[var(--paper-soft)] transition-colors"
+					className="bg-[var(--paper-strong)] border border-[var(--line-strong)] shadow-xl rounded-full px-3.5 py-1.5 min-h-[36px] flex items-center gap-2 text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer backdrop-blur-md"
+					title="Развернуть лист ожидания"
 				>
-					<Calendar className="w-5 h-5 text-[var(--teal)]" />
-					<span className="text-[var(--ink)] font-medium">
-						Лист ожидания (Свернут)
-					</span>
+					<Calendar className="w-4 h-4 text-[var(--teal)]" />
+					<span>Лист ожидания</span>
 				</button>
 			</div>
 		);

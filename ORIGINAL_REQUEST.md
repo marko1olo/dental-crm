@@ -1,132 +1,61 @@
 # Original User Request
 
-## 2026-08-26T21:10:06Z
+## Initial Request — 2026-08-29T11:35:11Z
 
-# Teamwork Subagent 1: Dentalpin Agentic Core & PHI Redaction Ingestor
+# Teamwork Project Prompt — Draft
 
-Working directory: `C:\Clinic_MVP\dental-crm`
-Reference cloned repo: `C:\Users\Admin\.gemini\antigravity\scratch\dentalpin`
+> Status: Launched
+> Goal: Eradicate interface clutter ("интерфейсная свалка"), eliminate all defects identified by the Adversarial Inquisitor, and enforce strict 1-row toolbars, flat hierarchy, and Russian clinical UX standards.
+> Requested team: Full swarm of specialized frontend engineers and hyper-critical adversarial auditors.
 
-## Task & Scope
-1. Исследовать реализацию агентного слоя в `dentalpin`:
-   - `backend/app/core/agents/redaction.py` (PHI boundary — как маскируются персональные данные пациента перед LLM).
-   - `backend/app/core/agents/orchestrator.py` (LLM loop, tool calls, streaming).
-   - `backend/app/core/agents/guardrails.py` и `context.py` (роли, права, лимиты токенов).
-   - `backend/app/modules/copilot/` (SSE потоки, подтверждение действий).
-2. Разработать аналогичный защищенный модуль на TypeScript для нашего бэкенда (`apps/api/src/services/`):
-   - Обезличивание PHI (ФИО, телефоны, паспорт/полис, адреса) перед отправкой в LLM провайдер.
-   - Спецификация клинических инструментов агента (`find_patient`, `get_emr_card`, `suggest_icd10_plan`, `book_visit`).
-3. Запустить тайпчек `npm run typecheck` и написать юнит-тесты.
+Total purge of visual landfill, syntax glitches, and layout defects across all DENTE Dental CRM modules, strictly resolving every item from the Adversarial Inquisition Defect List.
 
-## 2026-08-26T21:10:07Z
+Working directory: C:/Clinic_MVP/dental-crm
+Integrity mode: development
 
-# Teamwork Subagent 3: Dentalpin Comparative Architect & Feature Auditor
+## Requirements
 
-Working directory: `C:\Clinic_MVP\dental-crm`
-Reference cloned repo: `C:\Users\Admin\.gemini\antigravity\scratch\dentalpin`
+### R1. Schedule View & Appointment Ergonomics
+- Compress the 4-tier schedule header into exactly 1 clean row (height 32–36px): Date navigation `< 29.08.2026 📅 >` + 1-row horizontal doctor filter scroll + strictly 1 Primary `+ Запись` button (`bg-teal-600 font-bold`).
+- Move all secondary actions into a compact `[⋮ Опции]` dropdown.
+- Eliminate appointment card bloat: maximum 1 direct status selector dropdown (`Пришел`, `В кресле`, `Завершен`) + appointment time, patient name, and room number. Move all 15 secondary actions (WhatsApp, SMS, +15/+30 delay buttons, reschedule, buffer) into a single `...` context menu.
+- Eradicate the `🔥 CITO!` emoji; replace with a clean vector icon.
+- Ensure the floating softphone and dev bar never occlude appointment cards on 390px mobile viewport (`pb-32` bottom clearance).
 
-## Task & Scope
-1. Провести полный аудит всех 35 модулей `dentalpin` против модулей DENTE Dental CRM.
-2. Составить детальную сравнительную таблицу:
-   - В чем DENTE опережает `dentalpin` на порядок (3D CBCT томография Romexis, ЕГИСЗ/РЭМД, ЭМК 043/у ГОСТ, Честный Знак МДЛП, фискализация ФНС РФ, ISQ денситометрия, многослойный 5-поверхностный одонтограм).
-   - Какие концепции и архитектурные решения из `dentalpin` нам выгодно заимствовать (Agent tools, PHI anonymizer, WhatsApp Kapso адаптер, 2FA links для смет).
-3. Создать отчет в `docs/audit/DENTALPIN_INGESTION_REPORT.md`.
+### R2. SanPiN & Sterilization Registers Toolbar & Tabs Polish
+- Fix the syntax concatenation defect in the primary button: eliminate `+ + Новый цикл` -> render as clean `+ Новый цикл` with a single SVG icon.
+- Replace the hidden `≡ 3` overflow menu with a smooth horizontal touch-scroll displaying all 12 mandatory SanPiN registers (`0. Готовность`, `1. ПСО 366/у`, `2. Автоклавы 257/у`, `3. Рециркуляторы`, `4. Генеральные уборки`, `5. Медотходы`, `6. Аварии`, `7. Температура/влажность`, `Дезсредства`, `Баклаборатория`, `Утилизация игл`).
+- Seed realistic sterilization and autoclave cycles in test scenarios to eliminate empty 0-row tables.
 
-## 2026-08-26T23:03:22Z
+### R3. Patient Retention & Recall Analytics Polish
+- Replace all placeholder names (`Пациент`, `Test Testov`) with realistic Russian clinical patient names (`Барабаш С. В.`, `Ковалев Д. П.`).
+- Fix search input padding (`pl-10`) to eliminate visual overlap of the `🔍` search icon over the placeholder text (`🔍оиск...`).
+- Eliminate double-border and clipping artifacts between the `Утилизация кресел` and `Когорты Recall` tabs.
+- Ensure bottom management report blocks are fully clear of the floating softphone.
 
-[MASSIVE DIRECTIVE: EXPANDING CLINICAL TOOLS IN AGENT REGISTRY]
-Working directory: `C:\Clinic_MVP\dental-crm`
+### R4. Mobile RBAC Access Matrix Ergonomics (390px Viewport)
+- Remove `truncate` from the modal header and subtitle in `AccessMatrixModal.tsx`; allow clean multiline wrapping (`break-words`) so titles are never cut off with `...`.
+- Dismantle the 4-tier card-in-card "matryoshka" nesting: flatten into a single cohesive panel (max depth = 1).
+- Fix horizontal role navigation bar: ensure all 8 roles (`Владелец`, `Главный врач`, `Врач`, `Ассистент`, `Старшая медсестра`, `Администратор`, `Регистратор`, `Бухгалтер`) scroll smoothly with `snap-x` and eliminate edge clipping (e.g. `Вр[`).
+- Replace foreign Anglicisms (`strictly`) with proper Russian medical terminology (`строго`).
 
-You own the tool expansion of the AI Agentic Core:
-1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, implement and register 4 new high-value clinical tools:
-   - `get_patient_timeline`: retrieves unified chronological history (past visits, diagnoses, treatment plan stages, payments, lab orders).
-   - `check_drug_interactions`: validates proposed medications against patient known allergies and active prescriptions using `checkDentalMedicationInteractions`.
-   - `get_lab_orders`: returns prosthetics lab order status, tracking ETA and shade info for a patient.
-   - `get_family_balance`: returns aggregated balance and kinship links for family accounts.
-2. Update `apps/api/src/services/agent/agent.test.ts` to include unit test coverage for each new tool.
-3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`.
-4. Report completed results with test logs.
+### R5. CMO Compliance & REMD EGISZ Hub Refinement
+- Completely eradicate cartoon emoji traffic lights (`🔴`, `🟡`, `🔵`, `🟢`, `⚠️`) from filter tabs; replace with subtle 6px SVG status indicators.
+- Fix text fusion defect: eliminate `🔵В очереди` -> render as clean, spaced `В очереди`.
+- Remove `truncate` from filter tab pills: widen pills or provide smooth horizontal scroll so full legal descriptions (`Без диагноза МКБ-10`, `Не подписано врачом`, `Просрочено >24ч`) are 100% legible without ellipsis.
+- Expand search placeholder width to prevent truncation of `Поиск: Пациент, СНИЛС, Карта...`.
+- Populate real 043/u outpatient examination records in test view to avoid empty 0-row states.
 
-## 2026-08-26T23:34:09Z
+### R6. Odontogram & Billing Medical Hygiene
+- Maintain dental dominance: anatomical arch occupies $\ge 75\%$ of screen space.
+- Eliminate cartoon emojis (🦷, 💉, 🛡️) in billing acts; use Lucide vector icons (`Stethoscope`, `Syringe`, `FileText`).
+- Ensure billing modal footer buttons (`Печать бланка А4 (ГОСТ)`) never bleed past modal borders.
 
-[MASSIVE DOMAIN DIRECTIVE: AGENTIC SCHEDULE MUTATION TOOLS]
-Working directory: `C:\Clinic_MVP\dental-crm`
+## Follow-up — 2026-08-29T11:42:11Z
 
-You own the implementation of interactive appointment mutation tools in the Agent Tool Registry:
-1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, add 3 new tools with human-in-the-loop confirmation:
-   - `reschedule_appointment`: changes start/end time of appointment with conflict checking. Category: `"write"`, requires confirmation.
-   - `cancel_appointment`: cancels appointment with reason. Category: `"write"`, requires confirmation.
-   - `get_doctor_schedule`: retrieves doctor work shifts, booked slots, and free capacity for a given date range. Category: `"read"`.
-2. Update unit tests in `apps/api/src/services/agent/agent.test.ts`.
-3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and verify 100% pass.
-4. Run `npm run typecheck -w @dental/api` and report results.
+[REVIVAL PROTOCOL: TEAMWORK SWARM ORCHESTRATOR]
+Квота восполнена. Продолжаем работу.
+АДРЕС МАСТЕР-ПРОМПТА: file:///C:/Clinic_MVP/dental-crm/.agents/MASTER_PROMPT.md
+АРТЕФАКТ ТЗ: file:///C:/Users/Admin/.gemini/antigravity/brain/be190df0-d63b-46ee-9291-79fe56b0cd34/prompt_draft.md
 
-## 2026-08-27T07:24:46Z
-
-[MASSIVE DIRECTIVE 4: AGENTIC RECALLS & STAFF TASK TOOLS]
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-You own the implementation of Recalls & Staff Tasks tools in the AI Copilot Tool Registry:
-1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, add:
-   - `create_staff_task`: creates internal clinic task for admin/nurse/doctor (title, description, priority, assignedRole, patientId, dueDate). Category: `"write"`, requires human confirmation in supervised mode.
-   - `get_patient_recalls`: returns upcoming or overdue preventive recalls for a patient (hygiene, implant, ortho check). Category: `"read"`.
-   - `schedule_recall`: creates a preventive recall reminder for a patient. Category: `"write"`.
-2. Register the 3 tools in `ToolRegistry`.
-3. Update `apps/api/src/services/agent/agent.test.ts` with test coverage for the new tools.
-4. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`. Report verified results.
-
-## 2026-08-27T07:38:17Z
-
-[MICROSCOPIC BLOAT EXPEDITION — PHASE 3]
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-Perform a microscopic, file-by-file search for any remaining dead code, academic over-engineering, synthetic toys, or theoretical formulas across:
-1. `apps/web/src/components/odontogram/` (look for unused physics, tooth stress vectors, deciduous/permanent resonance calculations, unreferenced SVG tools).
-2. `apps/web/src/components/visit/` (look for unused diagnostic calculators, 40-step wizard popups, or theoretical scoring).
-3. `apps/web/src/components/clinical/` (look for any leftover academic perio/endo/surgery toys).
-4. `apps/web/src/components/analytics/` and `components/finance/` (look for theoretical econometric forecasting / Monte Carlo simulators).
-5. `apps/web/src/components/radiology/` (look for leftover math, synthetic filters, or unused DICOM shaders).
-6. `apps/api/src/` and `packages/shared/src/`.
-
-Check all files symbol by symbol.
-For every bloat item found, report:
-- Exact file path and line numbers
-- Total line count
-- Why it is useless/academic bloat in a commercial dental clinic
-- Recommended action (delete / simplify to 1-click)
-
-Save findings to `docs/audit/BLOAT_CENSUS_PHASE_3.md` and report back.
-
-## 2026-08-27T07:41:18Z
-
-[EXECUTION DIRECTIVE 1: PRUNE PERIODONTOGRAM SPIDER BLOAT]
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-You own the complete pruning of the Florida 6-point probing & Lang-Tonetti Spider PRA Radar bloat:
-1. Delete:
-   - `apps/web/src/components/odontogram/PeriodontalChartModule.tsx`
-   - `apps/web/src/components/odontogram/periodontalMath.ts`
-   - `apps/web/src/components/odontogram/PerioFullMouthGrid.tsx`
-   - `apps/web/src/components/odontogram/PerioKeypad.tsx`
-   - `apps/web/src/components/odontogram/PerioToothDetailCard.tsx`
-   - `apps/web/src/components/odontogram/perioTypes.ts`
-   - `apps/web/src/components/odontogram/PeriodontalChartModule.css`
-   - `apps/web/src/components/odontogram/perio043Protocol.ts`
-   - `apps/web/src/components/clinical/perio/` (entire directory)
-   - `apps/api/src/routes/perio.ts`
-2. Clean callers in `OdontogramModule.tsx`, `ChairsiderPerspectiveView.tsx`, `VisitView.tsx`, and `apps/api/src/server.ts`.
-   - In `VisitView.tsx` / `OdontogramModule.tsx`: replace complex perio chart modal with 1-click periodontal assessment badge in the tooth context drawer.
-3. Run `npm run typecheck` across all workspaces to guarantee **Exit Code 0**. Report raw verification output.
-
-## 2026-08-27T07:41:24Z
-
-[ADVERSARIAL VERIFICATION & TRG INTEGRITY AUDIT]
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-Your tasks:
-1. Verify TRG Cephalometrics (`apps/web/src/components/orthodontics/CephalometricAnalysisModal.tsx`, `CephalometricCanvas.tsx`, `cephalometricMath.ts`) remains 100% untouched and run `node --import tsx --test apps/web/src/components/orthodontics/__tests__/*.test.ts` (14/14 tests pass).
-2. As soon as Subagents 1 and 2 finish deleting the bloat modules, verify:
-   - `npm run typecheck` across all 3 workspaces passes with **Exit Code 0**.
-   - `npm run check:encoding` passes.
-   - Run shared & api test suites.
-3. Report full audit results.
+Продолжай координацию выполнения полного рефакторинга по всем 6 доменам. Жду результаты.

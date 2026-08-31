@@ -29,6 +29,7 @@ import {
 	User,
 	Eye,
 	Loader2,
+	Key,
 } from "lucide-react";
 import {
 	type ClinicVisitComplianceItem,
@@ -466,82 +467,8 @@ export function CmoComplianceHub({
 				</div>
 			</div>
 
-			{/* ── Compact Metrics Strip (Single Inline Row <= 32px) ── */}
-			<div className="cmo-hub-metrics-strip" role="region" aria-label="Метрики комплаенса">
-				<button
-					type="button"
-					onClick={() => setActiveFilter("all")}
-					className={`cmo-hub-metric-badge ${activeFilter === "all" ? "cmo-hub-metric-badge--active" : ""}`}
-					title="Всего приёмов за период"
-				>
-					<Layers size={13} className="text-slate-500 shrink-0" />
-					<span>Всего приёмов:</span>
-					<strong className="cmo-hub-badge-val">{metrics.totalEncounters}</strong>
-				</button>
 
-				<button
-					type="button"
-					onClick={() => setActiveFilter("registered_remd")}
-					className={`cmo-hub-metric-badge ${activeFilter === "registered_remd" ? "cmo-hub-metric-badge--active" : ""}`}
-					title="Успешно зарегистрировано в РЭМД ЕГИСЗ с присвоением OID"
-				>
-					<CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
-					<span>В РЭМД:</span>
-					<strong className="cmo-hub-badge-val cmo-hub-badge-val--success">{metrics.registeredRemdCount}</strong>
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveFilter("no_icd_or_tooth")}
-					className={`cmo-hub-metric-badge ${activeFilter === "no_icd_or_tooth" ? "cmo-hub-metric-badge--active" : ""}`}
-					title="Карты без кода МКБ-10 или номера зуба (Приказ 834н)"
-				>
-					<AlertOctagon size={13} className="text-red-500 shrink-0" />
-					<span>Без МКБ/зуба:</span>
-					<strong className={`cmo-hub-badge-val ${metrics.noIcdOrToothCount > 0 ? "cmo-hub-badge-val--danger" : ""}`}>
-						{metrics.noIcdOrToothCount}
-					</strong>
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveFilter("not_signed_doctor")}
-					className={`cmo-hub-metric-badge ${activeFilter === "not_signed_doctor" ? "cmo-hub-metric-badge--active" : ""}`}
-					title="Карты без электронной подписи врача (Приказ 947н)"
-				>
-					<FileSignature size={13} className="text-amber-500 shrink-0" />
-					<span>Без УКЭП:</span>
-					<strong className={`cmo-hub-badge-val ${metrics.notSignedDoctorCount > 0 ? "cmo-hub-badge-val--warning" : ""}`}>
-						{metrics.notSignedDoctorCount}
-					</strong>
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveFilter("pending_or_failed_egisz")}
-					className={`cmo-hub-metric-badge ${activeFilter === "pending_or_failed_egisz" ? "cmo-hub-metric-badge--active" : ""}`}
-					title="Ожидают отправки или ошибки передачи"
-				>
-					<Clock size={13} className="text-blue-500 shrink-0" />
-					<span>В очереди:</span>
-					<strong className="cmo-hub-badge-val cmo-hub-badge-val--info">{metrics.pendingOrFailedEgiszCount}</strong>
-				</button>
-
-				<button
-					type="button"
-					onClick={() => setActiveFilter("overdue_24h")}
-					className={`cmo-hub-metric-badge ${activeFilter === "overdue_24h" ? "cmo-hub-metric-badge--active" : ""}`}
-					title="Просрочено более 24 часов по ПП РФ № 852"
-				>
-					<AlertTriangle size={13} className="text-red-500 shrink-0" />
-					<span>Просрочено &gt;24ч:</span>
-					<strong className={`cmo-hub-badge-val ${metrics.overdue24hCount > 0 ? "cmo-hub-badge-val--danger" : ""}`}>
-						{metrics.overdue24hCount}
-					</strong>
-				</button>
-			</div>
-
-			{/* ── Statutory Filter Tabs (With Flex-Wrap & Scroll Protection) ── */}
+			{/* ── Statutory Filter Tabs (Compact Inline Row with Circular Counters) ── */}
 			<div className="cmo-hub-tabs-bar" role="tablist">
 				<button
 					type="button"
@@ -551,7 +478,7 @@ export function CmoComplianceHub({
 					className={`cmo-hub-tab-btn ${activeFilter === "all" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
 					<Layers size={14} />
-					<span>Все приёмы</span>
+					<span>Все</span>
 					<span className="cmo-hub-tab-count">{metrics.totalEncounters}</span>
 				</button>
 
@@ -563,7 +490,7 @@ export function CmoComplianceHub({
 					className={`cmo-hub-tab-btn ${activeFilter === "no_icd_or_tooth" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
 					<AlertCircle size={14} className="text-red-500 shrink-0" />
-					<span>Без диагноза МКБ-10 / зуба</span>
+					<span>Без диагноза</span>
 					<span className={`cmo-hub-tab-count ${metrics.noIcdOrToothCount > 0 ? "cmo-hub-tab-count--danger" : ""}`}>
 						{metrics.noIcdOrToothCount}
 					</span>
@@ -577,7 +504,7 @@ export function CmoComplianceHub({
 					className={`cmo-hub-tab-btn ${activeFilter === "not_signed_doctor" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
 					<FileSignature size={14} className="text-amber-500 shrink-0" />
-					<span>Не подписано врачом (нет ЭП/УКЭП)</span>
+					<span>Не подписано</span>
 					<span className={`cmo-hub-tab-count ${metrics.notSignedDoctorCount > 0 ? "cmo-hub-tab-count--warning" : ""}`}>
 						{metrics.notSignedDoctorCount}
 					</span>
@@ -591,7 +518,7 @@ export function CmoComplianceHub({
 					className={`cmo-hub-tab-btn ${activeFilter === "pending_or_failed_egisz" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
 					<Clock size={14} className="text-blue-500 shrink-0" />
-					<span>В очереди (ЕГИСЗ)</span>
+					<span>Очередь ЕГИСЗ</span>
 					<span className="cmo-hub-tab-count cmo-hub-tab-count--info">
 						{metrics.pendingOrFailedEgiszCount}
 					</span>
@@ -605,7 +532,7 @@ export function CmoComplianceHub({
 					className={`cmo-hub-tab-btn ${activeFilter === "registered_remd" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
 					<CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-					<span>Зарегистрировано в РЭМД</span>
+					<span>РЭМД</span>
 					<span className="cmo-hub-tab-count cmo-hub-tab-count--success">
 						{metrics.registeredRemdCount}
 					</span>
@@ -619,7 +546,7 @@ export function CmoComplianceHub({
 					className={`cmo-hub-tab-btn ${activeFilter === "overdue_24h" ? "cmo-hub-tab-btn--active" : ""}`}
 				>
 					<AlertTriangle size={14} className="text-red-500 shrink-0" />
-					<span>Просрочено &gt;24ч (ПП РФ № 852)</span>
+					<span>Просрочено &gt; 24 ч</span>
 					<span className={`cmo-hub-tab-count ${metrics.overdue24hCount > 0 ? "cmo-hub-tab-count--danger" : ""}`}>
 						{metrics.overdue24hCount}
 					</span>
@@ -786,7 +713,7 @@ export function CmoComplianceHub({
 											) : (
 												<span className="cmo-hub-pill cmo-hub-pill--danger">НЕТ МКБ</span>
 											)}
-											<div style={{ fontSize: "11px", color: "var(--muted)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+											<div className="text-[11px] text-[var(--muted)] min-w-[180px] max-w-[280px] break-words leading-tight mt-0.5">
 												{item.diagnosisText || "Диагноз не указан"}
 											</div>
 										</td>
@@ -883,66 +810,78 @@ export function CmoComplianceHub({
 				</table>
 			</div>
 
-			{/* ── Floating Batch Action HUD Bar ── */}
+			{/* ── Fixed Bottom Batch Action HUD Bar / Footer ── */}
 			{selectedVisitIds.size > 0 && (
-				<div className="cmo-hub-batch-bar">
-					<div className="cmo-hub-batch-info">
-						<span className="cmo-hub-batch-counter">{selectedVisitIds.size}</span>
-						<div>
-							<strong style={{ fontSize: "14px", display: "block" }}>Выбрано медицинских карт: {selectedVisitIds.size}</strong>
-							<span style={{ fontSize: "12px", color: "var(--muted)" }}>
-								Готовы к пакетному заверению УКЭП и отправке в РЭМД ЕГИСЗ
-							</span>
+				<div className="cmo-hub-batch-bar" data-testid="cmo-hub-batch-bar">
+					<div className="cmo-hub-batch-inner">
+						<div className="cmo-hub-batch-info">
+							<span className="cmo-hub-batch-counter">{selectedVisitIds.size}</span>
+							<div>
+								<strong style={{ fontSize: "14px", display: "block" }}>
+									Выбрано: {selectedVisitIds.size}{" "}
+									{selectedVisitIds.size === 1
+										? "приём"
+										: selectedVisitIds.size >= 2 && selectedVisitIds.size <= 4
+											? "приёма"
+											: "приёмов"}
+								</strong>
+								<span style={{ fontSize: "12px", color: "var(--muted)" }}>
+									Готовы к заверению УКЭП и отправке в РЭМД ЕГИСЗ
+								</span>
+							</div>
 						</div>
-					</div>
 
-					<div className="cmo-hub-batch-controls">
-						{certificates.length > 0 ? (
-							<select
-								value={selectedThumbprint}
-								onChange={(e) => setSelectedThumbprint(e.target.value)}
-								className="cmo-hub-select"
-								style={{ minWidth: "260px", maxWidth: "340px" }}
-								aria-label="Сертификат УКЭП для пакетной подписи"
+						<div className="cmo-hub-batch-controls">
+							{certificates.length > 0 ? (
+								<select
+									value={selectedThumbprint}
+									onChange={(e) => setSelectedThumbprint(e.target.value)}
+									className="cmo-hub-select"
+									style={{ minWidth: "240px", maxWidth: "340px", height: "40px", minHeight: "40px", fontSize: "12px" }}
+									aria-label="Сертификат УКЭП для пакетной подписи"
+								>
+									{certificates.map((cert) => {
+										const expiry = new Date(cert.validTo).toLocaleDateString("ru-RU");
+										const cleanSubject =
+											cert.subjectName
+												.split(",")
+												.find((part) => part.startsWith("CN="))
+												?.replace("CN=", "") || cert.subjectName;
+
+										return (
+											<option key={cert.thumbprint} value={cert.thumbprint}>
+												{cleanSubject} (до {expiry})
+											</option>
+										);
+									})}
+								</select>
+							) : (
+								<span style={{ fontSize: "12px", color: "var(--muted)" }}>
+									{hasCryptoPlugin === false ? "Плагин КриптоПро не найден" : "Читаем сертификаты..."}
+								</span>
+							)}
+
+							<button
+								type="button"
+								onClick={handleStartBatchSign}
+								disabled={Boolean(batchSession?.isActive)}
+								className="cmo-hub-btn cmo-hub-btn--primary"
+								style={{ minHeight: "40px", height: "40px", padding: "0 16px", fontSize: "13px", fontWeight: 700 }}
+								data-testid="cmo-hub-batch-sign-btn"
 							>
-								{certificates.map((cert) => {
-									const expiry = new Date(cert.validTo).toLocaleDateString("ru-RU");
-									const cleanSubject =
-										cert.subjectName
-											.split(",")
-											.find((part) => part.startsWith("CN="))
-											?.replace("CN=", "") || cert.subjectName;
+								<Key size={15} />
+								<span>Подписать выбранные УКЭП (КриптоПро)</span>
+							</button>
 
-									return (
-										<option key={cert.thumbprint} value={cert.thumbprint}>
-											{cleanSubject} (до {expiry})
-										</option>
-									);
-								})}
-							</select>
-						) : (
-							<span style={{ fontSize: "12px", color: "var(--muted)" }}>
-								{hasCryptoPlugin === false ? "Плагин КриптоПро не найден" : "Читаем сертификаты..."}
-							</span>
-						)}
-
-						<button
-							type="button"
-							onClick={handleStartBatchSign}
-							disabled={Boolean(batchSession?.isActive)}
-							className="cmo-hub-btn cmo-hub-btn--primary"
-						>
-							<FileSignature size={16} />
-							<span>Пакетная подпись УКЭП и отправка в ЕГИСЗ ({selectedVisitIds.size})</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setSelectedVisitIds(new Set())}
-							className="cmo-hub-btn cmo-hub-btn--secondary"
-						>
-							Снять выделение
-						</button>
+							<button
+								type="button"
+								onClick={() => setSelectedVisitIds(new Set())}
+								className="cmo-hub-btn cmo-hub-btn--secondary"
+								style={{ minHeight: "40px", height: "40px", padding: "0 12px", fontSize: "13px" }}
+							>
+								Снять выделение
+							</button>
+						</div>
 					</div>
 				</div>
 			)}

@@ -25,6 +25,7 @@ import "./styles/shadow-analyst.css";
 import "./styles/patients-redesign.css";
 import "./styles/premium.css";
 import "./styles/dente-redesign.css";
+import "./styles.css";
 // Псевдонимы необъявленных переменных и поверхности, зависящие от темы.
 import "./styles/token-aliases.css";
 // Минимальный размер зон нажатия на узких экранах.

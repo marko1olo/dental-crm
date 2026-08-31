@@ -1108,7 +1108,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	return (
 		<div
-			className="panel schedule-panel min-w-0 max-w-full overflow-hidden pb-32"
+			className="panel schedule-panel min-w-0 max-w-full overflow-hidden"
 			id="schedule"
 			data-testid="schedule-view"
 		>
@@ -1639,9 +1639,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 ненужной, но файл правит другой автор, поэтому не тронут.
               */}
 			</div>
-			{/* FAB clearance bottom spacer */}
-			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
-
 			{/*
         Ящик листа ожидания. Он существовал и умел всё нужное — добавить, снять,
         перевести в запись, — но не был смонтирован ни в одном экране, поэтому
@@ -1680,8 +1677,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				isOpen={isRosterModalOpen}
 				onClose={() => setIsRosterModalOpen(false)}
 			/>
-			{/* Floating Softphone & FAB clearance spacer */}
-			<div className="h-32 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 		</div>
 	);
 }

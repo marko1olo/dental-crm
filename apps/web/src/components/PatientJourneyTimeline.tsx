@@ -34,6 +34,33 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 	);
 }
 
+/**
+ * Преобразование пугающих хирургических и узкоспециализированных аббревиатур
+ * в тёплый, понятный пациенту русский язык (Consumer Apple Health HIG).
+ */
+export function toFriendlyRussianProcedure(text: string): string {
+	if (!text) return text;
+	let friendly = text;
+
+	const medicalDictionary: Array<[RegExp, string]> = [
+		[/К02\.0|К02\.1|К02\.2|кариес\s*эмали|кариес\s*дентина/gi, "Лечение кариеса с эстетической реставрацией"],
+		[/К04\.0|К04\.1|пульпит|девитализация|экстирпация\s*пульпы/gi, "Бережное лечение зубного нерва под микроскопом"],
+		[/К04\.4|К04\.5|периодонтит|обтурация\s*каналов/gi, "Пломбирование и стерилизация корневых каналов"],
+		[/К05\.\d|пародонтит|гингивит|кюретаж/gi, "Оздоровление и укрепление десен"],
+		[/синус-лифтинг|аугментация\s*кости|остеопластика/gi, "Подготовка костной ткани к установке имплантата"],
+		[/дентальная\s*имплантация|установка\s*имплантата/gi, "Установка премиального имплантата"],
+		[/препарирование\s*под\s*коронку|снятие\s*оттисков/gi, "Подготовка зуба под защитную керамическую коронку"],
+		[/коффердам|раббердам/gi, "Стерильная защита зуба латексным платком"],
+		[/апекс-локация/gi, "Точное электронное измерение длины каналов"],
+		[/профессиональная\s*гигиена|air-flow|ультразвук/gi, "Комплексная спа-гигиена Air-Flow и удаление налета"],
+	];
+
+	for (const [pattern, replacement] of medicalDictionary) {
+		friendly = friendly.replace(pattern, replacement);
+	}
+	return friendly;
+}
+
 /** Статусы приёма по-русски: в ленту попадал английский ключ из базы. */
 const appointmentStatusLabels: Record<string, string> = {
 	planned: "запланирован",
@@ -323,10 +350,23 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 								style={{ width: `${progressPercentage}%` }}
 							/>
 						</div>
-						<p className="progress-hint">
-							Пройдено {completedItemsCount} процедуры из {totalItemsCount}.
-							Следующий визит приблизит вас к завершению плана!
-						</p>
+						<div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+							<p className="progress-hint m-0">
+								Пройдено {completedItemsCount} из {totalItemsCount} процедур.
+								Следующий визит приблизит вас к здоровой улыбке!
+							</p>
+							<button
+								type="button"
+								onClick={() => {
+									window.location.hash = "#booking";
+								}}
+								className="min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--teal)] text-white hover:opacity-90 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+								data-testid="timeline-fast-book-btn"
+							>
+								<Calendar size={14} />
+								<span>Записаться на следующий этап за 2 тапа</span>
+							</button>
+						</div>
 					</div>
 				)}
 
@@ -404,10 +444,10 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 										)}
 									</div>
 									<h4 className={isHighlight ? "text-lg font-bold" : "text-base"}>
-										{highlightMatch(evt.title, searchQuery)}
+										{highlightMatch(toFriendlyRussianProcedure(evt.title), searchQuery)}
 									</h4>
 									<p className="text-sm text-[var(--ink)] leading-relaxed">
-										{highlightMatch(evt.description, searchQuery)}
+										{highlightMatch(toFriendlyRussianProcedure(evt.description), searchQuery)}
 									</p>
 									{evt.amount ? (
 										<div className="amount-highlight">+{money(evt.amount)}</div>

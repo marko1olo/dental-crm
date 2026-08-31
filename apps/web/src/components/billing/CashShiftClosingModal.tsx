@@ -382,12 +382,14 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 									Фискализация
 								</span>
 								{reconciliation.isShiftDurationExceeded24h ? (
-									<span className="cash-shift-status-pill critical">
-										🛑 Превышен лимит 24 ч!
+									<span className="cash-shift-status-pill critical inline-flex items-center gap-1">
+										<AlertCircle size={12} className="shrink-0" aria-hidden="true" />
+										<span>Превышен лимит 24 ч!</span>
 									</span>
 								) : reconciliation.isShiftDurationWarning20h ? (
-									<span className="cash-shift-status-pill warning">
-										⚠️ Внимание: {reconciliation.shiftDurationFormatted}
+									<span className="cash-shift-status-pill warning inline-flex items-center gap-1">
+										<AlertTriangle size={12} className="shrink-0" aria-hidden="true" />
+										<span>Внимание: {reconciliation.shiftDurationFormatted}</span>
 									</span>
 								) : (
 									<span className="cash-shift-status-pill ok">
@@ -460,7 +462,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					<div className="cash-shift-24h-alert critical">
 						<AlertCircle size={20} style={{ flexShrink: 0 }} />
 						<div>
-							<strong>🛑 КРИТИЧЕСКОЕ ТРЕБОВАНИЕ 54-ФЗ И ФНС РФ:</strong> Длительность кассовой смены составляет{" "}
+							<strong>КРИТИЧЕСКОЕ ТРЕБОВАНИЕ 54-ФЗ И ФНС РФ:</strong> Длительность кассовой смены составляет{" "}
 							<strong>{reconciliation.shiftDurationFormatted}</strong> (превышает установленный законом 24-часовой лимит).
 							Печать чеков пациентов заблокирована ККТ. Необходимо незамедлительно снять Z-отчет и закрыть смену!
 						</div>
@@ -471,7 +473,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					<div className="cash-shift-24h-alert warning">
 						<Clock size={18} style={{ flexShrink: 0 }} />
 						<div>
-							<strong>⚠️ Внимание:</strong> Смена открыта уже <strong>{reconciliation.shiftDurationFormatted}</strong>.
+							<strong>Внимание:</strong> Смена открыта уже <strong>{reconciliation.shiftDurationFormatted}</strong>.
 							До блокировки ККТ по лимиту 24 ч осталось <strong>{reconciliation.hoursRemainingUntil24h} ч.</strong> Рекомендуется закрыть смену.
 						</div>
 					</div>
@@ -621,16 +623,16 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 											<button
 												type="button"
 												onClick={() => setRetainedChangeFundInput("5000")}
-												className="cash-shift-btn secondary-small"
+												className="cash-shift-btn secondary-small whitespace-nowrap"
 											>
-												5 000 ₽
+												5{"\u00A0"}000{"\u00A0"}₽
 											</button>
 											<button
 												type="button"
 												onClick={() => setRetainedChangeFundInput("0")}
-												className="cash-shift-btn secondary-small"
+												className="cash-shift-btn secondary-small whitespace-nowrap"
 											>
-												0 ₽
+												0{"\u00A0"}₽
 											</button>
 										</div>
 									</div>

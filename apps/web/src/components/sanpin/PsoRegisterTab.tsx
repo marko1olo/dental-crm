@@ -261,8 +261,8 @@ export function PsoRegisterTab() {
 				<tr>
 					<td style="text-align:center;">${dateFormatted} 13:00</td>
 					<td>Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)</td>
-					<td style="text-align:center;">120 шт.</td>
-					<td style="text-align:center;">4 шт.</td>
+					<td style="text-align:center;">120&nbsp;шт.</td>
+					<td style="text-align:center;">4&nbsp;шт.</td>
 					<td style="text-align:center; color:#166534; font-weight:bold;">Отрицат. (Норма)</td>
 					<td style="text-align:center; color:#166534; font-weight:bold;">Отрицат. (Норма)</td>
 					<td>Биолот 0.5% + Аламинол 1%</td>

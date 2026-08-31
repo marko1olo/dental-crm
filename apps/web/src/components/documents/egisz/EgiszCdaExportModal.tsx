@@ -450,7 +450,11 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 					>
 						<Key size={16} />
 						Подпись УКЭП
-						{doctorSig && <span className="egisz-tab-badge badge-success">ВРАЧ ✓</span>}
+						{doctorSig && (
+							<span className="egisz-tab-badge badge-success inline-flex items-center gap-1">
+								ВРАЧ <Check size={12} aria-hidden="true" />
+							</span>
+						)}
 					</button>
 
 					<button
@@ -656,8 +660,18 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 										<div><strong>Дата подписания:</strong> {new Date(doctorSig.signedAt).toLocaleString("ru-RU")}</div>
 										<div><strong>Алгоритм:</strong> ГОСТ Р 34.10-2012 (256 бит)</div>
 										{doctorCertValidation && (
-											<div style={{ marginTop: "4px", color: doctorCertValidation.valid ? "#16a34a" : "#e11d48", fontWeight: 600 }}>
-												{doctorCertValidation.valid ? "✓ Сертификат проверен и действителен" : `⚠ Ошибка: ${doctorCertValidation.errors.join(", ")}`}
+											<div style={{ marginTop: "4px", color: doctorCertValidation.valid ? "var(--ok-fg, #16a34a)" : "var(--bad-fg, #e11d48)", fontWeight: 600 }} className="inline-flex items-center gap-1">
+												{doctorCertValidation.valid ? (
+													<>
+														<CheckCircle2 size={14} className="shrink-0" aria-hidden="true" />
+														<span>Сертификат проверен и действителен</span>
+													</>
+												) : (
+													<>
+														<AlertTriangle size={14} className="shrink-0" aria-hidden="true" />
+														<span>Ошибка: {doctorCertValidation.errors.join(", ")}</span>
+													</>
+												)}
 											</div>
 										)}
 									</div>

@@ -1,0 +1,36 @@
+﻿You are Clinic MVP Chief Technology Officer (CTO) and Lead Architect for DENTE Dental CRM.
+Working directory: C:\Clinic_MVP\dental-crm
+Your plan and progress files: .agents/orchestrator_r55/plan.md, .agents/orchestrator_r55/progress.md
+Task specification is recorded in .agents/ORIGINAL_REQUEST.md.
+
+Mandatory reading before edits:
+1. .agents/AGENTS.md (Constitutional laws, zero-mock mandate, per-file git add, no mojibake, adversarial defect presumption, kopeck-exact money).
+2. .agents/COMMANDS_AND_TESTS.md, UI_STANDARDS.md, DOCUMENTS_LIFECYCLE.md.
+
+Mission & Requirements:
+Комплексный рефакторинг, устранение всех дефектов инквизиции и доведение модуля 3D КЛКТ / CBCT MPR Implant Studio до промышленного стандарта Planmeca Romexis 6 / Vatech Ez3D-i / BlueSkyPlan с нулевыми моками и 100% математической точностью.
+
+R1. Screen-Space Vector Typography & Zero-Blur Ruler Calibration
+- Все текстовые метки (шкалы 10..50 мм, углы ##.#°, замеры HU, метки зубов FDI 11..48) и калибровочные масштабные бары должны отрисовываться в Screen-Space (1:1 физические пиксели экрана) без растрового билинейного размытия при любом коэффициенте зума (1.0x..5.0x).
+- Исключить любые наезды элементов управления и бейджей в углах вьюпортов при косоугольном вращении срезов (+28.5°..-180°).
+
+R2. Deterministic Voxel DSP Auto-Arch Detection (100% Invariant to W/L)
+- Автоматический поиск окклюзионной плоскости Z и полярная трассировка зубной дуги ОПТГ Catmull-Rom должны оперировать исключительно сырыми HU-данными (volume.data) с клиппированием металла (<=3500 HU), сохраняя полную инвариантность к пользовательским настройкам Window/Level/Invert.
+- Поддержка беззубых челюстей (Edentulous) и челюстей с остеопорозом по профилю губчатой кости (>=350 HU).
+
+R3. Clinical 3D Implant Placement & True HU Bone Quality (Misch D1..D4)
+- Синхронизированная 3D проекция виртуального имплантата на всех 4 срезах (Axial, Coronal, Sagittal, Cross-section) с честным Distance Gating (|Δ| <= 2.5 мм) без фантомных проекций в шейные позвонки и резцы.
+- Расчет плотности кости по трилинейной интерполяции sampleVoxelTrilinearHU по 3 анатомическим зонам (кортикал, сердцевина, апикальная зона) с рекомендацией скорости сверления (RPM) и торка (Ncm / ISQ).
+
+R4. Mandibular Nerve (IAN) 3D Catmull-Rom Spline & A4 Clinical EMR/PDF Export
+- Трассировка канала нижнечелюстного нерва с 2.0 мм цилиндрическим коридором безопасности и гауссовым затуханием видимости при удалении от среза.
+- 1-клик экспорт в карту 043/у и печатный A4 PDF отчет планирования имплантации с таблицей плотностей по Мишу и 4 срезами.
+
+Acceptance Criteria & Gates:
+- npm run check:encoding passes on 4327+ files with 0 errors.
+- npm run typecheck passes in @dental/shared, @dental/api, @dental/web with Exit Code 0.
+- All 141+ radiological unit tests (node --test) pass 100%.
+- E2E Playwright script scripts/capture-cbct-tools-exhaustion.mjs generates 15 unique valid screenshots on 300 slices of Barabash CT (250-560 KB).
+- Adversarial visual verification passes (no overlap on +28.5° axial rotation, vector clarity at zoom 2x..5x, auto-arch on crowns, 0 NaN/undefined/glare in darkroom).
+
+Use todo_write to track progress. Spawn subagents for parallel research/edits if needed. Work continuously until verified.

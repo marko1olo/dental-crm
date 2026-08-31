@@ -1,132 +1,89 @@
 # Original User Request
 
-## 2026-08-26T21:10:06Z
+## 2026-08-29T18:25:30Z
 
-# Teamwork Subagent 1: Dentalpin Agentic Core & PHI Redaction Ingestor
-
-Working directory: `C:\Clinic_MVP\dental-crm`
-Reference cloned repo: `C:\Users\Admin\.gemini\antigravity\scratch\dentalpin`
-
-## Task & Scope
-1. Исследовать реализацию агентного слоя в `dentalpin`:
-   - `backend/app/core/agents/redaction.py` (PHI boundary — как маскируются персональные данные пациента перед LLM).
-   - `backend/app/core/agents/orchestrator.py` (LLM loop, tool calls, streaming).
-   - `backend/app/core/agents/guardrails.py` и `context.py` (роли, права, лимиты токенов).
-   - `backend/app/modules/copilot/` (SSE потоки, подтверждение действий).
-2. Разработать аналогичный защищенный модуль на TypeScript для нашего бэкенда (`apps/api/src/services/`):
-   - Обезличивание PHI (ФИО, телефоны, паспорт/полис, адреса) перед отправкой в LLM провайдер.
-   - Спецификация клинических инструментов агента (`find_patient`, `get_emr_card`, `suggest_icd10_plan`, `book_visit`).
-3. Запустить тайпчек `npm run typecheck` и написать юнит-тесты.
-
-## 2026-08-26T21:10:07Z
-
-# Teamwork Subagent 3: Dentalpin Comparative Architect & Feature Auditor
+<USER_REQUEST>
+Полная ликвидация бутафории и промышленный рефакторинг модуля 3D КЛКТ Имплантации (CBCT Implant Studio) в Dental CRM до клинического стандарта Planmeca Romexis 6 / Vatech Ez3D-i / BlueSkyPlan.
 
 Working directory: `C:\Clinic_MVP\dental-crm`
-Reference cloned repo: `C:\Users\Admin\.gemini\antigravity\scratch\dentalpin`
 
-## Task & Scope
-1. Провести полный аудит всех 35 модулей `dentalpin` против модулей DENTE Dental CRM.
-2. Составить детальную сравнительную таблицу:
-   - В чем DENTE опережает `dentalpin` на порядок (3D CBCT томография Romexis, ЕГИСЗ/РЭМД, ЭМК 043/у ГОСТ, Честный Знак МДЛП, фискализация ФНС РФ, ISQ денситометрия, многослойный 5-поверхностный одонтограм).
-   - Какие концепции и архитектурные решения из `dentalpin` нам выгодно заимствовать (Agent tools, PHI anonymizer, WhatsApp Kapso адаптер, 2FA links для смет).
-3. Создать отчет в `docs/audit/DENTALPIN_INGESTION_REPORT.md`.
+## 1. БЕСПОЩАДНЫЙ ДЕФЕКТ-ЛИСТ ТЕКУЩЕГО СОСТОЯНИЯ (ПРЕЗУМПЦИЯ БРАКА)
 
-## 2026-08-26T23:03:22Z
+- [ ] **Критический дефект 1 (Проекции в позвоночник и резцы):** На срезах Coronal и Sagittal имплантат рисуется безусловно в фиксированных координатах среза независимо от физической координаты Y и X. Имплантат зуба #48 проецируется внутрь шейных позвонков на сагиттальном срезе и поверх фронтальных резцов на корональном.
+- [ ] **Критический дефект 2 (Смещение КТ-среза и имплантата на кросс-секции):** Растровый срез КТ рендерится в координаты (0, 0) размером 96x128 px, а геометрический имплантат и нерв рисуются от centerX = canvas.width / 2 (150px), из-за чего имплантат висит в черной пустоте мимо челюсти.
+- [ ] **Критический дефект 3 (Фальсификация HU плотности кости по Мишу):** Функция sampleCrossSectionHUProfile игнорирует реальный 3D-объем volume и выдает захардкоженные константы 1200 / 750 / 900 HU.
+- [ ] **Критический дефект 4 (Замусоренный сайдбар с ползунками вместо CAD-окна):** Боковой сайдбар на 360px перегружен неудобными HTML range-слайдерами наклона и микро-превьюшкой вместо крупного, высокоточного рабочего окна кросс-секции с миллиметровой сеткой и интерактивным позиционированием.
 
-[MASSIVE DIRECTIVE: EXPANDING CLINICAL TOOLS IN AGENT REGISTRY]
+## Requirements
+
+### R1. Честная 3D-геометрия и фильтрация дистанции на срезах (Distance Gating)
+- Имплантат на корональном (Y) и сагиттальном (X) срезах отображается исключительно в том случае, если текущий срез пересекает физическое тело имплантата (|Δ| <= 2.5 мм), либо с затуханием прозрачности пропорционально удалению.
+- При выборе зуба (#46, #47, #36, #16 и т.д.) или переходе в режим имплантации 3D-перекрестье (X, Y, Z) автоматически центрируется на верхушке гребня целевого зуба.
+
+### R2. Прецизионный холст Кросс-секции (1:1 сопоставление с вокселями)
+- Центрирование растрового среза челюсти на холсте кросс-секции.
+- Позиционирование имплантата, апекса, оси и угла строго относительно анатомического гребня альвеолярного отростка.
+- Интерактивное позиционирование (drag-and-drop за платформу и апекс) прямо на холсте.
+
+### R3. Честный воксельный расчет плотности кости (Misch D1..D4)
+- Расчет HU по трилинейной интерполяции sampleVoxelTrilinearHU из реального массива volume.data по 3 анатомическим зонам (кортикальная пластинка, губчатая сердцевина, апикальная зона).
+- Автоматический расчет рекомендуемой скорости сверления (RPM), протокола недопрепарирования (Underdrilling) и расчетного первичного торка (Ncm / ISQ).
+
+### R4. Клинический интерфейс и библиотека имплантатов
+- Библиотека реальных типоразмеров (Osstem TS III, Straumann BLX, Nobel Parallel CC, Dentium SuperLine).
+- Точный расчет расстояния в миллиметрах до нижнечелюстного канала (N. alveolaris inferior) и дна гайморовой пазухи с предупреждениями безопасности (буфер >= 2.0 мм).
+
+## Acceptance Criteria
+
+### Automated & Physical Verification
+- [ ] Статические гейты компилятора (npm run typecheck, npm run check:encoding, npm run check:stub-overrides) завершаются с Exit Code 0.
+- [ ] Юнит-тесты радиологии и математики имплантации (node --test) проходят на 100%.
+- [ ] E2E-скрипт Playwright генерирует свежий скриншот 11_virtual_implant_placed.png, где:
+  - Имплантат центрирован на кости целевого зуба.
+  - На коронале и сагиттале отсутствуют фантомные проекции в позвоночник и резцы.
+  - На кросс-секции костный срез и имплантат идеально совмещены по центру.
+  - Плотность HU рассчитывается из реальных вокселей КТ Барабаш.
+
+</USER_REQUEST>
+
+## 2026-08-30T06:40:08Z
+
+<USER_REQUEST>
+Комплексный рефакторинг, устранение всех дефектов инквизиции и доведение модуля 3D КЛКТ / CBCT MPR Implant Studio до промышленного стандарта Planmeca Romexis 6 / Vatech Ez3D-i / BlueSkyPlan с нулевыми моками и 100% математической точностью.
+
 Working directory: `C:\Clinic_MVP\dental-crm`
+Integrity mode: development
 
-You own the tool expansion of the AI Agentic Core:
-1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, implement and register 4 new high-value clinical tools:
-   - `get_patient_timeline`: retrieves unified chronological history (past visits, diagnoses, treatment plan stages, payments, lab orders).
-   - `check_drug_interactions`: validates proposed medications against patient known allergies and active prescriptions using `checkDentalMedicationInteractions`.
-   - `get_lab_orders`: returns prosthetics lab order status, tracking ETA and shade info for a patient.
-   - `get_family_balance`: returns aggregated balance and kinship links for family accounts.
-2. Update `apps/api/src/services/agent/agent.test.ts` to include unit test coverage for each new tool.
-3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`.
-4. Report completed results with test logs.
+## Requirements
 
-## 2026-08-26T23:34:09Z
+### R1. Screen-Space Vector Typography & Zero-Blur Ruler Calibration
+- Все текстовые метки (шкалы 10..50 мм, углы `##.#°`, замеры HU, метки зубов FDI 11..48) и калибровочные масштабные бары должны отрисовываться в Screen-Space (1:1 физические пиксели экрана) без растрового билинейного размытия при любом коэффициенте зума (1.0x..5.0x).
+- Исключить любые наезды элементов управления и бейджей в углах вьюпортов при косоугольном вращении срезов (+28.5°..-180°).
 
-[MASSIVE DOMAIN DIRECTIVE: AGENTIC SCHEDULE MUTATION TOOLS]
-Working directory: `C:\Clinic_MVP\dental-crm`
+### R2. Deterministic Voxel DSP Auto-Arch Detection (100% Invariant to W/L)
+- Автоматический поиск окклюзионной плоскости Z и полярная трассировка зубной дуги ОПТГ Catmull-Rom должны оперировать исключительно сырыми HU-данными (`volume.data`) с клиппированием металла (<=3500 HU), сохраняя полную инвариантность к пользовательским настройкам Window/Level/Invert.
+- Поддержка беззубых челюстей (Edentulous) и челюстей с остеопорозом по профилю губчатой кости (>=350 HU).
 
-You own the implementation of interactive appointment mutation tools in the Agent Tool Registry:
-1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, add 3 new tools with human-in-the-loop confirmation:
-   - `reschedule_appointment`: changes start/end time of appointment with conflict checking. Category: `"write"`, requires confirmation.
-   - `cancel_appointment`: cancels appointment with reason. Category: `"write"`, requires confirmation.
-   - `get_doctor_schedule`: retrieves doctor work shifts, booked slots, and free capacity for a given date range. Category: `"read"`.
-2. Update unit tests in `apps/api/src/services/agent/agent.test.ts`.
-3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and verify 100% pass.
-4. Run `npm run typecheck -w @dental/api` and report results.
+### R3. Clinical 3D Implant Placement & True HU Bone Quality (Misch D1..D4)
+- Синхронизированная 3D проекция виртуального имплантата на всех 4 срезах (Axial, Coronal, Sagittal, Cross-section) с честным Distance Gating (|Δ| <= 2.5 мм) без фантомных проекций в шейные позвонки и резцы.
+- Расчет плотности кости по трилинейной интерполяции `sampleVoxelTrilinearHU` по 3 анатомическим зонам (кортикал, сердцевина, апикальная зона) с рекомендацией скорости сверления (RPM) и торка (Ncm / ISQ).
 
-## 2026-08-27T07:24:46Z
+### R4. Mandibular Nerve (IAN) 3D Catmull-Rom Spline & A4 Clinical EMR/PDF Export
+- Трассировка канала нижнечелюстного нерва с 2.0 мм цилиндрическим коридором безопасности и гауссовым затуханием видимости при удалении от среза.
+- 1-клик экспорт в карту 043/у и печатный A4 PDF отчет планирования имплантации с таблицей плотностей по Мишу и 4 срезами.
 
-[MASSIVE DIRECTIVE 4: AGENTIC RECALLS & STAFF TASK TOOLS]
-Working directory: `C:\Clinic_MVP\dental-crm`
+## Acceptance Criteria
 
-You own the implementation of Recalls & Staff Tasks tools in the AI Copilot Tool Registry:
-1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, add:
-   - `create_staff_task`: creates internal clinic task for admin/nurse/doctor (title, description, priority, assignedRole, patientId, dueDate). Category: `"write"`, requires human confirmation in supervised mode.
-   - `get_patient_recalls`: returns upcoming or overdue preventive recalls for a patient (hygiene, implant, ortho check). Category: `"read"`.
-   - `schedule_recall`: creates a preventive recall reminder for a patient. Category: `"write"`.
-2. Register the 3 tools in `ToolRegistry`.
-3. Update `apps/api/src/services/agent/agent.test.ts` with test coverage for the new tools.
-4. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`. Report verified results.
+### Automated & Machine Gates
+- [ ] `npm run check:encoding` проходит на 4327+ файлах с 0 ошибок.
+- [ ] Сквозной `npm run typecheck` во всех пакетах (`@dental/shared`, `@dental/api`, `@dental/web`) завершается со строгим Exit Code 0.
+- [ ] Все 141+ радиологических юнит-тестов (`node --test`) завершаются с результатом 100% PASS.
+- [ ] E2E Playwright скрипт `scripts/capture-cbct-tools-exhaustion.mjs` генерирует 15 уникальных валидных скриншотов на 300 реальных срезах КТ Барабаш (размер файлов 250–560 КБ).
 
-## 2026-08-27T07:38:17Z
+### Adversarial Visual Inspection
+- [ ] Правый верхний угол Аксиального окна свободен от наездов кнопок при косоугольном вращении (+28.5°).
+- [ ] Шрифты линеек и угломеров сохраняют векторную четкость при зуме 2x..5x.
+- [ ] Авто-дуга проходит точно по коронкам зубов пациента.
+- [ ] 0 ошибок "NaN", "undefined" или слепящих белых пятен в Darkroom-режиме (`#000000` / `#09090b`).
 
-[MICROSCOPIC BLOAT EXPEDITION — PHASE 3]
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-Perform a microscopic, file-by-file search for any remaining dead code, academic over-engineering, synthetic toys, or theoretical formulas across:
-1. `apps/web/src/components/odontogram/` (look for unused physics, tooth stress vectors, deciduous/permanent resonance calculations, unreferenced SVG tools).
-2. `apps/web/src/components/visit/` (look for unused diagnostic calculators, 40-step wizard popups, or theoretical scoring).
-3. `apps/web/src/components/clinical/` (look for any leftover academic perio/endo/surgery toys).
-4. `apps/web/src/components/analytics/` and `components/finance/` (look for theoretical econometric forecasting / Monte Carlo simulators).
-5. `apps/web/src/components/radiology/` (look for leftover math, synthetic filters, or unused DICOM shaders).
-6. `apps/api/src/` and `packages/shared/src/`.
-
-Check all files symbol by symbol.
-For every bloat item found, report:
-- Exact file path and line numbers
-- Total line count
-- Why it is useless/academic bloat in a commercial dental clinic
-- Recommended action (delete / simplify to 1-click)
-
-Save findings to `docs/audit/BLOAT_CENSUS_PHASE_3.md` and report back.
-
-## 2026-08-27T07:41:18Z
-
-[EXECUTION DIRECTIVE 1: PRUNE PERIODONTOGRAM SPIDER BLOAT]
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-You own the complete pruning of the Florida 6-point probing & Lang-Tonetti Spider PRA Radar bloat:
-1. Delete:
-   - `apps/web/src/components/odontogram/PeriodontalChartModule.tsx`
-   - `apps/web/src/components/odontogram/periodontalMath.ts`
-   - `apps/web/src/components/odontogram/PerioFullMouthGrid.tsx`
-   - `apps/web/src/components/odontogram/PerioKeypad.tsx`
-   - `apps/web/src/components/odontogram/PerioToothDetailCard.tsx`
-   - `apps/web/src/components/odontogram/perioTypes.ts`
-   - `apps/web/src/components/odontogram/PeriodontalChartModule.css`
-   - `apps/web/src/components/odontogram/perio043Protocol.ts`
-   - `apps/web/src/components/clinical/perio/` (entire directory)
-   - `apps/api/src/routes/perio.ts`
-2. Clean callers in `OdontogramModule.tsx`, `ChairsiderPerspectiveView.tsx`, `VisitView.tsx`, and `apps/api/src/server.ts`.
-   - In `VisitView.tsx` / `OdontogramModule.tsx`: replace complex perio chart modal with 1-click periodontal assessment badge in the tooth context drawer.
-3. Run `npm run typecheck` across all workspaces to guarantee **Exit Code 0**. Report raw verification output.
-
-## 2026-08-27T07:41:24Z
-
-[ADVERSARIAL VERIFICATION & TRG INTEGRITY AUDIT]
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-Your tasks:
-1. Verify TRG Cephalometrics (`apps/web/src/components/orthodontics/CephalometricAnalysisModal.tsx`, `CephalometricCanvas.tsx`, `cephalometricMath.ts`) remains 100% untouched and run `node --import tsx --test apps/web/src/components/orthodontics/__tests__/*.test.ts` (14/14 tests pass).
-2. As soon as Subagents 1 and 2 finish deleting the bloat modules, verify:
-   - `npm run typecheck` across all 3 workspaces passes with **Exit Code 0**.
-   - `npm run check:encoding` passes.
-   - Run shared & api test suites.
-3. Report full audit results.
+</USER_REQUEST>
