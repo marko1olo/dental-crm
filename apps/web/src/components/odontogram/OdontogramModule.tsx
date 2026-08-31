@@ -60,6 +60,7 @@ import {
 } from "../../lib/clinicalProtocols043";
 import "./odontogram.css";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
+import { useAppStore } from "../../store/appStore";
 import { logger } from "../../utils/logger";
 
 export { ALL_ADULT_TEETH_NUMBERS, createDefaultAdultTeethData };
@@ -688,6 +689,7 @@ export const OdontogramModule = ({
 		rect: DOMRect,
 		surface?: string,
 	) => {
+		useAppStore.getState().setActiveTooth(toothNumber);
 		if (isMultiSelectMode) {
 			// Toggle selection, don't open menu yet
 			setSelectedTeeth((prev) =>

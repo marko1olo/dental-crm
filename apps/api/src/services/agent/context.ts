@@ -17,6 +17,7 @@ export interface AgentContext {
 	readonly tools: ToolRegistry;
 	// biome-ignore lint/suspicious/noExplicitAny: Drizzle client or transaction instance
 	readonly db: any;
+	readonly role?: string | undefined;
 	readonly supervisorId?: string | null;
 	readonly metadata?: Record<string, unknown>;
 	readonly guardrailConfig?: GuardrailConfig;

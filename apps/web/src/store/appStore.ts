@@ -447,6 +447,22 @@ interface AppStore {
 	setUiPreferencesSyncError: (
 		val: string | null | ((prev: string | null) => string | null),
 	) => void;
+	activeTooth: number | string | null;
+	setActiveTooth: (
+		val:
+			| number
+			| string
+			| null
+			| ((prev: number | string | null) => number | string | null),
+	) => void;
+	activeDoctorName: string | null;
+	setActiveDoctorName: (
+		val: string | null | ((prev: string | null) => string | null),
+	) => void;
+	activePatientId: string | null;
+	setActivePatientId: (
+		val: string | null | ((prev: string | null) => string | null),
+	) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -792,5 +808,22 @@ export const useAppStore = create<AppStore>((set) => ({
 		set((state) => ({
 			uiPreferencesSyncError:
 				typeof val === "function" ? val(state.uiPreferencesSyncError) : val,
+		})),
+	activeTooth: null,
+	setActiveTooth: (val) =>
+		set((state) => ({
+			activeTooth: typeof val === "function" ? val(state.activeTooth) : val,
+		})),
+	activeDoctorName: null,
+	setActiveDoctorName: (val) =>
+		set((state) => ({
+			activeDoctorName:
+				typeof val === "function" ? val(state.activeDoctorName) : val,
+		})),
+	activePatientId: null,
+	setActivePatientId: (val) =>
+		set((state) => ({
+			activePatientId:
+				typeof val === "function" ? val(state.activePatientId) : val,
 		})),
 }));

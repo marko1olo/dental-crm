@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, X, RotateCcw, MessageSquare, CheckSquare, Loader2 } from 'lucide-react';
+import { Sparkles, X, RotateCcw, MessageSquare, CheckSquare, Loader2, Activity, User } from 'lucide-react';
 import type {
   CopilotUiMessage,
   PendingConfirmation,
@@ -8,12 +8,14 @@ import type {
   CopilotNudge,
   SelectIdHandler,
   BookSlotHandler,
+  ConfirmHandler,
 } from './copilotTypes';
 import { CopilotMessage } from './CopilotMessage';
 import { CopilotConfirmCard } from './CopilotConfirmCard';
 import { CopilotComposer } from './CopilotComposer';
 import { CopilotNudges } from './CopilotNudges';
 import { CopilotSuggestions } from './CopilotSuggestions';
+import { useCopilotContextSync } from './CopilotContextSync';
 
 export interface CopilotDrawerProps {
   isOpen: boolean;
@@ -27,7 +29,7 @@ export interface CopilotDrawerProps {
   onTabChange: (tab: 'chat' | 'pending') => void;
   onClose: () => void;
   onSend: (text: string) => void;
-  onConfirm: (callId: string, decision: 'confirm' | 'reject') => void;
+  onConfirm: ConfirmHandler;
   onReset: () => void;
   onDismissNudge: (id: string) => void;
   onSelectPatient?: SelectIdHandler;
@@ -54,6 +56,8 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   onSelectAppointment,
   onBookSlot,
 }) => {
+  const { context: uiContext, enrichMessage } = useCopilotContextSync();
+
   const [input, setInput] = useState(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
@@ -93,10 +97,16 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
     onReset();
   };
 
+  const handleSendEnriched = (textToSend: string) => {
+    if (!textToSend.trim() || busy) return;
+    const enriched = enrichMessage(textToSend);
+    onSend(enriched);
+  };
+
   const handleSubmit = () => {
     if (!input.trim() || busy) return;
     const text = input.trim();
-    onSend(text);
+    handleSendEnriched(text);
     setInput('');
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
@@ -163,6 +173,101 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
         </div>
       </header>
 
+      {/* Context Awareness Telemetry Bar */}
+      <div
+        className="copilot-context-bar"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '6px',
+          padding: '6px 16px',
+          backgroundColor: 'var(--paper-soft, rgba(15, 118, 110, 0.04))',
+          borderBottom: '1px solid var(--line, rgba(15, 118, 110, 0.12))',
+          fontSize: '11px',
+          color: 'var(--ink, #0f172a)',
+        }}
+        data-testid="copilot-context-bar"
+      >
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontWeight: 600,
+            color: 'var(--teal-dark, #0f766e)',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            backgroundColor: 'var(--teal-soft, #ccfbf1)',
+            border: '1px solid var(--teal-surface, rgba(13, 148, 136, 0.2))',
+          }}
+          title={`Активный экран: ${uiContext.viewLabel || uiContext.view}`}
+        >
+          <Activity size={12} />
+          <span>{uiContext.viewLabel || uiContext.view}</span>
+        </span>
+
+        {uiContext.activeTooth !== null && uiContext.activeTooth !== undefined && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontWeight: 600,
+              padding: '2px 6px',
+              borderRadius: '4px',
+              backgroundColor: 'var(--paper-strong, #ffffff)',
+              border: '1px solid var(--line, rgba(15, 118, 110, 0.15))',
+            }}
+            title={`Выбранный зуб FDI: ${uiContext.activeTooth}`}
+          >
+            <span>{`Зуб #${uiContext.activeTooth}`}</span>
+          </span>
+        )}
+
+        {uiContext.patientId && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              backgroundColor: 'var(--paper-strong, #ffffff)',
+              border: '1px solid var(--line, rgba(15, 118, 110, 0.15))',
+              maxWidth: '160px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            title={uiContext.patientName ? `Пациент: ${uiContext.patientName}` : `Пациент ID: ${uiContext.patientId}`}
+          >
+            <User size={12} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {uiContext.patientName ?? `Пациент #${uiContext.patientId.slice(0, 6)}`}
+            </span>
+          </span>
+        )}
+
+        {uiContext.activeDoctor && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              backgroundColor: 'var(--paper-strong, #ffffff)',
+              border: '1px solid var(--line, rgba(15, 118, 110, 0.15))',
+              color: 'var(--muted, #64748b)',
+            }}
+            title={`Лечащий врач: ${uiContext.activeDoctor}`}
+          >
+            <span>{uiContext.activeDoctor}</span>
+          </span>
+        )}
+      </div>
+
       {/* Tab Controls */}
       <div className="copilot-tabs">
         <button
@@ -197,7 +302,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
       <CopilotNudges
         nudges={nudges}
         onDismiss={onDismissNudge}
-        onAct={onSend}
+        onAct={handleSendEnriched}
       />
 
       {/* Body Content / Chat Feed */}
@@ -205,7 +310,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
         {activeTab === 'chat' ? (
           <>
             {messages.length === 0 ? (
-              <CopilotSuggestions onPick={onSend} />
+              <CopilotSuggestions onPick={handleSendEnriched} />
             ) : (
               messages.map((msg, idx) => (
                 <CopilotMessage

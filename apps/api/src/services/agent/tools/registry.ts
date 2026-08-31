@@ -6,8 +6,10 @@ import type { z } from "zod";
 import { recordAuditEvent } from "../../../audit.js";
 import type { AgentContext } from "../context.js";
 import { checkGuardrails, permissionMatches } from "../guardrails.js";
+import { checkAiRbacGuard } from "../security/aiRbacGuard.js";
 import { registerClinicalNotesTools } from "./clinicalNotesTool.js";
 import { registerClinicalTools } from "./clinicalTools.js";
+import { registerRagTools } from "./ragTools.js";
 import { registerSanpinTools } from "./sanpinTools.js";
 import { toolToAnthropicSchema, toolToOpenAiSchema } from "./schemaSerializer.js";
 import type { ToolDefinition, ToolResult } from "./tool.js";
@@ -90,7 +92,26 @@ export class ToolRegistry {
 			};
 		}
 
-		// 1. Guardrail policy check
+		// 1. AI RBAC & Security Guard check (Chapter VII) — Fail Closed immediately if lacking permission
+		const rbacCheck = checkAiRbacGuard(ctx, tool, qualifiedName, args);
+		if (!rbacCheck.allowed) {
+			const errorMsg =
+				rbacCheck.error ??
+				`permission denied: ${(tool.permissions ?? [])[0] ?? qualifiedName}`;
+			await this.recordAuditSafe(ctx, qualifiedName, args, {
+				status: "BLOCKED",
+				error: errorMsg,
+			});
+			return {
+				ok: false,
+				error: errorMsg,
+				executionTimeMs: 0,
+			};
+		}
+
+		const effectiveArgs = rbacCheck.sanitizedArgs ?? args;
+
+		// 2. Guardrail policy check (Rate limits, Supervised approval, Destructive gate)
 		const decision = checkGuardrails(
 			ctx,
 			tool,
@@ -98,7 +119,7 @@ export class ToolRegistry {
 			ctx.guardrailConfig,
 		);
 		if (decision === "block") {
-			await this.recordAuditSafe(ctx, qualifiedName, args, {
+			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
 				status: "BLOCKED",
 				error: "blocked by guardrails",
 			});
@@ -110,7 +131,7 @@ export class ToolRegistry {
 		}
 
 		if (decision === "require_approval") {
-			await this.recordAuditSafe(ctx, qualifiedName, args, {
+			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
 				status: "PENDING_APPROVAL",
 				reason: "guardrail policy requires review",
 			});
@@ -119,38 +140,20 @@ export class ToolRegistry {
 				data: {
 					approvalRequired: true,
 					tool: qualifiedName,
-					arguments: args,
+					arguments: effectiveArgs,
 				},
 				error: "pending approval",
 				executionTimeMs: 0,
 			};
 		}
 
-		// 2. RBAC permissions check
-		for (const required of tool.permissions) {
-			const hasPermission = ctx.permissions.some((granted) =>
-				permissionMatches(required, granted),
-			);
-			if (!hasPermission) {
-				await this.recordAuditSafe(ctx, qualifiedName, args, {
-					status: "BLOCKED",
-					error: `permission denied: ${required}`,
-				});
-				return {
-					ok: false,
-					error: `permission denied: ${required}`,
-					executionTimeMs: 0,
-				};
-			}
-		}
-
 		// 3. Zod parameter validation
-		const parsed = tool.parameters.safeParse(args);
+		const parsed = tool.parameters.safeParse(effectiveArgs);
 		if (!parsed.success) {
 			const validationMsg = parsed.error.issues
 				.map((i) => `${i.path.join(".")}: ${i.message}`)
 				.join("; ");
-			await this.recordAuditSafe(ctx, qualifiedName, args, {
+			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
 				status: "FAILED",
 				error: `validation error: ${validationMsg}`,
 			});
@@ -167,7 +170,7 @@ export class ToolRegistry {
 			const rawResult = await tool.handler(ctx, parsed.data);
 			const elapsedMs = Math.round(performance.now() - t0);
 
-			await this.recordAuditSafe(ctx, qualifiedName, args, {
+			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
 				status: "SUCCESS",
 				executionTimeMs: elapsedMs,
 			});
@@ -182,7 +185,7 @@ export class ToolRegistry {
 			const errorMsg =
 				error instanceof Error ? error.message : String(error);
 
-			await this.recordAuditSafe(ctx, qualifiedName, args, {
+			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
 				status: "FAILED",
 				error: errorMsg,
 				executionTimeMs: elapsedMs,
@@ -229,6 +232,7 @@ export function createDefaultToolRegistry(): ToolRegistry {
 	registerClinicalTools(registry, "clinical");
 	registerClinicalNotesTools(registry, "clinical_notes");
 	registerSanpinTools(registry, "sanpin");
+	registerRagTools(registry, "internal");
 	return registry;
 }
 

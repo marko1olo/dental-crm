@@ -28,8 +28,11 @@ const messageBodySchema = z.object({
 });
 
 const confirmationBodySchema = z.object({
+	sessionId: z.string().optional(),
+	callId: z.string().optional(),
 	decision: z.enum(["confirm", "reject"]),
 	reason: z.string().optional(),
+	modifiedArgs: z.record(z.unknown()).optional(),
 });
 
 const DENTE_COPILOT_SYSTEM_PROMPT = `Вы — высококвалифицированный клинический AI-ассистент DENTE для стоматологов и администраторов клиник.
@@ -113,6 +116,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				userId,
 				sessionId,
 				mode: "supervised",
+				role: identity.role ?? "doctor",
 				permissions: [...PERMISSIONS],
 				tools: defaultToolRegistry,
 				db,
@@ -219,6 +223,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				userId,
 				sessionId,
 				mode: "supervised",
+				role: identity.role ?? "doctor",
 				permissions: [...PERMISSIONS],
 				tools: defaultToolRegistry,
 				db,
@@ -267,7 +272,11 @@ export const copilotRoutes: FastifyPluginAsync = async (
 	// POST /api/v1/copilot/sessions/:sessionId/confirmations/:callId — Doctor confirmation/rejection
 	server.post<{
 		Params: { sessionId: string; callId: string };
-		Body: { decision: "confirm" | "reject"; reason?: string };
+		Body: {
+			decision: "confirm" | "reject";
+			reason?: string;
+			modifiedArgs?: Record<string, unknown>;
+		};
 	}>(
 		"/api/v1/copilot/sessions/:sessionId/confirmations/:callId",
 		{ config: { tenantTxSelfManaged: true } },
@@ -292,14 +301,9 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			const identity = getRequestIdentity(request);
 			const userId =
 				identity.userId ?? "00000000-0000-7000-8000-000000000001";
-			const { decision, reason } = parsedBody.data;
+			const { decision, reason, modifiedArgs } = parsedBody.data;
 
-			// Setup SSE headers
-			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
-			reply.raw.setHeader("Connection", "keep-alive");
-			reply.raw.setHeader("X-Accel-Buffering", "no");
-			reply.raw.flushHeaders?.();
+			const wantsJson = request.headers.accept === "application/json";
 
 			if (decision === "confirm") {
 				const pending = await defaultCopilotActionManager.resolvePending(
@@ -307,6 +311,21 @@ export const copilotRoutes: FastifyPluginAsync = async (
 					resolvedOrgId,
 				);
 				if (!pending) {
+					if (wantsJson) {
+						return reply.code(404).send({
+							error: "NotFound",
+							message:
+								"Запрос на действие не найден или истек срок ожидания (15 минут)",
+						});
+					}
+					reply.raw.setHeader(
+						"Content-Type",
+						"text/event-stream; charset=utf-8",
+					);
+					reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+					reply.raw.setHeader("Connection", "keep-alive");
+					reply.raw.setHeader("X-Accel-Buffering", "no");
+					reply.raw.flushHeaders?.();
 					reply.raw.write(
 						formatSseEvent({
 							type: "token",
@@ -326,6 +345,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 					userId,
 					sessionId,
 					mode: "autonomous",
+					role: identity.role ?? "doctor",
 					permissions: [...PERMISSIONS],
 					tools: defaultToolRegistry,
 					db,
@@ -335,7 +355,27 @@ export const copilotRoutes: FastifyPluginAsync = async (
 					const result = await defaultCopilotActionManager.confirmAction(
 						ctx,
 						callId,
+						modifiedArgs,
 					);
+
+					if (wantsJson) {
+						return reply.code(200).send({
+							ok: result.ok,
+							result: result.ok ? result.data : undefined,
+							error: result.error,
+						});
+					}
+
+					// Setup SSE headers for ReAct Stream Closure
+					reply.raw.setHeader(
+						"Content-Type",
+						"text/event-stream; charset=utf-8",
+					);
+					reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+					reply.raw.setHeader("Connection", "keep-alive");
+					reply.raw.setHeader("X-Accel-Buffering", "no");
+					reply.raw.flushHeaders?.();
+
 					const toolFinishedEvent: TurnEvent = {
 						type: "tool_call_finished",
 						callId,
@@ -345,13 +385,52 @@ export const copilotRoutes: FastifyPluginAsync = async (
 					};
 					reply.raw.write(formatSseEvent(toolFinishedEvent));
 
-					const tokenText = result.ok
-						? `\n\n✅ Действие **${pending.toolName}** успешно подтверждено и выполнено.`
-						: `\n\n❌ Ошибка при выполнении **${pending.toolName}**: ${result.error}`;
-					reply.raw.write(formatSseEvent({ type: "token", text: tokenText }));
-					reply.raw.write(
-						formatSseEvent({ type: "final", stopReason: "stop" }),
+					// Append tool result into persistent session history
+					const session = await defaultSessionStore.getOrCreate(
+						sessionId,
+						resolvedOrgId,
+						userId,
+						resolvedOrgId,
 					);
+
+					session.history.push({
+						role: "tool",
+						content: [
+							{
+								type: "tool_result",
+								toolCallId: callId,
+								content: result.ok ? result.data : { error: result.error },
+								isError: !result.ok,
+							},
+						],
+					});
+
+					// Continue ReAct turn to generate closing assistant message
+					const stream = AgentOrchestrator.runTurnStream({
+						ctx,
+						provider: defaultLlmProvider,
+						system: DENTE_COPILOT_SYSTEM_PROMPT,
+						history: session.history,
+						toolNames: defaultToolRegistry.list(),
+						redactor: session.redactor,
+					});
+
+					for await (const event of stream) {
+						if (event.type === "confirmation_required") {
+							defaultCopilotActionManager.registerPending(
+								sessionId,
+								event.callId,
+								event.name,
+								event.arguments,
+								{ organizationId: resolvedOrgId, userId },
+							);
+						}
+						reply.raw.write(formatSseEvent(event));
+					}
+
+					await defaultSessionStore
+						.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
+						.catch(() => {});
 				} catch (err) {
 					const errorMsg = err instanceof Error ? err.message : String(err);
 					reply.raw.write(
@@ -375,26 +454,70 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				reason ?? "Отклонено пользователем",
 				resolvedOrgId,
 			);
-			reply.raw.write(
-				formatSseEvent({
-					type: "token",
-					text: `\n\n🚫 Действие отменено пользователем: ${rejection.reason}`,
-				}),
-			);
-			reply.raw.write(
-				formatSseEvent({ type: "final", stopReason: "rejected" }),
-			);
-			reply.raw.end();
+
+			if (wantsJson) {
+				return reply.code(200).send({
+					ok: true,
+					rejected: true,
+					reason: rejection.reason,
+				});
+			}
+
+			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+			reply.raw.setHeader("Connection", "keep-alive");
+			reply.raw.setHeader("X-Accel-Buffering", "no");
+			reply.raw.flushHeaders?.();
+
+			try {
+				const session = await defaultSessionStore.getOrCreate(
+					sessionId,
+					resolvedOrgId,
+					userId,
+					resolvedOrgId,
+				);
+
+				session.history.push({
+					role: "tool",
+					content: [
+						{
+							type: "tool_result",
+							toolCallId: callId,
+							content: {
+								error: `Действие отменено пользователем: ${rejection.reason}`,
+							},
+							isError: true,
+						},
+					],
+				});
+
+				reply.raw.write(
+					formatSseEvent({
+						type: "token",
+						text: `\n\n🚫 Действие отменено пользователем: ${rejection.reason}`,
+					}),
+				);
+				reply.raw.write(
+					formatSseEvent({ type: "final", stopReason: "rejected" }),
+				);
+
+				await defaultSessionStore
+					.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
+					.catch(() => {});
+			} finally {
+				reply.raw.end();
+			}
 		},
 	);
 
-	// POST /api/v1/copilot/confirm — Alias endpoint for backwards compatibility
+	// POST /api/v1/copilot/confirm — Unified confirm endpoint with ReAct Stream Closure
 	server.post<{
 		Body: {
 			sessionId?: string;
 			callId: string;
 			decision: "confirm" | "reject";
 			reason?: string;
+			modifiedArgs?: Record<string, unknown>;
 		};
 	}>(
 		"/api/v1/copilot/confirm",
@@ -403,12 +526,15 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			const resolvedOrgId = await requireResolvedOrganizationId(
 				request,
 				reply,
-				"copilot action confirmation alias",
+				"copilot action confirmation",
 			);
 			if (!resolvedOrgId) return;
 
 			const parsedBody = confirmationBodySchema.safeParse(request.body ?? {});
-			const callId = (request.body as { callId?: string })?.callId;
+			const callId =
+				parsedBody.success && parsedBody.data.callId
+					? parsedBody.data.callId
+					: (request.body as { callId?: string })?.callId;
 			if (!parsedBody.success || !callId) {
 				return reply.code(400).send({
 					error: "ValidationError",
@@ -421,9 +547,12 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			const userId =
 				identity.userId ?? "00000000-0000-7000-8000-000000000001";
 			const sessionId =
+				parsedBody.data.sessionId ??
 				(request.body as { sessionId?: string })?.sessionId ??
 				"default-session";
-			const { decision, reason } = parsedBody.data;
+			const { decision, reason, modifiedArgs } = parsedBody.data;
+
+			const wantsJson = request.headers.accept === "application/json";
 
 			if (decision === "confirm") {
 				const pending = await defaultCopilotActionManager.resolvePending(
@@ -431,11 +560,32 @@ export const copilotRoutes: FastifyPluginAsync = async (
 					resolvedOrgId,
 				);
 				if (!pending) {
-					return reply.code(404).send({
-						error: "NotFound",
-						message:
-							"Запрос на действие не найден или истек срок ожидания (15 минут)",
-					});
+					if (wantsJson) {
+						return reply.code(404).send({
+							error: "NotFound",
+							message:
+								"Запрос на действие не найден или истек срок ожидания (15 минут)",
+						});
+					}
+					reply.raw.setHeader(
+						"Content-Type",
+						"text/event-stream; charset=utf-8",
+					);
+					reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+					reply.raw.setHeader("Connection", "keep-alive");
+					reply.raw.setHeader("X-Accel-Buffering", "no");
+					reply.raw.flushHeaders?.();
+					reply.raw.write(
+						formatSseEvent({
+							type: "token",
+							text: "\n\n⚠️ Запрос на действие не найден или истек срок ожидания (15 минут).",
+						}),
+					);
+					reply.raw.write(
+						formatSseEvent({ type: "final", stopReason: "expired" }),
+					);
+					reply.raw.end();
+					return;
 				}
 
 				const ctx: AgentContext = {
@@ -444,32 +594,168 @@ export const copilotRoutes: FastifyPluginAsync = async (
 					userId,
 					sessionId,
 					mode: "autonomous",
+					role: identity.role ?? "doctor",
 					permissions: [...PERMISSIONS],
 					tools: defaultToolRegistry,
 					db,
 				};
 
-				const result = await defaultCopilotActionManager.confirmAction(
-					ctx,
-					callId,
-				);
-				return reply.code(200).send({
-					ok: result.ok,
-					result: result.ok ? result.data : undefined,
-					error: result.error,
-				});
+				try {
+					const result = await defaultCopilotActionManager.confirmAction(
+						ctx,
+						callId,
+						modifiedArgs,
+					);
+
+					if (wantsJson) {
+						return reply.code(200).send({
+							ok: result.ok,
+							result: result.ok ? result.data : undefined,
+							error: result.error,
+						});
+					}
+
+					// Setup SSE headers for ReAct Stream Closure
+					reply.raw.setHeader(
+						"Content-Type",
+						"text/event-stream; charset=utf-8",
+					);
+					reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+					reply.raw.setHeader("Connection", "keep-alive");
+					reply.raw.setHeader("X-Accel-Buffering", "no");
+					reply.raw.flushHeaders?.();
+
+					const toolFinishedEvent: TurnEvent = {
+						type: "tool_call_finished",
+						callId,
+						name: pending.toolName,
+						ok: result.ok,
+						result: result.ok ? result.data : { error: result.error },
+					};
+					reply.raw.write(formatSseEvent(toolFinishedEvent));
+
+					// Append tool result into persistent session history
+					const session = await defaultSessionStore.getOrCreate(
+						sessionId,
+						resolvedOrgId,
+						userId,
+						resolvedOrgId,
+					);
+
+					session.history.push({
+						role: "tool",
+						content: [
+							{
+								type: "tool_result",
+								toolCallId: callId,
+								content: result.ok ? result.data : { error: result.error },
+								isError: !result.ok,
+							},
+						],
+					});
+
+					// Continue ReAct turn to generate closing assistant message
+					const stream = AgentOrchestrator.runTurnStream({
+						ctx,
+						provider: defaultLlmProvider,
+						system: DENTE_COPILOT_SYSTEM_PROMPT,
+						history: session.history,
+						toolNames: defaultToolRegistry.list(),
+						redactor: session.redactor,
+					});
+
+					for await (const event of stream) {
+						if (event.type === "confirmation_required") {
+							defaultCopilotActionManager.registerPending(
+								sessionId,
+								event.callId,
+								event.name,
+								event.arguments,
+								{ organizationId: resolvedOrgId, userId },
+							);
+						}
+						reply.raw.write(formatSseEvent(event));
+					}
+
+					await defaultSessionStore
+						.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
+						.catch(() => {});
+				} catch (err) {
+					const errorMsg = err instanceof Error ? err.message : String(err);
+					reply.raw.write(
+						formatSseEvent({
+							type: "token",
+							text: `\n\n❌ Исключение при выполнении действия: ${errorMsg}`,
+						}),
+					);
+					reply.raw.write(
+						formatSseEvent({ type: "final", stopReason: "error" }),
+					);
+				} finally {
+					reply.raw.end();
+				}
+				return;
 			}
 
+			// decision === "reject"
 			const rejection = await defaultCopilotActionManager.rejectActionAsync(
 				callId,
 				reason ?? "Отклонено пользователем",
 				resolvedOrgId,
 			);
-			return reply.code(200).send({
-				ok: true,
-				rejected: true,
-				reason: rejection.reason,
-			});
+
+			if (wantsJson) {
+				return reply.code(200).send({
+					ok: true,
+					rejected: true,
+					reason: rejection.reason,
+				});
+			}
+
+			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+			reply.raw.setHeader("Connection", "keep-alive");
+			reply.raw.setHeader("X-Accel-Buffering", "no");
+			reply.raw.flushHeaders?.();
+
+			try {
+				const session = await defaultSessionStore.getOrCreate(
+					sessionId,
+					resolvedOrgId,
+					userId,
+					resolvedOrgId,
+				);
+
+				session.history.push({
+					role: "tool",
+					content: [
+						{
+							type: "tool_result",
+							toolCallId: callId,
+							content: {
+								error: `Действие отменено пользователем: ${rejection.reason}`,
+							},
+							isError: true,
+						},
+					],
+				});
+
+				reply.raw.write(
+					formatSseEvent({
+						type: "token",
+						text: `\n\n🚫 Действие отменено пользователем: ${rejection.reason}`,
+					}),
+				);
+				reply.raw.write(
+					formatSseEvent({ type: "final", stopReason: "rejected" }),
+				);
+
+				await defaultSessionStore
+					.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
+					.catch(() => {});
+			} finally {
+				reply.raw.end();
+			}
 		},
 	);
 
