@@ -425,8 +425,8 @@ export function calculateTaxDeductionSummary(
 			const code01EligibleRub = kopecksToRub(code01EligibleKopecks);
 
 			// Расчетный возврат 13% и 15% в целых копейках (по Коду 01 с лимитом, по Коду 02 без ограничений)
-			const refund13EstimateKopecks = Math.round(code01EligibleKopecks * 0.13) + Math.round(data.code02Kop * 0.13);
-			const refund15EstimateKopecks = Math.round(code01EligibleKopecks * 0.15) + Math.round(data.code02Kop * 0.15);
+			const refund13EstimateKopecks = Math.round((code01EligibleKopecks * 13) / 100) + Math.round((data.code02Kop * 13) / 100);
+			const refund15EstimateKopecks = Math.round((code01EligibleKopecks * 15) / 100) + Math.round((data.code02Kop * 15) / 100);
 			const refund13EstimateRub = kopecksToRub(refund13EstimateKopecks);
 			const refund15EstimateRub = kopecksToRub(refund15EstimateKopecks);
 

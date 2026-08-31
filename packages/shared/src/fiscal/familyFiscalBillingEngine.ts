@@ -245,7 +245,9 @@ export function compileFamilyBillingDraft(
 			// Code 01 max statutory limit is 150 000 ₽ per year (19 500 ₽ refund)
 			// Code 02 is unlimited expensive treatment
 			const code01EligibleRub = Math.min(150000, code01Rub);
-			const estimatedRefund13Rub = Math.round((code01EligibleRub + code02Rub) * 0.13 * 100) / 100;
+			const eligibleKopecks = rubToKopecks(code01EligibleRub) + rubToKopecks(code02Rub);
+			const estimatedRefund13Kopecks = Math.round((eligibleKopecks * 13) / 100);
+			const estimatedRefund13Rub = kopecksToRub(estimatedRefund13Kopecks);
 
 			return {
 				certificateNumber: `СПР-${currentYear}/${idx + 101}`,

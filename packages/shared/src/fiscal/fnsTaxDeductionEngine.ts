@@ -782,7 +782,7 @@ export function calculatePlanTaxDeductionBreakdown(
 		}
 
 		// Для отдельной строки расчетный возврат 13%
-		const itemRefund13Kopecks = Math.round(lineTotalKopecks * 0.13);
+		const itemRefund13Kopecks = Math.round((lineTotalKopecks * 13) / 100);
 
 		return {
 			id: item.id,
@@ -802,10 +802,10 @@ export function calculatePlanTaxDeductionBreakdown(
 	const limitKopecks = Math.max(0, Math.round(statutoryLimitRub * 100));
 	const code01EligibleKopecks = Math.min(code01TotalKopecks, limitKopecks);
 	const isCode01Capped = code01TotalKopecks > limitKopecks;
-	const code01Refund13Kopecks = Math.round(code01EligibleKopecks * 0.13);
+	const code01Refund13Kopecks = Math.round((code01EligibleKopecks * 13) / 100);
 
 	const code02EligibleKopecks = code02TotalKopecks;
-	const code02Refund13Kopecks = Math.round(code02EligibleKopecks * 0.13);
+	const code02Refund13Kopecks = Math.round((code02EligibleKopecks * 13) / 100);
 
 	const grandTotalKopecks = code01TotalKopecks + code02TotalKopecks;
 	const grandTotalRefund13Kopecks = code01Refund13Kopecks + code02Refund13Kopecks;
