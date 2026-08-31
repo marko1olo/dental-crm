@@ -164,67 +164,76 @@ export async function* runTurn(
 			return;
 		}
 
-		const tu = acc.toolUses[0]!;
-		const realArgs = redactor.resolveArgs(tu.input);
-		const tool = ctx.tools.get(tu.name);
+		let writeToolToConfirm: { tu: ToolUse; realArgs: Record<string, unknown> } | null = null;
 
-		if (!tool) {
-			history.push({
-				role: "tool",
-				content: [
-					{
-						type: "tool_result",
-						toolCallId: tu.id,
-						content: { error: `unknown tool: ${tu.name}` },
-						isError: true,
-					} as ToolResultBlock,
-				],
-			});
-			continue;
+		for (const tu of acc.toolUses) {
+			const realArgs = redactor.resolveArgs(tu.input);
+			const tool = ctx.tools.get(tu.name);
+
+			if (!tool) {
+				history.push({
+					role: "tool",
+					content: [
+						{
+							type: "tool_result",
+							toolCallId: tu.id,
+							content: { error: `unknown tool: ${tu.name}` },
+							isError: true,
+						} as ToolResultBlock,
+					],
+				});
+				continue;
+			}
+
+			// READ tools execute immediately and continue loop
+			if (tool.category === "read") {
+				yield {
+					type: "tool_call_started",
+					callId: tu.id,
+					name: tu.name,
+					arguments: realArgs,
+				};
+
+				const res = await ctx.tools.call(ctx, tu.name, realArgs);
+				const payload = res.ok ? res.data : { error: res.error };
+
+				history.push({
+					role: "tool",
+					content: [
+						{
+							type: "tool_result",
+							toolCallId: tu.id,
+							content: payload,
+							isError: !res.ok,
+						} as ToolResultBlock,
+					],
+				});
+
+				yield {
+					type: "tool_call_finished",
+					callId: tu.id,
+					name: tu.name,
+					ok: res.ok,
+					result: payload,
+				};
+				continue;
+			}
+
+			// WRITE / DESTRUCTIVE tools: record for suspension
+			if (!writeToolToConfirm) {
+				writeToolToConfirm = { tu, realArgs };
+			}
 		}
 
-		// READ tools execute immediately and continue loop
-		if (tool.category === "read") {
+		if (writeToolToConfirm) {
 			yield {
-				type: "tool_call_started",
-				callId: tu.id,
-				name: tu.name,
-				arguments: realArgs,
+				type: "confirmation_required",
+				callId: writeToolToConfirm.tu.id,
+				name: writeToolToConfirm.tu.name,
+				arguments: writeToolToConfirm.realArgs,
 			};
-
-			const res = await ctx.tools.call(ctx, tu.name, realArgs);
-			const payload = res.ok ? res.data : { error: res.error };
-
-			history.push({
-				role: "tool",
-				content: [
-					{
-						type: "tool_result",
-						toolCallId: tu.id,
-						content: payload,
-						isError: !res.ok,
-					} as ToolResultBlock,
-				],
-			});
-
-			yield {
-				type: "tool_call_finished",
-				callId: tu.id,
-				name: tu.name,
-				ok: res.ok,
-				result: payload,
-			};
-			continue;
+			return;
 		}
-
-		// WRITE / DESTRUCTIVE tools: suspend turn for inline user confirmation
-		yield {
-			type: "confirmation_required",
-			callId: tu.id,
-			name: tu.name,
-			arguments: realArgs,
-		};
-		return;
 	}
 }
 
