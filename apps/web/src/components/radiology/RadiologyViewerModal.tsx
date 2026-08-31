@@ -1982,7 +1982,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								<button
 									type="button"
 									onClick={() => setIsSideDrawerOpen(false)}
-									className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink)] hover:bg-[var(--paper,#1e293b)]"
+									className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
 									title="Скрыть панель"
 									data-testid="close-side-drawer-btn"
 								>

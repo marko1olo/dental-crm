@@ -556,7 +556,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			clearTimeout(timer2);
 			clearTimeout(timer3);
 		};
-	}, [isOpen, studioMode, invertColors, isSidebarOpen, isFullscreen, showDentalArch]);
+	}, [isOpen, studioMode, invertColors, isSidebarOpen, isFullscreen, showDentalArch, maximizedViewport, viewLayout]);
 
 	// ResizeObserver for modalContainerRef (Prevents #000000 black screen on sidebar/mode switch)
 	useEffect(() => {
@@ -1236,7 +1236,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.restore();
 			}
 		}
-	}, [volume, isOpen, crosshairMm, obliqueAngles, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, transforms.axial, transforms.coronal, transforms.sagittal, layoutBurstCount]);
+	}, [volume, isOpen, crosshairMm, obliqueAngles, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, transforms.axial, transforms.coronal, transforms.sagittal, maximizedViewport, viewLayout, layoutBurstCount]);
 
 	// ─── LAYER 2: RENDER 3-PLANE MPR OVERLAY UI (VECTORS, ANATOMY, MEASUREMENTS, HANDLES) ───
 	useEffect(() => {
@@ -2280,7 +2280,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
 		ctx.restore();
-	}, [panoramicData, transforms.panoramic, layoutBurstCount]);
+	}, [panoramicData, transforms.panoramic, maximizedViewport, viewLayout, layoutBurstCount]);
 
 	// ─── LAYER 2: RENDER PANORAMIC OVERLAY UI (INTERACTIVE FAN, NERVE, IMPLANTS) ───
 	useEffect(() => {
@@ -2740,7 +2740,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
 		ctx.restore();
-	}, [activeCrossSection, transforms.cross_section, layoutBurstCount]);
+	}, [activeCrossSection, transforms.cross_section, maximizedViewport, viewLayout, layoutBurstCount]);
 
 	// ─── LAYER 2: RENDER ACTIVE CROSS-SECTION OVERLAY UI (CAD IMPLANT, NERVE, GRID) ───
 	useEffect(() => {
