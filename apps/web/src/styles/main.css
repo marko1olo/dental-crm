@@ -2988,20 +2988,22 @@ section.imaging-panel {
 }
 
 .imaging-viewer {
-	background: #0b2426;
-	border: 1px solid #174b4f;
-	border-radius: 8px;
-	color: #eafffa;
-	display: grid;
-	grid-template-rows: minmax(260px, 1fr) auto;
-	min-height: 420px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	min-height: 480px;
 	overflow: hidden;
 }
 
 .imaging-viewer-stage {
+	background: #000000;
 	min-height: 260px;
 	overflow: hidden;
 	position: relative;
+	flex: 1;
 }
 
 .imaging-viewer-stage img {
@@ -16236,7 +16238,6 @@ html.dark .clinic-profile-form-grid textarea,
 .imaging-source-grid,
 .smart-mode-grid,
 .marketing-form-grid,
-.mode-grid,
 .onboarding-form-grid,
 .onboarding-readiness-grid,
 .onboarding-schedule-grid,
@@ -16282,7 +16283,6 @@ html.dark .clinic-profile-form-grid textarea,
 .imaging-source-grid > *,
 .smart-mode-grid > *,
 .marketing-form-grid > *,
-.mode-grid > *,
 .onboarding-form-grid > *,
 .onboarding-readiness-grid > *,
 .onboarding-schedule-grid > *,

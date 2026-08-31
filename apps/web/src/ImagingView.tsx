@@ -1380,10 +1380,8 @@ export function ImagingView(props: ImagingViewProps) {
 							)}
 						</>
 					) : (
-						<div className="w-full h-full flex flex-col items-center justify-center p-6 sm:p-10">
-							<div className="w-full max-w-2xl">
-								<DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
-							</div>
+						<div className="w-full h-full flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-[420px]">
+							<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full h-full min-h-[380px]" />
 						</div>
 					)}
 				</article>

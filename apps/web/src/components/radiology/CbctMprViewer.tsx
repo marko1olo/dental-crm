@@ -1855,99 +1855,107 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 	// Render Panoramic View on Canvas when available
 	useEffect(() => {
-		if (panoCanvasRef.current && panoramicResult) {
-			const canvas = panoCanvasRef.current;
-			const ctx = canvas.getContext("2d");
-			if (ctx) {
-				if (canvas.width !== panoramicResult.widthPx || canvas.height !== panoramicResult.heightPx) {
-					canvas.width = panoramicResult.widthPx;
-					canvas.height = panoramicResult.heightPx;
+		if (!panoCanvasRef.current) return;
+		const pano = panoramicResult || (volume && archCurve ? reconstructPanoramicView(volume, archCurve, {
+			heightMm: 38.0,
+			heightPx: 280,
+			windowWidth,
+			windowLevel,
+			invert: invertColors,
+		}) : null);
+		if (!pano) return;
+
+		const canvas = panoCanvasRef.current;
+		const ctx = canvas.getContext("2d");
+		if (ctx) {
+			if (canvas.width !== pano.widthPx || canvas.height !== pano.heightPx) {
+				canvas.width = pano.widthPx;
+				canvas.height = pano.heightPx;
+			}
+			const imgData = ctx.createImageData(pano.widthPx, pano.heightPx);
+			imgData.data.set(pano.pixelData);
+			ctx.putImageData(imgData, 0, 0);
+
+			// Draw Calibrated Millimeter Rulers on Panorama (Y-axis only to avoid collision with tooth markers)
+			drawCalibratedMillimeterRulers(ctx, {
+				widthPx: canvas.width,
+				heightPx: canvas.height,
+				pixelSpacingMmX: volume?.spacingMm.x ?? 0.4,
+				pixelSpacingMmY: volume?.spacingMm.z ?? 0.4,
+				showXAxis: false,
+				showYAxis: true,
+				showScaleBar: true,
+				invertColors,
+			});
+
+			// Draw Axial Plane Intersection Line (Cyan #06b6d4)
+			if (volume) {
+				const vox = worldMmToVoxel(crosshairMm, volume);
+				const zNorm = 1.0 - (vox.z / (volume.dimensions.depth - 1));
+				const zPx = Math.round(zNorm * canvas.height);
+
+				// Axial Slab corridor on Panorama
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "horizontal",
+						centerPx: zPx,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: volume.spacingMm.z,
+						lengthPx: canvas.width,
+						colorRgba: ROMEXIS_COLORS.axialRgba(0.6),
+						fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
+					});
 				}
-				const imgData = ctx.createImageData(panoramicResult.widthPx, panoramicResult.heightPx);
-				imgData.data.set(panoramicResult.pixelData);
-				ctx.putImageData(imgData, 0, 0);
 
-				// Draw Calibrated Millimeter Rulers on Panorama (Y-axis only to avoid collision with tooth markers)
-				drawCalibratedMillimeterRulers(ctx, {
-					widthPx: canvas.width,
-					heightPx: canvas.height,
-					pixelSpacingMmX: volume?.spacingMm.x ?? 0.4,
-					pixelSpacingMmY: volume?.spacingMm.z ?? 0.4,
-					showXAxis: false,
-					showYAxis: true,
-					showScaleBar: true,
-					invertColors,
-				});
+				ctx.strokeStyle = ROMEXIS_COLORS.axial;
+				ctx.lineWidth = 1.2;
+				ctx.beginPath();
+				ctx.moveTo(0, zPx);
+				ctx.lineTo(canvas.width, zPx);
+				ctx.stroke();
+			}
 
-				// Draw Axial Plane Intersection Line (Cyan #06b6d4)
-				if (volume) {
-					const vox = worldMmToVoxel(crosshairMm, volume);
-					const zNorm = 1.0 - (vox.z / (volume.dimensions.depth - 1));
-					const zPx = Math.round(zNorm * canvas.height);
-
-					// Axial Slab corridor on Panorama
-					if (slabMode !== "single" && slabThicknessMm > 1.0) {
-						drawRomexisSlabCorridor(ctx, {
-							orientation: "horizontal",
-							centerPx: zPx,
-							thicknessMm: slabThicknessMm,
-							pixelSpacingMm: volume.spacingMm.z,
-							lengthPx: canvas.width,
-							colorRgba: ROMEXIS_COLORS.axialRgba(0.6),
-							fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
-						});
-					}
-
-					ctx.strokeStyle = ROMEXIS_COLORS.axial;
-					ctx.lineWidth = 1.2;
+			// Draw Active Cross-Section Line on Panorama (Yellow #eab308)
+			if (crossSections.length > 0 && selectedCrossSectionIndex < crossSections.length) {
+				const cs = crossSections[selectedCrossSectionIndex];
+				if (cs && pano.widthPx > 0) {
+					const normX = cs.distanceAlongArchMm / (archCurve.totalArcLengthMm || 1.0);
+					const csX = Math.round(normX * canvas.width);
+					ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
+					ctx.lineWidth = 2.0;
 					ctx.beginPath();
-					ctx.moveTo(0, zPx);
-					ctx.lineTo(canvas.width, zPx);
+					ctx.moveTo(csX, 0);
+					ctx.lineTo(csX, canvas.height);
 					ctx.stroke();
-				}
-
-				// Draw Active Cross-Section Line on Panorama (Yellow #eab308)
-				if (crossSections.length > 0 && selectedCrossSectionIndex < crossSections.length) {
-					const cs = crossSections[selectedCrossSectionIndex];
-					if (cs && panoramicResult.widthPx > 0) {
-						const normX = cs.distanceAlongArchMm / (archCurve.totalArcLengthMm || 1.0);
-						const csX = Math.round(normX * canvas.width);
-						ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
-						ctx.lineWidth = 2.0;
-						ctx.beginPath();
-						ctx.moveTo(csX, 0);
-						ctx.lineTo(csX, canvas.height);
-						ctx.stroke();
-					}
-				}
-
-				// Draw FDI tooth marker lines with high-contrast dark underlay
-				ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.7);
-				ctx.lineWidth = 1.0;
-				ctx.font = "bold 10px monospace";
-
-				for (const marker of panoramicResult.toothMarkersOnPano) {
-					ctx.beginPath();
-					ctx.moveTo(marker.xPx, 0);
-					ctx.lineTo(marker.xPx, canvas.height);
-					ctx.stroke();
-
-					const fdiText = `#${marker.toothFdi}`;
-					const tw = ctx.measureText(fdiText).width;
-					ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
-					ctx.fillRect(marker.xPx - tw / 2 - 4, 3, tw + 8, 16);
-					ctx.strokeStyle = "rgba(6, 182, 212, 0.6)";
-					ctx.lineWidth = 1;
-					ctx.strokeRect(marker.xPx - tw / 2 - 4, 3, tw + 8, 16);
-
-					ctx.fillStyle = "#38bdf8";
-					ctx.textAlign = "center";
-					ctx.textBaseline = "middle";
-					ctx.fillText(fdiText, marker.xPx, 11);
 				}
 			}
+
+			// Draw FDI tooth marker lines with high-contrast dark underlay
+			ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.7);
+			ctx.lineWidth = 1.0;
+			ctx.font = "bold 10px monospace";
+
+			for (const marker of pano.toothMarkersOnPano) {
+				ctx.beginPath();
+				ctx.moveTo(marker.xPx, 0);
+				ctx.lineTo(marker.xPx, canvas.height);
+				ctx.stroke();
+
+				const fdiText = `#${marker.toothFdi}`;
+				const tw = ctx.measureText(fdiText).width;
+				ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+				ctx.fillRect(marker.xPx - tw / 2 - 4, 3, tw + 8, 16);
+				ctx.strokeStyle = "rgba(6, 182, 212, 0.6)";
+				ctx.lineWidth = 1;
+				ctx.strokeRect(marker.xPx - tw / 2 - 4, 3, tw + 8, 16);
+
+				ctx.fillStyle = "#38bdf8";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(fdiText, marker.xPx, 11);
+			}
 		}
-	}, [panoramicResult, volume, crosshairMm, slabMode, slabThicknessMm, crossSections, selectedCrossSectionIndex, archCurve, invertColors, isClearView, activeTab, maximizedViewport, cbctImplantMode]);
+	}, [panoramicResult, volume, crosshairMm, slabMode, slabThicknessMm, crossSections, selectedCrossSectionIndex, archCurve, windowWidth, windowLevel, invertColors, isClearView, activeTab, maximizedViewport, cbctImplantMode]);
 
 	// Render Selected Cross-Section Slice on Canvas
 	const activeCrossSection = crossSections[selectedCrossSectionIndex];

@@ -1904,7 +1904,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 					{/* ── WW/WL PRESETS QUICK BAR (Centered directly inside canvas viewport) ── */}
 					<div
-						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-16px)] sm:max-w-[calc(100%-32px)] overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none transition-all ${
+						className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-2 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700/80 shadow-2xl backdrop-blur-md max-w-[calc(100%-16px)] sm:max-w-[calc(100%-32px)] overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none transition-all ${
 							!isImageLoaded ? "opacity-40 pointer-events-none" : ""
 						}`}
 						data-testid="viewer-presets-bar"
@@ -1920,7 +1920,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									type="button"
 									disabled={!isImageLoaded}
 									onClick={() => handleSelectPreset(preset)}
-									className={`min-h-[44px] sm:min-h-[32px] sm:h-8 min-w-max shrink-0 whitespace-nowrap px-3 py-2 sm:py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
+									className={`min-h-[44px] sm:min-h-[34px] min-w-fit min-w-max shrink-0 whitespace-nowrap px-3.5 py-2 sm:py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
 										isSelected
 											? "bg-teal-600 border border-teal-400 text-white shadow-md font-bold"
 											: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 font-semibold"
@@ -1936,7 +1936,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 					{/* ── BOTTOM-LEFT VIEWPORT HUD STATUS (High-contrast HUD badge in light/dark themes) ── */}
 					<div
-						className="absolute left-14 bottom-4 z-30 hidden sm:flex items-center gap-2 px-2.5 py-1 rounded bg-white/90 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 text-xs font-mono font-semibold border border-slate-300 dark:border-slate-700/60 backdrop-blur-xs pointer-events-none whitespace-nowrap shadow-lg"
+						className="absolute left-14 bottom-4 z-30 flex items-center gap-2 px-2.5 py-1 rounded bg-white/90 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 text-xs font-mono font-semibold border border-slate-300 dark:border-slate-700/60 backdrop-blur-xs pointer-events-none whitespace-nowrap shadow-lg select-none"
 						data-testid="viewport-hud-status"
 					>
 						<div className="flex items-center gap-1 whitespace-nowrap">

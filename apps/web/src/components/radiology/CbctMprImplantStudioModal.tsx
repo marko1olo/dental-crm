@@ -2228,7 +2228,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	useEffect(() => {
 		if (!volume || !isOpen) return;
 
-		// Reconstruct Panorama
+		// Reconstruct Panorama along active dental arch spline
 		const pano = reconstructPanoramicView(volume, archCurve, {
 			heightPx: 220,
 			windowWidth,
@@ -2244,15 +2244,23 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			invert: invertColors,
 		});
 		setCrossSections(csList);
-	}, [volume, isOpen, archCurve, windowWidth, windowLevel, slabMode, invertColors]);
+	}, [volume, isOpen, archCurve, windowWidth, windowLevel, slabMode, invertColors, maximizedViewport, viewLayout]);
 
 	// ─── LAYER 1: RENDER PANORAMIC BASE RADIOGRAPH (OFFSCREEN RASTER) ─────────
 	useEffect(() => {
-		if (!panoramicData || !panoBaseCanvasRef.current) return;
+		if (!panoBaseCanvasRef.current) return;
+		const activePano = panoramicData || (volume && archCurve ? reconstructPanoramicView(volume, archCurve, {
+			heightPx: 220,
+			windowWidth,
+			windowLevel,
+			invert: invertColors,
+		}) : null);
+
+		if (!activePano) return;
 
 		const canvas = panoBaseCanvasRef.current;
-		canvas.width = panoramicData.widthPx;
-		canvas.height = panoramicData.heightPx;
+		canvas.width = activePano.widthPx;
+		canvas.height = activePano.heightPx;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
@@ -2260,16 +2268,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			panoOffscreenRef.current = document.createElement("canvas");
 		}
 		const off = panoOffscreenRef.current;
-		if (off.width !== panoramicData.widthPx || off.height !== panoramicData.heightPx) {
-			off.width = panoramicData.widthPx;
-			off.height = panoramicData.heightPx;
+		if (off.width !== activePano.widthPx || off.height !== activePano.heightPx) {
+			off.width = activePano.widthPx;
+			off.height = activePano.heightPx;
 		}
 		const offCtx = off.getContext("2d");
 		if (offCtx) {
-			if (!panoImgDataRef.current || panoImgDataRef.current.width !== panoramicData.widthPx || panoImgDataRef.current.height !== panoramicData.heightPx) {
-				panoImgDataRef.current = offCtx.createImageData(panoramicData.widthPx, panoramicData.heightPx);
+			if (!panoImgDataRef.current || panoImgDataRef.current.width !== activePano.widthPx || panoImgDataRef.current.height !== activePano.heightPx) {
+				panoImgDataRef.current = offCtx.createImageData(activePano.widthPx, activePano.heightPx);
 			}
-			panoImgDataRef.current.data.set(panoramicData.pixelData);
+			panoImgDataRef.current.data.set(activePano.pixelData);
 			offCtx.putImageData(panoImgDataRef.current, 0, 0);
 		}
 
@@ -2280,15 +2288,22 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		ctx.scale(transform.zoom, transform.zoom);
 		ctx.drawImage(off, 0, 0);
 		ctx.restore();
-	}, [panoramicData, transforms.panoramic, maximizedViewport, viewLayout, layoutBurstCount]);
+	}, [panoramicData, volume, archCurve, windowWidth, windowLevel, invertColors, transforms.panoramic, maximizedViewport, viewLayout, layoutBurstCount]);
 
 	// ─── LAYER 2: RENDER PANORAMIC OVERLAY UI (INTERACTIVE FAN, NERVE, IMPLANTS) ───
 	useEffect(() => {
-		if (!panoramicData || !panoOverlayCanvasRef.current) return;
+		if (!panoOverlayCanvasRef.current) return;
+		const activePano = panoramicData || (volume && archCurve ? reconstructPanoramicView(volume, archCurve, {
+			heightPx: 220,
+			windowWidth,
+			windowLevel,
+			invert: invertColors,
+		}) : null);
+		if (!activePano) return;
 
 		const canvas = panoOverlayCanvasRef.current;
-		canvas.width = panoramicData.widthPx;
-		canvas.height = panoramicData.heightPx;
+		canvas.width = activePano.widthPx;
+		canvas.height = activePano.heightPx;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
@@ -2328,12 +2343,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		}
 
 		// 3D Mandibular Canal Nerve (IAN) Projection on Panorama with 2.0 mm Safety Corridor
-		if (interpolatedNerve3D.length > 1 && panoramicData) {
+		if (interpolatedNerve3D.length > 1) {
 			const projectedNerve = project3DNerveToPanorama(
 				interpolatedNerve3D,
 				archCurve,
-				panoramicData.widthPx,
-				panoramicData.heightPx,
+				activePano.widthPx,
+				activePano.heightPx,
 			);
 
 			if (projectedNerve.projectedPoints.length > 1) {
@@ -2367,7 +2382,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 				// 3. Draw control nodes along nerve on panorama
 				for (const pt of nervePoints) {
-					const nodePano = project3DNerveToPanorama([pt], archCurve, panoramicData.widthPx, panoramicData.heightPx);
+					const nodePano = project3DNerveToPanorama([pt], archCurve, activePano.widthPx, activePano.heightPx);
 					const nodePt = nodePano.projectedPoints[0];
 					if (nodePt) {
 						ctx.fillStyle = "#ffffff";
@@ -2389,8 +2404,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		// Synchronized Virtual Implant 3D Projection Geometry on Panorama
 		if (studioMode === "implant" && activeCrossSection && implant3DWorld) {
-			const panoX = mapSliceToPanoramicX(activeCrossSection, panoramicData.widthPx, archCurve.totalArcLengthMm);
-			const panoH = panoramicData.heightPx;
+			const panoX = mapSliceToPanoramicX(activeCrossSection, activePano.widthPx, archCurve.totalArcLengthMm);
+			const panoH = activePano.heightPx;
 			const panoHMm = 38.0;
 			const zTopMm = panoHMm / 2.0;
 
@@ -2454,8 +2469,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		// Project and render 3D Mandibular Canal Nerve (IAN) with 2.0 mm Safety Corridor onto Panorama
 		if (interpolatedNerve3D.length > 1) {
-			const panoW = panoramicData.widthPx;
-			const panoH = panoramicData.heightPx;
+			const panoW = activePano.widthPx;
+			const panoH = activePano.heightPx;
 			const panoHMm = 38.0;
 			const zTopMm = panoHMm / 2.0;
 			const spline = archCurve.splinePointsMm;
@@ -2572,7 +2587,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		});
 
 		// 2. Draw Tooth Markers on Panorama in Screen Space
-		for (const tm of panoramicData.toothMarkersOnPano) {
+		for (const tm of activePano.toothMarkersOnPano) {
 			const xScreen = tm.xPx * transform.zoom + transform.panX;
 			if (xScreen < -20 || xScreen > canvas.width + 20) continue;
 
@@ -2601,7 +2616,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		}
 
 		// 3. Draw Numbered Cross-Section Slice Fan Ticks (#1..#N) in Screen Space
-		const fanTicks = getPanoramicSliceFanTicks(crossSections, panoramicData.widthPx, archCurve.totalArcLengthMm);
+		const fanTicks = getPanoramicSliceFanTicks(crossSections, activePano.widthPx, archCurve.totalArcLengthMm);
 		let lastDrawnMajorTickX = -999;
 
 		// 3a. Draw Tick Marks along the Bottom Edge (Separated from Active Badge)

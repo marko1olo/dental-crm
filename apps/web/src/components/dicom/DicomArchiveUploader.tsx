@@ -9,6 +9,7 @@ import { showToast } from "../GlobalToast";
 
 interface DicomArchiveUploaderProps {
 	onImagesLoaded: (imageIds: string[]) => void;
+	className?: string;
 }
 
 const MAX_SAFE_FILE_SIZE_BYTES = 1.5 * 1024 * 1024 * 1024; // 1.5 GB
@@ -61,6 +62,7 @@ function isDicomEntry(filename: string, byteArray: Uint8Array): boolean {
 
 export function DicomArchiveUploader({
 	onImagesLoaded,
+	className,
 }: DicomArchiveUploaderProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [loading, setLoading] = useState(false);
@@ -328,13 +330,13 @@ export function DicomArchiveUploader({
 			}}
 			onDragLeave={() => setIsDragging(false)}
 			onDrop={onDrop}
-			className={`w-full flex flex-col items-center justify-center p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl transition-all dicom-dropzone ${
+			className={`w-full h-full flex-1 flex flex-col items-center justify-center p-6 sm:p-10 border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-teal-500/60 dark:hover:border-teal-500/60 rounded-xl transition-all dicom-dropzone ${
 				isDragging ? "dicom-dropzone--dragging" : ""
-			}`}
+			} ${className ?? ""}`}
 			style={{
 				background: isDragging
 					? "var(--teal-soft, rgba(20,184,166,0.12))"
-					: "var(--paper, rgba(255,255,255,0.05))",
+					: "var(--paper-soft, rgba(0,0,0,0.02))",
 				borderColor: isDragging
 					? "var(--teal, #14b8a6)"
 					: undefined,

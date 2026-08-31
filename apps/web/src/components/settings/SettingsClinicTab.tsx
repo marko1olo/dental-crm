@@ -560,7 +560,7 @@ export function SettingsClinicTab({
 				</div>
 			</div>
 
-			<div role="toolbar" className="mode-grid" aria-label="Режим продукта">
+			<div role="toolbar" className="mode-grid grid grid-cols-2 lg:grid-cols-4 gap-3 w-full" aria-label="Режим продукта">
 				{typedClinicModes.map((mode) => (
 					<button
 						className={`mode-card ${dashboard?.clinicSettings?.profile?.mode === mode ? "active" : ""}`}
