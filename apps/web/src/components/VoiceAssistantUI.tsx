@@ -3,6 +3,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { DictationHints } from "../DictationHints";
 import { useVoiceAssistant } from "../hooks/useVoiceAssistant";
+import { CanvasWaveform } from "./audio";
 import {
 	VOICE_METER_BARS,
 	voiceGlowRadiusPx,
@@ -226,6 +227,16 @@ export function VoiceAssistantUI({
 								>
 									{transcript ||
 										workspaceActionsLabels.voice.listeningPlaceholder}
+								</div>
+
+								<div style={{ marginTop: "8px", width: "100%" }}>
+									<CanvasWaveform
+										isRecording={isListening}
+										isSpeaking={volume > 0.15}
+										height={36}
+										mode="wave"
+										showStatusBadge={false}
+									/>
 								</div>
 
 								{/* Полоски — детерминированная функция измеренного уровня, не Math.random(). */}

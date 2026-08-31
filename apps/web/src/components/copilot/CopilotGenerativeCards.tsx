@@ -186,8 +186,10 @@ export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
   const initials = useMemo(() => {
     if (!patient.fullName) return 'П';
     const parts = patient.fullName.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase();
+    const first = parts[0] || 'П';
+    const second = parts[1] || '';
+    if (parts.length === 1) return first.slice(0, 2).toUpperCase();
+    return (first.charAt(0) + second.charAt(0)).toUpperCase();
   }, [patient.fullName]);
 
   const rawBalance = patient.balanceRub ?? (patient.depositRub ? patient.depositRub : patient.debtRub ? -patient.debtRub : 0);
