@@ -21,9 +21,11 @@ import {
 } from "./orchestrator.js";
 import { Redactor, SymbolTable } from "./redaction.js";
 import {
+	calculateTreatmentEstimateTool,
 	cancelAppointmentTool,
 	checkDrugInteractionsTool,
 	createStaffTaskTool,
+	draftLabWorkOrderTool,
 	findPatientTool,
 	getDoctorScheduleTool,
 	getEmrCardTool,
@@ -1157,4 +1159,18 @@ describe("Copilot Action Manager & SSE Formatting", () => {
 		assert.strictEqual(rejected.ok, true);
 		assert.strictEqual(manager.getPending("call_xyz"), undefined);
 	});
+
+	test("Registers estimateTool and labOrderTool in default clinical registry", () => {
+		const registry = new ToolRegistry();
+		registerClinicalTools(registry, "clinical");
+
+		const estimate = registry.get("clinical.calculate_treatment_estimate");
+		assert.ok(estimate, "clinical.calculate_treatment_estimate must be registered");
+		assert.strictEqual(estimate.category, "read");
+
+		const labOrder = registry.get("clinical.draft_lab_work_order");
+		assert.ok(labOrder, "clinical.draft_lab_work_order must be registered");
+		assert.strictEqual(labOrder.category, "write");
+	});
 });
+

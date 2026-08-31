@@ -34,6 +34,11 @@ import {
 } from "../../clinical/Icd10ClinicalValidator.js";
 import type { ToolRegistry } from "./registry.js";
 import type { ToolDefinition } from "./tool.js";
+import { autoFillCancellationGapTool } from "./cancellationTool.js";
+import { generateInformedConsentTool } from "./consentTool.js";
+import { calculateTreatmentEstimateTool } from "./estimateTool.js";
+import { draftLabWorkOrderTool } from "./labOrderTool.js";
+import { analyzeRadiographVisionTool } from "./visionTool.js";
 
 // ─── 1. find_patient ────────────────────────────────────────────────────────
 
@@ -1717,4 +1722,25 @@ export function registerClinicalTools(
 	registry.register(createStaffTaskTool, moduleName);
 	registry.register(getPatientRecallsTool, moduleName);
 	registry.register(scheduleRecallTool, moduleName);
+
+	// 4. Vision AI & Radiograph Diagnostic Analysis
+	registry.register(analyzeRadiographVisionTool, moduleName);
+
+	// 5. Treatment Estimates & Dental Laboratory Tools
+	registry.register(calculateTreatmentEstimateTool, moduleName);
+	registry.register(draftLabWorkOrderTool, moduleName);
+
+	// 6. Cancellation Gap Auto-Fill & Informed Consent Tools
+	registry.register(autoFillCancellationGapTool, moduleName);
+	registry.register(generateInformedConsentTool, moduleName);
 }
+
+export {
+	analyzeRadiographVisionTool,
+	autoFillCancellationGapTool,
+	calculateTreatmentEstimateTool,
+	draftLabWorkOrderTool,
+	generateInformedConsentTool,
+};
+
+
