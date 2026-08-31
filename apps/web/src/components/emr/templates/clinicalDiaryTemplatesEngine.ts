@@ -161,7 +161,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K02.1",
 		icd10Title: "Кариес дентина (Caries of dentine)",
 		badge: "К02.1",
-		icon: "🦷",
+		icon: "tooth",
 		isCore1Click: true,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -211,7 +211,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K04.0",
 		icd10Title: "Пульпит (Pulpitis)",
 		badge: "К04.0",
-		icon: "⚡",
+		icon: "zap",
 		isCore1Click: true,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -263,7 +263,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K04.5",
 		icd10Title: "Хронический апикальный периодонтит (Chronic apical periodontitis)",
 		badge: "К04.5",
-		icon: "🛡️",
+		icon: "shield",
 		isCore1Click: true,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -312,7 +312,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K08.1",
 		icd10Title: "Потеря зубов вследствие удаления, травмы или разрушения",
 		badge: "E.max",
-		icon: "👑",
+		icon: "crown",
 		isCore1Click: true,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -361,7 +361,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K08.1",
 		icd10Title: "Потеря зубов вследствие удаления, травмы или других причин",
 		badge: "Имплант",
-		icon: "🔩",
+		icon: "implant",
 		isCore1Click: true,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -409,7 +409,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K08.1",
 		icd10Title: "Потеря зубов вследствие удаления (Loss of teeth due to extraction)",
 		badge: "Удаление",
-		icon: "✂️",
+		icon: "scissors",
 		isCore1Click: true,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -455,7 +455,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K05.3",
 		icd10Title: "Хронический пародонтит / Зубные отложения",
 		badge: "Air-Flow",
-		icon: "✨",
+		icon: "sparkles",
 		isCore1Click: true,
 		toothTargetRequired: false,
 		defaultSubjectiveComplaints:
@@ -507,7 +507,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K02.1",
 		icd10Title: "Кариес дентина (глубокий кариес)",
 		badge: "Глуб. кариес",
-		icon: "🦷",
+		icon: "tooth",
 		isCore1Click: false,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -555,7 +555,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K08.1",
 		icd10Title: "Потеря зубов вследствие разрушения / Протезирование",
 		badge: "Фиксация",
-		icon: "💎",
+		icon: "gem",
 		isCore1Click: false,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -601,7 +601,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K04.0",
 		icd10Title: "Пульпит временного зуба",
 		badge: "Дети: Пульпит",
-		icon: "👶",
+		icon: "baby",
 		isCore1Click: false,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -647,7 +647,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "Z01.2",
 		icd10Title: "Стоматологическое обследование / Профилактика кариеса",
 		badge: "Герметизация",
-		icon: "🛡️",
+		icon: "shield",
 		isCore1Click: false,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:
@@ -692,7 +692,7 @@ export const CLINICAL_1CLICK_TEMPLATES_CATALOG: readonly Clinical1ClickTemplate[
 		icd10Code: "K03.1",
 		icd10Title: "Сошлифовывание зубов / Клиновидный дефект",
 		badge: "К03.1",
-		icon: "🔹",
+		icon: "activity",
 		isCore1Click: false,
 		toothTargetRequired: true,
 		defaultSubjectiveComplaints:

@@ -1,6 +1,7 @@
 import { isValidFdiToothNumber } from "@dental/shared";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+	Activity,
 	AlertCircle,
 	ArrowLeft,
 	Award,
@@ -9,16 +10,20 @@ import {
 	Check,
 	CheckCircle2,
 	ChevronRight,
+	Clock,
+	Grid,
 	Heart,
 	Layers,
 	Loader2,
 	Phone,
+	PieChart,
 	Plus,
 	Printer,
 	Shield,
 	Smile,
 	Sparkles,
 	Star,
+	TrendingDown,
 	User,
 	Users,
 	X,
@@ -48,9 +53,45 @@ import {
 	calculateEruptionTimelineByAge,
 	DEFAULT_CARIOGRAM_INPUT,
 	type CariogramInput,
+	type EruptionTimelineAnalysis,
 	type ResorptionStagePercent,
 } from "../odontogram/pediatricDentitionEngine";
 import "../odontogram/odontogram.css";
+
+export interface PediatricPerspectiveViewProps {
+	readonly onBackToSchedule?: () => void;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PEDIATRIC TREATMENT TEMPLATES & FAST PRESETS (Order 804n / 834n compliant)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PEDIATRIC_CATEGORIES = [
+	{
+		id: "all",
+		label: "Все шаблоны",
+	},
+	{
+		id: "prevention",
+		label: "Профилактика",
+	},
+	{
+		id: "therapy",
+		label: "Лечение кариеса/пульпита",
+	},
+	{
+		id: "anesthesia",
+		label: "Анестезия",
+	},
+	{
+		id: "ortho_crown",
+		label: "Детские коронки",
+	},
+	{
+		id: "psychology",
+		label: "Адаптация",
+	},
+];
 
 const MILK_TOOTH_SHORT_CODES: Record<ToothState, { code: string; dotColor: string }> = {
 	Healthy: { code: "Зд", dotColor: "#10b981" },
@@ -136,49 +177,49 @@ const PEDIATRIC_TEMPLATES = [
 		title: "Анестезия Артикаин 1:100 000 детская",
 		category: "anesthesia",
 		price: "1 200 ₽",
-		icon: "💉",
+		iconType: "zap" as const,
 	},
 	{
 		id: "cofferdam",
 		title: "Изоляция детским коффердамом (K sanctuary)",
 		category: "isolation",
 		price: "900 ₽",
-		icon: "🛡️",
+		iconType: "shield" as const,
 	},
 	{
 		id: "fluoride",
 		title: "Глубокое фторирование (Эмаль-герметизирующий ликвид)",
 		category: "prevention",
 		price: "1 800 ₽",
-		icon: "🛡️",
+		iconType: "shield" as const,
 	},
 	{
 		id: "fissure_seal",
 		title: "Герметизация фиссур неинвазивная (Clinpro)",
 		category: "prevention",
 		price: "2 200 ₽",
-		icon: "✨",
+		iconType: "sparkles" as const,
 	},
 	{
 		id: "pulpotomy",
 		title: "Витальная пульпотомия молочного зуба (Biodentine)",
 		category: "therapy",
 		price: "4 500 ₽",
-		icon: "💉",
+		iconType: "heart" as const,
 	},
 	{
 		id: "steel_crown",
 		title: "Фиксация стандартной металлической коронки (3M ESPE)",
 		category: "ortho_crown",
 		price: "5 500 ₽",
-		icon: "👑",
+		iconType: "award" as const,
 	},
 	{
 		id: "adapt_visit",
 		title: "Адаптационный психологический визит (Игровая форма)",
 		category: "psychology",
 		price: "1 500 ₽",
-		icon: "🎈",
+		iconType: "smile" as const,
 	},
 ];
 
@@ -487,7 +528,8 @@ export function PediatricPerspectiveView() {
 										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30 border border-[var(--line,#cbd5e1)] dark:border-slate-700"
 								}`}
 							>
-								<span>🦷 Формула</span>
+								<Activity size={16} />
+								<span>Формула</span>
 							</button>
 							<button
 								type="button"
@@ -500,7 +542,8 @@ export function PediatricPerspectiveView() {
 										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30 border border-[var(--line,#cbd5e1)] dark:border-slate-700"
 								}`}
 							>
-								<span>🍰 Cariogram (Риск)</span>
+								<PieChart size={16} />
+								<span>Cariogram (Риск)</span>
 							</button>
 							<button
 								type="button"
@@ -513,7 +556,8 @@ export function PediatricPerspectiveView() {
 										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30 border border-[var(--line,#cbd5e1)] dark:border-slate-700"
 								}`}
 							>
-								<span>📉 Резорбция корней</span>
+								<TrendingDown size={16} />
+								<span>Резорбция корней</span>
 							</button>
 							<button
 								type="button"
@@ -526,7 +570,8 @@ export function PediatricPerspectiveView() {
 										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30 border border-[var(--line,#cbd5e1)] dark:border-slate-700"
 								}`}
 							>
-								<span>⏳ Сроки смены</span>
+								<Clock size={16} />
+								<span>Сроки смены</span>
 							</button>
 						</div>
 
@@ -571,7 +616,7 @@ export function PediatricPerspectiveView() {
 										)}
 									</div>
 
-									{/* View Mode Switcher: [🦷 Анатомическая дуга (SVG) | 🔲 Крупные плитки (56px)] */}
+									{/* View Mode Switcher: [Анатомическая дуга (SVG) | Крупные плитки (56px)] */}
 									<div
 										role="group"
 										aria-label="Режим отображения детской формулы"
@@ -587,7 +632,8 @@ export function PediatricPerspectiveView() {
 													: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-300"
 											}`}
 										>
-											<span>🦷 Анатомическая дуга (SVG)</span>
+											<Activity size={16} />
+											<span>Анатомическая дуга (SVG)</span>
 										</button>
 										<button
 											type="button"
@@ -599,7 +645,8 @@ export function PediatricPerspectiveView() {
 													: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-300"
 											}`}
 										>
-											<span>🔲 Крупные плитки (56px)</span>
+											<Grid size={16} />
+											<span>Крупные плитки (56px)</span>
 										</button>
 									</div>
 								</div>
@@ -907,7 +954,14 @@ export function PediatricPerspectiveView() {
 											}`}
 										>
 											<div className="flex items-center gap-3">
-												<span className="text-lg">{tmpl.icon}</span>
+												<div className="p-2 rounded-lg bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 shrink-0">
+													{tmpl.iconType === "zap" && <Zap size={18} />}
+													{tmpl.iconType === "shield" && <Shield size={18} />}
+													{tmpl.iconType === "sparkles" && <Sparkles size={18} />}
+													{tmpl.iconType === "heart" && <Heart size={18} />}
+													{tmpl.iconType === "award" && <Award size={18} />}
+													{tmpl.iconType === "smile" && <Smile size={18} />}
+												</div>
 												<div>
 													<div className="font-bold text-sm text-[var(--ink,#0f172a)] dark:text-white leading-tight">{tmpl.title}</div>
 													<div className="text-xs font-semibold text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">{tmpl.price}</div>
@@ -932,7 +986,7 @@ export function PediatricPerspectiveView() {
 								className="w-full min-h-[50px] bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 cursor-pointer active:scale-95 transition-all border border-pink-300/40"
 							>
 								<Award size={20} />
-								<span>Напечатать грамоту от Зубной Феи 🧚✨</span>
+								<span>Напечатать грамоту от Зубной Феи</span>
 							</button>
 						</div>
 					</div>
@@ -961,8 +1015,8 @@ export function PediatricPerspectiveView() {
 								<X size={20} />
 							</button>
 
-							<div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-3xl shadow-lg shadow-pink-400/30">
-								🧚✨
+							<div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-lg shadow-pink-400/30">
+								<Sparkles size={32} className="text-white" />
 							</div>
 
 							<span className="text-xs uppercase tracking-widest font-black text-pink-600 dark:text-pink-400 bg-pink-100 dark:bg-pink-950 px-3 py-1 rounded-full border border-pink-300 dark:border-pink-700">

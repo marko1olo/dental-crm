@@ -16,6 +16,8 @@ import {
 	User,
 	Clock,
 	Zap,
+	Scissors,
+	Award,
 } from "lucide-react";
 import {
 	type VisitDiaryEntry043,
@@ -67,7 +69,7 @@ export const CORE_1CLICK_PRESETS = [
 		code: "K02.1",
 		title: "Глубокий / средний кариес",
 		specialty: "therapy" as const,
-		icon: "🦷",
+		iconType: "activity" as const,
 		description: "Препарирование по Блэку, коффердам, адгезив, нанокомпозит, полировка",
 		accentColor: "sky",
 	},
@@ -76,7 +78,7 @@ export const CORE_1CLICK_PRESETS = [
 		code: "K04.0",
 		title: "Острый / обострившийся пульпит",
 		specialty: "endodontics" as const,
-		icon: "⚡",
+		iconType: "zap" as const,
 		description: "Апекслокация, Ni-Ti WaveOne/ProTaper, NaOCl+EDTA, горячая гуттаперча AH Plus",
 		accentColor: "purple",
 	},
@@ -85,7 +87,7 @@ export const CORE_1CLICK_PRESETS = [
 		code: "K04.5",
 		title: "Хронический периодонтит",
 		specialty: "endodontics" as const,
-		icon: "🛡️",
+		iconType: "shield" as const,
 		description: "Распломбировка, ревизия, временная обтурация гидроксидом кальция (Ca(OH)2)",
 		accentColor: "indigo",
 	},
@@ -94,7 +96,7 @@ export const CORE_1CLICK_PRESETS = [
 		code: "K08.1",
 		title: "Хирургическое удаление зуба",
 		specialty: "surgery" as const,
-		icon: "✂️",
+		iconType: "scissors" as const,
 		description: "Синдесмотомия, элеваторы/щипцы, ревизия лунки, Альвостим, шов Викрил 4-0",
 		accentColor: "rose",
 	},
@@ -103,7 +105,7 @@ export const CORE_1CLICK_PRESETS = [
 		code: "K08.1_ORTHO",
 		title: "Препарирование под коронку",
 		specialty: "orthopedics" as const,
-		icon: "👑",
+		iconType: "award" as const,
 		description: "Круговой уступ Chamfer, 2-нитевая ретракция, 3D скан / А-силикон, Protemp 4",
 		accentColor: "amber",
 	},
@@ -112,7 +114,7 @@ export const CORE_1CLICK_PRESETS = [
 		code: "K05.3",
 		title: "Профессиональная гигиена",
 		specialty: "periodontics" as const,
-		icon: "✨",
+		iconType: "sparkles" as const,
 		description: "УЗ скейлинг EMS Piezon, Air-Flow глицин, кюретаж Gracey, Метрогил Дента",
 		accentColor: "emerald",
 	},
@@ -379,7 +381,12 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 											>
 												<div className="flex items-center justify-between w-full">
 													<span className="text-sm font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-														<span>{preset.icon}</span>
+														{preset.iconType === "activity" && <Activity className="w-4 h-4 text-sky-500" />}
+														{preset.iconType === "zap" && <Zap className="w-4 h-4 text-purple-500" />}
+														{preset.iconType === "shield" && <ShieldCheck className="w-4 h-4 text-indigo-500" />}
+														{preset.iconType === "scissors" && <Scissors className="w-4 h-4 text-rose-500" />}
+														{preset.iconType === "award" && <Award className="w-4 h-4 text-amber-500" />}
+														{preset.iconType === "sparkles" && <Sparkles className="w-4 h-4 text-emerald-500" />}
 														<span>{preset.code}</span>
 													</span>
 													{isSelected && <CheckCircle2 className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />}

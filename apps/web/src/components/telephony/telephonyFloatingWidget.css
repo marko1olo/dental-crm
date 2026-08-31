@@ -3,7 +3,8 @@
    ============================================================ */
 
 /* Top Dynamic Island / Call Banner Container */
-.dnt-telephony-island-container {
+.dnt-telephony-island-container,
+.telephony-floating-widget {
 	position: fixed;
 	top: 12px;
 	left: 50%;
@@ -17,6 +18,15 @@
 	transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 	width: auto;
 	max-width: calc(100vw - 24px);
+}
+
+/* Fallback floating positioning for desktop toast avoidance */
+.dnt-telephony-floating-widget,
+.telephony-floating-softphone {
+	position: fixed;
+	bottom: 84px;
+	right: 24px;
+	z-index: 9990;
 }
 
 /* Compact Dynamic Island Pill */
