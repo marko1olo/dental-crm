@@ -631,8 +631,9 @@ export function AutoclaveRegisterTab() {
 						</div>
 					</div>
 				</div>
-				<table className="sanpin-table w-full" style={{ width: "100%", tableLayout: "auto" }}>
-					<thead>
+				<div className="w-full overflow-x-auto" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+					<table className="sanpin-table w-full" style={{ width: "100%", minWidth: "1080px", tableLayout: "auto" }}>
+						<thead>
 						<tr>
 							<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "130px", whiteSpace: "nowrap" }}>Дата / № Цикла</th>
 							<th style={{ fontSize: "0.825rem", width: "130px", minWidth: "120px" }}>Марка аппарата</th>
@@ -866,6 +867,7 @@ export function AutoclaveRegisterTab() {
 						)}
 					</tbody>
 				</table>
+				</div>
 			</div>
 
 			{/* SanPiN Sterilization Cycle Modal */}
