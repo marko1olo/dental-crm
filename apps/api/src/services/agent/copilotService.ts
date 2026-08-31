@@ -36,6 +36,8 @@ export function formatSseEvent(event: TurnEvent): string {
 	let eventName: string = event.type;
 	if (event.type === "tool_call_started") eventName = "tool_call";
 	else if (event.type === "tool_call_finished") eventName = "tool_result";
+	else if (event.type === "confirmation_required")
+		eventName = "tool_confirmation_required";
 	else if (event.type === "final") eventName = "done";
 
 	const payload = JSON.stringify(event);
@@ -163,6 +165,7 @@ export class CopilotActionManager {
 	public async confirmAction(
 		ctx: AgentContext,
 		callId: string,
+		modifiedArgs?: Record<string, unknown>,
 	): Promise<ToolResult> {
 		const action = await this.resolvePending(callId, ctx.organizationId);
 		if (!action) {
@@ -175,6 +178,8 @@ export class CopilotActionManager {
 
 		this.pendingActions.delete(callId);
 
+		const effectiveArgs = modifiedArgs ?? action.arguments;
+
 		// Mark as confirmed in PostgreSQL
 		if (ctx.organizationId) {
 			withTenantCtx(ctx.organizationId, async (tx) => {
@@ -182,6 +187,7 @@ export class CopilotActionManager {
 					.update(copilotPendingActions)
 					.set({
 						status: "confirmed",
+						arguments: effectiveArgs,
 						resolvedAt: new Date(),
 					})
 					.where(
@@ -199,7 +205,7 @@ export class CopilotActionManager {
 			mode: "autonomous",
 		};
 
-		return await ctx.tools.call(approvedCtx, action.toolName, action.arguments);
+		return await ctx.tools.call(approvedCtx, action.toolName, effectiveArgs);
 	}
 
 	public rejectAction(
@@ -572,6 +578,31 @@ export function createDefaultLlmProvider(): LLMProvider {
 					id: `call_notes_${Date.now()}`,
 					name: "clinical_notes.parse_voice_dictation",
 					input: { transcript: userText, specialty: "therapist" },
+				};
+				yield { type: "done", stopReason: "tool_use" };
+				return;
+			}
+
+			if (
+				lower.includes("цена") ||
+				lower.includes("стоимост") ||
+				lower.includes("почем") ||
+				lower.includes("прайс") ||
+				lower.includes("сколько стоит") ||
+				lower.includes("804н") ||
+				lower.includes("гаранти") ||
+				lower.includes("протокол")
+			) {
+				const category = lower.includes("гаранти")
+					? "guarantee"
+					: lower.includes("протокол")
+						? "clinical_protocol"
+						: "price_804n";
+				yield {
+					type: "tool_use",
+					id: `call_rag_${Date.now()}`,
+					name: "internal.search_knowledge_base",
+					input: { query: userText, category, threshold: 0.75 },
 				};
 				yield { type: "done", stopReason: "tool_use" };
 				return;

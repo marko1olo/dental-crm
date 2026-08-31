@@ -11,6 +11,7 @@ import {
   CopilotPatientCard,
   CopilotAppointmentCard,
   CopilotSlotCard,
+  CopilotActionConfirm,
   CopilotConfirmCard,
   CopilotLabOrderCard,
   CopilotDrugInteractionCard,
@@ -20,6 +21,10 @@ import {
   CopilotSuggestions,
   CopilotComposer,
   CopilotDrawer,
+  PatientProfileCard,
+  ScheduleSlotPickerCard,
+  Prescription107Card,
+  EstimateTierCard,
 } from '../index';
 
 describe('Copilot Formatters', () => {
@@ -201,7 +206,58 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     assert.ok(html.includes('Подтвержден'));
   });
 
-  it('renders CopilotConfirmCard with humanized arguments and destructive styling', () => {
+  it('renders CopilotActionConfirm with 3-way choices and humanized arguments', () => {
+    const args = {
+      patient_id: 'pat-1',
+      start_time: '2026-08-27T15:00:00Z',
+      duration_minutes: 45,
+      cabinet: 'Кабинет №1',
+    };
+    const html = renderToString(
+      <CopilotActionConfirm
+        callId="c1"
+        name="agenda.book_appointment"
+        args={args}
+        onConfirm={() => {}}
+      />
+    );
+    assert.ok(html.includes('Запись на прием'));
+    assert.ok(html.includes('Требуется подтверждение'));
+    assert.ok(html.includes('Подтвердить'));
+    assert.ok(html.includes('Изменить'));
+    assert.ok(html.includes('Отклонить'));
+    assert.ok(html.includes('45 мин.'));
+  });
+
+  it('renders CopilotActionConfirm with destructive styling and resolved states', () => {
+    const args = {
+      medication: 'Амоксициллин 500мг',
+      quantity: 2,
+    };
+    const htmlDestructive = renderToString(
+      <CopilotActionConfirm
+        callId="c2"
+        name="inventory.dispense_drugs"
+        args={args}
+        onConfirm={() => {}}
+      />
+    );
+    assert.ok(htmlDestructive.includes('Списание лекарственных средств') || htmlDestructive.includes('Списание медикаментов'));
+    assert.ok(htmlDestructive.includes('destructive'));
+
+    const htmlConfirmed = renderToString(
+      <CopilotActionConfirm
+        callId="c2"
+        name="inventory.dispense_drugs"
+        args={args}
+        resolved="confirm"
+      />
+    );
+    assert.ok(htmlConfirmed.includes('Подтверждено'));
+    assert.ok(!htmlConfirmed.includes('Отмена правок'));
+  });
+
+  it('renders CopilotConfirmCard with humanized arguments and backward compatibility', () => {
     const args = {
       patient_id: 'pat-1',
       start_time: '2026-08-27T15:00:00Z',
@@ -217,6 +273,7 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     );
     assert.ok(html.includes('Требуется подтверждение'));
     assert.ok(html.includes('Подтвердить'));
+    assert.ok(html.includes('Изменить'));
     assert.ok(html.includes('Отклонить'));
   });
 
@@ -283,5 +340,269 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     assert.ok(html.includes('Split-View'));
     // Ensure no blocking backdrop element
     assert.ok(!html.includes('copilot-backdrop'));
+  });
+
+  it('renders PatientProfileCard with avatar, balance, allergies, and open card button', () => {
+    const patientData = {
+      id: 'p-100',
+      fullName: 'Барабаш Сергей Владимирович',
+      birthDate: '15.04.1985',
+      phone: '+7 (999) 123-45-67',
+      cardNumber: '043-789',
+      status: 'VIP',
+      balanceRub: 14500,
+      familyBalanceRub: 35000,
+      allergies: ['Пенициллин', 'Лидокаин'],
+      lastVisitDate: '20.08.2026',
+      lastDoctorName: 'Д-р Смирнова А.С.',
+      lastDiagnosis: 'K02.1 Кариес дентина',
+      nextAppointmentDate: '05.09.2026 14:00',
+      activePlanStage: 'Этап 2: Эндодонтия 2.6',
+    };
+
+    const html = renderToString(
+      <PatientProfileCard
+        patient={patientData}
+        onOpenCard={() => {}}
+        onBookAppointment={() => {}}
+        onSelectPlan={() => {}}
+      />
+    );
+
+    assert.ok(html.includes('Барабаш Сергей Владимирович'));
+    assert.ok(html.includes('БС') || html.includes('Б'));
+    assert.ok(html.includes('VIP'));
+    assert.ok(html.includes('14') && html.includes('500'));
+    assert.ok(html.includes('Семейный'));
+    assert.ok(html.includes('Аллергический статус'));
+    assert.ok(html.includes('Пенициллин') && html.includes('Лидокаин'));
+    assert.ok(html.includes('Кариес дентина'));
+    assert.ok(html.includes('Открыть карту'));
+  });
+
+  it('renders ScheduleSlotPickerCard with doctor info, date chips, and 1-click booking', () => {
+    const scheduleData = {
+      doctorId: 'doc-1',
+      doctorName: 'Д-р Иванов Петр Сергеевич',
+      doctorSpecialty: 'Стоматолог-ортопед',
+      cabinet: 'Кабинет № 3 (Кресло 1)',
+      date: 'Сегодня',
+      availableDates: ['Сегодня', 'Завтра', '02.09'],
+      slots: [
+        { id: 's-1', time: '09:00', durationMinutes: 30, cabinet: 'Каб. 3', isAvailable: true },
+        { id: 's-2', time: '10:30', durationMinutes: 60, cabinet: 'Каб. 3', isAvailable: true },
+        { id: 's-3', time: '12:00', durationMinutes: 30, cabinet: 'Каб. 3', isAvailable: false },
+        { id: 's-4', time: '14:30', durationMinutes: 45, cabinet: 'Каб. 3', isAvailable: true },
+      ],
+    };
+
+    const html = renderToString(
+      <ScheduleSlotPickerCard
+        data={scheduleData}
+        selectedSlotId="s-2"
+        onSelectSlot={() => {}}
+        onBookSlot={() => {}}
+        onChangeDate={() => {}}
+      />
+    );
+
+    assert.ok(html.includes('Д-р Иванов Петр Сергеевич'));
+    assert.ok(html.includes('Стоматолог-ортопед'));
+    assert.ok(html.includes('Кабинет № 3'));
+    assert.ok(html.includes('09:00'));
+    assert.ok(html.includes('10:30'));
+    assert.ok(html.includes('14:30'));
+    assert.ok(html.includes('Забронировать'));
+  });
+
+  it('renders Prescription107Card with statutory 1094n header, Latin Rp lines, DDI safety, and UKEP', () => {
+    const rxData = {
+      series: '77-АА',
+      number: '004821',
+      patientName: 'Смирнова Елена Васильевна',
+      patientBirthDate: '12.11.1990',
+      doctorName: 'Д-р Барабаш С.В.',
+      doctorSpecialty: 'Врач-стоматолог-терапевт',
+      diagnosisIcd10: 'K04.0',
+      diagnosisName: 'Острый пульпит',
+      drugs: [
+        {
+          id: 'd1',
+          mnn: 'Nimesulide',
+          tradeName: 'Нимесил',
+          latinName: 'Tab. Nimesulidi',
+          dosageForm: 'таблетки',
+          dosage: '100 мг',
+          quantity: '№ 20',
+          signa: 'По 1 таблетке 2 раза в день после еды при болях. Курс 5 дней.',
+        },
+        {
+          id: 'd2',
+          mnn: 'Chlorhexidine',
+          tradeName: 'Хлоргексидин',
+          latinName: 'Sol. Chlorhexidini bigluconatis',
+          dosageForm: 'раствор',
+          dosage: '0.05%',
+          quantity: '100 мл',
+          signa: 'Ротовые ванночки 3 раза в день по 1 минуте после чистки зубов.',
+        },
+      ],
+      isSignedUkep: true,
+      ukepCertificate: '00E10352F71B39D48C19',
+      ukepSignedAt: '31.08.2026 22:30',
+    };
+
+    const html = renderToString(
+      <Prescription107Card
+        prescription={rxData}
+        onPrint={() => {}}
+        onSignUkep={() => {}}
+      />
+    );
+
+    assert.ok(html.includes('Рецептурный бланк № 107-1/у'));
+    assert.ok(html.includes('1094н'));
+    assert.ok(html.includes('77-АА № 004821'));
+    assert.ok(html.includes('Смирнова Елена Васильевна'));
+    assert.ok(html.includes('Tab. Nimesulidi 100 мг № 20'));
+    assert.ok(html.includes('Sol. Chlorhexidini bigluconatis 0.05% 100 мл'));
+    assert.ok(html.includes('D.S.'));
+    assert.ok(html.includes('DDI Safe'));
+    assert.ok(html.includes('Электронный документ подписан УКЭП') || html.includes('УКЭП'));
+    assert.ok(html.includes('00E10352F71B39D48C19'));
+    assert.ok(html.includes('Печать 107-1/у'));
+  });
+
+  it('renders EstimateTierCard with 3 parallel pricing tiers (Economy, Optimum, Premium), 13% tax deduction, and installments', () => {
+    const estimateData = {
+      patientName: 'Барабаш Сергей Владимирович',
+      teeth: ['1.6', '2.6', '3.6'],
+      selectedTier: 'optimum' as const,
+      tiers: [
+        {
+          tierKey: 'economy' as const,
+          tierName: 'Тариф «Эконом»',
+          badge: 'Базовый',
+          totalRub: 45000,
+          taxDeductionRub: 5850,
+          netCostAfterDeductionRub: 39150,
+          monthlyInstallmentRub: 3750,
+          installmentMonths: 12,
+          warrantyDescription: '1 год официальной гарантии',
+          materialsDescription: 'Базовые сертифицированные композиты (Filtek Z250) и металлокерамика Co-Cr',
+          keyAdvantages: ['Доступная стоимость санации', 'Сертифицированные материалы', 'Гарантия 1 год'],
+        },
+        {
+          tierKey: 'optimum' as const,
+          tierName: 'Тариф «Оптимум»',
+          badge: '★ Рекомендуемый (Выбор врачей)',
+          totalRub: 84500,
+          taxDeductionRub: 10985,
+          netCostAfterDeductionRub: 73515,
+          monthlyInstallmentRub: 7042,
+          installmentMonths: 12,
+          warrantyDescription: '2 года расширенной гарантии',
+          materialsDescription: 'Нанокомпозиты Estelite Sigma Quick, безметалловая керамика IPS e.max Press',
+          keyAdvantages: ['Идеальный баланс эстетики и долговечности', 'Керамика e.max и наногибрид', 'Расширенная гарантия 2 года'],
+          stages: [
+            { stageName: 'Терапевтическая санация', proceduresCount: 3, totalRub: 24500 },
+            { stageName: 'Ортопедическая реставрация', proceduresCount: 2, totalRub: 60000 },
+          ],
+        },
+        {
+          tierKey: 'premium' as const,
+          tierName: 'Тариф «Премиум»',
+          badge: 'VIP / Индивидуальный',
+          totalRub: 148000,
+          taxDeductionRub: 19240,
+          netCostAfterDeductionRub: 128760,
+          monthlyInstallmentRub: 12333,
+          installmentMonths: 12,
+          warrantyDescription: 'Пожизненная гарантия на конструкции',
+          materialsDescription: 'CAD/CAM диоксид циркония Multi-Layer, индивидуальные титановые абатменты',
+          keyAdvantages: ['Максимальная биосовместимость', 'Персональный куратор лечения', 'Пожизненная гарантия'],
+        },
+      ],
+    };
+
+    const html = renderToString(
+      <EstimateTierCard
+        data={estimateData}
+        activeTier="optimum"
+        onSelectTier={() => {}}
+        onApplyTier={() => {}}
+      />
+    );
+
+    assert.ok(html.includes('3 тарифных варианта') || html.includes('Тариф'));
+    assert.ok(html.includes('Оптимум'));
+    assert.ok(html.includes('Премиум'));
+    assert.ok(html.includes('Эконом'));
+    assert.ok(html.includes('84') && html.includes('500'));
+    assert.ok(html.includes('13% НДФЛ'));
+    assert.ok(html.includes('10') && html.includes('985'));
+    assert.ok(html.includes('Рассрочка 0%'));
+    assert.ok(html.includes('IPS e.max Press'));
+    assert.ok(html.includes('Применить тариф в план лечения'));
+  });
+
+  it('renders CopilotResultCard dispatching EstimateTierCard, Prescription107Card, and PatientProfileCard correctly', () => {
+    // 1. Estimate tiers result
+    const estimateResult = {
+      patientName: 'Иванов Иван Иванович',
+      teeth: ['1.1', '2.1'],
+      tiers: [
+        {
+          tierKey: 'optimum',
+          tierName: 'Тариф «Оптимум»',
+          badge: 'Выбор врачей',
+          totalRub: 65000,
+          taxDeductionRub: 8450,
+          netCostAfterDeductionRub: 56550,
+          warrantyDescription: '2 года гарантии',
+          materialsDescription: 'IPS e.max',
+          keyAdvantages: ['Высокая эстетика'],
+        },
+      ],
+    };
+
+    const htmlEstimate = renderToString(
+      <CopilotResultCard
+        toolName="clinical.calculate_treatment_estimate"
+        result={estimateResult}
+      />
+    );
+    assert.ok(htmlEstimate.includes('3 тарифных варианта') || htmlEstimate.includes('Оптимум'));
+    assert.ok(htmlEstimate.includes('65') && htmlEstimate.includes('000'));
+
+    // 2. Prescription 107-1/u result
+    const rxResult = {
+      prescription: {
+        series: '77-АА',
+        number: '123456',
+        patientName: 'Ковалева Анна Петровна',
+        doctorName: 'Д-р Смирнова А.С.',
+        drugs: [
+          {
+            id: 'd1',
+            mnn: 'Amoxicillin',
+            latinName: 'Tab. Amoxicillini',
+            dosage: '500 мг',
+            quantity: '№ 20',
+            signa: 'По 1 таблетке 3 раза в день.',
+          },
+        ],
+      },
+    };
+
+    const htmlRx = renderToString(
+      <CopilotResultCard
+        toolName="clinical.prescription_107"
+        result={rxResult}
+      />
+    );
+    assert.ok(htmlRx.includes('Рецептурный бланк № 107-1/у'));
+    assert.ok(htmlRx.includes('Ковалева Анна Петровна'));
+    assert.ok(htmlRx.includes('Tab. Amoxicillini'));
   });
 });

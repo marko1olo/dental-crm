@@ -50,7 +50,12 @@ export interface CopilotSuggestion {
   promptEn: string;
 }
 
-export type ConfirmHandler = (callId: string, action: 'confirm' | 'reject') => void;
+export type ConfirmHandler = (
+  callId: string,
+  action: 'confirm' | 'reject',
+  modifiedArgs?: Record<string, unknown> | undefined,
+  reason?: string | undefined,
+) => void;
 export interface SuggestionCategory {
   category: string;
   items: Array<{ label: string; prompt: string; icon?: string }>;

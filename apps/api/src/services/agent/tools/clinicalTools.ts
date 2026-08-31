@@ -44,6 +44,7 @@ import {
 	verifyKraftPackTool,
 } from "./sanpinTools.js";
 import { analyzeRadiographVisionTool } from "./visionTool.js";
+import { searchPatientHistoryTool } from "../rag/patientHistoryMemory.js";
 
 // ─── 1. find_patient ────────────────────────────────────────────────────────
 
@@ -1742,6 +1743,9 @@ export function registerClinicalTools(
 	// 7. SanPiN 3.3686-21 Sterilization & Infection Control Tools
 	registry.register(verifyKraftPackTool, moduleName);
 	registry.register(recordSterilizationTestTool, moduleName);
+
+	// 8. 5-Year Patient EHR Semantic Memory & RAG Search Tool
+	registry.register(searchPatientHistoryTool, moduleName);
 }
 
 export {
@@ -1752,6 +1756,7 @@ export {
 	generateInformedConsentTool,
 	recordSterilizationTestTool,
 	registerSanpinTools,
+	searchPatientHistoryTool,
 	verifyKraftPackTool,
 };
 

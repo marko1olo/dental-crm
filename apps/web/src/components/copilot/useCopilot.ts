@@ -141,7 +141,7 @@ export function useCopilot(options: UseCopilotOptions = {}) {
       if (isOk && data.name) {
         cacheNames(String(data.name), res);
       }
-    } else if (event === 'confirmation_required') {
+    } else if (event === 'confirmation_required' || event === 'tool_confirmation_required') {
       const cMsg: ConfirmUiMessage = {
         kind: 'confirmation',
         callId: String(data.callId || data.call_id || Date.now()),
@@ -257,33 +257,45 @@ export function useCopilot(options: UseCopilotOptions = {}) {
   );
 
   const confirm = useCallback(
-    async (callId: string, decision: 'confirm' | 'reject') => {
+    async (
+      callId: string,
+      decision: 'confirm' | 'reject',
+      modifiedArgs?: Record<string, unknown> | undefined,
+      reason?: string | undefined,
+    ) => {
       if (busy) return;
       setMessages((prev) =>
-        prev.map((m) => (m.kind === 'confirmation' && m.callId === callId ? { ...m, resolved: decision } : m))
+        prev.map((m) =>
+          m.kind === 'confirmation' && m.callId === callId
+            ? {
+                ...m,
+                resolved: decision,
+                args: modifiedArgs ? { ...m.args, ...modifiedArgs } : m.args,
+              }
+            : m
+        )
       );
       setPending(null);
       setBusy(true);
+      setPhase('working');
 
+      const sessId = conversationId || 'default-session';
       try {
-        const token = readDenteClinicToken() || readDenteStaffToken() || '';
-        const sessId = conversationId || 'default-session';
-        const url = `${apiBaseUrl}/api/v1/copilot/sessions/${sessId}/confirmations/${callId}`;
-        await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: token ? `Bearer ${token}` : '',
-          },
-          body: JSON.stringify({ decision }),
+        await streamRequest('/api/v1/copilot/confirm', {
+          sessionId: sessId,
+          callId,
+          decision,
+          reason,
+          modifiedArgs,
         });
       } catch (e) {
         console.error('Error confirming copilot action:', e);
+      } finally {
+        setBusy(false);
+        setPhase(null);
       }
-      setBusy(false);
-      setPhase(null);
     },
-    [apiBaseUrl, busy, conversationId]
+    [busy, conversationId, streamRequest]
   );
 
   const reset = useCallback(() => {
