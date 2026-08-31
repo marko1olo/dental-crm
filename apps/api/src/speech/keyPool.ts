@@ -2,7 +2,10 @@ import { createHash, randomInt } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import tls from "node:tls";
+import http from "node:http";
+import https from "node:https";
 import type { SpeechGatewayProvider } from "@dental/shared";
+import type { LlmProviderId } from "../services/agent/omniGatewayTypes.js";
 import { SocksClient } from "socks";
 import type { RequestInfo, RequestInit } from "undici";
 import {
@@ -16,7 +19,10 @@ import { ensureSshTunnel } from "./tunnel.js";
 let cachedProxyAgent: Dispatcher | null = null;
 export function getProxyAgent(): Dispatcher | null {
 	const proxyUrl =
-		process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+		process.env.GLOBAL_LLM_PROXY_URL ||
+		process.env.PROXY_URL ||
+		process.env.HTTPS_PROXY ||
+		process.env.HTTP_PROXY;
 	if (!proxyUrl) return null;
 	if (!cachedProxyAgent) {
 		try {
@@ -25,6 +31,18 @@ export function getProxyAgent(): Dispatcher | null {
 				const proxyHost = parsed.hostname;
 				const proxyPort = Number(parsed.port || 1080);
 				const proxyType = proxyUrl.includes("socks4") ? 4 : 5;
+
+				const socksProxyOpts: Record<string, unknown> = {
+					host: proxyHost,
+					port: proxyPort,
+					type: proxyType as 4 | 5,
+				};
+				if (parsed.username) {
+					socksProxyOpts.userId = decodeURIComponent(parsed.username);
+				}
+				if (parsed.password) {
+					socksProxyOpts.password = decodeURIComponent(parsed.password);
+				}
 
 				cachedProxyAgent = new Agent({
 					connect: (opts, callback) => {
@@ -37,11 +55,7 @@ export function getProxyAgent(): Dispatcher | null {
 
 						SocksClient.createConnection(
 							{
-								proxy: {
-									host: proxyHost,
-									port: proxyPort,
-									type: proxyType as 4 | 5,
-								},
+								proxy: socksProxyOpts as unknown as import("socks").SocksProxy,
 								command: "connect",
 								destination: {
 									host: destHost,
@@ -96,6 +110,133 @@ export function getProxyAgent(): Dispatcher | null {
 	return cachedProxyAgent;
 }
 
+let cachedWsAgent: https.Agent | http.Agent | null = null;
+export function getWsProxyAgent(): https.Agent | http.Agent | null {
+	const proxyUrl =
+		process.env.GLOBAL_LLM_PROXY_URL ||
+		process.env.PROXY_URL ||
+		process.env.HTTPS_PROXY ||
+		process.env.HTTP_PROXY;
+	if (!proxyUrl) return null;
+	if (cachedWsAgent) return cachedWsAgent;
+
+	try {
+		const parsedProxy = new URL(proxyUrl);
+		if (proxyUrl.startsWith("socks")) {
+			const proxyType = proxyUrl.includes("socks4") ? 4 : 5;
+			const proxyHost = parsedProxy.hostname;
+			const proxyPort = Number(parsedProxy.port || 1080);
+
+			const socksProxyConfig: Record<string, unknown> = {
+				host: proxyHost,
+				port: proxyPort,
+				type: proxyType as 4 | 5,
+			};
+			if (parsedProxy.username) {
+				socksProxyConfig.userId = decodeURIComponent(parsedProxy.username);
+			}
+			if (parsedProxy.password) {
+				socksProxyConfig.password = decodeURIComponent(parsedProxy.password);
+			}
+
+			const socksAgentOpts: any = {
+				createConnection: (options: any, callback: any) => {
+					const targetHost = options.host || options.hostname;
+					const targetPort = Number(options.port || 443);
+
+					SocksClient.createConnection(
+						{
+							proxy: socksProxyConfig as unknown as import("socks").SocksProxy,
+							command: "connect",
+							destination: {
+								host: targetHost,
+								port: targetPort,
+							},
+						},
+						(err, info) => {
+							if (err || !info) {
+								callback(err || new Error("SOCKS connection failed"), null);
+								return;
+							}
+							const tlsSocket = tls.connect(
+								{
+									socket: info.socket,
+									servername: options.servername || targetHost,
+								},
+								() => {
+									callback(null, tlsSocket);
+								},
+							);
+							tlsSocket.on("error", (tlsErr) => callback(tlsErr, null));
+						},
+					);
+				},
+			};
+			cachedWsAgent = new https.Agent(socksAgentOpts);
+		} else {
+			// HTTP / HTTPS CONNECT tunneling agent
+			const proxyHost = parsedProxy.hostname;
+			const proxyPort = Number(
+				parsedProxy.port || (parsedProxy.protocol === "https:" ? 443 : 8080),
+			);
+			const authHeader = parsedProxy.username
+				? `Basic ${Buffer.from(`${decodeURIComponent(parsedProxy.username)}:${decodeURIComponent(parsedProxy.password || "")}`).toString("base64")}`
+				: undefined;
+
+			const httpAgentOpts: any = {
+				createConnection: (options: any, callback: any) => {
+					const targetHost = options.host || options.hostname;
+					const targetPort = Number(options.port || 443);
+
+					const req = http.request({
+						host: proxyHost,
+						port: proxyPort,
+						method: "CONNECT",
+						path: `${targetHost}:${targetPort}`,
+						headers: {
+							Host: `${targetHost}:${targetPort}`,
+							...(authHeader ? { "Proxy-Authorization": authHeader } : {}),
+						},
+					});
+
+					req.on("connect", (res, socket, _head) => {
+						if (res.statusCode !== 200) {
+							callback(
+								new Error(
+									`Proxy CONNECT failed with status: ${res.statusCode}`,
+								),
+								null,
+							);
+							return;
+						}
+						const tlsSocket = tls.connect(
+							{
+								socket,
+								servername: options.servername || targetHost,
+							},
+							() => {
+								callback(null, tlsSocket);
+							},
+						);
+						tlsSocket.on("error", (tlsErr) => callback(tlsErr, null));
+					});
+
+					req.on("error", (err) => callback(err, null));
+					req.end();
+				},
+			};
+			cachedWsAgent = new https.Agent(httpAgentOpts);
+		}
+	} catch (err) {
+		console.error(`[WS Proxy Agent] Failed to create WebSocket proxy agent:`, err);
+		return null;
+	}
+
+	return cachedWsAgent;
+}
+
+export type KeyPoolProviderId = SpeechGatewayProvider | LlmProviderId | string;
+
 type ProviderKeySpec = {
 	singles: string[];
 	lists: string[];
@@ -128,6 +269,7 @@ export type SpeechProviderKeyHealthSnapshot = {
 	available: boolean;
 	coolingDownUntil: string | null;
 	failures: number;
+	consecutiveFailures: number;
 	successes: number;
 	lastUsedAt: string | null;
 	lastStatusCode: number | null;
@@ -137,6 +279,7 @@ export type SpeechProviderKeyHealthSnapshot = {
 type KeyHealth = {
 	cooldownUntil: number;
 	failures: number;
+	consecutiveFailures: number;
 	successes: number;
 	lastUsedAt: number | null;
 	lastStatusCode: number | null;
@@ -152,7 +295,7 @@ type PersistedKeyHealthFile = {
 	health: Record<string, KeyHealth>;
 };
 
-const providerKeySpecs: Record<SpeechGatewayProvider, ProviderKeySpec> = {
+const providerKeySpecs: Record<string, ProviderKeySpec> = {
 	none: { singles: [], lists: [], numberedBases: [] },
 	browser_speech: { singles: [], lists: [], numberedBases: [] },
 	groq_whisper: {
@@ -160,7 +303,17 @@ const providerKeySpecs: Record<SpeechGatewayProvider, ProviderKeySpec> = {
 		lists: ["GROQ_API_KEYS"],
 		numberedBases: ["GROQ_API_KEY"],
 	},
+	groq: {
+		singles: ["GROQ_API_KEY"],
+		lists: ["GROQ_API_KEYS"],
+		numberedBases: ["GROQ_API_KEY"],
+	},
 	openai_transcribe: {
+		singles: ["OPENAI_API_KEY"],
+		lists: ["OPENAI_API_KEYS"],
+		numberedBases: ["OPENAI_API_KEY"],
+	},
+	openai: {
 		singles: ["OPENAI_API_KEY"],
 		lists: ["OPENAI_API_KEYS"],
 		numberedBases: ["OPENAI_API_KEY"],
@@ -186,9 +339,41 @@ const providerKeySpecs: Record<SpeechGatewayProvider, ProviderKeySpec> = {
 		numberedBases: ["AZURE_SPEECH_KEY"],
 	},
 	google_speech: {
-		singles: ["GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_API_KEY"],
-		lists: ["GOOGLE_API_KEYS"],
-		numberedBases: ["GOOGLE_API_KEY"],
+		singles: [
+			"GOOGLE_APPLICATION_CREDENTIALS",
+			"GOOGLE_API_KEY",
+			"GEMINI_API_KEY",
+		],
+		lists: ["GOOGLE_API_KEYS", "GEMINI_API_KEYS"],
+		numberedBases: ["GOOGLE_API_KEY", "GEMINI_API_KEY"],
+	},
+	gemini_transcribe_live: {
+		singles: [
+			"GEMINI_API_KEY",
+			"GOOGLE_API_KEY",
+			"GOOGLE_APPLICATION_CREDENTIALS",
+		],
+		lists: ["GEMINI_API_KEYS", "GOOGLE_API_KEYS"],
+		numberedBases: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+	},
+	gemini: {
+		singles: [
+			"GEMINI_API_KEY",
+			"GOOGLE_API_KEY",
+			"GOOGLE_APPLICATION_CREDENTIALS",
+		],
+		lists: ["GEMINI_API_KEYS", "GOOGLE_API_KEYS"],
+		numberedBases: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+	},
+	deepseek: {
+		singles: ["DEEPSEEK_API_KEY"],
+		lists: ["DEEPSEEK_API_KEYS"],
+		numberedBases: ["DEEPSEEK_API_KEY"],
+	},
+	anthropic: {
+		singles: ["ANTHROPIC_API_KEY"],
+		lists: ["ANTHROPIC_API_KEYS"],
+		numberedBases: ["ANTHROPIC_API_KEY"],
 	},
 	huggingface_asr: {
 		singles: ["HUGGINGFACE_API_TOKEN", "HF_TOKEN"],
@@ -199,6 +384,18 @@ const providerKeySpecs: Record<SpeechGatewayProvider, ProviderKeySpec> = {
 	local_whisper: { singles: [], lists: [], numberedBases: [] },
 	vosk_local: { singles: [], lists: [], numberedBases: [] },
 };
+
+function getSpecForProvider(providerId: KeyPoolProviderId): ProviderKeySpec {
+	if (providerKeySpecs[providerId]) {
+		return providerKeySpecs[providerId];
+	}
+	const upper = String(providerId).toUpperCase();
+	return {
+		singles: [`${upper}_API_KEY`],
+		lists: [`${upper}_API_KEYS`],
+		numberedBases: [`${upper}_API_KEY`],
+	};
+}
 
 function keyHealthFilePath(): string | null {
 	const configured = process.env.DENTAL_SPEECH_KEY_HEALTH_FILE?.trim();
@@ -222,6 +419,9 @@ function normalizePersistedHealth(value: unknown): KeyHealth | null {
 	const candidate = value as Partial<KeyHealth>;
 	const cooldownUntil = Number(candidate.cooldownUntil ?? 0);
 	const failures = Number(candidate.failures ?? 0);
+	const consecutiveFailures = Number(
+		candidate.consecutiveFailures ?? candidate.failures ?? 0,
+	);
 	const successes = Number(candidate.successes ?? 0);
 	const lastUsedAt =
 		candidate.lastUsedAt === null || candidate.lastUsedAt === undefined
@@ -234,6 +434,7 @@ function normalizePersistedHealth(value: unknown): KeyHealth | null {
 	if (
 		!Number.isFinite(cooldownUntil) ||
 		!Number.isFinite(failures) ||
+		!Number.isFinite(consecutiveFailures) ||
 		!Number.isFinite(successes)
 	)
 		return null;
@@ -242,6 +443,7 @@ function normalizePersistedHealth(value: unknown): KeyHealth | null {
 	return {
 		cooldownUntil: Math.max(0, Math.floor(cooldownUntil)),
 		failures: Math.max(0, Math.floor(failures)),
+		consecutiveFailures: Math.max(0, Math.floor(consecutiveFailures)),
 		successes: Math.max(0, Math.floor(successes)),
 		lastUsedAt:
 			lastUsedAt === null ? null : Math.max(0, Math.floor(lastUsedAt)),
@@ -376,14 +578,14 @@ function fingerprintSecret(value: string): string {
 }
 
 function healthKey(
-	providerId: SpeechGatewayProvider,
+	providerId: KeyPoolProviderId,
 	candidate: Pick<SpeechProviderKeyCandidate, "fingerprint">,
 ): string {
 	return `${providerId}:${candidate.fingerprint}`;
 }
 
 function healthFor(
-	providerId: SpeechGatewayProvider,
+	providerId: KeyPoolProviderId,
 	candidate: Pick<SpeechProviderKeyCandidate, "fingerprint">,
 ): KeyHealth {
 	loadKeyHealthFromDisk();
@@ -391,6 +593,7 @@ function healthFor(
 		keyHealthByFingerprint.get(healthKey(providerId, candidate)) ?? {
 			cooldownUntil: 0,
 			failures: 0,
+			consecutiveFailures: 0,
 			successes: 0,
 			lastUsedAt: null,
 			lastStatusCode: null,
@@ -409,9 +612,9 @@ function isLikelyTransientProviderError(error: unknown): boolean {
 }
 
 export function getProviderKeyCandidates(
-	providerId: SpeechGatewayProvider,
+	providerId: KeyPoolProviderId,
 ): SpeechProviderKeyCandidate[] {
-	const spec = providerKeySpecs[providerId];
+	const spec = getSpecForProvider(providerId);
 	const values: Array<{ value: string; source: string }> = [];
 
 	for (const envName of spec.lists) {
@@ -447,9 +650,9 @@ export function getProviderKeyCandidates(
 }
 
 export function getProviderAcceptedKeyEnvVars(
-	providerId: SpeechGatewayProvider,
+	providerId: KeyPoolProviderId,
 ): string[] {
-	const spec = providerKeySpecs[providerId];
+	const spec = getSpecForProvider(providerId);
 	return [
 		...spec.lists,
 		...spec.numberedBases.map((baseName) => `${baseName}_1..N`),
@@ -457,11 +660,11 @@ export function getProviderAcceptedKeyEnvVars(
 	].filter((envName, index, envNames) => envNames.indexOf(envName) === index);
 }
 
-export function providerKeyCount(providerId: SpeechGatewayProvider): number {
+export function providerKeyCount(providerId: KeyPoolProviderId): number {
 	return getProviderKeyCandidates(providerId).length;
 }
 
-export function keyRetryLimit(providerId: SpeechGatewayProvider): number {
+export function keyRetryLimit(providerId: KeyPoolProviderId): number {
 	const configuredKeyCount = providerKeyCount(providerId);
 	if (!configuredKeyCount) return 0;
 	const requested = numberFromEnv(
@@ -472,7 +675,7 @@ export function keyRetryLimit(providerId: SpeechGatewayProvider): number {
 }
 
 export function getProviderKeyPoolSummary(
-	providerId: SpeechGatewayProvider,
+	providerId: KeyPoolProviderId,
 ): SpeechProviderKeyPoolSummary {
 	const candidates = getProviderKeyCandidates(providerId);
 	const now = Date.now();
@@ -494,7 +697,7 @@ export function getProviderKeyPoolSummary(
 }
 
 export function getProviderKeyHealthSnapshots(
-	providerId: SpeechGatewayProvider,
+	providerId: KeyPoolProviderId,
 ): SpeechProviderKeyHealthSnapshot[] {
 	const now = Date.now();
 	return getProviderKeyCandidates(providerId).map((candidate) => {
@@ -509,6 +712,7 @@ export function getProviderKeyHealthSnapshots(
 				? new Date(health.cooldownUntil).toISOString()
 				: null,
 			failures: health.failures,
+			consecutiveFailures: health.consecutiveFailures,
 			successes: health.successes,
 			lastUsedAt: health.lastUsedAt
 				? new Date(health.lastUsedAt).toISOString()
@@ -519,32 +723,59 @@ export function getProviderKeyHealthSnapshots(
 	});
 }
 
+const roundRobinIndexByProvider = new Map<string, number>();
+
 export function selectProviderKey(
-	providerId: SpeechGatewayProvider,
+	providerId: KeyPoolProviderId,
 	triedFingerprints: Set<string> = new Set<string>(),
+	mode: "round_robin" | "random" = "round_robin",
 ): SpeechProviderKeyCandidate | null {
+	const allCandidates = getProviderKeyCandidates(providerId);
+	if (!allCandidates.length) return null;
+
 	const now = Date.now();
-	const candidates = getProviderKeyCandidates(providerId).filter(
-		(candidate) => {
-			const health = healthFor(providerId, candidate);
-			return (
-				health.cooldownUntil <= now &&
-				!triedFingerprints.has(candidate.fingerprint)
+	const availableCandidates = allCandidates.filter((candidate) => {
+		const health = healthFor(providerId, candidate);
+		return (
+			health.cooldownUntil <= now &&
+			!triedFingerprints.has(candidate.fingerprint)
+		);
+	});
+	if (!availableCandidates.length) return null;
+
+	if (mode === "random") {
+		return availableCandidates[randomInt(availableCandidates.length)] ?? null;
+	}
+
+	const currentIdx = roundRobinIndexByProvider.get(providerId) ?? 0;
+	for (let step = 0; step < allCandidates.length; step++) {
+		const idx = (currentIdx + step) % allCandidates.length;
+		const candidate = allCandidates[idx];
+		if (
+			candidate &&
+			healthFor(providerId, candidate).cooldownUntil <= now &&
+			!triedFingerprints.has(candidate.fingerprint)
+		) {
+			roundRobinIndexByProvider.set(
+				providerId,
+				(idx + 1) % allCandidates.length,
 			);
-		},
-	);
-	if (!candidates.length) return null;
-	return candidates[randomInt(candidates.length)] ?? null;
+			return candidate;
+		}
+	}
+
+	return availableCandidates[0] ?? null;
 }
 
 export function recordProviderKeySuccess(
-	providerId: SpeechGatewayProvider,
+	providerId: KeyPoolProviderId,
 	candidate: SpeechProviderKeyCandidate,
 ): void {
 	const previous = healthFor(providerId, candidate);
 	keyHealthByFingerprint.set(healthKey(providerId, candidate), {
 		cooldownUntil: 0,
 		failures: 0,
+		consecutiveFailures: 0,
 		successes: previous.successes + 1,
 		lastUsedAt: Date.now(),
 		lastStatusCode: null,
@@ -554,34 +785,47 @@ export function recordProviderKeySuccess(
 }
 
 export function recordProviderKeyFailure(
-	providerId: SpeechGatewayProvider,
+	providerId: KeyPoolProviderId,
 	candidate: SpeechProviderKeyCandidate,
 	error: unknown,
 ): void {
 	const previous = healthFor(providerId, candidate);
 	const requestError =
 		error instanceof SpeechProviderRequestError ? error : null;
-	const statusCode = requestError?.statusCode ?? null;
-	let cooldownMs = 0;
+	const statusCode =
+		requestError?.statusCode ??
+		(typeof (error as any)?.statusCode === "number"
+			? (error as any).statusCode
+			: null);
+	let baseCooldownMs = 0;
+	const consecutiveFailures = (previous.consecutiveFailures || 0) + 1;
 
 	if (requestError?.rateLimited || statusCode === 429) {
-		cooldownMs = rateLimitCooldownMs();
+		baseCooldownMs = rateLimitCooldownMs();
 	} else if (statusCode === 401 || statusCode === 403) {
-		cooldownMs = authCooldownMs();
+		baseCooldownMs = authCooldownMs();
 	} else if (
 		requestError?.timedOut ||
 		requestError?.retryable ||
 		(statusCode !== null && statusCode >= 500)
 	) {
-		cooldownMs = errorCooldownMs();
+		baseCooldownMs = errorCooldownMs();
 	} else if (isLikelyTransientProviderError(error)) {
-		cooldownMs = errorCooldownMs();
+		baseCooldownMs = errorCooldownMs();
 	}
+
+	// Exponential backoff: baseCooldownMs * 2^(consecutiveFailures - 1), capped at 16x
+	const backoffMultiplier = Math.min(
+		2 ** Math.max(0, consecutiveFailures - 1),
+		16,
+	);
+	const cooldownMs = baseCooldownMs * backoffMultiplier;
 
 	keyHealthByFingerprint.set(healthKey(providerId, candidate), {
 		cooldownUntil:
 			cooldownMs > 0 ? Date.now() + cooldownMs : previous.cooldownUntil,
 		failures: previous.failures + 1,
+		consecutiveFailures,
 		successes: previous.successes,
 		lastUsedAt: Date.now(),
 		lastStatusCode: statusCode,
@@ -589,6 +833,22 @@ export function recordProviderKeyFailure(
 			error instanceof Error ? error.message : "unknown provider error",
 		),
 	});
+	saveKeyHealthToDisk();
+}
+
+export function resetProviderKeyCooldowns(providerId?: KeyPoolProviderId): void {
+	if (providerId) {
+		const prefix = `${providerId}:`;
+		for (const key of Array.from(keyHealthByFingerprint.keys())) {
+			if (key.startsWith(prefix)) {
+				keyHealthByFingerprint.delete(key);
+			}
+		}
+		roundRobinIndexByProvider.delete(providerId);
+	} else {
+		keyHealthByFingerprint.clear();
+		roundRobinIndexByProvider.clear();
+	}
 	saveKeyHealthToDisk();
 }
 

@@ -97,6 +97,9 @@ export function getGlobalProxyUrl(provider?: string): string | undefined {
 	}
 
 	// General LLM proxy overrides
+	if (env.GLOBAL_LLM_PROXY_URL?.trim()) return env.GLOBAL_LLM_PROXY_URL.trim();
+	if (env.LLM_PROXY_URL?.trim()) return env.LLM_PROXY_URL.trim();
+	if (env.PROXY_URL?.trim()) return env.PROXY_URL.trim();
 	if (env.LLM_PROXY?.trim()) return env.LLM_PROXY.trim();
 	if (env.HTTPS_PROXY?.trim()) return env.HTTPS_PROXY.trim();
 	if (env.https_proxy?.trim()) return env.https_proxy.trim();
