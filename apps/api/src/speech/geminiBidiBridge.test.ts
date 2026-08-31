@@ -140,12 +140,14 @@ describe("GeminiBidiBridge & Dental STT Protocol", () => {
 
 			assert.ok(chunkFrame.realtimeInput);
 			assert.equal(chunkFrame.realtimeInput.mediaChunks.length, 1);
+			const firstChunk = chunkFrame.realtimeInput.mediaChunks[0];
+			assert.ok(firstChunk);
 			assert.equal(
-				chunkFrame.realtimeInput.mediaChunks[0].mimeType,
+				firstChunk.mimeType,
 				"audio/pcm;rate=16000",
 			);
 			assert.equal(
-				chunkFrame.realtimeInput.mediaChunks[0].data,
+				firstChunk.data,
 				rawPcm.toString("base64"),
 			);
 		});
@@ -258,7 +260,9 @@ describe("GeminiBidiBridge & Dental STT Protocol", () => {
 
 			// Verify setup frame was sent
 			assert.equal((createdWs as MockBridgeWebSocket).sentMessages.length, 1);
-			const setupMsg = JSON.parse((createdWs as MockBridgeWebSocket).sentMessages[0]);
+			const firstSent = (createdWs as MockBridgeWebSocket).sentMessages[0];
+			assert.ok(firstSent);
+			const setupMsg = JSON.parse(firstSent);
 			assert.ok(setupMsg.setup);
 			assert.deepEqual(setupMsg.setup.generationConfig.responseModalities, ["TEXT"]);
 

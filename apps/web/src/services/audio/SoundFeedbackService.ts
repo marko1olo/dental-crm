@@ -231,6 +231,9 @@ export class SoundFeedbackService {
 			}
 			this.idleSuspendTimer = null;
 		}, this.idleTimeoutMs);
+		if (this.idleSuspendTimer && typeof (this.idleSuspendTimer as any).unref === "function") {
+			(this.idleSuspendTimer as any).unref();
+		}
 	}
 
 	/**
