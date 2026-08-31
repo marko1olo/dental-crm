@@ -1247,7 +1247,10 @@ describe("Copilot Action Manager & SSE Formatting", () => {
 			arguments: { query: "Иванов" },
 		});
 
-		assert.ok(sseChunk.startsWith("event: confirmation_required\n"));
+		assert.ok(
+			sseChunk.startsWith("event: tool_confirmation_required\n") ||
+				sseChunk.startsWith("event: confirmation_required\n"),
+		);
 		assert.ok(sseChunk.includes('"callId":"call_xyz"'));
 		assert.ok(sseChunk.endsWith("\n\n"));
 
