@@ -5,9 +5,15 @@
 
 import React, { useMemo, useState } from "react";
 import {
+	AlertTriangle,
 	Award,
+	Banknote,
+	Calendar,
 	Check,
+	CheckCircle2,
+	Coins,
 	Copy,
+	CreditCard,
 	Download,
 	Eye,
 	FileCheck,
@@ -26,6 +32,8 @@ import {
 	Sparkles,
 	Stethoscope,
 	Syringe,
+	Users,
+	Wallet,
 	X,
 } from "lucide-react";
 import {
@@ -35,6 +43,7 @@ import {
 	generateCompletedActAndWarrantyHtml,
 } from "./invoiceEngine";
 import {
+	calculateCashChange,
 	distributeLoyaltyDiscountAcrossItems,
 	LOYALTY_DISCOUNT_PRESETS,
 	type LoyaltyDiscountPreset,
@@ -60,7 +69,11 @@ export interface PatientBillingModalProps {
 		readonly phone?: string | null | undefined;
 		readonly address?: string | null | undefined;
 		readonly medicalCardNumber?: string | null | undefined;
+		readonly depositRub?: number | undefined;
+		readonly familyBalanceRub?: number | undefined;
 	} | null | undefined;
+	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly doctor?: {
 		readonly fullName?: string | null | undefined;
 		readonly specialty?: string | null | undefined;
@@ -97,10 +110,20 @@ function renderCategoryIcon(categoryGroup: string) {
 	}
 }
 
+export type PatientBillingPaymentMethod =
+	| "card"
+	| "sbp"
+	| "cash"
+	| "family"
+	| "deposit"
+	| "installment";
+
 export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	isOpen,
 	onClose,
 	patient,
+	patientDepositRub = 0,
+	patientFamilyBalanceRub = 0,
 	doctor,
 	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicLicenseNumber = "ЛО41-01137-77/00368421",
@@ -110,6 +133,8 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	onFiscalize,
 }) => {
 	const [activeTab, setActiveTab] = useState<"preview" | "friendly" | "details">("friendly");
+	const [selectedTender, setSelectedTender] = useState<PatientBillingPaymentMethod>("card");
+	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
 	const [actNumber] = useState(() => `АКТ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
 	const [copied, setCopied] = useState(false);
 	const [isQrOpen, setIsQrOpen] = useState(false);
@@ -168,6 +193,18 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	const friendlyBreakdown = useMemo(() => {
 		return groupServicesIntoFriendlyBlocks(services);
 	}, [services]);
+
+	const totalNetRub = discountResult.totalNetRub;
+
+	// Calculate exact cash change in kopecks
+	const cashChangeResult = useMemo(() => {
+		const requiredCash = totalNetRub;
+		const received = receivedCashRub > 0 ? receivedCashRub : requiredCash;
+		return calculateCashChange(requiredCash, received);
+	}, [totalNetRub, receivedCashRub]);
+
+	const effectiveDeposit = patient?.depositRub ?? patientDepositRub ?? 0;
+	const effectiveFamilyBalance = patient?.familyBalanceRub ?? patientFamilyBalanceRub ?? 0;
 
 	const actParams: CompletedWorksActParams = useMemo(() => {
 		return {
@@ -465,6 +502,262 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								</div>
 							</div>
 
+							{/* 1-Click Fast Payment Tender Selection & Change Calculator (Monolithic Clean Panel - Anti-Matryoshka) */}
+							<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3.5" data-testid="patient-billing-payment-panel">
+								<div className="flex items-center justify-between flex-wrap gap-2">
+									<div className="flex items-center gap-2">
+										<CreditCard className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+										<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink)] m-0 uppercase tracking-wider">
+											Способ оплаты (1-клик)
+										</h4>
+									</div>
+									<span className="text-[11px] text-[var(--muted)]">
+										Итого к расчету: <strong className="text-[var(--ink)] font-mono font-bold">{totalNetRub.toLocaleString("ru-RU")} ₽</strong>
+									</span>
+								</div>
+
+								{/* 1-Click Tender Buttons (32-36px height) */}
+								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-2">
+									<button
+										type="button"
+										onClick={() => setSelectedTender("card")}
+										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+											selectedTender === "card"
+												? "bg-blue-600 text-white shadow-xs ring-2 ring-blue-400"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+										}`}
+										data-testid="tender-btn-card"
+									>
+										<CreditCard className="w-3.5 h-3.5 shrink-0" />
+										<span>Терминал / Карта</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => setSelectedTender("sbp")}
+										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+											selectedTender === "sbp"
+												? "bg-purple-600 text-white shadow-xs ring-2 ring-purple-400"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+										}`}
+										data-testid="tender-btn-sbp"
+									>
+										<QrCode className="w-3.5 h-3.5 shrink-0" />
+										<span>СБП QR (0.7%)</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											setSelectedTender("cash");
+											if (!receivedCashRub) setReceivedCashRub(totalNetRub);
+										}}
+										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+											selectedTender === "cash"
+												? "bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+										}`}
+										data-testid="tender-btn-cash"
+									>
+										<Banknote className="w-3.5 h-3.5 shrink-0" />
+										<span>Наличные</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => setSelectedTender("family")}
+										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+											selectedTender === "family"
+												? "bg-pink-600 text-white shadow-xs ring-2 ring-pink-400"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+										}`}
+										data-testid="tender-btn-family"
+									>
+										<Users className="w-3.5 h-3.5 shrink-0" />
+										<span>Семейный счет</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => setSelectedTender("deposit")}
+										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+											selectedTender === "deposit"
+												? "bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-400"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+										}`}
+										data-testid="tender-btn-deposit"
+									>
+										<Wallet className="w-3.5 h-3.5 shrink-0" />
+										<span>Депозит</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => setSelectedTender("installment")}
+										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+											selectedTender === "installment"
+												? "bg-amber-600 text-white shadow-xs ring-2 ring-amber-400"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+										}`}
+										data-testid="tender-btn-installment"
+									>
+										<Calendar className="w-3.5 h-3.5 shrink-0" />
+										<span>Рассрочка 0%</span>
+									</button>
+								</div>
+
+								{/* Conditional Tender Context (Anti-Matryoshka Flat Drawer) */}
+								{selectedTender === "cash" && (
+									<div className="pt-2 border-t border-[var(--line)]/60 space-y-2.5">
+										<div className="flex flex-wrap items-center justify-between gap-2">
+											<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
+												<Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+												<span>Расчет сдачи наличных (до копейки):</span>
+											</div>
+											{cashChangeResult.changeRub > 0 && (
+												<div className="px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-800 dark:text-emerald-200 font-extrabold text-xs flex items-center gap-1.5">
+													<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+													<span>СДАЧА КЛИЕНТУ: {cashChangeResult.changeRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+												</div>
+											)}
+											{cashChangeResult.isShortage && (
+												<div className="px-3 py-1 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-800 dark:text-rose-200 font-extrabold text-xs flex items-center gap-1.5">
+													<AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+													<span>Недобор: {cashChangeResult.shortageRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+												</div>
+											)}
+										</div>
+
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+											<div className="space-y-1">
+												<label className="text-[11px] font-semibold text-[var(--muted)]">
+													Получено от пациента наличными (₽):
+												</label>
+												<input
+													type="number"
+													min={0}
+													step="1"
+													value={receivedCashRub || ""}
+													onChange={(e) => setReceivedCashRub(parseFloat(e.target.value) || 0)}
+													placeholder={`${totalNetRub} ₽`}
+													className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] focus:border-emerald-500 outline-none"
+												/>
+											</div>
+
+											<div className="space-y-1">
+												<label className="text-[11px] font-semibold text-[var(--muted)]">
+													Быстрый выбор купюр:
+												</label>
+												<div className="grid grid-cols-4 gap-1.5">
+													<button
+														type="button"
+														onClick={() => setReceivedCashRub(totalNetRub)}
+														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95"
+													>
+														Без сдачи
+													</button>
+													<button
+														type="button"
+														onClick={() => setReceivedCashRub(1000)}
+														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+													>
+														1 000 ₽
+													</button>
+													<button
+														type="button"
+														onClick={() => setReceivedCashRub(2000)}
+														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+													>
+														2 000 ₽
+													</button>
+													<button
+														type="button"
+														onClick={() => setReceivedCashRub(5000)}
+														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+													>
+														5 000 ₽
+													</button>
+												</div>
+											</div>
+										</div>
+									</div>
+								)}
+
+								{selectedTender === "installment" && (
+									<div className="pt-2 border-t border-[var(--line)]/60 space-y-2">
+										<div className="flex items-center justify-between text-xs font-bold text-amber-900 dark:text-amber-200">
+											<span className="flex items-center gap-1.5">
+												<Calendar className="w-3.5 h-3.5 text-amber-600" />
+												График платежей (0% переплат):
+											</span>
+											<span className="font-mono text-emerald-700 dark:text-emerald-300">
+												Первый взнос: {Math.round(totalNetRub * 0.3).toLocaleString("ru-RU")} ₽ (30%)
+											</span>
+										</div>
+										<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
+											<div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 space-y-0.5">
+												<div className="font-bold text-[var(--ink)]">1-й взнос (Сегодня)</div>
+												<div className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+													{Math.round(totalNetRub * 0.3).toLocaleString("ru-RU")} ₽
+												</div>
+											</div>
+											<div className="p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
+												<div className="font-bold text-[var(--muted)]">2-й этап (30 дн.)</div>
+												<div className="font-mono text-[var(--ink)] font-bold">
+													{Math.round(totalNetRub * 0.2333).toLocaleString("ru-RU")} ₽
+												</div>
+											</div>
+											<div className="p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
+												<div className="font-bold text-[var(--muted)]">3-й этап (60 дн.)</div>
+												<div className="font-mono text-[var(--ink)] font-bold">
+													{Math.round(totalNetRub * 0.2333).toLocaleString("ru-RU")} ₽
+												</div>
+											</div>
+											<div className="p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
+												<div className="font-bold text-[var(--muted)]">4-й этап (90 дн.)</div>
+												<div className="font-mono text-[var(--ink)] font-bold">
+													{Math.round(totalNetRub * 0.2334).toLocaleString("ru-RU")} ₽
+												</div>
+											</div>
+										</div>
+									</div>
+								)}
+
+								{selectedTender === "family" && (
+									<div className="pt-2 border-t border-[var(--line)]/60 flex items-center justify-between text-xs flex-wrap gap-2">
+										<div className="flex items-center gap-2">
+											<Users className="w-4 h-4 text-pink-600" />
+											<span>Списание с общего семейного счета</span>
+											{effectiveFamilyBalance > 0 && (
+												<span className="font-mono font-bold text-emerald-600">
+													(Доступно: {effectiveFamilyBalance.toLocaleString("ru-RU")} ₽)
+												</span>
+											)}
+										</div>
+										<span className="font-mono font-bold text-pink-700 dark:text-pink-300">
+											Тег 1215: Зачет семейного аванса
+										</span>
+									</div>
+								)}
+
+								{selectedTender === "deposit" && (
+									<div className="pt-2 border-t border-[var(--line)]/60 flex items-center justify-between text-xs flex-wrap gap-2">
+										<div className="flex items-center gap-2">
+											<Wallet className="w-4 h-4 text-indigo-600" />
+											<span>Списание с персонального депозита пациента</span>
+											{effectiveDeposit > 0 && (
+												<span className="font-mono font-bold text-emerald-600">
+													(Доступно: {effectiveDeposit.toLocaleString("ru-RU")} ₽)
+												</span>
+											)}
+										</div>
+										<span className="font-mono font-bold text-indigo-700 dark:text-indigo-300">
+											Тег 1215: Зачет аванса
+										</span>
+									</div>
+								)}
+							</div>
+
 							{/* Grouped Friendly Blocks */}
 							<div className="space-y-3">
 								{friendlyBreakdown.groups.map((grp) => {
@@ -747,39 +1040,43 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							</div>
 						</div>
 					) : (
-						/* Details Tab */
+						/* Details Tab — Monolithic Flat Panels (Anti-Matryoshka) */
 						<div className="space-y-4">
-							<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3">
-								<div className="flex items-center gap-2 font-bold text-sm text-[var(--ink)]">
+							<div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-xs">
+								<div className="px-4 py-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center gap-2 font-bold text-xs sm:text-sm text-[var(--ink)]">
 									<Award className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 									<span>Гарантийные условия по позициям счета:</span>
 								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+								<div className="divide-y divide-[var(--line)]/60 text-xs">
 									{summary.warrantyTerms.map((term, idx) => (
-										<div key={idx} className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
-											<div className="flex items-center justify-between gap-2">
-												<strong className="text-[var(--teal,#0d9488)]">{term.categoryName}</strong>
-												<span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-[var(--line)]">
-													{term.teethDisplay}
-												</span>
+										<div key={idx} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[var(--paper-soft)]/50 transition-colors">
+											<div className="space-y-1 flex-1 min-w-0">
+												<div className="flex items-center gap-2">
+													<strong className="text-[var(--teal,#0d9488)] text-xs sm:text-sm">{term.categoryName}</strong>
+													<span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-[var(--line)]">
+														{term.teethDisplay}
+													</span>
+												</div>
+												<div className="text-[11px] text-[var(--muted)]">
+													<span className="font-semibold text-[var(--ink)]">Условие:</span> {term.conditionsText}
+												</div>
 											</div>
-											<div className="text-[var(--ok-fg,#059669)] font-semibold">
-												Гарантия: {term.warrantyPeriodText}
-											</div>
-											<div className="text-[var(--muted)]">Срок службы: {term.serviceLifeText}</div>
-											<div className="text-[11px] text-[var(--muted)] border-t border-[var(--line)] pt-1 mt-1">
-												<span className="font-semibold text-[var(--teal,#0d9488)]">Условие:</span> {term.conditionsText}
+											<div className="text-left sm:text-right shrink-0 space-y-0.5">
+												<div className="text-[var(--ok-fg,#059669)] font-bold">
+													Гарантия: {term.warrantyPeriodText}
+												</div>
+												<div className="text-[11px] text-[var(--muted)]">Срок службы: {term.serviceLifeText}</div>
 											</div>
 										</div>
 									))}
 								</div>
 							</div>
 
-							<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
+							<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2 text-xs">
 								<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted)] m-0">
 									Реквизиты медицинской лицензии и клиники:
 								</h4>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 									<div>
 										<span className="text-[var(--muted)]">Юр. лицо:</span> <strong>{actParams.clinic.legalName}</strong>
 									</div>

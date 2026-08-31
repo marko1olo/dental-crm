@@ -16,5 +16,6 @@ export * from "./pnl";
 export * from "./one-c";
 export * from "./installmentScheduleEngine";
 export * from "./PatientInstallmentScheduleModal";
+export * from "./CashRegisterModal";
+export * from "./FamilyWalletModal";
 export * from "./refunds/RefundServiceModal";
-
