@@ -13,5 +13,7 @@ export * from "./tools/clinicalTools.js";
 export * from "./tools/clinicalNoteTemplates.js";
 export * from "./tools/voiceDictationParser.js";
 export * from "./tools/clinicalNotesTool.js";
+export * from "./tools/sanpinTools.js";
 export * from "./orchestrator.js";
 export * from "./copilotService.js";
+

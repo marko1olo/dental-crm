@@ -8,6 +8,7 @@ import type { AgentContext } from "../context.js";
 import { checkGuardrails, permissionMatches } from "../guardrails.js";
 import { registerClinicalNotesTools } from "./clinicalNotesTool.js";
 import { registerClinicalTools } from "./clinicalTools.js";
+import { registerSanpinTools } from "./sanpinTools.js";
 import { toolToAnthropicSchema, toolToOpenAiSchema } from "./schemaSerializer.js";
 import type { ToolDefinition, ToolResult } from "./tool.js";
 
@@ -227,6 +228,7 @@ export function createDefaultToolRegistry(): ToolRegistry {
 	const registry = new ToolRegistry();
 	registerClinicalTools(registry, "clinical");
 	registerClinicalNotesTools(registry, "clinical_notes");
+	registerSanpinTools(registry, "sanpin");
 	return registry;
 }
 

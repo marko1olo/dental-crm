@@ -38,6 +38,11 @@ import { autoFillCancellationGapTool } from "./cancellationTool.js";
 import { generateInformedConsentTool } from "./consentTool.js";
 import { calculateTreatmentEstimateTool } from "./estimateTool.js";
 import { draftLabWorkOrderTool } from "./labOrderTool.js";
+import {
+	recordSterilizationTestTool,
+	registerSanpinTools,
+	verifyKraftPackTool,
+} from "./sanpinTools.js";
 import { analyzeRadiographVisionTool } from "./visionTool.js";
 
 // ─── 1. find_patient ────────────────────────────────────────────────────────
@@ -1733,6 +1738,10 @@ export function registerClinicalTools(
 	// 6. Cancellation Gap Auto-Fill & Informed Consent Tools
 	registry.register(autoFillCancellationGapTool, moduleName);
 	registry.register(generateInformedConsentTool, moduleName);
+
+	// 7. SanPiN 3.3686-21 Sterilization & Infection Control Tools
+	registry.register(verifyKraftPackTool, moduleName);
+	registry.register(recordSterilizationTestTool, moduleName);
 }
 
 export {
@@ -1741,6 +1750,10 @@ export {
 	calculateTreatmentEstimateTool,
 	draftLabWorkOrderTool,
 	generateInformedConsentTool,
+	recordSterilizationTestTool,
+	registerSanpinTools,
+	verifyKraftPackTool,
 };
+
 
 
