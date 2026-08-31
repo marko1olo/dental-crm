@@ -289,6 +289,11 @@ type KeyHealth = {
 const keyHealthByFingerprint = new Map<string, KeyHealth>();
 let keyHealthLoadedFromDisk = false;
 
+export function clearSpeechKeyHealthMemoryForTests(): void {
+	keyHealthByFingerprint.clear();
+	roundRobinIndexByProvider.clear();
+}
+
 type PersistedKeyHealthFile = {
 	version: 1;
 	savedAt: string;
