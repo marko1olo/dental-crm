@@ -1430,6 +1430,7 @@ export const speechProviderKindSchema = z.enum([
 	"cloudflare_whisper",
 	"azure_speech",
 	"google_speech",
+	"gemini_transcribe_live",
 	"huggingface_asr",
 	"mobile_native_speech",
 	"local_whisper",

@@ -261,6 +261,27 @@ export const DENTAL_DRUG_INTERACTIONS: readonly DentalDrugInteractionRule[] = [
 		clinicalRecommendationRu: "Избегать назначения метронидазола; заменить на амоксициллин или клиндамицин. Контроль МНО.",
 	},
 	{
+		drugAId: "med_metron_500",
+		drugBId: "doac_anticoagulants",
+		severity: "critical",
+		riskDescriptionRu: "Метронидазол ингибирует метаболизм ПОАК (апиксабан, ривароксабан, дабигатран) с риском тяжелого кровотечения",
+		clinicalRecommendationRu: "Заменить метронидазол на амоксициллин или цефалоспорины.",
+	},
+	{
+		drugAId: "med_ibu_400",
+		drugBId: "warfarin",
+		severity: "critical",
+		riskDescriptionRu: "НПВП (ибупрофен) в комбинации с варфарином резко повышают риск желудочно-кишечных и постоперационных кровотечений",
+		clinicalRecommendationRu: "Заменить НПВП на парацетамол (до 2000 мг/сут). Избегать кеторолака и аспирина.",
+	},
+	{
+		drugAId: "med_ketorol_10",
+		drugBId: "warfarin",
+		severity: "critical",
+		riskDescriptionRu: "Кеторолак с антикоагулянтами категорически противопоказан из-за высокого риска летальных кровотечений",
+		clinicalRecommendationRu: "Кеторолак противопоказан. Использовать анальгетики центрального действия / парацетамол.",
+	},
+	{
 		drugAId: "med_ibu_400",
 		drugBId: "aspirin",
 		severity: "warning",
@@ -274,6 +295,27 @@ export const DENTAL_DRUG_INTERACTIONS: readonly DentalDrugInteractionRule[] = [
 		riskDescriptionRu: "Эпинефрин на фоне неселективных бета-блокаторов (пропранолол) вызывает тяжелый гипертонический криз с рефлекторной брадикардией",
 		clinicalRecommendationRu: "Использовать местный анестетик БЕЗ вазоконстриктора (Мепивакаин 3%).",
 	},
+	{
+		drugAId: "med_art_epi_100k",
+		drugBId: "asthma_sulfite_allergy",
+		severity: "critical",
+		riskDescriptionRu: "Анестетики с эпинефрином содержат натрия дисульфит (метабисульфит), вызывающий острый бронхоспазм и анафилаксию у пациентов с БА",
+		clinicalRecommendationRu: "Использовать местный анестетик без сульфитов и вазоконстрикторов (Мепивакаин 3% Скандонест plain).",
+	},
+	{
+		drugAId: "med_ibu_400",
+		drugBId: "pregnancy_3rd_trimester",
+		severity: "critical",
+		riskDescriptionRu: "НПВП в III триместре вызывают преждевременное закрытие артериального (Боталлова) протока плода и слабость родовой деятельности",
+		clinicalRecommendationRu: "НПВП противопоказаны. Назначить парацетамол 500 мг (FDA категория B) по согласованию с акушером-гинекологом.",
+	},
+	{
+		drugAId: "med_ketorol_10",
+		drugBId: "pregnancy_3rd_trimester",
+		severity: "critical",
+		riskDescriptionRu: "Кеторолак строго противопоказан при беременности и лактации (FDA категория D)",
+		clinicalRecommendationRu: "Кеторолак противопоказан. Использовать парацетамол.",
+	},
 ] as const;
 
 /**
@@ -282,11 +324,13 @@ export const DENTAL_DRUG_INTERACTIONS: readonly DentalDrugInteractionRule[] = [
 export function checkDentalMedicationInteractions(
 	medicationIds: readonly string[],
 ): DentalDrugInteractionRule[] {
-	const medSet = new Set(medicationIds);
+	const medSet = new Set(medicationIds.map((m) => m.toLowerCase().trim()));
 	const warnings: DentalDrugInteractionRule[] = [];
 
 	for (const rule of DENTAL_DRUG_INTERACTIONS) {
-		if (medSet.has(rule.drugAId) && medSet.has(rule.drugBId)) {
+		const a = rule.drugAId.toLowerCase();
+		const b = rule.drugBId.toLowerCase();
+		if ((medSet.has(a) && medSet.has(b)) || (medSet.has(b) && medSet.has(a))) {
 			warnings.push(rule);
 		}
 	}
