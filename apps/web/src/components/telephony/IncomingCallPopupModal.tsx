@@ -412,7 +412,7 @@ export function IncomingCallPopupModal({
 								<button
 									type="button"
 									onClick={() => setTransferType("blind")}
-									className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-md font-bold text-xs transition-all cursor-pointer ${
+									className={`flex-1 min-h-[44px] py-1.5 px-2 rounded-md font-bold text-xs transition-all cursor-pointer ${
 										transferType === "blind"
 											? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -423,7 +423,7 @@ export function IncomingCallPopupModal({
 								<button
 									type="button"
 									onClick={() => setTransferType("attended")}
-									className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-md font-bold text-xs transition-all cursor-pointer ${
+									className={`flex-1 min-h-[44px] py-1.5 px-2 rounded-md font-bold text-xs transition-all cursor-pointer ${
 										transferType === "attended"
 											? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"

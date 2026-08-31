@@ -132,7 +132,7 @@ export const PATIENT_CABINET_PRESET_ALEXEY: PatientPersonalCabinetData = {
 	appointments: [
 		{
 			id: "apt-8842-1",
-			dateIso: "2026-08-30",
+			dateIso: "2026-09-05",
 			timeRu: "14:30",
 			doctorId: "doc-smirnov",
 			doctorName: "Д-р Смирнов Андрей Васильевич",

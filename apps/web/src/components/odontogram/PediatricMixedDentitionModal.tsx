@@ -446,7 +446,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													return (
 														<span
 															key={num}
-															className={`min-h-[48px] min-w-[40px] sm:min-w-[44px] px-1 py-1 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all ${
+															className={`min-h-[48px] min-w-[44px] px-1 py-1 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all shrink-0 ${
 																isErupting
 																	? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 																	: isPrim
@@ -477,7 +477,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													return (
 														<span
 															key={num}
-															className={`min-h-[48px] min-w-[40px] sm:min-w-[44px] px-1 py-1 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all ${
+															className={`min-h-[48px] min-w-[44px] px-1 py-1 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none transition-all shrink-0 ${
 																isErupting
 																	? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 																	: isPrim
@@ -628,7 +628,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								<button
 									type="button"
 									onClick={handleInsertCariogramTo043}
-									className="px-6 py-3 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+									className="min-h-[48px] px-6 py-3 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-95"
 								>
 									<Check className="w-5 h-5" />
 									<span>Вставить протокол Cariogram в карту 043/у (1 клик)</span>

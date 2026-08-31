@@ -220,7 +220,7 @@ export function CephalometricAnalysisModal({
 							onClick={onClose}
 							data-testid="ceph-modal-close-btn"
 							aria-label="Закрыть окно цефалометрического анализа"
-							className="w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer border border-slate-700"
+							className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer border border-slate-700"
 							style={{ backgroundColor: "#1e293b", color: "#f8fafc", borderColor: "#334155" }}
 						>
 							<X size={20} />
@@ -233,7 +233,7 @@ export function CephalometricAnalysisModal({
 					<button
 						type="button"
 						onClick={() => setMobileView("canvas")}
-						className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+						className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
 							mobileView === "canvas"
 								? "bg-teal-600 text-white shadow-md font-extrabold"
 								: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
@@ -250,7 +250,7 @@ export function CephalometricAnalysisModal({
 							setMobileView("landmarks");
 							setActiveTab("landmarks");
 						}}
-						className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+						className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
 							mobileView === "landmarks"
 								? "bg-teal-600 text-white shadow-md font-extrabold"
 								: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
@@ -270,7 +270,7 @@ export function CephalometricAnalysisModal({
 							setMobileView("metrics");
 							setActiveTab("metrics");
 						}}
-						className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+						className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
 							mobileView === "metrics"
 								? "bg-teal-600 text-white shadow-md font-extrabold"
 								: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
@@ -293,7 +293,7 @@ export function CephalometricAnalysisModal({
 							setMobileView("report");
 							setActiveTab("report");
 						}}
-						className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+						className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
 							mobileView === "report"
 								? "bg-teal-600 text-white shadow-md font-extrabold"
 								: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
@@ -471,7 +471,7 @@ export function CephalometricAnalysisModal({
 									setActiveTab("landmarks");
 									setMobileView("landmarks");
 								}}
-								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "landmarks"
 										? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs"
 										: "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"
@@ -492,7 +492,7 @@ export function CephalometricAnalysisModal({
 										showToast("Сначала загрузите снимок ТРГ", "warning");
 									}
 								}}
-								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "metrics"
 										? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs"
 										: "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"
@@ -516,7 +516,7 @@ export function CephalometricAnalysisModal({
 										showToast("Сначала загрузите снимок ТРГ", "warning");
 									}
 								}}
-								className={`h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "report"
 										? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs"
 										: "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"
@@ -554,7 +554,7 @@ export function CephalometricAnalysisModal({
 								</div>
 
 								{/* Landmark Item Cards with Touch Targets >= 44x44px (min-h-[52px]) */}
-								<div className="space-y-2 flex-1 overflow-y-auto pr-1 pb-28">
+								<div className="space-y-2 flex-1 overflow-y-auto pr-1 pb-4">
 									{CEPHALOMETRIC_LANDMARKS.map((lm) => {
 										const isPlaced = isImageLoaded && landmarks[lm.key] !== undefined;
 										const isTarget = isImageLoaded && activeTargetKey === lm.key;

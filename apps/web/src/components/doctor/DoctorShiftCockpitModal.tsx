@@ -460,7 +460,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 				</div>
 
 				{/* Cockpit Main Body */}
-				<div className="doctor-cockpit-body pb-28 sm:pb-6">
+				<div className="doctor-cockpit-body p-4 sm:p-6">
 					{/* Operational & Financial Metrics Strip [DEFECT-C3: High contrast amber badge; DEFECT-M5: No wrap %) */}
 					<div className="doctor-cockpit-metrics-grid" data-testid="doctor-metrics-strip">
 						<div className="doctor-metric-card">

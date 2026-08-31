@@ -234,7 +234,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 	}, [dateKey, appointments, dashboard?.clinicSettings?.chairs, (dashboard?.clinicSettings as any)?.staff]);
 
 	return (
-		<div className="space-y-3 pb-32 sm:pb-8">
+		<div className="space-y-3">
 			{/* Daily Chair & Doctor Occupancy Summary Bar */}
 			{dailyTally.totalAppointmentsCount > 0 && (
 				<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -257,7 +257,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 			)}
 
 			<div
-				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm pb-44 pr-6 sm:pb-32 sm:pr-48 touch-pan-x"
+				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm p-4 sm:p-6 touch-pan-x"
 				data-testid="schedule-grid-view"
 				role="region"
 				aria-label="Сетка расписания по креслам и времени"

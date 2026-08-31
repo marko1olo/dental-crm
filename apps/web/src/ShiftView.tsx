@@ -302,7 +302,7 @@ export function ShiftView({
 		window.location.hash = section;
 	}
 	return (
-		<div className="shift-view-scroll-container pb-28 min-w-0">
+		<div className="shift-view-scroll-container min-w-0">
 			<section className="shift-hero" id="shift">
 				<div className="now-card">
 					<div className="row-between">
@@ -635,7 +635,7 @@ export function ShiftView({
 			</section>
 
 			<div
-				className="shift-dashboard-grid pb-28"
+				className="shift-dashboard-grid"
 				style={{
 					display: "flex",
 					flexDirection: "column",
@@ -1176,9 +1176,6 @@ export function ShiftView({
 					) : null}
 				</section>
 			</div>
-
-			{/* FAB softphone clearance bottom spacer */}
-			<div className="h-28 w-full shrink-0 pointer-events-none pb-28" aria-hidden="true" />
 		</div>
 	);
 }
@@ -1657,9 +1654,6 @@ export function PatientCockpit({
 					</div>
 				</button>
 			</div>
-
-			{/* FAB softphone clearance bottom spacer */}
-			<div className="h-28 w-full shrink-0 pointer-events-none pb-28" aria-hidden="true" />
 		</section>
 	);
 }

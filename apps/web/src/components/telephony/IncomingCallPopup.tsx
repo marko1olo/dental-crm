@@ -422,7 +422,7 @@ export function CallAudioPlayer({
 				<button
 					type="button"
 					onClick={() => setShowTranscript((prev) => !prev)}
-					className="text-xs font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[36px] py-1 transition-colors"
+					className="text-xs font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[44px] py-1 transition-colors cursor-pointer"
 					aria-expanded={showTranscript}
 				>
 					<Sparkles size={13} className="text-amber-500" />
@@ -433,7 +433,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={handleCopyTranscript}
-						className="text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] transition-colors"
+						className="min-h-[44px] text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] transition-colors cursor-pointer"
 						title="Скопировать текст диалога"
 					>
 						{copiedTranscript ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
