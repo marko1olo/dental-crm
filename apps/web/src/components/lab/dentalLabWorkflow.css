@@ -365,7 +365,10 @@
 }
 
 .ztl-column-icon {
-	font-size: 14px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--teal, #0d9488);
 }
 
 .ztl-column-title {

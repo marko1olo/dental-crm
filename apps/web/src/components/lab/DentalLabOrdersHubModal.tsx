@@ -169,7 +169,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	const [orders, setOrders] = useState<DentalLabWorkflowOrder[]>(() => {
 		return initialOrders && initialOrders.length > 0
 			? [...initialOrders]
-			: INITIAL_SAMPLE_ORDERS;
+			: [];
 	});
 
 	// Фильтры
@@ -548,7 +548,12 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							<div key={stageId} className="ztl-kanban-column">
 								<div className="ztl-column-header">
 									<div className="ztl-column-title-wrap">
-										<span className="ztl-column-icon">{stageDef.icon}</span>
+										<span className="ztl-column-icon">
+											{stageId === "draft" && <FileText size={16} />}
+											{stageId === "sent_to_lab" && <Truck size={16} />}
+											{stageId === "fitting_scheduled" && <Calendar size={16} />}
+											{stageId === "installed_completed" && <CheckCircle2 size={16} />}
+										</span>
 										<h3 className="ztl-column-title">{stageDef.nameRu}</h3>
 									</div>
 									<span className={`ztl-column-count ${stageOrders.length > 0 ? "has-items" : ""}`}>
