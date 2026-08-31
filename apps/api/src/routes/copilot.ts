@@ -12,7 +12,9 @@ import { getRequestIdentity } from "../security/identity.js";
 import { PERMISSIONS } from "../security/permissions.js";
 import {
 	AgentOrchestrator,
+	buildCompactedSystemPrompt,
 	defaultCopilotActionManager,
+	defaultCopilotSessionStore,
 	defaultLlmProvider,
 	defaultSessionStore,
 	defaultToolRegistry,
@@ -35,6 +37,27 @@ const confirmationBodySchema = z.object({
 	modifiedArgs: z.record(z.unknown()).optional(),
 });
 
+const createSessionBodySchema = z.object({
+	id: z.string().optional(),
+	userId: z.string().optional(),
+	patientId: z.string().optional(),
+	activeView: z.string().optional(),
+	summary: z.string().optional(),
+});
+
+const listSessionsQuerySchema = z.object({
+	userId: z.string().optional(),
+	patientId: z.string().optional(),
+	limit: z.coerce.number().min(1).max(100).optional(),
+	offset: z.coerce.number().min(0).optional(),
+});
+
+const getMessagesQuerySchema = z.object({
+	limit: z.coerce.number().min(1).max(200).optional(),
+	offset: z.coerce.number().min(0).optional(),
+	order: z.enum(["asc", "desc"]).optional(),
+});
+
 const DENTE_COPILOT_SYSTEM_PROMPT = `Вы — высококвалифицированный клинический AI-ассистент DENTE для стоматологов и администраторов клиник.
 Ваша цель — ускорять работу врача, безошибочно вести медицинские карты 043/у по клиническим протоколам Стоматологической Ассоциации России (СтАР), находить данные пациентов, проверять свободные окна и контролировать планы лечения.
 Отвечайте на чистом русском языке, четко, структурированно, без воды.
@@ -45,6 +68,134 @@ export const copilotRoutes: FastifyPluginAsync = async (
 ) => {
 	// Periodic GC for expired sessions (TTL 24 hours)
 	defaultSessionStore.cleanupStaleSessions().catch(() => {});
+
+	// GET /api/v1/copilot/sessions — List active sessions for tenant/user/patient
+	server.get(
+		"/api/v1/copilot/sessions",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot list sessions",
+			);
+			if (!resolvedOrgId) return;
+
+			const parsedQuery = listSessionsQuerySchema.safeParse(request.query ?? {});
+			const query = parsedQuery.success ? parsedQuery.data : {};
+
+			const sessions = await defaultCopilotSessionStore.listSessions(
+				resolvedOrgId,
+				{
+					userId: query.userId,
+					patientId: query.patientId,
+					limit: query.limit,
+					offset: query.offset,
+				},
+			);
+
+			return reply.send({ data: sessions });
+		},
+	);
+
+	// POST /api/v1/copilot/sessions — Create new persistent session
+	server.post(
+		"/api/v1/copilot/sessions",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot create session",
+			);
+			if (!resolvedOrgId) return;
+
+			const parsedBody = createSessionBodySchema.safeParse(request.body ?? {});
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры сессии",
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const userId = parsedBody.data.userId ?? identity.userId ?? null;
+
+			const session = await defaultCopilotSessionStore.createSession({
+				id: parsedBody.data.id,
+				organizationId: resolvedOrgId,
+				userId,
+				patientId: parsedBody.data.patientId ?? null,
+				activeView: parsedBody.data.activeView ?? null,
+				summary: parsedBody.data.summary ?? null,
+			});
+
+			return reply.code(201).send({ ok: true, data: session });
+		},
+	);
+
+	// GET /api/v1/copilot/sessions/:sessionId/messages — Load message history
+	server.get<{
+		Params: { sessionId: string };
+	}>(
+		"/api/v1/copilot/sessions/:sessionId/messages",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot get session messages",
+			);
+			if (!resolvedOrgId) return;
+
+			const { sessionId } = request.params;
+			const parsedQuery = getMessagesQuerySchema.safeParse(request.query ?? {});
+			const query = parsedQuery.success ? parsedQuery.data : {};
+
+			const messages = await defaultCopilotSessionStore.getMessages(
+				sessionId,
+				resolvedOrgId,
+				{
+					limit: query.limit,
+					offset: query.offset,
+					order: query.order,
+				},
+			);
+
+			const session = await defaultCopilotSessionStore.getSession(
+				sessionId,
+				resolvedOrgId,
+			);
+
+			return reply.send({
+				data: messages,
+				sessionId,
+				summary: session?.summary ?? null,
+			});
+		},
+	);
+
+	// DELETE /api/v1/copilot/sessions/:sessionId — Clear/delete session
+	server.delete<{
+		Params: { sessionId: string };
+	}>(
+		"/api/v1/copilot/sessions/:sessionId",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot delete session",
+			);
+			if (!resolvedOrgId) return;
+
+			const { sessionId } = request.params;
+
+			await defaultSessionStore.delete(sessionId, resolvedOrgId).catch(() => {});
+			const deleted = await defaultCopilotSessionStore.deleteSession(
+				sessionId,
+				resolvedOrgId,
+			);
+
+			return reply.send({ ok: true, deleted });
+		},
+	);
 
 	// POST /api/v1/copilot/sessions/:sessionId/messages — Stream conversation turn
 	server.post<{
@@ -102,6 +253,17 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				content: userText,
 			});
 
+			// Persist user message to normalized PostgreSQL store with auto-compaction
+			await defaultCopilotSessionStore
+				.addMessage({
+					sessionId,
+					organizationId: resolvedOrgId,
+					role: "user",
+					content: userText,
+					autoCompact: true,
+				})
+				.catch(() => {});
+
 			// Setup SSE headers
 			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
 			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
@@ -122,18 +284,37 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				db,
 			};
 
+			let assistantText = "";
+			const assistantToolCalls: Record<string, unknown>[] = [];
+
+			// Fetch persisted summary for system prompt augmentation
+			const sessionRecord = await defaultCopilotSessionStore
+				.getSession(sessionId, resolvedOrgId)
+				.catch(() => null);
+			const effectiveSystemPrompt = buildCompactedSystemPrompt(
+				DENTE_COPILOT_SYSTEM_PROMPT,
+				sessionRecord?.summary,
+			);
+
 			try {
 				const stream = AgentOrchestrator.runTurnStream({
 					ctx,
 					provider: defaultLlmProvider,
-					system: DENTE_COPILOT_SYSTEM_PROMPT,
+					system: effectiveSystemPrompt,
 					history: session.history,
 					toolNames: defaultToolRegistry.list(),
 					redactor: session.redactor,
 				});
 
 				for await (const event of stream) {
-					if (event.type === "confirmation_required") {
+					if (event.type === "token") {
+						assistantText += event.text;
+					} else if (event.type === "tool_call_started") {
+						assistantToolCalls.push({
+							name: event.name,
+							arguments: event.arguments,
+						});
+					} else if (event.type === "confirmation_required") {
 						defaultCopilotActionManager.registerPending(
 							sessionId,
 							event.callId,
@@ -154,6 +335,21 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				reply.raw.write(formatSseEvent(errorEvent));
 				reply.raw.write(formatSseEvent({ type: "final", stopReason: "error" }));
 			} finally {
+				// Persist assistant message in normalized copilot_messages
+				if (assistantText.trim() || assistantToolCalls.length > 0) {
+					await defaultCopilotSessionStore
+						.addMessage({
+							sessionId,
+							organizationId: resolvedOrgId,
+							role: "assistant",
+							content: assistantText.trim() || "Выполнены действия",
+							toolCalls:
+								assistantToolCalls.length > 0 ? assistantToolCalls : undefined,
+							autoCompact: true,
+						})
+						.catch(() => {});
+				}
+
 				// Persist updated session history and redactor symbol table to PostgreSQL
 				await defaultSessionStore
 					.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
@@ -211,6 +407,16 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				content: userText,
 			});
 
+			await defaultCopilotSessionStore
+				.addMessage({
+					sessionId,
+					organizationId: resolvedOrgId,
+					role: "user",
+					content: userText,
+					autoCompact: true,
+				})
+				.catch(() => {});
+
 			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
 			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
 			reply.raw.setHeader("Connection", "keep-alive");
@@ -229,18 +435,36 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				db,
 			};
 
+			let assistantText = "";
+			const assistantToolCalls: Record<string, unknown>[] = [];
+
+			const sessionRecord = await defaultCopilotSessionStore
+				.getSession(sessionId, resolvedOrgId)
+				.catch(() => null);
+			const effectiveSystemPrompt = buildCompactedSystemPrompt(
+				DENTE_COPILOT_SYSTEM_PROMPT,
+				sessionRecord?.summary,
+			);
+
 			try {
 				const stream = AgentOrchestrator.runTurnStream({
 					ctx,
 					provider: defaultLlmProvider,
-					system: DENTE_COPILOT_SYSTEM_PROMPT,
+					system: effectiveSystemPrompt,
 					history: session.history,
 					toolNames: defaultToolRegistry.list(),
 					redactor: session.redactor,
 				});
 
 				for await (const event of stream) {
-					if (event.type === "confirmation_required") {
+					if (event.type === "token") {
+						assistantText += event.text;
+					} else if (event.type === "tool_call_started") {
+						assistantToolCalls.push({
+							name: event.name,
+							arguments: event.arguments,
+						});
+					} else if (event.type === "confirmation_required") {
 						defaultCopilotActionManager.registerPending(
 							sessionId,
 							event.callId,
@@ -261,6 +485,20 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				reply.raw.write(formatSseEvent(errorEvent));
 				reply.raw.write(formatSseEvent({ type: "final", stopReason: "error" }));
 			} finally {
+				if (assistantText.trim() || assistantToolCalls.length > 0) {
+					await defaultCopilotSessionStore
+						.addMessage({
+							sessionId,
+							organizationId: resolvedOrgId,
+							role: "assistant",
+							content: assistantText.trim() || "Выполнены действия",
+							toolCalls:
+								assistantToolCalls.length > 0 ? assistantToolCalls : undefined,
+							autoCompact: true,
+						})
+						.catch(() => {});
+				}
+
 				await defaultSessionStore
 					.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
 					.catch(() => {});

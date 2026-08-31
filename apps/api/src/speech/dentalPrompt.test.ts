@@ -483,8 +483,8 @@ describe("dentalPrompt — 1000-Term Lexicon & Anti-Hallucination Guardrails", (
 			});
 			assert.ok(groqPrompt);
 			assert.ok(groqPrompt.length <= 850);
-			assert.ok(groqPrompt.includes("Жалобы:"));
-			assert.ok(groqPrompt.includes("Dx:"));
+			assert.ok(groqPrompt.includes("Стоматологическая терминология DENTE"));
+			assert.ok(groqPrompt.includes("FDI"));
 
 			const policy = getDentalSttPromptPolicy();
 			assert.ok(policy.enabled);

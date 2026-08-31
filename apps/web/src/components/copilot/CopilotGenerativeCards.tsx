@@ -372,7 +372,7 @@ export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
           </button>
         )}
 
-        {onBookAppointment && (
+        {onBookAppointment ? (
           <button
             type="button"
             onClick={() => onBookAppointment(patient.id)}
@@ -382,9 +382,7 @@ export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
             <Calendar size={14} />
             <span>+ Запись</span>
           </button>
-        )}
-
-        {onSelectPlan && (
+        ) : onSelectPlan ? (
           <button
             type="button"
             onClick={() => onSelectPlan(patient.id)}
@@ -392,9 +390,9 @@ export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
             title="Перейти к плану лечения"
           >
             <FileText size={14} />
-            <span>План</span>
+            <span>План лечения</span>
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );

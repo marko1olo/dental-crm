@@ -22,7 +22,68 @@ export interface ConfirmUiMessage {
   resolved?: ('confirm' | 'reject') | undefined;
 }
 
-export type CopilotUiMessage = TextUiMessage | ToolUiMessage | ConfirmUiMessage;
+export interface ThinkingUiMessage {
+  kind: 'thinking';
+  text: string;
+  streaming?: boolean | undefined;
+  durationMs?: number | undefined;
+}
+
+export interface ReactStepItem {
+  id: string;
+  stepNumber: number;
+  title: string;
+  status: 'pending' | 'running' | 'done' | 'failed';
+  detail?: string | undefined;
+  icon?: string | undefined;
+}
+
+export interface ReactStepsUiMessage {
+  kind: 'react_steps';
+  title?: string | undefined;
+  steps: ReactStepItem[];
+  currentStepIndex?: number | undefined;
+  isComplete?: boolean | undefined;
+  totalDurationMs?: number | undefined;
+}
+
+export type CopilotUiMessage =
+  | TextUiMessage
+  | ToolUiMessage
+  | ConfirmUiMessage
+  | ThinkingUiMessage
+  | ReactStepsUiMessage;
+
+export interface Protocol043Data {
+  patientId?: string | undefined;
+  patientName?: string | undefined;
+  tooth?: string | number | undefined;
+  teeth?: (string | number)[] | undefined;
+  diagnosis?: string | undefined;
+  icd10?: string | undefined;
+  complaint?: string | undefined;
+  complaints?: string | undefined;
+  anamnesis?: string | undefined;
+  objective?: string | undefined;
+  objectiveStatus?: string | undefined;
+  treatment?: string | undefined;
+  treatmentPlan?: string | undefined;
+  recommendations?: string | undefined;
+  doctorName?: string | undefined;
+  date?: string | undefined;
+}
+
+export interface DdiSafetyAlertData {
+  severity: 'contraindicated' | 'high' | 'moderate' | 'warning' | string;
+  title: string;
+  description: string;
+  allergen?: string | undefined;
+  contraindicatedDrug?: string | undefined;
+  patientAllergies?: string[] | undefined;
+  safeAlternatives: string[];
+  recommendedAlternative?: string | undefined;
+  clinicalRecommendation?: string | undefined;
+}
 
 export interface PendingConfirmation {
   callId: string;

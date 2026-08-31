@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Send, Mic, MicOff, RotateCcw, ShieldCheck, Check, Activity } from 'lucide-react';
 import { useUnifiedDictation } from '../../hooks/useUnifiedDictation';
+import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 
 export interface CopilotComposerProps {
   value: string;
@@ -26,6 +27,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const baseTextRef = useRef<string>('');
   const lastEmittedRef = useRef<string>('');
+  const { playActionSuccess } = useAudioFeedback();
 
   const {
     isRecording,
@@ -88,11 +90,22 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      if (!value.trim() || busy) return;
       if (isRecording) {
         stopDictation();
       }
+      void playActionSuccess();
       onSubmit();
     }
+  };
+
+  const handleSendClick = () => {
+    if (!value.trim() || busy) return;
+    if (isRecording) {
+      stopDictation();
+    }
+    void playActionSuccess();
+    onSubmit();
   };
 
   const handleTextChange = (newText: string) => {
@@ -196,7 +209,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
             )}
             {!baseTextRef.current && !fullTranscript.trim() && !interimText.trim() && (
               <span style={{ color: 'var(--muted, #6b7280)' }}>
-                🎙️ Говорите... Токены Gemini 3.5 Live бегут в реальном времени...
+                🎙️ Говорите... ДЕНТА слушает и транскрибирует в реальном времени...
               </span>
             )}
           </div>
@@ -206,7 +219,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
             value={value}
             onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Спросите ассистента или отдайте команду врачебного протокола..."
+            placeholder="Спросить ДЕНТУ или отдать команду врачебного протокола..."
             disabled={busy}
             rows={1}
             className="copilot-textarea"
@@ -222,9 +235,9 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
           title={
             isRecording
               ? 'Остановить надиктовку речи'
-              : 'Голосовая надиктовка (Gemini 3.5 Transcribe Live)'
+              : 'Голосовая надиктовка ДЕНТА (Gemini 3.5 Transcribe Live)'
           }
-          aria-label={isRecording ? 'Остановить запись речи' : 'Начать запись речи'}
+          aria-label={isRecording ? 'Остановить запись речи' : 'Голосовая надиктовка ДЕНТА'}
           data-testid="copilot-mic-btn"
         >
           {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
@@ -233,7 +246,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
         {/* Send Button */}
         <button
           type="button"
-          onClick={onSubmit}
+          onClick={handleSendClick}
           disabled={!value.trim() || busy}
           className="copilot-send-btn"
           title="Отправить (Enter)"

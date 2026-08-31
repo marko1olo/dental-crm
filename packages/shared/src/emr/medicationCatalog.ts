@@ -275,7 +275,7 @@ export const DENTAL_DRUG_INTERACTIONS: readonly DentalDrugInteractionRule[] = [
 		clinicalRecommendationRu: "Заменить НПВП на парацетамол (до 2000 мг/сут). Избегать кеторолака и аспирина.",
 	},
 	{
-		drugAId: "med_ketorol_10",
+		drugAId: "med_ketorolac_10",
 		drugBId: "warfarin",
 		severity: "critical",
 		riskDescriptionRu: "Кеторолак с антикоагулянтами категорически противопоказан из-за высокого риска летальных кровотечений",
@@ -310,7 +310,7 @@ export const DENTAL_DRUG_INTERACTIONS: readonly DentalDrugInteractionRule[] = [
 		clinicalRecommendationRu: "НПВП противопоказаны. Назначить парацетамол 500 мг (FDA категория B) по согласованию с акушером-гинекологом.",
 	},
 	{
-		drugAId: "med_ketorol_10",
+		drugAId: "med_ketorolac_10",
 		drugBId: "pregnancy_3rd_trimester",
 		severity: "critical",
 		riskDescriptionRu: "Кеторолак строго противопоказан при беременности и лактации (FDA категория D)",

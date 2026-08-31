@@ -26,7 +26,12 @@ import {
   ScheduleSlotPickerCard,
   Prescription107Card,
   EstimateTierCard,
+  CopilotReactTracker,
+  CopilotProtocol043ConfirmCard,
+  CopilotDdiSafetyCard,
+  DEFAULT_DENTE_REACT_STEPS,
 } from '../index';
+import { useVisitStore } from '../../../store/visitStore';
 
 describe('Copilot Formatters', () => {
   it('formats ISO timestamps with locale', () => {
@@ -337,19 +342,22 @@ describe('Copilot Core Cards & SSR Rendering', () => {
 
   it('renders CopilotSuggestions categories and prompts', () => {
     const html = renderToString(<CopilotSuggestions onPick={() => {}} />);
-    assert.ok(html.includes('Клинический ассистент DENTE') || html.includes('DENTE'));
+    assert.ok(html.includes('ДЕНТА — Клинический ИИ-ассистент') || html.includes('ДЕНТА'));
     assert.ok(html.includes('Рабочие сценарии') || html.includes('сценарии'));
   });
 
-  it('renders CopilotComposer with dictation and trust note', () => {
+  it('renders CopilotComposer with dictation mic, 152-FZ trust note, and hotkeys', () => {
     const html = renderToString(
       <CopilotComposer value="Тест" busy={false} onChange={() => {}} onSubmit={() => {}} onReset={() => {}} />
     );
-    assert.ok(html.includes('Данные защищены') || html.includes('Ctrl+K'));
+    assert.ok(html.includes('Данные защищены 152-ФЗ') || html.includes('152-ФЗ'));
+    assert.ok(html.includes('Ctrl+K'));
+    assert.ok(html.includes('copilot-mic-btn'));
     assert.ok(html.includes('Сброс'));
+    assert.ok(!html.includes('text-[10px]') && !html.includes('text-[11px]'));
   });
 
-  it('renders full CopilotDrawer with non-blocking split-view dock and tabs', () => {
+  it('renders full CopilotDrawer with non-blocking split-view dock, 12px context bar, and tabs', () => {
     const html = renderToString(
       <CopilotDrawer
         isOpen={true}
@@ -368,7 +376,7 @@ describe('Copilot Core Cards & SSR Rendering', () => {
         onDismissNudge={() => {}}
       />
     );
-    assert.ok(html.includes('DENTE Copilot'));
+    assert.ok(html.includes('ДЕНТА — Клинический ассистент') || html.includes('ДЕНТА'));
     assert.ok(html.includes('Привет, доктор!'));
     assert.ok(html.includes('Чат'));
     assert.ok(html.includes('Задачи'));
@@ -641,3 +649,216 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     assert.ok(htmlRx.includes('Tab. Amoxicillini'));
   });
 });
+
+describe('Copilot ReAct Agentic Loop & Tracker', () => {
+  it('renders default 4 canonical clinical ReAct steps', () => {
+    const html = renderToString(<CopilotReactTracker />);
+    assert.ok(html.includes('ReAct Цикл ДЕНТЫ') || html.includes('Автономное выполнение'));
+    assert.ok(html.includes('Поиск карты пациента и анамнеза'));
+    assert.ok(html.includes('Анализ прицельного снимка зуба 36'));
+    assert.ok(html.includes('Проверка лекарственной безопасности DDI'));
+    assert.ok(html.includes('Формирование 3-уровневого плана лечения'));
+    assert.ok(html.includes('Шаг 1'));
+    assert.ok(html.includes('Шаг 2'));
+    assert.ok(html.includes('Шаг 3'));
+    assert.ok(html.includes('Шаг 4'));
+    assert.ok(html.includes('K02.1') || html.includes('MOD'));
+    assert.ok(html.includes('DDI Safe'));
+  });
+
+  it('renders live step progression and active indicator', () => {
+    const customSteps = [
+      {
+        id: 's1',
+        stepNumber: 1,
+        title: 'Поиск карты пациента',
+        status: 'done' as const,
+        detail: 'Найден пациент Иванов И.И.',
+      },
+      {
+        id: 's2',
+        stepNumber: 2,
+        title: 'Анализ снимка зуба 36',
+        status: 'running' as const,
+        detail: 'Определен глубокий кариес K02.1',
+      },
+      {
+        id: 's3',
+        stepNumber: 3,
+        title: 'Проверка безопасности DDI',
+        status: 'pending' as const,
+      },
+    ];
+
+    const html = renderToString(
+      <CopilotReactTracker
+        title="Голосовой протокол врача"
+        steps={customSteps}
+        currentStepIndex={1}
+        isComplete={false}
+      />
+    );
+
+    assert.ok(html.includes('Голосовой протокол врача'));
+    assert.ok(html.includes('Выполняется шаг 2 из 3'));
+    assert.ok(html.includes('Шаг 2/3'));
+    assert.ok(html.includes('Поиск карты пациента'));
+    assert.ok(html.includes('Анализ снимка зуба 36'));
+    assert.ok(html.includes('Проверка безопасности DDI'));
+  });
+
+  it('renders completed state with success banner', () => {
+    const html = renderToString(
+      <CopilotReactTracker
+        isComplete={true}
+      />
+    );
+    assert.ok(html.includes('Все шаги клинического рассуждения успешно завершены'));
+    assert.ok(html.includes('Завершено (4/4)'));
+  });
+});
+
+describe('Copilot 1-Click Outpatient Diary 043/u Card', () => {
+  it('renders 043/u clinical diary form with complaints, anamnesis, objective, tooth, and treatment', () => {
+    const diaryData = {
+      patientName: 'Барабаш Сергей Владимирович',
+      tooth: '36',
+      diagnosis: 'K02.1 Кариес дентина (глубокий)',
+      complaints: 'Боль от термических раздражителей в зубе 36',
+      anamnesis: 'Появилась 2 недели назад, зуб ранее интактен',
+      objective: 'Глубокая кариозная полость MOD, дно плотное, болезненное при зондировании',
+      treatment: 'Препарирование MOD, Life, Ionosit, Estelite Sigma Quick A2/OA2',
+    };
+
+    const html = renderToString(
+      <CopilotProtocol043ConfirmCard data={diaryData} />
+    );
+
+    assert.ok(html.includes('ДЕНТА сформировала дневник 043/у'), 'title missing');
+    assert.ok(html.includes('Барабаш Сергей Владимирович'), 'patientName missing');
+    assert.ok(html.includes('Зуб 36'), 'tooth missing');
+    assert.ok(html.includes('K02.1'), 'diagnosis missing');
+    assert.ok(html.includes('Жалобы:'), 'complaints label missing');
+    assert.ok(html.includes('Боль от термических раздражителей'), 'complaints text missing');
+    assert.ok(html.includes('Анамнез заболевания:'), 'anamnesis label missing');
+    assert.ok(html.includes('Объективный статус:'), 'objective label missing');
+    assert.ok(html.includes('Глубокая кариозная полость MOD'), 'objective text missing');
+    assert.ok(html.includes('Лечение и пломбирование:'), 'treatment label missing');
+    assert.ok(html.includes('Estelite Sigma Quick'), 'treatment text missing');
+    assert.ok(html.includes('Сохранить в ЭМК визита (1 клик)'), 'button text missing');
+  });
+
+  it('renders saved state correctly after confirmation', () => {
+    const diaryData = {
+      patientName: 'Сидоров А.П.',
+      tooth: '46',
+      diagnosis: 'K02.1',
+      complaints: 'Жалобы отсутствуют',
+      treatment: 'Пломбирование 46',
+    };
+
+    const html = renderToString(
+      <CopilotProtocol043ConfirmCard data={diaryData} resolved="confirm" />
+    );
+
+    assert.ok(html.includes('Дневник 043/у сохранён в ЭМК визита'));
+    assert.ok(html.includes('В ЭМК визита'));
+  });
+});
+
+describe('Copilot DDI Safety & Allergy Blocking Card', () => {
+  it('renders critical alert banner, allergen warning, and safe alternatives', () => {
+    const ddiData = {
+      severity: 'contraindicated' as const,
+      title: '🛡️ Критическое предупреждение: Противопоказание DDI',
+      description: 'Аллергия на пенициллины (K02.1 / K04.0). Назначение амоксициллина заблокировано.',
+      patientAllergies: ['Пенициллины', 'Новокаин'],
+      safeAlternatives: ['Кларитромицин 500 мг (Macrolide Safe)', 'Азитромицин 500 мг', 'Спирамицин 3 млн МЕ'],
+      recommendedAlternative: 'Кларитромицин 500 мг (Macrolide Safe)',
+    };
+
+    const html = renderToString(
+      <CopilotDdiSafetyCard data={ddiData} />
+    );
+
+    assert.ok(html.includes('Критическое предупреждение: Противопоказание DDI'));
+    assert.ok(html.includes('Критический риск'));
+    assert.ok(html.includes('Пенициллины'));
+    assert.ok(html.includes('Новокаин'));
+    assert.ok(html.includes('Кларитромицин 500 мг'));
+    assert.ok(html.includes('Азитромицин 500 мг'));
+    assert.ok(html.includes('Заменить на безопасный препарат'));
+  });
+
+  it('renders restored safe status after drug replacement', () => {
+    const ddiData = {
+      severity: 'safe' as const,
+      title: 'Лекарственная безопасность',
+      description: 'Безопасный препарат назначен.',
+      safeAlternatives: ['Кларитромицин 500 мг'],
+    };
+
+    const html = renderToString(
+      <CopilotDdiSafetyCard data={ddiData} resolved="confirm" />
+    );
+
+    assert.ok(html.includes('Лекарственная безопасность восстановлена'));
+    assert.ok(html.includes('DDI Safe'));
+    assert.ok(html.includes('Препарат успешно заменен'));
+  });
+});
+
+describe('CopilotActionConfirm Specialized 1-Click Medical Buttons', () => {
+  it('displays 1-click EMR diary button for save_protocol_043', () => {
+    const html = renderToString(
+      <CopilotActionConfirm
+        name="save_protocol_043"
+        args={{
+          tooth: '36',
+          diagnosis: 'K02.1 Кариес дентина',
+          complaints: 'Боль на холодное',
+          treatment: 'Пломбирование светоотверждаемым композитом',
+        }}
+      />
+    );
+
+    assert.ok(html.includes('ДЕНТА сформировала дневник 043/у'));
+    assert.ok(html.includes('Сохранить в ЭМК визита (1 клик)'));
+    assert.ok(html.includes('Жалобы пациента'));
+    assert.ok(html.includes('Лечение и процедуры'));
+  });
+
+  it('displays 1-click plan approval button for calculate_treatment_estimate', () => {
+    const html = renderToString(
+      <CopilotActionConfirm
+        name="calculate_treatment_estimate"
+        args={{
+          teeth: ['36', '37'],
+          tier_key: 'optimum',
+          amount_rub: 84500,
+        }}
+      />
+    );
+
+    assert.ok(html.includes('ДЕНТА предлагает план лечения'));
+    assert.ok(html.includes('Утвердить план лечения'));
+  });
+
+  it('displays 1-click drug replacement button for check_drug_interactions', () => {
+    const html = renderToString(
+      <CopilotActionConfirm
+        name="check_drug_interactions"
+        args={{
+          medication: 'Амоксиклав',
+          safe_alternative: 'Кларитромицин 500 мг',
+          allergen: 'Пенициллины',
+        }}
+      />
+    );
+
+    assert.ok(html.includes('Проверка взаимодействия лекарств (DDI)'));
+    assert.ok(html.includes('Заменить на безопасный препарат'));
+    assert.ok(html.includes('Безопасный аналог'));
+  });
+});
+

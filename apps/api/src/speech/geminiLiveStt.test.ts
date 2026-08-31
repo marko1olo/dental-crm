@@ -58,12 +58,8 @@ class MockWebSocket extends EventEmitter {
 				process.nextTick(() => {
 					this.simulateServerMessage({
 						serverContent: {
-							modelTurn: {
-								parts: [
-									{
-										text: "Акт выполненных работ: анестезия, пломбирование канала.",
-									},
-								],
+							inputTranscription: {
+								text: "Акт выполненных работ: анестезия, пломбирование канала.",
 							},
 							turnComplete: true,
 						},
@@ -264,11 +260,11 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 			assert.equal(parsed?.transcript?.turnComplete, true);
 		});
 
-		it("should fallback to modelTurn when inputTranscription is absent", () => {
+		it("should parse interim transcript from interimInputTranscription", () => {
 			const payload = {
 				serverContent: {
-					modelTurn: {
-						parts: [{ text: "Зуб тридцать шесть" }],
+					interimInputTranscription: {
+						text: "Зуб тридцать шесть",
 					},
 					interim: true,
 				},
@@ -284,11 +280,11 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 			assert.equal(parsed?.transcript?.isFinal, false);
 		});
 
-		it("should parse finalized transcript when turnComplete is true via modelTurn", () => {
+		it("should parse finalized transcript when turnComplete is true via inputTranscription", () => {
 			const payload = {
 				serverContent: {
-					modelTurn: {
-						parts: [{ text: "Зуб 36: глубокий кариес дентина." }],
+					inputTranscription: {
+						text: "Зуб 36: глубокий кариес дентина.",
 					},
 					turnComplete: true,
 				},
@@ -497,7 +493,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 			// Finalize on socket 2
 			socket2.simulateServerMessage({
 				serverContent: {
-					modelTurn: { parts: [{ text: "Успешное восстановление сессии." }] },
+					inputTranscription: { text: "Успешное восстановление сессии." },
 					turnComplete: true,
 				},
 			});
@@ -603,7 +599,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 			// Turn 1 is finalized
 			socket1.simulateServerMessage({
 				serverContent: {
-					modelTurn: { parts: [{ text: "Первое предложение." }] },
+					inputTranscription: { text: "Первое предложение." },
 					turnComplete: true,
 				},
 			});
@@ -629,7 +625,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 
 			socket2.simulateServerMessage({
 				serverContent: {
-					modelTurn: { parts: [{ text: "Второе предложение." }] },
+					inputTranscription: { text: "Второе предложение." },
 					turnComplete: true,
 				},
 			});

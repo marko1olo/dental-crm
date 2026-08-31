@@ -7,41 +7,67 @@ import {
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { clinics, organizations, users } from "./auth.js";
+import { organizations, users } from "./auth.js";
+import { patients } from "./patients.js";
 
 /**
- * copilot_sessions — Persistent storage for AI Copilot dialogue sessions.
- * Ensures session survival across server restarts and deploys, with 152-FZ redaction state.
+ * copilot_sessions — Persistent PostgreSQL storage for AI Copilot dialogue sessions (SQUAD GAMMA).
+ * Supports tenant isolation, active workspace view context, and compacted conversation summaries.
  */
 export const copilotSessions = pgTable(
 	"copilot_sessions",
 	{
-		id: text("id").primaryKey(),
+		id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id, { onDelete: "cascade" }),
 		userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
-		clinicId: uuid("clinic_id").references(() => clinics.id, { onDelete: "set null" }),
-		history: jsonb("history").notNull().default(sql`'[]'::jsonb`),
-		redactorState: jsonb("redactor_state").notNull().default(sql`'{}'::jsonb`),
-		metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+		patientId: uuid("patient_id").references(() => patients.id, { onDelete: "set null" }),
+		activeView: text("active_view"),
+		summary: text("summary"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
-		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 	},
 	(t) => ({
 		organizationIdIdx: index("copilot_sessions_organization_id_idx").on(
 			t.organizationId,
 		),
 		userIdIdx: index("copilot_sessions_user_id_idx").on(t.userId),
-		expiresAtIdx: index("copilot_sessions_expires_at_idx").on(t.expiresAt),
+		patientIdIdx: index("copilot_sessions_patient_id_idx").on(t.patientId),
 		orgUpdatedIdx: index("copilot_sessions_org_updated_idx").on(
 			t.organizationId,
 			t.updatedAt,
+		),
+	}),
+);
+
+/**
+ * copilot_messages — Persistent normalized messages for Copilot sessions (SQUAD GAMMA).
+ * Maintains exact role-based chat history, tool calls, and created timestamps.
+ */
+export const copilotMessages = pgTable(
+	"copilot_messages",
+	{
+		id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+		sessionId: uuid("session_id")
+			.notNull()
+			.references(() => copilotSessions.id, { onDelete: "cascade" }),
+		role: text("role").notNull(), // 'user' | 'assistant' | 'system' | 'tool'
+		content: text("content").notNull(),
+		toolCalls: jsonb("tool_calls"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		sessionIdIdx: index("copilot_messages_session_id_idx").on(t.sessionId),
+		sessionCreatedIdx: index("copilot_messages_session_created_idx").on(
+			t.sessionId,
+			t.createdAt,
 		),
 	}),
 );

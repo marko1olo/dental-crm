@@ -160,13 +160,14 @@
 }
 
 .copilot-action-confirm-edit-toggle {
-  min-height: 28px;
-  padding: 2px 8px;
-  border-radius: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 6px 12px;
+  border-radius: 8px;
   background: transparent;
   border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
   color: var(--teal-dark, #0f766e);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: flex;

@@ -21,6 +21,9 @@ import {
   ScheduleSlotPickerCard,
   Prescription107Card,
   EstimateTierCard,
+  CopilotReactTracker,
+  CopilotProtocol043ConfirmCard,
+  CopilotDdiSafetyCard,
   type PatientProfileCardData,
   type ScheduleSlotPickerData,
   type ScheduleSlotOption,
@@ -28,6 +31,7 @@ import {
   type EstimateTierData,
   type EstimateTierOption,
 } from './CopilotGenerativeCards';
+import type { Protocol043Data, DdiSafetyAlertData, ReactStepItem } from './copilotTypes';
 import { formatMoney } from './useCopilotFormat';
 import { Users, CreditCard, AlertCircle } from 'lucide-react';
 
@@ -186,7 +190,7 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
               <div key={i} className="flex items-center justify-between p-1.5 rounded bg-[var(--paper-soft)]">
                 <div>
                   <span className="font-medium text-[var(--ink)]">{String(m.patient_name || m.name || 'Член семьи')}</span>
-                  {Boolean(m.relationship) && <span className="text-[var(--muted)] text-[10px]"> ({String(m.relationship)})</span>}
+                  {Boolean(m.relationship) && <span className="text-[var(--muted)] text-xs"> ({String(m.relationship)})</span>}
                 </div>
                 <span className="font-bold text-[var(--ink)] tabular-nums">
                   {formatMoney(Number(m.balance_rub || m.balance || 0))}
@@ -197,6 +201,55 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
         )}
       </div>
     );
+  }
+
+  // 3.5. Generative UI: Live ReAct Execution Tracker
+  if (
+    tool.includes('react') ||
+    tool.includes('pipeline') ||
+    tool.includes('agentic') ||
+    Array.isArray(obj.steps) ||
+    Array.isArray(obj.react_steps)
+  ) {
+    const rawSteps = Array.isArray(obj.steps)
+      ? (obj.steps as unknown as ReactStepItem[])
+      : Array.isArray(obj.react_steps)
+      ? (obj.react_steps as unknown as ReactStepItem[])
+      : undefined;
+
+    return (
+      <CopilotReactTracker
+        title={typeof obj.title === 'string' ? obj.title : undefined}
+        steps={rawSteps}
+        currentStepIndex={typeof obj.currentStepIndex === 'number' ? obj.currentStepIndex : undefined}
+        isComplete={typeof obj.isComplete === 'boolean' ? obj.isComplete : undefined}
+      />
+    );
+  }
+
+  // 3.6. Generative UI: Outpatient Diary 043/u Card
+  if (
+    tool.includes('043') ||
+    tool.includes('diary') ||
+    tool.includes('protocol') ||
+    (obj.complaints !== undefined && obj.treatment !== undefined) ||
+    obj.protocol_043 !== undefined
+  ) {
+    const pObj = (obj.protocol_043 && typeof obj.protocol_043 === 'object' ? obj.protocol_043 : obj) as Obj;
+    const p043Data: Protocol043Data = {
+      patientId: typeof pObj.patientId === 'string' ? pObj.patientId : undefined,
+      patientName: typeof pObj.patientName === 'string' ? pObj.patientName : typeof pObj.patient_name === 'string' ? pObj.patient_name : undefined,
+      tooth: (pObj.tooth as string | number) ?? (Array.isArray(pObj.teeth) ? (pObj.teeth[0] as string | number) : undefined),
+      teeth: Array.isArray(pObj.teeth) ? (pObj.teeth as (string | number)[]) : undefined,
+      diagnosis: typeof pObj.diagnosis === 'string' ? pObj.diagnosis : typeof pObj.icd10 === 'string' ? pObj.icd10 : undefined,
+      icd10: typeof pObj.icd10 === 'string' ? pObj.icd10 : undefined,
+      complaints: typeof pObj.complaints === 'string' ? pObj.complaints : undefined,
+      anamnesis: typeof pObj.anamnesis === 'string' ? pObj.anamnesis : undefined,
+      objective: typeof pObj.objective === 'string' ? pObj.objective : undefined,
+      treatment: typeof pObj.treatment === 'string' ? pObj.treatment : undefined,
+      recommendations: typeof pObj.recommendations === 'string' ? pObj.recommendations : undefined,
+    };
+    return <CopilotProtocol043ConfirmCard data={p043Data} />;
   }
 
   // 4.1. Generative UI: Estimate 3-Tier Treatment Plan Card
@@ -408,7 +461,7 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
 
   // Fallback raw view
   return (
-    <pre className="p-2.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-[11px] font-mono text-[var(--ink)] overflow-x-auto m-0">
+    <pre className="p-2.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] overflow-x-auto m-0">
       {JSON.stringify(result, null, 2)}
     </pre>
   );

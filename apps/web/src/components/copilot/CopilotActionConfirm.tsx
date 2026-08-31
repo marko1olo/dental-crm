@@ -14,9 +14,11 @@ import {
   FileText,
   DollarSign,
   Pill,
+  ShieldCheck,
 } from 'lucide-react';
 import { formatDateTime } from './useCopilotFormat';
 import type { ConfirmHandler } from './copilotTypes';
+import { useVisitStore } from '../../store/visitStore';
 
 export interface CopilotActionConfirmProps {
   callId?: string | undefined;
@@ -48,12 +50,17 @@ const ACTION_TITLES: Record<string, string> = {
   'inventory.dispense_drugs': 'Списание лекарственных средств',
   update_odontogram: 'Изменение одонтограммы',
   'clinical.update_odontogram': 'Изменение зубной формулы / одонтограммы',
-  save_protocol_043: 'Сохранение формы 043/у',
-  'clinical_notes.save_protocol_043': 'Сохранение протокола 043/у в ЭМК',
+  save_protocol_043: 'ДЕНТА сформировала дневник 043/у',
+  'clinical_notes.save_protocol_043': 'ДЕНТА сформировала дневник 043/у',
+  calculate_treatment_estimate: 'ДЕНТА предлагает план лечения',
+  'clinical.calculate_treatment_estimate': 'ДЕНТА предлагает план лечения',
   create_lab_order: 'Заказ-наряд в зуботехническую лабораторию',
   'lab.create_lab_order': 'Создание наряда в лабораторию',
   sign_consent: 'Подписание ИДС',
   'documents.sign_consent': 'Регистрация информированного согласия',
+  check_drug_interactions: 'Проверка взаимодействия лекарств (DDI)',
+  'clinical.check_drug_interactions': 'Проверка лекарственной безопасности DDI',
+  replace_unsafe_drug: 'Замена противопоказанного препарата',
 };
 
 const ARG_LABELS: Record<string, { label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
@@ -75,10 +82,22 @@ const ARG_LABELS: Record<string, { label: string; icon: React.ComponentType<{ si
   tooth: { label: 'Зуб (FDI)', icon: Layers },
   tooth_number: { label: 'Номер зуба', icon: Layers },
   diagnosis: { label: 'Диагноз МКБ-10', icon: FileText },
+  icd10: { label: 'МКБ-10', icon: FileText },
+  complaints: { label: 'Жалобы пациента', icon: FileText },
+  anamnesis: { label: 'Анамнез заболевания', icon: FileText },
+  objective: { label: 'Объективный статус', icon: FileText },
+  treatment: { label: 'Лечение и процедуры', icon: FileText },
+  recommendations: { label: 'Рекомендации', icon: FileText },
   medication: { label: 'Препарат', icon: Pill },
   drug_name: { label: 'Препарат', icon: Pill },
   dosage: { label: 'Дозировка', icon: Pill },
   quantity: { label: 'Количество', icon: Layers },
+  safe_alternative: { label: 'Безопасный аналог', icon: Pill },
+  alternative: { label: 'Безопасный аналог', icon: Pill },
+  allergen: { label: 'Аллерген', icon: ShieldAlert },
+  contraindication: { label: 'Противопоказание', icon: ShieldAlert },
+  tier_key: { label: 'Тариф плана', icon: Layers },
+  tierKey: { label: 'Тариф плана', icon: Layers },
 };
 
 export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
@@ -113,6 +132,42 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
     if (!onConfirm) return;
     const finalArgs = decision === 'confirm' ? (customArgs ?? editedArgs) : undefined;
     const finalReason = decision === 'reject' ? (customReason ?? (rejectReason.trim() || undefined)) : undefined;
+
+    // Direct synchronous state sync with useVisitStore on confirmation
+    if (decision === 'confirm' && finalArgs) {
+      try {
+        const store = useVisitStore.getState();
+        // 1. Protocol 043/u
+        if (rawName.includes('043') || rawName.includes('diary') || rawName.includes('note')) {
+          const toothCode = String(finalArgs.tooth || (Array.isArray(finalArgs.teeth) ? finalArgs.teeth[0] : '') || '36');
+          const diagStr = String(finalArgs.diagnosis || finalArgs.icd10 || 'K02.1');
+          if (toothCode) {
+            store.applyAiToothCodes([toothCode], 'done', { [toothCode]: 'treatment' }, { [toothCode]: diagStr });
+          }
+          store.setVisitNoteForm((prev) => ({
+            ...prev,
+            complaint: String(finalArgs.complaint || finalArgs.complaints || prev.complaint),
+            anamnesis: String(finalArgs.anamnesis || prev.anamnesis),
+            objectiveStatus: String(finalArgs.objectiveStatus || finalArgs.objective || prev.objectiveStatus),
+            diagnosis: String(finalArgs.diagnosis || prev.diagnosis),
+            treatmentPlan: String(finalArgs.treatmentPlan || finalArgs.treatment || prev.treatmentPlan),
+          }));
+        }
+        // 2. Treatment plan estimate
+        else if (rawName.includes('estimate') || rawName.includes('plan')) {
+          const teethList = Array.isArray(finalArgs.teeth) && finalArgs.teeth.length > 0
+            ? finalArgs.teeth.map(String)
+            : ['36'];
+          const plannedMap: Record<string, 'planned'> = {};
+          teethList.forEach((t) => {
+            plannedMap[t] = 'planned';
+          });
+          store.applyAiToothCodes(teethList, 'planned', plannedMap);
+        }
+      } catch {
+        // resilience
+      }
+    }
 
     onConfirm(actualCallId, decision, finalArgs, finalReason);
     setIsEditing(false);
@@ -224,7 +279,7 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
                 : 'Операция была отменена по решению пользователя.'
               : isDestructive
               ? 'Внимание: данное действие вносит необратимые изменения в медицинскую карту или расписание клиники.'
-              : 'Проверьте параметры клинического действия перед утверждением.'}
+              : 'ДЕНТА запрашивает подтверждение операции: проверьте параметры перед утверждением.'}
           </p>
         </div>
       </div>
@@ -388,24 +443,21 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
 
               <button
                 type="button"
-                className="copilot-btn-secondary"
-                onClick={() => setIsEditing(true)}
-                disabled={disabled}
-                title="Изменить параметры перед выполнением"
-              >
-                <Edit3 size={15} />
-                <span>Изменить</span>
-              </button>
-
-              <button
-                type="button"
                 className={isDestructive ? 'copilot-btn-destructive' : 'copilot-btn-primary'}
                 onClick={() => handleExecute('confirm', initialArgs)}
                 disabled={disabled}
                 title="Авторизовать и выполнить действие"
               >
                 <Check size={15} />
-                <span>Подтвердить</span>
+                <span>
+                  {rawName.includes('043') || rawName.includes('diary')
+                    ? 'Сохранить в ЭМК визита (1 клик)'
+                    : rawName.includes('estimate') || rawName.includes('plan')
+                    ? 'Утвердить план лечения'
+                    : rawName.includes('interaction') || rawName.includes('replace') || rawName.includes('drug')
+                    ? 'Заменить на безопасный препарат'
+                    : 'Подтвердить'}
+                </span>
               </button>
             </>
           )}

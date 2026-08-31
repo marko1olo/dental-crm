@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { User, Sparkles, CheckCircle2, AlertTriangle, Loader2, ChevronDown, ChevronUp, XCircle } from 'lucide-react';
+import { User, Sparkles, CheckCircle2, AlertTriangle, Loader2, ChevronDown, ChevronUp, XCircle, Brain } from 'lucide-react';
 import type { CopilotUiMessage, SlotResult, SelectIdHandler, BookSlotHandler, ConfirmHandler } from './copilotTypes';
 import { CopilotMarkdown } from './CopilotMarkdown';
 import { CopilotConfirmCard } from './CopilotConfirmCard';
 import { CopilotResultCard } from './CopilotResultCard';
+import { CopilotReactTracker } from './CopilotGenerativeCards';
 import { parseCopilotUiContextHeader } from './CopilotContextSync';
 
 export interface CopilotMessageProps {
@@ -158,6 +159,61 @@ export const CopilotMessage: React.FC<CopilotMessageProps> = ({
     );
   }
 
+  if (message.kind === 'thinking') {
+    const isStreaming = Boolean(message.streaming);
+    return (
+      <div
+        className="copilot-thinking-box"
+        style={{
+          margin: '6px 0',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          backgroundColor: 'var(--paper-soft, rgba(15, 118, 110, 0.04))',
+          border: '1px solid var(--line, rgba(15, 118, 110, 0.15))',
+          fontSize: '12px',
+          color: 'var(--ink, #0f172a)',
+        }}
+      >
+        <div
+          onClick={() => setExpanded(!expanded)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--teal-dark, #0f766e)', fontWeight: 600 }}>
+            <Brain size={14} className={isStreaming ? 'animate-pulse' : undefined} />
+            <span>{isStreaming ? 'Рассуждение ИИ (в процессе)...' : 'Ход рассуждения ИИ'}</span>
+          </div>
+          <span style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center' }}>
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </span>
+        </div>
+
+        {expanded && (
+          <div
+            style={{
+              marginTop: '6px',
+              paddingTop: '6px',
+              borderTop: '1px dashed var(--line, rgba(15, 118, 110, 0.15))',
+              color: 'var(--muted, #64748b)',
+              lineHeight: 1.45,
+              whiteSpace: 'pre-wrap',
+              fontFamily: 'monospace',
+              fontSize: '11px',
+            }}
+          >
+            {message.text}
+            {isStreaming && <span className="copilot-streaming-cursor" />}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (message.kind === 'confirmation') {
     return (
       <div style={{ margin: '8px 0' }}>
@@ -168,6 +224,20 @@ export const CopilotMessage: React.FC<CopilotMessageProps> = ({
           resolved={message.resolved}
           nameCache={nameCache}
           onConfirm={onConfirm ? (id, dec, mod, reas) => onConfirm(id, dec, mod, reas) : undefined}
+        />
+      </div>
+    );
+  }
+
+  if (message.kind === 'react_steps') {
+    return (
+      <div style={{ margin: '8px 0' }}>
+        <CopilotReactTracker
+          title={message.title}
+          steps={message.steps}
+          currentStepIndex={message.currentStepIndex}
+          isComplete={message.isComplete}
+          totalDurationMs={message.totalDurationMs}
         />
       </div>
     );

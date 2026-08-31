@@ -1,12 +1,8 @@
-import { Check, Mic, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { actionFailureToast } from "../../lib/panelStateText";
-import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast";
-import {
-	VOICE_DICTATION_UNSUPPORTED_TEXT,
-	voiceDictationErrorText,
-} from "./voiceDictationText";
+import { Check, Mic, MicOff, Sparkles, X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
+import { useAudioFeedback } from "../../hooks/useAudioFeedback";
+import { parseDentalVoiceSpeech } from "../../services/voice/dentalGrammarParser";
 
 export function VoiceDictationOverlay({
 	isOpen,
@@ -17,126 +13,82 @@ export function VoiceDictationOverlay({
 	onClose: () => void;
 	onDictationSubmit: (text: string) => void;
 }) {
-	const [isListening, setIsListening] = useState(false);
-	const [transcript, setTranscript] = useState("");
-	const [waves, setWaves] = useState<number[]>([20, 40, 60, 40, 20]);
-	/*
-	 * Почему распознавания нет — отдельно от распознанного текста.
-	 *
-	 * БЫЛО: сообщение «Браузер не поддерживает распознавание речи» записывалось
-	 * в transcript, то есть в речь пациента. Кнопка «Подтвердить» появляется по
-	 * непустому transcript, поэтому она появлялась и здесь — и эту фразу можно
-	 * было отправить на разбор как содержание приёма.
-	 */
-	const [problem, setProblem] = useState<string | null>(null);
-	/*
-	 * Живой объект распознавания. БЫЛО: он был локальной переменной внутри
-	 * эффекта, поэтому кнопка «Остановить запись» до него не доставала и делала
-	 * только setIsListening(false) — микрофон продолжал слушать кабинет, а
-	 * onresult продолжал дописывать текст, который врач уже считал итоговым.
-	 */
-	const recognitionRef = useRef<{ stop: () => void } | null>(null);
+	const {
+		isRecording,
+		audioLevel,
+		interimText,
+		fullTranscript,
+		startDictation,
+		stopDictation,
+		clearTranscript,
+		error,
+	} = useUnifiedDictation({
+		preferredMode: "gemini_live",
+		context: "visit",
+		specialty: "therapy",
+		autoFallback: true,
+	});
 
-	/** Остановить распознавание по-настоящему, а не только погасить полоски. */
-	const stopListening = () => {
-		const recognition = recognitionRef.current;
-		recognitionRef.current = null;
-		if (recognition) {
-			try {
-				recognition.stop();
-			} catch (err) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				// Остановка уже остановленного распознавания бросает исключение в
-				// части браузеров. Человеку это не ошибка: запись и так не идёт.
-				logger.error("[диктовка] остановка распознавания", err);
-			}
-		}
-		setIsListening(false);
-	};
+	const [liveIntentSummary, setLiveIntentSummary] = useState<string | null>(null);
+	const prevParsedCountRef = useRef(0);
+	const { playActionSuccess, playSpeechCaptured } = useAudioFeedback();
 
 	useEffect(() => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		let recognition: any = null;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		let waveInterval: any = null;
-
 		if (isOpen) {
-			setTranscript("");
-			setProblem(null);
-			setIsListening(true);
-
-			waveInterval = setInterval(() => {
-				setWaves(
-					Array.from(
-						{ length: 15 },
-						() =>
-							(Number(crypto.getRandomValues(new Uint32Array(1))[0]) /
-								4294967295) *
-								80 +
-							20,
-					),
-				);
-			}, 150);
-
-			const SpeechRecognition =
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				(window as any).SpeechRecognition ||
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				(window as any).webkitSpeechRecognition;
-			if (SpeechRecognition) {
-				recognition = new SpeechRecognition();
-				recognition.lang = "ru-RU";
-				recognition.continuous = true;
-				recognition.interimResults = true;
-
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				recognition.onresult = (event: any) => {
-					let currentTranscript = "";
-					for (let i = event.resultIndex; i < event.results.length; ++i) {
-						currentTranscript += event.results[i][0].transcript;
-					}
-					setTranscript((prev) => prev + currentTranscript);
-				};
-
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				recognition.onerror = (event: any) => {
-					// Код ошибки английский и остаётся в консоли; врачу идёт причина
-					// словами и следующий шаг.
-					logger.error("[диктовка] распознавание речи", event?.error);
-					setProblem(voiceDictationErrorText(event?.error));
-					setIsListening(false);
-				};
-
-				recognition.onend = () => {
-					setIsListening(false);
-				};
-
-				recognitionRef.current = recognition;
-				recognition.start();
-			} else {
-				// Браузер без распознавания речи: причина в отдельном состоянии, а не
-				// в тексте распознанного.
-				setProblem(VOICE_DICTATION_UNSUPPORTED_TEXT);
-				setIsListening(false);
+			clearTranscript();
+			setLiveIntentSummary(null);
+			prevParsedCountRef.current = 0;
+			void startDictation("gemini_live");
+		} else {
+			if (isRecording) {
+				void stopDictation();
 			}
 		}
+	}, [isOpen, startDictation, stopDictation, clearTranscript]);
 
-		return () => {
-			if (waveInterval) clearInterval(waveInterval);
-			recognitionRef.current = null;
-			if (recognition) {
-				recognition.stop();
+	// Live parse intent for preview feedback
+	useEffect(() => {
+		const fullText = (fullTranscript + " " + interimText).trim();
+		if (fullText) {
+			const intent = parseDentalVoiceSpeech(fullText);
+			if (intent.teethUpdates.length > 0) {
+				const chips = intent.teethUpdates
+					.map((t) => `Зуб ${t.toothNumber}: ${t.state}`)
+					.join(", ");
+				setLiveIntentSummary(chips);
+				if (intent.teethUpdates.length > prevParsedCountRef.current) {
+					prevParsedCountRef.current = intent.teethUpdates.length;
+					void playSpeechCaptured();
+				}
+			} else {
+				setLiveIntentSummary(null);
 			}
-		};
-	}, [isOpen]);
+		} else {
+			setLiveIntentSummary(null);
+			prevParsedCountRef.current = 0;
+		}
+	}, [fullTranscript, interimText, playSpeechCaptured]);
 
 	if (!isOpen) return null;
+
+	const handleStop = async () => {
+		const res = await stopDictation();
+		if (res && res.trim()) {
+			onDictationSubmit(res.trim());
+		}
+	};
+
+	const handleConfirm = () => {
+		const finalVal = (fullTranscript + " " + interimText).trim();
+		if (finalVal) {
+			void playActionSuccess();
+			onDictationSubmit(finalVal);
+		}
+		onClose();
+	};
+
+	const displayText = fullTranscript.trim();
+	const interim = interimText.trim();
 
 	return (
 		<div
@@ -144,23 +96,27 @@ export function VoiceDictationOverlay({
 				position: "fixed",
 				inset: 0,
 				zIndex: 100000,
-				background: "rgba(0,0,0,0.7)",
-				backdropFilter: "blur(12px)",
+				background: "rgba(0,0,0,0.75)",
+				backdropFilter: "blur(14px)",
 				display: "flex",
 				flexDirection: "column",
 				alignItems: "center",
 				justifyContent: "center",
+				padding: "24px",
+				boxSizing: "border-box",
 			}}
+			data-testid="voice-dictation-overlay"
 		>
 			<button
 				type="button"
 				onClick={onClose}
+				aria-label="Закрыть голосовую надиктовку ДЕНТА"
 				style={{
 					position: "absolute",
-					top: 40,
-					right: 40,
-					background: "rgba(255,255,255,0.1)",
-					border: "none",
+					top: 24,
+					right: 24,
+					background: "rgba(255,255,255,0.12)",
+					border: "1px solid rgba(255,255,255,0.2)",
 					borderRadius: "50%",
 					width: 48,
 					height: 48,
@@ -168,152 +124,260 @@ export function VoiceDictationOverlay({
 					alignItems: "center",
 					justifyContent: "center",
 					cursor: "pointer",
-					color: "#fff",
+					color: "#ffffff",
+					transition: "all 0.2s ease",
 				}}
 			>
-				<X size={24} />
+				<X size={22} />
 			</button>
 
+			{/* Real Live VU Equalizer Waveform */}
 			<div
 				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: 8,
-					height: 100,
-					marginBottom: 40,
-				}}
-			>
-				{isListening ? (
-					waves
-						.map((h, barIndex) => ({ barId: `wave-bar-${barIndex}`, h }))
-						.map(({ barId, h }) => (
-							<div
-								key={barId}
-								style={{
-									width: 8,
-									height: h,
-									background: "var(--teal, #0d9488)",
-									borderRadius: 4,
-									transition: "height 0.15s ease",
-								}}
-							/>
-						))
-				) : (
-					<div
-						style={{
-							width: 8,
-							height: 10,
-							background: "#888",
-							borderRadius: 4,
-						}}
-					/>
-				)}
-			</div>
-
-			<div
-				style={{
-					position: "relative",
-					width: 120,
-					height: 120,
-					borderRadius: "50%",
-					background: isListening
-						? "var(--teal, #0d9488)"
-						: "rgba(255,255,255,0.1)",
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
-					boxShadow: isListening
-						? "var(--shadow-md, 0 4px 12px rgba(0,0,0,0.15))"
+					gap: 6,
+					height: 72,
+					marginBottom: 24,
+				}}
+				aria-label="Аудио индикатор"
+			>
+				{[0.3, 0.6, 1.1, 1.7, 2.0, 1.6, 1.2, 0.7, 0.4].map((mult, idx) => {
+					const barHeight = isRecording
+						? Math.max(6, Math.min(68, 6 + audioLevel * mult * 60))
+						: 6;
+					return (
+						<div
+							key={idx}
+							style={{
+								width: 6,
+								height: `${barHeight}px`,
+								background: isRecording ? "var(--teal, #0d9488)" : "#666",
+								borderRadius: 3,
+								transition: "height 0.08s cubic-bezier(0.2, 0.8, 0.4, 1)",
+							}}
+						/>
+					);
+				})}
+			</div>
+
+			{/* Central Mic Pulse Orb */}
+			<div
+				style={{
+					position: "relative",
+					width: 100,
+					height: 100,
+					borderRadius: "50%",
+					background: isRecording
+						? "var(--teal, #0d9488)"
+						: "rgba(255,255,255,0.12)",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					boxShadow: isRecording
+						? "0 0 32px var(--teal-glow, rgba(13, 148, 136, 0.45))"
 						: "none",
-					border: isListening ? "3px solid var(--teal, #0d9488)" : "3px solid transparent",
-					transition: "all 0.3s",
-					marginBottom: 32,
+					border: isRecording ? "3px solid #ffffff" : "3px solid transparent",
+					transition: "all 0.3s ease",
+					marginBottom: 24,
 				}}
 			>
-				{isListening && (
+				{isRecording && (
 					<div
 						style={{
 							position: "absolute",
-							inset: -12,
+							inset: -10,
 							borderRadius: "50%",
 							border: "2px solid var(--teal, #0d9488)",
-							opacity: 0.4,
+							opacity: 0.5,
+							animation: "copilot-pulse-mic 1.5s infinite",
 						}}
 					/>
 				)}
-				<Mic size={48} color={isListening ? "#fff" : "#aaa"} />
+				{isRecording ? (
+					<Mic size={40} color="#ffffff" />
+				) : (
+					<MicOff size={40} color="#aaaaaa" />
+				)}
 			</div>
 
-			<div style={{ maxWidth: 600, textAlign: "center" }}>
+			{/* Two-Layer Streaming Text Area */}
+			<div
+				style={{
+					maxWidth: 680,
+					width: "100%",
+					textAlign: "center",
+					minHeight: 90,
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
+					justifyContent: "center",
+					gap: 8,
+				}}
+			>
 				<p
 					style={{
-						fontSize: 24,
+						fontSize: 22,
 						fontWeight: 500,
-						color: "#fff",
-						minHeight: 80,
+						color: "#ffffff",
 						lineHeight: 1.4,
+						margin: 0,
+						wordBreak: "break-word",
 					}}
 				>
-					{transcript || (isListening ? "Говорите..." : "")}
+					{displayText ? (
+						<span>
+							{displayText}
+							{interim && (
+								<span
+									style={{
+										color: "var(--teal-soft, #5eead4)",
+										fontStyle: "italic",
+										fontWeight: 600,
+										marginLeft: 6,
+									}}
+								>
+									{interim}
+								</span>
+							)}
+						</span>
+					) : interim ? (
+						<span
+							style={{
+								color: "var(--teal-soft, #5eead4)",
+								fontStyle: "italic",
+								fontWeight: 600,
+							}}
+						>
+							{interim}
+						</span>
+					) : isRecording ? (
+						<span style={{ color: "rgba(255,255,255,0.6)" }}>
+							Слушаю... ДЕНТА распознает команды зубной формулы ("36 кариес", "47 пульпит")...
+						</span>
+					) : (
+						<span style={{ color: "rgba(255,255,255,0.4)" }}>
+							Запись остановлена
+						</span>
+					)}
 				</p>
-				{/* Причина, по которой диктовать не выходит. БЫЛО: замершее окно без
-				    слов и без кнопок — врач не знал ни что случилось, ни что делать. */}
-				{problem !== null && (
+
+				{/* Live Dental Intent Chip Feedback */}
+				{liveIntentSummary && (
+					<div
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 6,
+							padding: "4px 12px",
+							borderRadius: 20,
+							background: "rgba(13, 148, 136, 0.25)",
+							border: "1px solid var(--teal, #0d9488)",
+							color: "var(--teal-soft, #5eead4)",
+							fontSize: 13,
+							fontWeight: 600,
+							marginTop: 4,
+						}}
+					>
+						<Sparkles size={14} />
+						<span>ДЕНТА распознала: {liveIntentSummary}</span>
+					</div>
+				)}
+
+				{error && (
 					<p
 						role="alert"
 						style={{
-							fontSize: 16,
-							lineHeight: 1.5,
-							color: "#ffd7a3",
+							fontSize: 14,
+							lineHeight: 1.4,
+							color: "#fca5a5",
 							maxWidth: 520,
-							margin: "0 auto",
+							margin: "4px 0 0 0",
 						}}
 					>
-						{problem}
+						{error}
 					</p>
 				)}
 			</div>
 
-			<div style={{ display: "flex", gap: 16, marginTop: 40 }}>
-				{isListening && (
+			{/* Actions Bar */}
+			<div style={{ display: "flex", gap: 14, marginTop: 32 }}>
+				{isRecording ? (
 					<button
 						type="button"
-						/* БЫЛО: только setIsListening(false) — полоски гасли, а микрофон
-						   продолжал слушать кабинет и дописывать текст. */
-						onClick={stopListening}
+						onClick={handleStop}
 						style={{
-							padding: "16px 32px",
-							borderRadius: 32,
-							background: "rgba(255,255,255,0.1)",
-							color: "#fff",
-							border: "none",
-							fontSize: 18,
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "12px 28px",
+							borderRadius: 24,
+							background: "rgba(255,255,255,0.15)",
+							color: "#ffffff",
+							border: "1px solid rgba(255,255,255,0.25)",
+							fontSize: 16,
 							fontWeight: 600,
 							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: 8,
+							transition: "all 0.15s ease",
 						}}
 					>
-						Остановить запись
+						<MicOff size={18} />
+						<span>Остановить</span>
+					</button>
+				) : (
+					<button
+						type="button"
+						onClick={() => void startDictation("gemini_live")}
+						style={{
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "12px 28px",
+							borderRadius: 24,
+							background: "rgba(255,255,255,0.15)",
+							color: "#ffffff",
+							border: "1px solid rgba(255,255,255,0.25)",
+							fontSize: 16,
+							fontWeight: 600,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: 8,
+						}}
+					>
+						<Mic size={18} />
+						<span>Продолжить запись</span>
 					</button>
 				)}
-				{!isListening && transcript && (
+
+				{(displayText || interim) && (
 					<button
 						type="button"
-						onClick={() => onDictationSubmit(transcript)}
+						onClick={handleConfirm}
 						style={{
-							padding: "16px 32px",
-							borderRadius: 32,
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "12px 28px",
+							borderRadius: 24,
 							background: "var(--teal, #0d9488)",
-							color: "#fff",
+							color: "#ffffff",
 							border: "none",
-							fontSize: 18,
-							fontWeight: 600,
-							display: "flex",
+							fontSize: 16,
+							fontWeight: 700,
+							display: "inline-flex",
 							alignItems: "center",
-							gap: 12,
+							justifyContent: "center",
+							gap: 8,
 							cursor: "pointer",
+							boxShadow: "0 2px 10px rgba(13, 148, 136, 0.4)",
 						}}
 					>
-						<Check size={24} /> Подтвердить
+						<Check size={20} />
+						<span>Применить</span>
 					</button>
 				)}
 			</div>

@@ -128,7 +128,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   const pendingCount = pending ? 1 : messages.filter((m) => m.kind === 'confirmation' && !m.resolved).length;
 
   const content = (
-    <aside className="copilot-drawer open" aria-label="DENTE Copilot Assistant">
+    <aside className="copilot-drawer open" aria-label="ДЕНТА — Клинический ассистент">
       {/* Header */}
       <header className="copilot-header">
         <div className="copilot-header-brand">
@@ -137,8 +137,8 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           </div>
           <div>
             <h3 className="copilot-header-title">
-              <span>DENTE Copilot</span>
-              <span className="copilot-header-badge">AI Assistant</span>
+              <span>ДЕНТА — Клинический ассистент</span>
+              <span className="copilot-header-badge">ИИ-ассистент</span>
             </h3>
             <div style={{ fontSize: '12px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
               {busy ? (
@@ -184,7 +184,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           padding: '6px 16px',
           backgroundColor: 'var(--paper-soft, rgba(15, 118, 110, 0.04))',
           borderBottom: '1px solid var(--line, rgba(15, 118, 110, 0.12))',
-          fontSize: '11px',
+          fontSize: '12px',
           color: 'var(--ink, #0f172a)',
         }}
         data-testid="copilot-context-bar"
@@ -351,6 +351,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
         onChange={handleInputChange}
         onSubmit={handleSubmit}
         onReset={handleReset}
+        patientId={uiContext.patientId ?? null}
       />
     </aside>
   );

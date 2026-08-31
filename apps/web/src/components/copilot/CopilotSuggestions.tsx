@@ -46,9 +46,9 @@ export const CopilotSuggestions: React.FC<CopilotSuggestionsProps> = ({ onPick, 
         <Sparkles size={24} />
       </div>
       <div>
-        <h4 className="copilot-hero-title">Клинический ассистент DENTE</h4>
+        <h4 className="copilot-hero-title">ДЕНТА — Клинический ИИ-ассистент</h4>
         <p className="copilot-hero-sub">
-          Задайте вопрос по расписанию, пациентам, планам лечения или выберите готовый сценарий:
+          Задайте вопрос ДЕНТЕ по расписанию, пациентам, планам лечения или выберите готовый сценарий:
         </p>
       </div>
 

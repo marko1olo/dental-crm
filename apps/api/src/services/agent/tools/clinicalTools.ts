@@ -410,12 +410,19 @@ export async function performClinicalDrugSafetyAudit(
 			propLower.includes("ubistesin") ||
 			propLower.includes("убистезин");
 
-		const hasSulfiteAllergy = unifiedAllergies.some(
-			(a) =>
-				a.includes("сульфит") ||
-				a.includes("метабисульфит") ||
-				a.includes("sulfite"),
-		);
+		const hasSulfiteAllergy =
+			unifiedAllergies.some(
+				(a) =>
+					a.includes("сульфит") ||
+					a.includes("метабисульфит") ||
+					a.includes("sulfite"),
+			) ||
+			unifiedConditions.some(
+				(c) =>
+					c.includes("asthma") ||
+					c.includes("астма") ||
+					c.includes("bronchial_asthma"),
+			);
 
 		if (hasVasoconstrictor && hasSulfiteAllergy) {
 			blockedPrescriptions.add(proposed);
@@ -1992,7 +1999,11 @@ export const checkDrugInteractionsTool: ToolDefinition<
 			hasAllergyClash: audit.hasAllergyClash,
 			allergyWarnings: audit.allergyWarnings,
 			drugInteractionsCount: audit.drugInteractions.length,
-			drugInteractions: audit.drugInteractions,
+			drugInteractions: audit.drugInteractions.map((i) => ({
+				...i,
+				drugAId: i.primaryDrug,
+				drugBId: i.interactingDrug,
+			})),
 			contraindications: audit.conditionContraindications,
 			blockedPrescriptions: audit.blockedPrescriptions,
 			safeAlternativeRecommendations: audit.safeAlternativeRecommendations,
