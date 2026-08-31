@@ -16,6 +16,18 @@ import { CopilotSlotCard } from './CopilotSlotCard';
 import { CopilotLabOrderCard } from './CopilotLabOrderCard';
 import { CopilotDrugInteractionCard } from './CopilotDrugInteractionCard';
 import { CopilotTimelineCard } from './CopilotTimelineCard';
+import {
+  PatientProfileCard,
+  ScheduleSlotPickerCard,
+  Prescription107Card,
+  EstimateTierCard,
+  type PatientProfileCardData,
+  type ScheduleSlotPickerData,
+  type ScheduleSlotOption,
+  type Prescription107Data,
+  type EstimateTierData,
+  type EstimateTierOption,
+} from './CopilotGenerativeCards';
 import { formatMoney } from './useCopilotFormat';
 import { Users, CreditCard, AlertCircle } from 'lucide-react';
 
@@ -187,6 +199,106 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
     );
   }
 
+  // 4.1. Generative UI: Estimate 3-Tier Treatment Plan Card
+  if (
+    tool.includes('estimate') ||
+    tool.includes('tier') ||
+    tool.includes('treatment_plan') ||
+    Array.isArray(obj.tiers) ||
+    Array.isArray(obj.pricing_tiers) ||
+    obj.estimate !== undefined
+  ) {
+    const rawTiers = Array.isArray(obj.tiers)
+      ? (obj.tiers as unknown as EstimateTierOption[])
+      : Array.isArray(obj.pricing_tiers)
+      ? (obj.pricing_tiers as unknown as EstimateTierOption[])
+      : Array.isArray(result) && result.length > 0 && ('tierKey' in (result[0] as Obj) || 'tierName' in (result[0] as Obj))
+      ? (result as unknown as EstimateTierOption[])
+      : undefined;
+
+    if (rawTiers || obj.items) {
+      const estimateData: EstimateTierData = {
+        patientId: typeof obj.patientId === 'string' ? obj.patientId : undefined,
+        patientName: typeof obj.patientName === 'string' ? obj.patientName : undefined,
+        discountPercent: typeof obj.discountPercent === 'number' ? obj.discountPercent : undefined,
+        teeth: Array.isArray(obj.teeth) ? (obj.teeth as (string | number)[]) : undefined,
+        tiers: rawTiers || [],
+      };
+      return <EstimateTierCard data={estimateData} />;
+    }
+  }
+
+  // 4.2. Generative UI: Prescription 107-1/u Card
+  if (
+    tool.includes('prescription') ||
+    tool.includes('107') ||
+    tool.includes('recipe') ||
+    obj.prescription !== undefined ||
+    (Array.isArray(obj.drugs) && obj.drugs.length > 0 && ('latinName' in (obj.drugs[0] as Obj) || 'signa' in (obj.drugs[0] as Obj)))
+  ) {
+    const rxObj = (obj.prescription && typeof obj.prescription === 'object' ? obj.prescription : obj) as unknown as Prescription107Data;
+    if (rxObj && rxObj.patientName && Array.isArray(rxObj.drugs)) {
+      return <Prescription107Card prescription={rxObj} />;
+    }
+  }
+
+  // 4.3. Generative UI: Schedule Slot Picker Card (interactive grid)
+  if (
+    (tool.includes('picker') || tool.includes('schedule_picker') || (Array.isArray(obj.slots) && obj.slots.length > 0 && typeof (obj.slots[0] as Obj).time === 'string')) &&
+    (typeof obj.doctorName === 'string' || Array.isArray(obj.slots))
+  ) {
+    const pickerData: ScheduleSlotPickerData = {
+      doctorId: typeof obj.doctorId === 'string' ? obj.doctorId : undefined,
+      doctorName: typeof obj.doctorName === 'string' ? obj.doctorName : undefined,
+      doctorSpecialty: typeof obj.doctorSpecialty === 'string' ? obj.doctorSpecialty : undefined,
+      cabinet: typeof obj.cabinet === 'string' ? obj.cabinet : undefined,
+      date: typeof obj.date === 'string' ? obj.date : undefined,
+      availableDates: Array.isArray(obj.availableDates) ? (obj.availableDates as string[]) : undefined,
+      slots: Array.isArray(obj.slots) ? (obj.slots as unknown as ScheduleSlotOption[]) : [],
+    };
+    if (pickerData.slots.length > 0) {
+      return (
+        <ScheduleSlotPickerCard
+          data={pickerData}
+          onBookSlot={(slot) =>
+            onBookSlot?.({
+              start_time: slot.startTime || slot.time,
+              end_time: slot.endTime,
+              doctor_name: pickerData.doctorName,
+              cabinet: slot.cabinet || pickerData.cabinet,
+            })
+          }
+        />
+      );
+    }
+  }
+
+  // 4.4. Generative UI: Patient Profile Card (rich clinical profile)
+  if (
+    (tool.includes('profile') || tool === 'get_emr_card') &&
+    (obj.fullName || obj.full_name) &&
+    (obj.balanceRub !== undefined || obj.balance_rub !== undefined || obj.allergies !== undefined || obj.cardNumber !== undefined || obj.card_number !== undefined || obj.lastVisitDate !== undefined)
+  ) {
+    const patientData: PatientProfileCardData = {
+      id: String(obj.id || ''),
+      fullName: String(obj.fullName || obj.full_name || ''),
+      phone: typeof obj.phone === 'string' ? obj.phone : undefined,
+      birthDate: typeof obj.birthDate === 'string' ? obj.birthDate : typeof obj.birth_date === 'string' ? obj.birth_date : undefined,
+      gender: typeof obj.gender === 'string' ? obj.gender : undefined,
+      cardNumber: typeof obj.cardNumber === 'string' ? obj.cardNumber : typeof obj.card_number === 'string' ? obj.card_number : undefined,
+      status: typeof obj.status === 'string' ? obj.status : undefined,
+      balanceRub: typeof obj.balanceRub === 'number' ? obj.balanceRub : typeof obj.balance_rub === 'number' ? obj.balance_rub : undefined,
+      familyBalanceRub: typeof obj.familyBalanceRub === 'number' ? obj.familyBalanceRub : typeof obj.family_balance_rub === 'number' ? obj.family_balance_rub : undefined,
+      allergies: Array.isArray(obj.allergies) ? (obj.allergies as string[]) : undefined,
+      lastVisitDate: typeof obj.lastVisitDate === 'string' ? obj.lastVisitDate : typeof obj.last_visit_date === 'string' ? obj.last_visit_date : undefined,
+      lastDoctorName: typeof obj.lastDoctorName === 'string' ? obj.lastDoctorName : typeof obj.last_doctor_name === 'string' ? obj.last_doctor_name : undefined,
+      lastDiagnosis: typeof obj.lastDiagnosis === 'string' ? obj.lastDiagnosis : typeof obj.last_diagnosis === 'string' ? obj.last_diagnosis : undefined,
+      nextAppointmentDate: typeof obj.nextAppointmentDate === 'string' ? obj.nextAppointmentDate : typeof obj.next_appointment_date === 'string' ? obj.next_appointment_date : undefined,
+      activePlanStage: typeof obj.activePlanStage === 'string' ? obj.activePlanStage : typeof obj.active_plan_stage === 'string' ? obj.active_plan_stage : undefined,
+    };
+    return <PatientProfileCard patient={patientData} onOpenCard={onSelectPatient} />;
+  }
+
   // 5. Patients (search / get / list)
   if (Array.isArray(obj.patients) || tool.includes('patient') || tool === 'search' || tool === 'search_patients' || (obj.id && obj.full_name)) {
     const patients: PatientResult[] = Array.isArray(obj.patients)
@@ -244,6 +356,7 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
       );
     }
   }
+
 
   // 8. Financial summary
   if (tool.includes('revenue') || tool.includes('debt') || tool.includes('finance') || typeof obj.total_rub === 'number' || typeof obj.total === 'number') {

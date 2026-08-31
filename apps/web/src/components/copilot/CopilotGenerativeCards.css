@@ -1,0 +1,894 @@
+/**
+ * DENTE Copilot — Generative Server-Driven UI Cards
+ * Standard: Apple HIG & Clinical Density (Section VI)
+ * Responsive across PC Light/Dark, Mobile Light/Dark, Ocean, Cyber X-Ray, Contrast
+ */
+
+/* Base Generative Card Container */
+.copilot-gen-card {
+  width: 100%;
+  border-radius: 12px;
+  background-color: var(--paper-strong, #fafcfa);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  padding: 14px;
+  margin: 8px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 44px;
+  contain: content;
+}
+
+.copilot-gen-card:hover {
+  border-color: var(--line-strong, rgba(15, 118, 110, 0.25));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+/* ==========================================================================
+   1. PatientProfileCard
+   ========================================================================== */
+.copilot-patient-profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.copilot-pp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.copilot-pp-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.copilot-pp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--teal-soft, #ccfbf1), var(--paper-soft, #f4f7f6));
+  color: var(--teal-dark, #0f766e);
+  border: 1.5px solid var(--teal-surface, rgba(204, 251, 241, 0.7));
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.12);
+}
+
+.copilot-pp-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copilot-pp-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.copilot-pp-status-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+}
+
+.copilot-pp-status-badge.active {
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+  border-color: var(--teal-surface, rgba(204, 251, 241, 0.5));
+}
+
+.copilot-pp-status-badge.vip {
+  background-color: var(--amber-soft, #fef3c7);
+  color: var(--amber, #d97706);
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.copilot-pp-status-badge.primary {
+  background-color: var(--paper-soft, #f4f7f6);
+  color: var(--muted, #6b7280);
+  border-color: var(--line, rgba(15, 118, 110, 0.15));
+}
+
+.copilot-pp-meta {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.copilot-pp-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Financial summary pill strip */
+.copilot-pp-finance-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  box-sizing: border-box;
+}
+
+.copilot-pp-finance-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.copilot-pp-finance-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #6b7280);
+}
+
+.copilot-pp-finance-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-pp-finance-val.positive {
+  color: var(--teal, #0d9488);
+}
+
+.copilot-pp-finance-val.negative {
+  color: var(--rust, #b91c1c);
+}
+
+/* Allergy alert banner */
+.copilot-pp-allergy-alert {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: var(--amber-soft, #fef3c7);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  color: var(--amber, #d97706);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copilot-pp-allergy-alert.danger {
+  background-color: var(--rust-soft, #fee2e2);
+  border-color: rgba(185, 28, 28, 0.3);
+  color: var(--rust, #b91c1c);
+}
+
+.copilot-pp-allergy-alert.clean {
+  background-color: var(--paper-soft, #f4f7f6);
+  border-color: var(--line, rgba(15, 118, 110, 0.15));
+  color: var(--muted, #6b7280);
+}
+
+/* Clinical History row */
+.copilot-pp-history-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.1));
+}
+
+.copilot-pp-history-title {
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copilot-pp-history-text {
+  color: var(--muted, #6b7280);
+  line-height: 1.4;
+}
+
+/* Action row */
+.copilot-pp-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.copilot-pp-primary-btn {
+  min-height: 44px;
+  min-width: 44px;
+  flex: 1;
+  padding: 0 16px;
+  border-radius: 8px;
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+  box-sizing: border-box;
+}
+
+.copilot-pp-primary-btn:hover {
+  background-color: var(--teal-dark, #0f766e);
+  transform: translateY(-1px);
+}
+
+.copilot-pp-secondary-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
+  color: var(--ink, #0f172a);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.copilot-pp-secondary-btn:hover {
+  background-color: var(--paper-soft, #f4f7f6);
+  border-color: var(--teal, #0d9488);
+  color: var(--teal-dark, #0f766e);
+}
+
+
+/* ==========================================================================
+   2. ScheduleSlotPickerCard
+   ========================================================================== */
+.copilot-schedule-picker-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.copilot-sp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.copilot-sp-doctor-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.copilot-sp-doctor-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal, #0d9488);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.copilot-sp-doctor-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-sp-doctor-meta {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1px;
+}
+
+/* Date picker bar */
+.copilot-sp-date-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  box-sizing: border-box;
+}
+
+.copilot-sp-date-chip {
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  color: var(--ink, #0f172a);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.copilot-sp-date-chip:hover {
+  border-color: var(--teal, #0d9488);
+  background-color: var(--paper-soft, #f4f7f6);
+}
+
+.copilot-sp-date-chip.active {
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border-color: var(--teal-dark, #0f766e);
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+}
+
+/* Slots Grid */
+.copilot-sp-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  min-height: 96px;
+  box-sizing: border-box;
+}
+
+.copilot-sp-slot-btn {
+  min-height: 44px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  color: var(--ink, #0f172a);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.copilot-sp-slot-btn:hover:not(:disabled) {
+  border-color: var(--teal, #0d9488);
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+}
+
+.copilot-sp-slot-btn.selected {
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border-color: var(--teal-dark, #0f766e);
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+}
+
+.copilot-sp-slot-duration {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted, #6b7280);
+}
+
+.copilot-sp-slot-btn.selected .copilot-sp-slot-duration {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.copilot-sp-slot-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: var(--paper-soft, #f4f7f6);
+}
+
+/* 1-Click Booking Confirmation Footer */
+.copilot-sp-booking-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--teal-soft, #ccfbf1);
+  border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.7));
+  box-sizing: border-box;
+}
+
+.copilot-sp-booking-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal-dark, #0f766e);
+}
+
+.copilot-sp-book-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.copilot-sp-book-btn:hover {
+  background-color: var(--teal-dark, #0f766e);
+}
+
+
+/* ==========================================================================
+   3. Prescription107Card
+   ========================================================================== */
+.copilot-prescription-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-left: 3px solid var(--teal, #0d9488);
+}
+
+.copilot-rx-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  padding-bottom: 10px;
+}
+
+.copilot-rx-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.copilot-rx-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copilot-rx-subtitle {
+  font-size: 11px;
+  color: var(--muted, #6b7280);
+}
+
+.copilot-rx-series-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
+  color: var(--ink, #0f172a);
+  font-family: monospace;
+}
+
+/* Patient & Doctor metadata grid */
+.copilot-rx-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+}
+
+@media (max-width: 480px) {
+  .copilot-rx-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.copilot-rx-meta-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.copilot-rx-meta-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted, #6b7280);
+  text-transform: uppercase;
+}
+
+.copilot-rx-meta-val {
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+}
+
+/* Drugs list */
+.copilot-rx-drug-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copilot-rx-drug-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.copilot-rx-latin-line {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  font-family: "Golos Text", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.copilot-rx-signa-line {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  line-height: 1.4;
+}
+
+/* DDI Safety stamp */
+.copilot-rx-safety-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background-color: var(--teal-soft, #ccfbf1);
+  border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.5));
+  color: var(--teal-dark, #0f766e);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* UKEP Signature block */
+.copilot-rx-ukep-stamp {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: rgba(13, 148, 136, 0.05);
+  border: 1.5px dashed var(--teal, #0d9488);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--teal-dark, #0f766e);
+}
+
+.copilot-rx-ukep-stamp.signed {
+  background-color: var(--teal-soft, #ccfbf1);
+  border-style: solid;
+}
+
+/* Rx Action buttons */
+.copilot-rx-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.copilot-rx-print-btn {
+  min-height: 44px;
+  min-width: 44px;
+  flex: 1;
+  padding: 0 16px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line-strong, rgba(15, 118, 110, 0.3));
+  color: var(--ink, #0f172a);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.copilot-rx-print-btn:hover {
+  background-color: var(--paper-soft, #f4f7f6);
+  border-color: var(--teal, #0d9488);
+  color: var(--teal-dark, #0f766e);
+}
+
+.copilot-rx-sign-btn {
+  min-height: 44px;
+  min-width: 44px;
+  flex: 1;
+  padding: 0 16px;
+  border-radius: 8px;
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+  box-sizing: border-box;
+}
+
+.copilot-rx-sign-btn:hover {
+  background-color: var(--teal-dark, #0f766e);
+}
+
+.copilot-rx-sign-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+
+/* ==========================================================================
+   4. EstimateTierCard
+   ========================================================================== */
+.copilot-estimate-tier-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.copilot-et-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.copilot-et-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink, #0f172a);
+  margin: 0;
+}
+
+.copilot-et-subtitle {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  margin-top: 2px;
+}
+
+/* Responsive Segmented Control (Section VI Apple HIG - no 2500px scroll) */
+.copilot-et-segmented-control {
+  display: flex;
+  padding: 4px;
+  border-radius: 10px;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  gap: 4px;
+  box-sizing: border-box;
+}
+
+.copilot-et-segment-btn {
+  min-height: 44px;
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted, #6b7280);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.copilot-et-segment-btn:hover {
+  color: var(--ink, #0f172a);
+}
+
+.copilot-et-segment-btn.active {
+  background-color: var(--paper, #ffffff);
+  color: var(--teal-dark, #0f766e);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.copilot-et-segment-btn.active.optimum {
+  color: var(--teal, #0d9488);
+}
+
+.copilot-et-segment-btn.active.premium {
+  color: var(--amber, #d97706);
+}
+
+/* Active Tier Presentation Pane */
+.copilot-et-tier-body {
+  padding: 14px;
+  border-radius: 10px;
+  background-color: var(--paper, #ffffff);
+  border: 1.5px solid var(--line, rgba(15, 118, 110, 0.2));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.copilot-et-tier-body.optimum {
+  border-color: var(--teal, #0d9488);
+  box-shadow: 0 0 0 1px var(--teal, #0d9488);
+}
+
+.copilot-et-tier-body.premium {
+  border-color: var(--amber, #d97706);
+}
+
+.copilot-et-price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.copilot-et-tier-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink, #0f172a);
+  margin: 0;
+}
+
+.copilot-et-price {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--teal-dark, #0f766e);
+  letter-spacing: -0.02em;
+}
+
+/* Tax Deduction & Installment Badges */
+.copilot-et-perks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  .copilot-et-perks-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.copilot-et-perk-box {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.copilot-et-perk-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted, #6b7280);
+}
+
+.copilot-et-perk-val {
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+}
+
+/* Materials & Advantages */
+.copilot-et-materials {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background-color: var(--paper-soft, #f4f7f6);
+}
+
+.copilot-et-advantages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-et-adv-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.35;
+}
+
+/* Apply Tier Action Button */
+.copilot-et-apply-btn {
+  min-height: 44px;
+  min-width: 44px;
+  width: 100%;
+  padding: 0 18px;
+  border-radius: 8px;
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px var(--teal-glow, rgba(13, 148, 136, 0.25));
+  box-sizing: border-box;
+}
+
+.copilot-et-apply-btn:hover {
+  background-color: var(--teal-dark, #0f766e);
+  transform: translateY(-1px);
+}
+
+.copilot-et-apply-btn.applied {
+  background-color: var(--green, #15803d);
+}
