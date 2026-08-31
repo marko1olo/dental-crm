@@ -530,14 +530,14 @@ export function SettingsClinicTab({
 
 	return (
 		<section className="clinic-config" aria-label="Аккаунт клиники и команда">
-			<div className="clinic-config-head">
-				<div>
+			<div className="clinic-config-head flex flex-col sm:flex-row items-start justify-between gap-4 w-full">
+				<div className="min-w-0 max-w-full">
 					<p className="eyebrow">Аккаунт клиники</p>
-					<h2>
+					<h2 className="text-xl sm:text-2xl font-bold leading-tight break-words text-[var(--ink)]">
 						{dashboard?.clinicSettings?.profile?.clinicName ??
 							"Демо Клиника DENTE"}
 					</h2>
-					<p>
+					<p className="text-xs sm:text-sm text-[var(--muted)] leading-normal break-words mt-1">
 						{dashboard?.clinicSettings?.profile?.legalName ??
 							"ООО Демо Клиника"}{" "}
 						· {dashboard?.clinicSettings?.profile?.address ?? ""} ·{" "}
@@ -545,14 +545,9 @@ export function SettingsClinicTab({
 					</p>
 				</div>
 				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: "8px",
-						alignItems: "flex-end",
-					}}
+					className="flex flex-col gap-2 items-start sm:items-end shrink-0"
 				>
-					<span>
+					<span className="bg-teal-600 text-white text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap">
 						{dashboard?.clinicSettings?.profile?.mode
 							? clinicModeLabels?.[dashboard.clinicSettings.profile.mode]?.title
 							: "Стандартный"}

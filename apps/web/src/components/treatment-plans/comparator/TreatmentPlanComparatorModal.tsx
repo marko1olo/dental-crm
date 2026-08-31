@@ -144,11 +144,11 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 						<div className="plan-header-icon" aria-hidden="true">
 							<Sparkles size={20} />
 						</div>
-						<div className="min-w-0">
-							<h2 id="plan-comparator-title" className="plan-header-title">
+						<div className="min-w-0 flex-1">
+							<h2 id="plan-comparator-title" className="plan-header-title text-sm sm:text-lg font-bold break-words leading-snug">
 								Студия сравнения планов лечения &mdash; {patientName}
 							</h2>
-							<p className="plan-header-subtitle">
+							<p className="plan-header-subtitle text-xs sm:text-sm text-[var(--muted,#64748b)] break-words mt-0.5">
 								Врач: {doctorName} | {clinicName}
 							</p>
 						</div>

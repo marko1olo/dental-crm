@@ -1337,8 +1337,12 @@ export function VisitEmkTab() {
 				</div>
 			</details>
 
-			{/* Компактные 32px вкладки (EMK Tabs) */}
-			<div className="emk-tabs-container flex items-center gap-1.5 overflow-x-auto flex-nowrap scrollbar-none my-2 pb-1 border-b border-[var(--line)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist">
+			{/* Вкладки протокола приема ЭМК (44px тач-таргеты и адаптивный скролл-контейнер для 390px) */}
+			<div
+				className="emk-tabs-container flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none py-1 my-2 border-b border-[var(--line)] touch-pan-x min-w-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				role="tablist"
+				aria-label="Вкладки протокола приема"
+			>
 				{emkTabs.map((tab) => {
 					const isFilled =
 						tab.id !== "all" &&
@@ -1349,7 +1353,7 @@ export function VisitEmkTab() {
 							type="button"
 							role="tab"
 							aria-selected={activeEmkTab === tab.id}
-							className={`emk-tab-button h-8 !min-h-[32px] px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
+							className={`emk-tab-button min-h-[44px] px-3 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap touch-manipulation ${
 								activeEmkTab === tab.id
 									? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-xs"
 									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"

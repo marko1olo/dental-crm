@@ -109,14 +109,14 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					</div>
 					<div className="min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
-							<span className="font-black text-xs sm:text-sm text-[var(--ink,#0f172a)] truncate">
+							<span className="font-black text-xs sm:text-sm text-[var(--ink,#0f172a)] break-words">
 								3-Tier Сравнение планов (Эконом / Оптимум / Премиум)
 							</span>
 							<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20 whitespace-nowrap">
 								СтАР / 804н
 							</span>
 						</div>
-						<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 truncate max-w-xl">
+						<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 break-words max-w-xl">
 							Интерактивное сравнение клинических этапов, сроков, гарантий и программ оплаты 0%
 						</p>
 					</div>

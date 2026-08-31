@@ -322,20 +322,21 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					</div>
 				</div>
 
-				{/* Кнопка Открыть/Закрыть смену */}
+				{/* Кнопка Открыть/Закрыть смену (Единая точка действия по Закону Хика) */}
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
-						onClick={handleToggleShift}
+						onClick={isShiftOpen ? handleOpenZReportModal : handleToggleShift}
 						disabled={isProcessing}
 						className={`cash-shift-btn min-h-[48px] px-5 text-sm font-bold shadow-md cursor-pointer ${
 							isShiftOpen ? "cash-shift-btn-open" : "cash-shift-btn-closed"
 						}`}
+						data-testid="cash-shift-toggle-btn"
 					>
 						{isShiftOpen ? (
 							<>
 								<Lock size={16} />
-								<span>Закрыть смену (Z-отчет)</span>
+								<span>Сформировать Z-отчет и закрыть смену</span>
 							</>
 						) : (
 							<>
@@ -457,17 +458,6 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 				>
 					<Printer size={16} />
 					<span>Печать X-отчета (без гашения)</span>
-				</button>
-
-				<button
-					type="button"
-					onClick={handleOpenZReportModal}
-					disabled={!isShiftOpen || isProcessing}
-					className="min-h-[48px] px-4 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-sm transition-all"
-					title="Сформировать Z-отчет с гашением"
-				>
-					<FileSpreadsheet size={16} />
-					<span>Сформировать Z-отчет 54-ФЗ</span>
 				</button>
 
 				<button

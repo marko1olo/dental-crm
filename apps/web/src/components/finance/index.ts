@@ -2,6 +2,7 @@
  * @dental/web finance components re-exports
  */
 export * from "./TaxDeductionCertificateModal";
+export * from "./FinanceTaxDeductionCard";
 export * from "./FiscalReceipt54FzModal";
 export * from "./PatientBillingModal";
 export * from "./FamilyCombinedBillingModal";

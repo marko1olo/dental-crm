@@ -64,7 +64,10 @@ export function VisitMainTabs({
 				onClick={() => setVisitSubViewTab("odontogram")}
 			>
 				<Activity size={15} className="shrink-0" />
-				<span className="whitespace-nowrap flex-shrink-0">Зубная формула и Дневник</span>
+				<span className="whitespace-nowrap flex-shrink-0">
+					<span className="sm:hidden">Формула / Дневник</span>
+					<span className="hidden sm:inline">Зубная формула и Дневник</span>
+				</span>
 			</button>
 			<button
 				type="button"

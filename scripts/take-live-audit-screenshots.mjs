@@ -242,11 +242,26 @@ async function seedTokensAndGo(page, clinicToken, staffToken, patientId, scenari
 		(ct, st, pid, tm, pers) => {
 			localStorage.setItem("dente_clinic_token", ct);
 			localStorage.setItem("dente_staff_token", st);
+			localStorage.setItem("dente_active_session_token", st);
+			localStorage.setItem("dente_user_role", "owner");
+			localStorage.setItem("dente_onboarding_completed", "true");
 			localStorage.setItem("dente_theme_mode", tm);
 			localStorage.setItem("dente_workspace_perspective", pers);
 			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
 			localStorage.setItem(
 				"dental-crm:web-ui-preferences:v1",
+				JSON.stringify({
+					version: 1,
+					uiLanguage: "ru",
+					selectedWorkspaceRole: "owner",
+					selectedSpecialty: "therapist",
+					selectedPatientId: pid || null,
+					onboardingDismissed: true,
+					soundNotificationsMuted: false,
+				}),
+			);
+			localStorage.setItem(
+				"dente_ui_preferences_v1",
 				JSON.stringify({
 					version: 1,
 					uiLanguage: "ru",
@@ -333,7 +348,7 @@ async function screenshot(page, name) {
 			process.exit(1);
 		}
 		const size = statSync(filePath).size;
-		const minSize = name.includes("mobile") ? 8000 : 15000;
+		const minSize = name.includes("mobile") ? 35000 : 40000;
 		if (size < minSize) {
 			console.error(`[FATAL] Screenshot ${name}.png is too small (${size} bytes < ${minSize} bytes). Render failure!`);
 			process.exit(1);
@@ -360,7 +375,7 @@ const TEST_SCENARIOS = [
 		name: "01_schedule_grid",
 		url: `${APP_BASE}/#schedule`,
 		perspective: "standard",
-		selector: ".schedule-container, [data-testid='schedule-grid'], #root",
+		selector: ".schedule-filter-strip, [data-testid='schedule-view'], .schedule-container, #root",
 	},
 	{
 		name: "02_treatment_plans",

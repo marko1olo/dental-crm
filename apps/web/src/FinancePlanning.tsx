@@ -159,14 +159,16 @@ export function FinancePlanningOverview({
 							: financeSummaryUnknownLabel}
 					</p>
 				</article>
-				<article>
-					<span>Вычет</span>
-					<strong>
-						{billingSummary
-							? money(billingSummary.taxDeductionEligibleRub)
-							: "—"}
-					</strong>
-					<p>медицинские услуги, пригодные для справки</p>
+				<article className="pb-3 flex flex-col justify-between">
+					<div>
+						<span>Вычет</span>
+						<strong className="block mt-1">
+							{billingSummary
+								? money(billingSummary.taxDeductionEligibleRub)
+								: "—"}
+						</strong>
+					</div>
+					<p className="leading-relaxed text-xs mt-1">медицинские услуги, пригодные для справки</p>
 				</article>
 			</section>
 

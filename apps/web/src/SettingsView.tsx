@@ -1912,7 +1912,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 			</div>
 
 			<div
-				className="settings-tabs"
+				className="settings-tabs flex-nowrap overflow-x-auto whitespace-nowrap scrollbar-none touch-pan-x"
 				role="tablist"
 				aria-label="Раздел настроек"
 				style={{

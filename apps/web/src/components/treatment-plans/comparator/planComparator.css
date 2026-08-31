@@ -128,18 +128,18 @@
 	font-weight: 700;
 	margin: 0;
 	color: var(--plan-text-main);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+	white-space: normal;
+	word-break: break-word;
+	overflow-wrap: break-word;
 }
 
 .plan-header-subtitle {
 	font-size: 0.8125rem;
 	color: var(--plan-text-muted);
 	margin: 2px 0 0 0;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+	white-space: normal;
+	word-break: break-word;
+	overflow-wrap: break-word;
 }
 
 .plan-header-actions {
