@@ -32,6 +32,12 @@ import { KraftPackageModal } from "./KraftPackageModal";
 import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
+import {
+	AutoclaveEquipmentModal,
+	type ClinicAutoclaveDevice,
+	loadSavedClinicAutoclaves,
+	saveClinicAutoclaves,
+} from "./AutoclaveEquipmentModal";
 import { generateThermalStickerHtml, type KraftPackageRecord } from "./kraft/kraftPackageEngine";
 import {
 	createDefault5ChamberPoints,
@@ -170,7 +176,7 @@ export const DEFAULT_STERILIZATION_DEMO_RECORDS: SterilizationLogRecord[] = [
 ];
 
 export function AutoclaveRegisterTab() {
-	const [logs, setLogs] = useState<SterilizationLogRecord[]>(DEFAULT_STERILIZATION_DEMO_RECORDS);
+	const [logs, setLogs] = useState<SterilizationLogRecord[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [deviceFilter, setDeviceFilter] = useState<string>("all");
@@ -186,6 +192,8 @@ export function AutoclaveRegisterTab() {
 		cycleNumber?: number | undefined;
 		operatorName?: string | undefined;
 	}>({});
+	const [clinicDevices, setClinicDevices] = useState<ClinicAutoclaveDevice[]>(() => loadSavedClinicAutoclaves());
+	const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
 	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
 
 	useEffect(() => {
@@ -213,24 +221,59 @@ export function AutoclaveRegisterTab() {
 			});
 			if (res.ok) {
 				const data = await res.json();
-				if (Array.isArray(data) && data.length > 0) {
-					setLogs(data);
-				} else {
-					setLogs(DEFAULT_STERILIZATION_DEMO_RECORDS);
-				}
+				setLogs(Array.isArray(data) ? data : []);
 			} else {
-				setLogs(DEFAULT_STERILIZATION_DEMO_RECORDS);
+				setLogs([]);
 			}
 		} catch (err) {
 			console.error("Failed to load sterilization logs", err);
-			setLogs(DEFAULT_STERILIZATION_DEMO_RECORDS);
+			setLogs([]);
 		} finally {
 			setLoading(false);
 		}
 	};
 
+	const fetchDevices = async () => {
+		try {
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const res = await fetch("/api/registers/sterilizers/equipments", {
+				headers: {
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+			}).catch(() => null);
+
+			if (res && res.ok) {
+				const data = await res.json();
+				if (Array.isArray(data)) {
+					const mapped: ClinicAutoclaveDevice[] = data.map((d: any) => ({
+						id: d.id,
+						brandModelRu: d.brandModel || d.name,
+						serialNumber: d.serialNumber,
+						inventoryNumber: d.inventoryNumber || "",
+						deviceType: d.deviceClass === "dry_heat_air" ? "dry_heat_air" : d.deviceClass === "autoclave_class_s" ? "autoclave_class_s" : d.deviceClass === "autoclave_class_n" ? "autoclave_class_n" : "autoclave_class_b",
+						chamberVolumeLiters: Number(d.chamberVolumeLiters) || 22,
+						locationRu: d.locationRoom || "ЦСО",
+						lastMaintenanceDate: d.lastMaintenanceDate || "",
+						nextMaintenanceDate: d.nextMaintenanceDate || d.verificationExpiryDate || "",
+						isOperational: d.status === "active",
+						notes: d.notes || "",
+					}));
+					setClinicDevices(mapped);
+					saveClinicAutoclaves(mapped);
+					return;
+				}
+			}
+		} catch (e) {
+			console.error("Failed to load sterilizer devices", e);
+		}
+		setClinicDevices(loadSavedClinicAutoclaves());
+	};
+
 	useEffect(() => {
 		fetchLogs();
+		fetchDevices();
 	}, []);
 
 	const filteredLogs = useMemo(() => {
@@ -472,6 +515,30 @@ export function AutoclaveRegisterTab() {
 							<option value="failed">Брак индикатора</option>
 						</select>
 
+						{/* Action: Оборудование ЦСО */}
+						<button
+							type="button"
+							onClick={() => setIsEquipmentModalOpen(true)}
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+							style={{
+								minHeight: "32px",
+								height: "32px",
+								padding: "0.2rem 0.65rem",
+								fontSize: "0.78rem",
+								fontWeight: 600,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.25rem",
+								borderRadius: "6px",
+							}}
+							data-testid="autoclave-equipment-btn"
+							title="Управление парком автоклавов и стерилизаторов клиники"
+						>
+							<ShieldCheck size={13} color="#2563eb" /> <span>Оборудование ({clinicDevices.length})</span>
+						</button>
+
 						{/* Action: + Зафиксировать цикл */}
 						<button
 							type="button"
@@ -653,10 +720,59 @@ export function AutoclaveRegisterTab() {
 									Загрузка журнала стерилизаторов...
 								</td>
 							</tr>
+						) : clinicDevices.length === 0 ? (
+							<tr>
+								<td colSpan={9} style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
+									<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", maxWidth: "560px", margin: "0 auto" }}>
+										<ShieldCheck size={42} color="var(--brand-primary, #2563eb)" />
+										<div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--ink, #0f172a)" }}>
+											В клинике не зарегистрировано автоклавов
+										</div>
+										<div style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
+											Зарегистрируйте автоклав или сухожаровой шкаф клиники для ведения официального журнала контроля работы стерилизаторов (Форма № 257/у) и генерации крафт-пакетов.
+										</div>
+										<button
+											type="button"
+											onClick={() => setIsEquipmentModalOpen(true)}
+											className="sanpin-btn sanpin-btn-primary"
+											style={{ minHeight: "44px", padding: "0.5rem 1.5rem", fontSize: "0.875rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.4rem", marginTop: "0.25rem" }}
+											data-testid="add-first-autoclave-table-btn"
+										>
+											<Plus size={16} /> + Зарегистрировать автоклав клиники
+										</button>
+									</div>
+								</td>
+							</tr>
 						) : filteredLogs.length === 0 ? (
 							<tr>
-								<td colSpan={9} style={{ textAlign: "center", padding: "2.5rem", color: "var(--muted)", fontSize: "0.95rem" }}>
-									Записи циклов стерилизации не найдены.
+								<td colSpan={9} style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
+									<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", maxWidth: "560px", margin: "0 auto" }}>
+										<Sparkles size={36} color="var(--brand-primary, #2563eb)" />
+										<div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink, #0f172a)" }}>
+											Журнал стерилизации пуст
+										</div>
+										<div style={{ fontSize: "0.825rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
+											В выбранном периоде нет записей циклов стерилизации. Запустите новый цикл или сформируйте партию крафт-пакетов.
+										</div>
+										<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
+											<button
+												type="button"
+												onClick={() => setIsModalOpen(true)}
+												className="sanpin-btn sanpin-btn-primary"
+												style={{ minHeight: "38px", padding: "0.4rem 1rem", fontSize: "0.825rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+											>
+												<Plus size={14} /> Запустить цикл стерилизации
+											</button>
+											<button
+												type="button"
+												onClick={() => setIsKraftModalOpen(true)}
+												className="sanpin-btn sanpin-btn-secondary"
+												style={{ minHeight: "38px", padding: "0.4rem 1rem", fontSize: "0.825rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+											>
+												<QrCode size={14} /> Печать крафт-пакетов
+											</button>
+										</div>
+									</div>
 								</td>
 							</tr>
 						) : (
@@ -903,6 +1019,13 @@ export function AutoclaveRegisterTab() {
 			<MedicalWasteJournalModal
 				isOpen={isWasteJournalOpen}
 				onClose={() => setIsWasteJournalOpen(false)}
+			/>
+
+			{/* Clinic Autoclave Equipment Fleet CRUD Modal */}
+			<AutoclaveEquipmentModal
+				isOpen={isEquipmentModalOpen}
+				onClose={() => setIsEquipmentModalOpen(false)}
+				onDevicesUpdated={(devs) => setClinicDevices(devs)}
 			/>
 		</div>
 	);

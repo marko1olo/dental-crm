@@ -337,9 +337,9 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Hot Folder Items State
-	const [hotFolderItems, setHotFolderItems] = useState<HotFolderItem[]>(INITIAL_HOT_FOLDER_ITEMS);
+	const [hotFolderItems, setHotFolderItems] = useState<HotFolderItem[]>([]);
 	const [activeSourceFilter, setActiveSourceFilter] = useState<HotFolderSource>("all");
-	const [selectedItemId, setSelectedItemId] = useState<string>("hf-01");
+	const [selectedItemId, setSelectedItemId] = useState<string>("");
 	const [isScanning, setIsScanning] = useState(false);
 	const [lastScanTime, setLastScanTime] = useState<string>("только что");
 	const [isDragOver, setIsDragOver] = useState(false);
@@ -350,7 +350,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	}, [hotFolderItems, selectedItemId]);
 
 	// Selected Teeth in FDI formula
-	const [selectedTeeth, setSelectedTeeth] = useState<string[]>(["16"]);
+	const [selectedTeeth, setSelectedTeeth] = useState<string[]>([]);
 
 	// Synchronize selected teeth when switching hot folder item
 	useEffect(() => {
@@ -716,7 +716,16 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 
 						{/* Discovered Files List */}
 						<div className="hfi-files-list" data-testid="hfi-files-list">
-							{filteredItems.map((item) => {
+							{filteredItems.length === 0 ? (
+								<div className="p-6 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+									<FolderSync className="w-8 h-8 text-teal-400/40" />
+									<p className="font-semibold text-gray-300">В папке пока нет новых снимков</p>
+									<p className="text-[11px] text-gray-500 max-w-[200px]">
+										Экспортируйте снимок из EzDent / Romexis или перетащите файл в область ниже.
+									</p>
+								</div>
+							) : (
+								filteredItems.map((item) => {
 								const isSelected = item.id === activeItem?.id;
 								return (
 									<button
@@ -767,7 +776,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 										)}
 									</button>
 								);
-							})}
+							}))}
 						</div>
 
 						{/* Dropzone for local dragging */}
