@@ -96,7 +96,9 @@ import {
 import { PostOpCareTimelineWidget } from "./PostOpCareTimelineWidget.js";
 import { FamilyBalanceShareWidget } from "./FamilyBalanceShareWidget.js";
 import { ImplantPassportWidget } from "./ImplantPassportWidget.js";
+import { FamilyDentalCareHubWidget } from "./FamilyDentalCareHubWidget.js";
 import { InteractiveSmartBookingFlow } from "./InteractiveSmartBookingFlow.js";
+import { InteractiveTreatmentTimelineWidget } from "./InteractiveTreatmentTimelineWidget.js";
 import "./patientWebapp.css";
 
 export interface PatientWebappPortalModalProps {
@@ -133,8 +135,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 	const [magicLinkCopied, setMagicLinkCopied] = useState<boolean>(false);
 	const [showSmartBooking, setShowSmartBooking] = useState<boolean>(false);
 
-	// Appointments Sub-tab (upcoming vs history vs postop)
-	const [appointmentsSubTab, setAppointmentsSubTab] = useState<"upcoming" | "history" | "postop">("upcoming");
+	// Appointments Sub-tab (upcoming vs history vs postop vs family_care)
+	const [appointmentsSubTab, setAppointmentsSubTab] = useState<"upcoming" | "history" | "postop" | "family_care">("upcoming");
 
 	// Before/After Photo Protocol State
 	const [galleries, setGalleries] = useState<readonly BeforeAfterComparisonPair[]>([]);
@@ -1059,7 +1061,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											type="button"
 											onClick={() => setAppointmentsSubTab("postop")}
 											style={{
-												flex: 1.2,
+												flex: 1,
 												minHeight: "40px",
 												borderRadius: "8px",
 												border: "none",
@@ -1078,6 +1080,30 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 										>
 											<HeartPulse size={14} />
 											<span>После операции</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => setAppointmentsSubTab("family_care")}
+											style={{
+												flex: 1.2,
+												minHeight: "40px",
+												borderRadius: "8px",
+												border: "none",
+												background: appointmentsSubTab === "family_care" ? "var(--brand-500, #0d9488)" : "transparent",
+												color: appointmentsSubTab === "family_care" ? "#ffffff" : "var(--muted, #64748b)",
+												fontSize: "12px",
+												fontWeight: 700,
+												cursor: "pointer",
+												whiteSpace: "nowrap",
+												padding: "0 8px",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												gap: "4px",
+											}}
+										>
+											<Users size={14} />
+											<span>Семья (CAMBRA)</span>
 										</button>
 									</div>
 
@@ -1181,6 +1207,23 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											/>
 										</div>
 									)}
+
+									{appointmentsSubTab === "family_care" && (
+										<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+											<FamilyDentalCareHubWidget
+												currentPatientId={profile.patientId}
+												onBookMemberHygiene={() => {
+													setShowSmartBooking(true);
+												}}
+												onBookParallelVisit={() => {
+													setShowSmartBooking(true);
+												}}
+												onSendFamilyReminder={async () => {
+													showToast("Семейные напоминания отправлены членам семьи", "success");
+												}}
+											/>
+										</div>
+									)}
 								</div>
 							)}
 
@@ -1205,129 +1248,17 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 							{/* TAB 3: ПЛАН ЛЕЧЕНИЯ (TREATMENT PLAN) */}
 							{activeTab === "plan" && (
 								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-									{profile.activeTreatmentPlan ? (
-										<>
-											{/* Financial & Progress Hero */}
-											<div className="pwa-card" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", color: "#ffffff" }}>
-												<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-													<span style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", color: "#2dd4bf" }}>
-														№ {profile.activeTreatmentPlan.planNumber}
-													</span>
-													<span style={{ fontSize: "12px", fontWeight: 800, color: "#2dd4bf" }}>
-														{profile.activeTreatmentPlan.progressPercent}% выполнено
-													</span>
-												</div>
-
-												<h3 style={{ margin: "4px 0 0 0", fontSize: "15px", fontWeight: 800 }}>
-													{profile.activeTreatmentPlan.titleRu}
-												</h3>
-
-												{/* Progress Bar */}
-												<div style={{ height: "8px", borderRadius: "4px", background: "rgba(255, 255, 255, 0.15)", overflow: "hidden", margin: "8px 0" }}>
-													<div
-														style={{
-															width: `${profile.activeTreatmentPlan.progressPercent}%`,
-															height: "100%",
-															background: "#0d9488",
-															transition: "width 0.4s ease",
-														}}
-													/>
-												</div>
-
-												<div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", opacity: 0.9 }}>
-													<span>Оплачено: <strong>{profile.activeTreatmentPlan.paidCostRub.toLocaleString("ru-RU")} ₽</strong></span>
-													<span>Остаток: <strong>{profile.activeTreatmentPlan.remainingDueRub.toLocaleString("ru-RU")} ₽</strong></span>
-												</div>
-											</div>
-
-											{/* Itemized Stages */}
-											<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-												<h4 style={{ margin: "4px 0 0 0", fontSize: "13px", fontWeight: 800 }}>
-													Этапы лечения ({profile.activeTreatmentPlan.stages.length}):
-												</h4>
-
-												{profile.activeTreatmentPlan.stages.map((stage) => {
-													const isCompleted = stage.status === "completed";
-													const isInProgress = stage.status === "in_progress";
-
-													return (
-														<div
-															key={stage.id}
-															className="pwa-card"
-															style={{
-																borderLeft: isCompleted
-																	? "4px solid var(--success, #10b981)"
-																	: isInProgress
-																		? "4px solid var(--brand-500, #0d9488)"
-																		: "4px solid var(--border, #cbd5e1)",
-															}}
-														>
-															<div className="pwa-card-header">
-																<span style={{ fontSize: "11px", fontWeight: 800, color: isCompleted ? "var(--success, #10b981)" : isInProgress ? "var(--brand-500, #0d9488)" : "var(--muted, #64748b)" }}>
-																	Этап {stage.orderIndex} • {stage.categoryRu}
-																</span>
-																<span style={{ fontSize: "11px", fontWeight: 700 }}>
-																	{isCompleted ? "✓ Выполнен" : isInProgress ? "В работе" : "Запланирован"}
-																</span>
-															</div>
-
-															<div>
-																<h5 style={{ margin: 0, fontSize: "13px", fontWeight: 800 }}>
-																	{stage.titleRu}
-																</h5>
-																{stage.teethFdi && stage.teethFdi.length > 0 && (
-																	<span style={{ fontSize: "10px", color: "var(--muted, #64748b)", display: "block", marginTop: "2px" }}>
-																		Зубы (FDI): {stage.teethFdi.join(", ")}
-																	</span>
-																)}
-															</div>
-
-															{/* Procedures breakdown */}
-															<div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11px", borderTop: "1px solid var(--border, #e2e8f0)", paddingTop: "6px" }}>
-																{stage.procedures.map((proc) => (
-																	<div key={proc.id} style={{ display: "flex", justifyContent: "space-between" }}>
-																		<span style={{ color: "var(--muted, #64748b)" }}>
-																			{proc.nameRu} ({proc.quantity} шт.)
-																		</span>
-																		<span style={{ fontWeight: 700, fontFamily: "monospace" }}>
-																			{proc.totalRub.toLocaleString("ru-RU")} ₽
-																		</span>
-																	</div>
-																))}
-															</div>
-
-															<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border, #e2e8f0)", paddingTop: "8px" }}>
-																<span style={{ fontSize: "12px", fontWeight: 800 }}>
-																	Итого по этапу:
-																</span>
-																<strong style={{ fontSize: "14px", fontFamily: "monospace", color: "var(--brand-500, #0d9488)" }}>
-																	{stage.costRub.toLocaleString("ru-RU")} ₽
-																</strong>
-															</div>
-
-															{!isCompleted && (
-																<button
-																	type="button"
-																	onClick={() => handlePayStageSbp(stage)}
-																	className="pwa-action-btn-primary"
-																	style={{ minHeight: "44px", marginTop: "4px" }}
-																>
-																	<QrCode size={14} />
-																	<span>Оплатить этап через СБП ({stage.costRub.toLocaleString("ru-RU")} ₽)</span>
-																</button>
-															)}
-														</div>
-													);
-												})}
-											</div>
-										</>
-									) : (
-										<div className="pwa-card" style={{ textAlign: "center", padding: "20px" }}>
-											<p style={{ margin: 0, fontSize: "13px", color: "var(--muted, #64748b)" }}>
-												План лечения формируется врачом после очной консультации и КЛКТ.
-											</p>
-										</div>
-									)}
+									<InteractiveTreatmentTimelineWidget
+										planProfile={profile.activeTreatmentPlan}
+										onBookStage={() => setShowSmartBooking(true)}
+										onPayStageSbp={(stageId) => {
+											const st = profile.activeTreatmentPlan?.stages.find((s) => s.id === stageId);
+											if (st) handlePayStageSbp(st);
+										}}
+										onSignStatutoryConsent={(stageId) => {
+											onDocumentSigned?.(stageId);
+										}}
+									/>
 								</div>
 							)}
 

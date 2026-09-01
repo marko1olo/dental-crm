@@ -1,0 +1,185 @@
+/* Interactive Treatment Plan Timeline & Statutory 323-FZ Informed Consent Styling */
+
+.treatment-timeline-container {
+	background: var(--paper-strong, #18181b);
+	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.1));
+	border-radius: 1.25rem;
+	padding: 1.25rem;
+	color: var(--ink-strong, #ffffff);
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.35);
+	font-family: Inter, system-ui, -apple-system, sans-serif;
+	max-width: 100%;
+}
+
+.treatment-timeline-hero {
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.2) 0%, rgba(20, 184, 166, 0.05) 100%);
+	border: 1px solid rgba(45, 212, 191, 0.3);
+	border-radius: 1rem;
+	padding: 1rem 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.treatment-timeline-progress-track {
+	width: 100%;
+	height: 0.5rem; /* 8px */
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 9999px;
+	overflow: hidden;
+	position: relative;
+}
+
+.treatment-timeline-progress-bar {
+	height: 100%;
+	background: linear-gradient(90deg, #0d9488 0%, #2dd4bf 100%);
+	border-radius: 9999px;
+	transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.treatment-stage-card {
+	background: var(--paper, #27272a);
+	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.08));
+	border-radius: 1rem;
+	padding: 1.125rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+}
+
+.treatment-stage-card.completed {
+	border-color: rgba(16, 185, 129, 0.3);
+	background: rgba(16, 185, 129, 0.04);
+}
+
+.treatment-stage-card.in_progress {
+	border-color: rgba(45, 212, 191, 0.5);
+	background: rgba(20, 184, 166, 0.08);
+	box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.3);
+}
+
+.treatment-stage-card.planned {
+	border-color: rgba(255, 255, 255, 0.06);
+	opacity: 0.85;
+}
+
+.treatment-stage-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.25rem 0.625rem;
+	border-radius: 9999px;
+	font-size: 0.6875rem;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.treatment-stage-badge.completed {
+	background: rgba(16, 185, 129, 0.15);
+	color: #34d399;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.treatment-stage-badge.in_progress {
+	background: rgba(45, 212, 191, 0.15);
+	color: #2dd4bf;
+	border: 1px solid rgba(45, 212, 191, 0.4);
+}
+
+.treatment-stage-badge.planned {
+	background: rgba(255, 255, 255, 0.08);
+	color: var(--muted, #a1a1aa);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.treatment-proc-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.5rem 0;
+	border-bottom: 1px solid var(--border-soft, rgba(255, 255, 255, 0.06));
+	font-size: 0.8125rem;
+}
+
+.treatment-proc-row:last-child {
+	border-bottom: none;
+}
+
+.treatment-action-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.625rem 1rem;
+	border-radius: 0.625rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	border: none;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	text-decoration: none;
+}
+
+.treatment-action-btn.primary {
+	background: #0d9488;
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
+}
+
+.treatment-action-btn.primary:hover {
+	background: #0f766e;
+}
+
+.treatment-action-btn.secondary {
+	background: rgba(255, 255, 255, 0.08);
+	color: var(--ink, #e4e4e7);
+	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.1));
+}
+
+.treatment-action-btn.secondary:hover {
+	background: rgba(255, 255, 255, 0.12);
+}
+
+.treatment-action-btn.consent {
+	background: rgba(59, 130, 246, 0.15);
+	color: #60a5fa;
+	border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.treatment-action-btn.consent:hover {
+	background: rgba(59, 130, 246, 0.25);
+}
+
+.treatment-ids-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(0, 0, 0, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+}
+
+.treatment-ids-modal-content {
+	background: var(--paper-strong, #18181b);
+	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.15));
+	border-radius: 1.25rem;
+	width: 100%;
+	max-width: 540px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.5);
+	color: var(--ink, #e4e4e7);
+	overflow: hidden;
+}
