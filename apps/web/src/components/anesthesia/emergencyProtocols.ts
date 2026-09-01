@@ -677,26 +677,154 @@ export interface EmergencyActPayload {
 	smpCallTime?: string | undefined;
 	smpBrigadeArrivedTime?: string | undefined;
 	smpDoctorFullName?: string | undefined;
-	patientOutcome: 'transferred_to_smp' | 'stabilized_discharged_home' | 'refused_hospitalization';
+	patientOutcome?: 'transferred_to_smp' | 'stabilized_discharged_home' | 'refused_hospitalization' | undefined;
 	clinicalNotes?: string | undefined;
+	patientName?: string | undefined;
+	patientAge?: number | undefined;
+	patientWeightKg?: number | undefined;
+	doctorName?: string | undefined;
+	injectedAnestheticInfo?: string | undefined;
+	stopwatchTotalSeconds?: number | undefined;
+	administeredDrugs?: ReadonlyArray<{ name: string; dose: string; timeIso?: string }> | undefined;
+}
+
+export interface CalculatedEmergencyDrugMatrix {
+	epinephrine: {
+		doseText: string;
+		volumeText: string;
+		noteRu: string;
+	};
+	lipidEmulsion20: {
+		bolusVolumeText: string;
+		infusionRateText: string;
+		maxTotal30MinText: string;
+	};
+	prednisolone: {
+		doseText: string;
+		volumeText: string;
+		noteRu: string;
+	};
+	dexamethasone: {
+		doseText: string;
+		volumeText: string;
+		noteRu: string;
+	};
+	nacl09Infusion: {
+		doseText: string;
+		volumeText: string;
+		noteRu: string;
+	};
+}
+
+/**
+ * Calculates weight-specific exact dosages for emergency medications (Matrix).
+ */
+export function calculateEmergencyMedicationMatrix(
+	weightKg: number,
+	ageYears?: number
+): CalculatedEmergencyDrugMatrix {
+	const safeWeight = Math.max(5, Math.min(250, weightKg || 70));
+	const isChild = (ageYears !== undefined && ageYears < 18) || safeWeight < 40;
+
+	// 1. Epinephrine 0.1% (1 mg/ml)
+	let epDoseMg = 0.5;
+	let epVolumeText = '0.5 мл (0.1% р-р)';
+	let epNote = 'Стандартная взрослая доза в/м в бедро';
+	if (isChild) {
+		epDoseMg = Math.min(0.3, Number((safeWeight * 0.01).toFixed(2)));
+		epVolumeText = `${epDoseMg} мл (0.1% р-р)`;
+		epNote = 'Детская доза 0.01 мг/кг (макс 0.3 мг) в/м в бедро';
+	}
+
+	// 2. 20% Lipid Emulsion (Lipofundin / Intralipid 20%)
+	const bolusMl = Math.round(safeWeight * 1.5);
+	const infusionMlPerMin = Number((safeWeight * 0.25).toFixed(1));
+	const maxTotalMl = Math.round(safeWeight * 12);
+
+	// 3. Prednisolone
+	let predMgText = '90 – 120 мг';
+	let predVolText = '3 – 4 ампулы (3-4 мл)';
+	if (isChild) {
+		const predMg = Math.round(safeWeight * 2.5);
+		predMgText = `${predMg} мг`;
+		predVolText = `${(predMg / 30).toFixed(1)} амп. (${(predMg / 30).toFixed(1)} мл)`;
+	}
+
+	// 4. Dexamethasone
+	let dexaMgText = '8 – 16 мг';
+	let dexaVolText = '2 – 4 ампулы (2-4 мл)';
+	if (isChild) {
+		const dexaMg = Number((safeWeight * 0.3).toFixed(1));
+		dexaMgText = `${dexaMg} мг`;
+		dexaVolText = `${(dexaMg / 4).toFixed(1)} амп.`;
+	}
+
+	// 5. 0.9% NaCl Infusion
+	let naclMl = 1000;
+	if (isChild) {
+		naclMl = Math.round(safeWeight * 20);
+	}
+
+	return {
+		epinephrine: {
+			doseText: `${epDoseMg} мг`,
+			volumeText: epVolumeText,
+			noteRu: epNote
+		},
+		lipidEmulsion20: {
+			bolusVolumeText: `${bolusMl} мл`,
+			infusionRateText: `${infusionMlPerMin} мл/мин`,
+			maxTotal30MinText: `${maxTotalMl} мл`
+		},
+		prednisolone: {
+			doseText: predMgText,
+			volumeText: predVolText,
+			noteRu: 'в/в медленно струйно'
+		},
+		dexamethasone: {
+			doseText: dexaMgText,
+			volumeText: dexaVolText,
+			noteRu: 'в/в медленно струйно'
+		},
+		nacl09Infusion: {
+			doseText: `${naclMl} мл`,
+			volumeText: `${naclMl} мл 0.9% NaCl`,
+			noteRu: isChild ? '20 мл/кг в/в струйно' : '500-1000 мл в/в струйно под давлением'
+		}
+	};
 }
 
 /**
  * Calculates weight-specific exact dosages for emergency medications.
+ * Supports both (weightKg, ageYears) and (scenarioId, weightKg, ageYears).
  */
 export function calculateAllEmergencyDosagesForWeight(
-	scenarioId: EmergencyScenarioId,
-	weightKg: number,
-	ageYears?: number
-): Record<string, { doseText: string; volumeText: string; noteRu?: string }> {
+	arg1: EmergencyScenarioId | number,
+	arg2?: number,
+	arg3?: number
+): CalculatedEmergencyDrugMatrix & Record<string, any> {
+	let weightKg = 70;
+	let ageYears: number | undefined;
+	let scenarioId: EmergencyScenarioId = 'last_toxicity';
+
+	if (typeof arg1 === 'string') {
+		scenarioId = arg1;
+		weightKg = arg2 || 70;
+		ageYears = arg3;
+	} else {
+		weightKg = arg1 || 70;
+		ageYears = arg2;
+	}
+
+	const matrix = calculateEmergencyMedicationMatrix(weightKg, ageYears);
 	const protocol = EMERGENCY_PROTOCOLS[scenarioId];
-	const results: Record<string, { doseText: string; volumeText: string; noteRu?: string }> = {};
+	const results: any = { ...matrix };
 
-	if (!protocol) return results;
-
-	for (const step of protocol.steps) {
-		if (step.drugDetail && step.drugDetail.calculatedDoseForWeight) {
-			results[step.drugDetail.drugNameRu] = step.drugDetail.calculatedDoseForWeight(weightKg, ageYears);
+	if (protocol) {
+		for (const step of protocol.steps) {
+			if (step.drugDetail && step.drugDetail.calculatedDoseForWeight) {
+				results[step.drugDetail.drugNameRu] = step.drugDetail.calculatedDoseForWeight(weightKg, ageYears);
+			}
 		}
 	}
 
@@ -704,19 +832,34 @@ export function calculateAllEmergencyDosagesForWeight(
 }
 
 /**
- * Formats seconds into MM:SS display string.
+ * Formats seconds into MM:SS (or HH:MM:SS) display string.
  */
 export function formatEmergencyStopwatchTime(totalSeconds: number): string {
-	const mins = Math.floor(totalSeconds / 60);
+	const hrs = Math.floor(totalSeconds / 3600);
+	const mins = Math.floor((totalSeconds % 3600) / 60);
 	const secs = totalSeconds % 60;
+	if (hrs > 0) {
+		return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+	}
 	return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
 /**
  * Generates an official Medical Incident & Resuscitation Protocol Act for Form 043/u.
  */
-export function generateEmergencyForm043Act(payload: EmergencyActPayload): string {
-	const protocol = EMERGENCY_PROTOCOLS[payload.scenarioId];
+export function generateEmergencyForm043Act(payload: Partial<EmergencyActPayload> & {
+	scenarioId?: EmergencyScenarioId | undefined;
+	patientName?: string | undefined;
+	patientAge?: number | undefined;
+	patientWeightKg?: number | undefined;
+	doctorName?: string | undefined;
+	injectedAnestheticInfo?: string | undefined;
+	stopwatchTotalSeconds?: number | undefined;
+	executedSteps?: ReadonlyArray<any> | undefined;
+	administeredDrugs?: ReadonlyArray<{ name: string; dose: string; timeIso?: string }> | undefined;
+}): string {
+	const scenarioId = payload.scenarioId || 'last_toxicity';
+	const protocol = EMERGENCY_PROTOCOLS[scenarioId] || EMERGENCY_PROTOCOLS.last_toxicity;
 	const now = new Date(payload.startTimeIso || Date.now());
 	const dateFormatted = now.toLocaleDateString('ru-RU', {
 		day: '2-digit',
@@ -728,14 +871,28 @@ export function generateEmergencyForm043Act(payload: EmergencyActPayload): strin
 		minute: '2-digit'
 	});
 
-	const stepsLogText = payload.executedSteps.length > 0
-		? payload.executedSteps
+	const patFullName = payload.patient?.fullName || payload.patientName || 'Пациент';
+	const patAge = payload.patient?.ageYears ?? payload.patientAge ?? 35;
+	const patWeight = payload.patient?.weightKg ?? payload.patientWeightKg ?? 70;
+	const docName = payload.doctorFullName || payload.doctorName || 'Лечащий врач-стоматолог';
+	const clinic = payload.clinicName || 'Стоматологическая клиника';
+	const address = payload.clinicAddress || 'ул. Клиническая, д. 1';
+	const cabinet = payload.cabinetNumber || '1';
+
+	const executed = payload.executedSteps || [];
+	const stepsLogText = executed.length > 0
+		? executed
 				.map(
-					(s) =>
-						`• [${s.timeFormatted}] Шаг ${s.stepNumber}: ${s.titleRu}${s.actionNotes ? ` (${s.actionNotes})` : ''}`
+					(s: any) =>
+						`• [${s.timeFormatted || s.timestampFormatted || '00:00'}] Шаг ${s.stepNumber}: ${s.titleRu || s.stepTitleRu || ''}${s.actionNotes || s.notesRu ? ` (${s.actionNotes || s.notesRu})` : ''}`
 				)
 				.join('\n')
-		: '• Реанимационные мероприятия проведены в полном объеме согласно протоколу.';
+		: '• Реанимационные мероприятия проведены в полном объеме согласно стандарту.';
+
+	const drugs = payload.administeredDrugs || [];
+	const drugsText = drugs.length > 0
+		? '\nВВЕДЕННЫЕ ЛЕКАРСТВЕННЫЕ ПРЕПАРАТЫ:\n' + drugs.map((d) => `• ${d.name} — ${d.dose}`).join('\n')
+		: '';
 
 	let outcomeText = 'Пациент стабилен, отпущен домой в сопровождении родственников.';
 	if (payload.patientOutcome === 'transferred_to_smp') {
@@ -744,12 +901,13 @@ export function generateEmergencyForm043Act(payload: EmergencyActPayload): strin
 		outcomeText = 'Состояние купировано, пациент категорически отказался от госпитализации в стационар (письменный отказ оформлен).';
 	}
 
-	return `ПРОТОКОЛ ОКАЗАНИЯ НЕОТЛОЖНОЙ МЕДИЦИНСКОЙ ПОМОЩИ (Форма № 043/у)
-Регламент: ${protocol.statutoryOrderRu}
+	return `АКТ ОКАЗАНИЯ ЭКСТРЕННОЙ МЕДИЦИНСКОЙ ПОМОЩИ (Форма № 043/у)
+Нормативный регламент: ${protocol.statutoryOrderRu} (Приказ МЗ РФ № 786н, КР345)
 Дата и время инцидента: ${dateFormatted} в ${timeFormatted}
-Место: ${payload.clinicName} (кабинет № ${payload.cabinetNumber}, ${payload.clinicAddress})
-Лечащий врач: ${payload.doctorFullName}
-Пациент: ${payload.patient.fullName}, ${payload.patient.ageYears} лет, масса тела ${payload.patient.weightKg} кг
+Место: ${clinic} (кабинет № ${cabinet}, ${address})
+Лечащий врач: ${docName}
+Пациент: ${patFullName}, ${patAge} лет, масса тела ${patWeight} кг
+Введенный анестетик: ${payload.injectedAnestheticInfo || 'Местный анестетик'}
 
 ДИАГНОЗ / КЛИНИЧЕСКАЯ СИТУАЦИЯ:
 ${protocol.titleRu} (${protocol.severityBadgeRu})
@@ -759,14 +917,14 @@ ${protocol.titleRu} (${protocol.severityBadgeRu})
 • Пульс / ЧСС: ${payload.initialHr || '—'} уд/мин
 • Сатурация SpO2: ${payload.initialSpo2 || '—'}%
 
-ПРОВЕДЕННЫЙ КОМПЛЕКС РЕАНИМАЦИОННЫХ И НЕОТЛОЖНЫХ МЕРОПРИЯТИЙ:
-${stepsLogText}
+ХРОНОЛОГИЯ РЕАНИМАЦИОННЫХ МЕРОПРИЯТИЙ:
+${stepsLogText}${drugsText}
 
 ${payload.smpBrigadeCalled ? `ВЫЗОВ СКОРОЙ МЕДИЦИНСКОЙ ПОМОЩИ (112):
 • Время вызова: ${payload.smpCallTime || timeFormatted}
 • Время прибытия бригады: ${payload.smpBrigadeArrivedTime || 'через 12 минут'}
 ` : ''}
-ДИНАМИКА ВИТАЛЬНЫХ ФУНКЦИЙ ПОСЛЕ ОКАЗАНИЯ ПОМОЩИ:
+ДИНАМИКА ВИТАЛЬНЫХ ФУНКЦИЙ:
 • Конечное АД: ${payload.finalBp || '120/80'} мм рт. ст.
 • Конечный пульс (ЧСС): ${payload.finalHr || '76'} уд/мин
 • Конечная сатурация SpO2: ${payload.finalSpo2 || '98'}%
@@ -775,43 +933,70 @@ ${payload.smpBrigadeCalled ? `ВЫЗОВ СКОРОЙ МЕДИЦИНСКОЙ П�
 ${outcomeText}
 ${payload.clinicalNotes ? `\nОсобые отметки врача: ${payload.clinicalNotes}` : ''}
 
-Врач-стоматолог: ____________________ / ${payload.doctorFullName} /
+Врач-стоматолог: ____________________ / ${docName} /
 Медицинская сестра / ассистент: ____________________`;
 }
 
 /**
- * Generates an ultra-clear phone script for calling 112 / 103 dispatchers.
+ * Generates an ultra-clear phone script for calling 112 / 103 dispatchers (SBAR standard).
  */
 export function generateEmergency112DispatchScript(params: {
-	scenarioId: EmergencyScenarioId;
-	clinicName: string;
-	clinicAddress: string;
-	cabinetNumber: string;
-	patientAgeYears: number;
+	scenarioId?: EmergencyScenarioId | undefined;
+	clinicName?: string | undefined;
+	clinicAddress?: string | undefined;
+	cabinetNumber?: string | undefined;
+	patientName?: string | undefined;
+	patientAge?: number | undefined;
+	patientAgeYears?: number | undefined;
+	patientWeightKg?: number | undefined;
 	patientGender?: 'male' | 'female' | undefined;
+	doctorName?: string | undefined;
+	injectedAnestheticInfo?: string | undefined;
 	currentBp?: string | undefined;
 	currentHr?: string | undefined;
 	currentSpo2?: string | undefined;
 	adrenalineGivenMg?: number | undefined;
+	stopwatchSeconds?: number | undefined;
+	administeredDrugs?: ReadonlyArray<string> | undefined;
 }): string {
-	const protocol = EMERGENCY_PROTOCOLS[params.scenarioId];
-	const genderRu = params.patientGender === 'female' ? 'Женщина' : 'Мужчина';
+	const scenarioId = params.scenarioId || 'last_toxicity';
+	const protocol = EMERGENCY_PROTOCOLS[scenarioId] || EMERGENCY_PROTOCOLS.last_toxicity;
+	const genderRu = params.patientGender === 'female' ? 'Женщина' : 'Мужчина / Пациент';
+	const age = params.patientAgeYears ?? params.patientAge ?? 35;
+	const weight = params.patientWeightKg ?? 70;
+	const clinic = params.clinicName || 'Стоматологическая клиника';
+	const address = params.clinicAddress || 'ул. Клиническая, д. 1';
+	const cabinet = params.cabinetNumber || '1';
+	const patName = params.patientName || 'Пациент';
 
 	const vitalsPart = params.currentBp
 		? `АД ${params.currentBp} мм рт. ст., ЧСС ${params.currentHr || '110'}, SpO2 ${params.currentSpo2 || '92'}%.`
-		: 'Тяжелое нестабильное состояние.';
+		: 'Нестабильная гемодинамика, падение АД / судорожный синдром.';
 
-	const adrenalinePart = params.adrenalineGivenMg && params.adrenalineGivenMg > 0
-		? `Введен адреналин 0.1% ${params.adrenalineGivenMg} мг в/м в бедро.`
+	const drugsPart = params.administeredDrugs && params.administeredDrugs.length > 0
+		? `\nВведенные препараты: ${params.administeredDrugs.join(', ')}.`
+		: params.adrenalineGivenMg && params.adrenalineGivenMg > 0
+		? `\nВведен адреналин 0.1% ${params.adrenalineGivenMg} мг в/м в бедро.`
 		: '';
 
-	return `ШПАРГАЛКА ДЛЯ ДИСПЕТЧЕРА 112 / 103 (ЧИТАТЬ В ТРУБКУ):
-1. «Здравствуйте! Вызов в стоматологическую клинику «${params.clinicName}».
-2. Адрес: ${params.clinicAddress}, кабинет № ${params.cabinetNumber}.
-3. Срочно требуется СПЕЦИАЛИЗИРОВАННАЯ РЕАНИМАЦИОННАЯ БРИГАДА (БИТ / РХБ)!
-4. Повод к вызову: ${protocol.shortTitleRu}.
-5. Пациент: ${genderRu}, возраст ${params.patientAgeYears} лет.
-6. Состояние: ${vitalsPart} ${adrenalinePart}
-7. Проводится подача 100% кислорода и инфузионная терапия.
-8. Кто вызвал: врач стоматолог, телефон для связи у двери / шлагбаума клиники.»`;
+	return `СТАНДАРТ SBAR ПЕРЕДАЧИ ДИСПЕТЧЕРУ 112 / 103 (ЧИТАТЬ В ТРУБКУ):
+
+1. СИТУАЦИЯ (Situation):
+«Здравствуйте! Вызов экстренной бригады в стоматологическую клинику «${clinic}».
+Адрес: ${address}, кабинет № ${cabinet}.
+Срочно требуется СПЕЦИАЛИЗИРОВАННАЯ РЕАНИМАЦИОННАЯ БРИГАДА (БИТ / РХБ)!
+Повод: ${protocol.shortTitleRu} (${protocol.titleRu}).»
+
+2. АНАМНЕЗ (Background):
+«Пациент: ${patName}, ${genderRu}, возраст ${age} лет, масса тела ${weight} кг.
+Проводилась стоматологическая процедура под местной анестезией: ${params.injectedAnestheticInfo || 'Местный анестетик'}.»
+
+3. ОЦЕНКА (Assessment):
+«Состояние пациента: ${vitalsPart}${drugsPart}
+Проводится подача 100% кислорода, инфузия и протокол ${protocol.shortTitleRu}.»
+
+4. РЕКОМЕНДАЦИЯ (Recommendation):
+«Требуется экстренное прибытие реанимационной бригады СМП и подготовка стационара к приёму пациента.
+Кто вызвал: врач-стоматолог ${params.doctorName || ''}. Бригаду встречает администратор у входа.»`;
 }
+

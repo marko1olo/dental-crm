@@ -371,12 +371,12 @@ export interface StaffDuplicateConflict {
 }
 
 export interface StaffMemberSearchCandidate {
-	readonly id?: string;
-	readonly fullName?: string;
-	readonly snils?: string | null;
-	readonly inn?: string | null;
-	readonly email?: string | null;
-	readonly phone?: string | null;
+	readonly id?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly snils?: string | null | undefined;
+	readonly inn?: string | null | undefined;
+	readonly email?: string | null | undefined;
+	readonly phone?: string | null | undefined;
 }
 
 /**
@@ -543,6 +543,7 @@ export const updateStaffProfileExtendedSchema = z.object({
 	canSignMedicalRecords: z.boolean().optional(),
 	canManageMoney: z.boolean().optional(),
 	canManageImports: z.boolean().optional(),
+	passwordEntropyBits: z.number().nonnegative().optional(),
 });
 
 export type UpdateStaffProfileExtendedInput = z.infer<

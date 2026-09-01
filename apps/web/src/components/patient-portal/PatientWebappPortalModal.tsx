@@ -60,8 +60,15 @@ import {
 	Smartphone,
 	Smile,
 	Sparkles,
+	Star,
+	Stethoscope,
+	Tag,
+	TrendingUp,
 	Trash2,
 	User,
+	UserCheck,
+	Users,
+	Wand2,
 	Wallet,
 	X,
 	XCircle,
@@ -1249,7 +1256,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 							{activeTab === "plan" && (
 								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 									<InteractiveTreatmentTimelineWidget
-										planProfile={profile.activeTreatmentPlan}
+										planProfile={profile.activeTreatmentPlan ?? undefined}
 										onBookStage={() => setShowSmartBooking(true)}
 										onPayStageSbp={(stageId) => {
 											const st = profile.activeTreatmentPlan?.stages.find((s) => s.id === stageId);

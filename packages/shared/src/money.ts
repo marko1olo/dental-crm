@@ -47,4 +47,5 @@ export function formatKopecksToRubles(kopecks: number): string {
 export const formatKopecksToRubExact = formatKopecksToRubles;
 
 export * from "./utils/money.js";
+export { formatKopecksRu as moneyRub } from "./utils/money.js";
 

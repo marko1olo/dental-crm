@@ -263,3 +263,63 @@ export function renderSupplementaryAgreementHtml(draft: SupplementaryAgreementDr
 </html>
 	`.trim();
 }
+
+export interface PriceLockEvaluationStatus {
+	readonly isLocked: boolean;
+	readonly isExpired: boolean;
+	readonly daysRemaining: number;
+	readonly daysElapsed: number;
+	readonly badgeText: string;
+	readonly policy: PriceLockPolicyConfig;
+}
+
+export function calculatePriceLockStatus(
+	createdAtIso: string,
+	policy: PriceLockPolicyConfig = PRICE_LOCK_POLICY_CONFIGS.standard_30_days,
+	isSignedWithPatient = false,
+): PriceLockEvaluationStatus {
+	const createdMs = new Date(createdAtIso).getTime();
+	const nowMs = Date.now();
+	const daysElapsed = Math.max(0, Math.floor((nowMs - createdMs) / (1000 * 60 * 60 * 24)));
+	const validityDays = policy.validityDays;
+
+	let isLocked = false;
+	let isExpired = false;
+	let daysRemaining = 0;
+
+	if (policy.id === "strict_fixed_contract") {
+		isLocked = isSignedWithPatient;
+		isExpired = false;
+		daysRemaining = 365;
+	} else if (policy.id === "market_floating") {
+		isLocked = false;
+		isExpired = false;
+		daysRemaining = 0;
+	} else {
+		if (daysElapsed <= validityDays) {
+			isLocked = true;
+			isExpired = false;
+			daysRemaining = validityDays - daysElapsed;
+		} else {
+			isLocked = isSignedWithPatient;
+			isExpired = !isSignedWithPatient;
+			daysRemaining = 0;
+		}
+	}
+
+	const badgeText = isLocked
+		? `Фиксация цены (${daysRemaining > 0 ? `осталось ${daysRemaining} дн.` : "по договору"})`
+		: isExpired
+			? `Срок гарантии цены истек (${daysElapsed} дн.)`
+			: "По прайсу клиники";
+
+	return {
+		isLocked,
+		isExpired,
+		daysRemaining,
+		daysElapsed,
+		badgeText,
+		policy,
+	};
+}
+

@@ -512,22 +512,24 @@ export function validatePlanToInvoice(
 	const totalPatientSurchargeKopecks = sumKopecks(validatedItems.map((i) => i.patientSurchargeKopecks));
 
 	// Критерий готовности к выписке наряда / счёта:
-	// 1. Нет архивных / ненайденных позиций без замены (DEFECT-PRICE-02)
-	// 2. Нет недействительных нулевых цен
-	// 3. Либо все блокировки разрешены / авторизованы администратором
+	// 1. Нет архивных / ненайденных позиций без замены на 804н аналог (DEFECT-PRICE-02 — НЕЛЬЗЯ обойти оверрайдом)
+	// 2. Нет недействительных нулевых цен (НЕЛЬЗЯ обойти оверрайдом)
+	// 3. Все превышения инфляции / скидки авторизованы администратором
+	// 4. Истекший срок плана согласован оверрайдом или покрыт действующим договором
 	const hasUnresolvedArchivedOrMissing = validatedItems.some(
-		(i) => (i.isArchived || !i.isFoundInCatalog) && i.severity === "BLOCKED",
+		(i) => (i.isArchived || !i.isFoundInCatalog) && i.selectedResolution !== "REPLACE_WITH_804N_ANALOGUE",
 	);
 	const hasZeroPrices = validatedItems.some((i) => i.effectiveUnitPriceKopecks <= 0);
 	const hasUnresolvedAdminOverrides =
 		validatedItems.some((i) => i.requiresAdminOverride) && payload.adminOverrideAuthorized !== true;
+	const isExpiredUnapproved = isPlanExpired && !payload.isSignedWithPatient && payload.adminOverrideAuthorized !== true;
 
 	const canGenerateWorkOrder =
 		validatedItems.length > 0 &&
 		!hasUnresolvedArchivedOrMissing &&
 		!hasZeroPrices &&
 		!hasUnresolvedAdminOverrides &&
-		(blockingReasons.length === 0 || payload.adminOverrideAuthorized === true);
+		!isExpiredUnapproved;
 
 	const canGenerateInvoice = canGenerateWorkOrder;
 	const isValid = canGenerateWorkOrder && warnings.length === 0;

@@ -19,4 +19,6 @@ export * from "./expensesEngine.js";
 export * from "./splitPayment.js";
 export * from "./partialRefundEngine.js";
 export * from "./installmentScheduleEngine.js";
+export * from "./planToInvoiceValidator.js";
+export * from "./priceLockEngine.js";
 
