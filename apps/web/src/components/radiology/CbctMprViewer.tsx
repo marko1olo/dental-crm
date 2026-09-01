@@ -309,6 +309,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			nerveClearanceMm = minDist;
 		}
 
+		const safetyStatus: "safe" | "warning" | "danger" =
+			nerveClearanceMm < 1.0
+				? "danger"
+				: nerveClearanceMm < 2.0
+					? "warning"
+					: "safe";
+
 		return {
 			meanHU,
 			coronalHU,
@@ -323,7 +330,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			healingWeeks: analysis.healingPeriodWeeks,
 			tissueDesc: getTissueNameFromHU(meanHU),
 			nerveClearanceMm,
-			isSafe: nerveClearanceMm >= 2.0,
+			safetyStatus,
+			isDanger: safetyStatus === "danger",
+			isWarning: safetyStatus === "warning",
+			isSafe: safetyStatus === "safe",
 			diaryText: formatMischProtocolToDiaryText(profile, analysis, "48"),
 		};
 	}, [volume, crosshairMm, currentImplantSpec, implantAngulationDeg, implantDepthOffsetMm, interpolatedNerve3D]);
@@ -357,23 +367,41 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 	// Initialize synthetic volume if none provided
 	useEffect(() => {
+		let currentSynVol: CbctVoxelVolume | null = null;
 		if (propVolume) {
 			setVolume(propVolume);
 			if (propVolume.defaultWindowWidth) setWindowWidth(propVolume.defaultWindowWidth);
 			if (propVolume.defaultWindowLevel) setWindowLevel(propVolume.defaultWindowLevel);
 		} else {
 			const synVol = createSyntheticDentalCbctVolume(160, 160, 100, 0.4);
+			currentSynVol = synVol;
 			setVolume(synVol);
 			if (synVol.defaultWindowWidth) setWindowWidth(synVol.defaultWindowWidth);
 			if (synVol.defaultWindowLevel) setWindowLevel(synVol.defaultWindowLevel);
 		}
 
 		return () => {
-			if (!propVolume && volume) {
-				disposeCbctVolume(volume);
+			if (currentSynVol) {
+				disposeCbctVolume(currentSynVol);
 			}
 		};
 	}, [propVolume]);
+
+	// Comprehensive unmount cleanup for offscreens, image data, and animation frames
+	useEffect(() => {
+		return () => {
+			axialOffscreenRef.current = null;
+			coronalOffscreenRef.current = null;
+			sagittalOffscreenRef.current = null;
+			axialImgDataRef.current = null;
+			coronalImgDataRef.current = null;
+			sagittalImgDataRef.current = null;
+			if (rafArchAnchorIdRef.current !== null) {
+				cancelAnimationFrame(rafArchAnchorIdRef.current);
+				rafArchAnchorIdRef.current = null;
+			}
+		};
+	}, []);
 
 	// Build active dental arch curve
 	const archCurve = useMemo<DentalArchCurve>(() => {
@@ -2663,8 +2691,9 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<button
 								type="button"
 								onClick={() => setCbctImplantMode(false)}
-								className="min-h-[36px] min-w-[36px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+								className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 cursor-pointer transition-colors"
 								title="Закрыть панель имплантации"
+								aria-label="Закрыть панель имплантации"
 							>
 								<X className="w-4 h-4" />
 							</button>
@@ -2789,18 +2818,22 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 								{/* Safety Clearance vs IAN / Sinus */}
 								<div className={`p-2.5 rounded-xl border flex flex-col gap-1 ${
-									implantDensityAudit.isSafe
-										? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
-										: "bg-rose-950/40 border-rose-500/40 text-rose-300"
+									implantDensityAudit.isDanger
+										? "bg-rose-950/40 border-rose-500/40 text-rose-300"
+										: implantDensityAudit.isWarning
+											? "bg-amber-950/40 border-amber-500/40 text-amber-300"
+											: "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
 								}`}>
 									<div className="flex items-center justify-between text-xs font-bold">
 										<span>Зазор до канала нерва (IAN):</span>
 										<span className="font-mono">{implantDensityAudit.nerveClearanceMm.toFixed(1)} мм</span>
 									</div>
 									<div className="text-[11px] leading-tight opacity-90">
-										{implantDensityAudit.isSafe
-											? "✓ Безопасное расстояние: коридор безопасности >= 2.0 мм соблюден"
-											: "⚠ ВНИМАНИЕ: зазор до нерва менее 2.0 мм! Риск травмы IAN"}
+										{implantDensityAudit.isDanger
+											? "⛔ КРИТИЧЕСКИЙ РИСК: зазор до нерва менее 1.0 мм! Риск травмы IAN и парестезии"
+											: implantDensityAudit.isWarning
+												? "⚠ ВНИМАНИЕ: зона приближения к нерву (1.0–2.0 мм). Требуется запас >= 2.0 мм по Misch"
+												: "✓ Безопасное расстояние: коридор безопасности >= 2.0 мм соблюден"}
 									</div>
 								</div>
 
