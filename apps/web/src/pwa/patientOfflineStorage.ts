@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
+import { showToast } from "../components/GlobalToast";
 import { logger } from "../utils/logger";
 
 export interface UpcomingVisit {
@@ -31,12 +32,12 @@ export interface UpcomingVisit {
 
 export interface OfflinePatientBookingRequest {
 	id: string;
-	patientId?: string;
+	patientId?: string | undefined;
 	patientFullName: string;
 	patientPhone: string;
-	patientBirthDate?: string;
+	patientBirthDate?: string | undefined;
 	branchId: string;
-	branchName?: string;
+	branchName?: string | undefined;
 	doctorId: string;
 	doctorName: string;
 	serviceId: string;
@@ -44,18 +45,19 @@ export interface OfflinePatientBookingRequest {
 	dateIso: string;
 	slotId: string;
 	timeRu: string;
-	patientComment?: string;
+	patientComment?: string | undefined;
 	consentPersonalData152Fz: boolean;
 	createdAtIso: string;
 	status: "queued" | "syncing" | "synced" | "failed";
 	retryCount: number;
-	lastError?: string;
+	lastError?: string | undefined;
 }
 
 export const PATIENT_OFFLINE_DB_NAME = "dente-patient-pwa-storage";
-export const PATIENT_OFFLINE_DB_VERSION = 1;
+export const PATIENT_OFFLINE_DB_VERSION = 2;
 export const UPCOMING_VISIT_STORE = "upcoming_visit";
-export const BOOKINGS_QUEUE_STORE = "offline_booking_queue";
+export const BOOKINGS_QUEUE_STORE = "bookings_queue";
+export const LEGACY_BOOKINGS_QUEUE_STORE = "offline_booking_queue";
 
 export const LOCAL_STORAGE_UPCOMING_VISIT_KEY = "dente_pwa_cached_upcoming_visit_v1";
 export const LOCAL_STORAGE_BOOKING_QUEUE_KEY = "dente_pwa_offline_booking_queue_v1";
@@ -84,6 +86,11 @@ function openPatientOfflineDb(): Promise<IDBDatabase> {
 				}
 				if (!db.objectStoreNames.contains(BOOKINGS_QUEUE_STORE)) {
 					const queueStore = db.createObjectStore(BOOKINGS_QUEUE_STORE, { keyPath: "id" });
+					queueStore.createIndex("status", "status", { unique: false });
+					queueStore.createIndex("createdAtIso", "createdAtIso", { unique: false });
+				}
+				if (!db.objectStoreNames.contains(LEGACY_BOOKINGS_QUEUE_STORE)) {
+					const queueStore = db.createObjectStore(LEGACY_BOOKINGS_QUEUE_STORE, { keyPath: "id" });
 					queueStore.createIndex("status", "status", { unique: false });
 					queueStore.createIndex("createdAtIso", "createdAtIso", { unique: false });
 				}
@@ -235,12 +242,12 @@ export async function clearCachedUpcomingVisit(): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function enqueueOfflinePatientBooking(
-	bookingInput: Omit<OfflinePatientBookingRequest, "id" | "createdAtIso" | "status" | "retryCount">,
+	bookingInput: Omit<OfflinePatientBookingRequest, "id" | "createdAtIso" | "status" | "retryCount"> & { id?: string; createdAtIso?: string },
 ): Promise<OfflinePatientBookingRequest> {
 	const booking: OfflinePatientBookingRequest = {
 		...bookingInput,
-		id: `offline-book-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-		createdAtIso: new Date().toISOString(),
+		id: bookingInput.id || `offline-book-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+		createdAtIso: bookingInput.createdAtIso || new Date().toISOString(),
 		status: "queued",
 		retryCount: 0,
 	};
@@ -367,26 +374,38 @@ export async function flushOfflinePatientBookings(
 				isSuccess = false;
 			}
 		} else {
-			// Default API fetch attempt
+			// Real API fetch attempt: send to /api/portal/booking with /api/public-booking/book fallback
 			try {
-				const response = await fetch("/api/public-booking/book", {
+				const bookingPayload = {
+					branchId: booking.branchId,
+					doctorId: booking.doctorId,
+					serviceId: booking.serviceId,
+					dateIso: booking.dateIso,
+					slotId: booking.slotId,
+					timeRu: booking.timeRu,
+					patientFullName: booking.patientFullName,
+					patientPhone: booking.patientPhone,
+					patientComment: booking.patientComment,
+					consentPersonalData152Fz: booking.consentPersonalData152Fz,
+				};
+
+				let response = await fetch("/api/portal/booking", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						branchId: booking.branchId,
-						doctorId: booking.doctorId,
-						serviceId: booking.serviceId,
-						dateIso: booking.dateIso,
-						slotId: booking.slotId,
-						timeRu: booking.timeRu,
-						patientFullName: booking.patientFullName,
-						patientPhone: booking.patientPhone,
-						patientComment: booking.patientComment,
-						consentPersonalData152Fz: booking.consentPersonalData152Fz,
-					}),
+					body: JSON.stringify(bookingPayload),
 				});
+
+				if (!response.ok && response.status === 404) {
+					response = await fetch("/api/public-booking/book", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(bookingPayload),
+					});
+				}
+
 				isSuccess = response.ok;
-			} catch {
+			} catch (err) {
+				logger.warn(`Network error dispatching booking ${booking.id}`, err);
 				isSuccess = false;
 			}
 		}
@@ -399,8 +418,14 @@ export async function flushOfflinePatientBookings(
 		}
 	}
 
+	if (successCount > 0) {
+		showToast("Заявка синхронизирована", "success");
+	}
+
 	return { successCount, failedCount };
 }
+
+export const syncOfflineBookingsWithServer = flushOfflinePatientBookings;
 
 function requestServiceWorkerBackgroundSync(): void {
 	if (
@@ -502,3 +527,5 @@ export function useOfflinePatientSync(
 		flushNow: triggerFlush,
 	};
 }
+
+export { flushOfflinePatientBookings as syncOfflineBookingsWithServer };

@@ -1,0 +1,224 @@
+/* Interactive Smart Booking Wizard & Subway Offline Engine Styling */
+
+.smart-booking-container {
+	background: var(--paper-strong, #18181b);
+	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.1));
+	border-radius: 1.25rem;
+	padding: 1.25rem;
+	box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.35);
+	color: var(--ink-strong, #ffffff);
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	font-family: Inter, system-ui, -apple-system, sans-serif;
+	max-width: 100%;
+}
+
+.smart-booking-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding-bottom: 0.875rem;
+	border-bottom: 1px solid var(--border-soft, rgba(255, 255, 255, 0.08));
+}
+
+.smart-booking-step-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	position: relative;
+	gap: 0.5rem;
+}
+
+.smart-booking-step-item {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--muted, #71717a);
+	cursor: pointer;
+	min-height: 44px;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.5rem;
+	transition: all 0.2s ease;
+}
+
+.smart-booking-step-item.active {
+	color: #2dd4bf;
+}
+
+.smart-booking-step-item.completed {
+	color: #10b981;
+}
+
+.smart-booking-step-circle {
+	width: 1.75rem; /* 28px */
+	height: 1.75rem;
+	min-width: 1.75rem;
+	border-radius: 9999px;
+	border: 2px solid currentColor;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.75rem;
+	font-weight: 800;
+}
+
+.smart-booking-service-card {
+	background: var(--paper, #27272a);
+	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.08));
+	border-radius: 0.875rem;
+	padding: 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	cursor: pointer;
+	min-height: 52px;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+
+.smart-booking-service-card:hover {
+	border-color: rgba(45, 212, 191, 0.4);
+	background: rgba(45, 212, 191, 0.04);
+	transform: translateY(-1px);
+}
+
+.smart-booking-service-card.selected {
+	border-color: #2dd4bf;
+	background: rgba(20, 184, 166, 0.12);
+	box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.4);
+}
+
+.smart-booking-doctor-card {
+	background: var(--paper, #27272a);
+	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.08));
+	border-radius: 0.875rem;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+
+.smart-booking-doctor-card:hover {
+	border-color: rgba(45, 212, 191, 0.4);
+}
+
+.smart-booking-doctor-card.selected {
+	border-color: #2dd4bf;
+	background: rgba(20, 184, 166, 0.1);
+	box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.4);
+}
+
+.smart-booking-slot-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+	gap: 0.5rem;
+}
+
+.smart-booking-slot-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.5rem;
+	border-radius: 0.625rem;
+	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.1));
+	background: rgba(255, 255, 255, 0.03);
+	color: var(--ink, #e4e4e7);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+}
+
+.smart-booking-slot-btn:hover:not(:disabled) {
+	background: rgba(45, 212, 191, 0.15);
+	border-color: #2dd4bf;
+	color: #2dd4bf;
+}
+
+.smart-booking-slot-btn.selected {
+	background: #0d9488;
+	border-color: #2dd4bf;
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
+}
+
+.smart-booking-slot-btn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+	text-decoration: line-through;
+}
+
+.smart-booking-offline-banner {
+	background: rgba(245, 158, 11, 0.12);
+	border: 1px solid rgba(245, 158, 11, 0.3);
+	border-radius: 0.75rem;
+	padding: 0.75rem 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	color: #fbbf24;
+	font-size: 0.75rem;
+	line-height: 1.4;
+}
+
+.smart-booking-sbp-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.25rem 0.625rem;
+	border-radius: 9999px;
+	background: rgba(16, 185, 129, 0.15);
+	color: #34d399;
+	font-size: 0.6875rem;
+	font-weight: 800;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.smart-booking-action-btn {
+	min-height: 48px;
+	min-width: 48px;
+	padding: 0.75rem 1.5rem;
+	border-radius: 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	border: none;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	text-decoration: none;
+}
+
+.smart-booking-action-btn.primary {
+	background: #0d9488;
+	color: #ffffff;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);
+}
+
+.smart-booking-action-btn.primary:hover {
+	background: #0f766e;
+	box-shadow: 0 6px 20px rgba(13, 148, 136, 0.5);
+	transform: translateY(-1px);
+}
+
+.smart-booking-action-btn.secondary {
+	background: rgba(255, 255, 255, 0.08);
+	color: var(--ink, #e4e4e7);
+	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.1));
+}
+
+.smart-booking-action-btn.secondary:hover {
+	background: rgba(255, 255, 255, 0.12);
+}

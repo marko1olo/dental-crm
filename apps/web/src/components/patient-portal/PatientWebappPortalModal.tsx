@@ -95,6 +95,8 @@ import {
 } from "./patientWebappEngine.js";
 import { PostOpCareTimelineWidget } from "./PostOpCareTimelineWidget.js";
 import { FamilyBalanceShareWidget } from "./FamilyBalanceShareWidget.js";
+import { ImplantPassportWidget } from "./ImplantPassportWidget.js";
+import { InteractiveSmartBookingFlow } from "./InteractiveSmartBookingFlow.js";
 import "./patientWebapp.css";
 
 export interface PatientWebappPortalModalProps {
@@ -129,6 +131,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 	const [showShareModal, setShowShareModal] = useState<boolean>(false);
 	const [magicLinkCopied, setMagicLinkCopied] = useState<boolean>(false);
+	const [showSmartBooking, setShowSmartBooking] = useState<boolean>(false);
 
 	// Appointments Sub-tab (upcoming vs history vs postop)
 	const [appointmentsSubTab, setAppointmentsSubTab] = useState<"upcoming" | "history" | "postop">("upcoming");
@@ -733,82 +736,97 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 						{/* App Content Tabs */}
 						<main className="pwa-app-content">
-							{/* TAB 1: ГЛАВНАЯ (HOME) */}
-							{activeTab === "home" && (
-								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-									{/* Next Visit Banner */}
-									{profile.nextAppointment ? (
-										<div className="pwa-card pwa-hero-next-visit">
-											<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-												<span style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", opacity: 0.9 }}>
-													Ближайший прием
-												</span>
-												<span style={{ fontSize: "11px", fontWeight: 700, opacity: 0.85 }}>
-													{profile.nextAppointment.roomNumber}
-												</span>
-											</div>
+							{showSmartBooking ? (
+								<InteractiveSmartBookingFlow
+									patientId={profile.patientId}
+									defaultPatientName={profile.fullName}
+									defaultPatientPhone={profile.phone}
+									clinicName={profile.clinicName}
+									clinicAddress={profile.clinicAddress}
+									onBookingSuccess={() => {
+										setShowSmartBooking(false);
+										onAppointmentBook?.();
+									}}
+									onCancel={() => setShowSmartBooking(false)}
+								/>
+							) : (
+								<>
+									{/* TAB 1: ГЛАВНАЯ (HOME) */}
+									{activeTab === "home" && (
+										<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+											{/* Next Visit Banner */}
+											{profile.nextAppointment ? (
+												<div className="pwa-card pwa-hero-next-visit">
+													<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+														<span style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", opacity: 0.9 }}>
+															Ближайший прием
+														</span>
+														<span style={{ fontSize: "11px", fontWeight: 700, opacity: 0.85 }}>
+															{profile.nextAppointment.roomNumber}
+														</span>
+													</div>
 
-											<div>
-												<h3 style={{ margin: 0, fontSize: "16px", fontWeight: 900 }}>
-													{profile.nextAppointment.titleRu}
-												</h3>
-												<p style={{ margin: "3px 0 0 0", fontSize: "12px", opacity: 0.9 }}>
-													{profile.nextAppointment.dateIso} в {profile.nextAppointment.timeRu} • {profile.nextAppointment.doctorName}
-												</p>
-											</div>
+													<div>
+														<h3 style={{ margin: 0, fontSize: "16px", fontWeight: 900 }}>
+															{profile.nextAppointment.titleRu}
+														</h3>
+														<p style={{ margin: "3px 0 0 0", fontSize: "12px", opacity: 0.9 }}>
+															{profile.nextAppointment.dateIso} в {profile.nextAppointment.timeRu} • {profile.nextAppointment.doctorName}
+														</p>
+													</div>
 
-											<div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-												<button
-													type="button"
-													onClick={() => setActiveTab("appointments")}
-													style={{
-														flex: 1,
-														minHeight: "44px",
-														borderRadius: "10px",
-														border: "none",
-														background: "#ffffff",
-														color: "#0f766e",
-														fontSize: "12px",
-														fontWeight: 800,
-														cursor: "pointer",
-													}}
-												>
-													Детали приема
-												</button>
-												<a
-													href={`tel:${profile.clinicPhone.replace(/\D/g, "")}`}
-													style={{
-														display: "inline-flex",
-														alignItems: "center",
-														justifyContent: "center",
-														minWidth: "44px",
-														minHeight: "44px",
-														borderRadius: "10px",
-														background: "rgba(255, 255, 255, 0.2)",
-														color: "#ffffff",
-														textDecoration: "none",
-													}}
-													title="Позвонить в клинику"
-												>
-													<PhoneCall size={16} />
-												</a>
-											</div>
-										</div>
-									) : (
-										<div className="pwa-card" style={{ textAlign: "center", padding: "16px" }}>
-											<p style={{ margin: 0, fontSize: "13px", fontWeight: 700 }}>
-												У вас нет активных записей на прием
-											</p>
-											<button
-												type="button"
-												onClick={onAppointmentBook}
-												className="pwa-action-btn-primary"
-												style={{ marginTop: "10px" }}
-											>
-												Записаться к врачу
-											</button>
-										</div>
-									)}
+													<div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+														<button
+															type="button"
+															onClick={() => setActiveTab("appointments")}
+															style={{
+																flex: 1,
+																minHeight: "44px",
+																borderRadius: "10px",
+																border: "none",
+																background: "#ffffff",
+																color: "#0f766e",
+																fontSize: "12px",
+																fontWeight: 800,
+																cursor: "pointer",
+															}}
+														>
+															Детали приема
+														</button>
+														<a
+															href={`tel:${profile.clinicPhone.replace(/\D/g, "")}`}
+															style={{
+																display: "inline-flex",
+																alignItems: "center",
+																justifyContent: "center",
+																minWidth: "44px",
+																minHeight: "44px",
+																borderRadius: "10px",
+																background: "rgba(255, 255, 255, 0.2)",
+																color: "#ffffff",
+																textDecoration: "none",
+															}}
+															title="Позвонить в клинику"
+														>
+															<PhoneCall size={16} />
+														</a>
+													</div>
+												</div>
+											) : (
+												<div className="pwa-card" style={{ textAlign: "center", padding: "16px" }}>
+													<p style={{ margin: 0, fontSize: "13px", fontWeight: 700 }}>
+														У вас нет активных записей на прием
+													</p>
+													<button
+														type="button"
+														onClick={() => setShowSmartBooking(true)}
+														className="pwa-action-btn-primary"
+														style={{ marginTop: "10px" }}
+													>
+														Записаться к врачу
+													</button>
+												</div>
+											)}
 
 									{/* Quick Action Buttons Grid */}
 									<div className="pwa-quick-action-grid">
@@ -986,6 +1004,17 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 							{/* TAB 2: ЗАПИСИ И ВИЗИТЫ (APPOINTMENTS) */}
 							{activeTab === "appointments" && (
 								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+									{/* Quick Action: New Appointment */}
+									<button
+										type="button"
+										onClick={() => setShowSmartBooking(true)}
+										className="pwa-action-btn-primary"
+										style={{ minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+									>
+										<Calendar size={16} />
+										<span>Записаться на прием к врачу</span>
+									</button>
+
 									{/* Sub-tab pills */}
 									<div style={{ display: "flex", background: "var(--paper, #ffffff)", padding: "4px", borderRadius: "12px", border: "1px solid var(--border, #e2e8f0)", gap: "4px", overflowX: "auto" }}>
 										<button
@@ -1554,7 +1583,19 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											);
 										})}
 									</div>
+
+									{/* Electronic Implant & Prosthetics Passport */}
+									<div style={{ marginTop: "8px" }}>
+										<ImplantPassportWidget
+											currentPatientId={profile.patientId}
+											onBookCheckupAppointment={() => {
+												setShowSmartBooking(true);
+											}}
+										/>
+									</div>
 								</div>
+							)}
+								</>
 							)}
 						</main>
 
@@ -1562,8 +1603,11 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 						<nav className="pwa-bottom-tabbar">
 							<button
 								type="button"
-								className={`pwa-tab-button ${activeTab === "home" ? "active" : ""}`}
-								onClick={() => setActiveTab("home")}
+								className={`pwa-tab-button ${!showSmartBooking && activeTab === "home" ? "active" : ""}`}
+								onClick={() => {
+									setShowSmartBooking(false);
+									setActiveTab("home");
+								}}
 							>
 								<Smile size={20} />
 								<span>Главная</span>
@@ -1571,8 +1615,11 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 							<button
 								type="button"
-								className={`pwa-tab-button ${activeTab === "appointments" ? "active" : ""}`}
-								onClick={() => setActiveTab("appointments")}
+								className={`pwa-tab-button ${!showSmartBooking && activeTab === "appointments" ? "active" : ""}`}
+								onClick={() => {
+									setShowSmartBooking(false);
+									setActiveTab("appointments");
+								}}
 							>
 								<Calendar size={20} />
 								<span>Записи</span>
@@ -1583,8 +1630,11 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 							<button
 								type="button"
-								className={`pwa-tab-button ${activeTab === "plan" ? "active" : ""}`}
-								onClick={() => setActiveTab("plan")}
+								className={`pwa-tab-button ${!showSmartBooking && activeTab === "plan" ? "active" : ""}`}
+								onClick={() => {
+									setShowSmartBooking(false);
+									setActiveTab("plan");
+								}}
 							>
 								<Activity size={20} />
 								<span>План</span>
@@ -1592,8 +1642,11 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 							<button
 								type="button"
-								className={`pwa-tab-button ${activeTab === "photos" ? "active" : ""}`}
-								onClick={() => setActiveTab("photos")}
+								className={`pwa-tab-button ${!showSmartBooking && activeTab === "photos" ? "active" : ""}`}
+								onClick={() => {
+									setShowSmartBooking(false);
+									setActiveTab("photos");
+								}}
 							>
 								<Camera size={20} />
 								<span>До/После</span>
@@ -1601,8 +1654,11 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 							<button
 								type="button"
-								className={`pwa-tab-button ${activeTab === "payments" ? "active" : ""}`}
-								onClick={() => setActiveTab("payments")}
+								className={`pwa-tab-button ${!showSmartBooking && activeTab === "payments" ? "active" : ""}`}
+								onClick={() => {
+									setShowSmartBooking(false);
+									setActiveTab("payments");
+								}}
 							>
 								<CreditCard size={20} />
 								<span>Оплата</span>
