@@ -32,13 +32,13 @@ export const clinicExpenseItemSchema = z.object({
 	clinicId: z.string().uuid().optional().nullable(),
 	category: clinicExpenseCategorySchema,
 	costNature: costNatureSchema.default("fixed"),
-	amountKopecks: z.number().int().positive(),
+	amountKopecks: z.number().int().positive().refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)),
 	expenseDate: z.string(), // YYYY-MM-DD
 	description: z.string().max(2000).optional().nullable(),
 	vendorContactId: z.string().uuid().optional().nullable(),
 	receiptUrl: z.string().url().optional().nullable(),
 	isRecurring: z.boolean().default(false),
-	recurringIntervalMonths: z.number().int().min(1).max(12).optional().nullable(),
+	recurringIntervalMonths: z.number().int().min(1).max(12).refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)).optional().nullable(),
 	createdBy: z.string().uuid().optional().nullable(),
 	createdAt: z.string().datetime().optional(),
 });

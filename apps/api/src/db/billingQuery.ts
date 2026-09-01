@@ -1,6 +1,7 @@
 import {
 	type CreatePaymentInput,
 	formatKopecksRu,
+	formatKopecksToRubles,
 	type Kopecks,
 	type Payment,
 	sumKopecks,
@@ -189,6 +190,42 @@ export async function createPaymentInDb(
 			throw new Error(
 				`Пациент с идентификатором ${input.patientId} не найден или заблокирован другой операцией.`,
 			);
+		}
+
+		// 1b. Price Spoofing Defense: Verify amount against service_catalog_items if serviceId/catalogItemId is provided
+		const targetServiceId = input.serviceId || input.catalogItemId;
+		if (targetServiceId) {
+			const [serviceItem] = await tx
+				.select()
+				.from(schema.serviceCatalogItems)
+				.where(
+					and(
+						eq(schema.serviceCatalogItems.id, targetServiceId),
+						eq(schema.serviceCatalogItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!serviceItem) {
+				throw new Error(`Услуга с ID «${targetServiceId}» не найдена в каталоге клиники.`);
+			}
+
+			const catalogPriceKopecks = toKopecks(serviceItem.priceRub, "цена услуги в каталоге");
+			let discountKopecks = 0;
+			if (input.discountRub !== undefined && input.discountRub !== null) {
+				discountKopecks = toKopecks(input.discountRub, "скидка на услугу");
+			} else if (input.discountPercent !== undefined && input.discountPercent !== null) {
+				discountKopecks = Math.trunc(
+					(catalogPriceKopecks * Math.round(input.discountPercent * 100)) / 10000,
+				);
+			}
+
+			const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
+			if (incomingPaymentKopecks !== verifiedAmountKopecks) {
+				throw new Error(
+					`Попытка подмены прайса для услуги «${serviceItem.title}»: цена в каталоге составляет ${formatKopecksToRubles(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${formatKopecksToRubles(verifiedAmountKopecks)} ₽), получено ${formatKopecksToRubles(incomingPaymentKopecks)} ₽.`,
+				);
+			}
 		}
 
 		// 2. Validate and check remaining balance for visitId

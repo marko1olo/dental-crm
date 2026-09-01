@@ -56,7 +56,7 @@ export function parseKopecks(
 	if (value === null || value === undefined || value === "") return 0;
 
 	if (typeof value === "number") {
-		if (!Number.isFinite(value)) {
+		if (!Number.isFinite(value) || Number.isNaN(value)) {
 			throw new Error(`Денежное значение не является числом: ${value}`);
 		}
 		// Колонки integer хранят целые рубли — тут перевод точный.
@@ -79,7 +79,7 @@ export function parseKopecks(
 
 /** Целые рубли → копейки. Для значений из контрактов, где сумма объявлена int. */
 export function rublesToKopecks(rubles: number): Kopecks {
-	if (!Number.isInteger(rubles)) {
+	if (typeof rubles !== "number" || !Number.isFinite(rubles) || Number.isNaN(rubles) || !Number.isInteger(rubles)) {
 		throw new Error(`Ожидались целые рубли, получено ${rubles}`);
 	}
 	return rubles * KOPECKS_IN_RUBLE;
@@ -216,7 +216,7 @@ export function formatKopecksRu(kopecks: Kopecks): string {
 }
 
 function assertWholeKopecks(value: Kopecks): void {
-	if (!Number.isInteger(value)) {
+	if (typeof value !== "number" || !Number.isFinite(value) || Number.isNaN(value) || !Number.isInteger(value)) {
 		throw new Error(
 			`Копейки должны быть целым числом, получено ${value}. Похоже, сумма прошла через плавающую точку.`,
 		);

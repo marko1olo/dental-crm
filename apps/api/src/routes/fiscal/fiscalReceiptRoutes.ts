@@ -21,6 +21,7 @@ import {
 	kopecksToNumericString,
 	kopecksToRub,
 	parseChestnyZnakDataMatrix,
+	parseKopecks,
 	buildFiscalReceiptPayloadSignature,
 	buildFiscalRefundPayloadSignature,
 	verifyFiscalCompositeIdempotencyKey,
@@ -33,7 +34,7 @@ import {
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { fiscalReceiptQueue, payments } from "../../db/schema.js";
+import { fiscalReceiptQueue, payments, serviceCatalogItems } from "../../db/schema.js";
 import { Fiscal54FzService, Fiscal54FzValidationError } from "../../services/billing/fiscal54fzService.js";
 import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import {
@@ -61,6 +62,64 @@ export async function registerFiscalReceiptRoutes(
 				message: "Некорректные параметры фискального чека 54-ФЗ",
 				details: parsed.error.issues,
 			});
+		}
+
+		// ЗАЩИТА ОТ ПОДМЕНЫ ПРАЙСА: если в позициях чека переданы serviceId/catalogItemId
+		const serviceIds = parsed.data.items
+			.map((it) => it.serviceId || it.catalogItemId)
+			.filter((id): id is string => typeof id === "string" && id.length > 0);
+
+		if (serviceIds.length > 0) {
+			const catalogRows = await db
+				.select()
+				.from(serviceCatalogItems)
+				.where(
+					and(
+						eq(serviceCatalogItems.organizationId, ctx.organizationId),
+						inArray(serviceCatalogItems.id, serviceIds),
+					),
+				);
+
+			const catalogMap = new Map(catalogRows.map((r) => [r.id, r]));
+
+			for (const item of parsed.data.items) {
+				const sId = item.serviceId || item.catalogItemId;
+				if (!sId) continue;
+				const catalogItem = catalogMap.get(sId);
+				if (!catalogItem) {
+					return reply.status(400).send({
+						error: "FiscalPriceVerificationError",
+						message: `Услуга с ID «${sId}» не найдена в каталоге клиники.`,
+					});
+				}
+
+				const catalogUnitPriceKop = parseKopecks(catalogItem.priceRub);
+				let discountKop = 0;
+				if (item.discountKopecks !== undefined && item.discountKopecks !== null) {
+					discountKop = item.discountKopecks;
+				} else if (item.discountPercent !== undefined && item.discountPercent !== null) {
+					discountKop = Math.trunc(
+						(catalogUnitPriceKop * Math.round(item.discountPercent * 100)) / 10000,
+					);
+				}
+
+				const expectedUnitPriceKop = Math.max(0, catalogUnitPriceKop - discountKop);
+				const expectedTotalItemKop = Math.round(expectedUnitPriceKop * item.quantity);
+
+				if (item.priceKopecks !== expectedUnitPriceKop || item.amountKopecks !== expectedTotalItemKop) {
+					return reply.status(400).send({
+						error: "FiscalPriceSpoofingError",
+						message: `Обнаружена попытка подмены цены услуги «${catalogItem.title}»: в каталоге ${kopecksToRub(catalogUnitPriceKop)} ₽/ед. (к списанию с учетом скидки: ${expectedTotalItemKop} коп.), передано ${item.amountKopecks} коп.`,
+						details: {
+							serviceId: sId,
+							serviceTitle: catalogItem.title,
+							catalogUnitPriceKopecks: catalogUnitPriceKop,
+							expectedAmountKopecks: expectedTotalItemKop,
+							receivedAmountKopecks: item.amountKopecks,
+						},
+					});
+				}
+			}
 		}
 
 		try {
@@ -162,6 +221,64 @@ export async function registerFiscalReceiptRoutes(
 			...rawData,
 			clientMutationId: effectiveMutationId,
 		};
+
+		// ЗАЩИТА ОТ ПОДМЕНЫ ПРАЙСА: если в позициях чека переданы serviceId/catalogItemId
+		const receiptServiceIds = data.items
+			.map((it) => it.serviceId || it.catalogItemId)
+			.filter((id): id is string => typeof id === "string" && id.length > 0);
+
+		if (receiptServiceIds.length > 0) {
+			const catalogRows = await db
+				.select()
+				.from(serviceCatalogItems)
+				.where(
+					and(
+						eq(serviceCatalogItems.organizationId, orgId),
+						inArray(serviceCatalogItems.id, receiptServiceIds),
+					),
+				);
+
+			const catalogMap = new Map(catalogRows.map((r) => [r.id, r]));
+
+			for (const item of data.items) {
+				const sId = item.serviceId || item.catalogItemId;
+				if (!sId) continue;
+				const catalogItem = catalogMap.get(sId);
+				if (!catalogItem) {
+					return reply.status(400).send({
+						error: "FiscalPriceVerificationError",
+						message: `Услуга с ID «${sId}» не найдена в каталоге клиники.`,
+					});
+				}
+
+				const catalogUnitPriceKop = parseKopecks(catalogItem.priceRub);
+				let discountKop = 0;
+				if (item.discountKopecks !== undefined && item.discountKopecks !== null) {
+					discountKop = item.discountKopecks;
+				} else if (item.discountPercent !== undefined && item.discountPercent !== null) {
+					discountKop = Math.trunc(
+						(catalogUnitPriceKop * Math.round(item.discountPercent * 100)) / 10000,
+					);
+				}
+
+				const expectedUnitPriceKop = Math.max(0, catalogUnitPriceKop - discountKop);
+				const expectedTotalItemKop = Math.round(expectedUnitPriceKop * item.quantity);
+
+				if (item.priceKopecks !== expectedUnitPriceKop || item.amountKopecks !== expectedTotalItemKop) {
+					return reply.status(400).send({
+						error: "FiscalPriceSpoofingError",
+						message: `Обнаружена попытка подмены цены услуги «${catalogItem.title}»: в каталоге ${kopecksToRub(catalogUnitPriceKop)} ₽/ед. (к списанию с учетом скидки: ${expectedTotalItemKop} коп.), передано ${item.amountKopecks} коп.`,
+						details: {
+							serviceId: sId,
+							serviceTitle: catalogItem.title,
+							catalogUnitPriceKopecks: catalogUnitPriceKop,
+							expectedAmountKopecks: expectedTotalItemKop,
+							receivedAmountKopecks: item.amountKopecks,
+						},
+					});
+				}
+			}
+		}
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// IDEMPOTENCY CHECK (<UUID>#<SHA256(PAYLOAD)>) WITH ATOMIC ADVISORY LOCK

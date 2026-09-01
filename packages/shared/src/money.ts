@@ -13,7 +13,9 @@ import { z } from "zod";
  * на двоичной плавающей точке неверно: 1500.5 % 0.01 не ноль.
  */
 const kopecksAreExact = (value: number) =>
+	typeof value === "number" &&
 	Number.isFinite(value) &&
+	!Number.isNaN(value) &&
 	Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
 
 export const moneyRubSchema = z.number().refine(kopecksAreExact, {
@@ -21,14 +23,14 @@ export const moneyRubSchema = z.number().refine(kopecksAreExact, {
 });
 
 export const positiveMoneyRubSchema = moneyRubSchema.refine(
-	(value) => value > 0,
+	(value) => typeof value === "number" && Number.isFinite(value) && !Number.isNaN(value) && value > 0,
 	{
 		message: "сумма должна быть больше нуля",
 	},
 );
 
 export const nonNegativeMoneyRubSchema = moneyRubSchema.refine(
-	(value) => value >= 0,
+	(value) => typeof value === "number" && Number.isFinite(value) && !Number.isNaN(value) && value >= 0,
 	{
 		message: "сумма не может быть отрицательной",
 	},

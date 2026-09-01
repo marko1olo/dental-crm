@@ -21,6 +21,7 @@ import {
 	familyGroups,
 	patients,
 	payments,
+	serviceCatalogItems,
 } from "../../db/schema.js";
 import {
 	buildFnsKnd1151156Xml,
@@ -49,11 +50,12 @@ export class FamilyWalletError extends Error {
 export interface FamilyTopupParams {
 	readonly organizationId: string;
 	readonly familyGroupId: string;
-	readonly patientId: string; // Payer / Head of household
+	readonly patientId?: string | undefined; // Payer / Head of family
+	readonly payerPatientId?: string | undefined; // Payer / Head of family
 	readonly amountRub: number;
 	readonly method?: "cash" | "card" | "bank_transfer" | "online" | "other" | undefined;
 	readonly clientMutationId: string;
-	readonly comment?: string | undefined;
+	readonly notes?: string | undefined;
 }
 
 export interface FamilyTopupResult {
@@ -70,6 +72,10 @@ export interface FamilyDebitParams {
 	readonly familyGroupId: string;
 	readonly patientId: string; // Patient receiving care (child, spouse, etc.)
 	readonly amountRub: number;
+	readonly serviceId?: string | undefined;
+	readonly catalogItemId?: string | undefined;
+	readonly discountRub?: number | undefined;
+	readonly discountPercent?: number | undefined;
 	readonly clientMutationId: string;
 	readonly documentId?: string | undefined;
 	readonly visitId?: string | undefined;
@@ -112,11 +118,12 @@ export class FamilyWalletService {
 		const {
 			organizationId,
 			familyGroupId,
-			patientId,
 			amountRub,
 			method = "cash",
 			clientMutationId,
 		} = params;
+
+		const targetPatientId = params.payerPatientId || params.patientId;
 
 		if (!organizationId) {
 			throw new FamilyWalletError("Не указан ID организации клиники", 400, "MISSING_ORG_ID");
@@ -124,7 +131,7 @@ export class FamilyWalletService {
 		if (!familyGroupId) {
 			throw new FamilyWalletError("Не указан ID семейной группы", 400, "MISSING_FAMILY_ID");
 		}
-		if (!patientId) {
+		if (!targetPatientId) {
 			throw new FamilyWalletError("Не указан ID плательщика", 400, "MISSING_PATIENT_ID");
 		}
 		if (!clientMutationId || !clientMutationId.trim()) {
@@ -154,7 +161,7 @@ export class FamilyWalletService {
 				.from(patients)
 				.where(
 					and(
-						eq(patients.id, patientId),
+						eq(patients.id, targetPatientId),
 						eq(patients.organizationId, organizationId),
 					),
 				)
@@ -242,7 +249,7 @@ export class FamilyWalletService {
 				.insert(payments)
 				.values({
 					organizationId,
-					patientId,
+					patientId: targetPatientId,
 					amountRub: kopecksToRub(creditKopecks),
 					method,
 					status: "planned",
@@ -310,6 +317,10 @@ export class FamilyWalletService {
 			);
 		}
 
+		if (typeof amountRub !== "number" || !Number.isFinite(amountRub) || Number.isNaN(amountRub)) {
+			throw new FamilyWalletError("Сумма списания должна быть числом", 400, "INVALID_AMOUNT");
+		}
+
 		const debitKopecks = parseKopecks(amountRub);
 		if (debitKopecks <= 0) {
 			throw new FamilyWalletError("Сумма списания должна быть больше 0 ₽", 400, "INVALID_AMOUNT");
@@ -334,6 +345,48 @@ export class FamilyWalletService {
 					404,
 					"PATIENT_NOT_IN_FAMILY",
 				);
+			}
+
+			// 1a. Защита от подмены прайса: если передан serviceId/catalogItemId, проверяем цену в каталоге
+			const targetServiceId = params.serviceId || params.catalogItemId;
+			if (targetServiceId) {
+				const [serviceItem] = await tx
+					.select()
+					.from(serviceCatalogItems)
+					.where(
+						and(
+							eq(serviceCatalogItems.id, targetServiceId),
+							eq(serviceCatalogItems.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+
+				if (!serviceItem) {
+					throw new FamilyWalletError(
+						`Услуга с ID «${targetServiceId}» не найдена в каталоге клиники`,
+						404,
+						"SERVICE_NOT_FOUND",
+					);
+				}
+
+				const catalogPriceKopecks = parseKopecks(serviceItem.priceRub);
+				let discountKopecks = 0;
+				if (params.discountRub !== undefined && params.discountRub !== null) {
+					discountKopecks = parseKopecks(params.discountRub);
+				} else if (params.discountPercent !== undefined && params.discountPercent !== null) {
+					discountKopecks = Math.trunc(
+						(catalogPriceKopecks * Math.round(params.discountPercent * 100)) / 10000,
+					);
+				}
+
+				const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
+				if (debitKopecks !== verifiedAmountKopecks) {
+					throw new FamilyWalletError(
+						`Попытка подмены стоимости услуги «${serviceItem.title}»: в каталоге клиники ${kopecksToRub(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${kopecksToRub(verifiedAmountKopecks)} ₽), получено ${kopecksToRub(debitKopecks)} ₽`,
+						400,
+						"PRICE_SPOOFING_DETECTED",
+					);
+				}
 			}
 
 			// 2. Lock Family Group row with SELECT ... FOR UPDATE

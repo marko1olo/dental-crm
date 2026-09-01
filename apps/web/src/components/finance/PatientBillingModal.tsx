@@ -57,6 +57,7 @@ import { generateQrCodeSvg } from "../portal/patientCabinet/patientCabinetEngine
 import { OneCExportButton } from "./OneCExportButton";
 import { Fiscal54FzReceiptModal } from "./fiscal/Fiscal54FzReceiptModal";
 import { RefundServiceModal } from "./refunds/RefundServiceModal";
+import { useModalA11y } from "../../hooks/useModalA11y";
 
 export interface PatientBillingModalProps {
 	readonly isOpen: boolean;
@@ -286,20 +287,42 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 		}
 	};
 
+	const handleFiscalizeAction = () => {
+		if (onFiscalize) {
+			onFiscalize();
+		} else {
+			setIsFiscalOpen(true);
+		}
+	};
+
+	const primaryInputRef = React.useRef<HTMLInputElement | null>(null);
+
+	const { modalRef, handleInputEnterKeyDown } = useModalA11y<HTMLDivElement>({
+		isOpen,
+		onClose,
+		onSubmit: handleFiscalizeAction,
+		autoFocusRef: primaryInputRef,
+		initialFocusSelector: '[data-testid="btn-tab-friendly-bill"], [data-testid="btn-fiscalize-54fz"], button',
+	});
+
+	if (!isOpen) return null;
+
 	return (
 		<div
+			ref={modalRef}
 			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Акт выполненных работ и гарантийный талон"
 			data-testid="patient-billing-modal"
+			tabIndex={-1}
 		>
 			<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
 				{/* Toast Notification */}
 				{toastMsg && (
 					<div className="bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0">
-						<span>✓ {toastMsg}</span>
-						<button type="button" onClick={() => setToastMsg(null)} className="text-white hover:opacity-80">✕</button>
+						<span className="flex items-center gap-1.5"><Check size={14} className="shrink-0" /> {toastMsg}</span>
+						<button type="button" onClick={() => setToastMsg(null)} className="text-white hover:opacity-80 p-0.5 rounded cursor-pointer" aria-label="Закрыть уведомление"><X size={14} /></button>
 					</div>
 				)}
 
@@ -438,6 +461,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									max={100}
 									value={customDiscountPercent || ""}
 									onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+									onKeyDown={handleInputEnterKeyDown}
 									placeholder="0%"
 									className="h-9 w-20 px-2.5 py-1 text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none focus:border-[var(--teal,#0d9488)]"
 								/>
@@ -453,6 +477,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									max={discountResult.totalGrossRub}
 									value={customDiscountRub || ""}
 									onChange={(e) => setCustomDiscountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+									onKeyDown={handleInputEnterKeyDown}
 									placeholder="0 ₽"
 									className="h-9 w-24 px-2.5 py-1 text-xs font-bold bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl text-[var(--ink)] outline-none focus:border-[var(--teal,#0d9488)]"
 								/>
@@ -634,11 +659,14 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 													Получено от пациента наличными (₽):
 												</label>
 												<input
+													ref={primaryInputRef}
+													autoFocus
 													type="number"
 													min={0}
 													step="1"
 													value={receivedCashRub || ""}
 													onChange={(e) => setReceivedCashRub(parseFloat(e.target.value) || 0)}
+													onKeyDown={handleInputEnterKeyDown}
 													placeholder={`${totalNetRub} ₽`}
 													className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] focus:border-emerald-500 outline-none"
 												/>
@@ -1007,8 +1035,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											<span>/ {actParams.doctor.fullName} /</span>
 										</div>
 										<div className="flex items-center gap-3 mt-2">
-											<div className="border-2 border-[var(--ok-fg,#059669)] text-[var(--ok-fg,#059669)] font-black text-xs px-2 py-0.5 rounded-sm uppercase transform -rotate-3">
-												✓ ОПЛАЧЕНО
+											<div className="border-2 border-[var(--ok-fg,#059669)] text-[var(--ok-fg,#059669)] font-black text-xs px-2 py-0.5 rounded-sm uppercase transform -rotate-3 flex items-center gap-1">
+												<Check size={12} className="stroke-[3]" /> ОПЛАЧЕНО
 											</div>
 											<div className="w-16 h-16 rounded-full border border-dashed border-[var(--line)] flex items-center justify-center text-[9px] text-[var(--muted)] text-center">
 												М.П.<br />Клиники

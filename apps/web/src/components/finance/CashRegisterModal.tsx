@@ -52,6 +52,7 @@ import {
 	parseChestnyZnakDataMatrix,
 	rubToKopecks,
 } from "@dental/shared";
+import { useModalA11y } from "../../hooks/useModalA11y";
 
 export type CashRegisterTenderMethod =
 	| "card"
@@ -113,6 +114,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 	// Status flags
 	const [isProcessing, setIsProcessing] = useState(false);
+	const inFlightRef = React.useRef(false);
+	const lastClickTimeRef = React.useRef(0);
 	const [fiscalSuccessReceipt, setFiscalSuccessReceipt] = useState<{
 		fiscalSign: string;
 		fiscalDocNumber: number;
@@ -183,14 +186,26 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		return calculateCashChange(requiredCash, received);
 	}, [selectedTender, totalInvoiceRub, splitCashRub, receivedCashRub]);
 
-	// Fast 1-Click fiscalize action
+	// Fast 1-Click fiscalize action with rage click debounce + atomic ref lock
 	const handleFiscalize = async () => {
+		const now = Date.now();
+		if (inFlightRef.current || isProcessing || now - lastClickTimeRef.current < 600) {
+			return;
+		}
+		inFlightRef.current = true;
+		lastClickTimeRef.current = now;
 		setIsProcessing(true);
 		try {
 			// Construct composite idempotency key per 54-FZ
 			const idempotencyKey = createCompositeIdempotencyKey(
 				patientId || "fiscal-patient",
-				{ totalInvoiceRub, date: new Date().toISOString().slice(0, 10) },
+				{
+					totalInvoiceRub,
+					date: new Date().toISOString().slice(0, 10),
+					nonce: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+						? crypto.randomUUID()
+						: `r-${now}-${Math.random().toString(36).slice(2, 7)}`,
+				},
 			);
 
 			// Emulate immediate OFD transmission with exact signature
@@ -219,25 +234,38 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			setToastMsg("Ошибка фискализации чека. Проверьте связь с ККТ.");
 		} finally {
 			setIsProcessing(false);
+			inFlightRef.current = false;
 		}
 	};
+
+	const primaryInputRef = React.useRef<HTMLInputElement | null>(null);
+
+	const { modalRef, handleInputEnterKeyDown } = useModalA11y<HTMLDivElement>({
+		isOpen,
+		onClose,
+		onSubmit: handleFiscalize,
+		autoFocusRef: primaryInputRef,
+		initialFocusSelector: '[data-testid="tab-cash-checkout"], input, button',
+	});
 
 	if (!isOpen) return null;
 
 	return (
 		<div
+			ref={modalRef}
 			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Кассовый аппарат 54-ФЗ"
 			data-testid="cash-register-modal"
+			tabIndex={-1}
 		>
 			<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-4xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
 				{/* Toast Banner */}
 				{toastMsg && (
 					<div className="bg-emerald-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0">
-						<span>✓ {toastMsg}</span>
-						<button type="button" onClick={() => setToastMsg(null)} className="text-white hover:opacity-80">✕</button>
+						<span className="flex items-center gap-1.5"><Check size={14} className="shrink-0" /> {toastMsg}</span>
+						<button type="button" onClick={() => setToastMsg(null)} className="text-white hover:opacity-80 p-0.5 rounded cursor-pointer" aria-label="Закрыть уведомление"><X size={14} /></button>
 					</div>
 				)}
 
@@ -493,11 +521,14 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													Получено от пациента наличными (₽):
 												</label>
 												<input
+													ref={primaryInputRef}
+													autoFocus
 													type="number"
 													min={0}
 													step="1"
 													value={receivedCashRub || ""}
 													onChange={(e) => setReceivedCashRub(parseFloat(e.target.value) || 0)}
+													onKeyDown={handleInputEnterKeyDown}
 													placeholder={`${totalInvoiceRub} ₽`}
 													className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] focus:border-emerald-500 outline-none"
 												/>
@@ -633,6 +664,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											min={0}
 											value={splitCardRub || ""}
 											onChange={(e) => setSplitCardRub(parseFloat(e.target.value) || 0)}
+											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
 											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
 										/>
@@ -648,6 +680,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											min={0}
 											value={splitCashRub || ""}
 											onChange={(e) => setSplitCashRub(parseFloat(e.target.value) || 0)}
+											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
 											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
 										/>
@@ -663,6 +696,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											min={0}
 											value={splitSbpRub || ""}
 											onChange={(e) => setSplitSbpRub(parseFloat(e.target.value) || 0)}
+											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
 											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
 										/>
@@ -679,6 +713,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											max={patientDepositRub}
 											value={splitDepositRub || ""}
 											onChange={(e) => setSplitDepositRub(parseFloat(e.target.value) || 0)}
+											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
 											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
 										/>
@@ -695,6 +730,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											max={patientFamilyBalanceRub}
 											value={splitFamilyRub || ""}
 											onChange={(e) => setSplitFamilyRub(parseFloat(e.target.value) || 0)}
+											onKeyDown={handleInputEnterKeyDown}
 											placeholder="0 ₽"
 											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
 										/>

@@ -1,5 +1,6 @@
 import {
 	kopecksToNumericString,
+	nonNegativeMoneyRubSchema,
 	parseKopecks,
 	positiveMoneyRubSchema,
 } from "@dental/shared";
@@ -11,7 +12,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { familyGroups, patients, payments } from "../db/schema.js";
+import { familyGroups, patients, payments, serviceCatalogItems } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
@@ -19,6 +20,10 @@ const familyPaymentSchema = z.object({
 	organizationId: z.string().uuid().optional(),
 	patientId: z.string().uuid(),
 	familyGroupId: z.string().uuid(),
+	serviceId: z.string().uuid().optional(),
+	catalogItemId: z.string().uuid().optional(),
+	discountRub: nonNegativeMoneyRubSchema.optional(),
+	discountPercent: z.number().min(0).max(100).refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)).optional(),
 	/*
 	 * КОПЕЙКИ. Здесь стояло `z.number().int().positive()` с обоснованием
 	 * «The payments ledger stores whole rubles (integer column)». Обоснование
@@ -667,6 +672,47 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				// перезагрузки страницы сумма менялась сама.
 				const currentKopecks = parseKopecks(family.balance);
 				const amountKopecks = parseKopecks(payload.amountRub);
+
+				// ЗАЩИТА ОТ ПОДМЕНЫ ПРАЙСА: если передан serviceId/catalogItemId, проверяем цену в каталоге
+				const targetServiceId = payload.serviceId || payload.catalogItemId;
+				if (targetServiceId) {
+					const [serviceItem] = await tx
+						.select()
+						.from(serviceCatalogItems)
+						.where(
+							and(
+								eq(serviceCatalogItems.id, targetServiceId),
+								eq(serviceCatalogItems.organizationId, organizationId),
+							),
+						)
+						.limit(1);
+
+					if (!serviceItem) {
+						throw new FamilyFinanceError(
+							`Услуга с ID «${targetServiceId}» не найдена в каталоге клиники.`,
+							404,
+						);
+					}
+
+					const catalogPriceKopecks = parseKopecks(serviceItem.priceRub);
+					let discountKopecks = 0;
+					if (payload.discountRub !== undefined && payload.discountRub !== null) {
+						discountKopecks = parseKopecks(payload.discountRub);
+					} else if (payload.discountPercent !== undefined && payload.discountPercent !== null) {
+						discountKopecks = Math.trunc(
+							(catalogPriceKopecks * Math.round(payload.discountPercent * 100)) / 10000,
+						);
+					}
+
+					const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
+					if (amountKopecks !== verifiedAmountKopecks) {
+						throw new FamilyFinanceError(
+							`Попытка подмены стоимости услуги «${serviceItem.title}»: в каталоге клиники ${kopecksToNumericString(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${kopecksToNumericString(verifiedAmountKopecks)} ₽), получено ${kopecksToNumericString(amountKopecks)} ₽.`,
+							400,
+						);
+					}
+				}
+
 				if (currentKopecks < amountKopecks) {
 					throw new FamilyFinanceError(
 						"Недостаточно средств на семейном балансе",

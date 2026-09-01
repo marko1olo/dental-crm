@@ -98,6 +98,9 @@ const batchToothStateSchema = z.object({
 	notes: z.string().max(10000).optional().nullable(),
 	clinicalData: endoToothClinicalDataSchema.optional().nullable(),
 	visitId: z.string().uuid().optional().nullable(),
+	updatedAt: z.string().optional().nullable(),
+	version: z.number().int().nonnegative().optional().nullable(),
+	reason: z.string().max(1000).optional().nullable(),
 });
 
 function parseClinicalDataFromNotes(
@@ -335,6 +338,11 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			const actorUserId = getRequestIdentity(request).userId;
 			const now = new Date();
 
+			const incomingUpdatedAt = parsed.data.updatedAt
+				? new Date(parsed.data.updatedAt)
+				: now;
+			const incomingVersion = parsed.data.version ?? 1;
+
 			const inserted = await db.transaction(async (tx) => {
 				const previousStates = await tx
 					.select({
@@ -342,6 +350,8 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						state: toothStates.state,
 						surfaces: toothStates.surfaces,
 						notes: toothStates.notes,
+						updatedAt: toothStates.updatedAt,
+						version: toothStates.version,
 					})
 					.from(toothStates)
 					.where(
@@ -357,6 +367,8 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 					state: string;
 					surfaces: unknown;
 					notes: string | null;
+					updatedAt: Date | null;
+					version: number | null;
 				};
 				const previousByTooth = new Map<number, PreviousToothState>(
 					(previousStates as PreviousToothState[]).map((row) => [
@@ -365,8 +377,95 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 					]),
 				);
 
-				await tx
-					.delete(toothStates)
+				const serializedClinicalNotes = parsed.data.clinicalData
+					? JSON.stringify(parsed.data.clinicalData)
+					: parsed.data.notes;
+
+				for (const toothNumber of toothNumbers) {
+					const prev = previousByTooth.get(toothNumber);
+					const prevTime = prev?.updatedAt ? new Date(prev.updatedAt).getTime() : 0;
+					const prevVersion = prev?.version ?? 0;
+					const incomingTime = incomingUpdatedAt.getTime();
+
+					const incomingWins =
+						!prev ||
+						incomingTime > prevTime ||
+						(incomingTime === prevTime && incomingVersion >= prevVersion);
+
+					if (incomingWins) {
+						// 1. Record transition into append-only tooth state history audit log
+						await tx.insert(toothStateHistory).values({
+							organizationId,
+							patientId,
+							visitId: parsed.data.visitId ?? null,
+							toothNumber,
+							previousState: prev?.state ?? null,
+							newState: parsed.data.state,
+							previousSurfaces: prev?.surfaces ?? null,
+							newSurfaces: parsed.data.surfaces || null,
+							changedByUserId: actorUserId,
+							reason: parsed.data.clinicalData
+								? "Эндодонтический протокол / обработка каналов"
+								: (parsed.data.reason || null),
+							changedAt: incomingUpdatedAt,
+						});
+
+						// 2. Delete and insert winning state in toothStates
+						await tx
+							.delete(toothStates)
+							.where(
+								and(
+									eq(toothStates.organizationId, organizationId),
+									eq(toothStates.patientId, patientId),
+									eq(toothStates.toothNumber, toothNumber),
+								),
+							);
+
+						const effectiveNotes =
+							serializedClinicalNotes !== undefined
+								? serializedClinicalNotes
+								: (prev?.notes ?? null);
+
+						await tx.insert(toothStates).values({
+							organizationId,
+							patientId,
+							toothNumber,
+							state: parsed.data.state,
+							surfaces: parsed.data.surfaces || null,
+							notes: effectiveNotes,
+							updatedAt: incomingUpdatedAt,
+							isSynced: false,
+							version: Math.max(prevVersion + 1, incomingVersion, 1),
+						});
+					} else {
+						// Stale offline mutation: Server active state is newer and wins (LWW),
+						// but offline mutation transition is STILL appended to toothStateHistory for full 043/u audit trail!
+						await tx.insert(toothStateHistory).values({
+							organizationId,
+							patientId,
+							visitId: parsed.data.visitId ?? null,
+							toothNumber,
+							previousState: null,
+							newState: parsed.data.state,
+							previousSurfaces: null,
+							newSurfaces: parsed.data.surfaces || null,
+							changedByUserId: actorUserId,
+							reason:
+								parsed.data.reason ||
+								"Оффлайн-синхронизация (LWW архив)",
+							changedAt: incomingUpdatedAt,
+						});
+					}
+				}
+
+				const currentStates = await tx
+					.select({
+						toothNumber: toothStates.toothNumber,
+						state: toothStates.state,
+						surfaces: toothStates.surfaces,
+						notes: toothStates.notes,
+					})
+					.from(toothStates)
 					.where(
 						and(
 							eq(toothStates.organizationId, organizationId),
@@ -375,71 +474,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						),
 					);
 
-				const changedTeeth = toothNumbers.filter((toothNumber) => {
-					const previous = previousByTooth.get(toothNumber);
-					return (
-						!previous ||
-						previous.state !== parsed.data.state ||
-						Boolean(parsed.data.clinicalData)
-					);
-				});
-
-				if (changedTeeth.length > 0) {
-					await tx.insert(toothStateHistory).values(
-						changedTeeth.map((toothNumber) => ({
-							organizationId,
-							patientId,
-							visitId: parsed.data.visitId ?? null,
-							toothNumber,
-							previousState: previousByTooth.get(toothNumber)?.state ?? null,
-							newState: parsed.data.state,
-							previousSurfaces:
-								previousByTooth.get(toothNumber)?.surfaces ?? null,
-							newSurfaces: parsed.data.surfaces || null,
-							changedByUserId: actorUserId,
-							reason: parsed.data.clinicalData
-								? "Эндодонтический протокол / обработка каналов"
-								: null,
-							changedAt: now,
-						})),
-					);
-				}
-
-				const serializedClinicalNotes = parsed.data.clinicalData
-					? JSON.stringify(parsed.data.clinicalData)
-					: parsed.data.notes;
-
-				const rowsToInsert = toothNumbers.map((toothNumber) => {
-					const prev = previousByTooth.get(toothNumber);
-					const effectiveNotes =
-						serializedClinicalNotes !== undefined
-							? serializedClinicalNotes
-							: (prev?.notes ?? null);
-
-					return {
-						organizationId,
-						patientId,
-						toothNumber,
-						state: parsed.data.state,
-						surfaces: parsed.data.surfaces || null,
-						notes: effectiveNotes,
-						updatedAt: now,
-						isSynced: false,
-						version: 1,
-					};
-				});
-
-				const resultRows = await tx
-					.insert(toothStates)
-					.values(rowsToInsert)
-					.returning({
-						toothNumber: toothStates.toothNumber,
-						state: toothStates.state,
-						surfaces: toothStates.surfaces,
-						notes: toothStates.notes,
-					});
-
-				return resultRows.map((row) => ({
+				return currentStates.map((row) => ({
 					toothNumber: row.toothNumber,
 					state: row.state,
 					surfaces: row.surfaces,

@@ -42,7 +42,7 @@ export const expenseRecordSchema = z.object({
 	organizationId: z.string().uuid(),
 	clinicId: z.string().uuid().optional().nullable(),
 	category: expenseCategorySchema,
-	amountKopecks: z.number().int().positive(),
+	amountKopecks: z.number().int().positive().refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)),
 	expenseDate: z.string(), // YYYY-MM-DD
 	description: z.string().max(2000).optional().nullable(),
 	vendorName: z.string().max(255).optional().nullable(),

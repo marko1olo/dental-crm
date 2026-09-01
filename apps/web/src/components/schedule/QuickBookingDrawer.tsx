@@ -43,6 +43,7 @@ import {
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { specialtyLabels } from "../../workspaceUiLabels";
+import { SlotConflictModal } from "./SlotConflictModal";
 
 export interface QuickBookingSlotInfo {
 	dateKey?: string | undefined;
@@ -204,6 +205,10 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	// Submission state
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [slotConflict, setSlotConflict] = useState<{
+		message: string;
+		suggestedSlots: string[];
+	} | null>(null);
 
 	const staff = dashboard?.clinicSettings?.staff ?? [];
 	const doctors = useMemo(
@@ -635,6 +640,12 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						? "Конфликт времени: выбранный врач или кресло уже заняты"
 						: "Ошибка сервера при создании записи");
 				setSubmitError(msg);
+				if (res.status === 409 && Array.isArray(errBody?.suggestedSlots)) {
+					setSlotConflict({
+						message: msg,
+						suggestedSlots: errBody.suggestedSlots,
+					});
+				}
 				showToast(msg, "error");
 				return;
 			}
@@ -1641,6 +1652,23 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						</div>
 					</div>
 				)}
+				<SlotConflictModal
+					isOpen={Boolean(slotConflict)}
+					onClose={() => setSlotConflict(null)}
+					conflictMessage={slotConflict?.message}
+					suggestedSlots={slotConflict?.suggestedSlots ?? []}
+					patientName={selectedPatient?.fullName}
+					doctorName={doctors.find((d) => d.id === doctorUserId)?.fullName}
+					onSelectSlot={(slotTime) => {
+						if (startsAtLocal) {
+							const datePrefix = startsAtLocal.slice(0, 11);
+							const newStart = `${datePrefix}${slotTime}`;
+							setStartsAtLocal(newStart);
+							showToast(`Время изменено на ${slotTime}. Нажмите «Записать на прием» для подтверждения.`, "success");
+						}
+						setSlotConflict(null);
+					}}
+				/>
 			</div>
 		</div>
 	);

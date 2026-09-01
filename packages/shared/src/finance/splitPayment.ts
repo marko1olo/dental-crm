@@ -154,10 +154,16 @@ export class SplitPaymentValidationError extends Error {
  * Resolves a tender amount safely into integer kopecks.
  */
 function resolveKopecks(kop?: number, rub?: number): number {
-	if (kop !== undefined && Number.isFinite(kop)) {
+	if (kop !== undefined) {
+		if (typeof kop !== "number" || !Number.isFinite(kop) || Number.isNaN(kop)) {
+			throw new SplitPaymentValidationError("InvalidTenderAmount", `Некорректная сумма в копейках: ${kop}`);
+		}
 		return Math.round(kop);
 	}
-	if (rub !== undefined && Number.isFinite(rub)) {
+	if (rub !== undefined) {
+		if (typeof rub !== "number" || !Number.isFinite(rub) || Number.isNaN(rub)) {
+			throw new SplitPaymentValidationError("InvalidTenderAmount", `Некорректная сумма в рублях: ${rub}`);
+		}
 		return rubToKopecks(rub);
 	}
 	return 0;

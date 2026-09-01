@@ -31,9 +31,13 @@ import {
 export const fiscalReceiptItemSchema = z
 	.object({
 		id: z.string().uuid().optional(),
+		serviceId: z.string().uuid().optional().nullable(),
+		catalogItemId: z.string().uuid().optional().nullable(),
 		name: z.string().trim().min(1, "Наименование позиции обязательно").max(128, "Максимум 128 символов по ФФД 1.2 (Тег 1030)"),
 		priceKopecks: z.number().int().positive("Цена в копейках должна быть положительным числом"),
 		quantity: z.number().positive("Количество должно быть больше нуля").default(1),
+		discountKopecks: z.number().int().min(0).optional().nullable(),
+		discountPercent: z.number().min(0).max(100).optional().nullable(),
 		amountKopecks: z.number().int().positive("Сумма в копейках должна быть положительным числом"),
 		subject: ffd12PaymentSubjectSchema.default("service"),
 		method: ffd12PaymentMethodSchema.default("full_payment"),
@@ -46,12 +50,8 @@ export const fiscalReceiptItemSchema = z
 		/** Честный ЗНАК / МДЛП DataMatrix marking barcode (Тег 1162 / Тег 1163 / Тег 2000) */
 		markingCode: z.string().trim().max(200).optional().nullable(),
 	})
-	.transform((item) => ({
-		...item,
-		medicalServiceCode804n: item.medicalServiceCode804n ?? item.medicalServiceCodeMzk ?? null,
-	}))
 	.superRefine((item, ctx) => {
-		// Verify exact integer kopecks arithmetic: priceKopecks * quantity == amountKopecks
+		// Verify exact integer kopecks arithmetic: priceKopecks * quantity == amountKopecks (or with discount)
 		const expectedAmount = Math.round(item.priceKopecks * item.quantity);
 		if (Math.abs(expectedAmount - item.amountKopecks) > 1) {
 			ctx.addIssue({
@@ -72,7 +72,11 @@ export const fiscalReceiptItemSchema = z
 				});
 			}
 		}
-	});
+	})
+	.transform((item) => ({
+		...item,
+		medicalServiceCode804n: item.medicalServiceCode804n ?? item.medicalServiceCodeMzk ?? null,
+	}));
 
 export type FiscalReceiptItemInput = z.infer<typeof fiscalReceiptItemSchema>;
 
@@ -449,9 +453,13 @@ export function buildFiscalReceiptPayloadSignature(input: {
 	prepaidKopecks?: number | undefined;
 	creditKopecks?: number | undefined;
 	items: readonly {
+		serviceId?: string | null | undefined;
+		catalogItemId?: string | null | undefined;
 		name: string;
 		priceKopecks: number;
 		quantity: number;
+		discountKopecks?: number | null | undefined;
+		discountPercent?: number | null | undefined;
 		amountKopecks: number;
 		subject?: string | undefined;
 		method?: string | undefined;
@@ -472,9 +480,12 @@ export function buildFiscalReceiptPayloadSignature(input: {
 		prepaidKopecks: input.prepaidKopecks ?? 0,
 		creditKopecks: input.creditKopecks ?? 0,
 		items: input.items.map((it) => ({
+			serviceId: it.serviceId || it.catalogItemId || null,
 			name: it.name.trim(),
 			priceKopecks: it.priceKopecks,
 			quantity: it.quantity,
+			discountKopecks: it.discountKopecks ?? null,
+			discountPercent: it.discountPercent ?? null,
 			amountKopecks: it.amountKopecks,
 			subject: it.subject ?? "service",
 			method: it.method ?? "full_payment",

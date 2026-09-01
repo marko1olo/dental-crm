@@ -43,6 +43,12 @@ export type UnifiedAudioState =
 	| "processing"
 	| "error";
 
+export interface PcmAudioChunk {
+	readonly pcm: Int16Array;
+	readonly rms: number;
+	readonly timestamp: number;
+}
+
 export interface UnifiedAudioClientOptions {
 	preferredMode?: UnifiedAudioMode | undefined;
 	organizationId?: string | null | undefined;
@@ -56,6 +62,9 @@ export interface UnifiedAudioClientOptions {
 	autoFallback?: boolean | undefined;
 	persistDraftKey?: string | null | undefined;
 	offlineQueue?: VoiceOfflineQueue | undefined;
+	ringBufferCapacity?: number | undefined;
+	maxReconnectAttempts?: number | undefined;
+	reconnectBackoffMs?: number | undefined;
 }
 
 export type UnifiedAudioListener = {
@@ -91,6 +100,9 @@ interface InternalUnifiedAudioClientOptions {
 	vadOptions: VadOptions;
 	autoFallback: boolean;
 	persistDraftKey: string;
+	ringBufferCapacity: number;
+	maxReconnectAttempts: number;
+	reconnectBackoffMs: number;
 }
 
 export class UnifiedAudioClient {
@@ -109,6 +121,12 @@ export class UnifiedAudioClient {
 	private chunkIndex = 0;
 	private listeners = new Set<UnifiedAudioListener>();
 	private isDisposed = false;
+
+	// Ring buffer for audio frames & WebSocket auto-reconnect resilience
+	private pcmRingBuffer: PcmAudioChunk[] = [];
+	private isReconnecting = false;
+	private reconnectAttempts = 0;
+	private reconnectTimer: NodeJS.Timeout | null = null;
 
 	constructor(options: UnifiedAudioClientOptions = {}) {
 		this.options = {
@@ -139,6 +157,9 @@ export class UnifiedAudioClient {
 			autoFallback: options.autoFallback ?? true,
 			persistDraftKey:
 				options.persistDraftKey ?? "dente_voice_dictation_draft",
+			ringBufferCapacity: options.ringBufferCapacity ?? 200,
+			maxReconnectAttempts: options.maxReconnectAttempts ?? 5,
+			reconnectBackoffMs: options.reconnectBackoffMs ?? 800,
 		};
 
 		this.offlineQueue = options.offlineQueue ?? globalVoiceOfflineQueue;
@@ -199,6 +220,100 @@ export class UnifiedAudioClient {
 		return { finalized, interim, fullWithInterim };
 	}
 
+	/**
+	 * Количество аудиобуферизованных PCM-фреймов в кольцевом буфере при обрывах связи.
+	 */
+	public getBufferedPcmChunksCount(): number {
+		return this.pcmRingBuffer.length;
+	}
+
+	/**
+	 * Максимальная емкость кольцевого буфера PCM-фреймов.
+	 */
+	public getRingBufferCapacity(): number {
+		return this.options.ringBufferCapacity;
+	}
+
+	/**
+	 * Флаг процесса активного автоматического переподключения WebSocket.
+	 */
+	public getIsReconnecting(): boolean {
+		return this.isReconnecting;
+	}
+
+	/**
+	 * Очистка кольцевого буфера аудио-чанков.
+	 */
+	public clearBufferedPcmChunks(): void {
+		this.pcmRingBuffer = [];
+	}
+
+	/**
+	 * Буферизация входящего PCM-фрейма в кольцевой буфер при отсутствии активного WebSocket.
+	 */
+	public bufferPcmChunk(pcm: Int16Array, rms: number): void {
+		if (this.pcmRingBuffer.length >= this.options.ringBufferCapacity) {
+			this.pcmRingBuffer.shift(); // Вытесняем старейший фрейм (FIFO ring buffer)
+		}
+		this.pcmRingBuffer.push({
+			pcm,
+			rms,
+			timestamp: Date.now(),
+		});
+	}
+
+	/**
+	 * Досылка всех буферизованных во время дисконнекта PCM-фреймов в восстановленный WebSocket.
+	 */
+	public flushBufferedPcmChunks(): number {
+		if (
+			!this.ws ||
+			this.ws.readyState !== WebSocket.OPEN ||
+			this.pcmRingBuffer.length === 0
+		) {
+			return 0;
+		}
+
+		const chunksToFlush = [...this.pcmRingBuffer];
+		this.pcmRingBuffer = [];
+		let flushedCount = 0;
+
+		for (const chunk of chunksToFlush) {
+			try {
+				const uint8Buffer = new Uint8Array(
+					chunk.pcm.buffer,
+					chunk.pcm.byteOffset,
+					chunk.pcm.byteLength,
+				);
+				let binary = "";
+				const len = uint8Buffer.byteLength;
+				for (let i = 0; i < len; i++) {
+					const byte = uint8Buffer[i] ?? 0;
+					binary += String.fromCharCode(byte);
+				}
+				const base64 = btoa(binary);
+
+				this.ws.send(
+					JSON.stringify({
+						type: "audio_chunk",
+						audioBase64: base64,
+						data: base64,
+						rms: chunk.rms,
+						timestamp: chunk.timestamp,
+						isBufferedReplay: true,
+					}),
+				);
+				flushedCount++;
+			} catch (err) {
+				console.warn("Error flushing buffered PCM chunk:", err);
+				this.pcmRingBuffer.unshift(chunk);
+				break;
+			}
+		}
+
+		return flushedCount;
+	}
+
 	public setMode(mode: UnifiedAudioMode): void {
 		if (this.currentMode === mode) return;
 		const prevMode = this.currentMode;
@@ -252,11 +367,7 @@ export class UnifiedAudioClient {
 				onRmsUpdate: (rms, isSpeaking) => {
 					this.emitRmsUpdate(rms, isSpeaking);
 				},
-				onError: (err) => {
-					this.emitError(err);
-				},
 			});
-
 			await this.streamManager.start();
 
 			// 2. Запуск соответствующего бекенда распознавания
@@ -275,6 +386,17 @@ export class UnifiedAudioClient {
 			} else {
 				this.stop();
 			}
+		}
+	}
+
+	/**
+	 * Переключение состояния записи (start/stop) по клику пользователя с ленивой инициализацией AudioContext.
+	 */
+	public async toggle(): Promise<void> {
+		if (this.state === "listening" || this.state === "connecting") {
+			await this.stop();
+		} else {
+			await this.start();
 		}
 	}
 
@@ -339,6 +461,12 @@ export class UnifiedAudioClient {
 							sampleRate: 16000,
 						}),
 					);
+
+					// Досылка всех буферизованных во время дисконнекта аудио-фреймов
+					if (this.pcmRingBuffer.length > 0) {
+						this.flushBufferedPcmChunks();
+					}
+
 					resolve(true);
 				};
 
@@ -348,16 +476,19 @@ export class UnifiedAudioClient {
 						if (
 							data.type === "interim_token" ||
 							data.type === "interim_transcript" ||
-							data.type === "transcript_interim"
+							data.type === "transcript_interim" ||
+							data.type === "interim"
 						) {
 							this.interimText = data.text || "";
 							this.emitInterimText(this.interimText);
 						} else if (
 							data.type === "final_token" ||
 							data.type === "final_transcript" ||
-							data.type === "transcript_final"
+							data.type === "transcript_final" ||
+							data.type === "final" ||
+							data.type === "turn_complete"
 						) {
-							const text = data.text || "";
+							const text = data.text || data.finalText || "";
 							if (text.trim()) {
 								this.appendFinalText(text.trim());
 							}
@@ -377,19 +508,25 @@ export class UnifiedAudioClient {
 				ws.onerror = (err) => {
 					clearTimeout(timeoutTimer);
 					console.warn("Gemini Live WebSocket error:", err);
-					if (this.state === "listening" && this.options.autoFallback) {
-						this.fallbackToNextMode("Сбой WebSocket соединения Gemini Live");
+					if (
+						this.state === "listening" &&
+						!this.isReconnecting &&
+						!this.isDisposed
+					) {
+						void this.reconnectGeminiLiveWs();
 					}
 					resolve(false);
 				};
 
-				ws.onclose = () => {
+				ws.onclose = (event) => {
 					if (
 						this.state === "listening" &&
-						this.options.autoFallback &&
-						this.currentMode === "gemini_live"
+						this.currentMode === "gemini_live" &&
+						!this.isReconnecting &&
+						!this.isDisposed &&
+						event.code !== 1000
 					) {
-						this.fallbackToNextMode("Обрыв WebSocket соединения");
+						void this.reconnectGeminiLiveWs();
 					}
 				};
 			} catch (err) {
@@ -397,6 +534,105 @@ export class UnifiedAudioClient {
 				resolve(false);
 			}
 		});
+	}
+
+	/**
+	 * Автоматическое переподключение WebSocket с досылкой буферизованных PCM-фреймов без потери речи
+	 */
+	public async reconnectGeminiLiveWs(): Promise<boolean> {
+		if (
+			this.isReconnecting ||
+			this.isDisposed ||
+			this.state !== "listening" ||
+			this.currentMode !== "gemini_live"
+		) {
+			return false;
+		}
+
+		if (this.reconnectAttempts >= this.options.maxReconnectAttempts) {
+			console.warn(
+				`[DENTE Voice] Max WebSocket reconnect attempts (${this.options.maxReconnectAttempts}) reached.`,
+			);
+			if (this.options.autoFallback) {
+				// Flush buffered chunks to server_whisper / offline queue before falling back
+				if (this.pcmRingBuffer.length > 0) {
+					const combinedLength = this.pcmRingBuffer.reduce(
+						(acc, c) => acc + c.pcm.length,
+						0,
+					);
+					const combinedPcm = new Int16Array(combinedLength);
+					let offset = 0;
+					for (const chunk of this.pcmRingBuffer) {
+						combinedPcm.set(chunk.pcm, offset);
+						offset += chunk.pcm.length;
+					}
+					this.pcmRingBuffer = [];
+					void this.transcribePcmViaServerWhisper(combinedPcm);
+				}
+				await this.fallbackToNextMode("Превышено число попыток реконнекта Gemini Live");
+			}
+			return false;
+		}
+
+		this.isReconnecting = true;
+		this.reconnectAttempts++;
+
+		// Clean up broken ws instance without triggering close-cascade
+		if (this.ws) {
+			try {
+				this.ws.onopen = null;
+				this.ws.onmessage = null;
+				this.ws.onerror = null;
+				this.ws.onclose = null;
+				this.ws.close();
+			} catch {}
+			this.ws = null;
+		}
+
+		console.info(
+			`[DENTE Voice] Reconnecting WebSocket (attempt ${this.reconnectAttempts}/${this.options.maxReconnectAttempts}, buffered chunks: ${this.pcmRingBuffer.length})...`,
+		);
+
+		const connected = await this.startGeminiLiveWs();
+		const activeWs = this.ws as WebSocket | null;
+		if (connected && activeWs && activeWs.readyState === WebSocket.OPEN) {
+			this.isReconnecting = false;
+			this.reconnectAttempts = 0;
+			if (this.reconnectTimer) {
+				clearTimeout(this.reconnectTimer);
+				this.reconnectTimer = null;
+			}
+			const flushed = this.flushBufferedPcmChunks();
+			console.info(
+				`[DENTE Voice] WebSocket reconnected successfully. Flushed ${flushed} buffered audio chunks without speech loss.`,
+			);
+			return true;
+		} else {
+			this.isReconnecting = false;
+			if (
+				this.state === "listening" &&
+				!this.isDisposed &&
+				this.reconnectAttempts < this.options.maxReconnectAttempts
+			) {
+				const backoff = Math.min(
+					this.options.reconnectBackoffMs * Math.pow(1.5, this.reconnectAttempts - 1),
+					5000,
+				);
+				if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+				this.reconnectTimer = setTimeout(() => {
+					this.reconnectTimer = null;
+					if (this.state === "listening" && !this.isDisposed) {
+						void this.reconnectGeminiLiveWs();
+					}
+				}, backoff);
+			} else if (
+				this.reconnectAttempts >= this.options.maxReconnectAttempts &&
+				this.options.autoFallback
+			) {
+				await this.fallbackToNextMode("Обрыв WebSocket соединения Gemini Live");
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -420,31 +656,30 @@ export class UnifiedAudioClient {
 			recognition.lang = this.options.language === "ru" ? "ru-RU" : "en-US";
 			recognition.continuous = true;
 			recognition.interimResults = true;
-			recognition.maxAlternatives = 1;
 
-			// biome-ignore lint/suspicious/noExplicitAny: SpeechRecognitionEvent
+			// biome-ignore lint/suspicious/noExplicitAny: Event type
 			recognition.onresult = (event: any) => {
 				let interim = "";
 				for (let i = event.resultIndex; i < event.results.length; i++) {
-					const result = event.results[i];
-					if (result.isFinal) {
-						const finalTranscript = result[0]?.transcript?.trim() || "";
-						if (finalTranscript) {
-							this.appendFinalText(finalTranscript);
+					const transcript = event.results[i][0].transcript;
+					if (event.results[i].isFinal) {
+						if (transcript.trim()) {
+							this.appendFinalText(transcript.trim());
 						}
 					} else {
-						interim += result[0]?.transcript || "";
+						interim += transcript;
 					}
 				}
 				this.interimText = interim;
 				this.emitInterimText(interim);
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: SpeechRecognitionErrorEvent
+			// biome-ignore lint/suspicious/noExplicitAny: Event type
 			recognition.onerror = (event: any) => {
 				console.warn("Browser Speech Recognition error:", event.error);
-				if (event.error !== "no-speech") {
-					this.emitError(`Web Speech error: ${event.error}`);
+				if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+					this.setState("error");
+					this.emitError("Доступ к распознаванию речи в браузере заблокирован");
 				}
 			};
 
@@ -458,12 +693,12 @@ export class UnifiedAudioClient {
 
 			recognition.start();
 		} catch (err) {
-			console.warn("Failed to start Web Speech Recognition:", err);
+			console.warn("Failed to initialize Web Speech Recognition:", err);
 		}
 	}
 
 	/**
-	 * Переключение на следующий режим при сбое (gemini_live -> server_whisper -> browser_speech)
+	 * Переключение на следующий режим распознавания при сбое текущего
 	 */
 	private async fallbackToNextMode(reason: string): Promise<void> {
 		if (this.isDisposed) return;
@@ -489,39 +724,54 @@ export class UnifiedAudioClient {
 	}
 
 	/**
-	 * Передача потока PCM чанков в WebSocket (для Gemini Live)
+	 * Передача потока PCM чанков в WebSocket (для Gemini Live) с поддержкой кольцевого буфера
 	 */
 	private handleIncomingAudioPcm(pcm: Int16Array, rms: number): void {
-		if (
-			this.currentMode === "gemini_live" &&
-			this.ws &&
-			this.ws.readyState === WebSocket.OPEN
-		) {
-			try {
-				const uint8Buffer = new Uint8Array(
-					pcm.buffer,
-					pcm.byteOffset,
-					pcm.byteLength,
-				);
-				let binary = "";
-				const len = uint8Buffer.byteLength;
-				for (let i = 0; i < len; i++) {
-					const byte = uint8Buffer[i] ?? 0;
-					binary += String.fromCharCode(byte);
-				}
-				const base64 = btoa(binary);
+		if (this.currentMode === "gemini_live") {
+			if (
+				this.ws &&
+				this.ws.readyState === WebSocket.OPEN &&
+				!this.isReconnecting
+			) {
+				try {
+					const uint8Buffer = new Uint8Array(
+						pcm.buffer,
+						pcm.byteOffset,
+						pcm.byteLength,
+					);
+					let binary = "";
+					const len = uint8Buffer.byteLength;
+					for (let i = 0; i < len; i++) {
+						const byte = uint8Buffer[i] ?? 0;
+						binary += String.fromCharCode(byte);
+					}
+					const base64 = btoa(binary);
 
-				this.ws.send(
-					JSON.stringify({
-						type: "audio_chunk",
-						audioBase64: base64,
-						data: base64,
-						rms,
-						timestamp: Date.now(),
-					}),
-				);
-			} catch (err) {
-				console.warn("Error sending audio chunk via WebSocket:", err);
+					this.ws.send(
+						JSON.stringify({
+							type: "audio_chunk",
+							audioBase64: base64,
+							data: base64,
+							rms,
+							timestamp: Date.now(),
+						}),
+					);
+				} catch (err) {
+					console.warn("Error sending audio chunk via WebSocket:", err);
+					this.bufferPcmChunk(pcm, rms);
+					void this.reconnectGeminiLiveWs();
+				}
+			} else {
+				// Связь разорвана или идет реконнект -> Буферизуем фрейм в кольцевом буфере
+				this.bufferPcmChunk(pcm, rms);
+
+				if (
+					this.state === "listening" &&
+					!this.isReconnecting &&
+					!this.isDisposed
+				) {
+					void this.reconnectGeminiLiveWs();
+				}
 			}
 		}
 	}
@@ -657,8 +907,19 @@ export class UnifiedAudioClient {
 	}
 
 	private cleanupCurrentModeBackend(): void {
+		if (this.reconnectTimer) {
+			clearTimeout(this.reconnectTimer);
+			this.reconnectTimer = null;
+		}
+		this.isReconnecting = false;
+		this.reconnectAttempts = 0;
+
 		if (this.ws) {
 			try {
+				this.ws.onopen = null;
+				this.ws.onmessage = null;
+				this.ws.onerror = null;
+				this.ws.onclose = null;
 				if (this.ws.readyState === WebSocket.OPEN) {
 					this.ws.send(JSON.stringify({ type: "session_close" }));
 				}
@@ -733,6 +994,7 @@ export class UnifiedAudioClient {
 	public dispose(): void {
 		this.isDisposed = true;
 		this.cancel();
+		this.clearBufferedPcmChunks();
 		this.listeners.clear();
 	}
 

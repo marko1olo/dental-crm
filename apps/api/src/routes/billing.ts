@@ -106,6 +106,10 @@ const paymentFieldLabels: Record<string, string> = {
 	patientId: "пациент",
 	visitId: "прием",
 	documentId: "документ",
+	serviceId: "услуга прайс-листа",
+	catalogItemId: "позиция каталога",
+	discountRub: "скидка на услугу в рублях",
+	discountPercent: "процент скидки на услугу",
 	method: "способ оплаты",
 	fiscalReceiptNumber: "номер фискального чека",
 	fiscalReceiptIssuedAt: "дата фискального чека",
@@ -721,6 +725,18 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 					targetId: error.targetId,
 				});
 			}
+			if (
+				error instanceof Error &&
+				(error.message.includes("Попытка подмены прайса") ||
+					error.message.includes("не найдена в каталоге") ||
+					error.message.includes("не найден") ||
+					error.message.includes("должна быть строго больше"))
+			) {
+				return reply.code(400).send({
+					error: "BillingValidationError",
+					message: error.message,
+				});
+			}
 			/* Проверка «нет ли уже такой оплаты» выше и вставка здесь — два
          отдельных запроса вне транзакции. При двойном нажатии на «Принять
          оплату» оба запроса видят, что платежа нет, и оба вставляют.
@@ -795,8 +811,8 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				.array(
 					z.object({
 						itemId: z.string().min(1),
-						quantityToRefund: z.number().int().positive().default(1),
-						customAmountKopToRefund: z.number().int().positive().optional(),
+						quantityToRefund: z.number().int().positive().refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)).default(1),
+						customAmountKopToRefund: z.number().int().positive().refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)).optional(),
 						reasonRu: z.string().optional(),
 					}),
 				)
@@ -812,7 +828,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				.default("patient_refusal"),
 			customReasonDetailsRu: z.string().optional(),
 			clientMutationId: z.string().optional(),
-			defaultDoctorCommissionPct: z.number().min(0).max(100).optional(),
+			defaultDoctorCommissionPct: z.number().min(0).max(100).refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)).optional(),
 		});
 
 		const parsed = partialRefundBodySchema.safeParse(request.body);

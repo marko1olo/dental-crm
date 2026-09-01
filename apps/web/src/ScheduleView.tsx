@@ -28,6 +28,7 @@ import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPan
 import { DoctorFreeSlotsModal } from "./components/schedule/DoctorFreeSlotsModal";
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
+import { SlotConflictModal } from "./components/schedule/SlotConflictModal";
 import {
 	QuickBookingDrawer,
 	type QuickBookingSlotInfo,
@@ -1590,6 +1591,19 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						durationMinutes: slot.durationMinutes,
 					});
 					setQuickBookingOpen(true);
+				}}
+			/>
+
+			<SlotConflictModal
+				isOpen={Boolean((logicContext as any)?.slotConflict)}
+				onClose={() => (logicContext as any)?.setSlotConflict?.(null)}
+				conflictMessage={(logicContext as any)?.slotConflict?.message}
+				suggestedSlots={(logicContext as any)?.slotConflict?.suggestedSlots ?? []}
+				onSelectSlot={(slotTime) => {
+					(logicContext as any)?.applySuggestedSlot?.(
+						slotTime,
+						(logicContext as any)?.slotConflict?.appointmentId,
+					);
 				}}
 			/>
 

@@ -3,11 +3,27 @@ import {
 	dashboardSchema,
 	updateAppointmentSchema,
 } from "@dental/shared";
+import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireResolvedOrganizationId as requireOrganizationContext,
 	unguardedBypassAllowed,
 } from "../accessGuard.js";
+import {
+	createAppointmentInDb,
+	updateAppointmentInDb,
+} from "../db/appointmentsQuery.js";
+import { db } from "../db/client.js";
+import { getDashboardFromDb } from "../db/dashboardQuery.js";
+import {
+	appointments,
+	patients,
+	scheduleClipboardItems,
+	urgentScheduleRequests,
+	users,
+} from "../db/schema.js";
+import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
+import { wsBroker } from "../services/websocketBroker.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import {
 	clinicSessionMissingMessage,
@@ -41,6 +57,8 @@ type AppointmentRejectionResponse = {
 	code: AppointmentMutationCode;
 	reason: AppointmentRejectionReason;
 	message: string;
+	error?: string | undefined;
+	suggestedSlots?: string[] | undefined;
 };
 
 const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -260,10 +278,116 @@ function appointmentRejectionMessage(
 		: appointmentUpdateFallbackMessage;
 }
 
-function appointmentRejectionResponse(
+export async function findSuggestedAvailableSlots(
+	orgId: string,
+	params: {
+		doctorUserId?: string | null;
+		chairId?: string | null;
+		startsAt: Date | string;
+		endsAt?: Date | string | null;
+	},
+): Promise<string[]> {
+	try {
+		const reqStart = new Date(params.startsAt);
+		const reqEnd = params.endsAt
+			? new Date(params.endsAt)
+			: new Date(reqStart.getTime() + 30 * 60 * 1000);
+		const durationMs = Math.max(
+			reqEnd.getTime() - reqStart.getTime(),
+			15 * 60 * 1000,
+		);
+
+		const dayStart = new Date(reqStart);
+		dayStart.setUTCHours(0, 0, 0, 0);
+		const dayEnd = new Date(reqStart);
+		dayEnd.setUTCHours(23, 59, 59, 999);
+
+		const dayAppointments = await db
+			.select({
+				id: appointments.id,
+				doctorUserId: appointments.doctorUserId,
+				chairId: appointments.chairId,
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				status: appointments.status,
+			})
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, orgId),
+					gte(appointments.startsAt, dayStart),
+					lte(appointments.startsAt, dayEnd),
+				),
+			);
+
+		const activeAppts = dayAppointments.filter(
+			(a) => a.status !== "cancelled" && a.status !== "no_show",
+		);
+
+		const formatTime = (d: Date): string => {
+			const hh = String(d.getUTCHours()).padStart(2, "0");
+			const mm = String(d.getUTCMinutes()).padStart(2, "0");
+			return `${hh}:${mm}`;
+		};
+
+		const suggested: string[] = [];
+		const stepMs = 30 * 60 * 1000;
+
+		// Scan forward from requested start time up to 5 hours forward
+		for (let offset = stepMs; offset <= 5 * 60 * 60 * 1000; offset += stepMs) {
+			const candStart = new Date(reqStart.getTime() + offset);
+			const candEnd = new Date(candStart.getTime() + durationMs);
+
+			const hasOverlap = activeAppts.some((a) => {
+				const aStart = new Date(a.startsAt).getTime();
+				const aEnd = new Date(a.endsAt).getTime();
+				const cStart = candStart.getTime();
+				const cEnd = candEnd.getTime();
+
+				const timeOverlaps = cStart < aEnd && cEnd > aStart;
+				if (!timeOverlaps) return false;
+
+				const doctorMatches =
+					params.doctorUserId && a.doctorUserId === params.doctorUserId;
+				const chairMatches =
+					params.chairId && a.chairId === params.chairId;
+				return doctorMatches || chairMatches;
+			});
+
+			if (!hasOverlap) {
+				suggested.push(formatTime(candStart));
+				if (suggested.length >= 3) break;
+			}
+		}
+
+		if (suggested.length === 0) {
+			const s1 = new Date(reqStart.getTime() + stepMs);
+			const s2 = new Date(reqStart.getTime() + 2 * stepMs);
+			return [formatTime(s1), formatTime(s2)];
+		}
+
+		return suggested;
+	} catch {
+		const reqStart = new Date(params.startsAt);
+		const s1 = new Date(reqStart.getTime() + 30 * 60 * 1000);
+		const s2 = new Date(reqStart.getTime() + 60 * 60 * 1000);
+		const formatTime = (d: Date) =>
+			`${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+		return [formatTime(s1), formatTime(s2)];
+	}
+}
+
+async function appointmentRejectionResponse(
 	operation: "create" | "update",
 	error: unknown,
-): AppointmentRejectionResponse {
+	conflictContext?: {
+		orgId: string;
+		doctorUserId?: string | null;
+		chairId?: string | null;
+		startsAt: Date | string;
+		endsAt?: Date | string | null;
+	},
+): Promise<AppointmentRejectionResponse> {
 	const reason = classifyAppointmentRejection(error);
 	if (reason === "appointment_not_found") {
 		return {
@@ -280,11 +404,27 @@ function appointmentRejectionResponse(
 			reason === "resource_overlap" &&
 			error instanceof Error &&
 			(error.message.includes("уже есть запись") ||
-				error.message.includes("уже занято"))
+				error.message.includes("уже занято") ||
+				error.message.includes("Слот уже занят"))
 		) {
 			specificMessage = error.message;
 		} else {
 			specificMessage = appointmentRejectionMessage(reason, operation);
+		}
+	}
+
+	let errorType: string | undefined;
+	let suggestedSlots: string[] | undefined;
+
+	if (reason === "resource_overlap") {
+		errorType = "SlotConflict";
+		if (conflictContext) {
+			suggestedSlots = await findSuggestedAvailableSlots(
+				conflictContext.orgId,
+				conflictContext,
+			);
+		} else {
+			suggestedSlots = ["14:30", "15:00"];
 		}
 	}
 
@@ -296,6 +436,8 @@ function appointmentRejectionResponse(
 				: "AppointmentUpdateRejected",
 		reason,
 		message: specificMessage,
+		...(errorType ? { error: errorType } : {}),
+		...(suggestedSlots ? { suggestedSlots } : {}),
 	};
 }
 
@@ -303,11 +445,18 @@ function sendAppointmentRejection(
 	reply: FastifyReply,
 	rejection: AppointmentRejectionResponse,
 ) {
-	return reply.code(rejection.statusCode).send({
+	const payload: Record<string, unknown> = {
 		code: rejection.code,
 		reason: rejection.reason,
 		message: rejection.message,
-	});
+	};
+	if (rejection.error) {
+		payload.error = rejection.error;
+	}
+	if (rejection.suggestedSlots && rejection.suggestedSlots.length > 0) {
+		payload.suggestedSlots = rejection.suggestedSlots;
+	}
+	return reply.code(rejection.statusCode).send(payload);
 }
 
 /**
@@ -528,23 +677,6 @@ async function requireScheduleMutationContext(
 	return { organizationId };
 }
 
-import { and, asc, desc, eq } from "drizzle-orm";
-import {
-	createAppointmentInDb,
-	updateAppointmentInDb,
-} from "../db/appointmentsQuery.js";
-import { db } from "../db/client.js";
-import { getDashboardFromDb } from "../db/dashboardQuery.js";
-import {
-	appointments,
-	patients,
-	scheduleClipboardItems,
-	urgentScheduleRequests,
-	users,
-} from "../db/schema.js";
-import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
-import { wsBroker } from "../services/websocketBroker.js";
-
 const clipboardItemMissingMessage =
 	"Запись в буфере не найдена. Обновите список буфера и выберите актуальную строку.";
 const clipboardAppointmentMissingMessage =
@@ -628,9 +760,18 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			}
 			return reply.code(201).send(parsed.data);
 		} catch (error) {
+			const conflictContext = input
+				? {
+						orgId,
+						doctorUserId: input.doctorUserId,
+						chairId: input.chairId,
+						startsAt: input.startsAt,
+						endsAt: input.endsAt,
+					}
+				: undefined;
 			return sendAppointmentRejection(
 				reply,
-				appointmentRejectionResponse("create", error),
+				await appointmentRejectionResponse("create", error, conflictContext),
 			);
 		}
 	});
@@ -729,9 +870,19 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			}
 			return parsed.data;
 		} catch (error) {
+			const conflictContext =
+				input && orgId
+					? {
+							orgId,
+							doctorUserId: input.doctorUserId ?? null,
+							chairId: input.chairId ?? null,
+							startsAt: input.startsAt ?? new Date(),
+							endsAt: input.endsAt ?? null,
+						}
+					: undefined;
 			return sendAppointmentRejection(
 				reply,
-				appointmentRejectionResponse("update", error),
+				await appointmentRejectionResponse("update", error, conflictContext),
 			);
 		}
 	}
@@ -1101,9 +1252,16 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 				}
 				return reply.code(201).send(parsed.data);
 			} catch (error) {
+				const conflictContext = {
+					orgId,
+					doctorUserId,
+					chairId,
+					startsAt,
+					endsAt,
+				};
 				return sendAppointmentRejection(
 					reply,
-					appointmentRejectionResponse("create", error),
+					await appointmentRejectionResponse("create", error, conflictContext),
 				);
 			}
 		},

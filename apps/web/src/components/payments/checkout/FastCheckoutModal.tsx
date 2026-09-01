@@ -46,6 +46,7 @@ import {
 } from "./fastCheckoutEngine";
 import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../GlobalToast";
+import { useModalA11y } from "../../../hooks/useModalA11y";
 import "./fastCheckout.css";
 
 export interface FastCheckoutModalProps {
@@ -86,8 +87,9 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const [loyaltyAmountRub, setLoyaltyAmountRub] = useState<number>(0);
 	const [dmsAmountRub, setDmsAmountRub] = useState<number>(0);
 	const [cashTenderedRub, setCashTenderedRub] = useState<number>(0);
-
 	const [isPrinting, setIsPrinting] = useState<boolean>(false);
+	const inFlightRef = React.useRef(false);
+	const lastClickTimeRef = React.useRef(0);
 	const [isOfflineBuffered, setIsOfflineBuffered] = useState<boolean>(false);
 	const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(0);
 	const [isFlushingQueue, setIsFlushingQueue] = useState<boolean>(false);
@@ -321,11 +323,20 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	};
 
 	const handleExecutePayment = async () => {
-		if (!validation.isValid || isPrinting) return;
+		const now = Date.now();
+		if (inFlightRef.current || isPrinting || now - lastClickTimeRef.current < 600) {
+			return;
+		}
+		if (!validation.isValid) return;
+
+		inFlightRef.current = true;
+		lastClickTimeRef.current = now;
 		setIsPrinting(true);
 
 		// Statutory composite Idempotency-Key: <uuid>#<sha256(canonicalPayloadSignature)>
-		const rawUuid = crypto.randomUUID();
+		const rawUuid = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID()
+			: `idemp-${now}-${Math.random().toString(36).slice(2, 8)}`;
 		const signature = buildFiscalReceiptPayloadSignature({
 			patientId: orderId,
 			operationType: "income",
@@ -404,6 +415,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 			setTimeout(() => {
 				setIsPrinting(false);
+				inFlightRef.current = false;
 				onClose();
 			}, 800);
 		} catch {
@@ -438,6 +450,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				"warning"
 			);
 			setIsPrinting(false);
+			inFlightRef.current = false;
 			onClose();
 		}
 	};
@@ -452,8 +465,22 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		);
 	};
 
+	const primaryInputRef = React.useRef<HTMLInputElement | null>(null);
+
+	const { modalRef, handleInputEnterKeyDown } = useModalA11y<HTMLDivElement>({
+		isOpen,
+		onClose,
+		onSubmit: () => {
+			if (validation.isValid && !isPrinting) {
+				void handleExecutePayment();
+			}
+		},
+		autoFocusRef: primaryInputRef,
+		initialFocusSelector: '[data-testid="simple-card-btn"], [data-testid="simple-cash-btn"], [data-testid="simple-sbp-btn"], input, button',
+	});
+
 	return (
-		<div className="fast-checkout-modal-overlay" data-testid="fast-checkout-modal">
+		<div ref={modalRef} className="fast-checkout-modal-overlay" data-testid="fast-checkout-modal" tabIndex={-1}>
 			<div className="fast-checkout-modal-container max-w-3xl">
 				{/* Header */}
 				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
@@ -790,6 +817,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										step="0.01"
 										value={cardAmountRub || ""}
 										onChange={(e) => setCardAmountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										onKeyDown={handleInputEnterKeyDown}
 										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
 										placeholder="0.00 ₽"
 										data-testid="split-input-card"
@@ -817,6 +845,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 												setCashTenderedRub(val);
 											}
 										}}
+										onKeyDown={handleInputEnterKeyDown}
 										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
 										placeholder="0.00 ₽"
 										data-testid="split-input-cash"
@@ -838,6 +867,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										step="0.01"
 										value={sbpAmountRub || ""}
 										onChange={(e) => setSbpAmountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										onKeyDown={handleInputEnterKeyDown}
 										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none"
 										placeholder="0.00 ₽"
 										data-testid="split-input-sbp"
@@ -859,6 +889,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										step="0.01"
 										value={depositAmountRub || ""}
 										onChange={(e) => setDepositAmountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										onKeyDown={handleInputEnterKeyDown}
 										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
 										placeholder="0.00 ₽"
 										data-testid="split-input-deposit"
@@ -880,6 +911,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										step="0.01"
 										value={loyaltyAmountRub || ""}
 										onChange={(e) => setLoyaltyAmountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										onKeyDown={handleInputEnterKeyDown}
 										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
 										placeholder="0.00 ₽"
 										data-testid="split-input-loyalty"

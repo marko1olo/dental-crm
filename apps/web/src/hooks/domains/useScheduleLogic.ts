@@ -4,7 +4,7 @@ import type {
 	ScheduleWarning,
 	StaffWorkingHours,
 } from "@dental/shared";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type {
 	AppointmentScheduleDraft,
 	StaffScheduleDraft,
@@ -83,6 +83,11 @@ export function useScheduleLogic({
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 }: any) {
 	const appointmentMutationIdRef = useRef<string | null>(null);
+	const [slotConflict, setSlotConflict] = useState<{
+		message: string;
+		suggestedSlots: string[];
+		appointmentId?: string;
+	} | null>(null);
 	const scheduleStore = useScheduleStore();
 	const { setScheduleAdminSecretDemand } = useSettingsStore();
 	const {
@@ -760,6 +765,22 @@ export function useScheduleLogic({
 				setScheduleAdminSecretDemand(
 					(await scheduleAdminSecretRefusal(response)) ?? "",
 				);
+				if (response.status === 409) {
+					const errPayload = (await response
+						.clone()
+						.json()
+						.catch(() => null)) as {
+						message?: string;
+						suggestedSlots?: string[];
+					} | null;
+					if (Array.isArray(errPayload?.suggestedSlots)) {
+						setSlotConflict({
+							message: errPayload.message || "Слот уже занят",
+							suggestedSlots: errPayload.suggestedSlots,
+							appointmentId,
+						});
+					}
+				}
 				throw new Error(
 					await responseErrorMessage(response, "Запись не сохранена"),
 				);
@@ -881,6 +902,21 @@ export function useScheduleLogic({
 				setScheduleAdminSecretDemand(
 					(await scheduleAdminSecretRefusal(response)) ?? "",
 				);
+				if (response.status === 409) {
+					const errPayload = (await response
+						.clone()
+						.json()
+						.catch(() => null)) as {
+						message?: string;
+						suggestedSlots?: string[];
+					} | null;
+					if (Array.isArray(errPayload?.suggestedSlots)) {
+						setSlotConflict({
+							message: errPayload.message || "Слот уже занят",
+							suggestedSlots: errPayload.suggestedSlots,
+						});
+					}
+				}
 				throw new Error(
 					await responseErrorMessage(response, "Запись не создана"),
 				);
@@ -946,8 +982,43 @@ export function useScheduleLogic({
 		}
 	}
 
+	const applySuggestedSlot = (slotTime: string, appointmentId?: string) => {
+		if (appointmentId) {
+			const draft = appointmentScheduleDraftsRef.current[appointmentId];
+			if (draft?.startsAt) {
+				const datePrefix = draft.startsAt.slice(0, 11);
+				const newStart = `${datePrefix}${slotTime}:00.000Z`;
+				const [hh, mm] = slotTime.split(":").map(Number);
+				const endHh = String(Math.min(23, (hh || 0) + 1)).padStart(2, "0");
+				const newEnd = `${datePrefix}${endHh}:${String(mm || 0).padStart(2, "0")}:00.000Z`;
+				updateAppointmentScheduleDraft(appointmentId, "startsAt", newStart);
+				updateAppointmentScheduleDraft(appointmentId, "endsAt", newEnd);
+				showToast(
+					`Время записи изменено на ${slotTime}. Нажмите «Сохранить» для применения.`,
+					"success",
+				);
+			}
+		} else if (newAppointmentDraft?.startsAt) {
+			const datePrefix = newAppointmentDraft.startsAt.slice(0, 11);
+			const newStart = `${datePrefix}${slotTime}:00.000Z`;
+			const [hh, mm] = slotTime.split(":").map(Number);
+			const endHh = String(Math.min(23, (hh || 0) + 1)).padStart(2, "0");
+			const newEnd = `${datePrefix}${endHh}:${String(mm || 0).padStart(2, "0")}:00.000Z`;
+			updateNewAppointmentDraft("startsAt", newStart);
+			updateNewAppointmentDraft("endsAt", newEnd);
+			showToast(
+				`Время записи изменено на ${slotTime}. Нажмите «Создать запись» для сохранения.`,
+				"success",
+			);
+		}
+		setSlotConflict(null);
+	};
+
 	return {
 		...scheduleStore,
+		slotConflict,
+		setSlotConflict,
+		applySuggestedSlot,
 		markStaffScheduleDirty,
 		markChairScheduleDirty,
 		updateStaffScheduleDraft,

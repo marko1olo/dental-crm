@@ -211,7 +211,7 @@ export function calculatePartialRefund(
 			continue;
 		}
 
-		if (req.quantityToRefund <= 0) {
+		if (typeof req.quantityToRefund !== "number" || !Number.isFinite(req.quantityToRefund) || Number.isNaN(req.quantityToRefund) || req.quantityToRefund <= 0) {
 			errors.push(`Количество к возврату для «${originalItem.name}» должно быть больше 0.`);
 			continue;
 		}
