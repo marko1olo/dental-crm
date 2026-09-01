@@ -229,6 +229,27 @@
 	--violet-50: #f5f3ff;
 	--violet-200: #ddd6fe;
 	--violet-700: var(--teal-dark, #0f766e);
+
+	/* Исторические и сторонние имена токенов */
+	--accent: var(--teal);
+	--accent-hover: var(--teal-dark);
+	--accent-muted: var(--teal-surface);
+	--teal-subtle: var(--teal-surface);
+	--teal-strong: var(--teal-dark);
+	--err-fg: var(--bad-fg);
+	--gold: var(--warn-fg);
+	--gold-soft: var(--warn-bg);
+	--gold-surface: var(--warn-bg);
+	--danger-border: var(--bad-fg);
+	--emergency-border: var(--bad-fg);
+	--error-border: var(--bad-fg);
+	--ok-border: var(--ok-fg);
+	--success-border: var(--ok-fg);
+	--warning-border: var(--warn-fg);
+	--info-border: var(--info-fg);
+	--color-teal-100: var(--teal-soft);
+	--color-teal-700: var(--teal-dark);
+	--accent-primary: var(--primary);
 }
 
 /* Светлые значения ровно те, что были зашиты в main.css.

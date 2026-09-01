@@ -848,7 +848,8 @@ export async function runSomaticRadarScan(options?: {
 	targetDate?: Date | undefined;
 	now?: Date | undefined;
 }): Promise<SomaticRadarAlert[]> {
-	const now = options?.now ?? new Date();
+	try {
+		const now = options?.now ?? new Date();
 	const targetDate = options?.targetDate ?? now;
 
 	const startOfDay = new Date(
@@ -1011,6 +1012,9 @@ export async function runSomaticRadarScan(options?: {
 	}
 
 	return allAlerts;
+} catch {
+	return [];
+}
 }
 
 /**

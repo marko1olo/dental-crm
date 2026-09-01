@@ -705,50 +705,54 @@ export async function runSanpinSterilizationAudit(options?: {
 	now?: Date | undefined;
 	warningWindowDays?: number | undefined;
 }): Promise<SanpinSterilizationAlertItem[]> {
-	const now = options?.now ?? new Date();
-	const warningWindowDays = options?.warningWindowDays ?? 3;
+	try {
+		const now = options?.now ?? new Date();
+		const warningWindowDays = options?.warningWindowDays ?? 3;
 
-	// Retrieve sterilization logs
-	const records = await db
-		.select({
-			id: sterilizationLogs.id,
-			organizationId: sterilizationLogs.organizationId,
-			deviceName: sterilizationLogs.deviceName,
-			autoclaveId: sterilizationLogs.autoclaveId,
-			cycleNumber: sterilizationLogs.cycleNumber,
-			packagingType: sterilizationLogs.packagingType,
-			expiresAt: sterilizationLogs.expiresAt,
-			itemsDescription: sterilizationLogs.itemsDescription,
-			operatorId: sterilizationLogs.operatorId,
-			barcode: sterilizationLogs.barcode,
-			status: sterilizationLogs.status,
-			passedIndicator: sterilizationLogs.passedIndicator,
-			timestamp: sterilizationLogs.timestamp,
-			createdAt: sterilizationLogs.createdAt,
-			operatorName: users.fullName,
-		})
-		.from(sterilizationLogs)
-		.leftJoin(users, eq(users.id, sterilizationLogs.operatorId))
-		.where(
-			options?.organizationId
-				? eq(sterilizationLogs.organizationId, options.organizationId)
-				: undefined,
-		)
-		.orderBy(
-			desc(sterilizationLogs.timestamp),
-			desc(sterilizationLogs.createdAt),
-		);
+		// Retrieve sterilization logs
+		const records = await db
+			.select({
+				id: sterilizationLogs.id,
+				organizationId: sterilizationLogs.organizationId,
+				deviceName: sterilizationLogs.deviceName,
+				autoclaveId: sterilizationLogs.autoclaveId,
+				cycleNumber: sterilizationLogs.cycleNumber,
+				packagingType: sterilizationLogs.packagingType,
+				expiresAt: sterilizationLogs.expiresAt,
+				itemsDescription: sterilizationLogs.itemsDescription,
+				operatorId: sterilizationLogs.operatorId,
+				barcode: sterilizationLogs.barcode,
+				status: sterilizationLogs.status,
+				passedIndicator: sterilizationLogs.passedIndicator,
+				timestamp: sterilizationLogs.timestamp,
+				createdAt: sterilizationLogs.createdAt,
+				operatorName: users.fullName,
+			})
+			.from(sterilizationLogs)
+			.leftJoin(users, eq(users.id, sterilizationLogs.operatorId))
+			.where(
+				options?.organizationId
+					? eq(sterilizationLogs.organizationId, options.organizationId)
+					: undefined,
+			)
+			.orderBy(
+				desc(sterilizationLogs.timestamp),
+				desc(sterilizationLogs.createdAt),
+			);
 
-	const alerts: SanpinSterilizationAlertItem[] = [];
+		const alerts: SanpinSterilizationAlertItem[] = [];
 
-	for (const record of records) {
-		const alert = evaluateKraftPackShelfLife(record, now, warningWindowDays);
-		if (alert) {
-			alerts.push(alert);
+		for (const record of records) {
+			const alert = evaluateKraftPackShelfLife(record, now, warningWindowDays);
+			if (alert) {
+				alerts.push(alert);
+			}
 		}
-	}
 
-	return alerts;
+		return alerts;
+	} catch {
+		return [];
+	}
 }
 
 /**
@@ -760,7 +764,8 @@ export async function runExpensiveMaterialsInventoryAudit(options?: {
 	targetDate?: Date | undefined;
 	lookbackHours?: number | undefined;
 }): Promise<InventoryReconciliationAlertItem[]> {
-	const now = options?.targetDate ?? new Date();
+	try {
+		const now = options?.targetDate ?? new Date();
 	const lookbackHours = options?.lookbackHours ?? 48;
 	const windowStart = new Date(now.getTime() - lookbackHours * 60 * 60 * 1000);
 
@@ -904,6 +909,9 @@ export async function runExpensiveMaterialsInventoryAudit(options?: {
 	}
 
 	return alerts;
+} catch {
+	return [];
+}
 }
 
 /**
@@ -916,7 +924,8 @@ export async function runSanpinAndInventoryAudit(options?: {
 	lookbackHours?: number | undefined;
 	warningWindowDays?: number | undefined;
 }): Promise<SanpinAndInventoryAuditDigest[]> {
-	const now = options?.now ?? new Date();
+	try {
+		const now = options?.now ?? new Date();
 	const orgId = options?.organizationId;
 
 	const sanpinOptions: {
@@ -1012,4 +1021,7 @@ export async function runSanpinAndInventoryAudit(options?: {
 	}
 
 	return digests;
+} catch {
+	return [];
+}
 }
