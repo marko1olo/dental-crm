@@ -3,7 +3,28 @@
  * CommerceML 2.09 Statutory Financial & Medical Integration Test Suite.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+function expect(actual: any) {
+	return {
+		toBe: (expected: any) => assert.equal(actual, expected),
+		toEqual: (expected: any) => assert.deepEqual(actual, expected),
+		toBeGreaterThan: (expected: number) => assert.ok(actual > expected, `${actual} is not > ${expected}`),
+		toBeDefined: () => assert.notEqual(actual, undefined),
+		toContain: (expected: any) => {
+			if (typeof actual === "string" || Array.isArray(actual)) {
+				assert.ok(actual.includes(expected), `Expected ${actual} to contain ${expected}`);
+			} else {
+				assert.ok(expected in actual);
+			}
+		},
+		toMatch: (regex: RegExp) => assert.match(String(actual), regex),
+		not: {
+			toBe: (expected: any) => assert.notEqual(actual, expected),
+		},
+	};
+}
 import {
 	COMMERCEML_VERSION_209,
 	COMMERCEML_XMLNS,
