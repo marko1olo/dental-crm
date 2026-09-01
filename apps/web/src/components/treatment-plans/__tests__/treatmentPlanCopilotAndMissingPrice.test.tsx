@@ -307,13 +307,18 @@ describe("MissingPriceAlert & AI Treatment Plan Copilot Suite", () => {
 		});
 
 		it("8. requestTreatmentPlanAiValidationAndComment returns structured validation and chairside commentary", async () => {
-			const stages = generateTreatmentPlanStages([
-				{
-					toothNumber: 16,
-					state: "Pulpitis",
-					mobility: 0,
-				},
-			]);
+			const stages = generateTreatmentPlanStages(
+				[
+					{
+						toothNumber: 16,
+						state: "Pulpitis",
+						mobility: 0,
+					},
+				],
+				undefined,
+				0,
+				{ isDemoMode: true },
+			);
 
 			const aiResult = await requestTreatmentPlanAiValidationAndComment(stages, {
 				patientContext: { patientName: "Иванов И.И." },

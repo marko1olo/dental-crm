@@ -58,6 +58,7 @@ import { TreatmentPlanPhased4StageView } from "./TreatmentPlanPhased4StageView";
 import { TreatmentPlanComparatorModal } from "./comparator/TreatmentPlanComparatorModal";
 import { StagePaymentPlanModal } from "./stagePayment/StagePaymentPlanModal";
 import { TreatmentPlanPriceValidatorModal } from "./validation/TreatmentPlanPriceValidatorModal";
+import { TreatmentPlanPresenterModal } from "./TreatmentPlanPresenterModal";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import { LabWorkOrderModal } from "../lab/orders/LabWorkOrderModal";
 import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
@@ -103,6 +104,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isComparatorModalOpen, setIsComparatorModalOpen] = useState<boolean>(false);
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = useState<boolean>(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = useState<boolean>(false);
+	const [isPresenterModalOpen, setIsPresenterModalOpen] = useState<boolean>(false);
 	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
 	const [selectedInstallmentStage, setSelectedInstallmentStage] = useState<TreatmentPlanStage | null>(null);
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(false);
@@ -722,6 +724,17 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								{action.title}
 							</button>
 						))}
+
+						<button
+							type="button"
+							onClick={() => setIsPresenterModalOpen(true)}
+							className="px-3 py-1.5 rounded-xl font-bold bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-all shadow-2xs text-[11px] inline-flex items-center gap-1.5"
+							title="Запустить клиническую валидацию СтАР, проверку анатомии FDI и генерацию объяснения для пациента"
+							data-testid="module-copilot-ai-audit-btn"
+						>
+							<Bot size={13} className="text-amber-600 dark:text-amber-400" />
+							<span>ИИ-Аудит & Презентация</span>
+						</button>
 					</div>
 
 					<div className="flex items-center gap-2 shrink-0">
@@ -1052,6 +1065,22 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							"success",
 							5000,
 						);
+					}}
+				/>
+			)}
+
+			{/* AI Audit & 3-Tier Chairside Presenter Modal */}
+			{isPresenterModalOpen && (
+				<TreatmentPlanPresenterModal
+					isOpen={isPresenterModalOpen}
+					onClose={() => setIsPresenterModalOpen(false)}
+					patientId={patientId}
+					patientName={patientName}
+					patientPhone={dashboard?.activePatient?.phone || "+7 (999) 000-00-00"}
+					doctorFullName={auth?.currentUser?.name || "Д-р Ковалев С. П."}
+					teeth={teethData}
+					onSelectPlan={(plan) => {
+						showToast(`Выбран план: ${plan.title} (${plan.totalRub.toLocaleString("ru-RU")} ₽)`, "success");
 					}}
 				/>
 			)}
