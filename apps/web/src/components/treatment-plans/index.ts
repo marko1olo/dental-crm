@@ -13,4 +13,5 @@ export * from "./TreatmentPlanContractPrint";
 export * from "./TreatmentPlanCompletedActPrint";
 export * from "./TreatmentPlanPhased4StageView";
 export * from "./TreatmentPlanPresenterModal";
+export * from "./TreatmentPlanRoadmap";
 export * from "./TreatmentPlanModule";

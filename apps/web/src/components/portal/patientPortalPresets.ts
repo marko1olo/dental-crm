@@ -647,3 +647,26 @@ export const SAMPLE_PORTAL_TREATMENT_PLAN: PortalTreatmentPlan = {
 	],
 };
 
+export const SAMPLE_UPCOMING_VISIT = {
+	id: "visit-upcoming-2026-0902",
+	patientId: "PAT-2026-0891",
+	patientFullName: "Смирнова Екатерина Васильевна",
+	dateIso: "2026-09-02",
+	timeRu: "14:30",
+	doctorId: "doc-smirnov",
+	doctorName: "Д-р Смирнов Алексей Петрович",
+	doctorSpecialty: "Врач-стоматолог терапевт-ортопед",
+	doctorAvatarUrl: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&q=80",
+	clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+	clinicAddress: "г. Санкт-Петербург, Невский пр-т, д. 140, лит. А",
+	metroStationRu: "Площадь Восстания / Маяковская",
+	metroLineColor: "#ef4444", // Red line 1
+	clinicPhone: "+7 (812) 409-32-10",
+	cabinetNumber: "104 (Ортопедия / Терапия)",
+	procedureTitle: "Примерка и фиксация коронки из диоксида циркония Katana ML на зуб 1.6",
+	directionsRu: "Главный вход с Невского проспекта, 2-й этаж, домофон 104. При себе иметь паспорт для оформления.",
+	parkingInfoRu: "Бесплатная закрытая парковка во дворе (заезд с ул. Жуковского, въезд под шлагбаум по звонку администратору).",
+	preparationInstructionsRu: "Перед приёмом рекомендуется провести стандартную гигиену полости рта щёткой и пастой. Приём пищи разрешён за 1.5–2 часа до визита.",
+	cachedAtIso: "2026-09-01T12:00:00.000Z",
+};
+

@@ -9,6 +9,7 @@ export * from "./timeline";
 export * from "./PatientPortalModal";
 export * from "./PatientMobilePortalModal";
 export * from "./PatientOnlineBookingModal";
+export * from "./UpcomingVisitCard";
 export * from "./patientPortalEngine";
 export * from "./patientPortalPresets";
 export * from "./patientPortalTypes";

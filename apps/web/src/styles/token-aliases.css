@@ -61,6 +61,7 @@
 	--border-default: var(--line-strong);
 	--border-subtle: var(--line);
 	--border-soft: var(--line);
+	--line-subtle: var(--line);
 
 	/* Тени */
 	--shadow: var(--shadow-1);
@@ -71,6 +72,7 @@
 	--muted-dark: var(--ink-2, var(--ink));
 
 	/* Брендовые оттенки */
+	--brand: var(--teal);
 	--brand-300: var(--teal-2, var(--teal));
 	--brand-900: var(--teal-dark);
 

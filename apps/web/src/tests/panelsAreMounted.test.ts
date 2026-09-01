@@ -91,6 +91,12 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	readonly reason: string;
 }> = [
 	{
+		file: "components/finance/fiscal/FiscalReceiptPrintView.tsx",
+		name: "FiscalReceiptPrintView",
+		reason:
+			"Автономный визуализатор и генератор печатной термоленты кассового чека 54-ФЗ (ФФД 1.2) с поддержкой лент 80мм/57мм, QR-кода ФНС и штампа «ОПЛАЧЕНО». Предоставляется как экспортируемый компонент для интеграции в аппаратные и терминальные очереди печати.",
+	},
+	{
 		file: "components/documents/PaidMedicalContractModal.tsx",
 		name: "PaidMedicalContractModal",
 		reason:

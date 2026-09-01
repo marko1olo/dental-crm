@@ -4,6 +4,7 @@ const SHELL_ASSETS = [
 	"/index.html",
 	"/offline.html",
 	"/manifest.webmanifest",
+	"/manifest.json",
 	"/icon.svg",
 ];
 const MAX_DYNAMIC_SHELL_CACHE_ENTRIES = 500;
@@ -255,7 +256,11 @@ self.addEventListener("notificationclick", (event) => {
 });
 
 self.addEventListener("sync", (event) => {
-	if (event.tag === "dente-offline-sync" || event.tag === "dente-outbox-sync") {
+	if (
+		event.tag === "dente-offline-sync" ||
+		event.tag === "dente-outbox-sync" ||
+		event.tag === "dente-patient-booking-sync"
+	) {
 		event.waitUntil(
 			self.clients
 				.matchAll({ type: "window", includeUncontrolled: true })
