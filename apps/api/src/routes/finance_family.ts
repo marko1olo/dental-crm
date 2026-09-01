@@ -3,6 +3,7 @@ import {
 	nonNegativeMoneyRubSchema,
 	parseKopecks,
 	positiveMoneyRubSchema,
+	rubToKopecks,
 } from "@dental/shared";
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -14,6 +15,10 @@ import {
 import { db } from "../db/client.js";
 import { familyGroups, patients, payments, serviceCatalogItems } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
+import {
+	FamilyWalletError,
+	familyWalletService,
+} from "../services/familyWallet/FamilyWalletService.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 const familyPaymentSchema = z.object({
@@ -595,198 +600,30 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		};
 
 		try {
-			const result = await db.transaction(async (tx) => {
-				const [patient] = await tx
-					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
-					.from(patients)
-					.where(
-						and(
-							eq(patients.id, payload.patientId),
-							eq(patients.organizationId, organizationId),
-						),
-					)
-					.limit(1);
-
-				if (!patient || patient.familyGroupId !== payload.familyGroupId) {
-					throw new FamilyFinanceError(
-						"Пациент не найден в семейной группе клиники",
-						404,
-					);
-				}
-
-				// 1. Get Family Group & Lock it
-				const [family] = await tx
-					.select()
-					.from(familyGroups)
-					.where(
-						and(
-							eq(familyGroups.id, payload.familyGroupId),
-							eq(familyGroups.organizationId, organizationId),
-						),
-					)
-					.limit(1)
-					.for("update");
-				if (!family) {
-					throw new FamilyFinanceError("Семейная группа не найдена", 404);
-				}
-
-				// Повтор с тем же ключом не списывает деньги второй раз, а возвращает
-				// ранее созданный платёж. Проверка внутри транзакции и после
-				// блокировки строки семьи, чтобы два параллельных повтора не
-				// проскочили одновременно.
-				const [duplicate] = payload.clientMutationId
-					? await tx
-							.select()
-							.from(payments)
-							.where(
-								and(
-									eq(payments.organizationId, organizationId),
-									eq(payments.clientMutationId, payload.clientMutationId),
-								),
-							)
-							.limit(1)
-					: [undefined];
-				if (duplicate) {
-					if (
-						parseKopecks(duplicate.amountRub) !==
-							parseKopecks(payload.amountRub) ||
-						duplicate.patientId !== payload.patientId ||
-						duplicate.method !== "family_wallet"
-					) {
-						throw new FamilyFinanceError(
-							"Клиентская операция уже записала другую оплату.",
-							409,
-						);
-					}
-					return {
-						payment: duplicate,
-						newBalance: kopecksToNumericString(parseKopecks(family.balance)),
-						duplicate: true,
-					};
-				}
-
-				// Весь расчёт идёт целыми копейками. Раньше баланс читался через
-				// Number(), вычитание шло в плавающей точке, а в базу писался
-				// Math.round(newBalance): при балансе 150.50 и платеже 100 руб. в
-				// базу попадало 51, а клиентам по WebSocket уходило 50.50 — после
-				// перезагрузки страницы сумма менялась сама.
-				const currentKopecks = parseKopecks(family.balance);
-				const amountKopecks = parseKopecks(payload.amountRub);
-
-				// ЗАЩИТА ОТ ПОДМЕНЫ ПРАЙСА: если передан serviceId/catalogItemId, проверяем цену в каталоге
-				const targetServiceId = payload.serviceId || payload.catalogItemId;
-				if (targetServiceId) {
-					const [serviceItem] = await tx
-						.select()
-						.from(serviceCatalogItems)
-						.where(
-							and(
-								eq(serviceCatalogItems.id, targetServiceId),
-								eq(serviceCatalogItems.organizationId, organizationId),
-							),
-						)
-						.limit(1);
-
-					if (!serviceItem) {
-						throw new FamilyFinanceError(
-							`Услуга с ID «${targetServiceId}» не найдена в каталоге клиники.`,
-							404,
-						);
-					}
-
-					const catalogPriceKopecks = parseKopecks(serviceItem.priceRub);
-					let discountKopecks = 0;
-					if (payload.discountRub !== undefined && payload.discountRub !== null) {
-						discountKopecks = parseKopecks(payload.discountRub);
-					} else if (payload.discountPercent !== undefined && payload.discountPercent !== null) {
-						discountKopecks = Math.trunc(
-							(catalogPriceKopecks * Math.round(payload.discountPercent * 100)) / 10000,
-						);
-					}
-
-					const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
-					if (amountKopecks !== verifiedAmountKopecks) {
-						throw new FamilyFinanceError(
-							`Попытка подмены стоимости услуги «${serviceItem.title}»: в каталоге клиники ${kopecksToNumericString(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${kopecksToNumericString(verifiedAmountKopecks)} ₽), получено ${kopecksToNumericString(amountKopecks)} ₽.`,
-							400,
-						);
-					}
-				}
-
-				if (currentKopecks < amountKopecks) {
-					throw new FamilyFinanceError(
-						"Недостаточно средств на семейном балансе",
-						402,
-					);
-				}
-
-				// 2. Deduct Balance
-				const newBalance = kopecksToNumericString(
-					currentKopecks - amountKopecks,
-				);
-				/*
-				 * БЫЛО: UPDATE family_groups SET balance=... WHERE id=family.id
-				 * (organizationId только в SELECT FOR UPDATE выше). После
-				 * SELECT-then-UPDATE по одному id чужая клиника с тем же UUID
-				 * (копия базы, ошибка сида, ручной SQL) могла получить чужое
-				 * списание. organizationId в SET при этом не защищал строку —
-				 * он лишь перезаписывал то же значение.
-				 * СТАЛО: organizationId + id в WHERE; SET только balance;
-				 * пустой RETURNING → ошибка (не «успешная» оплата без списания).
-				 */
-				const [debited] = await tx
-					.update(familyGroups)
-					.set({ balance: newBalance })
-					.where(
-						and(
-							eq(familyGroups.id, family.id),
-							eq(familyGroups.organizationId, organizationId),
-						),
-					)
-					.returning({ id: familyGroups.id });
-				if (!debited) {
-					throw new FamilyFinanceError("Семейная группа не найдена", 404);
-				}
-
-				// 3. Create Payment Record
-				const [payment] = await tx
-					.insert(payments)
-					.values({
-						organizationId,
-						patientId: payload.patientId,
-						// Validated as an integer above; debit and record match exactly.
-						amountRub: payload.amountRub,
-						method: "family_wallet",
-						documentId: payload.documentId,
-						visitId: payload.visitId,
-						status: "paid",
-						clientMutationId: payload.clientMutationId ?? null,
-					})
-					.returning();
-
-				return { payment, newBalance, duplicate: false };
+			const result = await familyWalletService.debit({
+				organizationId,
+				familyGroupId: payload.familyGroupId,
+				patientId: payload.patientId,
+				amountRub: payload.amountRub,
+				serviceId: payload.serviceId,
+				catalogItemId: payload.catalogItemId,
+				discountRub: payload.discountRub,
+				discountPercent: payload.discountPercent,
+				clientMutationId: payload.clientMutationId,
+				documentId: payload.documentId,
+				visitId: payload.visitId,
 			});
 
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "FAMILY_BALANCE_UPDATED",
-				payload: {
-					organizationId,
-					familyGroupId: payload.familyGroupId,
-					balance: result.newBalance,
-				},
-			});
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "PAYMENT_CREATED",
-				payload: result.payment,
-			});
-
-			return result;
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			return {
+				payment: result.payment,
+				newBalance: kopecksToNumericString(rubToKopecks(result.newBalanceRub)),
+				duplicate: result.duplicate,
+			};
 		} catch (err: any) {
-			const statusCode = err.statusCode || 500;
+			const statusCode = err.statusCode || (err instanceof FamilyWalletError ? err.statusCode : 500);
 			const message = err.message || "Internal Server Error";
 			return reply.code(statusCode).send({
-				error: statusCode === 402 ? "InsufficientFunds" : "PaymentFailed",
+				error: statusCode === 402 ? "InsufficientFunds" : statusCode === 409 ? "IdempotencyConflict" : statusCode === 404 ? "NotFound" : "PaymentFailed",
 				message,
 			});
 		}
@@ -832,132 +669,24 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		};
 
 		try {
-			const result = await db.transaction(async (tx) => {
-				// Пациент должен принадлежать этой клинике и этой семье.
-				const [patient] = await tx
-					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
-					.from(patients)
-					.where(
-						and(
-							eq(patients.id, payload.patientId),
-							eq(patients.organizationId, organizationId),
-						),
-					)
-					.limit(1);
-				if (!patient || patient.familyGroupId !== payload.familyGroupId) {
-					throw new FamilyFinanceError(
-						"Пациент не найден в семейной группе клиники",
-						404,
-					);
-				}
-
-				// Блокируем строку семьи: параллельные пополнения не потеряют друг друга.
-				const [family] = await tx
-					.select()
-					.from(familyGroups)
-					.where(
-						and(
-							eq(familyGroups.id, payload.familyGroupId),
-							eq(familyGroups.organizationId, organizationId),
-						),
-					)
-					.limit(1)
-					.for("update");
-				if (!family) {
-					throw new FamilyFinanceError("Семейная группа не найдена", 404);
-				}
-
-				// Повтор с тем же ключом не зачисляет деньги второй раз.
-				const [duplicate] = payload.clientMutationId
-					? await tx
-							.select()
-							.from(payments)
-							.where(
-								and(
-									eq(payments.organizationId, organizationId),
-									eq(payments.clientMutationId, payload.clientMutationId),
-								),
-							)
-							.limit(1)
-					: [undefined];
-				if (duplicate) {
-					if (
-						parseKopecks(duplicate.amountRub) !==
-							parseKopecks(payload.amountRub) ||
-						duplicate.patientId !== payload.patientId ||
-						duplicate.method !== payload.method ||
-						duplicate.status !== "planned"
-					) {
-						throw new FamilyFinanceError(
-							"Клиентская операция уже записала другое пополнение.",
-							409,
-						);
-					}
-					return {
-						payment: duplicate,
-						newBalance: kopecksToNumericString(parseKopecks(family.balance)),
-						duplicate: true,
-					};
-				}
-
-				// Пополнение считается там же в копейках. Раньше здесь складывались
-				// Number(строка) и целые рубли, и результат записывался БЕЗ
-				// округления — а списание, наоборот, округляло. Из-за асимметрии
-				// копейки попадали в кошелёк при пополнении и терялись при оплате.
-				const newBalance = kopecksToNumericString(
-					parseKopecks(family.balance) + parseKopecks(payload.amountRub),
-				);
-				/*
-				 * БЫЛО: UPDATE по id без organizationId в WHERE (см. pay выше).
-				 * СТАЛО: organizationId + id; RETURNING обязателен.
-				 */
-				const [credited] = await tx
-					.update(familyGroups)
-					.set({ balance: newBalance, updatedAt: new Date() })
-					.where(
-						and(
-							eq(familyGroups.id, family.id),
-							eq(familyGroups.organizationId, organizationId),
-						),
-					)
-					.returning({ id: familyGroups.id });
-				if (!credited) {
-					throw new FamilyFinanceError("Семейная группа не найдена", 404);
-				}
-
-				// Пополнение фиксируется в журнале платежей со статусом "planned":
-				// это ещё не выручка клиники, а аванс семьи. Иначе пополнение
-				// попало бы в отчёт о выручке дважды — при внесении и при оплате.
-				const [payment] = await tx
-					.insert(payments)
-					.values({
-						organizationId,
-						patientId: payload.patientId,
-						amountRub: payload.amountRub,
-						method: payload.method,
-						status: "planned",
-						clientMutationId: payload.clientMutationId ?? null,
-					})
-					.returning();
-
-				return { payment, newBalance, duplicate: false };
+			const result = await familyWalletService.topup({
+				organizationId,
+				familyGroupId: payload.familyGroupId,
+				patientId: payload.patientId,
+				amountRub: payload.amountRub,
+				method: payload.method,
+				clientMutationId: payload.clientMutationId,
 			});
 
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "FAMILY_BALANCE_UPDATED",
-				payload: {
-					organizationId,
-					familyGroupId: payload.familyGroupId,
-					balance: result.newBalance,
-				},
-			});
-
-			return result;
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			return {
+				payment: result.payment,
+				newBalance: kopecksToNumericString(rubToKopecks(result.newBalanceRub)),
+				duplicate: result.duplicate,
+			};
 		} catch (err: any) {
-			const statusCode = err.statusCode || 500;
+			const statusCode = err.statusCode || (err instanceof FamilyWalletError ? err.statusCode : 500);
 			return reply.code(statusCode).send({
-				error: statusCode === 404 ? "NotFound" : "TopupFailed",
+				error: statusCode === 404 ? "NotFound" : statusCode === 409 ? "IdempotencyConflict" : "TopupFailed",
 				message: err.message || "Не удалось пополнить семейный счёт",
 			});
 		}

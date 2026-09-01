@@ -205,6 +205,17 @@ export class FamilyWalletService {
 				.limit(1);
 
 			if (existingPayment) {
+				if (
+					parseKopecks(existingPayment.amountRub) !== creditKopecks ||
+					(targetPatientId && existingPayment.patientId !== targetPatientId) ||
+					(method && existingPayment.method !== method)
+				) {
+					throw new FamilyWalletError(
+						"Клиентская операция уже записала другое пополнение.",
+						409,
+						"IDEMPOTENCY_CONFLICT",
+					);
+				}
 				const prevBalanceKop = parseKopecks(family.balance);
 				return {
 					success: true,
@@ -419,6 +430,17 @@ export class FamilyWalletService {
 				.limit(1);
 
 			if (existingPayment) {
+				if (
+					parseKopecks(existingPayment.amountRub) !== debitKopecks ||
+					existingPayment.patientId !== patientId ||
+					existingPayment.method !== "family_wallet"
+				) {
+					throw new FamilyWalletError(
+						"Клиентская операция уже записала другую оплату.",
+						409,
+						"IDEMPOTENCY_CONFLICT",
+					);
+				}
 				const currentBalKop = parseKopecks(family.balance);
 				return {
 					success: true,
