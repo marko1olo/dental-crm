@@ -180,6 +180,55 @@ describe("SanPiN 3.3686-21 & Expensive Materials Inventory Reconciliation Daemon
 		assert.strictEqual(alertFresh, null);
 	});
 
+	test("4b. Unpacked instrument (unpacked) older than current shift (1 day ago) is flagged as EXPIRED (CRITICAL) with statutory 0 days", () => {
+		const yesterday = new Date(fixedNow.getTime() - 26 * 60 * 60 * 1000); // 26 hours ago
+		const unpackedPack: KraftPackEvaluationInput = {
+			id: "pack-unpacked-yesterday",
+			organizationId: orgId,
+			packagingType: "unpacked",
+			itemsDescription: "Пинцеты и зонды на лотке",
+			status: "completed",
+			timestamp: yesterday,
+		};
+		const alert = evaluateKraftPackShelfLife(unpackedPack, fixedNow, 3);
+		assert.ok(alert !== null);
+		assert.strictEqual(alert.status, "EXPIRED");
+		assert.strictEqual(alert.severity, "CRITICAL");
+		assert.ok(alert.message.includes("норматив 0 суток — только текущая смена"));
+	});
+
+	test("4c. Unpacked instrument sterilized today (same shift) is not expired", () => {
+		const todayShift = new Date(fixedNow.getTime() - 2 * 60 * 60 * 1000); // 2 hours ago
+		const unpackedPack: KraftPackEvaluationInput = {
+			id: "pack-unpacked-today",
+			organizationId: orgId,
+			packagingType: "unpacked",
+			itemsDescription: "Стерильный лоток текущей смены",
+			status: "completed",
+			timestamp: todayShift,
+		};
+		const alert = evaluateKraftPackShelfLife(unpackedPack, fixedNow, 3);
+		assert.strictEqual(alert, null);
+	});
+
+	test("4d. Self-adhesive kraft pack (31 days ago) is flagged as EXPIRED by 30-day hard-cap even if expiresAt was set higher", () => {
+		const oldDate = new Date(fixedNow.getTime() - 31 * 24 * 60 * 60 * 1000);
+		const pack: KraftPackEvaluationInput = {
+			id: "pack-adhesive-hardcap",
+			organizationId: orgId,
+			packagingType: "kraft_self_adhesive",
+			itemsDescription: "Хирургический элеватор",
+			status: "completed",
+			timestamp: oldDate,
+			expiresAt: new Date(fixedNow.getTime() + 10 * 24 * 60 * 60 * 1000), // Incorrect DB future date
+		};
+		const alert = evaluateKraftPackShelfLife(pack, fixedNow, 3);
+		assert.ok(alert !== null);
+		assert.strictEqual(alert.status, "EXPIRED");
+		assert.strictEqual(alert.severity, "CRITICAL");
+		assert.ok(alert.message.includes("30 суток"));
+	});
+
 	test("5. Quarantined or failed packs are skipped by shelf-life monitor (already quarantined)", () => {
 		const failedPack: KraftPackEvaluationInput = {
 			id: "pack-failed-04",

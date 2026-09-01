@@ -4,7 +4,12 @@
  * Designed in compliance with the Quiet Digest / Passive Audit Doctrine (Tier 3 Backoffice):
  * 1. SanPiN 3.3686-21 Kraft Pack Shelf Life Monitor:
  *    - Scans sterilization records and kraft packs in `sterilization_logs`.
- *    - Detects packs exceeding the statutory 50-day storage limit (or <= 3 days remaining before 50 days).
+ *    - Detects packs exceeding statutory limits:
+ *      * Heat-sealed kraft packs: 50 days limit.
+ *      * Self-adhesive kraft packs: 30 days hard-cap.
+ *      * Unpacked instruments: 0 days (valid strictly within current shift on sterile table / in UV chamber).
+ *      * Metal cassettes: 30 days limit.
+ *      * Bix filters: 20 days limit.
  *    - Compiles structured alerts for the Head Nurse with 1-click action: [Отправить на повторную стерилизацию].
  *
  * 2. High-Cost Surgical Inventory & Financial Audit Trail:
@@ -23,7 +28,7 @@ import {
 	STERILIZATION_PACKAGING_TYPES,
 	type SterilizationPackagingType,
 } from "@dental/shared";
-import { and, desc, eq, gte, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	inventoryItems,
@@ -152,8 +157,8 @@ export const PACKAGING_TYPE_RU_MAP: Readonly<Record<string, string>> = {
 	laminated_heat_sealed: "Ламинированный пакет комбинированный (180 сут)",
 	metal_cassette: "Металлическая кассета с фильтром (30 сут)",
 	bix_filter: "Стерилизационная коробка (бикс) с фильтром (20 сут)",
-	unpacked: "Неупакованный инструмент (3 сут)",
-	other: "Иной вид упаковки (3 сут)",
+	unpacked: "Неупакованный инструмент на стерильном столе (0 сут, только текущая смена)",
+	other: "Иной вид упаковки (0 сут, без гарантии сохранения стерильности)",
 };
 
 export const DISCREPANCY_TYPE_RU_MAP: Readonly<
@@ -288,11 +293,20 @@ export function evaluateKraftPackShelfLife(
 		packagingMeta.label ??
 		"Крафт-пакет";
 
-	// According to SanPiN 3.3686-21, heat-sealed kraft packs cannot exceed 50 days
+	// According to SanPiN 3.3686-21:
+	// - unpacked instrument: 0 days (valid strictly within current shift, expires if elapsedDays >= 1)
+	// - kraft_self_adhesive: 30 days hard-cap
+	// - kraft_heat_sealed: 50 days hard-cap
+	const pkgStr = String(rawPackagingType);
+	const isUnpacked = pkgStr === "unpacked" || rawPackagingType === "other";
 	const isExpired =
 		now.getTime() > expiryDate.getTime() ||
-		(rawPackagingType === "kraft_heat_sealed" && elapsedDays > 50);
-	const isExpiringSoon = !isExpired && remainingDays <= warningWindowDays;
+		(isUnpacked && elapsedDays >= 1) ||
+		(rawPackagingType === "kraft_self_adhesive" && elapsedDays > 30) ||
+		(rawPackagingType === "kraft_heat_sealed" && elapsedDays > 50) ||
+		(pkgStr === "bix_filter" && elapsedDays > 20) ||
+		(rawPackagingType === "metal_cassette" && elapsedDays > 30);
+	const isExpiringSoon = !isExpired && remainingDays <= warningWindowDays && !isUnpacked;
 
 	if (!isExpired && !isExpiringSoon) {
 		return null;
@@ -308,8 +322,10 @@ export function evaluateKraftPackShelfLife(
 	const autoclaveInfo = record.deviceName || record.autoclaveId || "Автоклав";
 
 	const message = isExpired
-		? `🔴 КРИТИЧЕСКИЙ САНПИН 3.3686-21: Истек срок сохранения стерильности крафт-пакета${barcodeInfo}${descInfo}. Стерилизован ${sterilizationDate.toLocaleDateString("ru-RU")} (${elapsedDays} сут. назад, лимит 50 суток). Истек ${expiryDate.toLocaleDateString("ru-RU")}. Стерильность утрачена, использование запрещено!`
-		: `🟡 ВНИМАНИЕ САНПИН 3.3686-21: Срок годности крафт-пакета${barcodeInfo}${descInfo} истекает через ${remainingDays} дн. (${expiryDate.toLocaleDateString("ru-RU")}). Стерилизован ${sterilizationDate.toLocaleDateString("ru-RU")} в ${autoclaveInfo}. Приближение к нормативному лимиту 50 суток.`;
+		? isUnpacked
+			? `🔴 КРИТИЧЕСКИЙ САНПИН 3.3686-21: Истек срок сохранения стерильности неупакованного инструмента${barcodeInfo}${descInfo}. Стерилизован ${sterilizationDate.toLocaleDateString("ru-RU")} (${elapsedDays} сут. назад, норматив 0 суток — только текущая смена). Стерильность утрачена, использование запрещено!`
+			: `🔴 КРИТИЧЕСКИЙ САНПИН 3.3686-21: Истек срок сохранения стерильности крафт-пакета${barcodeInfo}${descInfo}. Стерилизован ${sterilizationDate.toLocaleDateString("ru-RU")} (${elapsedDays} сут. назад, лимит ${rawPackagingType === "kraft_self_adhesive" ? "30" : "50"} суток). Истек ${expiryDate.toLocaleDateString("ru-RU")}. Стерильность утрачена, использование запрещено!`
+		: `🟡 ВНИМАНИЕ САНПИН 3.3686-21: Срок годности крафт-пакета${barcodeInfo}${descInfo} истекает через ${remainingDays} дн. (${expiryDate.toLocaleDateString("ru-RU")}). Стерилизован ${sterilizationDate.toLocaleDateString("ru-RU")} в ${autoclaveInfo}. Приближение к нормативному лимиту ${rawPackagingType === "kraft_self_adhesive" ? "30" : "50"} суток.`;
 
 	return {
 		id: `sanpin_alert_${record.id}`,
@@ -327,7 +343,7 @@ export function evaluateKraftPackShelfLife(
 		sterilizationDate: sterilizationDate.toISOString(),
 		expiryDate: expiryDate.toISOString(),
 		elapsedDays,
-		remainingDays,
+		remainingDays: isUnpacked ? 0 : remainingDays,
 		status,
 		severity,
 		message,
@@ -342,8 +358,10 @@ export function evaluateKraftPackShelfLife(
 				packagingType: record.packagingType ?? null,
 				itemsDescription: record.itemsDescription ?? null,
 				reason: isExpired
-					? `Превышение допустимого срока хранения (${elapsedDays} сут. при нормативе 50 суток по СанПиН 3.3686-21)`
-					: `Приближение к предельному сроку хранения (осталось ${remainingDays} сут. до 50 суток)`,
+					? isUnpacked
+						? `Превышение допустимого срока для неупакованного инструмента (норматив 0 суток — только текущая смена по СанПиН 3.3686-21)`
+						: `Превышение допустимого срока хранения (${elapsedDays} сут. при нормативе ${rawPackagingType === "kraft_self_adhesive" ? "30" : "50"} суток по СанПиН 3.3686-21)`
+					: `Приближение к предельному сроку хранения (осталось ${remainingDays} сут. до ${rawPackagingType === "kraft_self_adhesive" ? "30" : "50"} суток)`,
 			},
 		},
 	};
@@ -750,8 +768,9 @@ export async function runSanpinSterilizationAudit(options?: {
 		}
 
 		return alerts;
-	} catch {
-		return [];
+	} catch (error) {
+		console.error("[SanpinAndInventoryDaemon:ERROR] Failed to run SanPiN sterilization audit:", error);
+		throw error;
 	}
 }
 
@@ -763,155 +782,172 @@ export async function runExpensiveMaterialsInventoryAudit(options?: {
 	organizationId?: string | undefined;
 	targetDate?: Date | undefined;
 	lookbackHours?: number | undefined;
-}): Promise<InventoryReconciliationAlertItem[]> {
+}): Promise<{
+	alerts: InventoryReconciliationAlertItem[];
+	totalSurgicalActsAudited: number;
+}> {
 	try {
 		const now = options?.targetDate ?? new Date();
-	const lookbackHours = options?.lookbackHours ?? 48;
-	const windowStart = new Date(now.getTime() - lookbackHours * 60 * 60 * 1000);
+		const lookbackHours = options?.lookbackHours ?? 48;
+		const windowStart = new Date(now.getTime() - lookbackHours * 60 * 60 * 1000);
 
-	const orgFilter = options?.organizationId
-		? eq(visits.organizationId, options.organizationId)
-		: undefined;
+		const orgFilter = options?.organizationId
+			? eq(visits.organizationId, options.organizationId)
+			: undefined;
 
-	// 1. Fetch completed visits in target window
-	const visitConditions = [
-		gte(visits.createdAt, windowStart),
-		lte(visits.createdAt, now),
-	];
-	if (orgFilter) {
-		visitConditions.push(orgFilter);
-	}
+		// 1. Fetch completed visits in target window
+		const visitConditions = [
+			gte(visits.createdAt, windowStart),
+			lte(visits.createdAt, now),
+		];
+		if (orgFilter) {
+			visitConditions.push(orgFilter);
+		}
 
-	const shiftVisits = await db
-		.select({
-			visitId: visits.id,
-			organizationId: visits.organizationId,
-			patientId: visits.patientId,
-			appointmentId: visits.appointmentId,
-			complaint: visits.complaint,
-			diagnosis: visits.diagnosis,
-			treatmentPlan: visits.treatmentPlan,
-			doctorSummary: visits.doctorSummary,
-			status: visits.status,
-			createdAt: visits.createdAt,
-			patientFullName: patients.fullName,
-		})
-		.from(visits)
-		.leftJoin(patients, eq(visits.patientId, patients.id))
-		.where(and(...visitConditions))
-		.orderBy(desc(visits.createdAt));
-
-	const alerts: InventoryReconciliationAlertItem[] = [];
-
-	for (const v of shiftVisits) {
-		if (!v.patientId) continue;
-		const patientFullName = v.patientFullName || "Пациент";
-
-		// 2. Fetch implant installations for this visit
-		const implantInstalls = await db
+		const shiftVisits = await db
 			.select({
-				id: patientImplantInstallations.id,
-				implantBrand: patientImplantInstallations.implantBrand,
-				toothNumberFdi: patientImplantInstallations.toothNumberFdi,
-				lotNumber: patientImplantInstallations.lotNumber,
-				serialNumber: patientImplantInstallations.serialNumber,
-				boneGraftMaterial: patientImplantInstallations.boneGraftMaterial,
-				membraneUsed: patientImplantInstallations.membraneUsed,
-				installedAt: patientImplantInstallations.installedAt,
-				surgeonDoctorId: patientImplantInstallations.surgeonDoctorId,
-				doctorName: users.fullName,
+				visitId: visits.id,
+				organizationId: visits.organizationId,
+				patientId: visits.patientId,
+				appointmentId: visits.appointmentId,
+				complaint: visits.complaint,
+				diagnosis: visits.diagnosis,
+				treatmentPlan: visits.treatmentPlan,
+				doctorSummary: visits.doctorSummary,
+				status: visits.status,
+				createdAt: visits.createdAt,
+				patientFullName: patients.fullName,
 			})
-			.from(patientImplantInstallations)
-			.leftJoin(
-				users,
-				eq(patientImplantInstallations.surgeonDoctorId, users.id),
-			)
-			.where(
-				and(
-					eq(patientImplantInstallations.organizationId, v.organizationId),
-					eq(patientImplantInstallations.patientId, v.patientId),
-					or(
-						eq(patientImplantInstallations.visitId, v.visitId),
-						and(
-							gte(patientImplantInstallations.installedAt, windowStart),
-							lte(patientImplantInstallations.installedAt, now),
+			.from(visits)
+			.leftJoin(patients, eq(visits.patientId, patients.id))
+			.where(and(...visitConditions))
+			.orderBy(desc(visits.createdAt));
+
+		const alerts: InventoryReconciliationAlertItem[] = [];
+		let surgicalActsCount = 0;
+
+		for (const v of shiftVisits) {
+			if (!v.patientId) continue;
+			const patientFullName = v.patientFullName || "Пациент";
+
+			// 2. Fetch implant installations for this visit
+			const implantInstalls = await db
+				.select({
+					id: patientImplantInstallations.id,
+					implantBrand: patientImplantInstallations.implantBrand,
+					toothNumberFdi: patientImplantInstallations.toothNumberFdi,
+					lotNumber: patientImplantInstallations.lotNumber,
+					serialNumber: patientImplantInstallations.serialNumber,
+					boneGraftMaterial: patientImplantInstallations.boneGraftMaterial,
+					membraneUsed: patientImplantInstallations.membraneUsed,
+					installedAt: patientImplantInstallations.installedAt,
+					surgeonDoctorId: patientImplantInstallations.surgeonDoctorId,
+					doctorName: users.fullName,
+				})
+				.from(patientImplantInstallations)
+				.leftJoin(
+					users,
+					eq(patientImplantInstallations.surgeonDoctorId, users.id),
+				)
+				.where(
+					and(
+						eq(patientImplantInstallations.organizationId, v.organizationId),
+						eq(patientImplantInstallations.patientId, v.patientId),
+						or(
+							eq(patientImplantInstallations.visitId, v.visitId),
+							and(
+								gte(patientImplantInstallations.installedAt, windowStart),
+								lte(patientImplantInstallations.installedAt, now),
+							),
 						),
 					),
-				),
-			);
+				);
 
-		// 3. Fetch treatment items billed for this visit
-		const billedItems = await db
-			.select({
-				id: treatmentItems.id,
-				serviceId: treatmentItems.serviceId,
-				quantity: treatmentItems.quantity,
-				priceRub: treatmentItems.priceRub,
-				status: treatmentItems.status,
-				serviceTitle: services.title,
-				serviceCode: services.code,
-				serviceCategory: services.category,
-			})
-			.from(treatmentItems)
-			.leftJoin(services, eq(treatmentItems.serviceId, services.id))
-			.where(
-				and(
-					eq(treatmentItems.organizationId, v.organizationId),
-					eq(treatmentItems.visitId, v.visitId),
-				),
-			);
+			// 3. Fetch treatment items billed for this visit
+			const billedItems = await db
+				.select({
+					id: treatmentItems.id,
+					serviceId: treatmentItems.serviceId,
+					quantity: treatmentItems.quantity,
+					priceRub: treatmentItems.priceRub,
+					status: treatmentItems.status,
+					serviceTitle: services.title,
+					serviceCode: services.code,
+					serviceCategory: services.category,
+				})
+				.from(treatmentItems)
+				.leftJoin(services, eq(treatmentItems.serviceId, services.id))
+				.where(
+					and(
+						eq(treatmentItems.organizationId, v.organizationId),
+						eq(treatmentItems.visitId, v.visitId),
+					),
+				);
 
-		// 4. Fetch warehouse stock movement transactions for this visit
-		const warehouseTx = await db
-			.select({
-				id: inventoryTransactions.id,
-				itemId: inventoryTransactions.itemId,
-				inventoryItemId: inventoryTransactions.inventoryItemId,
-				transactionType: inventoryTransactions.transactionType,
-				qty: inventoryTransactions.qty,
-				quantityChanged: inventoryTransactions.quantityChanged,
-				unitCostRub: inventoryTransactions.unitCostRub,
-				notes: inventoryTransactions.notes,
-				createdAt: inventoryTransactions.createdAt,
-				itemName: inventoryItems.name,
-				sku: inventoryItems.sku,
-				category: inventoryItems.category,
-			})
-			.from(inventoryTransactions)
-			.leftJoin(
-				inventoryItems,
-				eq(
-					inventoryItems.id,
-					sql`COALESCE(${inventoryTransactions.itemId}, ${inventoryTransactions.inventoryItemId})`,
-				),
-			)
-			.where(
-				and(
-					eq(inventoryTransactions.organizationId, v.organizationId),
-					eq(inventoryTransactions.visitId, v.visitId),
-				),
-			);
+			const isSurgical =
+				implantInstalls.length > 0 ||
+				billedItems.some(
+					(b) =>
+						(b.serviceCode && b.serviceCode.startsWith("A16.07")) ||
+						(b.serviceTitle && normalizeText(b.serviceTitle).includes("имплант")),
+				);
 
-		const actInput: SurgicalActInput = {
-			visitId: v.visitId,
-			organizationId: v.organizationId,
-			patientId: v.patientId,
-			patientFullName,
-			doctorId: implantInstalls[0]?.surgeonDoctorId ?? null,
-			doctorName: implantInstalls[0]?.doctorName ?? "Хирург-имплантолог",
-			shiftDate: v.createdAt.toLocaleDateString("ru-RU"),
-			implantInstallations: implantInstalls,
-			billedItems,
-		};
+			if (isSurgical) {
+				surgicalActsCount++;
+			}
 
-		const actAlerts = reconcileSurgicalActWithInventory(actInput, warehouseTx);
-		alerts.push(...actAlerts);
+			// 4. Fetch warehouse stock movement transactions for this visit
+			const warehouseTx = await db
+				.select({
+					id: inventoryTransactions.id,
+					itemId: inventoryTransactions.itemId,
+					inventoryItemId: inventoryTransactions.inventoryItemId,
+					transactionType: inventoryTransactions.transactionType,
+					qty: inventoryTransactions.qty,
+					quantityChanged: inventoryTransactions.quantityChanged,
+					unitCostRub: inventoryTransactions.unitCostRub,
+					notes: inventoryTransactions.notes,
+					createdAt: inventoryTransactions.createdAt,
+					itemName: inventoryItems.name,
+					sku: inventoryItems.sku,
+					category: inventoryItems.category,
+				})
+				.from(inventoryTransactions)
+				.leftJoin(
+					inventoryItems,
+					eq(
+						inventoryItems.id,
+						sql`COALESCE(${inventoryTransactions.itemId}, ${inventoryTransactions.inventoryItemId})`,
+					),
+				)
+				.where(
+					and(
+						eq(inventoryTransactions.organizationId, v.organizationId),
+						eq(inventoryTransactions.visitId, v.visitId),
+					),
+				);
+
+			const actInput: SurgicalActInput = {
+				visitId: v.visitId,
+				organizationId: v.organizationId,
+				patientId: v.patientId,
+				patientFullName,
+				doctorId: implantInstalls[0]?.surgeonDoctorId ?? null,
+				doctorName: implantInstalls[0]?.doctorName ?? "Хирург-имплантолог",
+				shiftDate: v.createdAt.toLocaleDateString("ru-RU"),
+				implantInstallations: implantInstalls,
+				billedItems,
+			};
+
+			const actAlerts = reconcileSurgicalActWithInventory(actInput, warehouseTx);
+			alerts.push(...actAlerts);
+		}
+
+		return { alerts, totalSurgicalActsAudited: surgicalActsCount };
+	} catch (error) {
+		console.error("[SanpinAndInventoryDaemon:ERROR] Failed to run expensive materials inventory audit:", error);
+		throw error;
 	}
-
-	return alerts;
-} catch {
-	return [];
-}
 }
 
 /**
@@ -926,102 +962,110 @@ export async function runSanpinAndInventoryAudit(options?: {
 }): Promise<SanpinAndInventoryAuditDigest[]> {
 	try {
 		const now = options?.now ?? new Date();
-	const orgId = options?.organizationId;
+		const orgId = options?.organizationId;
 
-	const sanpinOptions: {
-		organizationId?: string;
-		now?: Date;
-		warningWindowDays?: number;
-	} = {};
-	if (orgId) sanpinOptions.organizationId = orgId;
-	sanpinOptions.now = now;
-	if (options?.warningWindowDays !== undefined)
-		sanpinOptions.warningWindowDays = options.warningWindowDays;
+		const sanpinOptions: {
+			organizationId?: string;
+			now?: Date;
+			warningWindowDays?: number;
+		} = {};
+		if (orgId) sanpinOptions.organizationId = orgId;
+		sanpinOptions.now = now;
+		if (options?.warningWindowDays !== undefined)
+			sanpinOptions.warningWindowDays = options.warningWindowDays;
 
-	const sanpinAlerts = await runSanpinSterilizationAudit(sanpinOptions);
+		const sanpinAlerts = await runSanpinSterilizationAudit(sanpinOptions);
 
-	const inventoryOptions: {
-		organizationId?: string;
-		targetDate?: Date;
-		lookbackHours?: number;
-	} = {};
-	if (orgId) inventoryOptions.organizationId = orgId;
-	inventoryOptions.targetDate = now;
-	if (options?.lookbackHours !== undefined)
-		inventoryOptions.lookbackHours = options.lookbackHours;
+		const inventoryOptions: {
+			organizationId?: string;
+			targetDate?: Date;
+			lookbackHours?: number;
+		} = {};
+		if (orgId) inventoryOptions.organizationId = orgId;
+		inventoryOptions.targetDate = now;
+		if (options?.lookbackHours !== undefined)
+			inventoryOptions.lookbackHours = options.lookbackHours;
 
-	const inventoryAlerts =
-		await runExpensiveMaterialsInventoryAudit(inventoryOptions);
+		const inventoryResult =
+			await runExpensiveMaterialsInventoryAudit(inventoryOptions);
+		const inventoryAlerts = inventoryResult.alerts;
 
-	// Group alerts by organization
-	const orgMap = new Map<
-		string,
-		{
-			sanpin: SanpinSterilizationAlertItem[];
-			inventory: InventoryReconciliationAlertItem[];
-		}
-	>();
+		// Group alerts by organization
+		const orgMap = new Map<
+			string,
+			{
+				sanpin: SanpinSterilizationAlertItem[];
+				inventory: InventoryReconciliationAlertItem[];
+				totalSurgicalActs: number;
+			}
+		>();
 
-	if (orgId) {
-		orgMap.set(orgId, { sanpin: [], inventory: [] });
-	}
-
-	for (const a of sanpinAlerts) {
-		if (!orgMap.has(a.organizationId)) {
-			orgMap.set(a.organizationId, { sanpin: [], inventory: [] });
-		}
-		orgMap.get(a.organizationId)?.sanpin.push(a);
-	}
-
-	for (const inv of inventoryAlerts) {
-		if (!orgMap.has(inv.organizationId)) {
-			orgMap.set(inv.organizationId, { sanpin: [], inventory: [] });
-		}
-		orgMap.get(inv.organizationId)?.inventory.push(inv);
-	}
-
-	// Fallback if no alerts but org was requested
-	if (orgMap.size === 0 && orgId) {
-		orgMap.set(orgId, { sanpin: [], inventory: [] });
-	}
-
-	const digests: SanpinAndInventoryAuditDigest[] = [];
-
-	for (const [targetOrgId, data] of orgMap.entries()) {
-		let totalDiscrepancyRub = 0;
-		for (const inv of data.inventory) {
-			totalDiscrepancyRub += inv.billedOrInstalled.estimatedPriceRub;
+		if (orgId) {
+			orgMap.set(orgId, { sanpin: [], inventory: [], totalSurgicalActs: inventoryResult.totalSurgicalActsAudited });
 		}
 
-		const expiredCount = data.sanpin.filter(
-			(s) => s.status === "EXPIRED",
-		).length;
-		const expiringSoonCount = data.sanpin.filter(
-			(s) => s.status === "EXPIRING_SOON",
-		).length;
+		for (const a of sanpinAlerts) {
+			if (!orgMap.has(a.organizationId)) {
+				orgMap.set(a.organizationId, { sanpin: [], inventory: [], totalSurgicalActs: 0 });
+			}
+			orgMap.get(a.organizationId)?.sanpin.push(a);
+		}
 
-		digests.push({
-			id: `sanpin_inv_digest_${targetOrgId}_${now.getTime()}`,
-			organizationId: targetOrgId,
-			scanDate: now.toLocaleDateString("ru-RU"),
-			scanTimestamp: now.toISOString(),
-			summary: {
-				totalKraftPacksChecked: data.sanpin.length,
-				expiredPacksCount: expiredCount,
-				expiringSoonPacksCount: expiringSoonCount,
-				totalSurgicalActsAudited: data.inventory.length,
-				reconciledSurgicalActsCount: 0,
-				discrepantSurgicalActsCount: data.inventory.length,
-				totalEstimatedDiscrepancyRub: totalDiscrepancyRub,
-			},
-			sanpinAlerts: data.sanpin,
-			inventoryDiscrepancyAlerts: data.inventory,
-			createdAt: now.toISOString(),
-		});
+		for (const inv of inventoryAlerts) {
+			if (!orgMap.has(inv.organizationId)) {
+				orgMap.set(inv.organizationId, { sanpin: [], inventory: [], totalSurgicalActs: inventoryResult.totalSurgicalActsAudited });
+			}
+			orgMap.get(inv.organizationId)?.inventory.push(inv);
+		}
+
+		// Fallback if no alerts but org was requested
+		if (orgMap.size === 0 && orgId) {
+			orgMap.set(orgId, { sanpin: [], inventory: [], totalSurgicalActs: inventoryResult.totalSurgicalActsAudited });
+		}
+
+		const digests: SanpinAndInventoryAuditDigest[] = [];
+
+		for (const [targetOrgId, data] of orgMap.entries()) {
+			let totalDiscrepancyRub = 0;
+			for (const inv of data.inventory) {
+				totalDiscrepancyRub += inv.billedOrInstalled.estimatedPriceRub;
+			}
+
+			const expiredCount = data.sanpin.filter(
+				(s) => s.status === "EXPIRED",
+			).length;
+			const expiringSoonCount = data.sanpin.filter(
+				(s) => s.status === "EXPIRING_SOON",
+			).length;
+
+			const distinctDiscrepantVisits = new Set(data.inventory.map((i) => i.visitId));
+			const totalSurgicalActs = Math.max(data.totalSurgicalActs, distinctDiscrepantVisits.size);
+			const discrepantCount = distinctDiscrepantVisits.size;
+			const reconciledCount = Math.max(0, totalSurgicalActs - discrepantCount);
+
+			digests.push({
+				id: `sanpin_inv_digest_${targetOrgId}_${now.getTime()}`,
+				organizationId: targetOrgId,
+				scanDate: now.toLocaleDateString("ru-RU"),
+				scanTimestamp: now.toISOString(),
+				summary: {
+					totalKraftPacksChecked: data.sanpin.length,
+					expiredPacksCount: expiredCount,
+					expiringSoonPacksCount: expiringSoonCount,
+					totalSurgicalActsAudited: totalSurgicalActs,
+					reconciledSurgicalActsCount: reconciledCount,
+					discrepantSurgicalActsCount: discrepantCount,
+					totalEstimatedDiscrepancyRub: totalDiscrepancyRub,
+				},
+				sanpinAlerts: data.sanpin,
+				inventoryDiscrepancyAlerts: data.inventory,
+				createdAt: now.toISOString(),
+			});
+		}
+
+		return digests;
+	} catch (error) {
+		console.error("[SanpinAndInventoryDaemon:ERROR] Failed to run SanPiN and inventory combined audit:", error);
+		throw error;
 	}
-
-	return digests;
-} catch {
-	return [];
-}
 }

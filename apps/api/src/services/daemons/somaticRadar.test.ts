@@ -11,7 +11,8 @@
  * 7. Penicillin allergy and safe macrolide/lincosamide recommendations (Sumamed / Clindamycin).
  * 8. NSAID allergy & Samter's triad contraindication.
  * 9. Zero false positives for healthy patients.
- * 10. Integration with DaemonScheduler (07:30 AM scheduled time and on-demand trigger).
+ * 10. Clinical NLP Negation Parser (negation detection for "отрицает", "отменен", "нет", "в норме", "в 2012 г.").
+ * 11. Integration with DaemonScheduler (07:30 AM scheduled time and on-demand trigger).
  */
 
 import assert from "node:assert/strict";
@@ -21,7 +22,9 @@ import {
 	type PatientSomaticProfileInput,
 	calculateAge,
 	evaluatePatientSomaticRisk,
+	findActiveNonNegatedKeywords,
 	isAnesthesiaIndicatedAppointment,
+	isKeywordNegatedInText,
 	isSurgicalAppointment,
 } from "./somaticRadarDaemon.js";
 import { DaemonScheduler } from "./daemonScheduler.js";
@@ -291,7 +294,138 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.strictEqual(alerts.length, 0);
 	});
 
-	test("9. Surgery detection helper identifies surgical codes and Russian terms", () => {
+	// ─── PART 2: CLINICAL NLP NEGATION PARSER TESTS ──────────────────────────
+
+	test("9. Negation Parser: 'отрицает варфарин' and 'аспирин отменен' does NOT trigger bleeding alert", () => {
+		const patient: PatientSomaticProfileInput = {
+			patientId: "pat-neg-01",
+			organizationId: orgId,
+			fullName: "Федоров Сергей Петрович",
+			birthDate: "1965-08-14",
+			notes: "Отрицает прием варфарина. Аспирин отменен кардиологом 2 месяца назад.",
+			pastAnamnesisText: "Ранее принимал ксарелто, сейчас не пьет.",
+		};
+
+		const surgeryAppt: AppointmentSomaticContextInput = {
+			appointmentId: "appt-surg-neg-01",
+			organizationId: orgId,
+			doctorId,
+			doctorName,
+			startsAt: "2026-09-01T11:00:00.000Z",
+			reason: "Удаление зуба 47",
+		};
+
+		const alerts = evaluatePatientSomaticRisk(patient, surgeryAppt, { now: fixedNow });
+		const bleedAlerts = alerts.filter((a) => a.category === "anticoagulant_surgery");
+		assert.strictEqual(
+			bleedAlerts.length,
+			0,
+			"Negated anticoagulant mentions must not generate bleeding alert",
+		);
+	});
+
+	test("10. Negation Parser: 'аллергии на артикаин нет' does NOT trigger anesthetic allergy alert", () => {
+		const patient: PatientSomaticProfileInput = {
+			patientId: "pat-neg-02",
+			organizationId: orgId,
+			fullName: "Зайцева Марина Викторовна",
+			notes: "Аллергии на артикаин нет. Непереносимость анестетиков отрицает.",
+		};
+
+		const appt: AppointmentSomaticContextInput = {
+			appointmentId: "appt-neg-02",
+			organizationId: orgId,
+			doctorId,
+			doctorName,
+			startsAt: "2026-09-01T13:00:00.000Z",
+			reason: "Лечение глубокого кариеса зуба 35",
+		};
+
+		const alerts = evaluatePatientSomaticRisk(patient, appt, { now: fixedNow });
+		const allergyAlerts = alerts.filter((a) => a.category === "anesthetic_allergy");
+		assert.strictEqual(
+			allergyAlerts.length,
+			0,
+			"Negated articaine allergy must not generate alert",
+		);
+	});
+
+	test("11. Negation Parser: 'давление в норме' and 'криз в 2012 г.' does NOT trigger vasoconstrictor alert", () => {
+		const patient: PatientSomaticProfileInput = {
+			patientId: "pat-neg-03",
+			organizationId: orgId,
+			fullName: "Ковалев Алексей Юрьевич",
+			notes: "Давление в норме (120/80). Гипертонический криз в 2012 г. (сейчас норма, жалоб нет).",
+		};
+
+		const appt: AppointmentSomaticContextInput = {
+			appointmentId: "appt-neg-03",
+			organizationId: orgId,
+			doctorId,
+			doctorName,
+			startsAt: "2026-09-01T15:30:00.000Z",
+			reason: "Препарирование под коронку 16",
+		};
+
+		const alerts = evaluatePatientSomaticRisk(patient, appt, { now: fixedNow });
+		const vasoAlerts = alerts.filter((a) => a.category === "vasoconstrictor_contraindication");
+		assert.strictEqual(
+			vasoAlerts.length,
+			0,
+			"Normal blood pressure with historical 2012 crisis must not generate vasoconstrictor alert",
+		);
+	});
+
+	test("12. Negation Parser: 'бронхиальной астмы нет' does NOT trigger sulfite alert", () => {
+		const patient: PatientSomaticProfileInput = {
+			patientId: "pat-neg-04",
+			organizationId: orgId,
+			fullName: "Григорьев Денис Олегович",
+			notes: "Бронхиальной астмы нет. Аллергоанамнез не отягощен.",
+		};
+
+		const appt: AppointmentSomaticContextInput = {
+			appointmentId: "appt-neg-04",
+			organizationId: orgId,
+			doctorId,
+			doctorName,
+			startsAt: "2026-09-01T16:00:00.000Z",
+			reason: "Эндодонтическое лечение зуба 24",
+		};
+
+		const alerts = evaluatePatientSomaticRisk(patient, appt, { now: fixedNow });
+		const asthmaAlerts = alerts.filter((a) => a.category === "sulfite_asthma");
+		assert.strictEqual(
+			asthmaAlerts.length,
+			0,
+			"Negated asthma statement must not generate sulfite alert",
+		);
+	});
+
+	test("13. Negation Parser unit functions: isKeywordNegatedInText and findActiveNonNegatedKeywords", () => {
+		assert.strictEqual(isKeywordNegatedInText("Пациент отрицает варфарин", "варфарин"), true);
+		assert.strictEqual(isKeywordNegatedInText("Аспирин отменен врачом", "аспирин"), true);
+		assert.strictEqual(isKeywordNegatedInText("Аллергии на артикаин нет", "артикаин"), true);
+		assert.strictEqual(isKeywordNegatedInText("Давление в норме", "давление"), true);
+		assert.strictEqual(isKeywordNegatedInText("Криз был в 2012 г. (сейчас норма)", "криз"), true);
+
+		// Affirmative cases
+		assert.strictEqual(isKeywordNegatedInText("Постоянно принимает Варфарин", "варфарин"), false);
+		assert.strictEqual(isKeywordNegatedInText("Тяжелая аллергия на артикаин, отек", "артикаин"), false);
+		assert.strictEqual(isKeywordNegatedInText("Гипертоническая болезнь 3 степени, кризы", "криз"), false);
+
+		// findActiveNonNegatedKeywords
+		const sampleText = "Отрицает варфарин. Принимает Ксарелто 20 мг. Аллергии на артикаин нет.";
+		const activeAnticoags = findActiveNonNegatedKeywords(sampleText, ["варфарин", "ксарелто"]);
+		assert.deepStrictEqual(activeAnticoags, ["ксарелто"]);
+
+		const activeAnesthetics = findActiveNonNegatedKeywords(sampleText, ["артикаин"]);
+		assert.deepStrictEqual(activeAnesthetics, []);
+	});
+
+	// ─── PART 3: HELPERS & SCHEDULER TESTS ───────────────────────────────────
+
+	test("14. Surgery detection helper identifies surgical codes and Russian terms", () => {
 		assert.strictEqual(isSurgicalAppointment("Удаление зуба 38"), true);
 		assert.strictEqual(isSurgicalAppointment("Установка имплантата Osstem"), true);
 		assert.strictEqual(isSurgicalAppointment("Открытый синус-лифтинг"), true);
@@ -311,7 +445,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.strictEqual(isSurgicalAppointment("Снятие слепков"), false);
 	});
 
-	test("10. Age calculation helper works correctly with leap years and birthday thresholds", () => {
+	test("15. Age calculation helper works correctly with leap years and birthday thresholds", () => {
 		const refDate = new Date("2026-09-01T00:00:00.000Z");
 		// Birthday was in May (already passed this year)
 		assert.strictEqual(calculateAge("1990-05-10", refDate), 36);
@@ -322,7 +456,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.strictEqual(calculateAge("invalid-date", refDate), null);
 	});
 
-	test("11. DaemonScheduler registers somatic_radar_0730 at 07:30 and has on-demand method", () => {
+	test("16. DaemonScheduler registers somatic_radar_0730 at 07:30 and has on-demand method", () => {
 		const scheduler = new DaemonScheduler({
 			enableSomaticRadar: true,
 			enableZtlLookAhead: false,

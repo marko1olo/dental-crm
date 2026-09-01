@@ -4,8 +4,11 @@
  * Scans today's scheduled appointments for all doctors across the clinic:
  * 1. Analyzes patient electronic health records (EHR), anamnesis notes, active prescriptions,
  *    and verified drug allergies (patientDrugAllergies).
- * 2. Cross-references patient somatic profile with scheduled dental procedures.
- * 3. Applies dual-factor high-precision trigger logic:
+ * 2. Applies Clinical NLP Negation Parser:
+ *    - Accurately excludes negated, historical, or resolved conditions
+ *      (e.g., "отрицает варфарин", "аспирин отменен", "аллергии на артикаин нет", "давление в норме", "криз в 2012 г.").
+ * 3. Cross-references patient somatic profile with scheduled dental procedures.
+ * 4. Applies dual-factor high-precision trigger logic:
  *    - Generates quiet, actionable clinical alerts ONLY when a genuine risk combination occurs:
  *      * Patient for surgery/extraction + taking Anticoagulants (Warfarin, Xarelto, Plavix, Aspirin, Eliquis).
  *        -> Alert: "Высокий риск кровотечения. Рекомендовано: коагулограмма (МНО/АЧТВ) перед манипуляцией, местный гемостаз".
@@ -17,10 +20,11 @@
  *        -> Alert: "Противопоказаны анестетики с метабисульфитом натрия (E223). Рекомендован Мепивакаин 3% или Ультракаин Д".
  *      * Patient on Bisphosphonates / Denosumab + Invasive Surgery.
  *        -> Alert: "Высокий риск остеонекроза челюсти (MRONJ). Атравматичный протокол и антибиотикопрофилактика".
- * 4. Yields structured Copilot cards & Quiet Passive Badges for doctor pre-shift review with zero modal blockers.
+ * 5. Yields structured Copilot cards & Quiet Passive Badges for doctor pre-shift review with zero modal blockers.
+ * 6. High-Performance Architecture: Uses batch parallel queries (inArray) to eliminate N+1 database patterns.
  */
 
-import { and, desc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -127,7 +131,7 @@ export interface AppointmentSomaticContextInput {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. CLINICAL DETECTION HELPERS
+// 2. CLINICAL VOCABULARY & KEYWORD DICTIONARIES
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SURGERY_PROCEDURE_KEYWORDS = [
@@ -307,6 +311,121 @@ const NSAID_KEYWORDS = [
 	"samter",
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. CLINICAL NLP NEGATION PARSER
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PRE_NEGATION_PATTERNS = [
+	/(?<![а-яa-z0-9])(?:не\s+(?:принимает|пьет|пьёт|страдает|имеет|употребляет|было|отмечает|выявлено|обнаружено))(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:отрицает(?:\s+прием|\s+наличие|\s+аллергию|\s+непереносимость|\s+лечение)?)(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:отменил[аи]?|отменен[аоы]?|отмена|прекратил[аи]?\s+прием|снят(?:\s+диагноз)?)(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:нет(?:\s+аллергии|\s+данных|\s+приступов|\s+кризов|\s+жалоб)?)(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:без(?:\s+признаков|\s+гипертонии|\s+аллергии|\s+кризов)?)(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:отсутству(?:ет|ют)|не\s+отягощен|не\s+отягощён|не\s+выявлен[оаы]?|не\s+обнаружен[оаы]?|исключен[оаы]?)(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:давление\s+в\s+норме|ад\s+в\s+норме|давление\s+нормализовано|ад\s+стабильно)(?![а-яa-z0-9])/iu,
+];
+
+const POST_NEGATION_PATTERNS = [
+	/(?<![а-яa-z0-9])(?:отрицает|отменен[аоы]?|отменил[аи]?|не\s+принимает|не\s+пьет|не\s+пьёт|прекращен[аоы]?)(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:нет|отсутству(?:ет|ют)|не\s+выявлен[аоы]?|не\s+обнаружен[аоы]?)(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:в\s+норме|нормализовано|стабильно|стабилизировано|купирован[оаы]?)(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:в\s+прошлом|в\s+детстве|в\s+анамнезе\s*\((?:норма|купирован|без\s+рецидивов)\))(?![а-яa-z0-9])/iu,
+	/(?<![а-яa-z0-9])(?:(?:в|до)\s+\d{4}\s*г(?:\.|ода)?(?:\s*\([^)]*норм[^)]*\))?)(?![а-яa-z0-9])/iu,
+];
+
+/**
+ * Detects whether all occurrences of a keyword in the text are negated or historical.
+ */
+export function isKeywordNegatedInText(text: string, keyword: string): boolean {
+	const lowerText = text.toLowerCase();
+	const kwLower = keyword.toLowerCase();
+	let searchPos = 0;
+	let anyOccurrenceFound = false;
+	let hasNonNegatedOccurrence = false;
+
+	while (searchPos < lowerText.length) {
+		const idx = lowerText.indexOf(kwLower, searchPos);
+		if (idx === -1) break;
+		anyOccurrenceFound = true;
+
+		// Extract surrounding window/clause for this occurrence (up to 70 chars before/after)
+		const startBoundary = Math.max(0, idx - 70);
+		const endBoundary = Math.min(lowerText.length, idx + kwLower.length + 70);
+
+		const beforeText = lowerText.slice(startBoundary, idx);
+		const afterText = lowerText.slice(idx + kwLower.length, endBoundary);
+
+		const lastDelimiterBefore = Math.max(
+			beforeText.lastIndexOf("."),
+			beforeText.lastIndexOf("!"),
+			beforeText.lastIndexOf("?"),
+			beforeText.lastIndexOf(";"),
+			beforeText.lastIndexOf("\n"),
+		);
+		const clauseBefore = lastDelimiterBefore !== -1
+			? beforeText.slice(lastDelimiterBefore + 1)
+			: beforeText;
+
+		const firstDelimiterAfter = afterText.search(/[.!?;:\n]/);
+		const clauseAfter = firstDelimiterAfter !== -1
+			? afterText.slice(0, firstDelimiterAfter)
+			: afterText;
+
+		const fullClause = `${clauseBefore} ${kwLower} ${clauseAfter}`.trim();
+
+		// Check pre-negation
+		const isPreNegated = PRE_NEGATION_PATTERNS.some((p) => p.test(clauseBefore));
+		// Check post-negation
+		const isPostNegated = POST_NEGATION_PATTERNS.some((p) => p.test(clauseAfter));
+		// Check clause-wide patterns
+		const isClauseNegated =
+			isPreNegated ||
+			isPostNegated ||
+			/(?<![а-яa-z0-9])аллерги(?:и|я|ю)\s+(?:на\s+)?[а-яa-z0-9\s-]{1,30}\s+нет(?![а-яa-z0-9])/iu.test(fullClause) ||
+			/(?<![а-яa-z0-9])отрицает\s+[а-яa-z0-9\s-]{0,30}\s*(?:варфарин|аспирин|ксарелто|артикаин|пенициллин|нпвс|астм|криз)(?![а-яa-z0-9])/iu.test(fullClause) ||
+			/(?<![а-яa-z0-9])(?:давление|ад)\s+в\s+норме(?![а-яa-z0-9])/iu.test(fullClause) ||
+			/(?<![а-яa-z0-9])(?:криз[а-я]*|приступ[а-я]*)\s+(?:в|до)\s+20\d\d\s*г/iu.test(fullClause) ||
+			/(?<![а-яa-z0-9])(?:в|до)\s+20\d\d\s*г(?:\.|ода)?\s*\([^)]*норм[^)]*\)/iu.test(fullClause);
+
+		if (!isClauseNegated) {
+			hasNonNegatedOccurrence = true;
+			break;
+		}
+
+		searchPos = idx + kwLower.length;
+	}
+
+	if (!anyOccurrenceFound) return false;
+	return !hasNonNegatedOccurrence;
+}
+
+/**
+ * Searches for active (non-negated, non-historical) matches of any target keywords in clinical text.
+ */
+export function findActiveNonNegatedKeywords(
+	text: string | null | undefined,
+	keywords: readonly string[],
+): string[] {
+	if (!text) return [];
+	const lowerText = text.toLowerCase();
+	const activeMatches: string[] = [];
+
+	for (const kw of keywords) {
+		const kwLower = kw.toLowerCase();
+		if (lowerText.includes(kwLower)) {
+			if (!isKeywordNegatedInText(lowerText, kwLower)) {
+				activeMatches.push(kw);
+			}
+		}
+	}
+
+	return Array.from(new Set(activeMatches));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. PROCEDURAL & AGE DETECTION HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * Checks if a scheduled appointment involves an invasive surgical manipulation.
  */
@@ -402,7 +521,7 @@ export function calculateAge(birthDateStr?: string | null, refDate?: Date): numb
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. CORE PURE CLINICAL RADAR EVALUATION ENGINE
+// 5. CORE PURE CLINICAL RADAR EVALUATION ENGINE
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -434,29 +553,30 @@ export function evaluatePatientSomaticRisk(
 		appointment.plannedServices,
 	);
 
-	// Collect full combined patient context text
-	const patientAllergiesList = patient.allergies || [];
-	const allergyText = patientAllergiesList
-		.map(
-			(a) =>
-				`${a.allergenGroup} ${a.drugInnLatin || ""} ${a.clinicalManifestations || ""} ${a.notes || ""}`,
-		)
-		.join(" ")
-		.toLowerCase();
+	// Context texts for NLP analysis
+	const freeTextContext = `${patient.notes || ""} ${patient.pastAnamnesisText || ""} ${patient.pastDiagnosesText || ""}`.trim();
 
-	const medsText = (patient.activeMedications || []).join(" ").toLowerCase();
-	const notesText = (patient.notes || "").toLowerCase();
-	const pastAnamnesis = (patient.pastAnamnesisText || "").toLowerCase();
-	const pastDiagnoses = (patient.pastDiagnosesText || "").toLowerCase();
+	// Active non-negated medications
+	const activeMedsList = (patient.activeMedications || []).filter(
+		(m) => !m.toLowerCase().includes("отменен") && !m.toLowerCase().includes("отрицает"),
+	);
 
-	const fullTextContext = `${allergyText} ${medsText} ${notesText} ${pastAnamnesis} ${pastDiagnoses}`.toLowerCase();
+	// Non-negated allergies
+	const activeAllergiesList = (patient.allergies || []).filter((a) => {
+		if (a.reactionSeverity === "none") return false;
+		const fullAllergyStr = `${a.allergenGroup} ${a.drugInnLatin || ""} ${a.clinicalManifestations || ""} ${a.notes || ""}`.toLowerCase();
+		if (fullAllergyStr.includes("отрицает") || fullAllergyStr.includes("аллергии нет")) {
+			return false;
+		}
+		return true;
+	});
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// THREAT 1: Surgery / Extraction + Anticoagulants (Dual-Factor)
 	// ─────────────────────────────────────────────────────────────────────────
-	const matchedAnticoagulants = ANTICOAGULANT_KEYWORDS.filter((kw) =>
-		fullTextContext.includes(kw),
-	);
+	const matchedInFreeText = findActiveNonNegatedKeywords(freeTextContext, ANTICOAGULANT_KEYWORDS);
+	const matchedInMeds = findActiveNonNegatedKeywords(activeMedsList.join(" "), ANTICOAGULANT_KEYWORDS);
+	const matchedAnticoagulants = Array.from(new Set([...matchedInFreeText, ...matchedInMeds]));
 
 	if (isSurgery && matchedAnticoagulants.length > 0) {
 		const isHighPotency = matchedAnticoagulants.some(
@@ -523,9 +643,12 @@ export function evaluatePatientSomaticRisk(
 	// ─────────────────────────────────────────────────────────────────────────
 	// THREAT 2: Allergy to Articaine / Amide Anesthetics (Dual-Factor with Anesthesia)
 	// ─────────────────────────────────────────────────────────────────────────
-	const matchedAmideAllergies = ARTICAINE_AMIDE_KEYWORDS.filter((kw) =>
-		allergyText.includes(kw) || notesText.includes(`аллергия на ${kw}`) || notesText.includes(`непереносимость ${kw}`),
+	const amideInAllergies = findActiveNonNegatedKeywords(
+		activeAllergiesList.map((a) => `${a.allergenGroup} ${a.drugInnLatin || ""}`).join(" "),
+		ARTICAINE_AMIDE_KEYWORDS,
 	);
+	const amideInFreeText = findActiveNonNegatedKeywords(freeTextContext, ARTICAINE_AMIDE_KEYWORDS);
+	const matchedAmideAllergies = Array.from(new Set([...amideInAllergies, ...amideInFreeText]));
 
 	if (isAnesthesia && matchedAmideAllergies.length > 0) {
 		const allergenTitle = Array.from(new Set(matchedAmideAllergies)).join(", ");
@@ -579,8 +702,9 @@ export function evaluatePatientSomaticRisk(
 	// ─────────────────────────────────────────────────────────────────────────
 	// THREAT 3: Severe Hypertension Stage III / Thyrotoxicosis / Vasoconstrictor Risk
 	// ─────────────────────────────────────────────────────────────────────────
-	const matchedVasoconstrictorRisks = VASOCONSTRICTOR_CONTRAINDICATION_KEYWORDS.filter(
-		(kw) => fullTextContext.includes(kw),
+	const matchedVasoconstrictorRisks = findActiveNonNegatedKeywords(
+		freeTextContext,
+		VASOCONSTRICTOR_CONTRAINDICATION_KEYWORDS,
 	);
 
 	if (isAnesthesia && matchedVasoconstrictorRisks.length > 0) {
@@ -639,8 +763,9 @@ export function evaluatePatientSomaticRisk(
 	// ─────────────────────────────────────────────────────────────────────────
 	// THREAT 4: Bronchial Asthma / Sulfite Allergy vs Metabisulfite (E223)
 	// ─────────────────────────────────────────────────────────────────────────
-	const matchedSulfiteAsthma = SULFITE_ASTHMA_KEYWORDS.filter((kw) =>
-		fullTextContext.includes(kw),
+	const matchedSulfiteAsthma = findActiveNonNegatedKeywords(
+		`${freeTextContext} ${activeAllergiesList.map((a) => a.allergenGroup).join(" ")}`,
+		SULFITE_ASTHMA_KEYWORDS,
 	);
 
 	// Trigger only if vasoconstrictor threat didn't already capture it
@@ -694,8 +819,9 @@ export function evaluatePatientSomaticRisk(
 	// ─────────────────────────────────────────────────────────────────────────
 	// THREAT 5: Bisphosphonate Therapy / MRONJ Risk (Dual-Factor with Surgery)
 	// ─────────────────────────────────────────────────────────────────────────
-	const matchedBisphosphonates = BISPHOSPHONATES_KEYWORDS.filter((kw) =>
-		fullTextContext.includes(kw),
+	const matchedBisphosphonates = findActiveNonNegatedKeywords(
+		`${freeTextContext} ${activeMedsList.join(" ")}`,
+		BISPHOSPHONATES_KEYWORDS,
 	);
 
 	if (isSurgery && matchedBisphosphonates.length > 0) {
@@ -749,7 +875,10 @@ export function evaluatePatientSomaticRisk(
 	// ─────────────────────────────────────────────────────────────────────────
 	// THREAT 6: Penicillin / Beta-Lactam Allergy
 	// ─────────────────────────────────────────────────────────────────────────
-	const matchedPenicillins = PENICILLIN_KEYWORDS.filter((kw) => allergyText.includes(kw));
+	const matchedPenicillins = findActiveNonNegatedKeywords(
+		`${activeAllergiesList.map((a) => `${a.allergenGroup} ${a.drugInnLatin || ""}`).join(" ")} ${freeTextContext}`,
+		PENICILLIN_KEYWORDS,
+	);
 
 	if (matchedPenicillins.length > 0) {
 		const penName = Array.from(new Set(matchedPenicillins)).join(", ");
@@ -794,7 +923,10 @@ export function evaluatePatientSomaticRisk(
 	// ─────────────────────────────────────────────────────────────────────────
 	// THREAT 7: NSAID Allergy / Samter's Triad
 	// ─────────────────────────────────────────────────────────────────────────
-	const matchedNsaid = NSAID_KEYWORDS.filter((kw) => allergyText.includes(kw));
+	const matchedNsaid = findActiveNonNegatedKeywords(
+		`${activeAllergiesList.map((a) => `${a.allergenGroup} ${a.drugInnLatin || ""}`).join(" ")} ${freeTextContext}`,
+		NSAID_KEYWORDS,
+	);
 
 	if (matchedNsaid.length > 0) {
 		const nsaidName = Array.from(new Set(matchedNsaid)).join(", ");
@@ -837,11 +969,12 @@ export function evaluatePatientSomaticRisk(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. DATABASE INTEGRATION SCANNER (07:30 AM Shift Scanner)
+// 6. DATABASE INTEGRATION SCANNER (07:30 AM Shift Scanner with Batch Queries)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Runs the live 07:30 AM morning pre-shift somatic radar scan against PostgreSQL database.
+ * Uses batch parallel queries (inArray) to eliminate N+1 database patterns.
  */
 export async function runSomaticRadarScan(options?: {
 	organizationId?: string | undefined;
@@ -850,171 +983,232 @@ export async function runSomaticRadarScan(options?: {
 }): Promise<SomaticRadarAlert[]> {
 	try {
 		const now = options?.now ?? new Date();
-	const targetDate = options?.targetDate ?? now;
+		const targetDate = options?.targetDate ?? now;
 
-	const startOfDay = new Date(
-		targetDate.getFullYear(),
-		targetDate.getMonth(),
-		targetDate.getDate(),
-		0,
-		0,
-		0,
-	);
-	const endOfDay = new Date(
-		targetDate.getFullYear(),
-		targetDate.getMonth(),
-		targetDate.getDate(),
-		23,
-		59,
-		59,
-	);
-
-	// Fetch today's scheduled appointments
-	const conditions = [
-		gte(appointments.startsAt, startOfDay),
-		lte(appointments.startsAt, endOfDay),
-		or(
-			eq(appointments.status, "planned"),
-			eq(appointments.status, "confirmed"),
-			eq(appointments.status, "in_treatment"),
-		),
-	];
-
-	if (options?.organizationId) {
-		conditions.push(eq(appointments.organizationId, options.organizationId));
-	}
-
-	const todayAppointments = await db
-		.select({
-			appointmentId: appointments.id,
-			organizationId: appointments.organizationId,
-			patientId: appointments.patientId,
-			doctorUserId: appointments.doctorUserId,
-			startsAt: appointments.startsAt,
-			endsAt: appointments.endsAt,
-			status: appointments.status,
-			reason: appointments.reason,
-			comment: appointments.comment,
-			patientFullName: patients.fullName,
-			patientBirthDate: patients.birthDate,
-			patientPhone: patients.phone,
-			patientNotes: patients.notes,
-			doctorFullName: users.fullName,
-		})
-		.from(appointments)
-		.leftJoin(patients, eq(appointments.patientId, patients.id))
-		.leftJoin(users, eq(appointments.doctorUserId, users.id))
-		.where(and(...conditions));
-
-	const allAlerts: SomaticRadarAlert[] = [];
-
-	for (const appt of todayAppointments) {
-		if (!appt.patientId) continue;
-
-		// 1. Fetch patient drug allergies
-		const allergies = await db
-			.select({
-				allergenGroup: patientDrugAllergies.allergenGroup,
-				drugInnLatin: patientDrugAllergies.drugInnLatin,
-				reactionSeverity: patientDrugAllergies.reactionSeverity,
-				clinicalManifestations: patientDrugAllergies.clinicalManifestations,
-				hasSamterTriad: patientDrugAllergies.hasSamterTriad,
-				notes: patientDrugAllergies.notes,
-			})
-			.from(patientDrugAllergies)
-			.where(
-				and(
-					eq(patientDrugAllergies.organizationId, appt.organizationId),
-					eq(patientDrugAllergies.patientId, appt.patientId),
-				),
-			);
-
-		// 2. Fetch past visit notes / anamnesis
-		const pastVisits = await db
-			.select({
-				complaint: visits.complaint,
-				anamnesis: visits.anamnesis,
-				objectiveStatus: visits.objectiveStatus,
-				diagnosis: visits.diagnosis,
-				treatmentPlan: visits.treatmentPlan,
-				doctorSummary: visits.doctorSummary,
-			})
-			.from(visits)
-			.where(
-				and(
-					eq(visits.organizationId, appt.organizationId),
-					eq(visits.patientId, appt.patientId),
-				),
-			)
-			.orderBy(desc(visits.createdAt))
-			.limit(5);
-
-		const anamnesisTexts: string[] = [];
-		const diagnosisTexts: string[] = [];
-
-		for (const v of pastVisits) {
-			if (v.anamnesis) anamnesisTexts.push(v.anamnesis);
-			if (v.complaint) anamnesisTexts.push(v.complaint);
-			if (v.doctorSummary) anamnesisTexts.push(v.doctorSummary);
-			if (v.diagnosis) diagnosisTexts.push(v.diagnosis);
-			if (v.objectiveStatus) diagnosisTexts.push(v.objectiveStatus);
-		}
-
-		// 3. Fetch active electronic prescriptions if any
-		const activePrescriptionItems = await db
-			.select({
-				innLatin: electronicPrescriptionItems.innLatin,
-				signatureDirectionRussian: electronicPrescriptionItems.signatureDirectionRussian,
-			})
-			.from(electronicPrescriptionItems)
-			.innerJoin(
-				electronicPrescriptions,
-				eq(electronicPrescriptionItems.prescriptionId, electronicPrescriptions.id),
-			)
-			.where(
-				and(
-					eq(electronicPrescriptions.organizationId, appt.organizationId),
-					eq(electronicPrescriptions.patientId, appt.patientId),
-				),
-			)
-			.limit(10);
-
-		const activeMedications = activePrescriptionItems.map(
-			(i) => `${i.innLatin} ${i.signatureDirectionRussian}`,
+		const startOfDay = new Date(
+			targetDate.getFullYear(),
+			targetDate.getMonth(),
+			targetDate.getDate(),
+			0,
+			0,
+			0,
+		);
+		const endOfDay = new Date(
+			targetDate.getFullYear(),
+			targetDate.getMonth(),
+			targetDate.getDate(),
+			23,
+			59,
+			59,
 		);
 
-		const patientProfile: PatientSomaticProfileInput = {
-			patientId: appt.patientId,
-			organizationId: appt.organizationId,
-			fullName: appt.patientFullName || "Пациент",
-			birthDate: appt.patientBirthDate,
-			phone: appt.patientPhone,
-			notes: appt.patientNotes,
-			allergies,
-			pastAnamnesisText: anamnesisTexts.join(" "),
-			pastDiagnosesText: diagnosisTexts.join(" "),
-			activeMedications,
-		};
+		// Fetch today's scheduled appointments
+		const conditions = [
+			gte(appointments.startsAt, startOfDay),
+			lte(appointments.startsAt, endOfDay),
+			or(
+				eq(appointments.status, "planned"),
+				eq(appointments.status, "confirmed"),
+				eq(appointments.status, "in_treatment"),
+			),
+		];
 
-		const appointmentContext: AppointmentSomaticContextInput = {
-			appointmentId: appt.appointmentId,
-			organizationId: appt.organizationId,
-			doctorId: appt.doctorUserId,
-			doctorName: appt.doctorFullName || "Врач клиники",
-			startsAt: appt.startsAt,
-			endsAt: appt.endsAt,
-			reason: appt.reason,
-			comment: appt.comment,
-		};
+		if (options?.organizationId) {
+			conditions.push(eq(appointments.organizationId, options.organizationId));
+		}
 
-		const apptAlerts = evaluatePatientSomaticRisk(patientProfile, appointmentContext, { now });
-		allAlerts.push(...apptAlerts);
+		const todayAppointments = await db
+			.select({
+				appointmentId: appointments.id,
+				organizationId: appointments.organizationId,
+				patientId: appointments.patientId,
+				doctorUserId: appointments.doctorUserId,
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				status: appointments.status,
+				reason: appointments.reason,
+				comment: appointments.comment,
+				patientFullName: patients.fullName,
+				patientBirthDate: patients.birthDate,
+				patientPhone: patients.phone,
+				patientNotes: patients.notes,
+				doctorFullName: users.fullName,
+			})
+			.from(appointments)
+			.leftJoin(patients, eq(appointments.patientId, patients.id))
+			.leftJoin(users, eq(appointments.doctorUserId, users.id))
+			.where(and(...conditions));
+
+		if (todayAppointments.length === 0) {
+			return [];
+		}
+
+		// Collect unique patient IDs for batch loading (Eliminates N+1 query pattern)
+		const patientIds = Array.from(
+			new Set(
+				todayAppointments
+					.map((a) => a.patientId)
+					.filter((id): id is string => Boolean(id)),
+			),
+		);
+
+		const allergiesByPatient = new Map<
+			string,
+			Array<{
+				allergenGroup: string;
+				drugInnLatin?: string | null;
+				reactionSeverity?: string | null;
+				clinicalManifestations?: string | null;
+				hasSamterTriad?: boolean | null;
+				notes?: string | null;
+			}>
+		>();
+
+		const pastVisitsByPatient = new Map<
+			string,
+			Array<{
+				complaint: string | null;
+				anamnesis: string | null;
+				objectiveStatus: string | null;
+				diagnosis: string | null;
+				treatmentPlan: string | null;
+				doctorSummary: string | null;
+			}>
+		>();
+
+		const activePrescriptionsByPatient = new Map<string, string[]>();
+
+		if (patientIds.length > 0) {
+			const [batchAllergies, batchVisits, batchPrescriptionItems] = await Promise.all([
+				// 1. Batch fetch allergies
+				db
+					.select({
+						patientId: patientDrugAllergies.patientId,
+						allergenGroup: patientDrugAllergies.allergenGroup,
+						drugInnLatin: patientDrugAllergies.drugInnLatin,
+						reactionSeverity: patientDrugAllergies.reactionSeverity,
+						clinicalManifestations: patientDrugAllergies.clinicalManifestations,
+						hasSamterTriad: patientDrugAllergies.hasSamterTriad,
+						notes: patientDrugAllergies.notes,
+					})
+					.from(patientDrugAllergies)
+					.where(inArray(patientDrugAllergies.patientId, patientIds)),
+
+				// 2. Batch fetch past visits
+				db
+					.select({
+						patientId: visits.patientId,
+						complaint: visits.complaint,
+						anamnesis: visits.anamnesis,
+						objectiveStatus: visits.objectiveStatus,
+						diagnosis: visits.diagnosis,
+						treatmentPlan: visits.treatmentPlan,
+						doctorSummary: visits.doctorSummary,
+						createdAt: visits.createdAt,
+					})
+					.from(visits)
+					.where(inArray(visits.patientId, patientIds))
+					.orderBy(desc(visits.createdAt)),
+
+				// 3. Batch fetch active prescriptions
+				db
+					.select({
+						patientId: electronicPrescriptions.patientId,
+						innLatin: electronicPrescriptionItems.innLatin,
+						signatureDirectionRussian: electronicPrescriptionItems.signatureDirectionRussian,
+					})
+					.from(electronicPrescriptionItems)
+					.innerJoin(
+						electronicPrescriptions,
+						eq(electronicPrescriptionItems.prescriptionId, electronicPrescriptions.id),
+					)
+					.where(inArray(electronicPrescriptions.patientId, patientIds)),
+			]);
+
+			// Group allergies by patientId
+			for (const item of batchAllergies) {
+				if (!allergiesByPatient.has(item.patientId)) {
+					allergiesByPatient.set(item.patientId, []);
+				}
+				allergiesByPatient.get(item.patientId)!.push(item);
+			}
+
+			// Group visits by patientId (keep up to 5 most recent)
+			for (const v of batchVisits) {
+				if (!v.patientId) continue;
+				if (!pastVisitsByPatient.has(v.patientId)) {
+					pastVisitsByPatient.set(v.patientId, []);
+				}
+				const patientVisits = pastVisitsByPatient.get(v.patientId)!;
+				if (patientVisits.length < 5) {
+					patientVisits.push(v);
+				}
+			}
+
+			// Group prescription items by patientId
+			for (const p of batchPrescriptionItems) {
+				if (!activePrescriptionsByPatient.has(p.patientId)) {
+					activePrescriptionsByPatient.set(p.patientId, []);
+				}
+				activePrescriptionsByPatient.get(p.patientId)!.push(
+					`${p.innLatin} ${p.signatureDirectionRussian}`,
+				);
+			}
+		}
+
+		const allAlerts: SomaticRadarAlert[] = [];
+
+		for (const appt of todayAppointments) {
+			if (!appt.patientId) continue;
+
+			const allergies = allergiesByPatient.get(appt.patientId) ?? [];
+			const pastVisits = pastVisitsByPatient.get(appt.patientId) ?? [];
+			const activeMedications = activePrescriptionsByPatient.get(appt.patientId) ?? [];
+
+			const anamnesisTexts: string[] = [];
+			const diagnosisTexts: string[] = [];
+
+			for (const v of pastVisits) {
+				if (v.anamnesis) anamnesisTexts.push(v.anamnesis);
+				if (v.complaint) anamnesisTexts.push(v.complaint);
+				if (v.doctorSummary) anamnesisTexts.push(v.doctorSummary);
+				if (v.diagnosis) diagnosisTexts.push(v.diagnosis);
+				if (v.objectiveStatus) diagnosisTexts.push(v.objectiveStatus);
+			}
+
+			const patientProfile: PatientSomaticProfileInput = {
+				patientId: appt.patientId,
+				organizationId: appt.organizationId,
+				fullName: appt.patientFullName || "Пациент",
+				birthDate: appt.patientBirthDate,
+				phone: appt.patientPhone,
+				notes: appt.patientNotes,
+				allergies,
+				pastAnamnesisText: anamnesisTexts.join(" "),
+				pastDiagnosesText: diagnosisTexts.join(" "),
+				activeMedications,
+			};
+
+			const appointmentContext: AppointmentSomaticContextInput = {
+				appointmentId: appt.appointmentId,
+				organizationId: appt.organizationId,
+				doctorId: appt.doctorUserId,
+				doctorName: appt.doctorFullName || "Врач клиники",
+				startsAt: appt.startsAt,
+				endsAt: appt.endsAt,
+				reason: appt.reason,
+				comment: appt.comment,
+			};
+
+			const apptAlerts = evaluatePatientSomaticRisk(patientProfile, appointmentContext, { now });
+			allAlerts.push(...apptAlerts);
+		}
+
+		return allAlerts;
+	} catch (error) {
+		console.error("[SomaticRadarDaemon:ERROR] Failed to run somatic radar scan:", error);
+		throw error;
 	}
-
-	return allAlerts;
-} catch {
-	return [];
-}
 }
 
 /**
@@ -1025,59 +1219,64 @@ export async function runSomaticRadarShiftSummary(options?: {
 	targetDate?: Date | undefined;
 	now?: Date | undefined;
 }): Promise<SomaticRadarPreShiftSummary[]> {
-	const now = options?.now ?? new Date();
-	const targetDate = options?.targetDate ?? now;
-	const scanArgs: { organizationId?: string; targetDate?: Date; now?: Date } = {
-		targetDate,
-		now,
-	};
-	if (options?.organizationId) {
-		scanArgs.organizationId = options.organizationId;
-	}
-	const alerts = await runSomaticRadarScan(scanArgs);
-
-	const orgMap = new Map<string, SomaticRadarAlert[]>();
-
-	for (const a of alerts) {
-		const orgId = a.organizationId;
-		if (!orgMap.has(orgId)) {
-			orgMap.set(orgId, []);
+	try {
+		const now = options?.now ?? new Date();
+		const targetDate = options?.targetDate ?? now;
+		const scanArgs: { organizationId?: string; targetDate?: Date; now?: Date } = {
+			targetDate,
+			now,
+		};
+		if (options?.organizationId) {
+			scanArgs.organizationId = options.organizationId;
 		}
-		orgMap.get(orgId)!.push(a);
-	}
+		const alerts = await runSomaticRadarScan(scanArgs);
 
-	if (options?.organizationId && !orgMap.has(options.organizationId)) {
-		orgMap.set(options.organizationId, []);
-	}
+		const orgMap = new Map<string, SomaticRadarAlert[]>();
 
-	const summaries: SomaticRadarPreShiftSummary[] = [];
-
-	for (const [orgId, orgAlerts] of orgMap.entries()) {
-		let critical = 0;
-		let high = 0;
-		let warnings = 0;
-		const uniquePatients = new Set<string>();
-
-		for (const a of orgAlerts) {
-			uniquePatients.add(a.patientId);
-			if (a.urgency === "CRITICAL") critical++;
-			else if (a.urgency === "HIGH") high++;
-			else warnings++;
+		for (const a of alerts) {
+			const orgId = a.organizationId;
+			if (!orgMap.has(orgId)) {
+				orgMap.set(orgId, []);
+			}
+			orgMap.get(orgId)!.push(a);
 		}
 
-		summaries.push({
-			id: `somatic_summary_${orgId}_${Date.now()}`,
-			organizationId: orgId,
-			shiftDate: targetDate.toLocaleDateString("ru-RU"),
-			totalAppointmentsScanned: orgAlerts.length,
-			totalPatientsWithRisk: uniquePatients.size,
-			criticalThreatsCount: critical,
-			highThreatsCount: high,
-			warningsCount: warnings,
-			alerts: orgAlerts,
-			createdAt: now.toISOString(),
-		});
-	}
+		if (options?.organizationId && !orgMap.has(options.organizationId)) {
+			orgMap.set(options.organizationId, []);
+		}
 
-	return summaries;
+		const summaries: SomaticRadarPreShiftSummary[] = [];
+
+		for (const [orgId, orgAlerts] of orgMap.entries()) {
+			let critical = 0;
+			let high = 0;
+			let warnings = 0;
+			const uniquePatients = new Set<string>();
+
+			for (const a of orgAlerts) {
+				uniquePatients.add(a.patientId);
+				if (a.urgency === "CRITICAL") critical++;
+				else if (a.urgency === "HIGH") high++;
+				else warnings++;
+			}
+
+			summaries.push({
+				id: `somatic_summary_${orgId}_${Date.now()}`,
+				organizationId: orgId,
+				shiftDate: targetDate.toLocaleDateString("ru-RU"),
+				totalAppointmentsScanned: orgAlerts.length,
+				totalPatientsWithRisk: uniquePatients.size,
+				criticalThreatsCount: critical,
+				highThreatsCount: high,
+				warningsCount: warnings,
+				alerts: orgAlerts,
+				createdAt: now.toISOString(),
+			});
+		}
+
+		return summaries;
+	} catch (error) {
+		console.error("[SomaticRadarDaemon:ERROR] Failed to run somatic radar shift summary:", error);
+		throw error;
+	}
 }
