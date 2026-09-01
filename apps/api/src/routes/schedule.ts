@@ -333,10 +333,17 @@ export async function findSuggestedAvailableSlots(
 		const suggested: string[] = [];
 		const stepMs = 30 * 60 * 1000;
 
-		// Scan forward from requested start time up to 5 hours forward
+		// Scan forward from requested start time up to 5 hours forward (within clinic operating day 08:00 - 21:00)
 		for (let offset = stepMs; offset <= 5 * 60 * 60 * 1000; offset += stepMs) {
 			const candStart = new Date(reqStart.getTime() + offset);
 			const candEnd = new Date(candStart.getTime() + durationMs);
+
+			// Must not cross into the next calendar day
+			if (candStart.getUTCDate() !== reqStart.getUTCDate()) break;
+
+			// Clinic operating window (08:00 - 21:00 UTC/Local)
+			const candHour = candStart.getUTCHours();
+			if (candHour >= 21 || candHour < 8) continue;
 
 			const hasOverlap = activeAppts.some((a) => {
 				const aStart = new Date(a.startsAt).getTime();
@@ -363,7 +370,16 @@ export async function findSuggestedAvailableSlots(
 		if (suggested.length === 0) {
 			const s1 = new Date(reqStart.getTime() + stepMs);
 			const s2 = new Date(reqStart.getTime() + 2 * stepMs);
-			return [formatTime(s1), formatTime(s2)];
+			if (s1.getUTCDate() === reqStart.getUTCDate() && s1.getUTCHours() < 21) {
+				suggested.push(formatTime(s1));
+			}
+			if (s2.getUTCDate() === reqStart.getUTCDate() && s2.getUTCHours() < 21) {
+				suggested.push(formatTime(s2));
+			}
+			if (suggested.length === 0) {
+				suggested.push("10:00", "11:00");
+			}
+			return suggested;
 		}
 
 		return suggested;

@@ -338,9 +338,15 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			const actorUserId = getRequestIdentity(request).userId;
 			const now = new Date();
 
-			const incomingUpdatedAt = parsed.data.updatedAt
-				? new Date(parsed.data.updatedAt)
-				: now;
+			const maxFutureSkewMs = 60 * 1000; // max 1 minute future tolerance for clock drift
+			const incomingRawTime = parsed.data.updatedAt
+				? new Date(parsed.data.updatedAt).getTime()
+				: now.getTime();
+			const boundedIncomingTime = Math.min(
+				incomingRawTime,
+				now.getTime() + maxFutureSkewMs,
+			);
+			const incomingUpdatedAt = new Date(boundedIncomingTime);
 			const incomingVersion = parsed.data.version ?? 1;
 
 			const inserted = await db.transaction(async (tx) => {

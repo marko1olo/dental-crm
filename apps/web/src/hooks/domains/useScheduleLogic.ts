@@ -983,29 +983,54 @@ export function useScheduleLogic({
 	}
 
 	const applySuggestedSlot = (slotTime: string, appointmentId?: string) => {
+		const [hh, mm] = slotTime.split(":").map(Number);
+		if (hh === undefined || mm === undefined || Number.isNaN(hh) || Number.isNaN(mm)) {
+			setSlotConflict(null);
+			return;
+		}
+
 		if (appointmentId) {
 			const draft = appointmentScheduleDraftsRef.current[appointmentId];
 			if (draft?.startsAt) {
-				const datePrefix = draft.startsAt.slice(0, 11);
-				const newStart = `${datePrefix}${slotTime}:00.000Z`;
-				const [hh, mm] = slotTime.split(":").map(Number);
-				const endHh = String(Math.min(23, (hh || 0) + 1)).padStart(2, "0");
-				const newEnd = `${datePrefix}${endHh}:${String(mm || 0).padStart(2, "0")}:00.000Z`;
-				updateAppointmentScheduleDraft(appointmentId, "startsAt", newStart);
-				updateAppointmentScheduleDraft(appointmentId, "endsAt", newEnd);
+				const origStart = Date.parse(draft.startsAt);
+				const origEnd = draft.endsAt ? Date.parse(draft.endsAt) : origStart + 30 * 60_000;
+				const durationMs = origEnd > origStart ? origEnd - origStart : 30 * 60_000;
+
+				const d = new Date(origStart);
+				// If ISO string has UTC time, adjust UTC; if local string, set hours
+				if (draft.startsAt.endsWith("Z")) {
+					d.setUTCHours(hh, mm, 0, 0);
+				} else {
+					d.setHours(hh, mm, 0, 0);
+				}
+				const newStartIso = d.toISOString();
+				const newEndIso = new Date(d.getTime() + durationMs).toISOString();
+
+				updateAppointmentScheduleDraft(appointmentId, "startsAt", newStartIso);
+				updateAppointmentScheduleDraft(appointmentId, "endsAt", newEndIso);
 				showToast(
 					`Время записи изменено на ${slotTime}. Нажмите «Сохранить» для применения.`,
 					"success",
 				);
 			}
 		} else if (newAppointmentDraft?.startsAt) {
-			const datePrefix = newAppointmentDraft.startsAt.slice(0, 11);
-			const newStart = `${datePrefix}${slotTime}:00.000Z`;
-			const [hh, mm] = slotTime.split(":").map(Number);
-			const endHh = String(Math.min(23, (hh || 0) + 1)).padStart(2, "0");
-			const newEnd = `${datePrefix}${endHh}:${String(mm || 0).padStart(2, "0")}:00.000Z`;
-			updateNewAppointmentDraft("startsAt", newStart);
-			updateNewAppointmentDraft("endsAt", newEnd);
+			const origStart = Date.parse(newAppointmentDraft.startsAt);
+			const origEnd = newAppointmentDraft.endsAt
+				? Date.parse(newAppointmentDraft.endsAt)
+				: origStart + 30 * 60_000;
+			const durationMs = origEnd > origStart ? origEnd - origStart : 30 * 60_000;
+
+			const d = new Date(origStart);
+			if (newAppointmentDraft.startsAt.endsWith("Z")) {
+				d.setUTCHours(hh, mm, 0, 0);
+			} else {
+				d.setHours(hh, mm, 0, 0);
+			}
+			const newStartIso = d.toISOString();
+			const newEndIso = new Date(d.getTime() + durationMs).toISOString();
+
+			updateNewAppointmentDraft("startsAt", newStartIso);
+			updateNewAppointmentDraft("endsAt", newEndIso);
 			showToast(
 				`Время записи изменено на ${slotTime}. Нажмите «Создать запись» для сохранения.`,
 				"success",
