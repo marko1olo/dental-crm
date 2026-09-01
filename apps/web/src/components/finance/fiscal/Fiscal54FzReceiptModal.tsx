@@ -1181,7 +1181,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 												title="Позвонить пациенту по телефону"
 											>
 												<Phone className="w-3.5 h-3.5 text-emerald-600" />
-												<span>📞 Позвонить</span>
+												<span>Позвонить</span>
 											</button>
 											<button
 												type="button"
@@ -1190,7 +1190,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 												title="Отправить сообщение в WhatsApp по шаблону"
 											>
 												<MessageSquare className="w-3.5 h-3.5 text-[#25d366]" />
-												<span>💬 WhatsApp</span>
+												<span>WhatsApp</span>
 											</button>
 										</div>
 									</div>

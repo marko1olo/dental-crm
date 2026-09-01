@@ -1279,7 +1279,7 @@ export function buildReceptionQuickContactMessage(params: ReceptionQuickContactP
 
 	switch (params.template) {
 		case "reminder_visit":
-			messageText = `Здравствуйте, ${firstName}! Напоминаем о вашем визите в ${clinic} ${time}${doc}. Если ваши планы изменились, пожалуйста, сообщите нам. Ждем вас! 🦷`;
+			messageText = `Здравствуйте, ${firstName}! Напоминаем о вашем визите в ${clinic} ${time}${doc}. Если ваши планы изменились, пожалуйста, сообщите нам. Ждем вас!`;
 			break;
 		case "doctor_early":
 			messageText = `Здравствуйте, ${firstName}! Доктор${doc} освободился чуть раньше запланированного времени. Если вам удобно, вы можете подойти пораньше. С уважением, ${clinic}.`;

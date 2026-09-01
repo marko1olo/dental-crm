@@ -78,7 +78,7 @@ export const AnesthesiaOnsetTimerWidget: React.FC<AnesthesiaOnsetTimerWidgetProp
 				</div>
 				<div className="text-[11px] text-zinc-400 mt-1 text-center">
 					{timerCompleted
-						? '🎉 Анестезия наступила! Можно препарировать'
+						? 'Анестезия наступила. Можно препарировать'
 						: isTimerRunning
 							? `Ожидание диффузии: ${currentTechnique.shortNameRu}`
 							: `Рекомендовано: ${Math.round(currentTechnique.onsetMinutes.defaultWaitTimeSec / 60)} мин`}

@@ -26,6 +26,7 @@ import {
 	Sparkles,
 	Tag,
 	Trash2,
+	Syringe,
 	X,
 	Zap,
 } from "lucide-react";
@@ -460,7 +461,7 @@ export function VisitEmkTab() {
 				completedPlanItems: (appLogic as any)?.activeTreatmentPlanItems || [],
 			});
 			setCompletionResult(result);
-			showToast(`🏁 Приём завершён! ${result.statusBannerText}`, "success", 4500);
+			showToast(`Приём завершён! ${result.statusBannerText}`, "success", 4500);
 		} catch {
 			showToast("Ошибка при формировании сметы и чека", "error", 4000);
 		} finally {
@@ -1891,7 +1892,7 @@ export function VisitEmkTab() {
 													className="min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
 													data-testid="btn-apply-anesthesia-to-plan"
 												>
-													<span>💉</span>
+													<Syringe className="w-4 h-4" />
 													<span>+ Внести в протокол</span>
 												</button>
 											</div>
@@ -1929,7 +1930,9 @@ export function VisitEmkTab() {
 									<details className="group rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] overflow-hidden">
 										<summary className="flex items-center justify-between p-3 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--teal-soft)]/40 transition-colors">
 											<div className="flex items-center gap-2">
-												<span className="w-6 h-6 rounded-md bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center text-xs">⚡</span>
+												<span className="w-6 h-6 rounded-md bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center text-xs">
+													<Zap className="w-3.5 h-3.5" />
+												</span>
 												<span>Эндодонтия: Учет каналов, апекслокация, мастер-файлы и силеры ({selectedEndoCanalKey}, {endoWorkingLengthMm} мм)</span>
 											</div>
 											<ChevronDown size={16} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
@@ -1946,7 +1949,7 @@ export function VisitEmkTab() {
 													data-testid="btn-open-full-endo-modal"
 												>
 													<FileText size={14} />
-													<span>📋 Интерактивный журнал каналов</span>
+													<span>Интерактивный журнал каналов</span>
 												</button>
 											</div>
 
@@ -2169,7 +2172,7 @@ export function VisitEmkTab() {
 													className="min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
 													data-testid="btn-apply-endo-to-plan"
 												>
-													<span>⚡</span>
+													<Zap className="w-4 h-4" />
 													<span>+ Внести эндо-протокол в 043/у</span>
 												</button>
 											</div>
@@ -2822,7 +2825,7 @@ export function VisitEmkTab() {
 						</div>
 
 						<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 font-medium">
-							💡 Рекомендуется скопировать текст в буфер обмена перед подтверждением, чтобы не потерять внесенные записи.
+							Рекомендуется скопировать текст в буфер обмена перед подтверждением, чтобы не потерять внесенные записи.
 						</div>
 
 						<div className="flex flex-col gap-2.5 pt-3 border-t border-[var(--line)]">
@@ -2843,7 +2846,7 @@ export function VisitEmkTab() {
 									data-testid="btn-cancel-discard"
 								>
 									<X size={20} />
-									<span>❌ Отмена (Оставить всё как есть)</span>
+									<span>Отмена (Оставить всё как есть)</span>
 								</button>
 								<button
 									type="button"
@@ -2856,7 +2859,7 @@ export function VisitEmkTab() {
 									data-testid="btn-confirm-discard-and-switch"
 								>
 									<Trash2 size={20} />
-									<span>🗑️ Да, удалить данные</span>
+									<span>Да, удалить данные</span>
 								</button>
 							</div>
 						</div>
@@ -3016,7 +3019,7 @@ export function VisitEmkTab() {
 					<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 text-center">
 						<div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
 							<div className="flex items-center gap-2 text-[var(--ok-fg)] font-extrabold text-sm sm:text-base">
-								<span>⚡</span>
+								<Zap className="w-4 h-4" />
 								<h3 id="sbp-qr-modal-title" className="m-0 text-base font-extrabold text-[var(--ink)]">
 									Оплата через СБП (QR-код)
 								</h3>

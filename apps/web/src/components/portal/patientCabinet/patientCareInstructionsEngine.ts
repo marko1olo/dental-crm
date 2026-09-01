@@ -1279,7 +1279,7 @@ export function generateCareMemoPrintHtml(memo: PatientCareMemo): string {
 			(rec) => `
       <div style="margin-bottom: 10px; padding: 8px 12px; background: #f8fafc; border-left: 4px solid ${rec.isUrgent ? "#ef4444" : "#0d9488"}; border-radius: 4px;">
         <div style="font-weight: 700; color: #0f172a; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
-          <span>${rec.icon} ${rec.title}</span>
+          <span>${rec.title}</span>
           ${rec.badgeText ? `<span style="font-size: 10px; background: ${rec.isUrgent ? "#fee2e2" : "#ccfbf1"}; color: ${rec.isUrgent ? "#b91c1c" : "#0f766e"}; padding: 2px 6px; border-radius: 4px; font-weight: 800;">${rec.badgeText}</span>` : ""}
         </div>
         <div style="font-size: 11.5px; color: #334155; margin-top: 3px; line-height: 1.4;">${rec.description}</div>
@@ -1293,7 +1293,7 @@ export function generateCareMemoPrintHtml(memo: PatientCareMemo): string {
 			? `
       <div style="margin-top: 14px; margin-bottom: 14px;">
         <div style="font-weight: 800; font-size: 13px; color: #0f172a; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-          💊 Режим и схема приёма медикаментов:
+          Режим и схема приёма медикаментов:
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 6px;">
           <thead>
@@ -1310,7 +1310,7 @@ export function generateCareMemoPrintHtml(memo: PatientCareMemo): string {
 								(med) => `
               <tr>
                 <td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-weight: 700; color: #0f172a;">
-                  ${med.icon} ${med.name}<br><span style="font-weight: 400; color: #64748b; font-size: 10px;">${med.formRu}</span>
+                  ${med.name}<br><span style="font-weight: 400; color: #64748b; font-size: 10px;">${med.formRu}</span>
                 </td>
                 <td style="padding: 6px 8px; border: 1px solid #cbd5e1; color: #334155;">${med.dosageRu}</td>
                 <td style="padding: 6px 8px; border: 1px solid #cbd5e1; color: #334155;">${med.frequencyRu}</td>
@@ -1358,7 +1358,7 @@ export function generateCareMemoPrintHtml(memo: PatientCareMemo): string {
       <div>
         <h1 class="clinic-title">${memo.clinicName}</h1>
         <div class="clinic-sub">Лицензия ЛО-78-01-011842 • Телефон: ${memo.clinicPhone}</div>
-        <div class="clinic-sub" style="font-weight: 800; color: #b91c1c;">🚨 Горячая линия дежурного врача (круглосуточно): ${memo.clinicEmergencyPhone}</div>
+        <div class="clinic-sub" style="font-weight: 800; color: #b91c1c;">Горячая линия дежурного врача (круглосуточно): ${memo.clinicEmergencyPhone}</div>
       </div>
       <div class="doc-meta">
         <div><strong>Дата:</strong> ${memo.memoDateIso}</div>
@@ -1381,7 +1381,7 @@ export function generateCareMemoPrintHtml(memo: PatientCareMemo): string {
     </div>
 
     <div style="font-weight: 800; font-size: 13px; color: #0f172a; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
-      📋 Персональные рекомендации и правила ухода:
+      Персональные рекомендации и правила ухода:
     </div>
 
     ${recsHtml}
@@ -1389,7 +1389,7 @@ export function generateCareMemoPrintHtml(memo: PatientCareMemo): string {
 
     <div class="danger-box">
       <div style="font-weight: 800; color: #b91c1c; font-size: 11.5px; display: flex; align-items: center; gap: 6px;">
-        ⚠️ Когда необходимо срочно связаться с лечащим или дежурным врачом:
+        Когда необходимо срочно связаться с лечащим или дежурным врачом:
       </div>
       <ul style="margin: 4px 0 0 0; padding-left: 18px; font-size: 11px; color: #7f1d1d; line-height: 1.3;">
         ${warningsHtml}
@@ -1397,7 +1397,7 @@ export function generateCareMemoPrintHtml(memo: PatientCareMemo): string {
     </div>
 
     <div style="margin-top: 10px; font-size: 11px; color: #334155; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
-      📅 <strong>Следующий плановый визит:</strong> ${memo.nextVisitRecommendedText}
+      <strong>Следующий плановый визит:</strong> ${memo.nextVisitRecommendedText}
     </div>
 
     <div class="footer">

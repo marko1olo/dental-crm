@@ -1128,7 +1128,7 @@ export function LeadsFunnelAnalyticsModal({
 																	fontWeight: 700,
 																}}
 															>
-																ТОП 🚀
+																ТОП
 															</span>
 														)}
 														{ch.efficiencyRating === "good" && (
@@ -1141,7 +1141,7 @@ export function LeadsFunnelAnalyticsModal({
 																	fontWeight: 600,
 																}}
 															>
-																В плюсе ✅
+																В плюсе
 															</span>
 														)}
 														{ch.efficiencyRating === "warning" && (
@@ -1154,7 +1154,7 @@ export function LeadsFunnelAnalyticsModal({
 																	fontWeight: 600,
 																}}
 															>
-																В ноль ⚠️
+																В ноль
 															</span>
 														)}
 														{ch.efficiencyRating === "critical" && (
@@ -1167,7 +1167,7 @@ export function LeadsFunnelAnalyticsModal({
 																	fontWeight: 600,
 																}}
 															>
-																Убыток 🔻
+																Убыток
 															</span>
 														)}
 														{ch.efficiencyRating === "organic" && (
@@ -1180,7 +1180,7 @@ export function LeadsFunnelAnalyticsModal({
 																	fontWeight: 600,
 																}}
 															>
-																Сарафан 💎
+																Органика / Сарафан
 															</span>
 														)}
 														<span style={{ color: "var(--muted)" }}>

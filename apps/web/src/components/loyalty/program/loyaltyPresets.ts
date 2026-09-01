@@ -57,7 +57,7 @@ export const LOYALTY_TIER_PRESETS: readonly LoyaltyTierDefinition[] = [
 	{
 		id: "silver",
 		nameRu: "Серебряный",
-		badgeLabelRu: "🥈 Silver (Базовый)",
+		badgeLabelRu: "Silver (Базовый)",
 		cashbackPercent: 3,
 		maxInvoiceCoveragePercent: 30,
 		minLifetimeSpentKop: 0, // 0 RUB
@@ -75,7 +75,7 @@ export const LOYALTY_TIER_PRESETS: readonly LoyaltyTierDefinition[] = [
 	{
 		id: "gold",
 		nameRu: "Золотой",
-		badgeLabelRu: "🥇 Gold (Премиум)",
+		badgeLabelRu: "Gold (Премиум)",
 		cashbackPercent: 5,
 		maxInvoiceCoveragePercent: 40,
 		minLifetimeSpentKop: 15000000, // 150,000 RUB
@@ -93,7 +93,7 @@ export const LOYALTY_TIER_PRESETS: readonly LoyaltyTierDefinition[] = [
 	{
 		id: "platinum",
 		nameRu: "Платиновый / VIP",
-		badgeLabelRu: "💎 Platinum (VIP)",
+		badgeLabelRu: "Platinum (VIP)",
 		cashbackPercent: 7,
 		maxInvoiceCoveragePercent: 50,
 		minLifetimeSpentKop: 40000000, // 400,000 RUB
@@ -112,7 +112,7 @@ export const LOYALTY_TIER_PRESETS: readonly LoyaltyTierDefinition[] = [
 	{
 		id: "family",
 		nameRu: "Семейный накопительный",
-		badgeLabelRu: "👨‍👩‍👧‍👦 Family (Семейный)",
+		badgeLabelRu: "Family (Семейный)",
 		cashbackPercent: 6,
 		maxInvoiceCoveragePercent: 35,
 		minLifetimeSpentKop: 5000000, // 50,000 RUB суммарно для семьи

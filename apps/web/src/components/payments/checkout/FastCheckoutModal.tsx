@@ -509,7 +509,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							title="Переключить крупный режим «Простая касса» для медсестры/кассира"
 							data-testid="toggle-simple-cashier-btn"
 						>
-							<span>👵 Простая касса</span>
+							<span>Простая касса</span>
 							<span className="text-[10px] opacity-90 font-mono">[{isSimpleCashierMode ? "Крупно" : "Сплит"}]</span>
 						</button>
 					</div>
@@ -641,7 +641,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									data-testid="simple-card-btn"
 								>
 									<CreditCard size={24} className="text-blue-600 dark:text-blue-400 shrink-0" />
-									<span>💳 Картой</span>
+									<span>Картой</span>
 								</button>
 
 								<button
@@ -655,7 +655,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									data-testid="simple-cash-btn"
 								>
 									<Banknote size={24} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>💵 Наличными</span>
+									<span>Наличными</span>
 								</button>
 
 								<button
@@ -669,7 +669,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									data-testid="simple-sbp-btn"
 								>
 									<QrCode size={24} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>📱 По QR-коду СБП</span>
+									<span>По QR-коду СБП</span>
 								</button>
 							</div>
 						) : (
@@ -912,7 +912,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<div className="flex items-center justify-between flex-wrap gap-1">
 								<span className="text-sm font-extrabold text-[var(--ink,#0f172a)] flex items-center gap-2">
 									<Coins size={20} className="text-emerald-600" />
-									<span>💵 Расчет сдачи с наличных:</span>
+									<span>Расчет сдачи с наличных:</span>
 								</span>
 								<span className="text-sm font-extrabold font-mono text-emerald-800 dark:text-emerald-300">
 									К оплате: {( (cashAmountRub > 0 ? cashAmountRub : targetBillRub) ).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
@@ -1103,7 +1103,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1 cursor-pointer transition-all shadow-xs"
 								title="Сбросить суммы и применить выбранный способ на весь чек"
 							>
-								<Zap size={13} /> ⚡ Исправить в 1 клик ({activeMethod ? CHECKOUT_PAYMENT_METHODS.find((m) => m.id === activeMethod)?.titleRu : "Картой"})
+								<Zap size={13} /> Исправить в 1 клик ({activeMethod ? CHECKOUT_PAYMENT_METHODS.find((m) => m.id === activeMethod)?.titleRu : "Картой"})
 							</button>
 						</div>
 					)}
@@ -1129,7 +1129,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							) : (
 								<>
 									<Check className="w-5 h-5" />
-									⚡ Пробить чек 54-ФЗ ({(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)
+									Пробить чек 54-ФЗ ({(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)
 								</>
 							)}
 						</button>

@@ -1,15 +1,25 @@
 import {
+	Activity,
 	AlertCircle,
 	ArrowLeft,
+	Camera,
 	Check,
+	CircleDot,
+	ClipboardList,
 	FileCode,
+	Layers,
+	LayoutGrid,
 	Loader2,
 	Mic,
+	Microscope,
 	Play,
 	Plus,
 	Scan,
+	ShieldCheck,
 	Sparkles,
 	Stethoscope,
+	Syringe,
+	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -132,13 +142,13 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 ];
 
 const QUICK_PROCEDURE_TEMPLATES = [
-	{ id: "anesthesia", label: "Анестезия Артикаин 1:100 000 (1.7 мл)", category: "anesthesia", icon: "💉" },
-	{ id: "cofferdam", label: "Изоляция операционного поля (Коффердам)", category: "isolation", icon: "🛡️" },
-	{ id: "prep", label: "Препарирование твёрдых тканей зуба", category: "therapy", icon: "⚡" },
-	{ id: "composite", label: "Пломбирование светоотверждаемым композитом", category: "therapy", icon: "✨" },
-	{ id: "fluoridation", label: "Глубокое фторирование эмали и дентина", category: "prevention", icon: "🔬" },
-	{ id: "polishing", label: "Шлифовка и финишная полировка пломбы", category: "therapy", icon: "💎" },
-	{ id: "xray", label: "Контрольный радиовизиографический снимок", category: "xray", icon: "📸" },
+	{ id: "anesthesia", label: "Анестезия Артикаин 1:100 000 (1.7 мл)", category: "anesthesia", icon: "anesthesia" },
+	{ id: "cofferdam", label: "Изоляция операционного поля (Коффердам)", category: "isolation", icon: "cofferdam" },
+	{ id: "prep", label: "Препарирование твёрдых тканей зуба", category: "therapy", icon: "prep" },
+	{ id: "composite", label: "Пломбирование светоотверждаемым композитом", category: "therapy", icon: "composite" },
+	{ id: "fluoridation", label: "Глубокое фторирование эмали и дентина", category: "prevention", icon: "fluoridation" },
+	{ id: "polishing", label: "Шлифовка и финишная полировка пломбы", category: "therapy", icon: "polishing" },
+	{ id: "xray", label: "Контрольный радиовизиографический снимок", category: "xray", icon: "xray" },
 ];
 
 export function ChairsiderPerspectiveView() {
@@ -539,7 +549,7 @@ export function ChairsiderPerspectiveView() {
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 								>
-									<span className="text-base sm:text-sm">🦷</span>
+									<CircleDot size={14} className="shrink-0" />
 									<span><span className="hidden sm:inline">Анатомическая </span>Дуга</span>
 								</button>
 								<button
@@ -552,7 +562,7 @@ export function ChairsiderPerspectiveView() {
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 								>
-									<span className="text-base sm:text-sm">🔲</span>
+									<LayoutGrid size={14} className="shrink-0" />
 									<span>Плитки</span>
 								</button>
 								<button
@@ -565,7 +575,7 @@ export function ChairsiderPerspectiveView() {
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 								>
-									<span className="text-base sm:text-sm">📊</span>
+									<Activity size={14} className="shrink-0" />
 									<span><span className="sm:hidden">Перио</span><span className="hidden sm:inline">Пародонтограмма</span></span>
 								</button>
 							</div>
@@ -576,7 +586,7 @@ export function ChairsiderPerspectiveView() {
 							<div className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl flex flex-col gap-3 text-slate-100">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
-										<span className="text-lg">📊</span>
+										<Activity className="w-5 h-5 text-emerald-400 shrink-0" />
 										<span className="text-sm font-bold text-emerald-400">Пародонтальный скрининг PSR (СтАР 2017)</span>
 									</div>
 									<span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold">
@@ -848,7 +858,7 @@ export function ChairsiderPerspectiveView() {
 						>
 							<div className="flex items-center justify-between w-full gap-2">
 								<span className="flex items-center gap-1.5 font-bold text-xs text-rose-800 dark:text-rose-300">
-									<span className="text-sm shrink-0">📋</span>
+									<ClipboardList size={16} className="shrink-0" />
 									<span>Эндодонтия</span>
 								</span>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-600 text-white font-black shrink-0">
@@ -870,7 +880,7 @@ export function ChairsiderPerspectiveView() {
 						>
 							<div className="flex items-center justify-between w-full gap-2">
 								<span className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink)]">
-									<span className="text-sm shrink-0">🦷</span>
+									<Layers size={16} className="shrink-0" />
 									<span>Зуботехника</span>
 								</span>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-black shrink-0">
@@ -969,7 +979,13 @@ export function ChairsiderPerspectiveView() {
 											}`}
 										>
 											<span className="flex items-center gap-2 truncate">
-												<span className="text-sm shrink-0">{proc.icon}</span>
+												{proc.id === "anesthesia" && <Syringe size={14} className="text-teal-600 shrink-0" />}
+												{proc.id === "cofferdam" && <ShieldCheck size={14} className="text-blue-600 shrink-0" />}
+												{proc.id === "prep" && <Zap size={14} className="text-amber-600 shrink-0" />}
+												{proc.id === "composite" && <Sparkles size={14} className="text-indigo-600 shrink-0" />}
+												{proc.id === "fluoridation" && <Microscope size={14} className="text-purple-600 shrink-0" />}
+												{proc.id === "polishing" && <Sparkles size={14} className="text-emerald-600 shrink-0" />}
+												{proc.id === "xray" && <Camera size={14} className="text-sky-600 shrink-0" />}
 												<span className="leading-tight truncate">{proc.label}</span>
 											</span>
 											{isApplied ? (

@@ -46,8 +46,8 @@ export const VISIOGRAPH_WINDOW_PRESETS: Record<
 	bone: {
 		id: "bone",
 		label: "Костная ткань",
-		shortLabel: "🦴 Кость",
-		icon: "🦴",
+		shortLabel: "Кость",
+		icon: "bone",
 		description: "Плотность альвеолярного гребня и кортикальной пластинки (WW 2000, WL 500)",
 		windowWidth: 2000,
 		windowCenter: 500,
@@ -56,8 +56,8 @@ export const VISIOGRAPH_WINDOW_PRESETS: Record<
 	enamel_dentin: {
 		id: "enamel_dentin",
 		label: "Эмаль / Дентин",
-		shortLabel: "🦷 Зубы",
-		icon: "🦷",
+		shortLabel: "Зубы",
+		icon: "tooth",
 		description: "Высокоплотные структуры эмали, дентина и коронок (WW 4000, WL 1500)",
 		windowWidth: 4000,
 		windowCenter: 1500,
@@ -66,8 +66,8 @@ export const VISIOGRAPH_WINDOW_PRESETS: Record<
 	soft_tissue: {
 		id: "soft_tissue",
 		label: "Мягкие ткани / Десна",
-		shortLabel: "🧠 Ткани",
-		icon: "🧠",
+		shortLabel: "Ткани",
+		icon: "tissue",
 		description: "Десневой контур, слизистая и мягкотканные образования (WW 400, WL 40)",
 		windowWidth: 400,
 		windowCenter: 40,
@@ -76,8 +76,8 @@ export const VISIOGRAPH_WINDOW_PRESETS: Record<
 	endodontic_canal: {
 		id: "endodontic_canal",
 		label: "Эндодонтический канал / Апекс",
-		shortLabel: "🔬 Эндо / Апекс",
-		icon: "🔬",
+		shortLabel: "Эндо / Апекс",
+		icon: "microscope",
 		description: "Корневые каналы, верхушечные периодонтиты и апексы (WW 1500, WL 300)",
 		windowWidth: 1500,
 		windowCenter: 300,

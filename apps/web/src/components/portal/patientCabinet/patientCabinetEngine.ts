@@ -546,12 +546,12 @@ export function generateQrCodeSvg(content: string, options?: { size?: number; ma
 
 export function formatRubles(rub: number): string {
 	const whole = Math.round(rub);
-	return whole.toLocaleString("ru-RU") + " ₽";
+	return whole.toLocaleString("ru-RU") + "\u00A0₽";
 }
 
 export function formatKopecksToRub(kopecks: number): string {
 	const rub = kopecks / 100;
-	return rub.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₽";
+	return rub.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "\u00A0₽";
 }
 
 export function formatRussianDateIso(isoDate: string): string {

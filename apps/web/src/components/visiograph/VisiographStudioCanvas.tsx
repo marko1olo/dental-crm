@@ -662,7 +662,7 @@ export function VisiographStudioCanvas({
 							cursor: "pointer",
 						}}
 					>
-						🦴 Кость
+						Кость
 					</button>
 					<button
 						type="button"
@@ -677,7 +677,7 @@ export function VisiographStudioCanvas({
 							cursor: "pointer",
 						}}
 					>
-						🦷 Эмаль
+						Эмаль
 					</button>
 					<button
 						type="button"
@@ -693,7 +693,7 @@ export function VisiographStudioCanvas({
 							fontWeight: params.invert ? 600 : 400,
 						}}
 					>
-						🔄 Негатив
+						Негатив
 					</button>
 
 					<button

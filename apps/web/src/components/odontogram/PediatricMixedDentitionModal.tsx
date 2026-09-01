@@ -324,8 +324,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-200"
 						}`}
 					>
-						<span className="hidden sm:inline">📅 Сроки смены (6–12 лет)</span>
-						<span className="sm:hidden">📅 Сроки смены</span>
+						<span className="hidden sm:inline">Сроки смены (6–12 лет)</span>
+						<span className="sm:hidden">Сроки смены</span>
 					</button>
 
 					<button
@@ -337,8 +337,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-200"
 						}`}
 					>
-						<span className="hidden sm:inline">📊 Cariogram (Риск кариеса)</span>
-						<span className="sm:hidden">📊 Cariogram</span>
+						<span className="hidden sm:inline">Cariogram (Риск кариеса)</span>
+						<span className="sm:hidden">Cariogram</span>
 					</button>
 
 					<button
@@ -350,8 +350,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-200"
 						}`}
 					>
-						<span className="hidden sm:inline">🦷 Резорбция корней (0–100%)</span>
-						<span className="sm:hidden">🦷 Резорбция</span>
+						<span className="hidden sm:inline">Резорбция корней (0–100%)</span>
+						<span className="sm:hidden">Резорбция</span>
 					</button>
 
 					<button
@@ -363,7 +363,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-200"
 						}`}
 					>
-						♡ Шкала Frankl
+						<span>Шкала Frankl</span>
 					</button>
 				</div>
 

@@ -4,6 +4,7 @@ import {
 	AlertTriangle,
 	Banknote,
 	Calculator,
+	CircleDot,
 	Coins,
 	CreditCard,
 	History,
@@ -862,7 +863,7 @@ export const OdontogramModule = ({
 							title="Постоянный прикус взрослого человека: зубы 11–48 (32 зуба)"
 							data-testid="switch-adult-dentition-btn"
 						>
-							<span className="text-lg">🦷</span>
+							<CircleDot size={18} />
 							<span>Взрослый прикус (11–48)</span>
 						</button>
 						<button
@@ -876,7 +877,7 @@ export const OdontogramModule = ({
 							title="Детский сменный / молочный прикус: зубы 51–85 (20 зубов)"
 							data-testid="switch-pediatric-dentition-btn"
 						>
-							<span className="text-lg">👶</span>
+							<Sparkles size={18} />
 							<span>Детский прикус (51–85)</span>
 						</button>
 					</div>
@@ -1371,7 +1372,7 @@ export const OdontogramModule = ({
 				<div className="w-full flex flex-col gap-3 mt-2 p-4 bg-slate-900 border border-slate-700 rounded-xl animate-in fade-in duration-200 text-slate-100">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
-							<span className="text-lg">🦷</span>
+							<Activity size={18} className="text-emerald-400" />
 							<span className="text-sm font-bold text-emerald-400">Пародонтальный статус (PSR / Интактный пародонт)</span>
 						</div>
 						<span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold">

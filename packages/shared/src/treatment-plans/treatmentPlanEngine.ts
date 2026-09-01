@@ -821,8 +821,8 @@ function escapeHtml(str: unknown): string {
 function formatRublesFromKopecks(kopecks: Kopecks): string {
 	const whole = Math.trunc(kopecks / 100);
 	const frac = Math.abs(kopecks % 100);
-	const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-	return `${grouped},${String(frac).padStart(2, "0")} ₽`;
+	const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+	return `${grouped},${String(frac).padStart(2, "0")}\u00A0₽`;
 }
 
 function convertKopecksToRussianWords(kopecks: Kopecks): string {

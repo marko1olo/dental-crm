@@ -41,6 +41,7 @@ import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { RadialToothMenu } from "./RadialToothMenu";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { ToothContextDrawer } from "../diagnostic/ToothContextDrawer";
+import { showToast } from "../GlobalToast";
 
 export interface OdontogramViewOption {
 	mode: OdontogramViewMode;
@@ -268,6 +269,10 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					for (const t of intent.teethUpdates) {
 						onQuickStateChange([t.toothNumber], t.state, t.surfaces);
 					}
+					const summary = intent.teethUpdates
+						.map((t) => `Зуб ${t.toothNumber}: ${t.state}`)
+						.join(", ");
+					showToast(`Голос: ${summary}`, "success");
 				}
 			},
 		});
@@ -716,7 +721,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								data-testid="btn-cancel-sanitation"
 							>
 								<X size={20} />
-								<span>❌ Отмена (Оставить всё как есть)</span>
+								<span>Отмена (Оставить всё как есть)</span>
 							</button>
 							<button
 								type="button"
@@ -731,7 +736,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								data-testid="btn-confirm-sanitation"
 							>
 								<Trash2 size={20} />
-								<span>🗑️ Да, удалить данные</span>
+								<span>Да, удалить данные</span>
 							</button>
 						</div>
 					</div>

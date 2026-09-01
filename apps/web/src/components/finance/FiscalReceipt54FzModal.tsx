@@ -2170,7 +2170,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									contractNumber={contractNumber}
 									contractDate={oneCDocDate}
 									variant="primary"
-									label="⚡ Экспорт в 1С (XML)"
+									label="Экспорт в 1С (XML)"
 									className="h-9 px-5 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white"
 								/>
 							</div>

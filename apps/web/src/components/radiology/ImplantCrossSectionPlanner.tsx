@@ -194,14 +194,14 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
 
   const handleCopyDiary = () => {
     navigator.clipboard.writeText(audit.form043DiaryText);
-    showToast("✅ Протокол операции скопирован в буфер для Формы 043/у!");
+    showToast("Протокол операции скопирован в буфер для Формы 043/у.");
   };
 
   const handleAddToTreatmentPlan = () => {
     if (onPlanApproved) {
       onPlanApproved(audit);
     }
-    showToast("✅ Установка " + currentSpec.brandName + " " + currentSpec.lineName + " добавлена в план лечения!");
+    showToast("Установка " + currentSpec.brandName + " " + currentSpec.lineName + " добавлена в план лечения.");
   };
 
   const handleResetCenter = () => {
@@ -287,7 +287,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
           )}
           <span>{audit.nerveSafety.clinicalMessageRu}</span>
         </div>
-        <div className="text-xs font-bold px-2.5 py-1 rounded-md bg-white/70 backdrop-blur-sm shadow-sm">
+        <div className="text-xs font-bold px-2.5 py-1 rounded-md bg-[var(--paper-strong)]/85 text-[var(--ink)] border border-[var(--line)] backdrop-blur-sm shadow-sm">
           Дистанция: {audit.nerveSafety.netClearanceToCanalWallMm.toFixed(1)} мм
         </div>
       </div>

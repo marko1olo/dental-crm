@@ -243,7 +243,10 @@ export const PatientWhatsappSendPanel: React.FC<
 						onClick={() => applyTemplate("reminder")}
 						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
-						<span>🔔 Напоминание</span>
+						<span className="flex items-center gap-1">
+							<Calendar size={12} className="text-amber-400" />
+							<span>Напоминание</span>
+						</span>
 						<span className="text-[10px] text-zinc-500 font-normal truncate">
 							{upcomingAppointment ? "К визиту" : "Плановый приём"}
 						</span>
@@ -254,7 +257,10 @@ export const PatientWhatsappSendPanel: React.FC<
 						onClick={() => applyTemplate("confirmation")}
 						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
-						<span>✅ Подтверждение</span>
+						<span className="flex items-center gap-1">
+							<CheckCircle2 size={12} className="text-emerald-400" />
+							<span>Подтверждение</span>
+						</span>
 						<span className="text-[10px] text-zinc-500 font-normal truncate">
 							Ответ ДА / НЕТ
 						</span>
@@ -265,7 +271,10 @@ export const PatientWhatsappSendPanel: React.FC<
 						onClick={() => applyTemplate("hygiene")}
 						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
-						<span>✨ Профгигиена</span>
+						<span className="flex items-center gap-1">
+							<Sparkles size={12} className="text-cyan-400" />
+							<span>Профгигиена</span>
+						</span>
 						<span className="text-[10px] text-zinc-500 font-normal truncate">
 							Раз в 6 месяцев
 						</span>
@@ -276,7 +285,10 @@ export const PatientWhatsappSendPanel: React.FC<
 						onClick={() => applyTemplate("checkup")}
 						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
 					>
-						<span>🦷 Осмотр</span>
+						<span className="flex items-center gap-1">
+							<Stethoscope size={12} className="text-purple-400" />
+							<span>Осмотр</span>
+						</span>
 						<span className="text-[10px] text-zinc-500 font-normal truncate">
 							После лечения
 						</span>

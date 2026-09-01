@@ -119,7 +119,7 @@ export const AspirationTestCockpit: React.FC<AspirationTestCockpitProps> = ({
 					}`}
 				>
 					<CheckCircle2 className="w-6 h-6 shrink-0" />
-					<span className="truncate">🟢 АСПИРАЦИОННАЯ ПРОБА: ОТРИЦАТЕЛЬНАЯ</span>
+					<span className="truncate">АСПИРАЦИОННАЯ ПРОБА: ОТРИЦАТЕЛЬНАЯ</span>
 				</button>
 
 				{/* POSITIVE ASPIRATION BUTTON */}
@@ -133,7 +133,7 @@ export const AspirationTestCockpit: React.FC<AspirationTestCockpitProps> = ({
 					}`}
 				>
 					<AlertOctagon className="w-6 h-6 shrink-0" />
-					<span className="truncate">🔴 ПОЛОЖИТЕЛЬНАЯ (Кровь в карпуле — СТОП)</span>
+					<span className="truncate">ПОЛОЖИТЕЛЬНАЯ (Кровь в карпуле — СТОП)</span>
 				</button>
 			</div>
 
@@ -165,7 +165,7 @@ export const AspirationTestCockpit: React.FC<AspirationTestCockpitProps> = ({
 						className="w-full py-2.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors min-h-[44px]"
 					>
 						<RotateCcw className="w-4 h-4" />
-						<span>✅ Карпула и игла заменены • Готов к повторной пробе</span>
+						<span>Карпула и игла заменены • Готов к повторной пробе</span>
 					</button>
 				</div>
 			)}
@@ -205,7 +205,7 @@ export const AspirationTestCockpit: React.FC<AspirationTestCockpitProps> = ({
 							>
 								<span className="font-bold">Попытка {att.attemptNumber}:</span>
 								<span>
-									{att.overallResult === 'positive' ? '🔴 Кровь в карпуле' : '🟢 Отрицательная'}
+									{att.overallResult === 'positive' ? 'Кровь в карпуле' : 'Отрицательная'}
 								</span>
 								<span className="text-[10px] text-zinc-400 font-mono">
 									{new Date(att.timestampIso).toLocaleTimeString([], {

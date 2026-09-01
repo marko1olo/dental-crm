@@ -637,7 +637,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						data-testid="btn-open-family-combined-billing"
 					>
 						<Sparkles size={15} className="animate-pulse" />
-						<span>⚡ Семейный расчет 54-ФЗ</span>
+						<span>Семейный расчет 54-ФЗ</span>
 					</button>
 				</div>
 			</div>

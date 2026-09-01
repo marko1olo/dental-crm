@@ -802,7 +802,7 @@ ${certs
 							data-testid="btn-execute-family-fiscal-checkout"
 						>
 							<Sparkles size={18} className="animate-pulse" />
-							<span>⚡ Пробить чек 54-ФЗ в 1 клик</span>
+							<span>Пробить чек 54-ФЗ в 1 клик</span>
 						</button>
 					</div>
 				</div>

@@ -350,7 +350,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 						</div>
 						<div className="ml-auto flex items-center gap-1 text-[var(--muted,#64748b)] text-[11px]">
 							<ShieldCheck size={13} className="text-[var(--ok-fg,#059669)]" />
-							<span>💾 Готов к синхронизации с Формой 043/у</span>
+							<span>Готов к синхронизации с Формой 043/у</span>
 						</div>
 					</div>
 
@@ -526,7 +526,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 											<select
 												value={selectedCanals}
 												onChange={(e) => setSelectedCanals(parseInt(e.target.value, 10) || 3)}
-												className="w-full px-2.5 py-2 min-h-[44px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-500"
+												className="w-full px-2.5 py-2 min-h-[44px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-500"
 											>
 												<option value={1}>1 канал</option>
 												<option value={2}>2 канала</option>
@@ -545,7 +545,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 														e.target.value as "single_visit_complete" | "access_instrumentation_temporary_calcium" | "final_obturation_restoration",
 													)
 												}
-												className="w-full px-2.5 py-2 min-h-[44px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-500"
+												className="w-full px-2.5 py-2 min-h-[44px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-500"
 											>
 												<option value="single_visit_complete">В 1 посещение</option>
 												<option value="access_instrumentation_temporary_calcium">
@@ -591,7 +591,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 											<select
 												value={selectedAnesthesiaTechnique}
 												onChange={(e) => setSelectedAnesthesiaTechnique(e.target.value as LocalAnesthesiaType)}
-												className="w-full px-2.5 py-2 min-h-[44px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+												className="w-full px-2.5 py-2 min-h-[44px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
 											>
 												<option value="infiltration">Инфильтрационная</option>
 												<option value="mandibular">Мандибулярная</option>
@@ -850,7 +850,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 										data-testid="apply-emr-protocol-btn"
 									>
 										<Sparkles className="w-4 h-4" />
-										<span>⚡ Применить в дневник 043/у (1 клик)</span>
+										<span>Применить в дневник 043/у (1 клик)</span>
 									</button>
 								</div>
 							</div>

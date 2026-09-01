@@ -470,7 +470,7 @@ export function OfflineFiscalBatchModal({
 							data-testid="btn-execute-batch-fiscalization"
 						>
 							<Sparkles className="w-5 h-5 animate-pulse" />
-							{isProcessing ? "Фискализация..." : "⚡ Пробить все чеки в 1 клик"}
+							{isProcessing ? "Фискализация..." : "Пробить все чеки в 1 клик"}
 						</button>
 					)}
 
@@ -607,7 +607,7 @@ export function OfflineFiscalBatchModal({
 									<Layers className="w-10 h-10 mx-auto mb-2 opacity-50" />
 									<div>Пакетная фискализация еще не выполнена.</div>
 									<div className="text-xs mt-1">
-										Нажмите кнопку «⚡ Пробить все чеки в 1 клик» на вкладке очереди.
+										Нажмите кнопку «Пробить все чеки в 1 клик» на вкладке очереди.
 									</div>
 								</div>
 							) : (
@@ -645,7 +645,7 @@ export function OfflineFiscalBatchModal({
 											{s.zReport && (
 												<details className="mt-2 text-xs">
 													<summary className="cursor-pointer text-[var(--muted)] hover:text-[var(--ink)] select-none">
-														📄 Показать чек Z-отчета
+														Показать чек Z-отчета
 													</summary>
 													<pre className="mt-2 p-2 rounded bg-black/80 text-emerald-400 font-mono text-[10px] overflow-x-auto">
 														{s.zReport.zReportTapeText80mm || s.zReport.zReportTapeText58mm}

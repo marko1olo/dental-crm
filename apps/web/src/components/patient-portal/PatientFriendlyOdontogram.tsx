@@ -21,6 +21,7 @@ import {
 	Award,
 	Check,
 	CheckCircle2,
+	Clock,
 	Filter,
 	Heart,
 	HelpCircle,
@@ -263,9 +264,9 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 			>
 				<span style={{ fontSize: "11px", fontWeight: 800, textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>{tooth.fdiCode}</span>
 				{tooth.status === "healthy" && <Check size={12} strokeWidth={3} />}
-				{tooth.status === "in_treatment" && <span style={{ fontSize: "10px" }}>⏳</span>}
-				{tooth.status === "needs_treatment" && <span style={{ fontSize: "10px" }}>⚠️</span>}
-				{tooth.status === "missing_or_implant" && <span style={{ fontSize: "10px" }}>🔩</span>}
+				{tooth.status === "in_treatment" && <Clock size={11} strokeWidth={2.5} />}
+				{tooth.status === "needs_treatment" && <AlertTriangle size={11} strokeWidth={2.5} />}
+				{tooth.status === "missing_or_implant" && <span style={{ fontSize: "10px", fontWeight: 800 }}>—</span>}
 			</button>
 		);
 	};

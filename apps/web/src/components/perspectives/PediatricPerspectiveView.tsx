@@ -488,7 +488,7 @@ export function PediatricPerspectiveView() {
 								<span>{activePatient?.fullName || "Ребёнок (Пациент не выбран)"}</span>
 							)}
 							<span className="text-sm font-bold text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/50 px-2.5 py-0.5 rounded-full border border-pink-500/30">
-								🧸 Детский возраст
+								Детский приём
 							</span>
 						</h1>
 					</div>
@@ -1045,7 +1045,7 @@ export function PediatricPerspectiveView() {
 									<span className="font-bold">Дата:</span> {new Date().toLocaleDateString("ru-RU")}
 								</div>
 								<div>
-									<span className="font-bold">Печать:</span> 🌟 Золотой Зубик
+									<span className="font-bold">Печать:</span> Золотой Зубик
 								</div>
 							</div>
 

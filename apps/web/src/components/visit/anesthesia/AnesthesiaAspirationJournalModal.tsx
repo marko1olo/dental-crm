@@ -48,6 +48,7 @@ import { AspirationTestCockpit } from './AspirationTestCockpit';
 import { AnesthesiaOnsetTimerWidget } from './AnesthesiaOnsetTimerWidget';
 import { AnesthesiaAnatomyMapWidget } from './AnesthesiaAnatomyMapWidget';
 import { showToast } from '../../GlobalToast';
+import { soundFeedback } from '../../../services/audio/SoundFeedbackService';
 
 export interface AnesthesiaAspirationJournalModalProps {
 	readonly isOpen: boolean;
@@ -156,22 +157,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 	const playCompletionSound = useCallback(() => {
 		if (!soundEnabled) return;
 		try {
-			const AudioContextClass =
-				window.AudioContext ||
-				(window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-			if (!AudioContextClass) return;
-			const ctx = new AudioContextClass();
-			const osc = ctx.createOscillator();
-			const gain = ctx.createGain();
-			osc.type = 'sine';
-			osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-			osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3); // A5
-			gain.gain.setValueAtTime(0.2, ctx.currentTime);
-			gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-			osc.connect(gain);
-			gain.connect(ctx.destination);
-			osc.start();
-			osc.stop(ctx.currentTime + 0.8);
+			void soundFeedback.playActionSuccess();
 		} catch {
 			// Silent fallback for restricted environments
 		}
@@ -401,10 +387,10 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 									}`}
 								>
 									{currentTechnique.vascularRiskTier === 'critical_high'
-										? '⚠️ Высокий сосудистый риск'
+										? 'Высокий сосудистый риск'
 										: currentTechnique.vascularRiskTier === 'moderate'
-											? '⚡ Умеренный риск'
-											: '🟢 Низкий риск'}
+											? 'Умеренный риск'
+											: 'Низкий риск'}
 								</span>
 							</div>
 							<p className="text-xs text-zinc-400 truncate">
@@ -801,7 +787,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 							}`}
 						>
 							<FileText className="w-4 h-4" />
-							<span>📝 Вставить в дневник Формы 043/у</span>
+							<span>Вставить в дневник Формы 043/у</span>
 						</button>
 					</div>
 				</div>
