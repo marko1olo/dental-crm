@@ -629,10 +629,17 @@ export class FamilyWalletService {
 			const memberPayments = familyPayments.filter((p) => p.patientId === member.id);
 			if (memberPayments.length === 0) continue;
 
-			let totalKopecks = 0;
+			let code1Kopecks = 0;
+			let code2Kopecks = 0;
 			for (const p of memberPayments) {
-				totalKopecks += parseKopecks(p.amountRub);
+				const kopecks = parseKopecks(p.amountRub);
+				if (p.taxDeductionCode === "2") {
+					code2Kopecks += kopecks;
+				} else {
+					code1Kopecks += kopecks;
+				}
 			}
+			const totalKopecks = code1Kopecks + code2Kopecks;
 			if (totalKopecks <= 0) continue;
 
 			// Kinship code: 1 = Self, 2 = Spouse, 3 = Parent, 4 = Child
@@ -698,13 +705,15 @@ export class FamilyWalletService {
 				payer: payerPerson,
 				patient: patientInfo,
 				expenses: {
-					code1AmountKopecks: totalKopecks, // Код 01 (стандартное лечение)
-					code2AmountKopecks: 0,
+					code1AmountKopecks: code1Kopecks,
+					code2AmountKopecks: code2Kopecks,
 				},
 				signatory,
 			};
 
 			const { xmlContent, fileName } = buildFnsKnd1151156Xml(fnsPayload);
+			const code01AmountRub = kopecksToRub(code1Kopecks);
+			const code02AmountRub = kopecksToRub(code2Kopecks);
 			const grandTotalRub = kopecksToRub(totalKopecks);
 
 			certificates.push({
@@ -717,8 +726,8 @@ export class FamilyWalletService {
 				patientFullName: member.fullName,
 				kinshipCode,
 				kinshipNameRu,
-				code01AmountRub: grandTotalRub,
-				code02AmountRub: 0,
+				code01AmountRub,
+				code02AmountRub,
 				grandTotalRub,
 				estimated13PercentRefundRub: Math.round(grandTotalRub * 0.13),
 				xmlPayload: xmlContent,

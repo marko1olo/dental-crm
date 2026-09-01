@@ -1663,6 +1663,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						.trim();
 					if (spec) setDiaryDoctorSpecialty(spec);
 				}
+				try {
+					localStorage.removeItem(localDiaryStorageKey);
+				} catch {
+					// ignore
+				}
 				showToast(
 					json?.reattached
 						? "Оттиск УКЭП прикреплён к отредактированному дневнику."
@@ -1671,6 +1676,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				);
 			} else if (res.status === 409) {
 				setIsLocked(true);
+				try {
+					localStorage.removeItem(localDiaryStorageKey);
+				} catch {
+					// ignore
+				}
 				// 409 AlreadyLocked: hash + lockedAt с сервера — печать 043/у
 				// не остаётся без даты подписи и без штампа ЭЦП.
 				if (typeof json?.hash === "string") setDiaryHash(json.hash);

@@ -37,10 +37,10 @@ import {
 
 describe("Patient Personal Portal - SBP QR Payments & Currency Formatting", () => {
 	it("formats rubles and kopecks accurately with Russian locale", () => {
-		assert.equal(formatRubles(35000), "35\u00A0000 ₽");
-		assert.equal(formatRubles(0), "0 ₽");
-		assert.equal(formatKopecksToRub(3500000), "35\u00A0000,00 ₽");
-		assert.equal(formatKopecksToRub(12550), "125,50 ₽");
+		assert.equal(formatRubles(35000), "35\u00A0000\u00A0₽");
+		assert.equal(formatRubles(0), "0\u00A0₽");
+		assert.equal(formatKopecksToRub(3500000), "35\u00A0000,00\u00A0₽");
+		assert.equal(formatKopecksToRub(12550), "125,50\u00A0₽");
 	});
 
 	it("generates deterministic NSPK SBP QR payload and SVG", () => {

@@ -209,7 +209,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			role="toolbar"
 			aria-label="Панель инструментов Romexis"
 			data-testid="cbct-left-tool-dock"
-			className={`w-[44px] min-w-[44px] max-w-[44px] h-full bg-[#09090b] border-r border-zinc-800 flex flex-col items-center py-2 px-0.5 shrink-0 select-none z-30 relative overflow-visible ${className}`}
+			className={`w-[48px] min-w-[48px] max-w-[48px] h-full bg-[#09090b] border-r border-zinc-800 flex flex-col items-center py-2 px-0.5 shrink-0 select-none z-30 relative overflow-visible ${className}`}
 		>
 			{/* Hidden file inputs as fallback triggers */}
 			<input
@@ -236,7 +236,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("crosshair")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "crosshair"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -264,7 +264,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("pan")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "pan"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -292,7 +292,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("zoom")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "zoom"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -320,7 +320,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("window_level")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "window_level"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -348,7 +348,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("rotate")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "rotate"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -384,7 +384,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("ruler")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "ruler"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -412,7 +412,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("angle")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "angle"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -440,7 +440,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("probe")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "probe"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -468,7 +468,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("nerve")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "nerve"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -497,7 +497,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={onToggleDentalArch}
-							className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+							className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 								showDentalArch
 									? "bg-purple-500/20 text-purple-300 border border-purple-500/60 shadow-xs shadow-purple-950/40"
 									: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-purple-500/40"
@@ -524,7 +524,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={onAutoDetectArch}
-							className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 bg-[#09090b] text-purple-300 hover:text-white hover:bg-purple-950/40 border border-zinc-800 hover:border-purple-500/80 shadow-xs"
+							className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 bg-[#09090b] text-purple-300 hover:text-white hover:bg-purple-950/40 border border-zinc-800 hover:border-purple-500/80 shadow-xs"
 							title="Сгенерировать дугу автоматически (по плотности эмали/кости)"
 							aria-label="Сгенерировать дугу автоматически"
 							data-testid="cbct-tool-auto-arch"
@@ -547,7 +547,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={() => onSelectStudioMode(studioMode === "implant" ? "diagnostic" : "implant")}
-							className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+							className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 								studioMode === "implant"
 									? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
 									: "bg-[#09090b] text-zinc-400 hover:text-amber-300 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/40"
@@ -579,7 +579,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => toggleMenu("slab")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "slab" || isSlabActive
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -735,7 +735,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => toggleMenu("hu")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "hu"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -821,7 +821,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={onToggleClearView}
-							className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+							className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 								isClearView
 									? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
 									: "bg-[#09090b] text-zinc-400 hover:text-white hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -850,7 +850,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={onToggleInvertColors}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							invertColors
 								? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-white hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -878,7 +878,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={onResetAll}
-						className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center bg-[#09090b] text-zinc-400 hover:text-amber-300 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 transition-all duration-150"
+						className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center bg-[#09090b] text-zinc-400 hover:text-amber-300 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 transition-all duration-150"
 						title="↺ Сброс осей, зума и панорамы"
 						aria-label="Сбросить оси и зум"
 						data-testid="cbct-tool-reset-all"
@@ -899,7 +899,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => toggleMenu("dicom")}
-						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							openMenu === "dicom"
 								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-[#09090b] text-zinc-400 hover:text-cyan-300 hover:bg-zinc-900 border border-zinc-800 hover:border-cyan-500/40"
@@ -928,10 +928,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								<button
 									type="button"
 									onClick={() => setOpenMenu("none")}
-									className="min-h-[36px] min-w-[36px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+									className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
 									aria-label="Закрыть меню"
 								>
-									<X className="w-3.5 h-3.5" />
+									<X className="w-4 h-4" />
 								</button>
 							</div>
 

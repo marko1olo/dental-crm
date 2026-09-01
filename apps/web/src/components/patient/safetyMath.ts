@@ -55,6 +55,7 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasLidocaineAllergy?: boolean | undefined;
 	readonly hasArticaineAllergy?: boolean | undefined;
 	readonly hasMepivacaineAllergy?: boolean | undefined;
+	readonly hasEsterAnestheticsAllergy?: boolean | undefined;
 	readonly hasSulfiteAllergy?: boolean | undefined;
 	readonly hasAnaphylaxisHistory?: boolean | undefined;
 
@@ -678,8 +679,15 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 
 	const hasLidocaine =
 		raw.includes("лидокаин") ||
-		raw.includes("ксилокаин") ||
-		raw.includes("дикаин");
+		raw.includes("ксилокаин");
+
+	const hasEsterAnesthetics =
+		raw.includes("дикаин") ||
+		raw.includes("тетракаин") ||
+		raw.includes("новокаин") ||
+		raw.includes("прокаин") ||
+		raw.includes("анестезин") ||
+		raw.includes("бензокаин");
 
 	const hasMepivacaine =
 		raw.includes("мепивакаин") ||
@@ -845,6 +853,7 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		hasArticaineAllergy: hasArticaine,
 		hasLidocaineAllergy: hasLidocaine,
 		hasMepivacaineAllergy: hasMepivacaine,
+		hasEsterAnestheticsAllergy: hasEsterAnesthetics,
 		hasSulfiteAllergy: hasSulfites,
 		hasPacemakerExs: hasPacemaker,
 		takesBisphosphonates: hasBisphosphonates,
@@ -879,6 +888,7 @@ export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinical
 	if (profile.hasArticaineAllergy) allergies.push("Артикаин (Ультракаин)");
 	if (profile.hasLidocaineAllergy) allergies.push("Лидокаин");
 	if (profile.hasMepivacaineAllergy) allergies.push("Мепивакаин");
+	if (profile.hasEsterAnestheticsAllergy) allergies.push("Эфирные анестетики (Новокаин / Дикаин / Анестезин)");
 	if (profile.hasSulfiteAllergy) allergies.push("Сульфиты / метабисульфит");
 	if (profile.hasPenicillinAllergy) allergies.push("Пенициллины (Амоксиклав)");
 	if (profile.hasLatexAllergy) allergies.push("Латекс");

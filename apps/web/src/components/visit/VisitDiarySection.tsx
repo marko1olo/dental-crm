@@ -58,6 +58,7 @@ import {
 	VisitSummaryModal,
 } from "./VisitSummaryModal";
 import { ClinicalDiaryTemplatesModal } from "../emr/templates";
+import { PatientAllergySafetyBanner } from "../patient/PatientAllergySafetyBanner";
 import "../../styles/visit-diary-043.css";
 
 export interface VisitDiarySectionProps {
@@ -748,6 +749,30 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</div>
 			</div>
 
+			{/* ── Tier 1 Critical Somatic & Allergy Safety Banner (Pacemaker, Bisphosphonates, Anticoagulants, Anesthesia) ── */}
+			<div className="mb-2" data-testid="visit-diary-safety-banner-wrapper">
+				<PatientAllergySafetyBanner
+					patientId={patientId}
+					patientName={patientFullName}
+					profile={
+						(activePatient as any)?.clinicalSafetyProfile ||
+						(activePatient as any)?.allergies ||
+						diary.comorbidities
+					}
+					notes={diary.comorbidities}
+					compact={false}
+					onSyncToEmkDiary={(snippet) => {
+						setDiary((prev) => ({
+							...prev,
+							comorbidities: prev.comorbidities?.trim()
+								? `${prev.comorbidities.trim()}\n${snippet}`
+								: snippet,
+						}));
+						scheduleDebouncedSave();
+					}}
+				/>
+			</div>
+
 			{/* ── 1-Click Fast Clinical Presets Accordion (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (
 				<details
@@ -864,23 +889,56 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</summary>
 					<div className="pt-2.5">
 						<AnesthesiaQuickBar
-							patientWeightKg={70}
+							patientWeightKg={
+								typeof (activePatient as any)?.weightKg === "number" &&
+								(activePatient as any).weightKg > 0
+									? (activePatient as any).weightKg
+									: typeof (activePatient as any)?.administrativeProfile?.weightKg ===
+												"number" &&
+										(activePatient as any).administrativeProfile.weightKg > 0
+										? (activePatient as any).administrativeProfile.weightKg
+										: 70
+							}
 							targetToothNumberFdi={diary.diagnosisTooth || 16}
 							hasCardiovascularRisk={
+								Boolean(
+									(activePatient as any)?.clinicalSafetyProfile
+										?.hasCardiovascularDisease,
+								) ||
+								Boolean(
+									(activePatient as any)?.clinicalSafetyProfile
+										?.hasPacemakerExs,
+								) ||
+								Boolean(
+									(activePatient as any)?.clinicalSafetyProfile
+										?.hasHypertension,
+								) ||
 								diary.comorbidities?.toLowerCase().includes("сердц") ||
 								diary.comorbidities?.toLowerCase().includes("давлен") ||
 								diary.comorbidities?.toLowerCase().includes("ибс") ||
 								diary.comorbidities?.toLowerCase().includes("гипертон")
 							}
 							hasSulfiteAllergy={
+								Boolean(
+									(activePatient as any)?.clinicalSafetyProfile
+										?.hasSulfiteAllergy,
+								) ||
 								diary.comorbidities?.toLowerCase().includes("сульфит") ||
 								diary.comorbidities?.toLowerCase().includes("аллерги")
 							}
 							hasBronchialAsthma={
+								Boolean(
+									(activePatient as any)?.clinicalSafetyProfile
+										?.hasBronchialAsthma,
+								) ||
 								diary.comorbidities?.toLowerCase().includes("астм") ||
 								diary.comorbidities?.toLowerCase().includes("бронх")
 							}
 							isPregnantOrLactating={
+								((activePatient as any)?.clinicalSafetyProfile
+									?.pregnancyTrimester &&
+									(activePatient as any).clinicalSafetyProfile
+										.pregnancyTrimester !== "none") ||
 								diary.comorbidities?.toLowerCase().includes("беремен") ||
 								diary.comorbidities?.toLowerCase().includes("лактац")
 							}
@@ -1248,6 +1306,24 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					<label className="vde-043__label" htmlFor="vde-complications">
 						<AlertTriangle className="w-3 h-3 text-[var(--bad-fg,#b91c1c)]" />
 						Осложнения и сопутствующие заболевания
+						{!fieldsDisabled && (
+							<div className="vde-043__label-mic">
+								<SmartMicrophoneButton
+									context="visit"
+									sterileMode={false}
+									className="p-1"
+									onResult={(text) => {
+										setDiary((p) => ({
+											...p,
+											complications: p.complications
+												? `${p.complications} ${text}`
+												: text,
+										}));
+										scheduleDebouncedSave();
+									}}
+								/>
+							</div>
+						)}
 					</label>
 					<div className="vde-043__complications-grid">
 						<textarea
