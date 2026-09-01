@@ -5,7 +5,7 @@
 	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.1));
 	border-radius: 1.25rem;
 	padding: 1.25rem;
-	color: var(--ink-strong, #ffffff);
+	color: var(--ink);
 	display: flex;
 	flex-direction: column;
 	gap: 1.25rem;

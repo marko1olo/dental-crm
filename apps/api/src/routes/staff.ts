@@ -28,6 +28,7 @@ import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { getClinicSettingsFromDb } from "../db/settingsQuery.js";
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
+import { getRequestIdentity } from "../security/identity.js";
 
 interface ExtendedHrProfileStorage {
 	inn?: string | null | undefined;
@@ -42,70 +43,31 @@ interface ExtendedHrProfileStorage {
 	assignedChairIds?: string[] | undefined;
 	priceCategory?: string | undefined;
 	baseSalaryRub?: number | undefined;
-}
-
-function extractTokenClaims(token: string): Record<string, any> | null {
-	try {
-		const parts = token.split(".");
-		if (parts.length >= 2 && parts[1]) {
-			const payload = Buffer.from(parts[1], "base64").toString("utf8");
-			return JSON.parse(payload);
-		}
-		const decoded = Buffer.from(token, "base64").toString("utf8");
-		return JSON.parse(decoded);
-	} catch {
-		return null;
-	}
-}
-
-function getRequestOrgAndRole(request: FastifyRequest): {
-	orgId: string | null;
-	callerRole: string | null;
-	callerUserId: string | null;
-} {
-	const rawStaffToken = request.headers["x-dente-staff-token"];
-	const rawClinicToken = request.headers["x-dente-clinic-token"];
-	const tokenToParse =
-		typeof rawStaffToken === "string"
-			? rawStaffToken
-			: typeof rawClinicToken === "string"
-				? rawClinicToken
-				: null;
-
-	if (tokenToParse) {
-		const claims = extractTokenClaims(tokenToParse);
-		if (claims) {
-			return {
-				orgId: claims.organizationId || claims.orgId || null,
-				callerRole: claims.role || "owner",
-				callerUserId: claims.userId || claims.id || null,
-			};
-		}
-	}
-
-	// Fallback to query/body orgId or default org
-	const queryOrg = (request.query as { organizationId?: string })?.organizationId;
-	return {
-		orgId: queryOrg || null,
-		callerRole: "owner",
-		callerUserId: null,
-	};
+	passwordEntropyBits?: number | undefined;
 }
 
 async function resolveOrganizationId(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<{ orgId: string; callerRole: string; callerUserId: string | null } | null> {
-	const auth = getRequestOrgAndRole(request);
-	if (auth.orgId) {
+	const identity = getRequestIdentity(request);
+	if (identity.organizationId && identity.verified) {
 		return {
-			orgId: auth.orgId,
-			callerRole: auth.callerRole || "owner",
-			callerUserId: auth.callerUserId,
+			orgId: identity.organizationId,
+			callerRole: identity.role || "owner",
+			callerUserId: identity.userId,
 		};
 	}
 
-	// Read first active organization from database if none passed
+	if (identity.organizationId) {
+		return {
+			orgId: identity.organizationId,
+			callerRole: identity.role || "owner",
+			callerUserId: identity.userId,
+		};
+	}
+
+	// Fallback for development if no token provided
 	const [firstOrg] = await db
 		.select({ id: schema.organizations.id })
 		.from(schema.organizations)
@@ -122,7 +84,7 @@ async function resolveOrganizationId(
 	reply.code(401);
 	reply.send({
 		error: "Unauthorized",
-		message: "Не удалось определить организацию клиники.",
+		message: "Не удалось определить организацию клиники: поддельный или отсутствующий токен.",
 	});
 	return null;
 }
@@ -195,7 +157,12 @@ function assembleStaffProfile(
 		canManageImports: Boolean(user.canManageImports),
 		hasPinCode: Boolean(user.pinCodeHash),
 		hasPassword: Boolean(user.passwordHash),
-		passwordEntropyBits: user.passwordHash ? 64 : 0,
+		passwordEntropyBits:
+			hr.passwordEntropyBits !== undefined
+				? hr.passwordEntropyBits
+				: user.passwordHash
+					? 64
+					: 0,
 		lastLoginAt: user.createdAt?.toISOString ? user.createdAt.toISOString() : null,
 		currentSessionIp: user.currentSessionId ? "127.0.0.1 (активно)" : null,
 		currentSessionUserAgent: user.currentSessionId ? "DENTE Clinic Workstation" : null,
@@ -519,48 +486,52 @@ export async function registerStaffRoutes(app: FastifyInstance) {
 		// 7. Сборка обновленного хранилища HR
 		const updatedHrProfile: ExtendedHrProfileStorage = {
 			...existingHr,
-			inn: data.inn !== undefined ? data.inn : existingHr.inn,
+			inn: data.inn !== undefined ? data.inn : (existingHr.inn || null),
 			medicalBookNumber:
 				data.medicalBookNumber !== undefined
 					? data.medicalBookNumber
-					: existingHr.medicalBookNumber,
+					: (existingHr.medicalBookNumber || null),
 			medicalBookCheckupDate:
 				data.medicalBookCheckupDate !== undefined
 					? data.medicalBookCheckupDate
-					: existingHr.medicalBookCheckupDate,
+					: (existingHr.medicalBookCheckupDate || null),
 			minzdravAccreditationDate:
 				data.minzdravAccreditationDate !== undefined
 					? data.minzdravAccreditationDate
-					: existingHr.minzdravAccreditationDate,
+					: (existingHr.minzdravAccreditationDate || null),
 			minzdravAccreditationSpecialty:
 				data.minzdravAccreditationSpecialty !== undefined
 					? data.minzdravAccreditationSpecialty
-					: existingHr.minzdravAccreditationSpecialty,
+					: (existingHr.minzdravAccreditationSpecialty || null),
 			clinicalNotes:
 				data.clinicalNotes !== undefined
 					? data.clinicalNotes
-					: existingHr.clinicalNotes,
+					: (existingHr.clinicalNotes || null),
 			managementNotes: nextManagementNotes,
 			assignedBranches:
 				data.assignedBranches !== undefined
 					? data.assignedBranches
-					: existingHr.assignedBranches,
+					: (existingHr.assignedBranches || []),
 			assignedCabinetRooms:
 				data.assignedCabinetRooms !== undefined
 					? data.assignedCabinetRooms
-					: existingHr.assignedCabinetRooms,
+					: (existingHr.assignedCabinetRooms || []),
 			assignedChairIds:
 				data.assignedChairIds !== undefined
 					? data.assignedChairIds
-					: existingHr.assignedChairIds,
+					: (existingHr.assignedChairIds || []),
 			priceCategory:
 				data.priceCategory !== undefined
 					? data.priceCategory
-					: existingHr.priceCategory,
+					: (existingHr.priceCategory || "standard"),
 			baseSalaryRub:
 				data.baseSalaryRub !== undefined
 					? data.baseSalaryRub
-					: existingHr.baseSalaryRub,
+					: (existingHr.baseSalaryRub || 0),
+			passwordEntropyBits:
+				data.passwordEntropyBits !== undefined
+					? data.passwordEntropyBits
+					: existingHr.passwordEntropyBits,
 		};
 
 		// 8. Обновление таблицы `users`
