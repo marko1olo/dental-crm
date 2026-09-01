@@ -15,18 +15,116 @@ import {
 	buildCompactedSystemPrompt,
 	defaultCopilotActionManager,
 	defaultCopilotSessionStore,
+	defaultCopilotStreamManager,
 	defaultLlmProvider,
 	defaultSessionStore,
 	defaultToolRegistry,
+	defaultWhatsAppBridge,
 	formatSseEvent,
 	type AgentContext,
+	type DoctorScreenContext,
+	type ProactiveAlertCardData,
 	type TurnEvent,
+	type WhatsAppApprovalCardData,
 } from "../services/agent/index.js";
+import { defaultDaemonScheduler } from "../services/daemons/index.js";
+
+export function extractDoctorScreenContext(
+	text: string,
+	bodyContext?: unknown,
+): { doctorContext: DoctorScreenContext | null; cleanText: string } {
+	if (bodyContext && typeof bodyContext === "object") {
+		return {
+			doctorContext: bodyContext as DoctorScreenContext,
+			cleanText: text,
+		};
+	}
+
+	const headerMatch = text.match(/^\[UI Context:\s*([\s\S]*?)\](?:\r?\n)?/i);
+	if (!headerMatch) {
+		return { doctorContext: null, cleanText: text };
+	}
+
+	const rawHeader = headerMatch[0];
+	const headerBody = headerMatch[1] ?? "";
+
+	const viewMatch = headerBody.match(/View='([^']*)'/i);
+	const patientIdMatch = headerBody.match(/PatientId=(null|'[^']*')/i);
+	const activeToothMatch = headerBody.match(/ActiveTooth=(null|[0-9]+|'[^']*')/i);
+	const activeDoctorMatch = headerBody.match(/ActiveDoctor=(null|'[^']*')/i);
+	const toothFormulaMatch = headerBody.match(/ToothFormula='([^']*)'/i);
+	const diagnosesMatch = headerBody.match(/Diagnoses='([^']*)'/i);
+	const form043Match = headerBody.match(/Form043='([^']*)'/i);
+	const allergiesMatch = headerBody.match(/Allergies='([^']*)'/i);
+
+	const patientId =
+		patientIdMatch?.[1] && patientIdMatch[1] !== "null"
+			? patientIdMatch[1].replace(/^'|'$/g, "").replace(/\\'/g, "'")
+			: null;
+
+	let activeTooth: number | string | null = null;
+	if (activeToothMatch?.[1] && activeToothMatch[1] !== "null") {
+		const unquoted = activeToothMatch[1]
+			.replace(/^'|'$/g, "")
+			.replace(/\\'/g, "'");
+		const num = Number(unquoted);
+		activeTooth = !Number.isNaN(num) && num > 0 ? num : unquoted;
+	}
+
+	const activeDoctor =
+		activeDoctorMatch?.[1] && activeDoctorMatch[1] !== "null"
+			? activeDoctorMatch[1].replace(/^'|'$/g, "").replace(/\\'/g, "'")
+			: null;
+
+	let toothFormula: Record<string, string> | undefined = undefined;
+	if (toothFormulaMatch?.[1]) {
+		try {
+			toothFormula = JSON.parse(toothFormulaMatch[1].replace(/\\'/g, "'"));
+		} catch {}
+	}
+
+	let diagnosesByTooth: Record<string, string> | undefined = undefined;
+	if (diagnosesMatch?.[1]) {
+		try {
+			diagnosesByTooth = JSON.parse(diagnosesMatch[1].replace(/\\'/g, "'"));
+		} catch {}
+	}
+
+	let clinical043Context: Record<string, string> | undefined = undefined;
+	if (form043Match?.[1]) {
+		try {
+			clinical043Context = JSON.parse(form043Match[1].replace(/\\'/g, "'"));
+		} catch {}
+	}
+
+	let allergies: string[] | undefined = undefined;
+	if (allergiesMatch?.[1]) {
+		try {
+			allergies = JSON.parse(allergiesMatch[1].replace(/\\'/g, "'"));
+		} catch {}
+	}
+
+	const doctorContext: DoctorScreenContext = {
+		view: viewMatch?.[1] || null,
+		patientId,
+		activeTooth,
+		activeDoctor,
+		toothFormula: toothFormula ?? null,
+		diagnosesByTooth: diagnosesByTooth ?? null,
+		clinical043Context: (clinical043Context as any) ?? null,
+		allergies: allergies ?? null,
+	};
+
+	const cleanText = text.slice(rawHeader.length).trimStart();
+	return { doctorContext, cleanText };
+}
 
 const messageBodySchema = z.object({
 	content: z.string().optional(),
 	message: z.string().optional(),
 	text: z.string().optional(),
+	uiContext: z.record(z.unknown()).optional(),
+	context: z.record(z.unknown()).optional(),
 });
 
 const confirmationBodySchema = z.object({
@@ -56,6 +154,31 @@ const getMessagesQuerySchema = z.object({
 	limit: z.coerce.number().min(1).max(200).optional(),
 	offset: z.coerce.number().min(0).optional(),
 	order: z.enum(["asc", "desc"]).optional(),
+});
+
+const ztlScanBodySchema = z.object({
+	organizationId: z.string().uuid().optional(),
+	lookAheadHours: z.number().min(1).max(168).optional(),
+});
+
+const emrSaviorBodySchema = z.object({
+	organizationId: z.string().uuid().optional(),
+	targetDate: z.string().optional(),
+});
+
+const retentionScanBodySchema = z.object({
+	organizationId: z.string().uuid().optional(),
+});
+
+const gapFillerBodySchema = z.object({
+	cancelledAppointmentId: z.string().uuid(),
+	organizationId: z.string().uuid().optional(),
+	maxCandidates: z.number().min(1).max(20).optional(),
+});
+
+const proactiveAlertsQuerySchema = z.object({
+	organizationId: z.string().uuid().optional(),
+	liveScan: z.enum(["true", "false"]).optional(),
 });
 
 const DENTE_COPILOT_SYSTEM_PROMPT = `Вы — высококвалифицированный клинический AI-ассистент DENTE для стоматологов и администраторов клиник.
@@ -264,6 +387,11 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				})
 				.catch(() => {});
 
+			const { doctorContext, cleanText } = extractDoctorScreenContext(
+				userText,
+				parsedBody.data.uiContext ?? parsedBody.data.context,
+			);
+
 			// Setup SSE headers
 			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
 			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
@@ -282,6 +410,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				permissions: [...PERMISSIONS],
 				tools: defaultToolRegistry,
 				db,
+				...(doctorContext ? { metadata: { doctorContext } } : {}),
 			};
 
 			let assistantText = "";
@@ -294,6 +423,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			const effectiveSystemPrompt = buildCompactedSystemPrompt(
 				DENTE_COPILOT_SYSTEM_PROMPT,
 				sessionRecord?.summary,
+				doctorContext,
 			);
 
 			try {
@@ -417,6 +547,12 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				})
 				.catch(() => {});
 
+			const rawBody = body as { uiContext?: unknown; context?: unknown };
+			const { doctorContext, cleanText } = extractDoctorScreenContext(
+				userText,
+				rawBody.uiContext ?? rawBody.context,
+			);
+
 			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
 			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
 			reply.raw.setHeader("Connection", "keep-alive");
@@ -433,6 +569,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 				permissions: [...PERMISSIONS],
 				tools: defaultToolRegistry,
 				db,
+				...(doctorContext ? { metadata: { doctorContext } } : {}),
 			};
 
 			let assistantText = "";
@@ -444,6 +581,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			const effectiveSystemPrompt = buildCompactedSystemPrompt(
 				DENTE_COPILOT_SYSTEM_PROMPT,
 				sessionRecord?.summary,
+				doctorContext,
 			);
 
 			try {
@@ -1262,4 +1400,455 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			}
 		},
 	);
+
+	// =========================================================================
+	// SERVER-INITIATED PROACTIVE MESSAGES & SSE STREAM HUB
+	// =========================================================================
+
+	// GET /api/v1/copilot/stream — Persistent SSE connection for proactive alerts & HitL
+	const handleCopilotProactiveStream = async (
+		request: any,
+		reply: any,
+	) => {
+		const resolvedOrgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"copilot proactive stream",
+		);
+		if (!resolvedOrgId) return;
+
+		const identity = getRequestIdentity(request);
+		const userId = identity.userId ?? undefined;
+		const query = (request.query as Record<string, string>) || {};
+		const sessionId = query.sessionId || undefined;
+		const subscriberId = `sub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+		// Setup SSE Headers
+		reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+		reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+		reply.raw.setHeader("Connection", "keep-alive");
+		reply.raw.setHeader("X-Accel-Buffering", "no");
+		reply.raw.flushHeaders?.();
+
+		// Initial connection handshake
+		const welcomeChunk = formatSseEvent({
+			type: "connected",
+			subscriberId,
+			organizationId: resolvedOrgId,
+			timestamp: new Date().toISOString(),
+		});
+		reply.raw.write(welcomeChunk);
+
+		// Stream existing active proactive alerts for this tenant on connect
+		const activeAlerts = defaultWhatsAppBridge
+			.getHitLQueue()
+			.listProactiveAlerts(resolvedOrgId);
+		for (const alert of activeAlerts) {
+			reply.raw.write(formatSseEvent({ type: "proactive_alert", data: alert }));
+		}
+
+		// Register subscriber in CopilotStreamManager
+		const unsubscribe = defaultCopilotStreamManager.subscribe({
+			id: subscriberId,
+			organizationId: resolvedOrgId,
+			userId,
+			sessionId,
+			send: (chunk: string) => {
+				try {
+					if (!reply.raw.writableEnded && !reply.raw.destroyed) {
+						reply.raw.write(chunk);
+						return true;
+					}
+					return false;
+				} catch {
+					return false;
+				}
+			},
+			close: () => {
+				try {
+					if (!reply.raw.writableEnded) reply.raw.end();
+				} catch {}
+			},
+		});
+
+		// 20-second heartbeat to keep SSE alive
+		const heartbeatTimer = setInterval(() => {
+			try {
+				if (!reply.raw.writableEnded && !reply.raw.destroyed) {
+					reply.raw.write(`: ping ${Date.now()}\n\n`);
+				} else {
+					clearInterval(heartbeatTimer);
+					unsubscribe();
+				}
+			} catch {
+				clearInterval(heartbeatTimer);
+				unsubscribe();
+			}
+		}, 20000);
+
+		request.raw.on("close", () => {
+			clearInterval(heartbeatTimer);
+			unsubscribe();
+		});
+	};
+
+	server.get(
+		"/api/v1/copilot/stream",
+		{ config: { tenantTxSelfManaged: true } },
+		handleCopilotProactiveStream,
+	);
+
+	server.post(
+		"/api/v1/copilot/stream",
+		{ config: { tenantTxSelfManaged: true } },
+		handleCopilotProactiveStream,
+	);
+
+	// GET /api/v1/copilot/proactive/pending — List active emergency alerts & HitL cards
+	server.get(
+		"/api/v1/copilot/proactive/pending",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot list proactive pending",
+			);
+			if (!resolvedOrgId) return;
+
+			const queue = defaultWhatsAppBridge.getHitLQueue();
+			const alerts = queue.listProactiveAlerts(resolvedOrgId);
+			const hitlCards = queue.listPendingCards(resolvedOrgId);
+
+			return reply.send({
+				ok: true,
+				alerts,
+				hitlCards,
+			});
+		},
+	);
+
+	// POST /api/v1/copilot/proactive/approve — 1-Click Approve WhatsApp/HitL message
+	server.post<{
+		Body: {
+			approvalId: string;
+			modifiedReply?: string;
+			sendNow?: boolean;
+		};
+	}>(
+		"/api/v1/copilot/proactive/approve",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot approve proactive card",
+			);
+			if (!resolvedOrgId) return;
+
+			const { approvalId, modifiedReply, sendNow } = request.body || {};
+			if (!approvalId) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Не указан approvalId",
+				});
+			}
+
+			try {
+				const queue = defaultWhatsAppBridge.getHitLQueue();
+				const approveOptions: { modifiedReply?: string; sendNow?: boolean } = {};
+				if (modifiedReply !== undefined) approveOptions.modifiedReply = modifiedReply;
+				if (sendNow !== undefined) approveOptions.sendNow = sendNow;
+				const result = await queue.approveCard(approvalId, resolvedOrgId, approveOptions);
+
+				// Broadcast resolution to active copilot streams
+				defaultCopilotStreamManager.broadcastToOrganization(
+					resolvedOrgId,
+					"proactive_alert_resolved",
+					{
+						id: approvalId,
+						status: "approved",
+						sent: result.sent,
+					},
+				);
+
+				return reply.send(result);
+			} catch (err: unknown) {
+				const errMsg = err instanceof Error ? err.message : String(err);
+				return reply.code(404).send({
+					error: "ApprovalError",
+					message: errMsg,
+				});
+			}
+		},
+	);
+
+	// POST /api/v1/copilot/proactive/reject — 1-Click Reject WhatsApp/HitL card
+	server.post<{
+		Body: {
+			approvalId: string;
+			reason?: string;
+		};
+	}>(
+		"/api/v1/copilot/proactive/reject",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot reject proactive card",
+			);
+			if (!resolvedOrgId) return;
+
+			const { approvalId, reason } = request.body || {};
+			if (!approvalId) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Не указан approvalId",
+				});
+			}
+
+			try {
+				const queue = defaultWhatsAppBridge.getHitLQueue();
+				const result = await queue.rejectCard(
+					approvalId,
+					resolvedOrgId,
+					reason,
+				);
+
+				// Broadcast resolution to active copilot streams
+				defaultCopilotStreamManager.broadcastToOrganization(
+					resolvedOrgId,
+					"proactive_alert_resolved",
+					{
+						id: approvalId,
+						status: "rejected",
+						reason,
+					},
+				);
+
+				return reply.send(result);
+			} catch (err: unknown) {
+				const errMsg = err instanceof Error ? err.message : String(err);
+				return reply.code(404).send({
+					error: "RejectionError",
+					message: errMsg,
+				});
+			}
+		},
+	);
+
+	// POST /api/v1/copilot/proactive/dismiss-alert — Dismiss proactive alert card
+	server.post<{
+		Body: {
+			alertId: string;
+		};
+	}>(
+		"/api/v1/copilot/proactive/dismiss-alert",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot dismiss proactive alert",
+			);
+			if (!resolvedOrgId) return;
+
+			const { alertId } = request.body || {};
+			if (!alertId) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Не указан alertId",
+				});
+			}
+
+			const deleted = defaultWhatsAppBridge
+				.getHitLQueue()
+				.dismissProactiveAlert(alertId);
+
+			defaultCopilotStreamManager.broadcastToOrganization(
+				resolvedOrgId,
+				"proactive_alert_dismissed",
+				{ alertId },
+			);
+
+			return reply.send({ ok: true, deleted });
+		},
+	);
+
+	// POST /api/v1/copilot/proactive/trigger-triage — Trigger Triage on message
+	server.post<{
+		Body: {
+			text: string;
+			fromPhone?: string;
+			patientId?: string;
+			patientName?: string;
+		};
+	}>(
+		"/api/v1/copilot/proactive/trigger-triage",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot trigger triage",
+			);
+			if (!resolvedOrgId) return;
+
+			const { text, fromPhone, patientId, patientName } = request.body || {};
+			if (!text || !text.trim()) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Текст сообщения не может быть пустым",
+				});
+			}
+
+			const result = await defaultWhatsAppBridge.handleIncomingMessage({
+				messageId: `msg_${Date.now()}`,
+				fromPhone: fromPhone || "+79990000000",
+				rawText: text,
+				patientId: patientId || null,
+				patientName: patientName || null,
+				organizationId: resolvedOrgId,
+			});
+
+			return reply.send({ ok: true, data: result });
+		},
+	);
+
+	// =========================================================================
+	// BACKGROUND DAEMONS & SCHEDULER CONTROL ENDPOINTS
+	// =========================================================================
+
+	// POST /api/v1/copilot/daemons/ztl-scan — Trigger 08:00 AM ZTL Look-Ahead scan on demand
+	server.post(
+		"/api/v1/copilot/daemons/ztl-scan",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot trigger ztl scan",
+			);
+			if (!resolvedOrgId) return;
+
+			const parsedBody = ztlScanBodySchema.safeParse(request.body ?? {});
+			const body = parsedBody.success ? parsedBody.data : {};
+			const orgId = body.organizationId ?? resolvedOrgId;
+
+			const alerts = await defaultDaemonScheduler.triggerZtlScan({
+				organizationId: orgId,
+				...(body.lookAheadHours !== undefined ? { lookAheadHours: body.lookAheadHours } : {}),
+			});
+
+			return reply.send({ ok: true, data: alerts, count: alerts.length });
+		},
+	);
+
+	// POST /api/v1/copilot/daemons/emr-savior — Trigger 21:00 PM EMR Savior scan on demand
+	server.post(
+		"/api/v1/copilot/daemons/emr-savior",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot trigger emr savior",
+			);
+			if (!resolvedOrgId) return;
+
+			const parsedBody = emrSaviorBodySchema.safeParse(request.body ?? {});
+			const body = parsedBody.success ? parsedBody.data : {};
+			const orgId = body.organizationId ?? resolvedOrgId;
+
+			const alerts = await defaultDaemonScheduler.triggerEmrSaviorScan({
+				organizationId: orgId,
+				...(body.targetDate ? { targetDate: new Date(body.targetDate) } : {}),
+			});
+
+			return reply.send({ ok: true, data: alerts, count: alerts.length });
+		},
+	);
+
+	// POST /api/v1/copilot/daemons/retention-scan — Trigger Weekly Retention Hunter scan on demand
+	server.post(
+		"/api/v1/copilot/daemons/retention-scan",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot trigger retention scan",
+			);
+			if (!resolvedOrgId) return;
+
+			const parsedBody = retentionScanBodySchema.safeParse(request.body ?? {});
+			const body = parsedBody.success ? parsedBody.data : {};
+			const orgId = body.organizationId ?? resolvedOrgId;
+
+			const summaries = await defaultDaemonScheduler.triggerRetentionScan({
+				organizationId: orgId,
+			});
+
+			return reply.send({ ok: true, data: summaries, count: summaries.length });
+		},
+	);
+
+	// POST /api/v1/copilot/daemons/gap-filler — Trigger Smart Gap-Filler when appointment is cancelled
+	server.post(
+		"/api/v1/copilot/daemons/gap-filler",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot trigger gap filler",
+			);
+			if (!resolvedOrgId) return;
+
+			const parsedBody = gapFillerBodySchema.safeParse(request.body ?? {});
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный запрос: укажите cancelledAppointmentId",
+				});
+			}
+
+			const alert = await defaultDaemonScheduler.triggerGapFiller(
+				parsedBody.data.cancelledAppointmentId,
+				{
+					organizationId: parsedBody.data.organizationId ?? resolvedOrgId,
+					...(parsedBody.data.maxCandidates !== undefined
+						? { maxCandidates: parsedBody.data.maxCandidates }
+						: {}),
+				},
+			);
+
+			if (!alert) {
+				return reply.code(404).send({
+					error: "NotFound",
+					message: "Отмененный прием не найден",
+				});
+			}
+
+			return reply.send({ ok: true, data: alert });
+		},
+	);
+
+	// GET /api/v1/copilot/proactive/alerts — Get aggregated proactive alerts (ZTL, EMR Savior, Retention)
+	server.get(
+		"/api/v1/copilot/proactive/alerts",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot get proactive alerts",
+			);
+			if (!resolvedOrgId) return;
+
+			const parsedQuery = proactiveAlertsQuerySchema.safeParse(request.query ?? {});
+			const query = parsedQuery.success ? parsedQuery.data : {};
+			const orgId = query.organizationId ?? resolvedOrgId;
+			const liveScan = query.liveScan === "true" || query.liveScan === undefined;
+
+			const aggregate = await defaultDaemonScheduler.getProactiveAlerts({
+				organizationId: orgId,
+				liveScan,
+			});
+
+			return reply.send({ ok: true, data: aggregate });
+		},
+	);
 };
+
