@@ -245,7 +245,7 @@ describe("10-Theme Architecture & Palette Verification", () => {
 		}
 	});
 
-	test("All 9 GOST official states are defined in GOST_TOOTH_STATES catalog", () => {
+	test("All 11 GOST official states are defined in GOST_TOOTH_STATES catalog", () => {
 		const expectedStates: ToothState[] = [
 			"Healthy",
 			"Caries",
@@ -256,6 +256,8 @@ describe("10-Theme Architecture & Palette Verification", () => {
 			"Implant",
 			"Missing",
 			"Planned_Implant",
+			"Retained",
+			"Root",
 		];
 
 		for (const state of expectedStates) {

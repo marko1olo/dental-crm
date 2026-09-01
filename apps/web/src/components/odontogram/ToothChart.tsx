@@ -25,7 +25,9 @@ export type ToothState =
 	| "Implant"
 	| "Filled"
 	| "Healthy"
-	| "Planned_Implant";
+	| "Planned_Implant"
+	| "Retained"
+	| "Root";
 
 /**
  * Русские названия состояний — для доступного имени зуба.
@@ -45,6 +47,8 @@ export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
 	Planned_Implant: "план. имплантат",
 	Missing: "отсутствует",
 	Healthy: "здоров",
+	Retained: "ретинированный",
+	Root: "разрушенный корень",
 };
 
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
@@ -527,6 +531,28 @@ export const getToothColors = (
 				badgeColor: "#94a3b8",
 				badgeBg: "rgba(148, 163, 184, 0.15)",
 				badgeText: "#64748b",
+			};
+		case "Retained":
+			return {
+				fill: "url(#dente-enamel-healthy)",
+				crownFill: "url(#dente-enamel-healthy)",
+				rootFill: "url(#dente-root-dentin)",
+				stroke: "#8b5cf6",
+				opacity: "0.85",
+				badgeColor: "#8b5cf6",
+				badgeBg: "rgba(139, 92, 246, 0.15)",
+				badgeText: "#7c3aed",
+			};
+		case "Root":
+			return {
+				fill: "url(#dente-root-dentin)",
+				crownFill: "none",
+				rootFill: "url(#dente-root-dentin)",
+				stroke: "#dc2626",
+				opacity: "1",
+				badgeColor: "#dc2626",
+				badgeBg: "rgba(220, 38, 38, 0.15)",
+				badgeText: "#991b1b",
 			};
 		default:
 			return {
@@ -1177,16 +1203,29 @@ const ToothSVG = ({
 				)}
 
 				{/* Crown Anatomical Contour */}
-				<path
-					d={geom.crown}
-					fill={colors.crownFill}
-					fillOpacity={colors.opacity}
-					stroke={colors.stroke}
-					strokeWidth={colors.isMissing ? "1.4" : "2.2"}
-					strokeDasharray={colors.isMissing ? "4 3" : undefined}
-					strokeLinejoin="round"
-					className="tooth-crown-path"
-				/>
+				{state !== "Root" && (
+					<path
+						d={geom.crown}
+						fill={colors.crownFill}
+						fillOpacity={colors.opacity}
+						stroke={colors.stroke}
+						strokeWidth={colors.isMissing ? "1.4" : "2.2"}
+						strokeDasharray={state === "Retained" ? "3 2" : colors.isMissing ? "4 3" : undefined}
+						strokeLinejoin="round"
+						className="tooth-crown-path"
+					/>
+				)}
+				{state === "Root" && (
+					<g className="tooth-root-stump-layer">
+						<path
+							d={isTop ? "M 25 85 Q 50 82 75 85" : "M 25 75 Q 50 78 75 75"}
+							fill="none"
+							stroke="#dc2626"
+							strokeWidth="2.2"
+							strokeLinecap="round"
+						/>
+					</g>
+				)}
 
 				{/* Photopolymer composite resin surface stipple texture */}
 				{state === "Filled" && material === "composite" && (

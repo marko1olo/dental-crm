@@ -5,9 +5,12 @@ import {
 	ADULT_UPPER_TEETH,
 	ANATOMICAL_SURFACE_LABELS_RU,
 	type AnatomicalSurfaceKey,
+	type BridgeSpanInfo,
 	CANAL_OBTURATIONS,
+	detectBridgeSpans,
 	getAnatomicalGroup,
 	getAnatomicalToothGeometry,
+	getBridgeSpanForTooth,
 	getGingivalRecessionPath,
 	getPeriodontalBoneLevelPath,
 	getPhysiologicalRootResorptionGeometry,
@@ -17,6 +20,9 @@ import {
 	isMaxillaryArch,
 	isPatientLeftSide,
 	isSurfaceActive,
+	isToothAbutment,
+	isToothPontic,
+	isToothPonticInBridge,
 	MIXED_LOWER_TEETH,
 	MIXED_UPPER_TEETH,
 	normalizeAnatomicalSurfaces,
@@ -27,6 +33,7 @@ import {
 	ROOT_RESORPTION_STAGES,
 	type RootResorptionStage,
 } from "../anatomicalToothGeometries";
+import type { ToothData } from "../ToothChart";
 
 describe("Anatomical Tooth Geometries & SVG Morphology Suite", () => {
 	test("Все 32 постоянных зуба взрослого человека имеют полную анатомическую модель", () => {
@@ -591,4 +598,108 @@ describe("Anatomical Tooth Geometries & SVG Morphology Suite", () => {
 		assert.equal(isSurfaceActive("M", ["Class V"]), false);
 	});
 });
+
+describe("Bridge Prosthetics & Pontic Spans Engine (Fixed Dental Bridge)", () => {
+	test("isToothAbutment определяет коронки и опорные зубы", () => {
+		assert.equal(isToothAbutment({ toothNumber: 16, state: "Crown" }), true);
+		assert.equal(isToothAbutment({ toothNumber: 16, state: "Caries" }), false);
+		assert.equal(
+			isToothAbutment({
+				toothNumber: 14,
+				state: "Filled",
+				clinicalData: { isAbutment: true },
+			}),
+			true,
+		);
+		assert.equal(
+			isToothAbutment({
+				toothNumber: 14,
+				state: "Healthy",
+				notes: "Опорный зуб мостовидного протеза",
+			}),
+			true,
+		);
+	});
+
+	test("isToothPontic определяет отсутствующие зубы и промежуточные фасетки", () => {
+		assert.equal(isToothPontic({ toothNumber: 15, state: "Missing" }), true);
+		assert.equal(
+			isToothPontic({
+				toothNumber: 15,
+				state: "Healthy",
+				clinicalData: { isPontic: true },
+			}),
+			true,
+		);
+		assert.equal(
+			isToothPontic({
+				toothNumber: 15,
+				state: "Filled",
+				notes: "Фасетка моста",
+			}),
+			true,
+		);
+	});
+
+	test("detectBridgeSpans обнаруживает непрерывный мост 16-15-14 (опора 16, тело 15, опора 14)", () => {
+		const topArch = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+		const teethData: ToothData[] = [
+			{ toothNumber: 16, state: "Crown", material: "zirconia" },
+			{ toothNumber: 15, state: "Missing" },
+			{ toothNumber: 14, state: "Crown", material: "zirconia" },
+		];
+
+		const spans = detectBridgeSpans(topArch, teethData);
+		assert.equal(spans.length, 1);
+		const bridge = spans[0]!;
+		assert.equal(bridge.id, "bridge-16-14");
+		assert.equal(bridge.arch, "upper");
+		assert.equal(bridge.material, "zirconia");
+		assert.deepEqual([...bridge.teeth], [16, 15, 14]);
+		assert.deepEqual([...bridge.abutments], [16, 14]);
+		assert.deepEqual([...bridge.pontics], [15]);
+		assert.equal(bridge.startTooth, 16);
+		assert.equal(bridge.endTooth, 14);
+
+		assert.equal(isToothPonticInBridge(15, spans), true);
+		assert.equal(isToothPonticInBridge(16, spans), false);
+		assert.equal(isToothPonticInBridge(14, spans), false);
+		assert.equal(isToothPonticInBridge(13, spans), false);
+
+		const tooth15Span = getBridgeSpanForTooth(15, spans);
+		assert.ok(tooth15Span);
+		assert.equal(tooth15Span.id, "bridge-16-14");
+	});
+
+	test("detectBridgeSpans обнаруживает протяженный мост на 2 промежуточных тела (47-46-45-44)", () => {
+		const bottomArch = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+		const teethData: ToothData[] = [
+			{ toothNumber: 47, state: "Crown", material: "ceramic_emax" },
+			{ toothNumber: 46, state: "Missing" },
+			{ toothNumber: 45, state: "Missing" },
+			{ toothNumber: 44, state: "Crown", material: "ceramic_emax" },
+		];
+
+		const spans = detectBridgeSpans(bottomArch, teethData);
+		assert.equal(spans.length, 1);
+		const bridge = spans[0]!;
+		assert.equal(bridge.id, "bridge-47-44");
+		assert.equal(bridge.arch, "lower");
+		assert.equal(bridge.material, "ceramic_emax");
+		assert.deepEqual([...bridge.teeth], [47, 46, 45, 44]);
+		assert.deepEqual([...bridge.abutments], [47, 44]);
+		assert.deepEqual([...bridge.pontics], [46, 45]);
+	});
+
+	test("getSurfaceShading для Retained и Root возвращает специализированные стили", () => {
+		const retainedShading = getSurfaceShading("Retained");
+		assert.equal(retainedShading.stroke, "#8b5cf6");
+		assert.equal(retainedShading.opacity, 0.85);
+
+		const rootShading = getSurfaceShading("Root");
+		assert.equal(rootShading.stroke, "#dc2626");
+		assert.equal(rootShading.opacity, 1);
+	});
+});
+
 

@@ -16,9 +16,12 @@ import {
 import {
 	ANATOMICAL_SURFACE_LABELS_RU,
 	type AnatomicalSurfaceKey,
+	type BridgeSpanInfo,
 	type CanalObturationMaterial,
+	detectBridgeSpans,
 	type FurcationGrade,
 	getAnatomicalToothGeometry,
+	getBridgeSpanForTooth,
 	getFurcationMarkerSvg,
 	getGingivalRecessionPath,
 	getPeriodontalBoneLevelPath,
@@ -235,6 +238,28 @@ const getAnatomicalToothColors = (
 				badgeBg: "rgba(148, 163, 184, 0.15)",
 				badgeText: "#64748b",
 			};
+		case "Retained":
+			return {
+				fill: "url(#dente-enamel-healthy)",
+				crownFill: "url(#dente-enamel-healthy)",
+				rootFill: "url(#dente-root-dentin)",
+				stroke: "#8b5cf6",
+				opacity: "0.85",
+				badgeColor: "#8b5cf6",
+				badgeBg: "rgba(139, 92, 246, 0.15)",
+				badgeText: "#7c3aed",
+			};
+		case "Root":
+			return {
+				fill: "url(#dente-root-dentin)",
+				crownFill: "none",
+				rootFill: "url(#dente-root-dentin)",
+				stroke: "#dc2626",
+				opacity: "1",
+				badgeColor: "#dc2626",
+				badgeBg: "rgba(220, 38, 38, 0.15)",
+				badgeText: "#991b1b",
+			};
 		default:
 			return {
 				fill: "url(#dente-enamel-healthy)",
@@ -254,6 +279,8 @@ const AnatomicalToothSVG = React.memo(({
 	state,
 	scale,
 	material,
+	isPontic = false,
+	bridgeMaterial,
 	canalObturation,
 	hasPost,
 	postType,
@@ -282,6 +309,8 @@ const AnatomicalToothSVG = React.memo(({
 	state: ToothState;
 	scale: number;
 	material?: RestorativeMaterialKey | undefined;
+	isPontic?: boolean | undefined;
+	bridgeMaterial?: RestorativeMaterialKey | undefined;
 	canalObturation?: CanalObturationMaterial | undefined;
 	hasPost?: boolean | undefined;
 	postType?: PostCoreType | undefined;
@@ -493,7 +522,7 @@ const AnatomicalToothSVG = React.memo(({
 					))}
 
 				{/* Anatomical Multi-Root Profile with Physiological Resorption Support */}
-				{resorptionGeom.rootPath && (
+				{!isPontic && resorptionGeom.rootPath && (
 					<g
 						className="pediatric-root-resorption-layer"
 						style={{ opacity: resorptionGeom.opacity }}
@@ -501,9 +530,23 @@ const AnatomicalToothSVG = React.memo(({
 						<path
 							d={resorptionGeom.rootPath}
 							fill={colors.rootFill}
-							stroke={colors.isMissing ? "var(--tooth-root-stroke, #94a3b8)" : "var(--tooth-root-stroke, #64748b)"}
+							stroke={
+								colors.isMissing
+									? "var(--tooth-root-stroke, #94a3b8)"
+									: state === "Retained"
+										? "#8b5cf6"
+										: state === "Root"
+											? "#dc2626"
+											: "var(--tooth-root-stroke, #64748b)"
+							}
 							strokeWidth={colors.isMissing ? "1.4" : "1.8"}
-							strokeDasharray={colors.isMissing ? "4 3" : undefined}
+							strokeDasharray={
+								state === "Retained"
+									? "3 2"
+									: colors.isMissing
+										? "4 3"
+										: undefined
+							}
 							strokeLinejoin="round"
 							className="tooth-root-path"
 						/>
@@ -593,16 +636,82 @@ const AnatomicalToothSVG = React.memo(({
 				))}
 
 				{/* Crown Anatomical Contour */}
-				<path
-					d={geom.crownPath}
-					fill={hasActiveSurfaces ? "url(#dente-enamel-healthy)" : colors.crownFill}
-					fillOpacity={hasActiveSurfaces ? "1" : colors.opacity}
-					stroke={colors.isMissing ? "var(--tooth-root-stroke, #94a3b8)" : colors.stroke}
-					strokeWidth={colors.isMissing ? "1.4" : "2.2"}
-					strokeDasharray={colors.isMissing ? "4 3" : undefined}
-					strokeLinejoin="round"
-					className={hasActiveSurfaces ? "tooth-crown-base-enamel" : "tooth-crown-path"}
-				/>
+				{state !== "Root" && (
+					<path
+						d={geom.crownPath}
+						fill={
+							isPontic
+								? bridgeMaterial === "gold"
+									? "url(#gold-crown-gradient)"
+									: bridgeMaterial === "ceramic_emax"
+										? "url(#ceramic-emax-gradient)"
+										: bridgeMaterial === "pfm_crown"
+											? "url(#pfm-crown-gradient)"
+											: "url(#zirconia-crown-gradient)"
+								: hasActiveSurfaces
+									? "url(#dente-enamel-healthy)"
+									: colors.crownFill
+						}
+						fillOpacity={isPontic ? 1 : hasActiveSurfaces ? "1" : colors.opacity}
+						stroke={
+							isPontic
+								? "#2563eb"
+								: colors.isMissing
+									? "var(--tooth-root-stroke, #94a3b8)"
+									: state === "Retained"
+										? "#8b5cf6"
+										: colors.stroke
+						}
+						strokeWidth={isPontic ? "2.2" : colors.isMissing ? "1.4" : "2.2"}
+						strokeDasharray={
+							state === "Retained"
+								? "3 2"
+								: colors.isMissing && !isPontic
+									? "4 3"
+									: undefined
+						}
+						strokeLinejoin="round"
+						className={hasActiveSurfaces ? "tooth-crown-base-enamel" : "tooth-crown-path"}
+					/>
+				)}
+
+				{/* Fixed Bridge Pontic Basal Clearance & Specular Sheen */}
+				{isPontic && (
+					<g className="bridge-pontic-prosthetic-layer">
+						{/* Sanitary / hygienic mucosal clearance curve */}
+						<path
+							d={isTop ? "M 22 96 Q 50 88 78 96" : "M 22 64 Q 50 72 78 64"}
+							fill="none"
+							stroke="#2563eb"
+							strokeWidth="2.2"
+							strokeLinecap="round"
+						/>
+						{/* High-gloss ceramic highlight */}
+						<path
+							d={isTop ? "M 28 134 Q 50 146 72 134" : "M 28 30 Q 50 18 72 30"}
+							fill="none"
+							stroke="rgba(255, 255, 255, 0.85)"
+							strokeWidth="1.6"
+							strokeLinecap="round"
+							opacity="0.9"
+						/>
+					</g>
+				)}
+
+				{/* Root Stump Cervical Fracture Line (Exposed Dentin at CEJ) */}
+				{state === "Root" && (
+					<g className="tooth-root-fracture-stump">
+						<path
+							d={isTop ? "M 20 96 L 32 93 L 42 98 L 52 92 L 64 97 L 80 94" : "M 20 64 L 32 67 L 42 62 L 52 68 L 64 63 L 80 66"}
+							fill="none"
+							stroke="#dc2626"
+							strokeWidth="2.6"
+							strokeLinejoin="round"
+							strokeLinecap="round"
+						/>
+						<circle cx="50" cy={isTop ? 95 : 65} r="2.8" fill="#7f1d1d" stroke="#dc2626" strokeWidth="0.8" />
+					</g>
+				)}
 
 				{/* Surface-Specific Shading Overlays (Highlights only active surfaces, keeps natural enamel visible) */}
 				{hasActiveSurfaces && (
@@ -942,7 +1051,7 @@ const AnatomicalToothSVG = React.memo(({
 				)}
 
 				{/* Missing Tooth Ghost Diagonal X */}
-				{colors.isMissing && (
+				{colors.isMissing && !isPontic && (
 					<g className="missing-tooth-cross" opacity="0.95">
 						<line
 							x1={geom.viewBox.x + 6}
@@ -1043,6 +1152,10 @@ export interface ToothWrapperProps {
 	showPulpAndCanals?: boolean | undefined;
 	showPeriapicalHalos?: boolean | undefined;
 	showPeriodontalBoneLoss?: boolean | undefined;
+	isPontic?: boolean | undefined;
+	bridgeMaterial?: RestorativeMaterialKey | undefined;
+	hasLeftBridgeConnector?: boolean | undefined;
+	hasRightBridgeConnector?: boolean | undefined;
 }
 
 function areSurfacesEqual(
@@ -1098,6 +1211,10 @@ function areToothWrapperPropsEqual(
 	if (prev.showPulpAndCanals !== next.showPulpAndCanals) return false;
 	if (prev.showPeriapicalHalos !== next.showPeriapicalHalos) return false;
 	if (prev.showPeriodontalBoneLoss !== next.showPeriodontalBoneLoss) return false;
+	if (prev.isPontic !== next.isPontic) return false;
+	if (prev.bridgeMaterial !== next.bridgeMaterial) return false;
+	if (prev.hasLeftBridgeConnector !== next.hasLeftBridgeConnector) return false;
+	if (prev.hasRightBridgeConnector !== next.hasRightBridgeConnector) return false;
 	if (prev.onClick !== next.onClick) return false;
 	if (prev.onQuickStateChange !== next.onQuickStateChange) return false;
 	if (!areToothDataEqual(prev.tooth, next.tooth)) return false;
@@ -1134,6 +1251,10 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 		showPulpAndCanals,
 		showPeriapicalHalos = true,
 		showPeriodontalBoneLoss = true,
+		isPontic = false,
+		bridgeMaterial,
+		hasLeftBridgeConnector = false,
+		hasRightBridgeConnector = false,
 	}) => {
 	const {
 		toothNumber: number,
@@ -1253,6 +1374,32 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 						onClick={(e) => {
 							e.stopPropagation();
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Retained");
+						}}
+						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-800 dark:text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						title="Ретинированный"
+					>
+						<span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block shadow-xs shrink-0" />
+						<span>Ретинирован</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Root");
+						}}
+						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-rose-700/15 hover:bg-rose-700 text-rose-900 dark:text-rose-200 hover:text-white border border-rose-700/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						title="Корень"
+					>
+						<span className="w-2.5 h-2.5 rounded-full bg-rose-700 inline-block shadow-xs shrink-0" />
+						<span>Корень</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Healthy");
 						}}
 						className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
@@ -1270,9 +1417,17 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 			>
 				<span
 					className="tooth-status-dot"
-					style={{ backgroundColor: colors.badgeColor }}
+					style={{ backgroundColor: isPontic ? "#2563eb" : colors.badgeColor }}
 				/>
 				<span className="tooth-number-text font-black">{number}</span>
+				{isPontic && (
+					<span
+						className="ml-0.5 px-1 py-0.2 rounded text-xs font-black bg-blue-600 text-white shadow-2xs leading-none"
+						title="Тело мостовидного протеза (Bridge Pontic)"
+					>
+						BP
+					</span>
+				)}
 				{mobility !== undefined && mobility > 0 && (
 					<span
 						className="ml-0.5 px-1 py-0.2 rounded text-xs font-black bg-indigo-600 text-white shadow-2xs leading-none"
@@ -1319,7 +1474,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 		<div
 			role="button"
 			tabIndex={0}
-			className={`tooth-svg-wrapper group ${isTop ? "top" : "bottom"} ${
+			className={`tooth-svg-wrapper group relative ${isTop ? "top" : "bottom"} ${
 				isSelected ? "selected ring-2 ring-indigo-500/70" : ""
 			}`}
 			data-tooth-id={number}
@@ -1373,12 +1528,48 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 				}
 			}}
 		>
+			{/* Interproximal Bridge Connectors */}
+			{hasLeftBridgeConnector && (
+				<div
+					className={`bridge-connector-left absolute left-0 w-3.5 h-3.5 -translate-x-2 z-20 pointer-events-none rounded-full shadow-xs border border-blue-400/60 ${
+						isTop ? "top-[62%]" : "top-[36%]"
+					}`}
+					style={{
+						background:
+							bridgeMaterial === "gold"
+								? "linear-gradient(135deg, #f59e0b, #b45309)"
+								: bridgeMaterial === "ceramic_emax"
+									? "linear-gradient(135deg, #38bdf8, #0284c7)"
+									: "linear-gradient(135deg, #93c5fd, #2563eb)",
+					}}
+					title="Мостовидное соединение"
+				/>
+			)}
+			{hasRightBridgeConnector && (
+				<div
+					className={`bridge-connector-right absolute right-0 w-3.5 h-3.5 translate-x-2 z-20 pointer-events-none rounded-full shadow-xs border border-blue-400/60 ${
+						isTop ? "top-[62%]" : "top-[36%]"
+					}`}
+					style={{
+						background:
+							bridgeMaterial === "gold"
+								? "linear-gradient(135deg, #f59e0b, #b45309)"
+								: bridgeMaterial === "ceramic_emax"
+									? "linear-gradient(135deg, #38bdf8, #0284c7)"
+									: "linear-gradient(135deg, #93c5fd, #2563eb)",
+					}}
+					title="Мостовидное соединение"
+				/>
+			)}
+
 			{isTop && renderNumberBadge()}
 			<AnatomicalToothSVG
 				number={number}
 				state={state}
 				scale={scale}
 				material={material}
+				isPontic={isPontic}
+				bridgeMaterial={bridgeMaterial}
 				canalObturation={canalObturation}
 				hasPost={hasPost}
 				postType={postType}
@@ -1448,7 +1639,7 @@ export interface AnatomicalSvgOdontogramProps {
 	className?: string | undefined;
 }
 
-export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = ({
+export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = React.memo(({
 	teethData = [],
 	pediatricMode,
 	mixedDentition,
@@ -1619,6 +1810,52 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 	const topSplit = splitArchAtMidline(topTeethList);
 	const bottomSplit = splitArchAtMidline(bottomTeethList);
 
+	const upperBridgeSpans = React.useMemo(
+		() => detectBridgeSpans(topTeethList, teethData ?? []),
+		[topTeethList, teethData],
+	);
+	const lowerBridgeSpans = React.useMemo(
+		() => detectBridgeSpans(bottomTeethList, teethData ?? []),
+		[bottomTeethList, teethData],
+	);
+	const allBridgeSpans = React.useMemo(
+		() => [...upperBridgeSpans, ...lowerBridgeSpans],
+		[upperBridgeSpans, lowerBridgeSpans],
+	);
+
+	const getToothBridgeProps = (
+		num: number,
+		archTeethList: readonly number[],
+		spans: readonly BridgeSpanInfo[],
+	) => {
+		const span = getBridgeSpanForTooth(num, spans);
+		if (!span) {
+			return {
+				isPontic: false,
+				bridgeMaterial: undefined,
+				hasLeftBridgeConnector: false,
+				hasRightBridgeConnector: false,
+			};
+		}
+		const isPontic = span.pontics.includes(num);
+		const archIdx = archTeethList.indexOf(num);
+		const prevNum = archIdx > 0 ? archTeethList[archIdx - 1] : undefined;
+		const nextNum =
+			archIdx >= 0 && archIdx < archTeethList.length - 1
+				? archTeethList[archIdx + 1]
+				: undefined;
+		const hasLeftBridgeConnector =
+			prevNum !== undefined && span.teeth.includes(prevNum);
+		const hasRightBridgeConnector =
+			nextNum !== undefined && span.teeth.includes(nextNum);
+		return {
+			isPontic,
+			bridgeMaterial: span.material,
+			hasLeftBridgeConnector,
+			hasRightBridgeConnector,
+		};
+	};
+
 	const isQuadrantView = currentQuadrant !== "all";
 	const activeQuadrantTeeth = isQuadrantView
 		? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, pediatricMode)
@@ -1746,7 +1983,44 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-slate-400 opacity-50" /> Отсутствует
 						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm" /> Ретинирован
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-rose-700 shadow-sm" /> Корень
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-sm" /> Мостовидный протез
+						</span>
 					</div>
+				</div>
+			)}
+
+			{/* Detected Bridge Spans Indicator Banner */}
+			{allBridgeSpans.length > 0 && (
+				<div
+					className="odontogram-bridge-spans-banner flex flex-wrap items-center gap-2 px-3 py-1.5 mb-2 rounded-xl bg-blue-500/10 dark:bg-blue-950/40 border border-blue-500/30 text-xs text-blue-900 dark:text-blue-200"
+					data-testid="bridge-spans-banner"
+				>
+					<Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+					<span className="font-bold">Мостовидные протезы ({allBridgeSpans.length}):</span>
+					{allBridgeSpans.map((span) => (
+						<span
+							key={span.id}
+							className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-500/20 text-blue-800 dark:text-blue-300 font-mono text-[11px] font-bold"
+						>
+							<span>{span.startTooth} (опора)</span>
+							<span className="text-blue-500 font-normal">━━</span>
+							<span className="text-blue-600 dark:text-blue-400 font-black">
+								{span.pontics.join(", ")} (тело)
+							</span>
+							<span className="text-blue-500 font-normal">━━</span>
+							<span>{span.endTooth} (опора)</span>
+							<span className="text-[10px] text-blue-600/70 dark:text-blue-400/70 uppercase font-sans">
+								• {span.material}
+							</span>
+						</span>
+					))}
 				</div>
 			)}
 
@@ -1793,6 +2067,11 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 										toothNumber: num,
 										state: "Healthy",
 									};
+									const bridgeProps = getToothBridgeProps(
+										num,
+										isTopQuadrant ? topTeethList : bottomTeethList,
+										isTopQuadrant ? upperBridgeSpans : lowerBridgeSpans,
+									);
 									return (
 										<ToothWrapper
 											key={num}
@@ -1809,6 +2088,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 											pediatricMode={pediatricMode}
+											{...bridgeProps}
 										/>
 									);
 								})}
@@ -1833,6 +2113,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 										toothNumber: num,
 										state: "Healthy",
 									};
+									const bridgeProps = getToothBridgeProps(num, topTeethList, upperBridgeSpans);
 									return (
 										<ToothWrapper
 											key={num}
@@ -1849,6 +2130,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 											pediatricMode={pediatricMode}
+											{...bridgeProps}
 										/>
 									);
 								})}
@@ -1864,6 +2146,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 										toothNumber: num,
 										state: "Healthy",
 									};
+									const bridgeProps = getToothBridgeProps(num, topTeethList, upperBridgeSpans);
 									return (
 										<ToothWrapper
 											key={num}
@@ -1880,6 +2163,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 											pediatricMode={pediatricMode}
+											{...bridgeProps}
 										/>
 									);
 								})}
@@ -1901,6 +2185,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 										toothNumber: num,
 										state: "Healthy",
 									};
+									const bridgeProps = getToothBridgeProps(num, bottomTeethList, lowerBridgeSpans);
 									return (
 										<ToothWrapper
 											key={num}
@@ -1917,6 +2202,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 											pediatricMode={pediatricMode}
+											{...bridgeProps}
 										/>
 									);
 								})}
@@ -1932,6 +2218,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 										toothNumber: num,
 										state: "Healthy",
 									};
+									const bridgeProps = getToothBridgeProps(num, bottomTeethList, lowerBridgeSpans);
 									return (
 										<ToothWrapper
 											key={num}
@@ -1948,6 +2235,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 											pediatricMode={pediatricMode}
+											{...bridgeProps}
 										/>
 									);
 								})}
@@ -1958,4 +2246,5 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 			</div>
 		</div>
 	);
-};
+});
+

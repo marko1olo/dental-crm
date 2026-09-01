@@ -25,7 +25,7 @@ export type ToothMorphologyGroup =
 	| "primary_molar_1"
 	| "primary_molar_2";
 
-import type { ToothState } from "./ToothChart";
+import type { ToothData, ToothState } from "./ToothChart";
 
 export type AnatomicalSurfaceKey = "O" | "V" | "L" | "M" | "D" | "C";
 
@@ -593,6 +593,20 @@ export function getSurfaceShading(
 			return {
 				fill: "url(#zirconia-crown-gradient)",
 				stroke: "#1d4ed8",
+				opacity: 1,
+				strokeWidth: 1.4,
+			};
+		case "Retained":
+			return {
+				fill: "url(#dente-enamel-healthy)",
+				stroke: "#8b5cf6",
+				opacity: 0.85,
+				strokeWidth: 1.2,
+			};
+		case "Root":
+			return {
+				fill: "url(#dente-root-dentin)",
+				stroke: "#dc2626",
 				opacity: 1,
 				strokeWidth: 1.4,
 			};
@@ -1820,4 +1834,165 @@ export function normalizeAnatomicalSurfaces(
 
 	return Array.from(set);
 }
+
+/**
+ * Спецификация несъемного мостовидного протеза (Fixed Dental Bridge).
+ */
+export interface BridgeSpanInfo {
+	readonly id: string;
+	readonly arch: "upper" | "lower";
+	readonly material: RestorativeMaterialKey;
+	readonly teeth: readonly number[];
+	readonly abutments: readonly number[];
+	readonly pontics: readonly number[];
+	readonly startTooth: number;
+	readonly endTooth: number;
+}
+
+export function isToothAbutment(tooth?: ToothData | null): boolean {
+	if (!tooth) return false;
+	if (tooth.state === "Crown") return true;
+	const cData = tooth.clinicalData as Record<string, unknown> | undefined;
+	if (
+		cData &&
+		(cData.isAbutment === true ||
+			cData.prostheticType === "bridge_abutment" ||
+			cData.statusCode === "bridge_abutment")
+	) {
+		return true;
+	}
+	const notes = tooth.notes?.toLowerCase() ?? "";
+	return notes.includes("опор") || notes.includes("abutment");
+}
+
+export function isToothPontic(tooth?: ToothData | null): boolean {
+	if (!tooth) return false;
+	const cData = tooth.clinicalData as Record<string, unknown> | undefined;
+	if (
+		cData &&
+		(cData.isPontic === true ||
+			cData.prostheticType === "bridge_pontic" ||
+			cData.statusCode === "bridge_pontic")
+	) {
+		return true;
+	}
+	const notes = tooth.notes?.toLowerCase() ?? "";
+	if (
+		notes.includes("фасет") ||
+		notes.includes("pontic") ||
+		notes.includes("тело мост") ||
+		notes.includes("промежуточн")
+	) {
+		return true;
+	}
+	return tooth.state === "Missing";
+}
+
+/**
+ * Автоматическое определение непрерывных блоков мостовидных протезов в зубной дуге.
+ * Находит непрерывные блоки, соединяющие опорные коронки через отсутствующие зубы / фасетки.
+ */
+export function detectBridgeSpans(
+	archTeeth: readonly number[],
+	teethData: readonly ToothData[],
+): BridgeSpanInfo[] {
+	if (!archTeeth || archTeeth.length < 2) return [];
+	const dataMap = new Map<number, ToothData>();
+	for (const t of teethData) {
+		dataMap.set(t.toothNumber, t);
+	}
+
+	const spans: BridgeSpanInfo[] = [];
+	let i = 0;
+
+	while (i < archTeeth.length) {
+		const startToothNum = archTeeth[i];
+		if (!startToothNum) {
+			i++;
+			continue;
+		}
+		const startTooth = dataMap.get(startToothNum);
+
+		if (isToothAbutment(startTooth)) {
+			// Look for sequence of pontics terminated by another abutment
+			let j = i + 1;
+			const candidatePontics: number[] = [];
+			const candidateAbutments: number[] = [startToothNum];
+
+			while (j < archTeeth.length) {
+				const curNum = archTeeth[j];
+				if (!curNum) break;
+				const curTooth = dataMap.get(curNum);
+
+				if (isToothAbutment(curTooth)) {
+					// We reached another abutment
+					if (candidatePontics.length > 0) {
+						candidateAbutments.push(curNum);
+						const allSpanTeeth = archTeeth.slice(i, j + 1);
+						const endToothNum = curNum;
+						const isTopArch =
+							startToothNum < 30 ||
+							(startToothNum >= 51 && startToothNum <= 65);
+
+						// Determine material from abutments or default to zirconia
+						let mat: RestorativeMaterialKey = "zirconia";
+						for (const abNum of candidateAbutments) {
+							const abTooth = dataMap.get(abNum);
+							if (abTooth?.material) {
+								mat = abTooth.material;
+								break;
+							}
+						}
+
+						spans.push({
+							id: `bridge-${startToothNum}-${endToothNum}`,
+							arch: isTopArch ? "upper" : "lower",
+							material: mat,
+							teeth: allSpanTeeth,
+							abutments: candidateAbutments,
+							pontics: [...candidatePontics],
+							startTooth: startToothNum,
+							endTooth: endToothNum,
+						});
+
+						i = j;
+						break;
+					}
+					// Adjacent abutments with no pontics in between
+					candidateAbutments.push(curNum);
+					j++;
+				} else if (isToothPontic(curTooth)) {
+					candidatePontics.push(curNum);
+					j++;
+				} else {
+					// Intact tooth or other state interrupts the bridge span
+					break;
+				}
+			}
+
+			if (j >= archTeeth.length || candidatePontics.length === 0) {
+				i++;
+			}
+		} else {
+			i++;
+		}
+	}
+
+	return spans;
+}
+
+export function getBridgeSpanForTooth(
+	toothNumber: number,
+	spans: readonly BridgeSpanInfo[],
+): BridgeSpanInfo | undefined {
+	return spans.find((s) => s.teeth.includes(toothNumber));
+}
+
+export function isToothPonticInBridge(
+	toothNumber: number,
+	spans: readonly BridgeSpanInfo[],
+): boolean {
+	return spans.some((s) => s.pontics.includes(toothNumber));
+}
+
 

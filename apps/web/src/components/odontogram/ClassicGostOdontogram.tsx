@@ -1,6 +1,5 @@
 import { Award, Check, Copy, FileText } from "lucide-react";
-import type React from "react";
-import { useMemo, useState, useRef, useEffect } from "react";
+import React, { useMemo, useState, useRef, useEffect, memo } from "react";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
 import type { ToothData, ToothState } from "./ToothChart";
@@ -15,6 +14,7 @@ export type GostToothAbbreviation =
 	| "Ип"
 	| "0"
 	| "Зд"
+	| "Р"
 	| "R";
 
 export const UPPER_TEETH_ADULT = [
@@ -131,6 +131,24 @@ export const GOST_TOOTH_STATES: Record<ToothState, GostStateDescriptor> = {
 		badgeText: "text-slate-600 dark:text-slate-400",
 		badgeBorder: "border-slate-500/30",
 	},
+	Retained: {
+		abbr: "Р",
+		nameRu: "Ретинированный",
+		descriptionRu: "Ретинированный / дистопированный зуб (Ret)",
+		colorClass: "text-purple-700 dark:text-purple-300",
+		badgeBg: "bg-purple-500/15 dark:bg-purple-950/50",
+		badgeText: "text-purple-700 dark:text-purple-300",
+		badgeBorder: "border-purple-500/40",
+	},
+	Root: {
+		abbr: "R",
+		nameRu: "Корень",
+		descriptionRu: "Разрушенный корень зуба (R)",
+		colorClass: "text-rose-800 dark:text-rose-300",
+		badgeBg: "bg-rose-500/15 dark:bg-rose-950/50",
+		badgeText: "text-rose-800 dark:text-rose-300",
+		badgeBorder: "border-rose-500/40",
+	},
 };
 
 export const GOST_ABBREVIATIONS: Record<string, ToothState> = {
@@ -143,14 +161,16 @@ export const GOST_ABBREVIATIONS: Record<string, ToothState> = {
 	Ип: "Planned_Implant",
 	"0": "Missing",
 	Зд: "Healthy",
-	R: "Missing",
+	Р: "Retained",
+	R: "Root",
 };
 
 export function getGostAbbreviation(
 	state?: ToothState | string | null,
 ): GostToothAbbreviation {
 	if (!state) return "Зд";
-	if (state === "Root_Canal_Treated") return "R";
+	if (state === "Root" || state === "Root_Canal_Treated") return "R";
+	if (state === "Retained" || state === "Impacted") return "Р";
 	if (state === "Extracted") return "0";
 	const mapped = GOST_TOOTH_STATES[state as ToothState];
 	return mapped ? mapped.abbr : "Зд";
@@ -260,6 +280,23 @@ export function getToothStateFromHotkey(
 		) {
 			return "Periodontitis";
 		}
+		if (
+			(prev === "р" && k === "е") ||
+			(prev === "r" && k === "e") ||
+			(prev === "р" && k === "т") ||
+			(prev === "r" && k === "t")
+		) {
+			return "Retained";
+		}
+		if (
+			(prev === "к" && k === "о") ||
+			(prev === "r" && k === "o") ||
+			(prev === "р" && k === "о") ||
+			(prev === "r" && k === "r") ||
+			(prev === "к" && k === "к")
+		) {
+			return "Root";
+		}
 	}
 
 	// Single key mappings:
@@ -341,7 +378,8 @@ export function calculateDmft(teethData: ToothData[]): DmftCalculationResult {
 		if (
 			state === "Caries" ||
 			state === "Pulpitis" ||
-			state === "Periodontitis"
+			state === "Periodontitis" ||
+			state === "Root"
 		) {
 			decayed++;
 		} else if (state === "Filled" || state === "Crown") {
@@ -386,7 +424,8 @@ export function calculateDmft(teethData: ToothData[]): DmftCalculationResult {
 		if (
 			state === "Caries" ||
 			state === "Pulpitis" ||
-			state === "Periodontitis"
+			state === "Periodontitis" ||
+			state === "Root"
 		) {
 			pedK++;
 		} else if (state === "Filled" || state === "Crown") {
@@ -475,7 +514,7 @@ export interface ClassicGostOdontogramProps {
 	className?: string | undefined;
 }
 
-export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
+export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(({
 	teethData = [],
 	pediatricMode,
 	mixedDentition,
@@ -1040,4 +1079,5 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 			)}
 		</div>
 	);
-};
+});
+
