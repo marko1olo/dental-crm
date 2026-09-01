@@ -72,13 +72,7 @@ export function isDemoShowcaseMode(explicitOverride?: boolean): boolean {
 	if (typeof _demoShowcaseOverride === "boolean") return _demoShowcaseOverride;
 
 	if (typeof process !== "undefined" && process.env) {
-		if (
-			process.env.IS_DEMO_SHOWCASE === "true" ||
-			process.env.VITE_DEMO_SHOWCASE === "true" ||
-			process.env.NODE_ENV === "test" ||
-			process.env.NODE_TEST_CONTEXT !== undefined ||
-			Boolean(process.env.npm_lifecycle_event && process.env.npm_lifecycle_event.includes("test"))
-		) {
+		if (process.env.IS_DEMO_SHOWCASE === "true" || process.env.VITE_DEMO_SHOWCASE === "true") {
 			return true;
 		}
 	}
@@ -1256,7 +1250,7 @@ export function generateTreatmentPlanStages(
 						},
 					),
 				);
-			} else if (state === "Periodontitis" || state === "Root" || state === "Impacted") {
+			} else if (state === "Periodontitis" || state === "Root" || state === "Impacted" || state === "Missing") {
 				const defPedExt = ORDER_804N_DICTIONARY.PediatricExtraction!;
 				stage2Items.push(
 					createPlanItem(
@@ -1956,19 +1950,19 @@ export function generateTierPlanStages(
 					),
 				);
 			} else {
-				// optimum
-				const defCarOpt = ORDER_804N_DICTIONARY.CariesTherapy!;
-				stage1Items.push(
+				// optimum: керамическая вкладка / накладка IPS e.max CAD в этап 3 (ортопедия)
+				const defInlay = ORDER_804N_DICTIONARY.InlayOnlay!;
+				stage3Items.push(
 					createPlanItem(
-						"s1-caries-opt-" + num,
-						1,
-						"stage_1_therapy",
-						defCarOpt,
+						"s3-inlay-opt-" + num,
+						3,
+						"stage_3_orthopedics",
+						defInlay,
 						num,
 						catalog,
 						validDiscountPct,
 						{
-							customTitle: "Художественная реставрация зуба №" + num + " нанокомпозитом Estelite под микроскопом",
+							customTitle: "Керамическая вкладка / накладка IPS e.max CAD на зуб №" + num,
 							isDemoMode: isDemo,
 						},
 					),
@@ -2184,9 +2178,25 @@ export function generateTierPlanStages(
 				}
 
 				if (tierId === "economy") {
-					// Эконом: мостовидные металлокерамические протезы
+					// Эконом: удаление корня / подготовка лунки + мостовидные металлокерамические протезы
 					for (const missingT of currentSpan) {
 						handled.add(missingT);
+						const defExt = ORDER_804N_DICTIONARY.SimpleExtraction!;
+						stage2Items.push(
+							createPlanItem(
+								"s2-eco-ext-" + missingT,
+								2,
+								"stage_2_surgery",
+								defExt,
+								missingT,
+								catalog,
+								validDiscountPct,
+								{
+									customTitle: "Удаление разрушенного корня / подготовка альвеолы зуба №" + missingT,
+									isDemoMode: isDemo,
+								},
+							),
+						);
 						const defEcoBridge = ORDER_804N_DICTIONARY.BridgeProsthesisEconomy!;
 						stage3Items.push(
 							createPlanItem(
@@ -2536,7 +2546,7 @@ export function generate3TierPlanComparison(
 	patientBonusBalanceRub: number = 0,
 	options?: { isDemoMode?: boolean },
 ): [TreatmentPlanTier, TreatmentPlanTier, TreatmentPlanTier] {
-	const isDemo = isDemoShowcaseMode(options?.isDemoMode);
+	const isDemo = options?.isDemoMode !== undefined ? options.isDemoMode : (isDemoShowcaseMode() || !catalog || catalog.length === 0);
 	const validLoyaltyPct = Math.max(0, Math.min(50, patientLoyaltyDiscountPercent));
 
 	const economyStages = generateTierPlanStages("economy", teeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
