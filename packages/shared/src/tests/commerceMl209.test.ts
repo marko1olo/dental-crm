@@ -41,10 +41,9 @@ import {
 	generateMaterialsWriteoffCsv,
 	generatePayrollCsv,
 	generateRetailSalesCsv,
-	kopecksToRub,
-	rubToKopecks,
 	validatePackageIntegrity,
 } from "../finance/commerceMl209.js";
+import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
 
 describe("CommerceML 2.09 & 1C Statutory Integration Engine", () => {
 	const samplePackage = createRealisticShiftExportPackage(

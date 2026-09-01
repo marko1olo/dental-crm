@@ -181,12 +181,12 @@ describe("Shared Dental Lab — Integer Kopecks Financial Clearing (No Floats)",
 describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 	test("CANONICAL_5STAGE_LAB_PIPELINE contains all 5 sequential clinical stages", () => {
 		const stages = ["impression_scan", "cad_modeling", "framework_fitting", "ceramic_layering", "ready_fixation"] as const;
-		for (let i = 0; i < stages.length; i++) {
-			const stage = CANONICAL_5STAGE_LAB_PIPELINE[stages[i]];
+		stages.forEach((stageKey, i) => {
+			const stage = CANONICAL_5STAGE_LAB_PIPELINE[stageKey];
 			assert.ok(stage);
 			assert.equal(stage.step, i + 1);
 			assert.ok(stage.titleRu.length > 0);
-		}
+		});
 	});
 
 	test("generateProstheticWarrantyPassport generates valid StAR passport", () => {
