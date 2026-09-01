@@ -80,16 +80,15 @@ describe("patientOfflineStorage — Subway Offline Storage & Booking Queue", () 
 			retryCount: 0,
 		};
 
-		await enqueueOfflinePatientBooking(bookingReq);
+		const booking = await enqueueOfflinePatientBooking(bookingReq);
 
 		const queued = await getQueuedOfflinePatientBookings();
 		assert.equal(queued.length, 1);
-		const first = queued[0];
-		assert.ok(first);
-		assert.equal(first.id, "offline-book-01");
-		assert.equal(first.serviceTitle, "Лечение кариеса");
+		assert.ok(queued[0]);
+		assert.equal(queued[0].id, booking.id);
+		assert.equal(queued[0].serviceTitle, "Лечение кариеса");
 
-		await removeQueuedOfflinePatientBooking("offline-book-01");
+		await removeQueuedOfflinePatientBooking(booking.id);
 		const remaining = await getQueuedOfflinePatientBookings();
 		assert.equal(remaining.length, 0);
 	});
