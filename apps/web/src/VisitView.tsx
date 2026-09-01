@@ -238,6 +238,7 @@ import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { EndoCanalLogModal } from "./components/odontogram/EndoCanalLogModal";
+import { AnesthesiaDosageCalculatorModal } from "./components/anesthesia/AnesthesiaDosageCalculatorModal";
 import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
 import { StagePaymentPlanModal } from "./components/treatment-plans/stagePayment/StagePaymentPlanModal";
 import { TreatmentPlanPriceValidatorModal } from "./components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
@@ -256,19 +257,23 @@ import {
 	AlertCircle,
 	AlertTriangle,
 	Anchor,
+	Ban,
 	CheckCircle2,
 	CircleDot,
 	ClipboardList,
+	Compass,
 	Crown,
 	Edit3,
 	Eye,
 	FileCheck2,
+	FileText,
 	Flame,
 	Lock,
 	Scissors,
 	Shield,
 	ShieldCheck,
 	Sparkles,
+	Syringe,
 	Wrench,
 	XCircle,
 	Zap,
@@ -473,6 +478,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = React.useState(false);
 	const [isDoctorCockpitModalOpen, setIsDoctorCockpitModalOpen] = React.useState(false);
+	const [isAnesthesiaModalOpen, setIsAnesthesiaModalOpen] = React.useState(false);
+	const [anesthesiaModalToothNumber, setAnesthesiaModalToothNumber] = React.useState<number | string | null>(null);
 
 	const priceValidatorCatalogList = React.useMemo<readonly CatalogServiceItem[]>(() => {
 		const rawCatalog = (dashboard as { serviceCatalog?: unknown[] } | null)?.serviceCatalog;
@@ -1107,7 +1114,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							outline: "none",
 						}}
 					>
-						🧭 Шаги приема и статус: {safeVisitPrimaryAction.label}
+						<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+							<Compass size={16} style={{ color: "var(--teal)" }} aria-hidden="true" />
+							<span>Шаги приема и статус: {safeVisitPrimaryAction.label}</span>
+						</span>
 					</summary>
 					<div style={{ marginTop: "1rem", padding: "0 1rem 1rem 1rem" }}>
 						<section
@@ -1718,42 +1728,48 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							className={`stamp-btn min-h-[44px] px-3 py-2 ${activeStamp === null ? "active" : ""}`}
 							onClick={() => setActiveStamp(null)}
 						>
-							🔍 Обычный клик
+							<Eye size={14} className="inline mr-1" aria-hidden="true" />
+							Обычный клик
 						</button>
 						<button
 							type="button"
 							className={`stamp-btn stamp-planned min-h-[44px] px-3 py-2 ${activeStamp === "planned" ? "active" : ""}`}
 							onClick={() => setActiveStamp("planned")}
 						>
-							📝 В план
+							<FileText size={14} className="inline mr-1" aria-hidden="true" />
+							В план
 						</button>
 						<button
 							type="button"
 							className={`stamp-btn stamp-treatment min-h-[44px] px-3 py-2 ${activeStamp === "treatment" ? "active" : ""}`}
 							onClick={() => setActiveStamp("treatment")}
 						>
-							🔴 Лечение
+							<AlertTriangle size={14} className="inline mr-1" aria-hidden="true" />
+							Лечение
 						</button>
 						<button
 							type="button"
 							className={`stamp-btn stamp-watch min-h-[44px] px-3 py-2 ${activeStamp === "watch" ? "active" : ""}`}
 							onClick={() => setActiveStamp("watch")}
 						>
-							⚠️ Наблюдение
+							<AlertTriangle size={14} className="inline mr-1" aria-hidden="true" />
+							Наблюдение
 						</button>
 						<button
 							type="button"
 							className={`stamp-btn stamp-done min-h-[44px] px-3 py-2 ${activeStamp === "done" ? "active" : ""}`}
 							onClick={() => setActiveStamp("done")}
 						>
-							🟢 Готово
+							<CheckCircle2 size={14} className="inline mr-1" aria-hidden="true" />
+							Готово
 						</button>
 						<button
 							type="button"
 							className={`stamp-btn stamp-missing min-h-[44px] px-3 py-2 ${activeStamp === "missing" ? "active" : ""}`}
 							onClick={() => setActiveStamp("missing")}
 						>
-							❌ Нет зуба
+							<Ban size={14} className="inline mr-1" aria-hidden="true" />
+							Нет зуба
 						</button>
 					</div>
 
@@ -3319,6 +3335,24 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											</button>
 											<button
 												type="button"
+												data-testid="visit-view-anesthesia-dosage-btn"
+												className="_ccm-btn"
+												data-color="sky"
+												style={{
+													borderColor: "var(--teal, var(--line))",
+													backgroundColor: "var(--surface-muted, var(--paper))",
+													color: "var(--ink)",
+													fontWeight: "bold",
+												}}
+												onClick={() => {
+													setAnesthesiaModalToothNumber(code);
+													setIsAnesthesiaModalOpen(true);
+												}}
+											>
+												<span className="flex-1 text-left">Анестезия & Дозировка (МРД)</span> <Syringe className="w-4 h-4 text-sky-500 shrink-0" />
+											</button>
+											<button
+												type="button"
 												className="_ccm-btn"
 												data-color="amber"
 												onClick={() =>
@@ -3525,6 +3559,34 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						`Акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ готов к подписанию.`,
 						"success",
 					);
+				}}
+			/>
+
+			{/* Anesthesia Dosage Calculator & Safety Modal (МРД) */}
+			<AnesthesiaDosageCalculatorModal
+				isOpen={isAnesthesiaModalOpen}
+				onClose={() => {
+					setIsAnesthesiaModalOpen(false);
+					setAnesthesiaModalToothNumber(null);
+				}}
+				initialToothNumber={anesthesiaModalToothNumber ?? selectedToothForMenu?.code ?? 16}
+				initialPatientWeightKg={activePatient?.weightKg ?? 70}
+				initialPatientAgeYears={activePatient?.ageYears ?? 35}
+				initialHasCardioRisk={activePatient?.hasCardioRisk ?? false}
+				initialPatientId={
+					activePatient?.id ||
+					(typeof (dashboard as any)?.activeVisit?.patientId === "string"
+						? (dashboard as any).activeVisit.patientId
+						: undefined)
+				}
+				initialVisitId={
+					activeAppointment?.id ||
+					(typeof (dashboard as any)?.activeVisit?.id === "string"
+						? (dashboard as any).activeVisit.id
+						: undefined)
+				}
+				onApplied={(result) => {
+					appendToEMKField("treatmentPlan", result.diaryEntryRu);
 				}}
 			/>
 

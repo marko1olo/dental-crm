@@ -8,9 +8,11 @@ import {
 	Plus,
 	RotateCcw,
 	Sparkles,
+	Syringe,
 	Trash2,
 	Wrench,
 } from "lucide-react";
+import { AnesthesiaDosageCalculatorModal } from "../anesthesia/AnesthesiaDosageCalculatorModal";
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import {
 	type EndoCanalData,
@@ -113,6 +115,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 	const [showEndoTable, setShowEndoTable] = useState<boolean>(
 		toothData?.state === "Pulpitis" || toothData?.state === "Periodontitis",
 	);
+	const [isAnesthesiaModalOpen, setIsAnesthesiaModalOpen] = useState<boolean>(false);
 
 	const isFrontal = (toothNumber % 10) <= 3;
 
@@ -213,14 +216,32 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 						Анатомический статус и матрица поверхностей (MOD)
 					</h3>
 				</div>
-				{iropzCalculated > 0 && (
-					<span
-						className={`dente-warm-tag ${iropzCalculated >= 0.6 ? "warning" : "ok"}`}
-						title="Индекс разрушения окклюзионной поверхности зуба"
+				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+					<button
+						type="button"
+						onClick={() => setIsAnesthesiaModalOpen(true)}
+						className="dente-text-action-btn"
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "0.25rem",
+							color: "var(--brand, #0284c7)",
+							fontWeight: 700,
+						}}
+						title="Рассчитать максимальную безопасную дозу карпул (МРД)"
 					>
-						ИРОПЗ: {iropzCalculated.toFixed(2)} {iropzCalculated >= 0.6 ? "(Коронка Z51.8)" : ""}
-					</span>
-				)}
+						<Syringe size={14} />
+						<span>Анестезия (МРД)</span>
+					</button>
+					{iropzCalculated > 0 && (
+						<span
+							className={`dente-warm-tag ${iropzCalculated >= 0.6 ? "warning" : "ok"}`}
+							title="Индекс разрушения окклюзионной поверхности зуба"
+						>
+							ИРОПЗ: {iropzCalculated.toFixed(2)} {iropzCalculated >= 0.6 ? "(Коронка Z51.8)" : ""}
+						</span>
+					)}
+				</div>
 			</div>
 
 			{/* 1-Click Tooth Status Buttons */}
@@ -533,6 +554,18 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 					</div>
 				)}
 			</div>
+
+			{/* Clinical Anesthesia Dosage Calculator & Safety Modal */}
+			<AnesthesiaDosageCalculatorModal
+				isOpen={isAnesthesiaModalOpen}
+				onClose={() => setIsAnesthesiaModalOpen(false)}
+				initialToothNumber={toothNumber}
+				onApplied={(res) => {
+					if (onInsertToProtocol) {
+						onInsertToProtocol(res.diaryEntryRu);
+					}
+				}}
+			/>
 		</div>
 	);
 };

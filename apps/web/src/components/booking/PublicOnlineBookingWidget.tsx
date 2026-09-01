@@ -39,6 +39,7 @@ import {
 	type BookingSlotItem,
 	type CalendarDayItem,
 } from "./BookingSlotPicker";
+import { parseUtmFromUrl } from "@dental/shared";
 import "./bookingWidget.css";
 
 // ============================================================================
@@ -1037,6 +1038,10 @@ export const PublicOnlineBookingWidget: React.FC<
 			createdAt: new Date().toISOString(),
 		};
 
+		// Parse UTM parameters from current URL and window context (DEFECT-BOOKING-01)
+		const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+		const parsedUtm = parseUtmFromUrl(currentUrl);
+
 		if (organizationId) {
 			try {
 				const response = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
@@ -1049,6 +1054,12 @@ export const PublicOnlineBookingWidget: React.FC<
 						patientName: patientName.trim(),
 						patientPhone,
 						comment: patientComment.trim() || undefined,
+						utm_source: parsedUtm.utm_source || undefined,
+						utm_medium: parsedUtm.utm_medium || undefined,
+						utm_campaign: parsedUtm.utm_campaign || undefined,
+						utm_content: parsedUtm.utm_content || undefined,
+						utm_term: parsedUtm.utm_term || undefined,
+						referrer: parsedUtm.referrer || (typeof document !== "undefined" ? document.referrer : undefined),
 					}),
 				});
 
@@ -1062,17 +1073,21 @@ export const PublicOnlineBookingWidget: React.FC<
 						return;
 					}
 					const errData = await response.json().catch(() => ({}));
-					throw new Error(
+					const errMsg =
 						errData?.message ||
-							errData?.error ||
-							"Не удалось завершить запись",
-					);
+						errData?.error ||
+						`Не удалось завершить запись на сервере клиники. Пожалуйста, позвоните в регистратуру по телефону: ${selectedBranch.phone}`;
+					setSubmitError(errMsg);
+					setIsSubmitting(false);
+					return;
 				}
-			} catch (err) {
-				console.warn(
-					"[DENTE Online Booking] API submit fallback to instant confirmation:",
-					err,
+			} catch (_err) {
+				// DEFECT-BOOKING-02: DO NOT fall back to fake success screen DNT-2026-XXXX on network or server error!
+				setSubmitError(
+					`Сбой связи с сервером клиники при бронировании. Пожалуйста, проверьте подключение к интернету или позвоните в клинику: ${selectedBranch.phone}`,
 				);
+				setIsSubmitting(false);
+				return;
 			}
 		}
 

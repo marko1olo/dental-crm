@@ -11,10 +11,12 @@ import type {
 	UpdateClinicProfileInput,
 } from "@dental/shared";
 import {
+	checkStaffDuplicates,
 	clinicModeSchema,
 	clinicScheduleDefaultsSchema,
 	staffRoleSchema,
 	staffWorkingHoursSchema,
+	validateStaffSnils,
 } from "@dental/shared";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import {
@@ -462,6 +464,37 @@ export async function createStaffMemberInDb(
 	input: CreateStaffMemberInput,
 ): Promise<StaffMember> {
 	if (useInMemory()) return createStaffMemberInMemory(input);
+
+	if (input.snils) {
+		const snilsCheck = validateStaffSnils(input.snils);
+		if (!snilsCheck.isValid) {
+			throw new Error(snilsCheck.error || "Невалидный СНИЛС сотрудника.");
+		}
+	}
+
+	const existingUsers = await db
+		.select({
+			id: schema.users.id,
+			fullName: schema.users.fullName,
+			snils: schema.users.snils,
+			email: schema.users.email,
+			phone: schema.users.phone,
+		})
+		.from(schema.users)
+		.where(eq(schema.users.organizationId, organizationId));
+
+	const duplicate = checkStaffDuplicates(existingUsers, {
+		id: "NEW",
+		fullName: input.fullName,
+		snils: input.snils ?? null,
+		email: input.email ?? null,
+		phone: input.phone ?? null,
+	});
+
+	if (duplicate) {
+		throw new Error(duplicate.message);
+	}
+
 	const [inserted] = await db
 		.insert(schema.users)
 		.values({
@@ -470,6 +503,7 @@ export async function createStaffMemberInDb(
 			role: input.role,
 			phone: input.phone || null,
 			email: input.email || null,
+			snils: input.snils || null,
 			isActive: true,
 			workingHours: input.workingHours,
 		})

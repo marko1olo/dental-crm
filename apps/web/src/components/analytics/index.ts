@@ -3,3 +3,8 @@ export * from "./LostPatientsPanel.js";
 export * from "./analyticsWidgetData.js";
 export * from "./CuratorDashboard.js";
 export * from "./CuratorConversionFunnel.js";
+export * from "./DirectorExecutiveDashboard.js";
+export * from "./ExecutiveFunnelMetrics.js";
+export * from "./ExecutivePnlWidget.js";
+export * from "./OnlineBookingConversionPanel.js";
+export * from "./MarketingAttributionDashboard.js";

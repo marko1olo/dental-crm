@@ -113,6 +113,21 @@ export function validateStaffSnils(raw: string | null | undefined): {
 }
 
 /**
+ * Форматирование ИНН с группировкой цифр для удобства чтения
+ */
+export function formatStaffInn(raw: string | null | undefined): string {
+	const digits = cleanStaffDigits(raw);
+	if (!digits) return "";
+	if (digits.length === 12) {
+		return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)}`;
+	}
+	if (digits.length === 10) {
+		return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 10)}`;
+	}
+	return digits;
+}
+
+/**
  * Валидация ИНН (10 цифр для юрлиц, 12 цифр для физлиц / врачей / ИП)
  */
 export function validateStaffInn(raw: string | null | undefined): {
@@ -194,6 +209,7 @@ export function validateStaffInn(raw: string | null | undefined): {
 
 	return { isValid: true, formatted: digits, type: "individual" };
 }
+
 
 /**
  * Валидация Личной медицинской книжки (ЛМК)

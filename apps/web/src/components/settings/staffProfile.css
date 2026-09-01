@@ -1,0 +1,470 @@
+/**
+ * staffProfile.css — 3-колоночный расширенный профиль сотрудника (Фича №51)
+ *
+ * Медицинская плотность, Apple Studio HIG, строгие CSS-токены, поддержка тем Dark/Light,
+ * тач-таргеты >= 44x44px.
+ */
+
+.staff-profile-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1050;
+	background: rgba(15, 23, 42, 0.7);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	animation: staffFadeIn 0.2s ease-out;
+}
+
+@keyframes staffFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes staffSlideUp {
+	from {
+		opacity: 0;
+		transform: translateY(12px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+.staff-profile-modal-window {
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	width: 100%;
+	max-width: 1380px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	animation: staffSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	overflow: hidden;
+}
+
+.staff-profile-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-strong);
+	flex-shrink: 0;
+}
+
+.staff-profile-modal-header-left {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.staff-profile-avatar-large {
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 20px;
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	flex-shrink: 0;
+}
+
+.staff-profile-header-meta h3 {
+	margin: 0;
+	font-size: 17px;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.3;
+}
+
+.staff-profile-header-meta p {
+	margin: 2px 0 0;
+	font-size: 13px;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.staff-profile-badge-role {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal);
+	border: 1px solid rgba(13, 148, 136, 0.2);
+}
+
+.staff-profile-badge-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.staff-profile-badge-status.active {
+	background: rgba(16, 185, 129, 0.12);
+	color: #10b981;
+	border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.staff-profile-badge-status.inactive {
+	background: rgba(239, 68, 68, 0.12);
+	color: #ef4444;
+	border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.staff-profile-modal-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px 24px;
+	min-height: 0;
+}
+
+/* 3-Колоночная Сетка Карточки */
+.staff-profile-3col-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 20px;
+	align-items: start;
+}
+
+@media (max-width: 1150px) {
+	.staff-profile-3col-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 768px) {
+	.staff-profile-3col-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.staff-profile-column {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.staff-profile-card-section {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.staff-profile-section-title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 8px;
+	margin: 0;
+}
+
+.staff-profile-section-title-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--ink);
+}
+
+.staff-profile-section-title-left svg {
+	color: var(--teal);
+}
+
+.staff-profile-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.staff-profile-form-group label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink-muted, var(--muted));
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.staff-profile-form-group input,
+.staff-profile-form-group select,
+.staff-profile-form-group textarea {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 8px 12px;
+	font-size: 13px;
+	color: var(--ink);
+	transition: all 0.15s ease;
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 38px;
+}
+
+.staff-profile-form-group input:focus,
+.staff-profile-form-group select:focus,
+.staff-profile-form-group textarea:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+}
+
+.staff-profile-form-group textarea {
+	resize: vertical;
+	min-height: 72px;
+}
+
+/* Валидационные бейджи и подсказки */
+.staff-compliance-status-box {
+	border-radius: 8px;
+	padding: 10px 12px;
+	font-size: 12px;
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	line-height: 1.4;
+}
+
+.staff-compliance-status-box.valid {
+	background: rgba(16, 185, 129, 0.08);
+	border: 1px solid rgba(16, 185, 129, 0.25);
+	color: #059669;
+}
+
+.staff-compliance-status-box.expiring {
+	background: rgba(245, 158, 11, 0.08);
+	border: 1px solid rgba(245, 158, 11, 0.25);
+	color: #d97706;
+}
+
+.staff-compliance-status-box.expired {
+	background: rgba(239, 68, 68, 0.08);
+	border: 1px solid rgba(239, 68, 68, 0.25);
+	color: #dc2626;
+}
+
+.staff-compliance-status-box.neutral {
+	background: rgba(100, 116, 139, 0.08);
+	border: 1px solid rgba(100, 116, 139, 0.2);
+	color: var(--muted);
+}
+
+/* Заметки руководства (HR Security Guard) */
+.staff-management-notes-box {
+	background: rgba(245, 158, 11, 0.04);
+	border: 1px dashed rgba(245, 158, 11, 0.35);
+	border-radius: 10px;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.staff-management-notes-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	color: #d97706;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Шкала надежности пароля (Entropy Meter) */
+.staff-entropy-gauge-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.staff-entropy-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.staff-entropy-bit-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-weight: 700;
+	font-size: 12px;
+	font-family: monospace;
+}
+
+.staff-entropy-bar-track {
+	width: 100%;
+	height: 6px;
+	background: rgba(100, 116, 139, 0.15);
+	border-radius: 999px;
+	overflow: hidden;
+	position: relative;
+}
+
+.staff-entropy-bar-fill {
+	height: 100%;
+	border-radius: 999px;
+	transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+}
+
+.staff-entropy-cracktime-pill {
+	font-size: 11px;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.staff-entropy-rules-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 4px 8px;
+	margin-top: 4px;
+}
+
+.staff-entropy-rule-item {
+	font-size: 11px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--muted);
+}
+
+.staff-entropy-rule-item.met {
+	color: #10b981;
+}
+
+/* Сессии и безопасность */
+.staff-session-telemetry-box {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 12px;
+	border-radius: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	font-size: 12px;
+}
+
+.staff-session-indicator {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #10b981;
+	box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.staff-session-indicator.offline {
+	background: #94a3b8;
+	box-shadow: none;
+}
+
+/* Модальный футер */
+.staff-profile-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 24px;
+	border-top: 1px solid var(--line);
+	background: var(--paper-strong);
+	flex-shrink: 0;
+	gap: 12px;
+}
+
+.staff-profile-footer-left {
+	font-size: 12px;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.staff-profile-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* Тач-таргеты >= 44x44px */
+.staff-touch-target-button {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 8px 16px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	border: none;
+}
+
+.staff-btn-primary {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+.staff-btn-primary:hover:not(:disabled) {
+	background: #0f766e;
+}
+
+.staff-btn-secondary {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+}
+
+.staff-btn-secondary:hover:not(:disabled) {
+	background: rgba(0, 0, 0, 0.04);
+}
+
+.staff-btn-danger {
+	background: rgba(239, 68, 68, 0.1);
+	border: 1px solid rgba(239, 68, 68, 0.25);
+	color: #ef4444;
+}
+
+.staff-btn-danger:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.18);
+}

@@ -20,6 +20,7 @@ import { PhotoSlotCard } from './PhotoSlotCard';
 import { BeforeAfterComparisonView } from './BeforeAfterComparisonView';
 import { PhotoCalibrationDrawer } from './PhotoCalibrationDrawer';
 import { PhotoCollageExportSheet } from './PhotoCollageExportSheet';
+import { decodeHeicImage } from '../../services/imaging/heicDecoder';
 
 export interface ClinicalPhotoProtocolModalProps {
 	isOpen: boolean;
@@ -80,12 +81,20 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		}));
 	};
 
-	const handleFileUpload = (slotId: string, file: File) => {
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			const resultUrl = e.target?.result as string;
+	const handleFileUpload = async (slotId: string, file: File) => {
+		try {
+			const decoded = await decodeHeicImage(file, {
+				targetFormat: "webp",
+				quality: 0.94,
+				maxDimension: 2048,
+				preserveColorProfile: true,
+				applyExifRotation: true,
+				generateThumbnail: true,
+				thumbnailSize: 200,
+			});
+
 			updateSlotRecord(slotId, {
-				imageUrl: resultUrl,
+				imageUrl: decoded.dataUrl,
 				uploadedAt: new Date().toISOString(),
 				stage: 'before',
 				rotationDegrees: 0,
@@ -96,8 +105,25 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 				exposure: 0,
 				warmth: 0
 			});
-		};
-		reader.readAsDataURL(file);
+		} catch (_err) {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				const resultUrl = e.target?.result as string;
+				updateSlotRecord(slotId, {
+					imageUrl: resultUrl,
+					uploadedAt: new Date().toISOString(),
+					stage: 'before',
+					rotationDegrees: 0,
+					flipHorizontal: false,
+					flipVertical: false,
+					brightness: 0,
+					contrast: 0,
+					exposure: 0,
+					warmth: 0
+				});
+			};
+			reader.readAsDataURL(file);
+		}
 	};
 
 	const triggerUploadForSlot = (slotId: string) => {
@@ -141,7 +167,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 				type="file"
 				ref={fileInputRef}
 				style={{ display: 'none' }}
-				accept="image/jpeg,image/png,image/webp"
+				accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png,.webp"
 				onChange={handleFileInputChange}
 			/>
 

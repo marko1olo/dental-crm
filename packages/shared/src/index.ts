@@ -6712,6 +6712,8 @@ export const createStaffMemberSchema = z.object({
 	specialties: z.array(dentalSpecialtySchema).min(1).default(["universal"]),
 	phone: z.string().trim().max(80).nullable().optional(),
 	email: z.string().trim().email().max(240).nullable().optional(),
+	snils: z.string().trim().max(30).nullable().optional(),
+	inn: z.string().trim().max(30).nullable().optional(),
 	workingHours: staffWorkingHoursSchema.nullable().optional(),
 });
 export type CreateStaffMemberInput = z.infer<typeof createStaffMemberSchema>;
@@ -13864,6 +13866,8 @@ export class DentalInteractionMatrixEngine {
 
 export * from "./security/index.js";
 export * from "./clinical/index.js";
+export * from "./analytics/callTrackingEngine.js";
+export * from "./marketing/marketingRomiEngine.js";
 
 
 

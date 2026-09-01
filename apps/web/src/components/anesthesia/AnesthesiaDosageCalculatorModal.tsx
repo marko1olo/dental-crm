@@ -345,7 +345,13 @@ export function AnesthesiaDosageCalculatorModal({
 										)
 									}
 									className="anesthesia-input"
-									style={{ width: "100%", padding: "0.375rem 0.5rem" }}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.5rem 0.75rem",
+										fontSize: "0.875rem",
+										boxSizing: "border-box",
+									}}
 								/>
 							</div>
 
@@ -374,7 +380,13 @@ export function AnesthesiaDosageCalculatorModal({
 										)
 									}
 									className="anesthesia-input"
-									style={{ width: "100%", padding: "0.375rem 0.5rem" }}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.5rem 0.75rem",
+										fontSize: "0.875rem",
+										boxSizing: "border-box",
+									}}
 								/>
 							</div>
 
@@ -398,7 +410,13 @@ export function AnesthesiaDosageCalculatorModal({
 										setAsaStatus(e.target.value as AsaPhysicalStatus)
 									}
 									className="anesthesia-select"
-									style={{ width: "100%", padding: "0.375rem 0.5rem" }}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.5rem 0.75rem",
+										fontSize: "0.875rem",
+										boxSizing: "border-box",
+									}}
 								>
 									{Object.entries(ASA_CLASSIFICATIONS).map(([key, info]) => (
 										<option key={key} value={key}>
@@ -427,7 +445,13 @@ export function AnesthesiaDosageCalculatorModal({
 									value={targetTooth}
 									onChange={(e) => setTargetTooth(e.target.value)}
 									className="anesthesia-input"
-									style={{ width: "100%", padding: "0.375rem 0.5rem" }}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.5rem 0.75rem",
+										fontSize: "0.875rem",
+										boxSizing: "border-box",
+									}}
 								/>
 							</div>
 						</div>
@@ -436,14 +460,15 @@ export function AnesthesiaDosageCalculatorModal({
 						<div
 							style={{
 								display: "flex",
-								gap: "0.375rem",
+								gap: "0.5rem",
 								alignItems: "center",
 								flexWrap: "wrap",
 							}}
 						>
 							<span
 								style={{
-									fontSize: "0.6875rem",
+									fontSize: "0.75rem",
+									fontWeight: 600,
 									color: "var(--muted, #64748b)",
 								}}
 							>
@@ -455,9 +480,12 @@ export function AnesthesiaDosageCalculatorModal({
 									type="button"
 									onClick={() => setPatientWeightKg(w)}
 									style={{
-										fontSize: "0.6875rem",
-										padding: "2px 8px",
-										borderRadius: "4px",
+										minHeight: "44px",
+										minWidth: "44px",
+										fontSize: "0.8125rem",
+										fontWeight: 700,
+										padding: "0.25rem 0.625rem",
+										borderRadius: "6px",
 										border: "1px solid var(--line, #cbd5e1)",
 										background:
 											patientWeightKg === w
@@ -465,6 +493,9 @@ export function AnesthesiaDosageCalculatorModal({
 												: "var(--paper, #fff)",
 										color: patientWeightKg === w ? "#fff" : "inherit",
 										cursor: "pointer",
+										display: "inline-flex",
+										alignItems: "center",
+										justifyContent: "center",
 									}}
 								>
 									{w} кг
@@ -599,10 +630,12 @@ export function AnesthesiaDosageCalculatorModal({
 										type="button"
 										onClick={() => setCarpulesCount(c)}
 										style={{
-											fontSize: "0.75rem",
-											fontWeight: 600,
-											padding: "3px 10px",
-											borderRadius: "4px",
+											minHeight: "44px",
+											minWidth: "48px",
+											fontSize: "0.8125rem",
+											fontWeight: 700,
+											padding: "0.25rem 0.625rem",
+											borderRadius: "6px",
 											border: "1px solid var(--line, #cbd5e1)",
 											background:
 												carpulesCount === c
@@ -610,6 +643,9 @@ export function AnesthesiaDosageCalculatorModal({
 													: "var(--paper, #fff)",
 											color: carpulesCount === c ? "#fff" : "inherit",
 											cursor: "pointer",
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
 										}}
 									>
 										{c} к.
@@ -1179,7 +1215,12 @@ export function AnesthesiaDosageCalculatorModal({
 						type="button"
 						onClick={onClose}
 						className="anesthesia-btn"
-						style={{ minHeight: "38px", padding: "0.375rem 1rem" }}
+						style={{
+							minHeight: "48px",
+							padding: "0.5rem 1.25rem",
+							fontSize: "0.875rem",
+							fontWeight: 600,
+						}}
 					>
 						Отмена
 					</button>
@@ -1189,14 +1230,14 @@ export function AnesthesiaDosageCalculatorModal({
 						onClick={handleApplyToVisit}
 						disabled={isBlocked}
 						style={{
-							minHeight: "38px",
-							padding: "0.375rem 1.25rem",
-							borderRadius: "6px",
+							minHeight: "48px",
+							padding: "0.5rem 1.5rem",
+							borderRadius: "8px",
 							fontWeight: 700,
-							fontSize: "0.875rem",
+							fontSize: "0.9375rem",
 							display: "flex",
 							alignItems: "center",
-							gap: "0.375rem",
+							gap: "0.5rem",
 							background: isBlocked ? "#ef4444" : "var(--brand, #0284c7)",
 							color: "#fff",
 							border: "none",
@@ -1205,7 +1246,7 @@ export function AnesthesiaDosageCalculatorModal({
 							transition: "all 0.15s ease-out",
 						}}
 					>
-						<CheckCircle2 size={16} />
+						<CheckCircle2 size={18} />
 						<span>Применить в дневник (043/у)</span>
 					</button>
 				</div>

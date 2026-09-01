@@ -26,6 +26,8 @@ import {
 	YAxis,
 } from "recharts";
 import { countLabel, money } from "../AppHelpers";
+import { CuratorDashboard } from "../components/analytics/CuratorDashboard";
+import { DirectorExecutiveDashboard } from "../components/analytics/DirectorExecutiveDashboard";
 import { LostPatientsPanel } from "../components/analytics/LostPatientsPanel";
 import { EmptyState } from "../components/EmptyState.js";
 import { RecallListPanel } from "../components/patients/RecallListPanel";
@@ -113,6 +115,9 @@ export function AnalyticsDashboardView() {
 	const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 	const [dateRange, setDateRange] = useState<string>("all");
 	const [branchFilter, setBranchFilter] = useState<string>("all");
+	const [analyticsSection, setAnalyticsSection] = useState<
+		"executive" | "operational" | "curators" | "lost_patients" | "freed_slots"
+	>("executive");
 	// Счётчик ручных повторов. Кнопка «Повторить» без него не работает: период
 	// не менялся, значит зависимости эффекта те же и он бы не перезапустился.
 	const [_retryToken, setRetryToken] = useState(0);
@@ -283,58 +288,148 @@ export function AnalyticsDashboardView() {
 				</div>
 			</header>
 
-			{/* Состояние 1 — загрузка. */}
-			{loading && (
-				<EmptyState
-					title="Загрузка аналитики"
-					description="Пожалуйста, подождите, идёт формирование показателей..."
-					className="my-6 py-8"
-				/>
+			{/* Навигация по подразделам аналитики (44x44px touch targets) */}
+			<div
+				className="analytics-section-tabs mb-6 flex flex-wrap gap-2 border-b border-[var(--line)] pb-3"
+				role="tablist"
+				aria-label="Разделы аналитики"
+			>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={analyticsSection === "executive"}
+					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+						analyticsSection === "executive"
+							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
+							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
+					}`}
+					onClick={() => setAnalyticsSection("executive")}
+				>
+					Рабочий стол Директора
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={analyticsSection === "operational"}
+					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+						analyticsSection === "operational"
+							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
+							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
+					}`}
+					onClick={() => setAnalyticsSection("operational")}
+				>
+					Операционные графики
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={analyticsSection === "curators"}
+					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+						analyticsSection === "curators"
+							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
+							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
+					}`}
+					onClick={() => setAnalyticsSection("curators")}
+				>
+					Кураторы пациентов
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={analyticsSection === "lost_patients"}
+					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+						analyticsSection === "lost_patients"
+							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
+							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
+					}`}
+					onClick={() => setAnalyticsSection("lost_patients")}
+				>
+					Возврат пациентов
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={analyticsSection === "freed_slots"}
+					className={`inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all ${
+						analyticsSection === "freed_slots"
+							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
+							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
+					}`}
+					onClick={() => setAnalyticsSection("freed_slots")}
+				>
+					Освободившиеся окна
+				</button>
+			</div>
+
+			{analyticsSection === "executive" && (
+				<DirectorExecutiveDashboard onNavigateToSection={(s) => setAnalyticsSection(s as any)} />
 			)}
 
-			{/*
-				Состояние 2 — запрос не удался и показывать нечего.
-				БЫЛО: сюда подставлялся `err.message`, то есть английский текст
-				браузерного исключения, и уйти с экрана было некуда — кнопки
-				повтора не существовало.
-			*/}
-			{!loading && !data && (
-				<EmptyState
-					icon={<AlertTriangle size={24} aria-hidden="true" />}
-					title="Аналитика не построена"
-					description={error ?? NETWORK_FAILURE_MESSAGE}
-					action={retryButton}
-					className="my-6 py-8"
-				/>
+			{analyticsSection === "curators" && (
+				<CuratorDashboard />
 			)}
 
-			{!loading && data && (
+			{analyticsSection === "lost_patients" && (
+				<div className="space-y-6">
+					<LostPatientsPanel />
+					<RecallListPanel />
+				</div>
+			)}
+
+			{analyticsSection === "freed_slots" && (
+				<FreedSlotsPanel />
+			)}
+
+			{analyticsSection === "operational" && (
 				<>
-					{/*
-						Данные показаны, но последнее обновление не прошло. Молча
-						оставить старые цифры на экране — значит выдать их за текущие.
-					*/}
-					{error && (
-						<div
-							role="status"
-							className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line-strong)] bg-[var(--warn-bg)] px-4 py-3 text-sm text-[var(--warn-fg)]"
-						>
-							<span className="flex items-start gap-2">
-								<AlertTriangle
-									size={16}
-									aria-hidden="true"
-									className="mt-0.5 shrink-0"
-								/>
-								<span>
-									{error}
-									{updatedAt
-										? ` Показаны данные на ${updatedAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}.`
-										: ""}
-								</span>
-							</span>
-							{retryButton}
-						</div>
+					{/* Состояние 1 — загрузка. */}
+					{loading && (
+						<EmptyState
+							title="Загрузка аналитики"
+							description="Пожалуйста, подождите, идёт формирование показателей..."
+							className="my-6 py-8"
+						/>
 					)}
+
+					{/*
+						Состояние 2 — запрос не удался и показывать нечего.
+					*/}
+					{!loading && !data && (
+						<EmptyState
+							icon={<AlertTriangle size={24} aria-hidden="true" />}
+							title="Аналитика не построена"
+							description={error ?? NETWORK_FAILURE_MESSAGE}
+							action={retryButton}
+							className="my-6 py-8"
+						/>
+					)}
+
+					{!loading && data && (
+						<>
+							{/*
+								Данные показаны, но последнее обновление не прошло.
+							*/}
+							{error && (
+								<div
+									role="status"
+									className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line-strong)] bg-[var(--warn-bg)] px-4 py-3 text-sm text-[var(--warn-fg)]"
+								>
+									<span className="flex items-start gap-2">
+										<AlertTriangle
+											size={16}
+											aria-hidden="true"
+											className="mt-0.5 shrink-0"
+										/>
+										<span>
+											{error}
+											{updatedAt
+												? ` Показаны данные на ${updatedAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}.`
+												: ""}
+										</span>
+									</span>
+									{retryButton}
+								</div>
+							)}
 
 					{/*
 						Состояние 3 — запрос удался, но за период данных нет. Сервер
@@ -719,6 +814,8 @@ export function AnalyticsDashboardView() {
 						После этого KPI считается живьём по appointments + visits + users,
 						и таблица-снимок не нужна вообще.
 					*/}
+						</>
+					)}
 				</>
 			)}
 			{/* Clearance spacer for floating softphone and dev HUD triggers */}

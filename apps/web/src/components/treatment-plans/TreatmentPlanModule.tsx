@@ -62,6 +62,7 @@ import { StagePaymentPlanModal } from "./stagePayment/StagePaymentPlanModal";
 import { TreatmentPlanPriceValidatorModal } from "./validation/TreatmentPlanPriceValidatorModal";
 import { TreatmentPlanPresenterModal } from "./TreatmentPlanPresenterModal";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
+import { InvoiceGenerationModal } from "../finance/InvoiceGenerationModal";
 import { LabWorkOrderModal } from "../lab/orders/LabWorkOrderModal";
 import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import { CuratorPlanAssignmentModal } from "./CuratorPlanAssignmentModal";
@@ -107,6 +108,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isComparatorModalOpen, setIsComparatorModalOpen] = useState<boolean>(false);
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = useState<boolean>(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = useState<boolean>(false);
+	const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState<boolean>(false);
 	const [isPresenterModalOpen, setIsPresenterModalOpen] = useState<boolean>(false);
 	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
 	const [selectedInstallmentStage, setSelectedInstallmentStage] = useState<TreatmentPlanStage | null>(null);
@@ -517,15 +519,15 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						</button>
 					)}
 
-					{/* Secondary 2: Export to Cashier Button */}
+					{/* Secondary 2: Export to Cashier / Invoice Generation */}
 					<button
 						type="button"
-						onClick={handleExportCashier}
+						onClick={() => setIsInvoiceModalOpen(true)}
 						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] shadow-xs cursor-pointer transition-colors"
-						title="Сформировать счет на оплату в кассу"
+						title="Сформировать наряд / счет на оплату с контролем цен и защитой сметы (Фича #41)"
 					>
 						<Receipt size={15} />
-						<span>Счет в кассу</span>
+						<span>Счет / Наряд</span>
 					</button>
 
 					{/* Secondary 3: 54-FZ Fiscal Receipt & Split Payment Modal */}
@@ -1059,9 +1061,84 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					initialTeeth={
 						selectedLabTeeth && selectedLabTeeth.length > 0 ? selectedLabTeeth : orthopedicTeeth
 					}
+					initialOrder={
+						selectedActStage
+							? ({
+									id: `LAB-${patientId.slice(0, 4)}-${Date.now().toString().slice(-4)}`,
+									orderNumber: `НРД-${patientId.slice(0, 4)}-${Date.now().toString().slice(-4)}`,
+									patientId,
+									patientName,
+									doctorId: auth?.currentUser?.id || "doc-001",
+									doctorName: auth?.currentUser?.name || "Д-р Ковалев С. П.",
+									selectedTeeth:
+										selectedLabTeeth && selectedLabTeeth.length > 0
+											? selectedLabTeeth
+											: orthopedicTeeth,
+									prostheticTypeId: "crown_zirconia_monolithic",
+									materialId: "zirconia_katana_ml",
+									shadeSystem: "classical",
+									shadeCode: "A2",
+									stumpShadeCode: "ND2",
+									currentStage: "in_progress",
+									completedStages: ["order_placed"],
+									patientPriceRub: selectedActStage.totalRub,
+									costPriceRub: Math.round(selectedActStage.totalRub * 0.4),
+									createdAt: new Date().toISOString(),
+									updatedAt: new Date().toISOString(),
+									stagesLog: [],
+									clinicNotes: `Оформлено по этапу №${selectedActStage.stageNumber} плана «${currentTier.title}». Зафиксированная стоимость: ${selectedActStage.totalRub.toLocaleString("ru-RU")} ₽.`,
+								} as any)
+							: null
+					}
 					onSaveOrder={(order) => {
 						showToast(
 							`Наряд-заказ №${order.orderNumber} в зуботехническую лабораторию на сумму ${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ успешно сохранен!`,
+							"success",
+							5000,
+						);
+					}}
+				/>
+			)}
+
+			{/* Fast Invoice & Work Order Generation Modal (Feature #41 PriceGuard) */}
+			{isInvoiceModalOpen && (
+				<InvoiceGenerationModal
+					isOpen={isInvoiceModalOpen}
+					onClose={() => setIsInvoiceModalOpen(false)}
+					patientId={patientId}
+					patientName={patientName}
+					patientPhone={patientPhone}
+					patientBalanceRub={patientBalanceRub}
+					planId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
+					planNumber={`ПЛАН-№${patientId.slice(0, 4)}`}
+					planTitle={currentTier.title}
+					planCreatedAtIso={new Date().toISOString()}
+					doctorFullName={auth?.currentUser?.name || "Д-р Смирнов А. В."}
+					doctorUserId={auth?.currentUser?.id || undefined}
+					planItems={stages.flatMap((s) => s.items)}
+					onInvoiceCreated={(inv) => {
+						showToast(`Документ ${inv.invoiceNumber} успешно сформирован!`, "success", 4000);
+					}}
+				/>
+			)}
+
+			{/* Price Validation & 804n Catalogue Lock Studio Modal (Feature #41) */}
+			{isPriceValidatorModalOpen && (
+				<TreatmentPlanPriceValidatorModal
+					isOpen={isPriceValidatorModalOpen}
+					onClose={() => setIsPriceValidatorModalOpen(false)}
+					planPayload={validationPayload}
+					catalogPricelist={(catalog as any) || []}
+					onExportWorkOrder={(order) => {
+						showToast(
+							`Наряд-заказ №${order.orderNumber} на сумму ${order.totalPayableRub.toLocaleString("ru-RU")} ₽ выписан!`,
+							"success",
+							5000,
+						);
+					}}
+					onExportCompletedAct={(act) => {
+						showToast(
+							`Акт выполненных работ №${act.orderNumber} на сумму ${act.totalPayableRub.toLocaleString("ru-RU")} ₽ сформирован!`,
 							"success",
 							5000,
 						);
