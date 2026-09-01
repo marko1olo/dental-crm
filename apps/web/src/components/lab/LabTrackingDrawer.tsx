@@ -350,7 +350,7 @@ export function LabTrackingDrawer({
 								type="button"
 								onClick={handleSaveFittingDates}
 								disabled={isUpdating}
-								className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 text-white shadow-sm disabled:opacity-50 transition-all inline-flex items-center gap-2"
+								className="min-h-[36px] h-9 px-4 py-1.5 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 text-white shadow-sm disabled:opacity-50 transition-all inline-flex items-center gap-2 cursor-pointer"
 							>
 								{isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
 								Сохранить даты примерок
@@ -369,13 +369,13 @@ export function LabTrackingDrawer({
 								placeholder="Напр. Каркас отфрезерован, требуется коррекция окклюзионного контакта на 16..."
 								value={stageNote}
 								onChange={(e) => setStageNote(e.target.value)}
-								className="flex-1 h-11 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
+								className="flex-1 h-10 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
 							/>
 							<button
 								type="button"
 								onClick={() => handleAdvanceStage()}
 								disabled={isUpdating || !nextStage}
-								className="min-h-[44px] px-4 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm disabled:opacity-50 transition-all"
+								className="min-h-[36px] h-10 px-4 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm disabled:opacity-50 transition-all cursor-pointer"
 							>
 								{isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
 								Следующий этап
@@ -418,7 +418,7 @@ export function LabTrackingDrawer({
 								href={portalUrl}
 								target="_blank"
 								rel="noreferrer"
-								className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] hover:bg-[var(--line)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1.5 transition-colors"
+								className="min-h-[36px] h-9 px-3.5 py-1.5 rounded-xl border border-[var(--line)] hover:bg-[var(--line)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 							>
 								<ExternalLink className="w-4 h-4" />
 								Портал техника
@@ -429,11 +429,11 @@ export function LabTrackingDrawer({
 				</div>
 
 				{/* ─── DRAWER FOOTER ──────────────────────────────────────────────── */}
-				<div className="px-6 py-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex justify-end">
+				<div className="px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] flex justify-end">
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-5 py-2.5 text-xs font-bold rounded-xl border border-[var(--line)] text-[var(--ink-2)] hover:bg-[var(--line)] transition-colors"
+						className="min-h-[36px] h-9 px-5 py-1.5 text-xs font-bold rounded-xl border border-[var(--line)] text-[var(--ink-2)] hover:bg-[var(--line)] transition-colors cursor-pointer"
 					>
 						Закрыть
 					</button>

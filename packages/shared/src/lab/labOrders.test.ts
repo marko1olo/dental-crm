@@ -19,6 +19,8 @@ import {
 	canTransitionLabOrderStatus,
 	calculateLabFinancialSplitKopecks,
 	calculateLabOrderFinancialsKopecks,
+	CANONICAL_5STAGE_LAB_PIPELINE,
+	generateProstheticWarrantyPassport,
 } from "./labOrders.js";
 
 describe("Shared Dental Lab — Zod Validation Schemas", () => {
@@ -175,3 +177,38 @@ describe("Shared Dental Lab — Integer Kopecks Financial Clearing (No Floats)",
 		assert.equal(clearing.doctorCommissionKopecks + clearing.clinicNetProfitKopecks, clearing.grossMarginKopecks);
 	});
 });
+
+describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
+	test("CANONICAL_5STAGE_LAB_PIPELINE contains all 5 sequential clinical stages", () => {
+		const stages = ["impression_scan", "cad_modeling", "framework_fitting", "ceramic_layering", "ready_fixation"] as const;
+		for (let i = 0; i < stages.length; i++) {
+			const stage = CANONICAL_5STAGE_LAB_PIPELINE[stages[i]];
+			assert.ok(stage);
+			assert.equal(stage.step, i + 1);
+			assert.ok(stage.titleRu.length > 0);
+		}
+	});
+
+	test("generateProstheticWarrantyPassport generates valid StAR passport", () => {
+		const passport = generateProstheticWarrantyPassport({
+			orderNumber: "ЛО-2026/09-0012",
+			patientFullName: "Иванов Иван Иванович",
+			doctorFullName: "Петров П.П.",
+			toothFdi: "11, 21",
+			restorationType: "Коронка e.max Press",
+			frameworkMaterial: "Дисиликат лития IPS e.max",
+			shade: "A2",
+			warrantyYears: 3,
+			fixationDate: "2026-09-01",
+		});
+
+		assert.equal(passport.orderNumber, "ЛО-2026/09-0012");
+		assert.equal(passport.warrantyYears, 3);
+		assert.equal(passport.fixationDate, "2026-09-01");
+		assert.equal(passport.expirationDate, "2029-09-01");
+		assert.ok(passport.batchCode.startsWith("LOT-2026-"));
+		assert.ok(passport.gostStandard.includes("ГОСТ"));
+		assert.ok(passport.sanpinDisinfectionMark.includes("СанПиН 3.3686-21"));
+	});
+});
+

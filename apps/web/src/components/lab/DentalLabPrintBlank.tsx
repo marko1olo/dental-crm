@@ -34,6 +34,7 @@ export interface DentalLabPrintBlankProps {
 	contactTightness: string;
 	surfaceTexture: string;
 	cementGapMicrons: number;
+	impressionType?: string;
 	frameworkTrialDate?: string | null;
 	ceramicTrialDate?: string | null;
 	dueDate?: string | null;
@@ -66,6 +67,7 @@ export function DentalLabPrintBlank({
 	contactTightness,
 	surfaceTexture,
 	cementGapMicrons,
+	impressionType = "a_silicone",
 	frameworkTrialDate,
 	ceramicTrialDate,
 	dueDate,
@@ -81,28 +83,39 @@ export function DentalLabPrintBlank({
 			? shadeBleach
 			: shadeClassical;
 
+	const impressionLabels: Record<string, string> = {
+		a_silicone: "А-силикон (Винилполисилоксан / VPS)",
+		c_silicone: "С-силикон (Конденсационный)",
+		polyether: "Полиэфир (Impregum / Permadyne)",
+		hydrocolloid: "Гидроколлоид (Агар-агар)",
+		alginate: "Альгинатная масса",
+		digital_scan_stl_ply: "Цифровой оптический 3D-скан (STL / PLY)",
+		digital_scan: "Цифровой скан (STL/PLY)",
+		pvs_silicone: "PVS-силикон",
+	};
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between flex-wrap gap-3">
 				<div>
 					<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 m-0">
-						Бланк наряд-заказа ЗТЛ (ГОСТ / Медицинская документация)
+						Бланк наряд-заказа ЗТЛ (ГОСТ / Медицинская документация СтАР)
 					</h3>
 					<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-						Официальный наряд-заказ с уникальным штрихкодом и ссылкой для трекинга техником.
+						Официальный наряд-заказ с уникальным 2D-штрихкодом партии и ссылкой для трекинга техником.
 					</p>
 				</div>
 				<button
 					type="button"
 					onClick={handlePrint}
-					className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-md"
+					className="min-h-[36px] h-9 px-4 py-1.5 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer"
 				>
 					<Printer className="w-4 h-4" />
 					Распечатать наряд (A4 / Термочехол)
 				</button>
 			</div>
 
-			{/* Printable Paper Card conforming to GOST standards */}
+			{/* Printable Paper Card conforming to GOST / StAR standards */}
 			<div
 				id="printable-lab-order-sheet"
 				className="p-6 sm:p-8 bg-white text-slate-900 rounded-xl border border-slate-300 shadow-sm space-y-5 print:border-none print:shadow-none print:p-0"
@@ -133,11 +146,13 @@ export function DentalLabPrintBlank({
 						<div><strong>Пациент:</strong> <span className="font-bold">{formPatientName}</span></div>
 						<div><strong>Лечащий врач:</strong> <span className="font-bold">{formDoctorName}</span></div>
 						<div><strong>Зубная формула (FDI):</strong> <span className="font-bold text-sm bg-slate-100 px-2 py-0.5 rounded">{selectedTeeth.join(", ") || "—"}</span></div>
+						<div><strong>Слепок / Оттискная масса:</strong> <span className="font-bold">{impressionLabels[impressionType] || impressionType}</span></div>
 					</div>
 					<div className="space-y-1.5">
 						<div><strong>Вид конструкции:</strong> <span className="font-bold">{CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}</span></div>
-						<div><strong>Материал:</strong> <span className="font-bold">{LAB_MATERIALS.find((m) => m.id === material)?.name || material}</span></div>
+						<div><strong>Материал каркаса:</strong> <span className="font-bold">{LAB_MATERIALS.find((m) => m.id === material)?.name || material}</span></div>
 						<div><strong>Основной цвет VITA:</strong> <span className="font-bold">{finalShade}</span> {shadeStump ? `(Цвет культи: ${shadeStump})` : ""}</div>
+						<div><strong>Гарантийный срок:</strong> <span className="font-bold">2 года (ГОСТ Р 51087-97 / Рекомендации СтАР)</span></div>
 					</div>
 				</div>
 

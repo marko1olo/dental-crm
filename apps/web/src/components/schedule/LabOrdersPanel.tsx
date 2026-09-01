@@ -555,7 +555,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					type="submit"
 					disabled={isCreating}
 					aria-busy={isCreating}
-					className="w-full min-h-[44px] py-2 bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,var(--brand-primary))] text-white font-bold rounded-lg text-xs transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+					className="w-full min-h-[36px] h-9 py-1.5 bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,var(--brand-primary))] text-white font-bold rounded-lg text-xs transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
 				>
 					{isCreating ? "Создание..." : "Создать наряд ЗТЛ"}
 				</button>
@@ -580,7 +580,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							type="button"
 							onClick={() => void fetchOrders()}
 							disabled={isLoading}
-							className="min-h-[44px] py-1.5 px-3 bg-rose-200 dark:bg-rose-500/20 hover:bg-rose-300 dark:hover:bg-rose-500/30 disabled:opacity-60 text-rose-950 dark:text-rose-100 border border-rose-400 dark:border-rose-500/40 rounded-lg font-semibold transition-colors"
+							className="min-h-[36px] h-9 py-1 px-3 bg-rose-200 dark:bg-rose-500/20 hover:bg-rose-300 dark:hover:bg-rose-500/30 disabled:opacity-60 text-rose-950 dark:text-rose-100 border border-rose-400 dark:border-rose-500/40 rounded-lg font-semibold transition-colors cursor-pointer"
 						>
 							{isLoading ? "Загружаем…" : "Попробовать снова"}
 						</button>
@@ -673,7 +673,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 									)}
 								</div>
 
-								<div className="flex items-center gap-2">
+								<div className="flex flex-wrap items-center gap-2 shrink-0">
 									{/*
 										ДЕНЬГИ ТОЛЬКО ЧЕРЕЗ money(). Было
 										`order.priceRub.toLocaleString() ₽` — это формат браузера,
@@ -688,7 +688,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										«цены нет» (null) по-прежнему не показывается вовсе.
 									*/}
 									{order.priceRub !== null && order.priceRub !== undefined ? (
-										<span className="font-semibold text-[var(--teal,var(--brand-primary))] mr-1 font-mono">
+										<span className="font-semibold text-[var(--teal,var(--brand-primary))] mr-1 font-mono whitespace-nowrap shrink-0">
 											{money(order.priceRub)}
 										</span>
 									) : null}
@@ -755,7 +755,8 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										disabled={deletingId === order.id}
 										aria-busy={deletingId === order.id}
 										onClick={() => handleDeleteOrder(order.id)}
-										className="p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+										className="p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+										title="Удалить наряд ЗТЛ"
 									>
 										<Trash2 className="w-3.5 h-3.5" />
 									</button>

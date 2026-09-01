@@ -204,7 +204,7 @@ export function LabOrdersPage() {
 					<button
 						type="button"
 						onClick={fetchOrders}
-						className="p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors shadow-sm"
+						className="p-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shadow-sm"
 						title="Обновить список"
 					>
 						<RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-teal-600" : ""}`} />
@@ -213,7 +213,7 @@ export function LabOrdersPage() {
 					<button
 						type="button"
 						onClick={handleOpenNewOrder}
-						className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs sm:text-sm font-bold shadow-md shadow-teal-500/20 inline-flex items-center gap-2 transition-all"
+						className="h-9 px-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-md shadow-teal-500/20 inline-flex items-center gap-2 transition-all"
 					>
 						<Plus className="w-4 h-4" />
 						Новый наряд в ЗТЛ
@@ -263,7 +263,7 @@ export function LabOrdersPage() {
 						placeholder="Поиск по пациенту, врачу, зубу FDI или материалу..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="w-full h-10 pl-9 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+						className="w-full h-9 pl-9 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
 					/>
 				</div>
 
@@ -271,7 +271,7 @@ export function LabOrdersPage() {
 					<select
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value)}
-						className="h-10 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+						className="h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
 					>
 						<option value="all">Все статусы</option>
 						<option value="sent">Отправлен в ЗТЛ</option>
@@ -286,35 +286,36 @@ export function LabOrdersPage() {
 
 			{/* Main Orders Table / Cards */}
 			{isLoading && orders.length === 0 ? (
-				<div className="p-12 text-center text-slate-400 text-xs flex flex-col items-center gap-3">
+				<div className="p-12 text-center text-[var(--muted)] text-xs flex flex-col items-center gap-3">
 					<Loader2 className="w-8 h-8 animate-spin text-teal-600" />
 					<span>Загрузка нарядов лаборатории...</span>
 				</div>
 			) : error ? (
-				<div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+				<div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 text-xs flex items-center justify-between">
 					<span>{error}</span>
 					<button
 						type="button"
 						onClick={fetchOrders}
-						className="px-3 py-1 bg-rose-200 rounded-lg font-bold"
+						className="px-3 py-1 bg-rose-200 dark:bg-rose-900/60 text-rose-900 dark:text-rose-100 rounded-lg font-bold"
 					>
 						Повторить
 					</button>
 				</div>
 			) : filteredOrders.length === 0 ? (
-				<div className="p-12 text-center bg-white dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-xs space-y-3">
-					<FlaskConical className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
-					<p className="font-semibold text-sm">Нарядов в зуботехническую лабораторию не найдено</p>
-					<p className="max-w-md mx-auto">
-						Оформите новый заказ-наряд с выбором зубов по FDI, расцветки VITA и автоматическим расчетом удержания себестоимости с врача.
+				<div className="p-12 text-center bg-[var(--paper)] rounded-2xl border border-dashed border-[var(--line)] text-[var(--muted)] text-xs space-y-3">
+					<FlaskConical className="w-10 h-10 mx-auto text-teal-600 dark:text-teal-400" />
+					<p className="font-bold text-sm text-[var(--ink)]">Нарядов в зуботехническую лабораторию пока нет</p>
+					<p className="max-w-md mx-auto text-[var(--muted)]">
+						Оформите новый заказ-наряд в лабораторию с выбором зубов по FDI, расцветки VITA и автоматическим расчетом удержания себестоимости с врача.
 					</p>
 					<button
 						type="button"
 						onClick={handleOpenNewOrder}
-						className="px-4 py-2 rounded-xl bg-teal-600 text-white font-bold inline-flex items-center gap-1.5 shadow-sm"
+						className="min-h-[36px] h-9 px-4 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold inline-flex items-center gap-2 shadow-md cursor-pointer transition-all active:scale-95 text-xs"
+						data-testid="empty-state-add-first-lab-order-btn"
 					>
 						<Plus className="w-4 h-4" />
-						Создать первый наряд
+						<span>+ Оформить заказ-наряд в лабораторию</span>
 					</button>
 				</div>
 			) : (

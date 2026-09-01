@@ -83,13 +83,65 @@ export const labWorkflowStageSchema = z.enum([
 export type LabWorkflowStage = z.infer<typeof labWorkflowStageSchema>;
 
 export const impressionTypeSchema = z.enum([
-	"alginate",
-	"pvs_silicone",
+	"a_silicone",
+	"c_silicone",
 	"polyether",
+	"hydrocolloid",
+	"alginate",
 	"digital_scan",
+	"digital_scan_stl_ply",
+	"pvs_silicone",
 	"other",
 ]);
 export type ImpressionType = z.infer<typeof impressionTypeSchema>;
+
+export const IMPRESSION_MATERIALS_RU: Record<ImpressionType, { nameRu: string; category: string; descriptionRu: string }> = {
+	a_silicone: {
+		nameRu: "А-силикон (Винилполисилоксан / VPS)",
+		category: "Эластомерные оттиски",
+		descriptionRu: "Высокоточный А-силикон (база + корригирующий слой) с минимальной усадкой (<0.1%) и гидрофильностью.",
+	},
+	c_silicone: {
+		nameRu: "С-силикон (Конденсационный силикон)",
+		category: "Эластомерные оттиски",
+		descriptionRu: "Стандартный поликонденсационный силикон для базовых двухэтапных и одноэтапных оттисков.",
+	},
+	polyether: {
+		nameRu: "Полиэфир (Impregum / Permadyne)",
+		category: "Полиэфирные оттиски",
+		descriptionRu: "Истинная гидрофильность во влажной среде зубодесневой борозды, идеален для протезирования на имплантатах.",
+	},
+	hydrocolloid: {
+		nameRu: "Обратимый гидроколлоид (Агар-агар)",
+		category: "Гидроколлоидные массы",
+		descriptionRu: "Сверхточная передача поддесневых уступов и микрорельефа витальных культей.",
+	},
+	alginate: {
+		nameRu: "Альгинатная масса (Необратимый гидроколлоид)",
+		category: "Диагностические оттиски",
+		descriptionRu: "Альгинат высокой стабильности для диагностических моделей, антагонистов и капп.",
+	},
+	digital_scan: {
+		nameRu: "Интраоральный цифровой 3D-скан (STL / PLY / OBJ)",
+		category: "Цифровой протокол CAD/CAM",
+		descriptionRu: "Прямой оптический скан челюстей сканером (Medit / 3Shape TRIOS / Shining3D / PrimeScan).",
+	},
+	digital_scan_stl_ply: {
+		nameRu: "Интраоральный цифровой 3D-скан (STL / PLY)",
+		category: "Цифровой протокол CAD/CAM",
+		descriptionRu: "Файлы оптического сканирования челюстей с текстурой в цвете (PLY) и полигональной сеткой (STL).",
+	},
+	pvs_silicone: {
+		nameRu: "PVS-силикон (Поливинилсилоксан)",
+		category: "Эластомерные оттиски",
+		descriptionRu: "Эластомерный слепочный материал длительной размерной стабильности.",
+	},
+	other: {
+		nameRu: "Прочий слепочный материал",
+		category: "Индивидуальный",
+		descriptionRu: "Комбинированная или индивидуальная методика снятия оттиска.",
+	},
+};
 
 // ─── VITA SHADES & NATURAL DIE STUMP SCALES ───────────────────────────────────
 
@@ -358,3 +410,140 @@ export function calculateLabOrderFinancialsKopecks(params: {
 		isBalanced: (doctorCommissionKopecks + clinicNetProfitKopecks) === grossMarginKopecks,
 	};
 }
+
+// ─── CANONICAL 5-STAGE DENTAL LAB PIPELINE ───────────────────────────────────
+
+export const labPipeline5StageKeySchema = z.enum([
+	"impression_scan",      // 1. Слепок / Интраоральный скан (отправка STL/PLY скана или слепка с указанием массы)
+	"cad_modeling",        // 2. 3D-моделирование / CAD (согласование виртуального wax-up)
+	"framework_fitting",   // 3. Примерка каркаса (диоксид циркония, титан, КХС, примерка во рту)
+	"ceramic_layering",    // 4. Нанесение керамики (глазурь, индивидуализация, расцветка Vita Classical / 3D-Master / Bleach)
+	"ready_fixation",      // 5. Готово к фиксации (прибыло в клинику, дата и время сдачи, гарантийный паспорт)
+]);
+export type LabPipeline5StageKey = z.infer<typeof labPipeline5StageKeySchema>;
+
+export interface LabPipeline5StageDefinition {
+	id: LabPipeline5StageKey;
+	step: number;
+	titleRu: string;
+	shortTitleRu: string;
+	descriptionRu: string;
+	badgeClass: string;
+	iconName: string;
+}
+
+export const CANONICAL_5STAGE_LAB_PIPELINE: Record<LabPipeline5StageKey, LabPipeline5StageDefinition> = {
+	impression_scan: {
+		id: "impression_scan",
+		step: 1,
+		titleRu: "1. Слепок / Интраоральный скан",
+		shortTitleRu: "Слепок/Скан",
+		descriptionRu: "Отправка STL/PLY цифрового скана или физического слепка с указанием оттискной массы (А-силикон, С-силикон, полиэфир, гидроколлоид, альгинат).",
+		badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300",
+		iconName: "scan",
+	},
+	cad_modeling: {
+		id: "cad_modeling",
+		step: 2,
+		titleRu: "2. 3D-моделирование / CAD",
+		shortTitleRu: "CAD-моделирование",
+		descriptionRu: "Цифровое моделирование анатомической формы, согласование виртуального wax-up, проверка окклюзионных контактов.",
+		badgeClass: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300",
+		iconName: "layers",
+	},
+	framework_fitting: {
+		id: "framework_fitting",
+		step: 3,
+		titleRu: "3. Примерка каркаса",
+		shortTitleRu: "Примерка каркаса",
+		descriptionRu: "Фрезерование или литье каркаса (диоксид циркония ZrO₂, фрезерованный титан, КХС / CoCr), клиническая примерка в полости рта.",
+		badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
+		iconName: "tool",
+	},
+	ceramic_layering: {
+		id: "ceramic_layering",
+		step: 4,
+		titleRu: "4. Нанесение керамики",
+		shortTitleRu: "Облицовка & Глазурь",
+		descriptionRu: "Послойное нанесение керамических масс, индивидуализация (мамелоны, кальцификаты), расцветка VITA Classical / 3D-Master / Bleach, глазурование.",
+		badgeClass: "bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300",
+		iconName: "palette",
+	},
+	ready_fixation: {
+		id: "ready_fixation",
+		step: 5,
+		titleRu: "5. Готово к фиксации",
+		shortTitleRu: "Готово / Фиксация",
+		descriptionRu: "Работа прибыла в клинику, назначена дата и время сдачи, оформлен гарантийный паспорт ортопедической конструкции.",
+		badgeClass: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+		iconName: "check-circle",
+	},
+};
+
+// ─── PROSTHETIC WARRANTY PASSPORT & STAR PRINT BLANK ─────────────────────────
+
+export const prostheticWarrantyPassportSchema = z.object({
+	orderNumber: z.string().min(1),
+	batchCode: z.string().min(1),
+	patientFullName: z.string().min(1),
+	clinicName: z.string().min(1),
+	doctorFullName: z.string().min(1),
+	technicianLabName: z.string().min(1),
+	toothFdi: z.string().min(1),
+	restorationType: z.string().min(1),
+	frameworkMaterial: z.string().min(1),
+	shade: z.string().min(1),
+	shadeStump: z.string().optional().nullable(),
+	cementationProtocol: z.string().min(1),
+	warrantyYears: z.number().int().min(1).max(10).default(2),
+	fixationDate: z.string(), // YYYY-MM-DD
+	expirationDate: z.string(), // YYYY-MM-DD
+	gostStandard: z.string().default("ГОСТ Р 51087-97 / Стандарты СтАР"),
+	sanpinDisinfectionMark: z.string().default("СанПиН 3.3686-21: Дезинфекция оттисков и протезов выполнена"),
+});
+export type ProstheticWarrantyPassport = z.infer<typeof prostheticWarrantyPassportSchema>;
+
+export function generateProstheticWarrantyPassport(params: {
+	orderNumber: string;
+	batchCode?: string;
+	patientFullName: string;
+	clinicName?: string;
+	doctorFullName: string;
+	technicianLabName?: string;
+	toothFdi: string;
+	restorationType: string;
+	frameworkMaterial: string;
+	shade: string;
+	shadeStump?: string | null;
+	cementationProtocol?: string;
+	warrantyYears?: number;
+	fixationDate?: string;
+}): ProstheticWarrantyPassport {
+	const fixation = params.fixationDate ? new Date(params.fixationDate) : new Date();
+	const years = params.warrantyYears ?? 2;
+	const expiration = new Date(fixation.getTime());
+	expiration.setFullYear(expiration.getFullYear() + years);
+
+	const batchCode = params.batchCode || `LOT-${fixation.getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+	return {
+		orderNumber: params.orderNumber,
+		batchCode,
+		patientFullName: params.patientFullName,
+		clinicName: params.clinicName || "Стоматологическая клиника",
+		doctorFullName: params.doctorFullName,
+		technicianLabName: params.technicianLabName || "Цифровая зуботехническая лаборатория CAD/CAM",
+		toothFdi: params.toothFdi,
+		restorationType: params.restorationType,
+		frameworkMaterial: params.frameworkMaterial,
+		shade: params.shade,
+		shadeStump: params.shadeStump ?? null,
+		cementationProtocol: params.cementationProtocol || "Адгезивный протокол двойного отверждения (композитный цемент)",
+		warrantyYears: years,
+		fixationDate: fixation.toISOString().slice(0, 10),
+		expirationDate: expiration.toISOString().slice(0, 10),
+		gostStandard: "ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Клинические рекомендации СтАР",
+		sanpinDisinfectionMark: "СанПиН 3.3686-21: Оттиски, прикусные блоки и конструкции дезинфицированы",
+	};
+}
+

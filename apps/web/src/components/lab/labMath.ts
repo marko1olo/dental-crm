@@ -16,6 +16,7 @@ export interface DentalLabOrderData {
 	selectedTeeth?: number[];
 	constructionType?: string;
 	material?: string | null;
+	impressionType?: string | null;
 	colorVita?: string | null;
 	shadeSystem?: "classical" | "3d_master" | "bleach";
 	shadeCervical?: string;

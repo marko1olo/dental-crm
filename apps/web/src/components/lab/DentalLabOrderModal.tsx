@@ -100,6 +100,7 @@ export function DentalLabOrderModal({
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
 	const [constructionType, setConstructionType] = useState<string>("single_crown");
 	const [material, setMaterial] = useState<string>("zirconia_multilayer");
+	const [impressionType, setImpressionType] = useState<string>("a_silicone");
 
 	// VITA Shade Selection
 	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master" | "bleach">("classical");
@@ -156,6 +157,7 @@ export function DentalLabOrderModal({
 			}
 			setConstructionType(initialOrder.constructionType || "single_crown");
 			setMaterial(initialOrder.material || "zirconia_multilayer");
+			setImpressionType(initialOrder.impressionType || "a_silicone");
 			if (initialOrder.colorVita) {
 				if (VITA_3D_MASTER_SHADES.includes(initialOrder.colorVita as any)) {
 					setShadeSystem("3d_master");
@@ -298,6 +300,7 @@ export function DentalLabOrderModal({
 
 			const comprehensiveNotes = [
 				clinicalNotes.trim(),
+				`Оттискная масса / Скан: ${impressionType}`,
 				`Конструкция: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`,
 				`Цветовые зоны: Пришейка ${shadeCervical}, Тело ${shadeBody}, Режущий край ${shadeIncisal}`,
 				shadeStump ? `Культя: ${shadeStump}` : null,
@@ -381,6 +384,7 @@ export function DentalLabOrderModal({
 				selectedTeeth,
 				constructionType,
 				material,
+				impressionType,
 				colorVita: finalShade,
 				shadeSystem,
 				shadeCervical,
@@ -520,6 +524,8 @@ export function DentalLabOrderModal({
 							setConstructionType={setConstructionType}
 							material={material}
 							setMaterial={setMaterial}
+							impressionType={impressionType}
+							setImpressionType={setImpressionType}
 							dueDate={dueDate}
 							setDueDate={setDueDate}
 							clinicalNotes={clinicalNotes}
@@ -737,6 +743,7 @@ export function DentalLabOrderModal({
 							contactTightness={contactTightness}
 							surfaceTexture={surfaceTexture}
 							cementGapMicrons={cementGapMicrons}
+							impressionType={impressionType}
 							frameworkTrialDate={frameworkTrialDate}
 							ceramicTrialDate={ceramicTrialDate}
 							dueDate={dueDate}

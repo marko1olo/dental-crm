@@ -25,6 +25,8 @@ export interface DentalLabRestorationTabProps {
 	setDueDate: (date: string) => void;
 	clinicalNotes: string;
 	setClinicalNotes: (notes: string) => void;
+	impressionType?: string;
+	setImpressionType?: (type: string) => void;
 	// Tier 1 Hot Path Shade Props
 	shadeSystem?: "classical" | "3d_master" | "bleach";
 	setShadeSystem?: (system: "classical" | "3d_master" | "bleach") => void;
@@ -61,6 +63,8 @@ export function DentalLabRestorationTab({
 	setDueDate,
 	clinicalNotes,
 	setClinicalNotes,
+	impressionType = "a_silicone",
+	setImpressionType,
 	shadeSystem = "classical",
 	setShadeSystem,
 	shadeClassical = "A2",
@@ -81,8 +85,111 @@ export function DentalLabRestorationTab({
 	cementGapMicrons = 30,
 	setCementGapMicrons,
 }: DentalLabRestorationTabProps) {
+	const [manualFdiInput, setManualFdiInput] = React.useState(selectedTeeth.join(", "));
+	const [fdiValidationError, setFdiValidationError] = React.useState<string | null>(null);
+
+	// Sync manual input when selectedTeeth changes externally
+	React.useEffect(() => {
+		setManualFdiInput(selectedTeeth.join(", "));
+	}, [selectedTeeth]);
+
+	const handleManualFdiChange = (val: string) => {
+		setManualFdiInput(val);
+		if (!val.trim()) {
+			setSelectedTeeth([]);
+			setFdiValidationError(null);
+			return;
+		}
+
+		const tokens = val.split(/[\s,;-]+/).filter(Boolean);
+		const parsedNumbers: number[] = [];
+		let hasInvalid = false;
+
+		for (const tok of tokens) {
+			const n = Number.parseInt(tok, 10);
+			if (Number.isNaN(n) || (n < 11 || (n > 48 && n < 51) || n > 85)) {
+				hasInvalid = true;
+			} else {
+				parsedNumbers.push(n);
+			}
+		}
+
+		if (hasInvalid) {
+			setFdiValidationError("Укажите корректные номера зубов FDI (11–48 постоянные, 51–85 временные)");
+		} else {
+			setFdiValidationError(null);
+			setSelectedTeeth(Array.from(new Set(parsedNumbers)).sort((a, b) => a - b));
+		}
+	};
+
 	return (
 		<div className="space-y-6">
+			{/* FDI Direct Input with autoFocus & Validation */}
+			<div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl space-y-2">
+				<div className="flex items-center justify-between">
+					<label className="block text-xs font-bold text-slate-900 dark:text-slate-100">
+						Быстрый ввод номеров зубов по формуле FDI (11–48 / 51–85)
+					</label>
+					<span className="text-[11px] text-slate-500 dark:text-slate-400">
+						Например: 11, 12, 21, 22 или выберите на схеме ниже
+					</span>
+				</div>
+				<input
+					type="text"
+					autoFocus
+					placeholder="16, 17, 26..."
+					value={manualFdiInput}
+					onChange={(e) => handleManualFdiChange(e.target.value)}
+					className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-mono font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+				/>
+				{fdiValidationError && (
+					<p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold m-0">
+						{fdiValidationError}
+					</p>
+				)}
+			</div>
+
+			{/* Impression Type & Scan File Selection */}
+			<div className="p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl space-y-3">
+				<div className="flex items-center justify-between">
+					<label className="block text-xs font-bold text-slate-900 dark:text-slate-100">
+						Этап 1: Слепок / Интраоральный цифровой скан (Оттискная масса)
+					</label>
+					<span className="text-[11px] font-semibold text-teal-600 dark:text-teal-400">
+						СанПиН 3.3686-21
+					</span>
+				</div>
+				<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+					{[
+						{ id: "a_silicone", label: "А-силикон (VPS)", desc: "Прецизионный оттиск" },
+						{ id: "c_silicone", label: "С-силикон", desc: "Базовый слепок" },
+						{ id: "polyether", label: "Полиэфир (Impregum)", desc: "Имплантология" },
+						{ id: "hydrocolloid", label: "Гидроколлоид", desc: "Сверхточный уступ" },
+						{ id: "alginate", label: "Альгинат", desc: "Диагностика/каппы" },
+						{ id: "digital_scan_stl_ply", label: "3D-скан (STL/PLY)", desc: "Интраоральный CAD" },
+					].map((mat) => {
+						const isSelected = impressionType === mat.id;
+						return (
+							<button
+								key={mat.id}
+								type="button"
+								onClick={() => setImpressionType?.(mat.id)}
+								className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+									isSelected
+										? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] font-bold shadow-xs ring-1 ring-[var(--teal)]"
+										: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+								}`}
+							>
+								<div className="font-bold truncate">{mat.label}</div>
+								<div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal truncate">
+									{mat.desc}
+								</div>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
 			{/* FDI Odontogram Mini-Picker with Compact Upper / Lower / Reset Controls */}
 			<div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 sm:p-5 space-y-4">
 				<div className="flex items-center justify-between flex-wrap gap-2.5">
