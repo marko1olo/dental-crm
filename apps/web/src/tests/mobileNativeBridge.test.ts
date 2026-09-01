@@ -782,7 +782,6 @@ test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 				phone: "+7 (999) 555-44-33",
 				patientName: "Кузнецова Ольга Ивановна",
 				patientId: "pat-9901",
-				direction: "incoming",
 				timestamp: new Date().toISOString(),
 			});
 

@@ -59,6 +59,7 @@ export interface ScheduleFilterStripProps {
 	showFreedSlotsPanel?: boolean;
 	onToggleClipboard?: () => void;
 	showClipboardPanel?: boolean;
+	onOpenCalendarSync?: () => void;
 }
 
 export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
@@ -110,6 +111,7 @@ export function ScheduleFilterStrip({
 	showFreedSlotsPanel = false,
 	onToggleClipboard,
 	showClipboardPanel = false,
+	onOpenCalendarSync,
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
@@ -593,6 +595,23 @@ export function ScheduleFilterStrip({
 								>
 									<Clipboard size={14} className="text-[var(--teal,var(--brand-primary))]" />
 									<span>{showClipboardPanel ? "Скрыть буфер" : "Буфер расписания"}</span>
+								</button>
+							)}
+
+							{onOpenCalendarSync && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenCalendarSync();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+									data-testid="open-calendar-sync-modal-btn"
+									title="Синхронизация с Яндекс Календарём, Apple Calendar и Google Calendar (iCal/CalDAV)"
+								>
+									<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
+									<span>Синхронизация календарей (iCal)</span>
 								</button>
 							)}
 						</div>

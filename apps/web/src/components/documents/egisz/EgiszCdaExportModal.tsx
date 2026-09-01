@@ -1,12 +1,12 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * EGISZ REMD CDA R2 XML EXPORT & UKEP SIGNATURE MODAL HUD
+ * EGISZ REMD CDA R2/R3 XML EXPORT & UKEP SIGNATURE MODAL HUD
  * (МИНЗДРАВ РФ / ПРИКАЗ 911Н / НСИ OID 1.2.643.5.1.13... / ГОСТ Р 34.10-2012)
  * Universal statutory module supporting Form 043/u (SEMD 101) & Form 043-1/u (SEMD 109)
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertCircle,
@@ -14,27 +14,24 @@ import {
 	Building2,
 	Check,
 	CheckCircle2,
-	ChevronRight,
 	Code2,
 	Copy,
 	Download,
-	FileCode2,
 	FileText,
 	Key,
-	Send,
 	Shield,
 	ShieldAlert,
 	ShieldCheck,
-	Sparkles,
 	User,
-	Users,
 	X,
 } from "lucide-react";
+import { strToU8, zipSync } from "fflate";
 import {
 	build1ClickExportPackage,
 	buildEgiszRemdPackage,
 	createDemonstrationGostSignature,
 	generateCdaXml,
+	prepareUkepSigningPayload,
 	validateCdaParams,
 	validateDetachedSignature,
 	validateUkepCertificate,
@@ -44,9 +41,17 @@ import {
 	type DetachedSignature,
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import {
+	checkCryptoProPlugin,
+	getPersonalCertificates,
+	signBase64WithCertificate,
+	type CryptoProCertificate,
+} from "../../../utils/cryptoPro";
 import "./egiszModal.css";
 
 export type SemdFormType = "043u" | "043_1u";
+export type AngleMolarClass = "class_1" | "class_2_sub_1" | "class_2_sub_2" | "class_3";
 
 export interface EgiszCdaExportModalProps {
 	isOpen?: boolean;
@@ -110,17 +115,21 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 	const [icd10, setIcd10] = useState(
 		formType === "043_1u" ? orthodonticDetails?.icd10Code || "K07.2" : "K02.1",
 	);
-	const [angleMolarR, setAngleMolarR] = useState<"class_1" | "class_2_sub_1" | "class_2_sub_2" | "class_3">(
+	const [angleMolarR, setAngleMolarR] = useState<AngleMolarClass>(
 		orthodonticDetails?.angleMolarClassRight || "class_2_sub_1",
 	);
-	const [angleMolarL, setAngleMolarL] = useState<"class_1" | "class_2_sub_1" | "class_2_sub_2" | "class_3">(
+	const [angleMolarL, setAngleMolarL] = useState<AngleMolarClass>(
 		orthodonticDetails?.angleMolarClassLeft || "class_2_sub_1",
 	);
 	const [applianceType, setApplianceType] = useState(
 		orthodonticDetails?.appliancePlan?.applianceType || "metal_braces_self_ligating",
 	);
 
-	// Signatures State
+	// CryptoPro CSP & Signatures State
+	const [hasCryptoPro, setHasCryptoPro] = useState<boolean | null>(null);
+	const [availableCerts, setAvailableCerts] = useState<CryptoProCertificate[]>([]);
+	const [selectedThumbprint, setSelectedThumbprint] = useState<string>("");
+	const [isPluginSigning, setIsPluginSigning] = useState(false);
 	const [doctorSig, setDoctorSig] = useState<DetachedSignature | null>(null);
 	const [clinicSig, setClinicSig] = useState<DetachedSignature | null>(null);
 
@@ -154,9 +163,42 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 		inn: incomingClinic?.inn || "7701234560",
 	}), [incomingClinic]);
 
+	// Detect CryptoPro Browser Plugin on mount
+	useEffect(() => {
+		let isMounted = true;
+		checkCryptoProPlugin()
+			.then(async (installed) => {
+				if (!isMounted) return;
+				setHasCryptoPro(installed);
+				if (installed) {
+					try {
+						const certs = await getPersonalCertificates();
+						if (!isMounted) return;
+						setAvailableCerts(certs);
+						if (certs.length > 0) {
+							const cleanDoctorSnils = currentDoctor.snils?.replace(/\D/g, "");
+							const matched = certs.find((c) =>
+								(cleanDoctorSnils && c.subjectName.includes(cleanDoctorSnils)) ||
+								c.subjectName.toLowerCase().includes(currentDoctor.name.last.toLowerCase()),
+							);
+							setSelectedThumbprint(matched?.thumbprint || certs[0]?.thumbprint || "");
+						}
+					} catch {
+						// Certificate reading may fail if store is inaccessible
+					}
+				}
+			})
+			.catch(() => {
+				if (isMounted) setHasCryptoPro(false);
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, [currentDoctor.snils, currentDoctor.name.last]);
+
 	// Build Full CDA Parameters
 	const cdaParams = useMemo(() => {
-		const docKind = formType === "043_1u" ? "043-1u" : "101";
 		if (formType === "043_1u") {
 			const p: CdaSemd043_1uParams = {
 				docKind: "043-1u",
@@ -272,7 +314,44 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 	}, [doctorSig, currentDoctor.snils, currentClinic.ogrn]);
 
 	// Sign Handlers
-	const handleSignDoctor = useCallback(() => {
+	const handleSignDoctorPlugin = useCallback(async () => {
+		if (!generationResult.success) {
+			showToast("Исправьте ошибки валидации перед подписанием", "error");
+			return;
+		}
+		if (!selectedThumbprint) {
+			showToast("Выберите сертификат КриптоПро для подписания", "error");
+			return;
+		}
+
+		setIsPluginSigning(true);
+		try {
+			const payload = prepareUkepSigningPayload(generationResult.xml);
+			const pkcs7Sig = await signBase64WithCertificate(payload.base64Content, selectedThumbprint);
+			const cert = availableCerts.find((c) => c.thumbprint === selectedThumbprint);
+
+			const sig: DetachedSignature = {
+				signatureBase64: pkcs7Sig,
+				certificateSerialNumber: cert?.thumbprint || "CP-CSP-SERIAL",
+				certificateSubject: cert?.subjectName || `CN=${currentDoctor.name.last} ${currentDoctor.name.first}, SNILS=${currentDoctor.snils}`,
+				certificateIssuer: cert?.issuerName || "УЦ КриптоПро CSP",
+				validFrom: cert?.validFrom,
+				validTo: cert?.validTo,
+				signedAt: new Date().toISOString(),
+				algorithmOid: EGISZ_OIDS.GOST_3410_2012_256,
+				digestAlgorithmOid: EGISZ_OIDS.GOST_3411_2012_256,
+			};
+			setDoctorSig(sig);
+			showToast("Электронная подпись УКЭП врача успешно сформирована через КриптоПро CSP!", "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			showToast(`Ошибка КриптоПро: ${msg}`, "error");
+		} finally {
+			setIsPluginSigning(false);
+		}
+	}, [generationResult, selectedThumbprint, availableCerts, currentDoctor]);
+
+	const handleSignDoctorDemo = useCallback(() => {
 		const sig = createDemonstrationGostSignature({
 			doctorName: `${currentDoctor.name.last} ${currentDoctor.name.first} ${currentDoctor.name.middle || ""}`.trim(),
 			doctorSnils: currentDoctor.snils,
@@ -280,7 +359,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 			isMoSignature: false,
 		});
 		setDoctorSig(sig);
-		showToast("Электронная подпись УКЭП врача успешно сформирована", "success");
+		showToast("Тестовая электронная подпись УКЭП (ГОСТ Р 34.10-2012) сформирована", "success");
 	}, [currentDoctor, currentClinic.name]);
 
 	const handleSignClinic = useCallback(() => {
@@ -294,7 +373,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 		showToast("Подпись медицинской организации (МО) успешно прикреплена", "success");
 	}, [currentClinic.name]);
 
-	// 1-Click Export Package Handler
+	// 1-Click Export ZIP Package Handler
 	const handle1ClickExport = useCallback(async () => {
 		if (!generationResult.success) {
 			showToast("Исправьте ошибки валидации перед экспортом", "error");
@@ -324,25 +403,30 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 			clinicOgrn: currentClinic.ogrn || undefined,
 		});
 
-		// Trigger downloads for XML and SIG files
-		const downloadFile = (fileName: string, content: string, mime: string) => {
-			const blob = new Blob([content], { type: mime });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = fileName;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			URL.revokeObjectURL(url);
+		// Create ZIP Archive Package (XML + .sig + manifest.json)
+		const zipEntries: Record<string, Uint8Array> = {
+			[bundle.xmlFileName]: strToU8(bundle.xmlContent),
+			[bundle.doctorSigFileName]: strToU8(bundle.doctorSigBase64),
+			[bundle.manifestFileName]: strToU8(bundle.manifestJson),
 		};
 
-		downloadFile(bundle.xmlFileName, bundle.xmlContent, "application/xml");
-		downloadFile(bundle.doctorSigFileName, bundle.doctorSigBase64, "application/pkcs7-signature");
 		if (bundle.moSigFileName && bundle.moSigBase64) {
-			downloadFile(bundle.moSigFileName, bundle.moSigBase64, "application/pkcs7-signature");
+			zipEntries[bundle.moSigFileName] = strToU8(bundle.moSigBase64);
 		}
-		downloadFile(bundle.manifestFileName, bundle.manifestJson, "application/json");
+
+		const zippedData = zipSync(zipEntries);
+		const zipBlob = new Blob([zippedData], { type: "application/zip" });
+		const zipFileName = bundle.xmlFileName.replace(/\.xml$/i, ".zip");
+
+		// Trigger download
+		const url = URL.createObjectURL(zipBlob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = zipFileName;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
 
 		// Attempt API submission to backend if reachable
 		setIsSubmitting(true);
@@ -361,17 +445,17 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 
 			const res = await fetch("/api/egisz/packages", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(remdPackage),
 			});
 
 			if (res.ok) {
-				showToast("Пакет РЭМД успешно отправлен в шлюз ЕГИСЗ!", "success");
+				showToast("ZIP-пакет сформирован и отправлен в шлюз ЕГИСЗ РЭМД!", "success");
 			} else {
-				showToast("Пакет сформирован и скачан локально (XML + .sig)", "info");
+				showToast("ZIP-пакет (XML + .sig) успешно сформирован и сохранен на диск", "success");
 			}
 		} catch {
-			showToast("Пакет сохранен на диск: XML + .sig + manifest.json", "info");
+			showToast("ZIP-пакет (XML + .sig) успешно сохранен на диск", "success");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -395,7 +479,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 				<header className="egisz-modal-header">
 					<div className="egisz-header-title-group">
 						<div className="egisz-header-icon">
-							<ShieldCheck size={24} />
+							<ShieldCheck size={20} />
 						</div>
 						<div>
 							<h2 className="egisz-header-title">
@@ -412,7 +496,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 						onClick={onClose}
 						aria-label="Закрыть модальное окно"
 					>
-						<X size={20} />
+						<X size={18} />
 					</button>
 				</header>
 
@@ -423,7 +507,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 						className={`egisz-tab-btn ${activeTab === "diagnostics" ? "active" : ""}`}
 						onClick={() => setActiveTab("diagnostics")}
 					>
-						<Shield size={16} />
+						<Shield size={14} />
 						Диагностика и реквизиты
 						<span
 							className={`egisz-tab-badge ${
@@ -439,7 +523,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 						className={`egisz-tab-btn ${activeTab === "clinical" ? "active" : ""}`}
 						onClick={() => setActiveTab("clinical")}
 					>
-						<FileText size={16} />
+						<FileText size={14} />
 						Клинический статус
 					</button>
 
@@ -448,11 +532,11 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 						className={`egisz-tab-btn ${activeTab === "signature" ? "active" : ""}`}
 						onClick={() => setActiveTab("signature")}
 					>
-						<Key size={16} />
+						<Key size={14} />
 						Подпись УКЭП
 						{doctorSig && (
 							<span className="egisz-tab-badge badge-success inline-flex items-center gap-1">
-								ВРАЧ <Check size={12} aria-hidden="true" />
+								ВРАЧ <Check size={10} aria-hidden="true" />
 							</span>
 						)}
 					</button>
@@ -462,7 +546,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 						className={`egisz-tab-btn ${activeTab === "xml" ? "active" : ""}`}
 						onClick={() => setActiveTab("xml")}
 					>
-						<Code2 size={16} />
+						<Code2 size={14} />
 						HL7 CDA R2 XML
 					</button>
 				</nav>
@@ -503,7 +587,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 						<div className="egisz-checklist">
 							<div className={`egisz-check-item ${currentPatient.snils ? "item-valid" : "item-error"}`}>
 								<div className="egisz-check-icon">
-									{currentPatient.snils ? <CheckCircle2 size={18} color="#16a34a" /> : <AlertCircle size={18} color="#e11d48" />}
+									{currentPatient.snils ? <CheckCircle2 size={16} color="#16a34a" /> : <AlertCircle size={16} color="#e11d48" />}
 								</div>
 								<div className="egisz-check-text-group">
 									<div className="egisz-check-label">Пациент: СНИЛС и полис ОМС</div>
@@ -515,7 +599,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 
 							<div className={`egisz-check-item ${currentDoctor.snils ? "item-valid" : "item-error"}`}>
 								<div className="egisz-check-icon">
-									{currentDoctor.snils ? <CheckCircle2 size={18} color="#16a34a" /> : <AlertCircle size={18} color="#e11d48" />}
+									{currentDoctor.snils ? <CheckCircle2 size={16} color="#16a34a" /> : <AlertCircle size={16} color="#e11d48" />}
 								</div>
 								<div className="egisz-check-text-group">
 									<div className="egisz-check-label">Врач: Должность и идентификатор ФРМР</div>
@@ -527,7 +611,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 
 							<div className={`egisz-check-item ${currentClinic.oid ? "item-valid" : "item-error"}`}>
 								<div className="egisz-check-icon">
-									{currentClinic.oid ? <CheckCircle2 size={18} color="#16a34a" /> : <AlertCircle size={18} color="#e11d48" />}
+									{currentClinic.oid ? <CheckCircle2 size={16} color="#16a34a" /> : <AlertCircle size={16} color="#e11d48" />}
 								</div>
 								<div className="egisz-check-text-group">
 									<div className="egisz-check-label">Медицинская организация (ФРМО)</div>
@@ -539,7 +623,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 
 							<div className={`egisz-check-item ${validationResult.valid ? "item-valid" : "item-error"}`}>
 								<div className="egisz-check-icon">
-									{validationResult.valid ? <CheckCircle2 size={18} color="#16a34a" /> : <AlertCircle size={18} color="#e11d48" />}
+									{validationResult.valid ? <CheckCircle2 size={16} color="#16a34a" /> : <AlertCircle size={16} color="#e11d48" />}
 								</div>
 								<div className="egisz-check-text-group">
 									<div className="egisz-check-label">Справочники НСИ Минздрава (OID)</div>
@@ -548,48 +632,68 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 									</div>
 								</div>
 							</div>
+
+							{validationResult.errors.length > 0 && (
+								<div className="egisz-check-item item-error">
+									<div className="egisz-check-icon">
+										<ShieldAlert size={16} color="#e11d48" />
+									</div>
+									<div className="egisz-check-text-group">
+										<div className="egisz-check-label">Обнаружены несоответствия стандарту:</div>
+										<ul className="egisz-check-detail list-disc pl-4">
+											{validationResult.errors.map((err, i) => (
+												<li key={i}>{err}</li>
+											))}
+										</ul>
+									</div>
+								</div>
+							)}
 						</div>
 					)}
 
 					{/* Tab 2: Clinical */}
 					{activeTab === "clinical" && (
-						<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 140px", gap: "12px" }}>
-								<div>
-									<label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "4px" }}>
+						<div className="egisz-form-container">
+							<div className="egisz-form-grid-split">
+								<div className="egisz-field-group">
+									<label className="egisz-field-label">
 										Клинический диагноз
 									</label>
 									<input
 										type="text"
 										value={diagnosis}
+										autoFocus
 										onChange={(e) => setDiagnosis(e.target.value)}
-										style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)" }}
+										className="egisz-input"
 									/>
 								</div>
-								<div>
-									<label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "4px" }}>
+								<div className="egisz-field-group">
+									<label className="egisz-field-label">
 										МКБ-10
 									</label>
 									<input
 										type="text"
 										value={icd10}
 										onChange={(e) => setIcd10(e.target.value)}
-										style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)" }}
+										className="egisz-input"
 									/>
 								</div>
 							</div>
 
 							{formType === "043_1u" && (
 								<>
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-										<div>
-											<label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "4px" }}>
+									<div className="egisz-form-grid-2col">
+										<div className="egisz-field-group">
+											<label className="egisz-field-label">
 												Смыкание моляров справа (Энгль)
 											</label>
 											<select
 												value={angleMolarR}
-												onChange={(e) => setAngleMolarR(e.target.value as any)}
-												style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)" }}
+												onChange={(e) => {
+													const val = e.target.value as AngleMolarClass;
+													setAngleMolarR(val);
+												}}
+												className="egisz-select"
 											>
 												<option value="class_1">I класс (нейтральный)</option>
 												<option value="class_2_sub_1">II класс 1 подкласс (дистальный + протрузия)</option>
@@ -597,14 +701,17 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 												<option value="class_3">III класс (мезиальный)</option>
 											</select>
 										</div>
-										<div>
-											<label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "4px" }}>
+										<div className="egisz-field-group">
+											<label className="egisz-field-label">
 												Смыкание моляров слева (Энгль)
 											</label>
 											<select
 												value={angleMolarL}
-												onChange={(e) => setAngleMolarL(e.target.value as any)}
-												style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)" }}
+												onChange={(e) => {
+													const val = e.target.value as AngleMolarClass;
+													setAngleMolarL(val);
+												}}
+												className="egisz-select"
 											>
 												<option value="class_1">I класс (нейтральный)</option>
 												<option value="class_2_sub_1">II класс 1 подкласс (дистальный + протрузия)</option>
@@ -614,14 +721,14 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 										</div>
 									</div>
 
-									<div>
-										<label style={{ fontSize: "12px", fontWeight: 600, display: "block", marginBottom: "4px" }}>
+									<div className="egisz-field-group">
+										<label className="egisz-field-label">
 											Выбранная ортодонтическая аппаратура
 										</label>
 										<select
 											value={applianceType}
 											onChange={(e) => setApplianceType(e.target.value)}
-											style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)" }}
+											className="egisz-select"
 										>
 											<option value="metal_braces_self_ligating">Металлическая самолигирующая брекет-система</option>
 											<option value="ceramic_braces_aesthetic">Эстетическая керамическая брекет-система</option>
@@ -641,17 +748,35 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							<div className="egisz-sign-card">
 								<div className="egisz-sign-card-header">
 									<span className="egisz-sign-card-title">
-										<User size={16} />
+										<User size={15} />
 										Подпись врача (CAdES-BES)
 									</span>
 									{doctorSig ? (
 										<span className="egisz-cert-valid-badge">
-											<Check size={14} /> Подписано
+											<Check size={12} /> Подписано
 										</span>
 									) : (
-										<span style={{ fontSize: "12px", color: "var(--muted)" }}>Не подписан</span>
+										<span className="egisz-cert-empty-state">Не подписан</span>
 									)}
 								</div>
+
+								{/* CryptoPro Browser Plugin Selection */}
+								{hasCryptoPro && availableCerts.length > 0 && (
+									<div className="egisz-cryptopro-banner">
+										<div className="font-semibold">Обнаружен плагин КриптоПро CSP</div>
+										<select
+											value={selectedThumbprint}
+											onChange={(e) => setSelectedThumbprint(e.target.value)}
+											className="egisz-select"
+										>
+											{availableCerts.map((cert) => (
+												<option key={cert.thumbprint} value={cert.thumbprint}>
+													{cert.name || cert.subjectName} (до {new Date(cert.validTo).toLocaleDateString("ru-RU")})
+												</option>
+											))}
+										</select>
+									</div>
+								)}
 
 								{doctorSig ? (
 									<div className="egisz-cert-details">
@@ -660,15 +785,15 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 										<div><strong>Дата подписания:</strong> {new Date(doctorSig.signedAt).toLocaleString("ru-RU")}</div>
 										<div><strong>Алгоритм:</strong> ГОСТ Р 34.10-2012 (256 бит)</div>
 										{doctorCertValidation && (
-											<div style={{ marginTop: "4px", color: doctorCertValidation.valid ? "var(--ok-fg, #16a34a)" : "var(--bad-fg, #e11d48)", fontWeight: 600 }} className="inline-flex items-center gap-1">
+											<div className={`egisz-cert-status-row ${doctorCertValidation.valid ? "egisz-cert-status-ok" : "egisz-cert-status-err"}`}>
 												{doctorCertValidation.valid ? (
 													<>
-														<CheckCircle2 size={14} className="shrink-0" aria-hidden="true" />
+														<CheckCircle2 size={13} className="shrink-0" aria-hidden="true" />
 														<span>Сертификат проверен и действителен</span>
 													</>
 												) : (
 													<>
-														<AlertTriangle size={14} className="shrink-0" aria-hidden="true" />
+														<AlertTriangle size={13} className="shrink-0" aria-hidden="true" />
 														<span>Ошибка: {doctorCertValidation.errors.join(", ")}</span>
 													</>
 												)}
@@ -676,34 +801,48 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 										)}
 									</div>
 								) : (
-									<div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4 }}>
+									<div className="egisz-cert-empty-state">
 										Подписание выполняется сертификатом врача-стоматолога (УКЭП) с верификацией СНИЛС по справочнику ФРМР.
 									</div>
 								)}
 
-								<button
-									type="button"
-									className="egisz-btn egisz-btn-primary"
-									onClick={handleSignDoctor}
-								>
-									<Key size={16} />
-									{doctorSig ? "Переподписать УКЭП врача" : "Подписать УКЭП врача"}
-								</button>
+								<div className="flex flex-col gap-2">
+									{hasCryptoPro && availableCerts.length > 0 ? (
+										<button
+											type="button"
+											className="egisz-btn egisz-btn-primary"
+											onClick={handleSignDoctorPlugin}
+											disabled={isPluginSigning}
+										>
+											<Key size={14} />
+											{isPluginSigning ? "Подписание..." : (doctorSig ? "Переподписать КриптоПро CSP" : "Подписать через КриптоПро CSP")}
+										</button>
+									) : (
+										<button
+											type="button"
+											className="egisz-btn egisz-btn-primary"
+											onClick={handleSignDoctorDemo}
+										>
+											<Key size={14} />
+											{doctorSig ? "Переподписать УКЭП врача" : "Сформировать УКЭП (ГОСТ 34.10-2012)"}
+										</button>
+									)}
+								</div>
 							</div>
 
 							{/* Clinic/MO Signature Card */}
 							<div className="egisz-sign-card">
 								<div className="egisz-sign-card-header">
 									<span className="egisz-sign-card-title">
-										<Building2 size={16} />
+										<Building2 size={15} />
 										Подпись клиники (МО / XAdES)
 									</span>
 									{clinicSig ? (
 										<span className="egisz-cert-valid-badge">
-											<Check size={14} /> Подписано
+											<Check size={12} /> Подписано
 										</span>
 									) : (
-										<span style={{ fontSize: "12px", color: "var(--muted)" }}>Опционально</span>
+										<span className="egisz-cert-empty-state">Опционально</span>
 									)}
 								</div>
 
@@ -715,7 +854,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 										<div><strong>ОГРН клиники:</strong> {currentClinic.ogrn}</div>
 									</div>
 								) : (
-									<div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4 }}>
+									<div className="egisz-cert-empty-state">
 										Подпись медицинской организации заверяет документ перед окончательной отправкой в архив РЭМД.
 									</div>
 								)}
@@ -725,7 +864,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 									className="egisz-btn egisz-btn-secondary"
 									onClick={handleSignClinic}
 								>
-									<ShieldCheck size={16} />
+									<ShieldCheck size={14} />
 									{clinicSig ? "Обновить подпись МО" : "Подписать УКЭП клиники"}
 								</button>
 							</div>
@@ -734,18 +873,17 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 
 					{/* Tab 4: XML Preview */}
 					{activeTab === "xml" && (
-						<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-								<span style={{ fontSize: "12px", color: "var(--muted)" }}>
-									Канонический HL7 CDA Release 2 XML (UTF-8, c14n)
+						<div className="egisz-xml-container">
+							<div className="egisz-xml-toolbar">
+								<span className="egisz-xml-title">
+									Канонический HL7 CDA Release 2/3 XML (UTF-8, c14n)
 								</span>
 								<button
 									type="button"
 									className="egisz-btn egisz-btn-secondary"
 									onClick={handleCopyXml}
-									style={{ minHeight: "36px", padding: "6px 12px", fontSize: "12px" }}
 								>
-									<Copy size={14} />
+									<Copy size={13} />
 									{copied ? "Скопировано!" : "Копировать XML"}
 								</button>
 							</div>
@@ -758,18 +896,18 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 
 				{/* Modal Footer: 1-Click Export Actions */}
 				<footer className="egisz-modal-footer">
-					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-						<span style={{ fontSize: "12px", color: "var(--muted)" }}>
+					<div className="egisz-footer-info">
+						<span>
 							СЭМД: <strong>{formType === "043_1u" ? "109 (Ортодонтия)" : "101 (Стоматология)"}</strong>
 						</span>
 						{doctorSig && (
 							<span className="egisz-cert-valid-badge">
-								<Check size={12} /> УКЭП готова к экспорту
+								<Check size={12} /> УКЭП готова
 							</span>
 						)}
 					</div>
 
-					<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+					<div className="egisz-footer-actions">
 						<button
 							type="button"
 							className="egisz-btn egisz-btn-secondary"
@@ -784,8 +922,8 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							onClick={handle1ClickExport}
 							disabled={!generationResult.success || isSubmitting}
 						>
-							<Download size={16} />
-							{isSubmitting ? "Отправка..." : "Экспорт пакета (XML + .sig) в 1 клик"}
+							<Download size={14} />
+							{isSubmitting ? "Отправка..." : "Экспорт ZIP-пакета (XML + .sig) в 1 клик"}
 						</button>
 					</div>
 				</footer>

@@ -26,7 +26,7 @@ export function SberbankTerminalPaymentModal({
 	onSelectAlternativeMethod,
 }: SberbankTerminalPaymentModalProps) {
 	const [status, setStatus] = useState<
-		"idle" | "initiating" | "polling" | "success" | "error"
+		"idle" | "initiating" | "polling" | "cancelling" | "success" | "error"
 	>("idle");
 	const [orderId, setOrderId] = useState<string | null>(null);
 	const [formUrl, setFormUrl] = useState<string | null>(null);
@@ -35,6 +35,55 @@ export function SberbankTerminalPaymentModal({
 	const { auth } = useAppLogicContext();
 
 	const inFlight = useRef(false);
+
+	const handleCancelOrReconcile = useCallback(
+		async (orderIdToCancel: string) => {
+			setStatus("cancelling");
+			try {
+				const res = await fetch("/api/sberbank/cancel-or-reconcile", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(auth && typeof auth.denteClinicalReadHeaders === "function"
+							? auth.denteClinicalReadHeaders()
+							: {}),
+					},
+					body: JSON.stringify({ orderId: orderIdToCancel }),
+				});
+				if (!res.ok) {
+					setStatus("error");
+					setErrorMsg(
+						"Время ожидания терминала истекло. Не удалось автоматически подтвердить отмену в банке. Обратитесь к администратору.",
+					);
+					return;
+				}
+				const data = (await res.json().catch(() => ({}))) as {
+					success?: boolean;
+					status?: string;
+					message?: string;
+				};
+				if (data.status === "paid") {
+					setStatus("success");
+					showToast("Оплата была успешно принята банком", "success");
+					setTimeout(() => {
+						onSuccess();
+						onClose();
+					}, 1500);
+					return;
+				}
+				setStatus("error");
+				setErrorMsg(
+					data.message ||
+						"Время ожидания терминала истекло. Транзакция отменена в банке. Выберите альтернативный способ оплаты.",
+				);
+			} catch (err) {
+				logger.error("Sberbank cancel error:", err);
+				setStatus("error");
+				setErrorMsg("Время ожидания истекло. Проверьте статус операции или повторите запрос.");
+			}
+		},
+		[auth, onSuccess, onClose],
+	);
 
 	const initiatePayment = useCallback(async () => {
 		if (
@@ -105,15 +154,19 @@ export function SberbankTerminalPaymentModal({
 		}
 	}, [isOpen]);
 
-	// Polling and timeout countdown
+	// Polling and timeout countdown with Double-Charge protection
 	useEffect(() => {
 		if (status !== "polling" || !orderId) return;
+
+		let isCleanedUp = false;
 
 		const timer = setInterval(() => {
 			setSecondsElapsed((prev) => {
 				if (prev >= TERMINAL_POLL_TIMEOUT_SEC) {
-					setStatus("error");
-					setErrorMsg("Время ожидания ответа эквайрингового терминала Сбербанк (Arcus2/TTK) истекло (Таймаут).");
+					clearInterval(timer);
+					if (!isCleanedUp && orderId) {
+						void handleCancelOrReconcile(orderId);
+					}
 					return prev;
 				}
 				return prev + 1;
@@ -177,22 +230,28 @@ export function SberbankTerminalPaymentModal({
 		}, 3000);
 
 		return () => {
+			isCleanedUp = true;
 			clearInterval(interval);
 			clearInterval(timer);
 		};
-	}, [status, orderId, auth, onSuccess, onClose]);
+	}, [status, orderId, auth, onSuccess, onClose, handleCancelOrReconcile]);
 
 	const handleClose = () => {
-		if (
-			status === "polling" &&
-			!window.confirm(
-				"Оплата еще не подтверждена. Вы уверены, что хотите закрыть окно?",
-			)
-		) {
+		if (status === "polling" && orderId) {
+			if (
+				!window.confirm(
+					"Оплата еще не подтверждена. Отменить транзакцию на терминале Сбербанк и закрыть окно?",
+				)
+			) {
+				return;
+			}
+			void handleCancelOrReconcile(orderId);
 			return;
 		}
+		if (status === "cancelling") return;
 		onClose();
 	};
+
 
 	const handleChooseAlternative = (method: "sbp" | "cash" | "deposit") => {
 		if (onSelectAlternativeMethod) {
@@ -253,6 +312,13 @@ export function SberbankTerminalPaymentModal({
 					</div>
 				)}
 
+				{status === "cancelling" && (
+					<div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 text-xs sm:text-sm font-semibold flex items-center gap-2">
+						<RotateCcw className="w-4 h-4 animate-spin shrink-0 text-amber-600" />
+						<span>Проверка статуса в банке и безопасная отмена транзакции (защита от двойного списания)...</span>
+					</div>
+				)}
+
 				{status === "polling" && (
 					<div className="space-y-3 p-4 rounded-xl bg-teal-500/5 border border-teal-500/20">
 						<div className="flex items-center justify-between text-xs sm:text-sm">
@@ -277,11 +343,12 @@ export function SberbankTerminalPaymentModal({
 								</a>
 							</div>
 						)}
-						<p className="text-xs text-rose-600 dark:text-rose-400 m-0">
-							Внимание: при закрытии окна во время оплаты транзакция на терминале не отменяется.
+						<p className="text-xs text-amber-700 dark:text-amber-300 m-0">
+							Безопасный режим: при таймауте или закрытии окна транзакция автоматически проверяется и отменяется на шлюзе Сбербанка.
 						</p>
 					</div>
 				)}
+
 
 				{status === "success" && (
 					<div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-sm">

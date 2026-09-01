@@ -64,6 +64,13 @@ const draft = {
 	dataProcessingBasisNote: "метка-основание-пдн",
 	orthodonticProgress: "",
 	loyaltyTier: "standard",
+	curatorId: "",
+	curatorFullName: "",
+	curatorAssignedAt: "",
+	curatorFunnelStage: "",
+	curatorCommissionPercent: "",
+	curatorNotes: "",
+	curatorNextContactDate: "",
 	preferredAppointmentWeekdays: [1, 3],
 };
 
@@ -80,7 +87,7 @@ const weekdayOptions = [
 function renderForm(profileDraft: typeof draft): string {
 	return renderToStaticMarkup(
 		createElement(PatientAdministrativeForm, {
-			patientAdministrativeProfileDraft: profileDraft,
+			patientAdministrativeProfileDraft: profileDraft as any,
 			updatePatientAdministrativeProfileDraft: () => {},
 			weekdayOptions,
 			normalizeOptionalWorkingDaysDraft: (days: number[]) =>
@@ -97,7 +104,8 @@ describe("реквизиты пациента рисуются целиком", 
 			.filter(
 				([field]) =>
 					field !== "preferredAppointmentWeekdays" &&
-					field !== "orthodonticProgress",
+					field !== "orthodonticProgress" &&
+					!field.startsWith("curator"),
 			)
 			.filter(([, value]) => !markup.includes(String(value)))
 			.map(([field]) => field);

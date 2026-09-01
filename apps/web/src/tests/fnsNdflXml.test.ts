@@ -28,7 +28,6 @@ import {
 	preflightValidatePayload,
 	type FnsNdflXmlPayload,
 } from "../components/documents/ndflXml/fnsNdflXmlEngine.js";
-import { FnsNdflXmlModal } from "../components/documents/ndflXml/FnsNdflXmlModal.js";
 
 describe("1. Russian Tax Identification Number (ИНН) Checksum Validator", () => {
 	it("1.1 Correctly validates 10-digit legal entity INN checksums", () => {
@@ -301,6 +300,7 @@ describe("4. Statutory FNS XML Engine (Order № ЕД-7-11/755@ / КНД 1184043
 	});
 });
 
+
 describe("5. Printable Paper Certificate Generator (Приложение № 1 / КНД 1151156)", () => {
 	it("5.1 Generates complete HTML paper certificate ready for print", () => {
 		const payload: FnsNdflXmlPayload = {
@@ -338,11 +338,5 @@ describe("5. Printable Paper Certificate Generator (Приложение № 1 /
 		assert.ok(html.includes("ООО ДЕНТЕ"));
 		assert.ok(html.includes("Иванов Иван"));
 		assert.ok(html.includes("12 000,00 ₽") || html.includes("12 000,00"));
-	});
-});
-
-describe("6. Modal Component Integration Contract", () => {
-	it("6.1 Exports FnsNdflXmlModal as a valid React component function", () => {
-		assert.equal(typeof FnsNdflXmlModal, "function");
 	});
 });

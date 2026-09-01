@@ -19,3 +19,6 @@ export * from "./PatientInstallmentScheduleModal";
 export * from "./CashRegisterModal";
 export * from "./FamilyWalletModal";
 export * from "./refunds/RefundServiceModal";
+export * from "./SberPayIntegration";
+export * from "./PaymentModal";
+export * from "./SberbankTerminalPaymentModal";

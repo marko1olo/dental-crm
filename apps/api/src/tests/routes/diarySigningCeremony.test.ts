@@ -156,11 +156,12 @@ describe("церемония подписания дневника одинак�
 		 * без контекста отвергается кодом 42501.
 		 */
 		return withFixtureTenant(organizationId, async (tx) => {
+			const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 			const [service] = await tx
 				.insert(serviceCatalogItems)
 				.values({
 					organizationId,
-					code: `U5-${label}`,
+					code: `U5-${label}-${uniqueSuffix}`,
 					title: `Лечение кариеса (${label})`,
 					basePriceRub: 4500,
 					priceRub: 4500,
@@ -172,7 +173,7 @@ describe("церемония подписания дневника одинак�
 				.insert(inventoryItems)
 				.values({
 					organizationId,
-					name: `Композит U5-${label}`,
+					name: `Композит U5-${label}-${uniqueSuffix}`,
 					stockQuantity: stock,
 					currentQty: START_STOCK,
 					unitCostRub: "123.45",

@@ -39,6 +39,15 @@ export type SberbankOrderStatusResponse = z.infer<
 	typeof SberbankOrderStatusResponseSchema
 >;
 
+const SberbankOperationResponseSchema = z.object({
+	errorCode: z.coerce.string().optional(),
+	errorMessage: z.string().optional(),
+});
+
+export type SberbankOperationResponse = z.infer<
+	typeof SberbankOperationResponseSchema
+>;
+
 export class SberbankClient {
 	private baseUrl: string;
 	private userName: string;
@@ -132,4 +141,70 @@ export class SberbankClient {
 		const data = await response.json();
 		return SberbankOrderStatusResponseSchema.parse(data);
 	}
+
+	/**
+	 * Отмена (реверс / unhold / void) не урегулированной операции
+	 * @param orderId Идентификатор заказа в Сбербанке
+	 */
+	async reverseOrder(orderId: string): Promise<SberbankOperationResponse> {
+		const params = new URLSearchParams();
+
+		if (this.token) {
+			params.append("token", this.token);
+		} else {
+			params.append("userName", this.userName);
+			if (this.password) params.append("password", this.password);
+		}
+
+		params.append("orderId", orderId);
+
+		const response = await fetch(`${this.baseUrl}reverse.do`, {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: params.toString(),
+		});
+
+		if (!response.ok) {
+			throw new Error(`Ошибка отмены заказа в Сбербанке: HTTP ${response.status}`);
+		}
+
+		const data = await response.json();
+		return SberbankOperationResponseSchema.parse(data);
+	}
+
+	/**
+	 * Возврат средств (refund) по ранее завершённому заказу
+	 * @param orderId Идентификатор заказа в Сбербанке
+	 * @param amount Сумма возврата в копейках
+	 */
+	async refundOrder(
+		orderId: string,
+		amount: number,
+	): Promise<SberbankOperationResponse> {
+		const params = new URLSearchParams();
+
+		if (this.token) {
+			params.append("token", this.token);
+		} else {
+			params.append("userName", this.userName);
+			if (this.password) params.append("password", this.password);
+		}
+
+		params.append("orderId", orderId);
+		params.append("amount", amount.toString());
+
+		const response = await fetch(`${this.baseUrl}refund.do`, {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: params.toString(),
+		});
+
+		if (!response.ok) {
+			throw new Error(`Ошибка возврата средств в Сбербанке: HTTP ${response.status}`);
+		}
+
+		const data = await response.json();
+		return SberbankOperationResponseSchema.parse(data);
+	}
 }
+

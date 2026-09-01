@@ -10,4 +10,6 @@ export * from "./usbBarcodeScanner.js";
 export * from "./HardwareScanner.js";
 export * from "./HardwarePrinter.js";
 export * from "./hardwareEmulators.js";
+export * from "./sberbankTerminal.js";
+export * from "./posTerminalBridge.js";
 

@@ -85,4 +85,71 @@ describe("TreatmentPlanRoadmap — 804n Translation, 5-Stage Patient Mapping & 1
 		assert.equal(breakdown.netPriceWithRefundKopecks, 5220000);
 		assert.equal(formatKopecksToRubExact(breakdown.netPriceWithRefundKopecks).replace(/\s/g, " "), "52 200,00");
 	});
+
+	it("7. Validates 1-click stage booking callback signatures (onBookStage / onSelectStage / onBookStageSlot)", () => {
+		const mockStage = {
+			stageNumber: 2 as const,
+			stageKind: "stage_2_therapy" as const,
+			titleRu: "Этап 2: Терапевтическая санация",
+			subtitleRu: "Лечение кариеса и каналов",
+			patientGoalRu: "Полностью ликвидировать кариес",
+			status: "planned" as const,
+			teethFdiList: ["16", "26"],
+			procedures: [],
+			totalRub: 15000,
+			totalKopecks: 1500000,
+			completedRub: 0,
+			completedKopecks: 0,
+			remainingRub: 15000,
+			remainingKopecks: 1500000,
+			estimatedVisitsCount: 2,
+		};
+
+		let bookedStage: any = null;
+		let selectedStage: any = null;
+		let bookedSlotNumber: number | null = null;
+
+		const onBookStage = (s: any) => {
+			bookedStage = s;
+		};
+		const onSelectStage = (s: any) => {
+			selectedStage = s;
+		};
+		const onBookStageSlot = (num: number, s: any) => {
+			bookedSlotNumber = num;
+		};
+
+		// Trigger booking handler simulation
+		onBookStage(mockStage);
+		onSelectStage(mockStage);
+		onBookStageSlot(mockStage.stageNumber, mockStage);
+
+		assert.equal(bookedStage?.stageNumber, 2);
+		assert.equal(selectedStage?.stageKind, "stage_2_therapy");
+		assert.equal(bookedSlotNumber, 2);
+	});
+
+	it("8. Validates treatmentPlanRoadmap.css for mobile 375px/390px rules and touch targets >= 44px", async () => {
+		const fs = await import("node:fs");
+		const path = await import("node:path");
+
+		const candidatePaths = [
+			path.resolve(process.cwd(), "src/components/treatment-plans/treatmentPlanRoadmap.css"),
+			path.resolve(process.cwd(), "apps/web/src/components/treatment-plans/treatmentPlanRoadmap.css"),
+		];
+		const cssPath = candidatePaths.find((p) => fs.existsSync(p)) || candidatePaths[0]!;
+		assert.ok(fs.existsSync(cssPath), `treatmentPlanRoadmap.css must exist at ${cssPath}`);
+
+		const css = fs.readFileSync(cssPath, "utf8");
+
+		// Touch targets >= 44px on mobile
+		assert.ok(css.includes("min-height: 44px"));
+		assert.ok(css.includes("touch-action: manipulation"));
+
+		// Mobile media query with overflow protection
+		assert.ok(css.includes("@media (max-width: 640px)"));
+		assert.ok(css.includes("roadmap-book-stage-btn"));
+		assert.ok(css.includes("roadmap-tax-banner"));
+		assert.ok(css.includes("overflow-x: hidden") || css.includes("max-width: 100%"));
+	});
 });

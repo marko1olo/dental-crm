@@ -638,3 +638,27 @@
     box-shadow: none;
   }
 }
+
+/* ── Mobile 390px Responsive Rules ── */
+@media (max-width: 640px) {
+  .emr043-modal-backdrop {
+    padding: 0.25rem;
+  }
+  .emr043-modal-window {
+    max-height: 98vh;
+    height: 98vh;
+    border-radius: 10px;
+  }
+  .emr043-header-toolbar {
+    padding: 0.75rem 0.875rem;
+    gap: 0.5rem;
+  }
+  .emr043-nav-tabs {
+    padding: 0.5rem 0.75rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .emr043-body {
+    padding: 0.75rem;
+  }
+}

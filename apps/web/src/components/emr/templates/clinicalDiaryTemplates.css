@@ -229,6 +229,15 @@
     flex-direction: column;
     overflow-y: auto;
   }
+  .cd-templates-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    max-height: 280px;
+    border-right: none;
+    border-bottom: 1px solid var(--line, #e2e8f0);
+  }
 }
 
 /* ── Left Sidebar (Catalog & Filters) ── */
@@ -725,4 +734,20 @@
 [data-theme="dark"] .cd-btn-secondary:hover,
 .dark .cd-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Mobile 390px Responsive Rules ── */
+@media (max-width: 640px) {
+  .cd-templates-backdrop {
+    padding: 4px;
+  }
+  .cd-templates-modal {
+    height: 98vh;
+    border-radius: 10px;
+  }
+  .cd-templates-header,
+  .cd-templates-fast-ribbon,
+  .cd-templates-footer {
+    padding: 8px 12px;
+  }
 }

@@ -25,6 +25,7 @@ import { showToast } from "./components/GlobalToast";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { AppointmentModal } from "./components/schedule/AppointmentModal";
 import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
+import { DoctorCalendarSyncModal } from "./components/schedule/DoctorCalendarSyncModal";
 import { DoctorFreeSlotsModal } from "./components/schedule/DoctorFreeSlotsModal";
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
@@ -286,6 +287,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	} = useSettingsStore();
 	const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
 	const [isRosterModalOpen, setIsRosterModalOpen] = useState(false);
+	const [isCalendarSyncModalOpen, setIsCalendarSyncModalOpen] = useState(false);
 	const [isSmartAiOpen, setIsSmartAiOpen] = useState(false);
 	/**
 	 * Раскрыта ли форма со всеми полями записи.
@@ -1146,6 +1148,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				showFreedSlotsPanel={showFreedSlotsPanel}
 				onToggleClipboard={() => setShowClipboardPanel((prev) => !prev)}
 				showClipboardPanel={showClipboardPanel}
+				onOpenCalendarSync={() => setIsCalendarSyncModalOpen(true)}
 				onQuickBooking={() => {
 					setQuickBookingSlot({
 						dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
@@ -1690,6 +1693,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			<DoctorShiftRosterModal
 				isOpen={isRosterModalOpen}
 				onClose={() => setIsRosterModalOpen(false)}
+			/>
+			<DoctorCalendarSyncModal
+				isOpen={isCalendarSyncModalOpen}
+				onClose={() => setIsCalendarSyncModalOpen(false)}
+				dashboard={dashboard}
+				initialDoctorId={scheduleDoctorFilterId}
 			/>
 		</div>
 	);

@@ -23,6 +23,8 @@ import {
 	Save,
 	ShieldCheck,
 	Sparkles,
+	UserCheck,
+	UserPlus,
 	Wallet,
 	Zap,
 } from "lucide-react";
@@ -62,6 +64,7 @@ import { TreatmentPlanPresenterModal } from "./TreatmentPlanPresenterModal";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import { LabWorkOrderModal } from "../lab/orders/LabWorkOrderModal";
 import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
+import { CuratorPlanAssignmentModal } from "./CuratorPlanAssignmentModal";
 import type {
 	CashierInvoiceExportData,
 	CompletedWorksActAndWriteOffData,
@@ -107,6 +110,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isPresenterModalOpen, setIsPresenterModalOpen] = useState<boolean>(false);
 	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
 	const [selectedInstallmentStage, setSelectedInstallmentStage] = useState<TreatmentPlanStage | null>(null);
+	const [isCuratorModalOpen, setIsCuratorModalOpen] = useState<boolean>(false);
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(false);
 	const optionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -535,6 +539,17 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<span>Чек 54-ФЗ</span>
 					</button>
 
+					{/* Secondary 3.5: Curator of Treatment Button */}
+					<button
+						type="button"
+						onClick={() => setIsCuratorModalOpen(true)}
+						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--accent,#6366f1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--accent,#6366f1)]/30 shadow-xs cursor-pointer transition-all"
+						title="Закрепить куратора лечения за пациентом и планом (Фича #27)"
+					>
+						<UserCheck size={15} className="text-[var(--accent,#6366f1)]" />
+						<span>{patient?.administrativeProfile?.curatorFullName ? `Куратор: ${patient.administrativeProfile.curatorFullName.split(" ")[0]}` : "Куратор"}</span>
+					</button>
+
 					{/* Secondary 4: Overflow Dropdown Menu [⋮ Опции] */}
 					<div className="relative inline-flex items-center" ref={optionsMenuRef}>
 						<button
@@ -557,6 +572,18 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 									Специализированные студии
 								</div>
+								<button
+									type="button"
+									onClick={() => {
+										setIsCuratorModalOpen(true);
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+								>
+									<UserCheck size={14} className="text-[var(--accent,#6366f1)]" />
+									<span>Куратор лечения (воронка и комиссия)</span>
+								</button>
 								<button
 									type="button"
 									onClick={() => {
@@ -1081,6 +1108,23 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					teeth={teethData}
 					onSelectPlan={(plan) => {
 						showToast(`Выбран план: ${plan.title} (${plan.totalRub.toLocaleString("ru-RU")} ₽)`, "success");
+					}}
+				/>
+			)}
+
+			{/* Curator Plan Assignment Modal */}
+			{isCuratorModalOpen && (
+				<CuratorPlanAssignmentModal
+					isOpen={isCuratorModalOpen}
+					onClose={() => setIsCuratorModalOpen(false)}
+					patientId={patientId}
+					patientName={patientName}
+					treatmentPlanId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
+					treatmentPlanTitle={`${currentTier.title} (${grandTotalRub.toLocaleString("ru-RU")} ₽)`}
+					currentCuratorId={patient?.administrativeProfile?.curatorId || undefined}
+					currentStage={patient?.administrativeProfile?.curatorFunnelStage || "consultation"}
+					onAssigned={(assigned) => {
+						showToast(`Куратор ${assigned.curatorFullName} успешно закреплен!`, "success");
 					}}
 				/>
 			)}

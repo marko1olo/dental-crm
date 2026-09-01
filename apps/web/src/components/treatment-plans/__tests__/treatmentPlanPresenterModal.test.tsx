@@ -88,6 +88,34 @@ describe("TreatmentPlanPresenterModal (Wave 19: Chairside Presentation & RF Decr
 		assert.ok(html.includes("Печать Приложения №1 (ПП РФ № 736)"), "Must contain 1-click official print button");
 	});
 
+	it("renders touch-first Segmented Control, 1-click NDFL calculation, and instant tariff apply buttons", () => {
+		const html = renderToString(
+			<TreatmentPlanPresenterModal
+				isOpen={true}
+				onClose={() => {}}
+				tiers={sampleTiers}
+				initialSelectedTierId="standard"
+				patientName="Смирнова Екатерина Васильевна"
+			/>
+		);
+
+		// 1. Mobile & iPad Segmented Control
+		assert.ok(html.includes("treatment-mobile-tier-bar"), "Must contain Segmented Control container");
+		assert.ok(html.includes("mobile-tier-btn-economy"), "Must contain Economy segment button");
+		assert.ok(html.includes("mobile-tier-btn-standard"), "Must contain Standard (Optimum) segment button");
+		assert.ok(html.includes("mobile-tier-btn-optimum"), "Must contain Premium segment button");
+		assert.ok(html.includes("Оптимум"), "Must render Optimum segment");
+
+		// 2. 1-click NDFL 13% tax deduction calculation button
+		assert.ok(html.includes("calc-ndfl-btn-standard"), "Must contain 1-click NDFL calculation trigger for standard tier");
+		assert.ok(html.includes("Вычет 13% НДФЛ:"), "Must display 13% NDFL refund label");
+		assert.ok(html.includes("Итого с вычетом:"), "Must display net price after tax refund");
+
+		// 3. 1-click instant tariff apply button
+		assert.ok(html.includes("apply-tier-btn-standard"), "Must contain 1-click instant tariff apply button for standard tier");
+		assert.ok(html.includes("Применить"), "Must display instant apply action title");
+	});
+
 	it("returns null when isOpen is false", () => {
 		const html = renderToString(
 			<TreatmentPlanPresenterModal

@@ -847,6 +847,25 @@
 	margin: 0;
 }
 
+.document-package-close-btn {
+	min-width: 44px;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.document-package-close-btn:hover {
+	color: var(--ink);
+	background: var(--teal-surface);
+}
+
 .document-package-modal-body {
 	padding: 18px;
 	overflow-y: auto;

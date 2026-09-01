@@ -46,6 +46,7 @@ import {
 } from "./cmoComplianceHubEngine";
 import { CmoEmrAuditModal } from "./CmoEmrAuditModal";
 import { EgiszCdaExportModal } from "../../documents/egisz/EgiszCdaExportModal";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	type CryptoProCertificate,
 	checkCryptoProPlugin,
@@ -319,7 +320,7 @@ export function CmoComplianceHub({
 		try {
 			const res = await fetch("/api/clinical/egisz/outbox/sync-status", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -556,7 +557,7 @@ export function CmoComplianceHub({
 			{/* ── Controls Bar: Search, Doctor, Period ── */}
 			<div className="cmo-hub-controls-bar">
 				<div className="cmo-hub-controls-left">
-					<div style={{ position: "relative", flex: 1, minWidth: "320px" }}>
+					<div style={{ position: "relative", flex: 1, minWidth: "min(320px, 100%)" }}>
 						<input
 							type="text"
 							value={searchQuery}

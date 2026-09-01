@@ -29,6 +29,7 @@ import { db } from "../../db/client.js";
 import {
 	clinicalAuditLogs,
 	clinicalQualityAudits,
+	generatedDocuments,
 	patients,
 	users,
 	visitDiaries,
@@ -213,7 +214,8 @@ export function evaluateOrder203nCriteria(
 		icd10DiagnosisValid = valResult.isValid;
 	}
 
-	const informedConsentPresent = Boolean(diary?.isLocked || anamnesisComplete);
+	// ИДС не симулируется через анамнез: берется строго из оверрайда (результата поиска в generated_documents)
+	const informedConsentPresent = customOverrides?.informedConsentPresent ?? false;
 
 	const base: Order203nCriteriaEvaluation = {
 		informedConsentPresent,
@@ -261,11 +263,8 @@ export function calculateComplianceScore(
 
 	const rawPct = Math.round((passedCount / keys.length) * 100);
 
-	if (verdict === "approved") {
-		return Math.max(90, rawPct);
-	}
 	if (verdict === "deficiencies_found") {
-		return Math.min(85, Math.max(55, rawPct));
+		return Math.min(85, Math.max(50, rawPct));
 	}
 
 	return rawPct;
@@ -544,11 +543,63 @@ export class ChiefPhysicianAuditService {
 		}
 
 		// 5. Оценка критериев Приказа 203н и расчёт скоринга
+		let informedConsentPresent = false;
+		if (options?.criteriaEvaluation?.informedConsentPresent !== undefined) {
+			informedConsentPresent = Boolean(options.criteriaEvaluation.informedConsentPresent);
+		} else {
+			// Честный поиск подписанного ИДС в таблице generated_documents
+			const patientDocs = await db
+				.select({
+					id: generatedDocuments.id,
+					status: generatedDocuments.status,
+					kind: generatedDocuments.kind,
+					title: generatedDocuments.title,
+				})
+				.from(generatedDocuments)
+				.where(
+					and(
+						eq(generatedDocuments.organizationId, organizationId),
+						eq(generatedDocuments.patientId, resolvedVisit.patientId),
+					),
+				)
+				.limit(20);
+
+			informedConsentPresent = patientDocs.some((d) => {
+				const isSigned = d.status === "issued" || (d.status as string) === "signed";
+				const isIds =
+					d.kind === "informed_consent" ||
+					(d.kind as string).includes("consent") ||
+					(d.kind as string).includes("ids") ||
+					d.title.toLowerCase().includes("согласи") ||
+					d.title.toLowerCase().includes("идс");
+				return isSigned && isIds;
+			});
+		}
+
 		const criteria = evaluateOrder203nCriteria(
 			diary ?? null,
 			resolvedVisit,
-			options?.criteriaEvaluation,
+			{
+				...options?.criteriaEvaluation,
+				informedConsentPresent,
+			},
 		);
+
+		// Запрет серверного вердикта approved, если отсутствуют обязательные поля (МКБ-10, анамнез, ИДС)
+		if (verdict === "approved") {
+			const missing: string[] = [];
+			if (!criteria.icd10DiagnosisValid) missing.push("валидный диагноз по МКБ-10");
+			if (!criteria.anamnesisComplete) missing.push("полный анамнез и жалобы");
+			if (!criteria.informedConsentPresent) missing.push("подписанное информированное добровольное согласие (ИДС ст. 20 323-ФЗ)");
+
+			if (missing.length > 0) {
+				throw new ChiefPhysicianAuditError(
+					"ValidationError",
+					`Утверждение карты 043/у главным врачом невозможно: выявлены критические дефекты ведения документации (${missing.join(", ")}).`,
+				);
+			}
+		}
+
 		const complianceScorePct = calculateComplianceScore(criteria, verdict);
 
 		const reviewedAt = new Date();

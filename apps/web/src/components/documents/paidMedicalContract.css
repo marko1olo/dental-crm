@@ -296,6 +296,21 @@
 	.paid-contract-grid-3 {
 		grid-template-columns: 1fr;
 	}
+	.paid-contract-close-btn {
+		width: 44px;
+		height: 44px;
+		min-width: 44px;
+		min-height: 44px;
+	}
+	.paid-contract-tab-btn {
+		min-height: 44px;
+	}
+	.paid-contract-sign-mode-btn {
+		min-height: 44px;
+	}
+	.paid-contract-btn {
+		min-height: 44px;
+	}
 }
 
 .paid-contract-field {

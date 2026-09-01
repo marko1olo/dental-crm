@@ -233,22 +233,21 @@
   margin-top: 1px;
 }
 
-/* ── Compact Metrics Strip (Single Inline Row <= 32px) ── */
+/* ── Compact Metrics Strip (Touch >= 44px) ── */
 .cmo-hub-metrics-strip {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  min-height: 32px;
+  min-height: 44px;
 }
 
 .cmo-hub-metric-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  min-height: 30px;
-  max-height: 32px;
+  padding: 6px 12px;
+  min-height: 44px;
   border-radius: 8px;
   font-size: 11px;
   font-weight: 600;
@@ -294,7 +293,7 @@
 .cmo-hub-badge-val--info { color: #3b82f6 !important; }
 .cmo-hub-badge-val--success { color: #10b981 !important; }
 
-/* ── Filter Tabs Bar (Flex-Wrap and Horizontal Scroll Clearance) ── */
+/* ── Filter Tabs Bar (Touch >= 44px) ── */
 .cmo-hub-tabs-bar {
   display: flex;
   align-items: center;
@@ -311,8 +310,9 @@
 }
 
 .cmo-hub-tab-btn {
-  min-height: 36px;
-  padding: 4px 12px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 6px 14px;
   border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
@@ -424,7 +424,8 @@
 }
 
 .cmo-hub-search-input {
-  min-height: 40px;
+  min-height: 44px;
+  height: 44px;
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid var(--glass-border, #cbd5e1);
@@ -816,4 +817,29 @@
   height: 20px;
   cursor: pointer;
   accent-color: var(--teal, #0d9488);
+}
+
+/* ── Mobile 390px Responsive Rules ── */
+@media (max-width: 640px) {
+  .cmo-hub-container {
+    padding: 8px;
+    gap: 8px;
+  }
+  .cmo-hub-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .cmo-hub-tabs-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cmo-hub-controls-bar {
+    padding: 8px;
+    gap: 8px;
+  }
+  .cmo-hub-controls-left,
+  .cmo-hub-controls-right {
+    width: 100%;
+  }
 }

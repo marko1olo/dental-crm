@@ -652,9 +652,9 @@
 }
 
 .cmo-preset-chip {
-  padding: 6px 12px;
-  min-height: 36px;
-  border-radius: 6px;
+  padding: 8px 14px;
+  min-height: 44px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
   background: var(--paper-strong, #ffffff);
@@ -714,6 +714,42 @@
 [data-theme="dark"] .cmo-audit-table td,
 .dark .cmo-audit-table td {
   border-bottom-color: var(--glass-border, #334155);
+}
+
+/* ── Responsive Mobile 390px Media Styles ── */
+@media (max-width: 768px) {
+  .cmo-audit-backdrop {
+    padding: 0.25rem;
+  }
+  .cmo-audit-modal {
+    max-height: 98vh;
+    height: 98vh;
+    border-radius: 10px;
+  }
+  .cmo-audit-header {
+    padding: 0.75rem 0.875rem;
+  }
+  .cmo-audit-nav-tabs {
+    padding: 0.5rem 0.875rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cmo-audit-master-detail {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .cmo-audit-queue-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    max-height: 260px;
+    border-right: none;
+    border-bottom: 1px solid var(--glass-border, #e2e8f0);
+  }
+  .cmo-audit-record-body {
+    padding: 0.875rem;
+  }
 }
 
 /* ── Print Media Styles ── */

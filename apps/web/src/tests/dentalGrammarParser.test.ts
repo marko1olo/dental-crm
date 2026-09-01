@@ -12,6 +12,7 @@ import {
 	extractAnesthesiaIntent,
 	extractProcedures804n,
 	extractSoapNotes,
+	extractQuadrantIntent,
 	parseDentalVoiceSpeech,
 	VALID_FDI_PERMANENT_TEETH,
 	VALID_FDI_PRIMARY_TEETH,
@@ -243,6 +244,60 @@ describe("Voice AI Dental STT Grammar Parser (dentalGrammarParser.ts)", () => {
 			assert.strictEqual(intent.detectedTeeth.length, 0);
 			assert.strictEqual(intent.teethUpdates.length, 0);
 			assert.strictEqual(intent.confidence, 0);
+		});
+	});
+
+	describe("8. Voice Quadrant Switching («верх право», «верх лево», «низ лево», «низ право», «все зубы»)", () => {
+		it("extracts Q1 (верх право / верхний правый / q1 / первый квадрант)", () => {
+			assert.strictEqual(extractQuadrantIntent("верх право"), "Q1");
+			assert.strictEqual(extractQuadrantIntent("верхний правый квадрант"), "Q1");
+			assert.strictEqual(extractQuadrantIntent("первый квадрант"), "Q1");
+			assert.strictEqual(extractQuadrantIntent("q1"), "Q1");
+			assert.strictEqual(extractQuadrantIntent("к1"), "Q1");
+		});
+
+		it("extracts Q2 (верх лево / верхний левый / q2 / второй квадрант)", () => {
+			assert.strictEqual(extractQuadrantIntent("верх лево"), "Q2");
+			assert.strictEqual(extractQuadrantIntent("верхний левый квадрант"), "Q2");
+			assert.strictEqual(extractQuadrantIntent("второй квадрант"), "Q2");
+			assert.strictEqual(extractQuadrantIntent("q2"), "Q2");
+			assert.strictEqual(extractQuadrantIntent("к2"), "Q2");
+		});
+
+		it("extracts Q3 (низ лево / нижний левый / q3 / третий квадрант)", () => {
+			assert.strictEqual(extractQuadrantIntent("низ лево"), "Q3");
+			assert.strictEqual(extractQuadrantIntent("нижний левый квадрант"), "Q3");
+			assert.strictEqual(extractQuadrantIntent("третий квадрант"), "Q3");
+			assert.strictEqual(extractQuadrantIntent("q3"), "Q3");
+			assert.strictEqual(extractQuadrantIntent("к3"), "Q3");
+		});
+
+		it("extracts Q4 (низ право / нижний правый / q4 / четвертый квадрант)", () => {
+			assert.strictEqual(extractQuadrantIntent("низ право"), "Q4");
+			assert.strictEqual(extractQuadrantIntent("нижний правый квадрант"), "Q4");
+			assert.strictEqual(extractQuadrantIntent("четвертый квадрант"), "Q4");
+			assert.strictEqual(extractQuadrantIntent("q4"), "Q4");
+			assert.strictEqual(extractQuadrantIntent("к4"), "Q4");
+		});
+
+		it("extracts 'all' (все зубы / вся челюсть / вся формула / общий вид / сброс квадранта)", () => {
+			assert.strictEqual(extractQuadrantIntent("все зубы"), "all");
+			assert.strictEqual(extractQuadrantIntent("вся челюсть"), "all");
+			assert.strictEqual(extractQuadrantIntent("вся формула"), "all");
+			assert.strictEqual(extractQuadrantIntent("общий вид"), "all");
+			assert.strictEqual(extractQuadrantIntent("сброс квадранта"), "all");
+			assert.strictEqual(extractQuadrantIntent("показать все"), "all");
+		});
+
+		it("creates structured 'quadrant_switch' DentalVoiceIntent when quadrant voice command is spoken", () => {
+			const intent = parseDentalVoiceSpeech("верх право");
+			assert.strictEqual(intent.type, "quadrant_switch");
+			assert.strictEqual(intent.targetQuadrant, "Q1");
+			assert.strictEqual(intent.confidenceLevel, "high");
+
+			const intentAll = parseDentalVoiceSpeech("все зубы");
+			assert.strictEqual(intentAll.type, "quadrant_switch");
+			assert.strictEqual(intentAll.targetQuadrant, "all");
 		});
 	});
 });

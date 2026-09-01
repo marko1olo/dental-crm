@@ -166,7 +166,7 @@ export function NdflCalculatorModal({
 									<h3 className="text-xs font-bold uppercase tracking-wider text-[var(--ok-fg,#059669)] m-0">
 										Суммы расходов (Приказ ФНС ЕА-7-11/824@):
 									</h3>
-									<span className="text-[10px] font-bold text-[var(--ok-fg,#059669)] bg-[var(--paper,#ffffff)] px-2 py-0.5 rounded border border-[var(--ok-fg,#059669)]/20">
+									<span className="text-[10px] font-bold text-[var(--ok-fg,#059669)] bg-[var(--paper,#ffffff)] px-2 py-0.5 rounded">
 										13% возврат
 									</span>
 								</div>

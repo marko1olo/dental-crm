@@ -508,9 +508,9 @@ export async function runDiarySigningCeremony(
 						const quantityChanged = String(-qtyNeeded);
 
 						if (newStock < 0) {
-							console.warn(
-								`[DiarySigningCeremonyService] Списание в дефицит по материалу «${inv.name}» (ID: ${inv.id}) ` +
-									`для визита ${diary.visitId}: в наличии ${baseStock}, требовалось ${qtyNeeded}, итоговый дефицит: ${newStock}.`,
+							throw new DiarySigningError(
+								"InsufficientStock",
+								`Недостаточно материалов на складе: «${inv.name}». Требуется: ${qtyNeeded}, в наличии: ${baseStock}.`,
 							);
 						}
 

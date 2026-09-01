@@ -231,7 +231,7 @@ describe("текст отказа по роли доходит до челове
 	});
 
 	test("роль вне матрицы получает СВОЙ отказ: её нужно настроить, а не искать коллегу", () => {
-		const message = permissionRefusalMessage("curator", "finance.write");
+		const message = permissionRefusalMessage("trainee", "finance.write");
 		assert.match(
 			message,
 			/роль в клинике не настроена/,

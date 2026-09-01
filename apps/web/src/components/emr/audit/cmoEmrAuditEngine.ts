@@ -10,14 +10,93 @@ import {
 	type CmoDefectSeverity,
 	type CmoDefectCategory,
 	CMO_AUDIT_CATEGORIES,
+	CMO_STATUTORY_DEFECT_PRESETS,
 } from "./cmoEmrAuditPresets";
 
 export type EmrAuditStatus =
-	| "draft"
-	| "pending_review"
-	| "approved"
-	| "rejected_with_remarks"
+	| "not_filled"              // 1. Не заполнен
+	| "in_progress"             // 2. В работе
+	| "under_review"            // 3. На проверке
+	| "pending_review"          // 3. На проверке (совместимость)
+	| "revision_required"       // 4. На доработке
+	| "rejected_with_remarks"   // 4. На доработке (совместимость)
+	| "approved_by_cmo"         // 5. Утверждено главврачом
+	| "approved"                // 5. Утверждено главврачом (совместимость)
+	| "draft"                   // 1. Не заполнен / Черновик (совместимость)
 	| "archived";
+
+export type CanonicalAuditStage =
+	| "not_filled"          // Не заполнен
+	| "in_progress"         // В работе
+	| "under_review"        // На проверке
+	| "revision_required"   // На доработке
+	| "approved_by_cmo";    // Утверждено главврачом
+
+export function getCanonicalAuditStage(status: EmrAuditStatus): CanonicalAuditStage {
+	switch (status) {
+		case "not_filled":
+		case "draft":
+			return "not_filled";
+		case "in_progress":
+			return "in_progress";
+		case "under_review":
+		case "pending_review":
+			return "under_review";
+		case "revision_required":
+		case "rejected_with_remarks":
+			return "revision_required";
+		case "approved_by_cmo":
+		case "approved":
+		case "archived":
+			return "approved_by_cmo";
+		default:
+			return "not_filled";
+	}
+}
+
+export const CANONICAL_AUDIT_STAGES: Array<{
+	key: CanonicalAuditStage;
+	stageNumber: number;
+	title: string;
+	description: string;
+	colorClass: string;
+}> = [
+	{
+		key: "not_filled",
+		stageNumber: 1,
+		title: "Не заполнен",
+		description: "Карта 043/у открыта, но клинические протоколы не внесены",
+		colorClass: "stage-not-filled",
+	},
+	{
+		key: "in_progress",
+		stageNumber: 2,
+		title: "В работе",
+		description: "Врач заполняет дневник SOAP, одонтограмму и назначения",
+		colorClass: "stage-in-progress",
+	},
+	{
+		key: "under_review",
+		stageNumber: 3,
+		title: "На проверке",
+		description: "Направлена в службу контроля качества (КЭР) и главному врачу",
+		colorClass: "stage-under-review",
+	},
+	{
+		key: "revision_required",
+		stageNumber: 4,
+		title: "На доработке",
+		description: "Возвращена лечащему врачу с обязательным клиническим комментарием",
+		colorClass: "stage-revision-required",
+	},
+	{
+		key: "approved_by_cmo",
+		stageNumber: 5,
+		title: "Утверждено главврачом",
+		description: "Проверено, заверено ЭЦП начмеда/главврача и готово к РЭМД",
+		colorClass: "stage-approved-by-cmo",
+	},
+];
 
 export interface AttachedEmrDocument {
 	id: string;
@@ -157,9 +236,72 @@ export interface CmoAuditSummaryReport {
 export function isValidIcd10Code(code: string | undefined | null): boolean {
 	if (!code || typeof code !== "string") return false;
 	const trimmed = code.trim().toUpperCase();
-	// МКБ-10 формат: Буква + 2 цифры, опционально точка и еще 1-3 цифры (например: K02, K02.1, K04.03, K05.3)
+	// МКБ-10 формат: Буква + 2 цифры, опционально точка и еще 1-3 цифры (например: K02, K02.1, K04.03, K05.3, Z01.2)
 	const icd10Regex = /^[A-Z][0-9]{2}(\.[0-9]{1,3})?$/;
 	return icd10Regex.test(trimmed);
+}
+
+/** Проверка соответствия кода услуги Номенклатуре медицинских услуг Минздрава РФ (Приказ № 804н) */
+export function isValidOrder804nServiceCode(code: string | undefined | null): boolean {
+	if (!code || typeof code !== "string") return false;
+	const trimmed = code.trim().toUpperCase();
+	// Номенклатура 804н: Класс A/B + 2 цифры + . + 2-3 цифры (+ опционально .xxx.xxx)
+	// Например: A16.07.002, A16.07.002.001, B01.003.004.001, A11.07.012, A06.07.004
+	const code804nRegex = /^[AB][0-9]{2}\.[0-9]{2,3}(\.[0-9]{3}(\.[0-9]{3})?)?$/;
+	return code804nRegex.test(trimmed);
+}
+
+export interface AnesthesiaProtocolAnalysis {
+	hasAnesthesiaMentioned: boolean;
+	hasDrugName: boolean;
+	hasDosageOrVolume: boolean;
+	hasSeriesOrLot: boolean;
+	isCompliant: boolean;
+	details: string;
+}
+
+/** Анализ полноты анестезиологического протокола (Приказ № 834н, Приказ № 203н) */
+export function analyzeAnesthesiaProtocol(diary: VisitDiaryEntry043): AnesthesiaProtocolAnalysis {
+	const rawText = `${diary.anesthesiaDetails || ""} ${diary.procedureProtocol || ""}`.toLowerCase();
+
+	const hasAnesthesiaMentioned =
+		rawText.includes("анестези") ||
+		rawText.includes("артикаин") ||
+		rawText.includes("ультракаин") ||
+		rawText.includes("септонест") ||
+		rawText.includes("убистезин") ||
+		rawText.includes("скандонест") ||
+		rawText.includes("лидокаин") ||
+		rawText.includes("мепивакаин");
+
+	if (!hasAnesthesiaMentioned) {
+		return {
+			hasAnesthesiaMentioned: false,
+			hasDrugName: false,
+			hasDosageOrVolume: false,
+			hasSeriesOrLot: false,
+			isCompliant: false,
+			details: "Запись об анестезии отсутствует",
+		};
+	}
+
+	const hasDrugName = /(ультракаин|септонест|убистезин|скандонест|артикаин|лидокаин|мепивакаин|sol\.\s*[a-zа-я]+)/i.test(rawText);
+	const hasDosageOrVolume = /(\d+([.,]\d+)?\s*(мл|ml|мг|mg|карпул|carp|%))|(\d+:\d+)/i.test(rawText);
+	const hasSeriesOrLot = /(серия|партия|лот|lot|series|№\s*\d+|24[a-z0-9]+|25[a-z0-9]+|26[a-z0-9]+)/i.test(rawText);
+
+	const isCompliant = hasDrugName && hasDosageOrVolume;
+	const details = isCompliant
+		? `Протокол обезболивания зафиксирован: препарат, дозировка ${hasSeriesOrLot ? "и серия карпулы" : "(рекомендуется указать серию)"}.`
+		: "Не указан конкретный анестетик (торговое наименование) или дозировка в мл/карпулах.";
+
+	return {
+		hasAnesthesiaMentioned,
+		hasDrugName,
+		hasDosageOrVolume,
+		hasSeriesOrLot,
+		isCompliant,
+		details,
+	};
 }
 
 /** Автоматический аудит медицинской карты 043/у по критериям Росздравнадзора и Приказа № 203н */
@@ -311,7 +453,7 @@ export function runAutomatedEmrAudit(record: EmrAuditRecord): {
 		deduction: anesthesiaPassed ? 0 : 20,
 	});
 
-	// 5. Проверка согласованности акта выполненных работ и плана лечения
+	// 5. Проверка согласованности акта выполненных работ, плана лечения и Номенклатуры 804н
 	let actCoherent = true;
 	let actDetails = "Позиции акта полностью согласованы с планом лечения и записями приема.";
 
@@ -326,10 +468,16 @@ export function runAutomatedEmrAudit(record: EmrAuditRecord): {
 		}
 	}
 
+	// Проверка корректности кодов Номенклатуры 804н в акте
+	const invalid804nCodes = record.completedActItems.filter((act) => act.serviceCode && !isValidOrder804nServiceCode(act.serviceCode));
+	if (invalid804nCodes.length > 0 && actCoherent) {
+		actDetails += ` (Предупреждение: коды ${invalid804nCodes.map((c) => c.serviceCode).join(", ")} не соответствуют формату Номенклатуры 804н)`;
+	}
+
 	results.push({
 		ruleId: "AUTO-ACT-01",
 		ruleCategory: "ACT_SERVICES_COHERENCE",
-		title: "Согласованность акта и плана лечения",
+		title: "Согласованность акта и плана лечения (Приказ 804н)",
 		passed: actCoherent,
 		severity: "major",
 		details: actDetails,
@@ -356,8 +504,8 @@ export function runAutomatedEmrAudit(record: EmrAuditRecord): {
 	});
 
 	// 7. Проверка рентгенологического заключения и дозовой нагрузки (СанПиН)
-	const hasXrayDose = card.dentalStatus.xrayRadiationDoseMsv !== undefined && card.dentalStatus.xrayRadiationDoseMsv !== null;
-	const hasXrayDesc = Boolean(card.dentalStatus.xrayFindingsDescription && card.dentalStatus.xrayFindingsDescription.trim().length >= 5);
+	const hasXrayDose = card.dentalStatus?.xrayRadiationDoseMsv !== undefined && card.dentalStatus?.xrayRadiationDoseMsv !== null;
+	const hasXrayDesc = Boolean(card.dentalStatus?.xrayFindingsDescription && card.dentalStatus.xrayFindingsDescription.trim().length >= 5);
 	const xrayPassed = hasXrayDesc || !hasXrayDose;
 
 	results.push({
@@ -367,14 +515,14 @@ export function runAutomatedEmrAudit(record: EmrAuditRecord): {
 		passed: xrayPassed,
 		severity: "minor",
 		details: xrayPassed
-			? `Рентгенологические данные зафиксированы (дозовая нагрузка: ${card.dentalStatus.xrayRadiationDoseMsv ?? 0} мЗв).`
+			? `Рентгенологические данные зафиксированы (дозовая нагрузка: ${card.dentalStatus?.xrayRadiationDoseMsv ?? 0} мЗв).`
 			: "Указана дозовая нагрузка, но отсутствует диагностическое описание снимка.",
 		statutoryRef: "СанПиН 2.6.1.1192-03, Приказ Минздрава № 560н",
 		deduction: xrayPassed ? 0 : 5,
 	});
 
 	// 8. Проверка эпикриза и диспансеризации
-	const hasDispensary = Boolean(card.epicrisis.dispensaryGroup && card.epicrisis.plannedRecallIntervalMonths);
+	const hasDispensary = Boolean(card.epicrisis?.dispensaryGroup && card.epicrisis?.plannedRecallIntervalMonths);
 	results.push({
 		ruleId: "AUTO-DISP-01",
 		ruleCategory: "DISPENSARY_AND_EPICRISIS",
@@ -382,7 +530,7 @@ export function runAutomatedEmrAudit(record: EmrAuditRecord): {
 		passed: hasDispensary,
 		severity: "minor",
 		details: hasDispensary
-			? `Группа диспансерного наблюдения: ${card.epicrisis.dispensaryGroupLabel || card.epicrisis.dispensaryGroup}, осмотр через ${card.epicrisis.plannedRecallIntervalMonths} мес.`
+			? `Группа диспансерного наблюдения: ${card.epicrisis?.dispensaryGroupLabel || card.epicrisis?.dispensaryGroup}, осмотр через ${card.epicrisis?.plannedRecallIntervalMonths} мес.`
 			: "Не определена диспансерная группа или срок повторного профосмотра.",
 		statutoryRef: "Приказ Минздрава России № 834н, Приказ № 168н",
 		deduction: hasDispensary ? 0 : 5,
@@ -441,23 +589,24 @@ export function calculateQualityScore(
 }
 
 /** Создание новой записи на аудит */
-export function createAuditRecord(initial: Partial<EmrAuditRecord> & { cardData: MedicalCardForm043uData }): EmrAuditRecord {
+export function createAuditRecord(initial: Partial<EmrAuditRecord> & { cardData?: Partial<MedicalCardForm043uData> | any }): EmrAuditRecord {
 	const id = initial.id ?? `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+	const passport = initial.cardData?.passport;
 	const record: EmrAuditRecord = {
 		id,
-		medicalCardId: initial.medicalCardId ?? initial.cardData.passport.medicalCardNumber ?? "MC-001",
+		medicalCardId: initial.medicalCardId ?? passport?.medicalCardNumber ?? "MC-001",
 		recordNumber: initial.recordNumber ?? `КЭР-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
 		patientId: initial.patientId ?? `pat-${Date.now()}`,
-		patientFullName: initial.patientFullName ?? initial.cardData.passport.patientFullName ?? "Пациент",
-		patientBirthDate: initial.patientBirthDate ?? initial.cardData.passport.patientBirthDate ?? "1990-01-01",
-		patientGender: initial.patientGender ?? initial.cardData.passport.patientSex ?? "male",
-		patientPhone: initial.patientPhone ?? initial.cardData.passport.patientPhone ?? null,
+		patientFullName: initial.patientFullName ?? passport?.patientFullName ?? "Пациент",
+		patientBirthDate: initial.patientBirthDate ?? passport?.patientBirthDate ?? "1990-01-01",
+		patientGender: initial.patientGender ?? passport?.patientSex ?? "male",
+		patientPhone: initial.patientPhone ?? passport?.patientPhone ?? null,
 		doctorStaffId: initial.doctorStaffId ?? "doc-001",
-		doctorFullName: initial.doctorFullName ?? initial.cardData.passport.attendingDoctorFullName ?? "Врач-стоматолог",
-		doctorSpecialty: initial.doctorSpecialty ?? initial.cardData.passport.attendingDoctorSpecialty ?? "Стоматолог-терапевт",
-		visitDate: initial.visitDate ?? initial.cardData.passport.cardOpenedDate ?? new Date().toISOString().split("T")[0],
+		doctorFullName: initial.doctorFullName ?? passport?.attendingDoctorFullName ?? "Врач-стоматолог",
+		doctorSpecialty: initial.doctorSpecialty ?? passport?.attendingDoctorSpecialty ?? "Стоматолог-терапевт",
+		visitDate: initial.visitDate ?? passport?.cardOpenedDate ?? new Date().toISOString().split("T")[0],
 		status: initial.status ?? "pending_review",
-		cardData: initial.cardData,
+		cardData: (initial.cardData ?? {}) as MedicalCardForm043uData,
 		attachedDocuments: initial.attachedDocuments ?? [],
 		completedActItems: initial.completedActItems ?? [],
 		treatmentPlanItems: initial.treatmentPlanItems ?? [],
@@ -595,6 +744,7 @@ export function addCmoRemark(
 }
 
 /** Разрешение (исправление) замечания лечащим врачом */
+/** Разрешение (исправление) замечания лечащим врачом */
 export function resolveCmoRemark(
 	record: EmrAuditRecord,
 	remarkId: string,
@@ -637,6 +787,173 @@ export function resolveCmoRemark(
 	};
 }
 
+/** Возврат карты врачу на доработку с обязательным клиническим комментарием */
+export function returnRecordForRevision(
+	record: EmrAuditRecord,
+	options: {
+		clinicalComment: string;
+		presetId?: string | undefined;
+		severity?: CmoDefectSeverity | undefined;
+		auditorFullName?: string | undefined;
+		auditorRole?: "chief_medical_officer" | "deputy_cmo_qcr" | "medical_commission_chair" | undefined;
+		targetSection?: "passport" | "anamnesis" | "dental_status" | "diaries" | "epicrisis" | "ids" | "anesthesia" | "act_reconciliation" | undefined;
+	}
+): { success: boolean; record: EmrAuditRecord; errorMessage?: string } {
+	const comment = options.clinicalComment ? options.clinicalComment.trim() : "";
+	if (!comment || comment.length < 5) {
+		return {
+			success: false,
+			record,
+			errorMessage: "Обязателен клинический комментарий эксперта (минимум 5 символов) с указанием дефекта и предписания по исправлению.",
+		};
+	}
+
+	const preset = options.presetId
+		? CMO_STATUTORY_DEFECT_PRESETS.find((p) => p.id === options.presetId)
+		: undefined;
+
+	const severity = options.severity || preset?.severity || "major";
+	const title = preset ? preset.title : "Замечание главного врача / службы КЭР";
+	const category = preset ? preset.category : "CLINICAL_DIARY_SOAP";
+	const affectedSection = options.targetSection || preset?.targetSection || "diaries";
+
+	const newRemark: CmoAuditRemark = {
+		id: `rem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+		presetId: preset?.id,
+		category,
+		severity,
+		title,
+		comment,
+		affectedSection,
+		createdAt: new Date().toISOString(),
+		isResolved: false,
+		doctorStaffId: record.doctorStaffId,
+	};
+
+	const updatedRemarks = [...record.cmoRemarks, newRemark];
+	const finalScore = calculateQualityScore(record.automatedCheckResults, updatedRemarks);
+	const auditorName = options.auditorFullName || "Главный врач";
+	const auditorRole = options.auditorRole || "chief_medical_officer";
+
+	const updatedRecord: EmrAuditRecord = {
+		...record,
+		status: "revision_required",
+		cmoRemarks: updatedRemarks,
+		automatedQualityScore: finalScore,
+		cmoResolution: {
+			auditorFullName: auditorName,
+			auditorRole,
+			reviewedAt: new Date().toISOString(),
+			decision: "rejected_with_remarks",
+			cmoComment: comment,
+			finalQualityScore: finalScore,
+			requiredActions: [comment],
+		},
+		auditHistory: [
+			...record.auditHistory,
+			{
+				timestamp: new Date().toISOString(),
+				actorFullName: auditorName,
+				actorRole: auditorRole === "chief_medical_officer" ? "Главный врач" : "Эксперт КЭР",
+				action: "rejected",
+				comment: `Карта 043/у возвращена на доработку: ${comment}`,
+				previousStatus: record.status,
+				newStatus: "revision_required",
+			},
+		],
+	};
+
+	return {
+		success: true,
+		record: updatedRecord,
+	};
+}
+
+export interface BatchCmoApprovalOptions {
+	auditorFullName: string;
+	auditorRole?: "chief_medical_officer" | "deputy_cmo_qcr" | "medical_commission_chair" | undefined;
+	certificateThumbprint?: string | undefined;
+	certificateSubject?: string | undefined;
+	comment?: string | undefined;
+}
+
+export interface BatchCmoApprovalResult {
+	totalRequested: number;
+	approvedCount: number;
+	skippedCount: number;
+	approvedRecords: EmrAuditRecord[];
+	errors: Array<{ recordId: string; reason: string }>;
+}
+
+/** Пакетное утверждение проверенных карт 043/у с фиксацией ЭЦП главврача */
+export function batchApproveCmoRecords(
+	records: EmrAuditRecord[],
+	targetRecordIds: string[],
+	options: BatchCmoApprovalOptions
+): BatchCmoApprovalResult {
+	const idSet = new Set(targetRecordIds);
+	const approvedRecords: EmrAuditRecord[] = [];
+	const errors: Array<{ recordId: string; reason: string }> = [];
+	let approvedCount = 0;
+	let skippedCount = 0;
+
+	const now = new Date().toISOString();
+	const auditorRole = options.auditorRole || "chief_medical_officer";
+	const roleTitle = auditorRole === "chief_medical_officer" ? "Главный врач" : "Зам. гл. врача по КЭР";
+
+	for (const rec of records) {
+		if (!idSet.has(rec.id)) {
+			approvedRecords.push(rec);
+			continue;
+		}
+
+		// Проверка: можно ли утвердить (нет неразрешенных критических замечаний)
+		const unresolvedCritical = rec.cmoRemarks.filter((r) => !r.isResolved && r.severity === "critical");
+		if (unresolvedCritical.length > 0) {
+			errors.push({
+				recordId: rec.id,
+				reason: `Карта ${rec.medicalCardId}: имеются неразрешенные критические замечания (${unresolvedCritical.map((r) => r.title).join(", ")})`,
+			});
+			skippedCount++;
+			approvedRecords.push(rec);
+			continue;
+		}
+
+		// Формирование ЭЦП оттиска
+		const signatureHash = `cmo-ecp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}-${rec.id}`;
+		const stampComment = options.comment || "Медицинская карта формы 043/у проверена и утверждена главным врачом с наложением ЭЦП.";
+
+		const approvedRec = applyCmoAuditDecision(rec, "approved", {
+			fullName: options.auditorFullName,
+			role: auditorRole,
+			comment: `${stampComment}${options.certificateSubject ? ` [Сертификат ЭЦП: ${options.certificateSubject}]` : ""}`,
+		});
+
+		// Обновляем статус и отметку ЭЦП
+		approvedRec.status = "approved_by_cmo";
+		approvedRec.auditHistory.push({
+			timestamp: now,
+			actorFullName: options.auditorFullName,
+			actorRole: roleTitle,
+			action: "approved",
+			comment: `Пакетное утверждение с фиксацией ЭЦП главврача (Хеш: ${signatureHash.substring(0, 16)}...)`,
+			previousStatus: rec.status,
+			newStatus: "approved_by_cmo",
+		});
+
+		approvedCount++;
+		approvedRecords.push(approvedRec);
+	}
+
+	return {
+		totalRequested: targetRecordIds.length,
+		approvedCount,
+		skippedCount,
+		approvedRecords,
+		errors,
+	};
+}
+
 /** Фильтрация и поиск записей в очереди аудита */
 export function filterAuditRecords(
 	records: EmrAuditRecord[],
@@ -648,9 +965,13 @@ export function filterAuditRecords(
 			return false;
 		}
 
-		// Фильтр по статусу
-		if (filters.status !== undefined && filters.status !== "all" && rec.status !== filters.status) {
-			return false;
+		// Фильтр по статусу (с поддержкой канонических стадий)
+		if (filters.status !== undefined && filters.status !== "all") {
+			const filterStage = getCanonicalAuditStage(filters.status as EmrAuditStatus);
+			const recStage = getCanonicalAuditStage(rec.status);
+			if (filterStage !== recStage && rec.status !== filters.status) {
+				return false;
+			}
 		}
 
 		// Фильтр по баллу качества
@@ -724,16 +1045,17 @@ export function calculateDoctorQualityMetrics(records: EmrAuditRecord[]): Doctor
 
 		for (const rec of docData.records) {
 			scoreSum += rec.automatedQualityScore;
+			const stage = getCanonicalAuditStage(rec.status);
 
-			if (rec.status === "approved") {
+			if (stage === "approved_by_cmo") {
 				if (rec.cmoRemarks.length === 0) {
 					approvedFirstAttempt++;
 				} else {
 					approvedWithRemarks++;
 				}
-			} else if (rec.status === "rejected_with_remarks") {
+			} else if (stage === "revision_required") {
 				rejectedCount++;
-			} else if (rec.status === "pending_review") {
+			} else if (stage === "under_review") {
 				pendingCount++;
 			}
 
@@ -803,10 +1125,11 @@ export function generateCmoAuditSummaryReport(records: EmrAuditRecord[]): CmoAud
 
 	for (const rec of records) {
 		totalScore += rec.automatedQualityScore;
-		if (rec.status === "approved") approvedCount++;
-		else if (rec.status === "rejected_with_remarks") rejectedCount++;
-		else if (rec.status === "pending_review") pendingCount++;
-		else if (rec.status === "draft") draftCount++;
+		const stage = getCanonicalAuditStage(rec.status);
+		if (stage === "approved_by_cmo") approvedCount++;
+		else if (stage === "revision_required") rejectedCount++;
+		else if (stage === "under_review") pendingCount++;
+		else if (stage === "not_filled" || stage === "in_progress") draftCount++;
 
 		for (const check of rec.automatedCheckResults) {
 			if (!check.passed) {

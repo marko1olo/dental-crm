@@ -242,48 +242,59 @@
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-/* Mobile Tier Switcher Bar (< 768px) */
+/* Mobile & iPad Tier Switcher Bar (Segmented Control <= 1024px) */
 .treatment-mobile-tier-bar {
 	display: none;
 	gap: 6px;
 	background: var(--tp-surface-soft);
-	padding: 4px;
-	border-radius: var(--tp-radius-md);
+	padding: 6px;
+	border-radius: var(--tp-radius-lg);
 	border: 1px solid var(--tp-border);
-	margin-bottom: 4px;
+	margin-bottom: 8px;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .treatment-mobile-tier-btn {
 	flex: 1;
-	min-height: 44px;
+	min-height: 48px;
 	min-width: 44px;
 	padding: 8px 10px;
-	border-radius: var(--tp-radius-sm);
-	font-size: 12px;
+	border-radius: var(--tp-radius-md);
+	font-size: 13px;
 	font-weight: 800;
 	color: var(--tp-text-muted);
-	background: transparent;
-	border: 1px solid transparent;
+	background: var(--tp-bg);
+	border: 1px solid var(--tp-border);
 	display: inline-flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 4px;
+	gap: 2px;
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	white-space: nowrap;
 	touch-action: manipulation;
+	user-select: none;
+}
+
+.treatment-mobile-tier-btn:hover {
+	color: var(--tp-text-main);
+	border-color: var(--tp-primary);
 }
 
 .treatment-mobile-tier-btn.active {
 	background: var(--tp-primary);
 	color: #ffffff;
 	border-color: var(--tp-primary);
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
 }
 
 .treatment-mobile-tier-btn.active.standard {
-	background: #d97706;
+	background: linear-gradient(135deg, #f59e0b, #d97706);
 	border-color: #d97706;
+	color: #ffffff;
+	box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
 }
 
 /* Content Container */
@@ -306,8 +317,16 @@
 }
 
 @media (max-width: 1024px) {
+	.treatment-mobile-tier-bar {
+		display: flex;
+	}
 	.treatment-3tier-grid {
 		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+	/* Elimination of 2500px scroll-tunnel on iPad and Mobile: show active selected tier */
+	.treatment-3tier-grid .treatment-tier-card:not(.selected) {
+		display: none;
 	}
 }
 
@@ -541,6 +560,29 @@
 .treatment-tier-chip-highlight {
 	font-weight: 700;
 	color: var(--tp-primary);
+}
+
+.treatment-tier-ndfl-calc-btn {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	padding: 8px 10px;
+	border-radius: var(--tp-radius-sm);
+	background: var(--tp-success-light, rgba(16, 185, 129, 0.12));
+	border: 1px solid rgba(16, 185, 129, 0.3);
+	color: inherit;
+	font-size: 11px;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+	text-align: left;
+	margin-top: 4px;
+	touch-action: manipulation;
+}
+
+.treatment-tier-ndfl-calc-btn:hover {
+	background: rgba(16, 185, 129, 0.2);
+	border-color: rgba(16, 185, 129, 0.5);
+	transform: translateY(-1px);
 }
 
 /* Metric Specs */

@@ -514,7 +514,7 @@ export function generateCompletedActAndWarrantyHtml(params: CompletedWorksActPar
 					<span>/ ${params.doctor.fullName} /</span>
 				</div>
 				<div style="display: flex; gap: 15px; align-items: center; margin-top: 10px;">
-					<div class="paid-badge">✓ ОПЛАЧЕНО</div>
+					<div class="paid-badge">ОПЛАЧЕНО</div>
 					<div class="stamp-place">М.П.<br>Клиники</div>
 				</div>
 			</td>

@@ -1,6 +1,20 @@
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import {
+	anonymizePatientName,
+	anonymizePatientForCalendar,
+	buildGoogleCalendarSubscriptionUrl,
+	buildWebcalUrl,
+	buildYandexCalendarSubscriptionUrl,
+	escapeIcalText,
+	foldIcalLine,
+	formatIcalDateTime,
+	generateDoctorIcsFeed,
+	generateIcsCalendar,
+	validateIcsRFC5545,
+	type IcalAppointmentItem,
+} from "@dental/shared";
 import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
@@ -14,301 +28,246 @@ import { authTokenSecret } from "../security/authSecret.js";
 import { requireStaffIdentity } from "../security/identity.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 
+// Re-export shared functions for module and test backward compatibility
+export {
+	anonymizePatientName,
+	anonymizePatientForCalendar,
+	escapeIcalText,
+	formatIcalDateTime,
+	foldIcalLine,
+	generateDoctorIcsFeed,
+	generateIcsCalendar,
+	validateIcsRFC5545,
+	buildWebcalUrl,
+	buildYandexCalendarSubscriptionUrl,
+	buildGoogleCalendarSubscriptionUrl,
+	type IcalAppointmentItem,
+};
+
 const SettingsSchema = z.object({
 	yandexCalendarId: z.string().nullable(),
 	yandexCalendarToken: z.any().nullable(),
 });
 
-/**
- * Анонимизация персональных данных пациента для календаря (152-ФЗ / HIPAA).
- * Преобразует "Иванов Иван Иванович" -> "Пациент И.И."
- */
-export function anonymizePatientName(fullName?: string | null): string {
-	if (!fullName || typeof fullName !== "string") {
-		return "Пациент";
-	}
-	const clean = fullName.trim();
-	if (!clean) return "Пациент";
+interface TokenPayload {
+	userId?: string;
+	doctorId?: string;
+	organizationId?: string;
+	v?: number;
+}
 
-	if (clean.toLowerCase().startsWith("пациент")) {
-		return clean;
-	}
-
-	const words = clean.split(/\s+/).filter(Boolean);
-	if (words.length === 0) return "Пациент";
-
-	const initials = words
-		.slice(0, 2)
-		.map((w) => {
-			const letter = w.replace(/^[^a-zA-Zа-яА-ЯёЁ]/, "")[0];
-			return letter ? `${letter.toUpperCase()}.` : "";
-		})
-		.filter(Boolean)
-		.join("");
-
-	if (!initials) return "Пациент";
-	return `Пациент ${initials}`;
+interface DoctorTokenMeta {
+	tokenVersion?: number;
+	rotatedAt?: string;
+	lastAccessedAt?: string;
 }
 
 /**
- * Экранирование спецсимволов RFC 5545 (пункт 3.3.11).
+ * Поиск доктора по криптографическому токену подписки iCal.
+ * Защита от утечек: доступ разрешён ИСКЛЮЧИТЕЛЬНО по валидному HMAC-подписанному
+ * токену с совпадением активной версии (мгновенный отзыв при ротации).
+ * Fallback-поиск по незащищённым UUID полностью удален.
  */
-export function escapeIcalText(text: string): string {
-	return text
-		.replace(/\\/g, "\\\\")
-		.replace(/;/g, "\\;")
-		.replace(/,/g, "\\,")
-		.replace(/\r?\n/g, "\\n");
-}
-
-/**
- * Форматирование даты в формат RFC 5545 UTC (YYYYMMDDTHHMMSSZ).
- */
-export function formatIcalDateTime(date: Date | string | number): string {
-	const d = new Date(date);
-	if (Number.isNaN(d.getTime())) {
-		return "19700101T000000Z";
-	}
-	const pad = (n: number) => n.toString().padStart(2, "0");
-	const year = d.getUTCFullYear();
-	const month = pad(d.getUTCMonth() + 1);
-	const day = pad(d.getUTCDate());
-	const hours = pad(d.getUTCHours());
-	const minutes = pad(d.getUTCMinutes());
-	const seconds = pad(d.getUTCSeconds());
-	return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
-}
-
-/**
- * Разбивка длинных строк iCalendar по стандарту RFC 5545 (не более 75 октетов).
- */
-export function foldIcalLine(line: string, maxLen = 75): string {
-	if (line.length <= maxLen) return line;
-	const parts: string[] = [];
-	let remaining = line;
-	let isFirst = true;
-	while (remaining.length > 0) {
-		const chunkLen = isFirst ? maxLen : maxLen - 1;
-		parts.push(remaining.slice(0, chunkLen));
-		remaining = remaining.slice(chunkLen);
-		isFirst = false;
-	}
-	return parts.join("\r\n ");
-}
-
-export interface IcalAppointmentItem {
-	id: string;
-	startsAt: Date | string;
-	endsAt: Date | string;
-	status: string;
-	reason?: string | null;
-	chairName?: string | null;
-	patientFullName?: string | null;
-}
-
-/**
- * Генерация RFC 5545 iCalendar (VCALENDAR / VEVENT) фида приёмов врача.
- */
-export function generateIcsCalendar(params: {
-	doctorName: string;
-	appointments: IcalAppointmentItem[];
-}): string {
-	const nowUtc = formatIcalDateTime(new Date());
-	const calName = `Расписание врача — ${params.doctorName}`;
-
-	const rawLines: string[] = [
-		"BEGIN:VCALENDAR",
-		"VERSION:2.0",
-		"PRODID:-//Dente Dental CRM//Doctor Schedule RFC 5545//RU",
-		"CALSCALE:GREGORIAN",
-		"METHOD:PUBLISH",
-		`X-WR-CALNAME:${escapeIcalText(calName)}`,
-		"X-WR-TIMEZONE:UTC",
-	];
-
-	for (const apt of params.appointments) {
-		const start = formatIcalDateTime(apt.startsAt);
-		const end = formatIcalDateTime(apt.endsAt);
-		const patientLabel = anonymizePatientName(apt.patientFullName);
-
-		let summary = "Приём врача";
-		if (apt.reason && patientLabel) {
-			summary = `Приём: ${apt.reason} (${patientLabel})`;
-		} else if (apt.reason) {
-			summary = `Приём: ${apt.reason}`;
-		} else if (patientLabel) {
-			summary = `Приём: ${patientLabel}`;
-		}
-
-		const statusMap: Record<string, string> = {
-			planned: "TENTATIVE",
-			confirmed: "CONFIRMED",
-			completed: "CONFIRMED",
-			cancelled: "CANCELLED",
-			no_show: "CANCELLED",
-		};
-		const icalStatus = statusMap[apt.status] || "CONFIRMED";
-
-		const statusLabels: Record<string, string> = {
-			planned: "Запланирован",
-			confirmed: "Подтвержден",
-			completed: "Завершен",
-			cancelled: "Отменен",
-			no_show: "Неявка",
-		};
-		const statusText = statusLabels[apt.status] || apt.status;
-
-		const descParts = [
-			`Пациент: ${patientLabel}`,
-			`Статус: ${statusText}`,
-		];
-		if (apt.chairName) {
-			descParts.push(`Кресло/Кабинет: ${apt.chairName}`);
-		}
-		if (apt.reason) {
-			descParts.push(`Причина/Услуга: ${apt.reason}`);
-		}
-		const description = descParts.join("\n");
-
-		rawLines.push("BEGIN:VEVENT");
-		rawLines.push(`UID:appointment-${apt.id}@dental-crm`);
-		rawLines.push(`DTSTAMP:${nowUtc}`);
-		rawLines.push(`DTSTART:${start}`);
-		rawLines.push(`DTEND:${end}`);
-		rawLines.push(`SUMMARY:${escapeIcalText(summary)}`);
-		rawLines.push(`DESCRIPTION:${escapeIcalText(description)}`);
-		rawLines.push(`STATUS:${icalStatus}`);
-		rawLines.push("END:VEVENT");
-	}
-
-	rawLines.push("END:VCALENDAR");
-
-	return rawLines.map((line) => foldIcalLine(line)).join("\r\n") + "\r\n";
-}
-
-/**
- * Поиск доктора по токену подписки iCal.
- */
-export async function lookupDoctorByIcalToken(rawToken: string): Promise<{
+export async function lookupDoctorByIcalToken(rawToken: string | null | undefined): Promise<{
 	doctorId: string;
 	organizationId: string;
 	doctorName: string;
+	tokenVersion: number;
 } | null> {
+	if (!rawToken || typeof rawToken !== "string") return null;
+	const clean = rawToken.replace(/\.ics$/i, "").trim();
+	if (!clean) return null;
+
+	// 1. Проверка валидности криптографической HMAC-подписи (без обращения к БД)
+	const secret = authTokenSecret();
+	const payload = verifyToken(clean, secret) as TokenPayload | null;
+
+	if (
+		!payload ||
+		!(payload.doctorId || payload.userId) ||
+		!payload.organizationId
+	) {
+		return null;
+	}
+
+	const targetDoctorId = payload.doctorId || payload.userId;
+	const targetOrgId = payload.organizationId;
+	if (!targetDoctorId || !targetOrgId) return null;
+	const doctorId: string = targetDoctorId;
+	const orgId: string = targetOrgId;
+
 	return withSuperuserBypass(async (tx) => {
-		// 1. Попытка валидации подписанного токена HMAC
-		const secret = authTokenSecret();
-		const payload = verifyToken(rawToken, secret) as {
-			doctorId?: string;
-			userId?: string;
-			organizationId?: string;
-		} | null;
-
-		if (
-			payload &&
-			(payload.doctorId || payload.userId) &&
-			payload.organizationId
-		) {
-			const targetUserId = payload.doctorId || payload.userId;
-			const user = await tx
-				.select({
-					id: users.id,
-					organizationId: users.organizationId,
-					fullName: users.fullName,
-					isActive: users.isActive,
-				})
-				.from(users)
-				.where(
-					and(
-						eq(users.id, targetUserId!),
-						eq(users.organizationId, payload.organizationId),
-					),
-				)
-				.then((r) => r[0]);
-
-			if (user && user.isActive) {
-				return {
-					doctorId: user.id,
-					organizationId: user.organizationId,
-					doctorName: user.fullName,
-				};
-			}
-		}
-
-		const isUuid =
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-				rawToken,
-			);
-
-		if (isUuid) {
-			// 2. Прямой поиск по ID пользователя
-			const user = await tx
-				.select({
-					id: users.id,
-					organizationId: users.organizationId,
-					fullName: users.fullName,
-					isActive: users.isActive,
-				})
-				.from(users)
-				.where(and(eq(users.id, rawToken), eq(users.isActive, true)))
-				.then((r) => r[0]);
-
-			if (user) {
-				return {
-					doctorId: user.id,
-					organizationId: user.organizationId,
-					doctorName: user.fullName,
-				};
-			}
-
-			// 3. Поиск по ID синхронизации
-			const sync = await tx
-				.select({
-					doctorId: yandexCalendarSyncs.doctorId,
-					organizationId: yandexCalendarSyncs.organizationId,
-					doctorName: users.fullName,
-					isActive: users.isActive,
-				})
-				.from(yandexCalendarSyncs)
-				.innerJoin(users, eq(yandexCalendarSyncs.doctorId, users.id))
-				.where(eq(yandexCalendarSyncs.id, rawToken))
-				.then((r) => r[0]);
-
-			if (sync && sync.isActive) {
-				return {
-					doctorId: sync.doctorId,
-					organizationId: sync.organizationId,
-					doctorName: sync.doctorName,
-				};
-			}
-		}
-
-		// 4. Поиск по yandexCalendarId
-		const userByCalId = await tx
+		// 2. Чтение пользователя и проверка актуальности версии токена
+		const user = await tx
 			.select({
 				id: users.id,
 				organizationId: users.organizationId,
 				fullName: users.fullName,
 				isActive: users.isActive,
+				yandexCalendarToken: users.yandexCalendarToken,
 			})
 			.from(users)
 			.where(
-				and(eq(users.yandexCalendarId, rawToken), eq(users.isActive, true)),
+				and(
+					eq(users.id, doctorId),
+					eq(users.organizationId, orgId),
+				),
 			)
 			.then((r) => r[0]);
 
-		if (userByCalId) {
-			return {
-				doctorId: userByCalId.id,
-				organizationId: userByCalId.organizationId,
-				doctorName: userByCalId.fullName,
-			};
+		if (!user || !user.isActive) {
+			return null;
 		}
 
-		return null;
+		const tokenMeta = user.yandexCalendarToken as DoctorTokenMeta | null;
+		const activeVersion = tokenMeta?.tokenVersion ?? 1;
+		const tokenVersion = payload.v ?? 1;
+
+		// Если токен был отозван через ротацию, старый токен отклоняется
+		if (tokenVersion < activeVersion) {
+			return null;
+		}
+
+		return {
+			doctorId: user.id,
+			organizationId: user.organizationId,
+			doctorName: user.fullName,
+			tokenVersion: activeVersion,
+		};
 	});
 }
 
+/**
+ * Генерация защищенного токена подписки на iCal расписание врача.
+ */
+export function generateDoctorIcalToken(params: {
+	doctorId: string;
+	organizationId: string;
+	tokenVersion: number;
+	expiresInSeconds?: number;
+}): string {
+	const { doctorId, organizationId, tokenVersion, expiresInSeconds = 365 * 24 * 3600 } = params;
+	return signToken(
+		{
+			userId: doctorId,
+			doctorId,
+			organizationId,
+			v: tokenVersion,
+		},
+		authTokenSecret(),
+		expiresInSeconds,
+	);
+}
+
+/**
+ * Обработчик выдачи RFC 5545 .ics файла расписания врача.
+ */
+async function handleIcalFeedRequest(
+	request: FastifyRequest<{ Params: { token?: string } }>,
+	reply: FastifyReply,
+) {
+	try {
+		const params = request.params as { token?: string };
+		const rawToken = params.token || "";
+		const cleanToken = rawToken.replace(/\.ics$/i, "").trim();
+
+		if (!cleanToken) {
+			return reply.code(400).send({
+				error: "InvalidToken",
+				message: "Токен расписания не указан.",
+			});
+		}
+
+		const doctor = await lookupDoctorByIcalToken(cleanToken);
+
+		if (!doctor) {
+			return reply.code(404).send({
+				error: "DoctorScheduleNotFound",
+				message: "Расписание врача не найдено, доступ заблокирован или ссылка устарела после ротации.",
+			});
+		}
+
+		const rows = await withTenantCtx(doctor.organizationId, async (tx) => {
+			return tx
+				.select({
+					id: appointments.id,
+					startsAt: appointments.startsAt,
+					endsAt: appointments.endsAt,
+					status: appointments.status,
+					reason: appointments.reason,
+					patientFullName: patients.fullName,
+					patientNotes: patients.notes,
+					chairName: chairs.name,
+				})
+				.from(appointments)
+				.leftJoin(patients, eq(appointments.patientId, patients.id))
+				.leftJoin(chairs, eq(appointments.chairId, chairs.id))
+				.where(
+					and(
+						eq(appointments.organizationId, doctor.organizationId),
+						eq(appointments.doctorUserId, doctor.doctorId),
+					),
+				)
+				.orderBy(appointments.startsAt);
+		});
+
+		const items: IcalAppointmentItem[] = rows.map((r) => {
+			// Extract card number from patient notes or use ID slice if notes contain card
+			let cardNumber: string | null = null;
+			if (r.patientNotes && typeof r.patientNotes === "string") {
+				const match = r.patientNotes.match(/(?:карта|№)\s*[:№]?\s*([a-zA-Z0-9\-_/]+)/i);
+				if (match && match[1]) {
+					cardNumber = match[1];
+				}
+			}
+
+			return {
+				id: r.id,
+				startsAt: r.startsAt,
+				endsAt: r.endsAt,
+				status: r.status,
+				reason: r.reason,
+				chairName: r.chairName,
+				patientFullName: r.patientFullName,
+				patientCardNumber: cardNumber,
+				isEmergency: false,
+				sequence: 0,
+			};
+		});
+
+		const ics = generateDoctorIcsFeed({
+			doctorName: doctor.doctorName,
+			appointments: items,
+			refreshIntervalMinutes: 15,
+			alarmMinutesBefore: 15,
+			includeAlarms: true,
+			anonymizePatient: true,
+			includeCardNumber: true,
+		});
+
+		return reply
+			.code(200)
+			.header("Content-Type", "text/calendar; charset=utf-8")
+			.header(
+				"Content-Disposition",
+				`inline; filename="doctor-schedule-${doctor.doctorId}.ics"`,
+			)
+			.header(
+				"Cache-Control",
+				"no-cache, no-store, max-age=0, must-revalidate",
+			)
+			.send(ics);
+	} catch (error: unknown) {
+		request.log.error(error, "Failed to export iCal schedule feed");
+		return reply.status(500).send({
+			error: "InternalServerError",
+			message: "Ошибка при формировании iCal-расписания.",
+		});
+	}
+}
+
 export async function registerYandexCalendarRoutes(app: FastifyInstance) {
+	// OAuth URL для Яндекс.Календаря
 	app.get("/api/integrations/yandex-calendar/auth", async (request, reply) => {
 		try {
 			const identity = await requireStaffIdentity(request, reply);
@@ -319,8 +278,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 					"https://oauth.yandex.ru/authorize?response_type=code&client_id=dente_crm",
 				connected: false,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -329,6 +287,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 		}
 	});
 
+	// Сохранение настроек Яндекс.Календаря для врача
 	app.post(
 		"/api/integrations/yandex-calendar/settings",
 		async (request, reply) => {
@@ -348,14 +307,17 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 					.where(and(eq(users.id, staffId), eq(users.organizationId, orgId)));
 
 				return { success: true };
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			} catch (err: any) {
+			} catch (err: unknown) {
 				request.log.error(err, "Failed to update Yandex Calendar settings");
-				return reply.code(400).send({ error: "InvalidPayload", message: "Некорректные параметры настроек Яндекс.Календаря." });
+				return reply.code(400).send({
+					error: "InvalidPayload",
+					message: "Некорректные параметры настроек Яндекс.Календаря.",
+				});
 			}
 		},
 	);
 
+	// Список синхронизаций с Яндекс Календарём
 	app.get("/api/integrations/yandex-calendar-syncs", async (request, reply) => {
 		try {
 			const identity = await requireStaffIdentity(request, reply);
@@ -375,8 +337,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				.where(eq(yandexCalendarSyncs.organizationId, identity.organizationId));
 
 			return syncs;
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -385,6 +346,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 		}
 	});
 
+	// Ручной запуск синхронизации
 	app.post("/api/integrations/yandex-calendar/sync", async (request, reply) => {
 		try {
 			const identity = await requireStaffIdentity(request, reply);
@@ -402,13 +364,11 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				.then((r) => r[0]);
 
 			if (!staffInfo?.yandexCalendarId || !staffInfo?.yandexCalendarToken) {
-				return reply.code(400).send({ error: "YandexCalendarNotConnected", message: "Яндекс.Календарь не подключен для данного сотрудника." });
+				return reply.code(400).send({
+					error: "YandexCalendarNotConnected",
+					message: "Яндекс.Календарь не подключен для данного сотрудника.",
+				});
 			}
-
-			request.log.info(
-				{ staffId },
-				"Starting Yandex Calendar sync for staffId",
-			);
 
 			const existingSync = await db
 				.select({ id: yandexCalendarSyncs.id })
@@ -447,8 +407,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 			}
 
 			return { success: true, message: "Синхронизация с Яндекс.Календарем успешно запущена." };
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -457,99 +416,209 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 		}
 	});
 
-	// Endpoint для получения защищенной iCal ссылки для текущего авторизованного врача
+	// Получение защищенной ссылки на iCal фид текущего авторизованного врача
 	app.get(
 		"/api/integrations/yandex-calendar/feed-url",
 		async (request, reply) => {
 			const identity = await requireStaffIdentity(request, reply);
 			if (!identity?.userId || !identity?.organizationId) return;
 
-			const token = signToken(
-				{
-					userId: identity.userId,
-					doctorId: identity.userId,
-					organizationId: identity.organizationId,
-				},
-				authTokenSecret(),
-				365 * 24 * 3600, // 1 год
-			);
+			const user = await db
+				.select({
+					id: users.id,
+					fullName: users.fullName,
+					yandexCalendarToken: users.yandexCalendarToken,
+				})
+				.from(users)
+				.where(
+					and(
+						eq(users.id, identity.userId),
+						eq(users.organizationId, identity.organizationId),
+					),
+				)
+				.then((r) => r[0]);
+
+			const tokenMeta = user?.yandexCalendarToken as DoctorTokenMeta | null;
+			const version = tokenMeta?.tokenVersion ?? 1;
+
+			const token = generateDoctorIcalToken({
+				doctorId: identity.userId,
+				organizationId: identity.organizationId,
+				tokenVersion: version,
+			});
 
 			return {
-				feedUrl: `/api/schedule/ical/${token}.ics`,
+				feedUrl: `/api/schedule/ical/doctor/${token}.ics`,
 				doctorId: identity.userId,
+				doctorName: user?.fullName || identity.fullName,
+				tokenVersion: version,
 			};
 		},
 	);
 
-	// RFC 5545 iCalendar endpoint для подписки в Яндекс.Календаре / Apple Calendar / Google Calendar
-	app.get("/api/schedule/ical/:token", async (request, reply) => {
-		try {
-			const { token } = request.params as { token: string };
-			const cleanToken = (token || "").replace(/\.ics$/i, "").trim();
+	// Получение защищенной ссылки на iCal фид для конкретного врача (доступно врачу или владельцу)
+	app.get(
+		"/api/schedule/ical/doctor/:doctorId/feed-url",
+		async (request, reply) => {
+			const identity = await requireStaffIdentity(request, reply);
+			if (!identity?.userId || !identity?.organizationId) return;
 
-			if (!cleanToken) {
-				return reply.code(400).send({
-					error: "InvalidToken",
-					message: "Токен расписания не указан.",
+			const params = request.params as { doctorId?: string };
+			const targetDoctorId = params.doctorId || identity.userId;
+
+			// Проверка прав: только сам врач или администратор/владелец
+			const isSelf = identity.userId === targetDoctorId;
+			const isPrivileged = identity.role === "owner" || identity.role === "admin";
+			if (!isSelf && !isPrivileged) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Недостаточно прав для получения ссылки на расписание другого врача.",
 				});
 			}
 
-			const doctor = await lookupDoctorByIcalToken(cleanToken);
+			const targetUser = await db
+				.select({
+					id: users.id,
+					fullName: users.fullName,
+					isActive: users.isActive,
+					yandexCalendarToken: users.yandexCalendarToken,
+				})
+				.from(users)
+				.where(
+					and(
+						eq(users.id, targetDoctorId),
+						eq(users.organizationId, identity.organizationId),
+					),
+				)
+				.then((r) => r[0]);
 
-			if (!doctor) {
+			if (!targetUser || !targetUser.isActive) {
 				return reply.code(404).send({
-					error: "DoctorScheduleNotFound",
-					message: "Расписание врача не найдено или токен недействителен.",
+					error: "DoctorNotFound",
+					message: "Врач не найден или не активен в этой организации.",
 				});
 			}
 
-			const rows = await withTenantCtx(doctor.organizationId, async (tx) => {
-				return tx
-					.select({
-						id: appointments.id,
-						startsAt: appointments.startsAt,
-						endsAt: appointments.endsAt,
-						status: appointments.status,
-						reason: appointments.reason,
-						patientFullName: patients.fullName,
-						chairName: chairs.name,
-					})
-					.from(appointments)
-					.leftJoin(patients, eq(appointments.patientId, patients.id))
-					.leftJoin(chairs, eq(appointments.chairId, chairs.id))
-					.where(
-						and(
-							eq(appointments.organizationId, doctor.organizationId),
-							eq(appointments.doctorUserId, doctor.doctorId),
-						),
-					)
-					.orderBy(appointments.startsAt);
+			const tokenMeta = targetUser.yandexCalendarToken as DoctorTokenMeta | null;
+			const version = tokenMeta?.tokenVersion ?? 1;
+
+			const token = generateDoctorIcalToken({
+				doctorId: targetUser.id,
+				organizationId: identity.organizationId,
+				tokenVersion: version,
 			});
 
-			const ics = generateIcsCalendar({
-				doctorName: doctor.doctorName,
-				appointments: rows,
+			return {
+				doctorId: targetUser.id,
+				doctorName: targetUser.fullName,
+				feedUrl: `/api/schedule/ical/doctor/${token}.ics`,
+				webcalUrl: `webcal://${request.headers.host || "localhost"}/api/schedule/ical/doctor/${token}.ics`,
+				tokenVersion: version,
+				tokenCreatedAt: tokenMeta?.rotatedAt || null,
+			};
+		},
+	);
+
+	// Мгновенная ротация токена подписки iCal (при компрометации ссылки)
+	app.post(
+		"/api/schedule/ical/doctor/:doctorId/rotate",
+		async (request, reply) => {
+			const identity = await requireStaffIdentity(request, reply);
+			if (!identity?.userId || !identity?.organizationId) return;
+
+			const params = request.params as { doctorId?: string };
+			const targetDoctorId = params.doctorId || identity.userId;
+
+			const isSelf = identity.userId === targetDoctorId;
+			const isPrivileged = identity.role === "owner" || identity.role === "admin";
+			if (!isSelf && !isPrivileged) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Недостаточно прав для ротации ссылки расписания другого врача.",
+				});
+			}
+
+			const targetUser = await db
+				.select({
+					id: users.id,
+					fullName: users.fullName,
+					isActive: users.isActive,
+					yandexCalendarToken: users.yandexCalendarToken,
+				})
+				.from(users)
+				.where(
+					and(
+						eq(users.id, targetDoctorId),
+						eq(users.organizationId, identity.organizationId),
+					),
+				)
+				.then((r) => r[0]);
+
+			if (!targetUser || !targetUser.isActive) {
+				return reply.code(404).send({
+					error: "DoctorNotFound",
+					message: "Врач не найден в организации.",
+				});
+			}
+
+			const prevMeta = (targetUser.yandexCalendarToken as DoctorTokenMeta | null) || {};
+			const newVersion = (prevMeta.tokenVersion ?? 1) + 1;
+			const rotatedAt = new Date().toISOString();
+
+			const newMeta: DoctorTokenMeta = {
+				...prevMeta,
+				tokenVersion: newVersion,
+				rotatedAt,
+			};
+
+			await db
+				.update(users)
+				.set({
+					yandexCalendarToken: newMeta,
+				})
+				.where(
+					and(
+						eq(users.id, targetDoctorId),
+						eq(users.organizationId, identity.organizationId),
+					),
+				);
+
+			const newToken = generateDoctorIcalToken({
+				doctorId: targetDoctorId,
+				organizationId: identity.organizationId,
+				tokenVersion: newVersion,
 			});
 
-			return reply
-				.code(200)
-				.header("Content-Type", "text/calendar; charset=utf-8")
-				.header(
-					"Content-Disposition",
-					`inline; filename="doctor-schedule-${doctor.doctorId}.ics"`,
-				)
-				.header(
-					"Cache-Control",
-					"no-cache, no-store, max-age=0, must-revalidate",
-				)
-				.send(ics);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
-			request.log.error(error, "Failed to export iCal schedule");
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при формировании iCal-расписания.",
-			});
-		}
+			const host = request.headers.host || "localhost";
+			const feedPath = `/api/schedule/ical/doctor/${newToken}.ics`;
+
+			return {
+				success: true,
+				message: "Ссылка подписки успешно отозвана. Выпущена новая ссылка доступа.",
+				doctorId: targetDoctorId,
+				doctorName: targetUser.fullName,
+				feedUrl: feedPath,
+				webcalUrl: `webcal://${host}${feedPath}`,
+				tokenVersion: newVersion,
+				rotatedAt,
+			};
+		},
+	);
+
+	// Ротация для текущего пользователя
+	app.post("/api/schedule/ical/rotate", async (request, reply) => {
+		const identity = await requireStaffIdentity(request, reply);
+		if (!identity?.userId) return;
+		return app.inject({
+			method: "POST",
+			url: `/api/schedule/ical/doctor/${identity.userId}/rotate`,
+			headers: request.headers as Record<string, string>,
+		});
 	});
+
+	// RFC 5545 iCalendar endpoint: /api/schedule/ical/doctor/:token (.ics)
+	app.get("/api/schedule/ical/doctor/:token", handleIcalFeedRequest);
+
+	// RFC 5545 iCalendar endpoint: /api/schedule/ical/:token (.ics) (legacy alias)
+	app.get("/api/schedule/ical/:token", handleIcalFeedRequest);
 }

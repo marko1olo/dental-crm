@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * EGISZ REMD CDA R2 & UKEP EXPORT MODAL STYLES (МИНЗДРАВ РФ / ПРИКАЗ 911Н)
- * 100% Design Token Compliance (Light & Dark Mode)
+ * EGISZ REMD CDA R2/R3 & UKEP EXPORT MODAL STYLES (МИНЗДРАВ РФ / ПРИКАЗ 911Н)
+ * 100% Design Token Compliance (Light & Dark Mode) — 32–36px Desktop Density
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -32,7 +32,7 @@
   background-color: var(--paper, #ffffff);
   color: var(--ink, #0f172a);
   border: 1px solid var(--line, #e2e8f0);
-  border-radius: 18px;
+  border-radius: 14px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
   overflow: hidden;
 }
@@ -46,7 +46,7 @@
 
 /* Header */
 .egisz-modal-header {
-  padding: 16px 20px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--line, #e2e8f0);
   display: flex;
   align-items: center;
@@ -63,13 +63,13 @@
 .egisz-header-title-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .egisz-header-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,21 +84,21 @@
 }
 
 .egisz-header-title {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1.2;
   margin: 0;
 }
 
 .egisz-header-subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted, #64748b);
   margin-top: 2px;
 }
 
 .egisz-close-btn {
-  width: 44px;
-  height: 44px;
+  width: 34px;
+  height: 34px;
   border-radius: 8px;
   border: none;
   background: transparent;
@@ -120,7 +120,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-bottom: 1px solid var(--line, #e2e8f0);
   background-color: rgba(241, 245, 249, 0.6);
   overflow-x: auto;
@@ -143,14 +143,15 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  min-height: 44px;
+  gap: 6px;
+  padding: 6px 12px;
+  min-height: 34px;
+  height: 34px;
   border-radius: 8px;
   border: none;
   background: transparent;
   color: var(--muted, #64748b);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -175,7 +176,7 @@
 }
 
 .egisz-tab-badge {
-  font-size: 11px;
+  font-size: 10px;
   padding: 2px 6px;
   border-radius: 9999px;
   font-weight: 700;
@@ -191,14 +192,26 @@
   color: #16a34a;
 }
 
+[data-theme="dark"] .egisz-tab-badge.badge-error,
+.dark .egisz-tab-badge.badge-error {
+  background-color: rgba(225, 29, 72, 0.2);
+  color: #fb7185;
+}
+
+[data-theme="dark"] .egisz-tab-badge.badge-success,
+.dark .egisz-tab-badge.badge-success {
+  background-color: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+}
+
 /* Modal Body */
 .egisz-modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 /* Document Kind Switcher */
@@ -215,15 +228,15 @@
 }
 
 .egisz-kind-card {
-  padding: 14px 16px;
-  border-radius: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
   border: 1.5px solid var(--line, #e2e8f0);
   background-color: var(--paper, #ffffff);
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 [data-theme="dark"] .egisz-kind-card,
@@ -254,7 +267,7 @@
 }
 
 .egisz-kind-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -265,7 +278,7 @@
 }
 
 .egisz-kind-desc {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted, #64748b);
   line-height: 1.35;
 }
@@ -281,8 +294,8 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
   background-color: var(--paper, #f8fafc);
   border: 1px solid var(--line, #e2e8f0);
 }
@@ -314,21 +327,100 @@
 }
 
 .egisz-check-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .egisz-check-detail {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted, #64748b);
   margin-top: 2px;
+}
+
+/* Clinical & Orthodontic Form Styles */
+.egisz-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.egisz-form-grid-split {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 12px;
+}
+
+.egisz-form-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .egisz-form-grid-split,
+  .egisz-form-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.egisz-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.egisz-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .egisz-field-label,
+.dark .egisz-field-label {
+  color: #f8fafc;
+}
+
+.egisz-input,
+.egisz-select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line, #e2e8f0);
+  background-color: var(--paper, #ffffff);
+  color: var(--ink, #0f172a);
+  font-size: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+[data-theme="dark"] .egisz-input,
+[data-theme="dark"] .egisz-select,
+.dark .egisz-input,
+.dark .egisz-select {
+  background-color: var(--paper-strong, #1e293b);
+  border-color: var(--line, #334155);
+  color: #f8fafc;
+}
+
+.egisz-input:focus,
+.egisz-select:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+}
+
+[data-theme="dark"] .egisz-input:focus,
+[data-theme="dark"] .egisz-select:focus,
+.dark .egisz-input:focus,
+.dark .egisz-select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
 /* Signature Panel */
 .egisz-sign-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 
 @media (max-width: 768px) {
@@ -338,13 +430,13 @@
 }
 
 .egisz-sign-card {
-  padding: 16px;
-  border-radius: 12px;
+  padding: 14px;
+  border-radius: 10px;
   border: 1px solid var(--line, #e2e8f0);
   background-color: var(--paper, #ffffff);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 [data-theme="dark"] .egisz-sign-card,
@@ -360,32 +452,65 @@
 }
 
 .egisz-sign-card-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .egisz-cert-details {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
   background-color: rgba(100, 116, 139, 0.06);
   display: flex;
   flex-direction: column;
+  gap: 3px;
+}
+
+.egisz-cert-empty-state {
+  font-size: 11px;
+  color: var(--muted, #64748b);
+  line-height: 1.4;
+}
+
+.egisz-cert-status-row {
+  margin-top: 4px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
+  font-size: 11px;
+}
+
+.egisz-cert-status-ok {
+  color: #16a34a;
+}
+
+[data-theme="dark"] .egisz-cert-status-ok,
+.dark .egisz-cert-status-ok {
+  color: #4ade80;
+}
+
+.egisz-cert-status-err {
+  color: #e11d48;
+}
+
+[data-theme="dark"] .egisz-cert-status-err,
+.dark .egisz-cert-status-err {
+  color: #fb7185;
 }
 
 .egisz-cert-valid-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
   background-color: rgba(22, 163, 74, 0.12);
   color: #16a34a;
 }
@@ -396,16 +521,53 @@
   color: #4ade80;
 }
 
+.egisz-cryptopro-banner {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background-color: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+  color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .egisz-cryptopro-banner,
+.dark .egisz-cryptopro-banner {
+  background-color: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.25);
+  color: #f8fafc;
+}
+
 /* XML Preview Box */
+.egisz-xml-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.egisz-xml-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.egisz-xml-title {
+  font-size: 12px;
+  color: var(--muted, #64748b);
+}
+
 .egisz-xml-viewer {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
   line-height: 1.5;
   background-color: #0f172a;
   color: #e2e8f0;
-  padding: 16px;
-  border-radius: 10px;
-  max-height: 380px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  max-height: 350px;
   overflow: auto;
   white-space: pre;
   user-select: text;
@@ -413,12 +575,12 @@
 
 /* Footer */
 .egisz-modal-footer {
-  padding: 16px 20px;
+  padding: 12px 18px;
   border-top: 1px solid var(--line, #e2e8f0);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
   background-color: var(--paper, #ffffff);
 }
@@ -429,15 +591,30 @@
   border-top-color: var(--line, #1e293b);
 }
 
+.egisz-footer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted, #64748b);
+}
+
+.egisz-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .egisz-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 18px;
-  min-height: 44px;
-  border-radius: 10px;
-  font-size: 13px;
+  gap: 6px;
+  padding: 6px 14px;
+  min-height: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -475,6 +652,10 @@
   color: #ffffff;
 }
 
+.egisz-btn-success:hover {
+  background-color: #15803d;
+}
+
 .egisz-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -487,51 +668,52 @@
 
   .egisz-modal-container {
     max-height: 98vh;
-    border-radius: 12px;
+    border-radius: 10px;
   }
 
   .egisz-modal-header {
-    padding: 12px 14px;
+    padding: 10px 12px;
   }
 
   .egisz-header-title {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .egisz-header-subtitle {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .egisz-header-icon {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
 
   .egisz-tabs-bar {
-    padding: 6px 8px;
+    padding: 4px 6px;
     gap: 4px;
   }
 
   .egisz-tab-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 11px;
+    min-height: 32px;
+    height: 32px;
   }
 
   .egisz-modal-body {
-    padding: 12px;
-    gap: 12px;
+    padding: 10px 12px;
+    gap: 10px;
   }
 
   .egisz-kind-switcher {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 6px;
   }
 
   .egisz-kind-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: 2px;
   }
 
   .egisz-kind-oid {
@@ -539,19 +721,19 @@
   }
 
   .egisz-modal-footer {
-    padding: 12px;
+    padding: 10px 12px;
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
 
-  .egisz-footer-semd-badge {
-    text-align: center;
+  .egisz-footer-info {
+    justify-content: center;
   }
 
   .egisz-footer-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
   }
 

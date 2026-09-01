@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { curatorFunnelStageSchema } from "./curator/index.js";
 
 export * from "./money.js";
 export * from "./fiscal/index.js";
@@ -43,6 +44,7 @@ export * from "./diagnostics/index.js";
 export * from "./branches/index.js";
 export * from "./warehouse/index.js";
 export * from "./mobile/index.js";
+export * from "./curator/index.js";
 export * as dispensaryRecall from "./recall/index.js";
 export {
 	clinicalRecallCategorySchema,
@@ -1186,6 +1188,7 @@ export const staffRoleSchema = z.enum([
 	"administrator",
 	"assistant",
 	"manager",
+	"curator",
 ]);
 export type StaffRole = z.infer<typeof staffRoleSchema>;
 
@@ -3368,6 +3371,16 @@ const patientAdministrativeProfileBaseSchema = z.object({
 		.nullable()
 		.optional()
 		.default(null),
+	/*
+	 * Закрепление куратора лечения за пациентом (Фича #27)
+	 */
+	curatorId: z.string().uuid().nullable().optional().default(null),
+	curatorFullName: z.string().trim().max(240).nullable().optional().default(null),
+	curatorAssignedAt: z.string().nullable().optional().default(null),
+	curatorFunnelStage: curatorFunnelStageSchema.nullable().optional().default(null),
+	curatorCommissionPercent: z.number().min(0).max(100).nullable().optional().default(null),
+	curatorNotes: z.string().trim().max(2000).nullable().optional().default(null),
+	curatorNextContactDate: z.string().nullable().optional().default(null),
 });
 
 export const patientAdministrativeProfileSchema =
@@ -3375,8 +3388,8 @@ export const patientAdministrativeProfileSchema =
 		if (
 			value.preferredAppointmentStart &&
 			value.preferredAppointmentEnd &&
-			clockTimeToMinutes(value.preferredAppointmentEnd) <=
-				clockTimeToMinutes(value.preferredAppointmentStart)
+			clockTimeToMinutes(String(value.preferredAppointmentEnd)) <=
+				clockTimeToMinutes(String(value.preferredAppointmentStart))
 		) {
 			context.addIssue({
 				code: "custom",
@@ -6634,8 +6647,8 @@ export const updatePatientAdministrativeProfileSchema =
 			if (
 				value.preferredAppointmentStart &&
 				value.preferredAppointmentEnd &&
-				clockTimeToMinutes(value.preferredAppointmentEnd) <=
-					clockTimeToMinutes(value.preferredAppointmentStart)
+				clockTimeToMinutes(String(value.preferredAppointmentEnd)) <=
+					clockTimeToMinutes(String(value.preferredAppointmentStart))
 			) {
 				context.addIssue({
 					code: "custom",

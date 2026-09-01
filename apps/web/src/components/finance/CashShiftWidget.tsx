@@ -65,14 +65,14 @@ function formatMoneyRu(value: number): string {
 }
 
 export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
-	initialIsOpen = true,
-	shiftNumber = 42,
-	cashierName = "Сидорова Анна Павловна",
-	cashierInn = "770198765432",
-	cashInDrawerRub = 24500,
-	cardSumRub = 68000,
-	sbpSumRub = 15400,
-	advanceOffsetRub = 22000,
+	initialIsOpen = false,
+	shiftNumber = 1,
+	cashierName = "Кассир",
+	cashierInn = "",
+	cashInDrawerRub = 0,
+	cardSumRub = 0,
+	sbpSumRub = 0,
+	advanceOffsetRub = 0,
 	openedAt = "08:00",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicInn = "7701234567",
@@ -341,7 +341,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						) : (
 							<>
 								<Unlock size={16} />
-								<span>Открыть смену</span>
+								<span>{shiftNumber === 1 && totalTurnoverRub === 0 ? "+ Открыть первую смену" : "Открыть смену"}</span>
 							</>
 						)}
 					</button>

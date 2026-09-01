@@ -333,8 +333,8 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 				{/* Toast Banner */}
 				{toastMsg && (
 					<div className="bg-teal-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0">
-						<span>✓ {toastMsg}</span>
-						<button type="button" onClick={() => setToastMsg(null)} className="text-white hover:opacity-80">✕</button>
+						<span className="flex items-center gap-1.5"><Check size={14} className="shrink-0" /> {toastMsg}</span>
+						<button type="button" onClick={() => setToastMsg(null)} className="text-white hover:opacity-80 p-0.5 rounded cursor-pointer" aria-label="Закрыть уведомление"><X size={14} /></button>
 					</div>
 				)}
 

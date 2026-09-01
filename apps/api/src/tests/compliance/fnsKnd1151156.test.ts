@@ -243,7 +243,7 @@ describe("FNS 13% NDFL Tax Exporter (КНД 1151156 Format 5.01 / Приказ �
 		assert.equal(res.ok, true);
 		if (res.ok) {
 			// Exact sum: 555.50 + 555.49 = 1110.99
-			assert.ok(res.xml.includes('СуммаКод1="1110.99"'));
+			assert.ok(res.xml.includes('КодУслуг="1" СумОпл="1110.99"'));
 		}
 	});
 });

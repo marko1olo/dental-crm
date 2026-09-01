@@ -9,3 +9,4 @@ export * from "./cmoEmrAuditEngine";
 export * from "./CmoEmrAuditModal";
 export * from "./cmoComplianceHubEngine";
 export * from "./CmoComplianceHub";
+export * from "./ClinicalAuditBoard";

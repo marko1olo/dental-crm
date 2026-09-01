@@ -149,6 +149,20 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"inventory.write",
 		"communications.read",
 	],
+
+	// Куратор лечения: ведёт пациентов по воронке планов лечения, согласует сметы,
+	// видит расписание и переписку, аналитику своей конверсии.
+	curator: [
+		"schedule.read",
+		"schedule.write",
+		"patients.read",
+		"patients.write",
+		"clinical.read",
+		"finance.read",
+		"analytics.read",
+		"communications.read",
+		"communications.write",
+	],
 };
 
 /**
@@ -286,6 +300,7 @@ const ROLE_LABELS: Record<string, string> = {
 	administrator: "администратор ресепшена",
 	doctor: "врач",
 	assistant: "ассистент",
+	curator: "куратор лечения",
 };
 
 /**

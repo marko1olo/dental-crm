@@ -6787,6 +6787,7 @@ function staffRoleLabelForTelegramDigest(role: StaffRole): string {
 		administrator: "администратор",
 		assistant: "ассистент",
 		manager: "управляющий",
+		curator: "куратор",
 	};
 	return labels[role];
 }
@@ -10896,6 +10897,13 @@ function normalizePatientAdministrativeProfile(
 		dataProcessingBasisNote: nullableTrimmed(input?.dataProcessingBasisNote),
 		orthodonticProgress: nullableTrimmed(input?.orthodonticProgress),
 		loyaltyTier,
+		curatorId: nullableTrimmed(input?.curatorId),
+		curatorFullName: nullableTrimmed(input?.curatorFullName),
+		curatorAssignedAt: nullableTrimmed(input?.curatorAssignedAt),
+		curatorFunnelStage: input?.curatorFunnelStage ?? null,
+		curatorCommissionPercent: typeof input?.curatorCommissionPercent === "number" ? input.curatorCommissionPercent : null,
+		curatorNotes: nullableTrimmed(input?.curatorNotes),
+		curatorNextContactDate: nullableTrimmed(input?.curatorNextContactDate),
 	};
 
 	const hasValue = Object.values(profile).some((value) =>

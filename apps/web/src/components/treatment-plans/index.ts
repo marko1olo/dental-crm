@@ -15,3 +15,4 @@ export * from "./TreatmentPlanPhased4StageView";
 export * from "./TreatmentPlanPresenterModal";
 export * from "./TreatmentPlanRoadmap";
 export * from "./TreatmentPlanModule";
+export * from "./CuratorPlanAssignmentModal";

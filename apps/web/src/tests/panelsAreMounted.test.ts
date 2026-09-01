@@ -174,6 +174,24 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Альтернативная модульная панель навигации и вторичных режимов расписания (Закон Миллера: 7±2 элемента с выпадающим меню '⋮ Ещё'). В активном расписании используется объединенная панель фильтрации ScheduleFilterStrip.",
 	},
+	{
+		file: "components/finance/PaymentModal.tsx",
+		name: "PaymentModal",
+		reason:
+			"Универсальное модальное окно приема платежей клиники (наличные, POS-терминалы Сбербанк, SberPay QR, FacePay Биометрия, депозиты и семейные кошельки) для прямого вызова из модулей финансового учета.",
+	},
+	{
+		file: "components/finance/SberPayIntegration.tsx",
+		name: "SberPayIntegration",
+		reason:
+			"Интерактивный микровиджет прямой интеграции с POS-терминалами Сбербанка (DualConnector, SmartPOS, Pilot-NT), отображением динамического QR-кода SberPay (СБП), FacePay Биометрией, 1-click печатью слипов CP866 и защитой от двойного списания (Reversal / Void).",
+	},
+	{
+		file: "components/anesthesia/AnesthesiaPkuDisposalModal.tsx",
+		name: "AnesthesiaPkuDisposalModal",
+		reason:
+			"Модальное окно списания и утилизации остатков сильнодействующих анестетиков и ампул предметно-количественного учета (ПКУ) по Приказу Минздрава РФ № 1094н / СанПиН.",
+	},
 	/*
 	 * OneCCommerceMlModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
 	 * через точку входа #clinical-modals-studio.

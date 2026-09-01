@@ -1,0 +1,558 @@
+/**
+ * apps/web/src/components/analytics/curatorDashboard.css
+ *
+ * Стили для дашборда и воронки куратора лечения DENTE CRM (Фича #27).
+ * Соответствует Apple Mac HIG, WCAG 4.5:1, тач-таргеты >= 44px, zero-hardcode variables.
+ */
+
+.curator-dashboard-container {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	max-width: 1400px;
+	margin: 0 auto;
+	padding: 16px;
+	color: var(--ink, #0f172a);
+}
+
+/* Верхняя панель управления и селектор куратора */
+.curator-dashboard-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px 20px;
+	background-color: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	border-radius: 16px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.curator-header-title-group {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.curator-header-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, var(--accent, #6366f1), var(--teal, #0d9488));
+	color: #ffffff;
+	flex-shrink: 0;
+}
+
+.curator-header-title {
+	font-size: 18px;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink, #0f172a);
+}
+
+.curator-header-subtitle {
+	font-size: 13px;
+	color: var(--ink-muted, #64748b);
+	margin: 2px 0 0 0;
+}
+
+.curator-header-controls {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.curator-select-input {
+	min-height: 44px;
+	padding: 8px 14px;
+	font-size: 14px;
+	font-weight: 500;
+	background-color: var(--paper, #f8fafc);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	border-radius: 10px;
+	cursor: pointer;
+	outline: none;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.curator-select-input:focus {
+	border-color: var(--accent, #6366f1);
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Сетка карточек KPI */
+.curator-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 16px;
+	width: 100%;
+}
+
+.curator-kpi-card {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	padding: 18px 20px;
+	background-color: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	border-radius: 16px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+	position: relative;
+	overflow: hidden;
+}
+
+.curator-kpi-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.curator-kpi-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink-muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.curator-kpi-badge {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 3px 8px;
+	border-radius: 6px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.curator-badge-emerald {
+	background-color: rgba(16, 185, 129, 0.12);
+	color: #059669;
+}
+
+.curator-badge-blue {
+	background-color: rgba(59, 130, 246, 0.12);
+	color: #2563eb;
+}
+
+.curator-badge-purple {
+	background-color: rgba(139, 92, 246, 0.12);
+	color: #7c3aed;
+}
+
+.curator-badge-amber {
+	background-color: rgba(245, 158, 11, 0.12);
+	color: #d97706;
+}
+
+.curator-kpi-value {
+	font-size: 26px;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	line-height: 1.2;
+}
+
+.curator-kpi-subtext {
+	font-size: 12px;
+	color: var(--ink-muted, #64748b);
+	margin-top: 6px;
+}
+
+/* Воронка конверсии */
+.curator-funnel-section {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 20px;
+	background-color: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	border-radius: 16px;
+}
+
+.curator-funnel-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.curator-funnel-title {
+	font-size: 16px;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink, #0f172a);
+}
+
+.curator-funnel-stages-row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+	position: relative;
+}
+
+.curator-funnel-stage-card {
+	display: flex;
+	flex-direction: column;
+	padding: 14px;
+	border-radius: 12px;
+	background-color: var(--paper, #f8fafc);
+	border: 2px solid transparent;
+	cursor: pointer;
+	min-height: 130px;
+	transition: all 0.2s ease;
+	position: relative;
+}
+
+.curator-funnel-stage-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.curator-funnel-stage-card.active {
+	border-color: var(--accent, #6366f1);
+	background-color: var(--paper-soft, #f1f5f9);
+}
+
+.curator-funnel-stage-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink-muted, #64748b);
+	margin-bottom: 6px;
+}
+
+.curator-stage-number {
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--line, rgba(0, 0, 0, 0.08));
+	font-size: 11px;
+}
+
+.curator-stage-count {
+	font-size: 22px;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+}
+
+.curator-stage-volume {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink-muted, #64748b);
+	margin-top: 2px;
+}
+
+.curator-stage-conversion {
+	margin-top: auto;
+	padding-top: 8px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* Очередь пациентов куратора */
+.curator-queue-section {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 20px;
+	background-color: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	border-radius: 16px;
+}
+
+.curator-queue-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.curator-search-input-wrapper {
+	position: relative;
+	flex: 1;
+	min-width: 240px;
+}
+
+.curator-search-input {
+	width: 100%;
+	min-height: 44px;
+	padding: 8px 14px 8px 38px;
+	font-size: 14px;
+	background-color: var(--paper, #f8fafc);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	border-radius: 10px;
+	outline: none;
+}
+
+.curator-search-icon {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--ink-muted, #94a3b8);
+	pointer-events: none;
+}
+
+.curator-filter-pills {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.curator-pill-btn {
+	min-height: 44px;
+	padding: 6px 14px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 10px;
+	background-color: var(--paper, #f8fafc);
+	color: var(--ink-muted, #64748b);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+}
+
+.curator-pill-btn:hover {
+	background-color: var(--paper-soft, #f1f5f9);
+	color: var(--ink, #0f172a);
+}
+
+.curator-pill-btn.active {
+	background-color: var(--accent, #6366f1);
+	color: #ffffff;
+	border-color: var(--accent, #6366f1);
+}
+
+/* Карточка пациента в очереди */
+.curator-patient-card {
+	display: flex;
+	flex-direction: column;
+	padding: 16px 18px;
+	background-color: var(--paper, #f8fafc);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	border-radius: 14px;
+	gap: 12px;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.curator-patient-card:hover {
+	border-color: var(--line-strong, rgba(99, 102, 241, 0.3));
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.curator-patient-card-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.curator-patient-info {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.curator-patient-avatar {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--paper-soft, #e2e8f0);
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	font-size: 15px;
+	flex-shrink: 0;
+}
+
+.curator-patient-name {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+}
+
+.curator-patient-phone {
+	font-size: 12px;
+	color: var(--ink-muted, #64748b);
+	margin: 2px 0 0 0;
+}
+
+.curator-patient-financials {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 16px;
+	background-color: var(--paper-strong, #ffffff);
+	padding: 10px 14px;
+	border-radius: 10px;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.06));
+}
+
+.curator-fin-item {
+	display: flex;
+	flex-direction: column;
+}
+
+.curator-fin-label {
+	font-size: 11px;
+	color: var(--ink-muted, #64748b);
+	text-transform: uppercase;
+}
+
+.curator-fin-value {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.curator-patient-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.curator-action-btn {
+	min-height: 44px;
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 10px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+	border: 1px solid transparent;
+}
+
+.curator-action-primary {
+	background-color: var(--accent, #6366f1);
+	color: #ffffff;
+}
+
+.curator-action-primary:hover {
+	opacity: 0.92;
+	transform: translateY(-1px);
+}
+
+.curator-action-secondary {
+	background-color: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, rgba(0, 0, 0, 0.12));
+}
+
+.curator-action-secondary:hover {
+	background-color: var(--paper-soft, #f1f5f9);
+}
+
+/* Модальное окно закрепления куратора */
+.curator-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1050;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(0, 0, 0, 0.7);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+	padding: 16px;
+}
+
+.curator-modal-dialog {
+	position: relative;
+	width: 100%;
+	max-width: 580px;
+	background-color: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	border-radius: 18px;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.curator-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 18px 22px;
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+}
+
+.curator-modal-body {
+	padding: 22px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	max-height: 75vh;
+	overflow-y: auto;
+}
+
+.curator-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 16px 22px;
+	border-top: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	background-color: var(--paper, #f8fafc);
+}
+
+.curator-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.curator-form-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.curator-form-input {
+	min-height: 44px;
+	padding: 10px 14px;
+	font-size: 14px;
+	background-color: var(--paper, #f8fafc);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	border-radius: 10px;
+	outline: none;
+}
+
+.curator-form-input:focus {
+	border-color: var(--accent, #6366f1);
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}

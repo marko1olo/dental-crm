@@ -51,7 +51,7 @@ import type { VisitDiaryEntry043 } from "../emr043Types";
 import "./cmoEmrAudit.css";
 
 // ── Fallback Initial Demo Audit Records for CMO Workspace ──
-const INITIAL_DEMO_RECORDS: EmrAuditRecord[] = [
+export const INITIAL_DEMO_RECORDS: EmrAuditRecord[] = [
 	{
 		id: "audit-001",
 		medicalCardId: "СТ-2026-0843",
@@ -328,6 +328,8 @@ export interface CmoEmrAuditModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	records?: EmrAuditRecord[] | undefined;
+	initialRecord?: EmrAuditRecord | undefined;
+	onSaveRecord?: ((updated: EmrAuditRecord) => void) | undefined;
 	onApproveRecord?: ((recordId: string, resolution: CmoAuditResolution) => void) | undefined;
 	onRejectRecord?: ((recordId: string, resolution: CmoAuditResolution) => void) | undefined;
 	currentAuditorName?: string | undefined;
@@ -338,6 +340,8 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 	isOpen,
 	onClose,
 	records: initialRecords,
+	initialRecord,
+	onSaveRecord,
 	onApproveRecord,
 	onRejectRecord,
 	currentAuditorName = "Прохоров Константин Игоревич",
@@ -345,7 +349,10 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 }) => {
 	// Инициализация записей с автоматическим расчетом аудита
 	const [records, setRecords] = useState<EmrAuditRecord[]>(() => {
-		const base = initialRecords && initialRecords.length > 0 ? initialRecords : INITIAL_DEMO_RECORDS;
+		let base = initialRecords && initialRecords.length > 0 ? initialRecords : INITIAL_DEMO_RECORDS;
+		if (initialRecord && !base.some((r) => r.id === initialRecord.id)) {
+			base = [initialRecord, ...base];
+		}
 		return base.map((rec: EmrAuditRecord) => {
 			const auditRes = runAutomatedEmrAudit(rec);
 			return {
@@ -357,9 +364,13 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 	});
 
 	useEffect(() => {
-		if (isOpen && initialRecords && initialRecords.length > 0) {
+		if (isOpen) {
+			let base = initialRecords && initialRecords.length > 0 ? initialRecords : INITIAL_DEMO_RECORDS;
+			if (initialRecord && !base.some((r) => r.id === initialRecord.id)) {
+				base = [initialRecord, ...base];
+			}
 			setRecords(
-				initialRecords.map((rec: EmrAuditRecord) => {
+				base.map((rec: EmrAuditRecord) => {
 					const auditRes = runAutomatedEmrAudit(rec);
 					return {
 						...rec,
@@ -368,11 +379,13 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 					};
 				})
 			);
-			if (initialRecords[0]) {
-				setSelectedRecordId(initialRecords[0].id);
+			if (initialRecord) {
+				setSelectedRecordId(initialRecord.id);
+			} else if (base[0]) {
+				setSelectedRecordId(base[0].id);
 			}
 		}
-	}, [initialRecords, isOpen]);
+	}, [initialRecords, initialRecord, isOpen]);
 
 	const [activeTab, setActiveTab] = useState<"queue" | "doctor_kpi" | "statutory_presets" | "protocol_preview">("queue");
 	const [selectedRecordId, setSelectedRecordId] = useState<string>(() => records[0]?.id || "");
@@ -437,6 +450,9 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 
 		setRecords((prev: EmrAuditRecord[]) => prev.map((r: EmrAuditRecord) => (r.id === updated.id ? updated : r)));
 		setCmoDecisionComment("");
+		if (onSaveRecord) {
+			onSaveRecord(updated);
+		}
 		if (onApproveRecord && updated.cmoResolution) {
 			onApproveRecord(updated.id, updated.cmoResolution);
 		}
@@ -453,6 +469,9 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 
 		setRecords((prev: EmrAuditRecord[]) => prev.map((r: EmrAuditRecord) => (r.id === updated.id ? updated : r)));
 		setCmoDecisionComment("");
+		if (onSaveRecord) {
+			onSaveRecord(updated);
+		}
 		if (onRejectRecord && updated.cmoResolution) {
 			onRejectRecord(updated.id, updated.cmoResolution);
 		}
@@ -481,6 +500,9 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 		const updated = addCmoRemark(selectedRecord, remarkPayload);
 
 		setRecords((prev: EmrAuditRecord[]) => prev.map((r: EmrAuditRecord) => (r.id === updated.id ? updated : r)));
+		if (onSaveRecord) {
+			onSaveRecord(updated);
+		}
 		setIsAddingRemark(false);
 		setSelectedPresetId("");
 		setRemarkComment("");
@@ -491,6 +513,9 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 		if (!selectedRecord || !doctorResolutionText.trim()) return;
 		const updated = resolveCmoRemark(selectedRecord, remarkId, doctorResolutionText, selectedRecord.doctorFullName);
 		setRecords((prev: EmrAuditRecord[]) => prev.map((r: EmrAuditRecord) => (r.id === updated.id ? updated : r)));
+		if (onSaveRecord) {
+			onSaveRecord(updated);
+		}
 		setResolvingRemarkId(null);
 		setDoctorResolutionText("");
 	};
@@ -789,9 +814,9 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 														<h4 style={{ margin: "0 0 8px 0", fontSize: "13px" }}>Услуги в акте выполненных работ:</h4>
 														<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
 															{selectedRecord.completedActItems.map((act: CompletedActItem, i: number) => (
-																<div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", padding: "6px 10px", background: "var(--paper)", borderRadius: "6px" }}>
-																	<span>{act.serviceName} {act.toothNumber ? `(зуб ${act.toothNumber})` : ""}</span>
-																	<span style={{ fontWeight: 700 }}>{act.priceRub} ₽</span>
+																<div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", padding: "6px 10px", background: "var(--paper)", borderRadius: "6px", gap: "8px" }}>
+																	<span style={{ minWidth: 0, wordBreak: "break-word" }}>{act.serviceName} {act.toothNumber ? `(зуб ${act.toothNumber})` : ""}</span>
+																	<span style={{ fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>{act.priceRub} ₽</span>
 																</div>
 															))}
 														</div>

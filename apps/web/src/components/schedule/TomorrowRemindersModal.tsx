@@ -287,11 +287,11 @@ export function TomorrowRemindersModal({
 				{/* Filter Tabs & Search Row */}
 				<div className="p-3 sm:px-5 border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-3 shrink-0">
 					{/* Channel Filter Chips */}
-					<div className="flex items-center gap-1.5 bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] text-xs font-bold">
+					<div className="flex items-center gap-1.5 bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] text-xs font-bold overflow-x-auto max-w-full scrollbar-none">
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("all")}
-							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "all"
 									? "bg-[var(--teal)] text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -302,7 +302,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("telegram")}
-							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "telegram"
 									? "bg-sky-600 text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -314,7 +314,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("whatsapp")}
-							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "whatsapp"
 									? "bg-emerald-600 text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -326,7 +326,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("sms")}
-							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "sms"
 									? "bg-indigo-600 text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"

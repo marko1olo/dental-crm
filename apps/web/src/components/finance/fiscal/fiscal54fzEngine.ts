@@ -1752,11 +1752,11 @@ export function generateAcquiringReconciliationPrintHtml(
 
 			const badgeText =
 				item.status === "matched"
-					? "✓ Сошлось"
+					? "Сошлось"
 					: item.status === "missing_kkt_receipt"
-					? "⚠️ НЕТ ЧЕКА ККТ"
+					? "[НЕТ ЧЕКА ККТ]"
 					: item.status === "missing_terminal_charge"
-					? "⚠️ НЕТ СПИСАНИЯ"
+					? "[НЕТ СПИСАНИЯ]"
 					: "≠ РАЗНИЦА";
 
 			return `
@@ -1816,7 +1816,7 @@ export function generateAcquiringReconciliationPrintHtml(
 		<div class="kpi-card">
 			<div class="kpi-label">Статус баланса</div>
 			<div class="kpi-value" style="font-size: 13px; color: ${report.isExactMatch ? "#059669" : "#dc2626"};">
-				${report.isExactMatch ? "✓ Сошлось копейка в копейку" : "⚠️ Есть расхождения"}
+				${report.isExactMatch ? "Сошлось копейка в копейку" : "Есть расхождения"}
 			</div>
 		</div>
 	</div>

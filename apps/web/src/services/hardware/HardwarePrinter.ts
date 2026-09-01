@@ -682,6 +682,147 @@ export class HardwarePrinter {
 	}
 
 	/**
+	 * Builds standard binary ESC/POS command buffer for Sberbank Bank Slip:
+	 * CP866 encoding, initialization, monospace formatting, feed lines, and auto-cut.
+	 */
+	public buildEscPosBankSlip(slipText: string): Uint8Array {
+		const buffer: number[] = [];
+
+		const appendBytes = (arr: number[] | Uint8Array) => {
+			for (let i = 0; i < arr.length; i++) {
+				buffer.push(arr[i]!);
+			}
+		};
+
+		const appendText = (text: string) => {
+			const encoded = this.encodeCp866(text);
+			appendBytes(encoded);
+		};
+
+		// 1. Initialize Printer (ESC @)
+		appendBytes([0x1b, 0x40]);
+
+		// 2. Select Code Page CP866 (ESC t 17)
+		appendBytes([0x1b, 0x74, 0x11]);
+
+		// 3. Left Align (ESC a 0)
+		appendBytes([0x1b, 0x61, 0x00]);
+
+		// 4. Append Slip Text with normalized newlines
+		const lines = slipText.split(/\r?\n/);
+		for (const line of lines) {
+			appendText(`${line}\n`);
+		}
+
+		// 5. Feed 4 lines (ESC d 4) & Auto-cut if enabled (GS V 0)
+		appendBytes([0x1b, 0x64, 0x04]);
+		if (this.config.autoCut) {
+			appendBytes([0x1d, 0x56, 0x00]);
+		}
+
+		return new Uint8Array(buffer);
+	}
+
+	/**
+	 * Generates HTML printable document for Sberbank thermal bank slips (58mm / 80mm).
+	 */
+	public generatePrintableBankSlipHtml(slipText: string, clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"): string {
+		const escapedSlip = slipText
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;");
+
+		return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Банковский слип - ${clinicName}</title>
+	<style>
+		@page { size: ${this.config.paperWidthMm === 80 ? "80mm auto" : "58mm auto"}; margin: 0; }
+		* { box-sizing: border-box; }
+		body {
+			font-family: 'Courier New', Courier, monospace;
+			font-size: 11px;
+			line-height: 1.25;
+			color: #000;
+			background: #fff;
+			margin: 0;
+			padding: 6px;
+			width: ${this.config.paperWidthMm === 80 ? "76mm" : "54mm"};
+			white-space: pre-wrap;
+			word-break: break-all;
+		}
+		@media print {
+			body { padding: 2mm; width: 100%; }
+			.no-print { display: none; }
+		}
+	</style>
+</head>
+<body>
+<pre style="margin: 0; font-family: inherit; font-size: inherit; white-space: pre-wrap;">${escapedSlip}</pre>
+	<script>
+		window.onload = function() {
+			try {
+				window.focus();
+				window.print();
+			} catch (e) {}
+		};
+	</script>
+</body>
+</html>`;
+	}
+
+	/**
+	 * Dispatches Sberbank POS transaction slip to thermal printer across Bluetooth, LAN, or Browser.
+	 */
+	public async printBankSlip(
+		slipText: string,
+		options: BrowserPrintOptions = {},
+	): Promise<HardwarePrintResult> {
+		const nowIso = new Date().toISOString();
+		const buffer = this.buildEscPosBankSlip(slipText);
+
+		// 1. Mobile Native Bluetooth
+		if (this.isCapacitorNative()) {
+			try {
+				const btResult = await this.dispatchBluetoothPrint(buffer);
+				if (btResult.success) {
+					triggerHaptic("success");
+					return {
+						success: true,
+						status: "printed",
+						interfaceUsed: "bluetooth_le",
+						printedAt: nowIso,
+						bytesWritten: buffer.length,
+					};
+				}
+			} catch (btErr) {
+				console.warn("[HardwarePrinter] Bluetooth bank slip print error:", btErr);
+			}
+		}
+
+		// 2. Desktop (Electron) -> direct print fallback
+		if (isDesktopApp()) {
+			try {
+				const html = this.generatePrintableBankSlipHtml(slipText);
+				return await this.printHtmlWithPopupFallback(html, {
+					downloadFilename: `sber_bank_slip_${Date.now()}.html`,
+					...options,
+				});
+			} catch (err) {
+				console.warn("[HardwarePrinter] Desktop print fallback error:", err);
+			}
+		}
+
+		// 3. Web Browser Dialog / Popup fallback
+		const html = this.generatePrintableBankSlipHtml(slipText);
+		return await this.printHtmlWithPopupFallback(html, {
+			downloadFilename: `sber_bank_slip_${Date.now()}.html`,
+			...options,
+		});
+	}
+
+	/**
 	 * Prints thermal label HTML (kraft barcodes, autoclave batches) with popup blocker resilience.
 	 */
 	public async printThermalLabelHtml(

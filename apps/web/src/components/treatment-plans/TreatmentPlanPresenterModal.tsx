@@ -585,7 +585,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					{/* TAB 1: 3-Tier Side-by-Side Comparison */}
 					{activeTab === "comparison" && (
 						<div className="flex flex-col gap-6" data-testid="comparison-view">
-							{/* Mobile Tier Tabs (Adaptive switcher for < 768px screens) */}
+							{/* Mobile & iPad Segmented Control (Adaptive switcher for <= 1024px screens) */}
 							<div className="treatment-mobile-tier-bar" data-testid="mobile-tier-tabs">
 								{allTiers.map((t) => {
 									const isCurrent = selectedTierId === t.tierId;
@@ -596,9 +596,22 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											onClick={() => handleSelectTier(t)}
 											className={"treatment-mobile-tier-btn " + (isCurrent ? "active " : "") + t.tierId}
 											data-testid={"mobile-tier-btn-" + t.tierId}
+											aria-pressed={isCurrent}
 										>
-											<span>{t.tierId === "economy" ? "А: Эконом" : t.tierId === "standard" ? "Б: Оптимум" : "В: Премиум"}</span>
-											{t.tierId === "standard" && <Sparkles size={11} className="text-amber-500" />}
+											<div className="flex items-center gap-1.5 font-extrabold text-[13px]">
+												{t.tierId === "standard" && <Star size={13} className="text-amber-400 fill-amber-400 shrink-0" />}
+												<span>
+													{t.tierId === "economy"
+														? "Эконом"
+														: t.tierId === "standard"
+															? "Оптимум"
+															: "Премиум"}
+												</span>
+												{t.tierId === "standard" && <Sparkles size={12} className="text-amber-400 shrink-0" />}
+											</div>
+											<div className="text-[11px] font-mono opacity-90 font-bold">
+												{t.totalRub.toLocaleString("ru-RU")} ₽
+											</div>
 										</button>
 									);
 								})}
@@ -656,12 +669,29 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																{tier.monthlyInstallment12Rub.toLocaleString("ru-RU")} ₽/мес
 															</span>
 														</div>
-														<div className="treatment-tier-chip-row">
-															<span>Возврат 13% НДФЛ:</span>
-															<span className="font-semibold text-emerald-600 dark:text-emerald-400">
-																−{tier.ndflRefundRub.toLocaleString("ru-RU")} ₽
-															</span>
-														</div>
+														<button
+															type="button"
+															onClick={(e) => {
+																e.stopPropagation();
+																setActiveTab("finance");
+															}}
+															className="treatment-tier-ndfl-calc-btn cursor-pointer"
+															title="1-клик детальный расчет вычета 13% НДФЛ и справка ФНС"
+															data-testid={"calc-ndfl-btn-" + tier.tierId}
+														>
+															<div className="flex items-center justify-between w-full">
+																<span className="flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-300">
+																	<Percent size={12} />
+																	<span>Вычет 13% НДФЛ:</span>
+																</span>
+																<span className="font-black text-emerald-700 dark:text-emerald-300">
+																	−{tier.ndflRefundRub.toLocaleString("ru-RU")} ₽
+																</span>
+															</div>
+															<div className="text-[10px] text-emerald-600/90 dark:text-emerald-400/90 text-left mt-0.5">
+																Итого с вычетом: {tier.priceWithNdflRefundRub.toLocaleString("ru-RU")} ₽ ({tier.ndflDetails.code === "02" ? "Код 02 без лимита" : "Код 01 лимит 150к"})
+															</div>
+														</button>
 													</div>
 												</div>
 											</div>
@@ -713,25 +743,45 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 												))}
 											</div>
 
-											{/* Selection Button */}
-											<button
-												type="button"
-												onClick={(e) => {
-													e.stopPropagation();
-													handleSelectTier(tier);
-												}}
-												className="treatment-tier-select-btn cursor-pointer"
-												data-testid={"select-tier-btn-" + tier.tierId}
-											>
-												{isSelected ? (
-													<>
-														<CheckCircle2 size={16} />
-														<span>Вариант выбран</span>
-													</>
-												) : (
-													<span>Выбрать {tier.badge}</span>
-												)}
-											</button>
+											{/* Selection & Instant Apply Buttons */}
+											<div className="p-3.5 pt-0 flex flex-col gap-2">
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleSelectTier(tier);
+														handleConfirmPatientChoice();
+													}}
+													className="btn-treatment-action btn-patient-choice w-full cursor-pointer"
+													data-testid={"apply-tier-btn-" + tier.tierId}
+												>
+													<CheckCircle2 size={16} />
+													<span>
+														{selectionConfirmed && selectedTierId === tier.tierId
+															? "Тариф применен"
+															: `Применить ${tier.badge} (${tier.totalRub.toLocaleString("ru-RU")} ₽)`}
+													</span>
+												</button>
+
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleSelectTier(tier);
+													}}
+													className="treatment-tier-select-btn cursor-pointer m-0"
+													data-testid={"select-tier-btn-" + tier.tierId}
+												>
+													{isSelected ? (
+														<>
+															<Check size={14} />
+															<span>Вариант выбран</span>
+														</>
+													) : (
+														<span>Выбрать {tier.badge}</span>
+													)}
+												</button>
+											</div>
 										</div>
 									);
 								})}
@@ -1405,8 +1455,9 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																</div>
 															</div>
 															{check.recommendation && (
-																<div className="text-[11px] opacity-85 mt-1">
-																	💡 Рекомендация: {check.recommendation}
+																<div className="text-[11px] opacity-85 mt-1 flex items-center gap-1">
+																	<Sparkles size={12} className="text-amber-500 shrink-0" />
+																	<span>Рекомендация: {check.recommendation}</span>
 																</div>
 															)}
 														</div>

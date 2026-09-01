@@ -703,7 +703,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						</div>
 
 						{/* Statutory Checkboxes (min-h-[44px] each) */}
-						<div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-2">
+						<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] flex flex-col gap-2">
 							<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5 mb-1">
 								<CheckCircle2 className="w-4 h-4 text-[var(--teal)]" />
 								Обязательные подтверждения согласия пациента:

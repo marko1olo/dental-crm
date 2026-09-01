@@ -477,11 +477,17 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 								</button>
 							) : null}
 							<button
-								className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
+								className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors font-bold shadow-sm"
 								type="button"
 								onClick={onNewAppointmentClick}
+								data-testid="btn-create-first-appointment"
 							>
-								<Plus aria-hidden="true" /> Записать пациента (N)
+								<Plus aria-hidden="true" size={16} />
+								<span>
+									{(dashboard.appointments ?? []).length === 0
+										? "+ Записать первого пациента"
+										: "Записать пациента (N)"}
+								</span>
 							</button>
 						</div>
 					}
