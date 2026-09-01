@@ -6201,7 +6201,7 @@ export const dmsGuaranteeLetterSchema = z.object({
 	maxCoverageRub: nonNegativeMoneyRubSchema,
 	usedAmountRub: nonNegativeMoneyRubSchema.default(0),
 	franchisePct: z.number().min(0).max(100).default(0),
-	franchiseType: z.enum(["percent", "fixed_rub"]).default("percent"),
+	franchiseType: z.enum(["none", "percent", "fixed_rub"]).default("none"),
 	franchiseFixedRub: nonNegativeMoneyRubSchema.default(0),
 	programExclusions: z.array(z.string()).default([]),
 	approvedServiceCodes: z.array(z.string()).default([]),

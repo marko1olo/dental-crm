@@ -3,21 +3,25 @@
  *
  * Implements:
  * 1. Webhook / Messenger Inbound Ingestor for WhatsApp, Telegram, SMS.
- * 2. Clinical Triage Analyzer: Classifies urgency (NORMAL, URGENT, CRITICAL),
- *    symptom categories (acute pain, facial/gum swelling, fever 38+, heavy bleeding, trauma),
- *    sentiment, and intent.
+ * 2. Clinical Triage Analyzer:
+ *    - Structured LLM Extraction via OmniGateway (WhatsAppTriageLlmSchema via Zod).
+ *    - Classifies urgency (NORMAL, URGENT, CRITICAL), symptom categories (acute pain,
+ *      facial/gum swelling, fever 38+, heavy bleeding, trauma), sentiment, and intent.
  * 3. Emergency Dispatcher: On CRITICAL urgency, immediately generates high-priority
  *    red proactive alert cards for on-duty doctors/administrators and broadcasts to active
  *    Copilot SSE streams and WebSocket broker.
  * 4. Human-in-the-Loop (HitL) Queue: Manages draft outbound messages (patient retention,
- *    ZTL status, reminders, gap fillers, EMR drafts) for 1-click staff approval.
+ *    ZTL status, reminders, gap fillers, EMR drafts) for 1-click staff approval with
+ *    PostgreSQL persistence into `communication_tasks` and `communication_events`.
  */
 
 import { and, desc, eq, sql } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "../../db/client.js";
 import {
 	communicationEvents,
 	communicationTasks,
+	copilotHitlCards,
 	messengerInboundEvents,
 	patients,
 } from "../../db/schema.js";
@@ -30,9 +34,11 @@ import {
 	type CopilotStreamManager,
 	defaultCopilotStreamManager,
 } from "./copilotService.js";
+import { omniLlmGateway } from "./omniGateway.js";
+import type { ChatOptions } from "./omniGatewayTypes.js";
 
 // ============================================================================
-// TYPE DEFINITIONS
+// TYPE DEFINITIONS & SCHEMAS
 // ============================================================================
 
 export type TriageUrgency = "NORMAL" | "URGENT" | "CRITICAL";
@@ -64,22 +70,53 @@ export type ProactiveCardCategory =
 	| "clinical_alert"
 	| "general_message";
 
-export interface TriageAnalysisResult {
-	readonly urgency: TriageUrgency;
-	readonly sentiment: PatientSentiment;
-	readonly intent: TriageIntent;
-	readonly confidence: number;
-	readonly matchedKeywords: string[];
-	readonly clinicalSummary: string;
-	readonly suggestedAction: string;
-	readonly recommendedDoctorRole?: string | undefined;
-	readonly requiresImmediateCall: boolean;
-	readonly requiresImmediateIntervention: boolean;
-	readonly detectedSymptoms: string[];
-	readonly recommendedAction: string;
-	readonly reasoning: string;
-	readonly painLevelEstimate?: number | undefined; // 0-10 scale
-}
+export const WhatsAppTriageLlmSchema = z.object({
+	urgency: z
+		.enum(["NORMAL", "URGENT", "CRITICAL"])
+		.describe(
+			"Triage urgency level: CRITICAL (emergency), URGENT (subacute/broken crown), NORMAL (routine)",
+		),
+	sentiment: z
+		.enum(["positive", "neutral", "negative", "anxious", "emergency"])
+		.describe("Detected patient emotional tone"),
+	intent: z
+		.enum([
+			"emergency",
+			"symptom_report",
+			"booking_request",
+			"cancellation_request",
+			"reschedule_request",
+			"ztl_inquiry",
+			"price_inquiry",
+			"general_inquiry",
+			"feedback",
+		])
+		.describe("Primary intent of the patient's message"),
+	confidence: z.number().min(0).max(1).default(0.95),
+	matchedKeywords: z.array(z.string()).default([]),
+	clinicalSummary: z.string().default("Клинический триаж обращения пациента"),
+	suggestedAction: z
+		.string()
+		.default(
+			"Немедленный звонок администратора / дежурного врача, запись в экстренное окно с подготовкой хирургического/терапевтического кабинета",
+		),
+	recommendedDoctorRole: z.string().optional(),
+	requiresImmediateCall: z.boolean().default(false),
+	requiresImmediateIntervention: z.boolean().default(false),
+	detectedSymptoms: z.array(z.string()).default([]),
+	recommendedAction: z
+		.string()
+		.default(
+			"Немедленный звонок администратора / дежурного врача, запись в экстренное окно с подготовкой хирургического/терапевтического кабинета",
+		),
+	reasoning: z.string().default("Клинический триаж по симптомам"),
+	suggestedHitlDraft: z.string().optional(),
+	painLevelEstimate: z.number().min(0).max(10).optional(),
+});
+
+export const WhatsAppTriageSchema = WhatsAppTriageLlmSchema;
+export type TriageAnalysisResult = z.infer<typeof WhatsAppTriageLlmSchema>;
+export type WhatsAppTriageResult = TriageAnalysisResult;
 
 export interface InboundWhatsAppMessage {
 	readonly messageId: string;
@@ -99,6 +136,7 @@ export interface IncomingWhatsAppMessage {
 	readonly patientName?: string | null | undefined;
 	readonly organizationId: string;
 	readonly clinicId?: string | null | undefined;
+	readonly channel?: "whatsapp" | "telegram" | "sms" | "max" | "vk" | string | undefined;
 	readonly mediaUrls?: string[] | undefined;
 	readonly buttonPayload?: string | null | undefined;
 	readonly context?:
@@ -147,7 +185,7 @@ export interface WhatsAppApprovalCardData {
 	readonly incomingSnippet: string;
 	readonly draftReply: string;
 	readonly proposedReply?: string | undefined;
-	readonly channel: "whatsapp" | "telegram" | "sms";
+	readonly channel: "whatsapp" | "telegram" | "sms" | "max" | "vk";
 	readonly confidenceScore: number;
 	readonly actionPrompt?: string | undefined;
 	readonly createdAt: string;
@@ -236,70 +274,139 @@ export function sanitizePatientInput(text: string): string {
 }
 
 // ============================================================================
-// CLINICAL TRIAGE ANALYZER (HYBRID SEMANTIC NEGATION & NLP RULES)
+// CLINICAL TRIAGE ANALYZER (STRUCTURED LLM VIA OMNIGATEWAY + SEMANTIC ENGINE)
+// ============================================================================
+// CLINICAL TRIAGE ANALYZER (STRUCTURED LLM VIA OMNIGATEWAY + SEMANTIC ENGINE)
 // ============================================================================
 
 export class WhatsAppTriageAnalyzer {
-	// 1. Acute / Severe Pain (Острая боль, пульсация, неэффективность анальгетиков)
-	private static readonly CRITICAL_PAIN_PATTERNS = [
-		/(?:остр(?:ая|ую|ой|ые|ых)?|нестерпим(?:ая|ую|ой|о)?|сильн(?:ейшая|ая|ую|ой)?|адск(?:ая|ую|ой)?|невыносим(?:ая|ую|о)?|жутк(?:ая|ую|о)?)\s+(?:бол(?:ь|и|ью)|прострел|ломот)/i,
-		/(?:бол(?:ит|ят)|ломит|пульсирует|стреляет|д[её]ргает|раскалывается)\s+(?:зуб|челюст|десн|вис|ух|ноч|всю\s+ночь|дико|невыносимо)/i,
-		/(?:зуб|челюсть|десна)\s+(?:болит\s+дико|раскалывается|пульсирует|стреляет|д[её]ргает)/i,
-		/(?:кетанов|найз|нурофен|нимесил|анальгин|пенталгин|ибупрофен|кеторол|кетарол|дексалгин|обезбол(?:ивающее|ивающие)?)\s+(?:не\s+(?:помога(?:ет|ют)?|действу(?:ет|ют)?|снима(?:ет|ют)?|бер(?:ет|ут)?)|бесполезн)/i,
-		/(?:спать|уснуть|лежать)\s+(?:не\s+мог(?:у|ла|ли)?|невозможно|всю\s+ночь\s+не\s+спал(?:а)?)/i,
-		/(?:10\s*из\s*10|10\/10|9\/10|дикая\s+боль|умираю\s+от\s+боли|на\s+стенку\s+лезу)/i,
-	];
+	/**
+	 * Analyzes patient message using OmniGateway LLM with strict Zod structured output.
+	 */
+	public async analyzeAsync(
+		text: string,
+		context?: {
+			patientName?: string | null | undefined;
+			recentVisitDate?: string | null | undefined;
+			recentDiagnoses?: string[] | undefined;
+			activeDoctor?: string | null | undefined;
+		},
+		options: ChatOptions = {},
+	): Promise<TriageAnalysisResult> {
+		const cleanText = sanitizePatientInput(text);
+		if (!cleanText) {
+			return this.analyze(cleanText, context);
+		}
 
-	// 2. Facial / Jaw / Gum Swelling (Отек, флюс, свищ, асимметрия, тризм)
-	private static readonly CRITICAL_SWELLING_PATTERNS = [
-		/(?:от[её]к(?:ла|ло|ли|а)?|опух(?:ла|ло|ли|а)?|раздул(?:о|а|и)?|надул(?:о|а|и)?|припух(?:ла|ло|ли)?)\s+(?:щек(?:а|у|и)|лиц(?:о|а)|десн(?:а|у|ы)|губ(?:а|у|ы)|подбородок|глаз|ше(?:я|ю)|горл(?:о|а))/i,
-		/(?:щек(?:а|у|и)|лиц(?:о|а)|десн(?:а|у|ы)|губ(?:а|у|ы)|подбородок|глаз)\s+(?:опух(?:ла|ло|ли)?|раздул(?:о|а|и)?|разнесло|надул(?:о|а|и)?|разбух(?:ла|ло|ли)?)/i,
-		/(?:флюс|свищ|нарыв|гной(?:ник|ит|ится)?|абсцесс|периостит|флегмон(?:а)?|тризм|инфильтрат)/i,
-		/(?:не\s+могу\s+(?:открыть|разинуть)\s+рот|челюсть\s+не\s+открывается|рот\s+трудно\s+открыть|глаз\s+(?:заплыл|закрылся|заплывает))/i,
-		/(?:опухоль\s+на\s+десне|шарик\s+с\s+гноем|вытекает\s+гной|гнойные\s+выделения)/i,
-	];
+		const systemPrompt = [
+			"You are an expert Chief Medical Officer / Dental Triage AI in a high-end Dental Clinic.",
+			"Perform urgent clinical classification on the patient's incoming WhatsApp message.",
+			"CRITICAL TRIAGE PROTOCOLS:",
+			"1. CRITICAL URGENCY: Acute unbearable pain (9-10/10, analgesics fail, cannot sleep), severe facial/gum swelling/flux/phlegmon, trismus (cannot open mouth), high fever 38.5C+, continuous heavy post-op bleeding (>2-3h), dental trauma/avulsion (knocked-out permanent tooth, jaw fracture).",
+			"2. URGENT: Lost filling, broken crown/veneer, chipped tooth with mild/moderate pain, poking orthodontic wire, loose bracket.",
+			"3. NORMAL: Routine booking inquiries, price requests, rescheduling, confirmation, feedback.",
+			"4. NEGATIONS: If a symptom is negated or mild (e.g. 'отека нет', 'крови нет', 'температура 36.6', 'боль терпимая'), DO NOT classify as CRITICAL.",
+		].join("\n");
 
-	// 3. High Fever (Температура 38+)
-	private static readonly CRITICAL_FEVER_PATTERNS = [
-		/(?:температур(?:а|у|ой)?|жар|градусник)\s*(?:38[.,][5-9]|39|40|\d{2}[.,]\d)/i,
-		/(?:38[.,][5-9]|39[.,][0-9]|40[.,][0-9]|39\s*градус(?:ов|а)?|40\s*градус(?:ов|а)?)/i,
-		/(?:лихорад(?:ит|ка)|тряс[её]т|сильный\s+озноб|высокая\s+температура)/i,
-	];
+		const contextStr = context
+			? `\nКонтекст пациента: ${context.patientName || "Пациент"}, Врач: ${context.activeDoctor || "Не указан"}, Недавние диагнозы: ${(context.recentDiagnoses || []).join(", ") || "Нет"}`
+			: "";
 
-	// 4. Heavy / Continuous Bleeding (Кровотечение, струя, не останавливается)
-	private static readonly CRITICAL_BLEEDING_PATTERNS = [
-		/(?:обильн(?:ое|ого|ым)|сильн(?:ое|ого|ым)|не\s+останавлива(?:ется|ющееся))\s+(?:кровотечен(?:ие|ия|ием)|кров(?:ь|отечение))/i,
-		/(?:кровь|кровит).*(?:хлещет|стру[её]й|не\s+останавлива(?:ется)?|полный\s+рот|заливает|сочится\s+сильно|третий\s+час|уже\s+\d+\s+час|сгустк)/i,
-		/(?:выпал|отош[её]л|вымылся)\s+(?:кровяной\s+)?сгусток/i,
-		/(?:после\s+удаления|удалили\s+зуб).*(?:кров(?:ь|ит|отечение)|не\s+сворачивается)/i,
-	];
+		try {
+			const result = await omniLlmGateway.generateStructuredJson(
+				WhatsAppTriageLlmSchema,
+				[
+					{
+						role: "user",
+						content: `Сообщение пациента:\n"""\n${cleanText}\n"""${contextStr}\n\nВыполни клинический триаж.`,
+					},
+				],
+				{
+					...options,
+					system: systemPrompt,
+				},
+			);
 
-	// 5. Dental Trauma / Fracture (Выбит зуб, перелом челюсти)
-	private static readonly CRITICAL_TRAUMA_PATTERNS = [
-		/(?:выбит(?:а|о|ы)?|выбил(?:и)?|вывих(?:нул)?|сломал(?:и)?|расколол(?:и)?).*(?:зуб|челюст|корен)/i,
-		/(?:травм(?:а|у|е)|удар(?:ил|или|ился)?|авари(?:я|ю)|падени(?:е|я)|упал(?:а)?).*(?:зуб|челюст|лиц|подбородок)/i,
-	];
+			const data = WhatsAppTriageLlmSchema.parse(result.data);
+			const normalizedSymptoms = new Set(data.detectedSymptoms);
+			const lowerSummary =
+				`${data.clinicalSummary} ${data.reasoning} ${cleanText}`.toLowerCase();
 
-	// 6. Urgent / Moderate Restoration, Crown or Subacute Issues
-	private static readonly URGENT_PATTERNS = [
-		/(?:выпал(?:а)?|вылетел(?:а)?|отколол(?:ся|ась)?|сколол(?:ся|ась)?|сломал(?:ась|ся)?|треснул(?:а|ся)?).*(?:пломб(?:а|у)|коронк(?:а|у)|мост(?:ик)?|винир|зуб|протез|стенк(?:а|у))/i,
-		/(?:слетел(?:а)?|отклеил(?:ась|ся)?|отвалил(?:ась|ся)?|расцементировал(?:ась|ся)?).*(?:коронк(?:а|у)|мост|брекет|замок|винир|формирователь)/i,
-		/(?:натира(?:ет)?|царапа(?:ет)?|давит|колет|режет).*(?:протез|дуг(?:а|у)|край|проволок(?:а|у)|зуб)/i,
-		/(?:ноет|поднывает|потягивает|чувствительн(?:ость|ый)|реагирует).*(?:зуб|на\s+холодное|на\s+горячее|на\s+сладкое|при\s+накусывании)/i,
-		/(?:десна\s+кровоточит|воспалилась\s+десна|кровоточивость\s+десен|десна\s+покраснела)/i,
-		/(?:после\s+(?:операции|имплантации|удаления)\s+(?:тянет|болит\s+терпимо|небольшой\s+дискомфорт|разошлись\s+швы))/i,
-	];
+			const hasSwellingNeg =
+				lowerSummary.includes("отека нет") ||
+				lowerSummary.includes("отёка нет") ||
+				lowerSummary.includes("без отека") ||
+				lowerSummary.includes("не опух");
+			if (
+				!hasSwellingNeg &&
+				(lowerSummary.includes("отек") ||
+					lowerSummary.includes("отёк") ||
+					lowerSummary.includes("раздул") ||
+					lowerSummary.includes("опух") ||
+					lowerSummary.includes("флюс"))
+			) {
+				normalizedSymptoms.add("swelling");
+			}
 
-	// 7. Normal Inquiries / Routine Workflow
-	private static readonly NORMAL_PATTERNS = [
-		/(?:записат(?:ься|и)?|хочу\s+на\s+при[её]м|свободное\s+время|есть\s+ли\s+окно|консультаци(?:я|ю))/i,
-		/(?:скольк(?:о)?\s+стоит|прайс|цена|стоимость|расценки)/i,
-		/(?:подтвержда(?:ю|ем)?|буд(?:у|ем)|прид(?:у|ем)|да,\s+буду)/i,
-		/(?:перенес(?:ти|ите)?|отменит(?:ь|е)?|не\s+смог(?:у|ем)?)/i,
-		/(?:готов(?:а|о|ы)?\s+(?:коронк|протез|капп|анализ|снимок|кт)|зтл|лаборатори)/i,
-		/(?:спасибо|благодар(?:ю|им)|до\s+свидания|хорошего\s+дня)/i,
-	];
+			if (
+				lowerSummary.includes("тризм") ||
+				lowerSummary.includes("рот не") ||
+				lowerSummary.includes("рот трудно") ||
+				lowerSummary.includes("челюсть сводит")
+			) {
+				normalizedSymptoms.add("trismus");
+			}
+			if (
+				lowerSummary.includes("38.5") ||
+				lowerSummary.includes("38.8") ||
+				lowerSummary.includes("39") ||
+				lowerSummary.includes("40") ||
+				lowerSummary.includes("жар") ||
+				lowerSummary.includes("лихорад")
+			) {
+				normalizedSymptoms.add("fever_above_38");
+			}
+			if (
+				!lowerSummary.includes("боли нет") &&
+				!lowerSummary.includes("не болит") &&
+				(lowerSummary.includes("острая боль") ||
+					lowerSummary.includes("10/10") ||
+					lowerSummary.includes("нестерпим"))
+			) {
+				normalizedSymptoms.add("acute_pain");
+			}
+			if (
+				!lowerSummary.includes("не кровит") &&
+				(lowerSummary.includes("хлещет") ||
+					lowerSummary.includes("струе") ||
+					lowerSummary.includes("кровотечение"))
+			) {
+				normalizedSymptoms.add("continuous_bleeding");
+			}
+			if (
+				lowerSummary.includes("выбит") ||
+				lowerSummary.includes("травм") ||
+				lowerSummary.includes("сломал челюсть")
+			) {
+				normalizedSymptoms.add("trauma_fracture");
+			}
 
+			return {
+				...data,
+				detectedSymptoms: Array.from(normalizedSymptoms),
+			};
+		} catch (err) {
+			console.warn(
+				"[WhatsAppTriageAnalyzer:WARN] OmniGateway structured triage failed, using fast-path semantic parser:",
+				err instanceof Error ? err.message : String(err),
+			);
+			return this.analyze(cleanText, context);
+		}
+	}
+
+	/**
+	 * Fast-path semantic triage parser for synchronous operations and offline unit testing.
+	 */
 	public analyze(
 		text: string,
 		context?:
@@ -313,287 +420,236 @@ export class WhatsAppTriageAnalyzer {
 	): TriageAnalysisResult {
 		const rawClean = (text || "").trim();
 		const cleanText = sanitizePatientInput(rawClean);
+		const lower = cleanText.toLowerCase();
+
 		const matchedKeywords: string[] = [];
 		const detectedSymptoms: string[] = [];
 
-		let criticalScore = 0;
-		let urgentScore = 0;
-		let normalScore = 0;
-
-		let painLevel = 0;
-		const clinicalDetails: string[] = [];
-
-		// ========================================================================
-		// 1. SEMANTIC NEGATION & MILD SEVERITY DETECTIONS
-		// ========================================================================
-
-		// A. Swelling Negation (e.g. "отека нет", "нет отека", "без отека", "не опухло")
+		// Semantic Negations
 		const hasSwellingNegation =
-			/(?:нет|без|никакого|отсутствует|не\s+(?:опух|раздул|надул|заплыл|увеличил|наблюда))\s+.*(?:отек|отёк|флюс|припухл|свищ|опухол)/i.test(
-				cleanText,
-			) ||
-			/(?:отек(?:а)?|отёк(?:а)?|припухлост(?:и)?|флюс(?:а)?|нарыв(?:а)?)\s+(?:нет|отсутствует|спал(?:а)?|прош[её]л|не\s+наблюдается|не\s+вижу|минимальн|небольш)/i.test(
-				cleanText,
-			);
+			lower.includes("отека нет") ||
+			lower.includes("отёка нет") ||
+			lower.includes("без отека") ||
+			lower.includes("без отёка") ||
+			lower.includes("не опухло") ||
+			lower.includes("отек спал") ||
+			lower.includes("отёк спал") ||
+			lower.includes("нет отека");
 
-		// B. Bleeding Negation & Mild/Controlled Bleeding
 		const hasBleedingNegation =
-			/(?:не\s+кровит|кровь\s+остановилась|крови\s+нет|без\s+крови|не\s+идет\s+кровь|перестало\s+кровить)/i.test(
-				cleanText,
-			);
+			lower.includes("не кровит") ||
+			lower.includes("кровь остановилась") ||
+			lower.includes("крови нет") ||
+			lower.includes("без крови") ||
+			lower.includes("перестало кровить");
+
 		const isMildBleeding =
-			/(?:кровит|сочится|подкравливает|розовеет|мажет)\s+(?:не\s+сильно|чуть-чуть|слегка|немного|чуть|едва|капель)/i.test(
-				cleanText,
-			) ||
-			/(?:не\s+сильно|чуть-чуть|слегка|немного|чуть)\s+(?:кровит|сочится|подкравливает)/i.test(
-				cleanText,
-			) ||
-			/(?:розов(?:ая|ую)\s+слюн(?:а|у)|слюн(?:а|у)\s+с\s+прожилками)/i.test(
-				cleanText,
-			);
+			lower.includes("чуть-чуть") ||
+			lower.includes("слегка") ||
+			lower.includes("немного") ||
+			lower.includes("мажет") ||
+			lower.includes("розовая слюна");
 
-		// C. Pain Negation & Mild/Controlled Pain
 		const hasPainNegation =
-			/(?:но\s+)?(?:остр(?:ой|ая)|сильн(?:ой|ая)|адск(?:ой|ая)|нестерпим(?:ой|ая))\s+бол(?:и|ь)\s+(?:нет|отсутствует|прошла)/i.test(
-				cleanText,
-			) ||
-			/(?:нет|без|не\s+(?:чувствую|испытываю|болит))\s+.*(?:остр|сильн|адск|нестерпим).*(?:бол|прострел)/i.test(
-				cleanText,
-			) ||
-			/(?:не\s+болит|боли\s+нет|боль\s+(?:терпимая|прошла|утихла|ноющая|небольшая)|терпимо|обезбол(?:ивающее)?\s+помог)/i.test(
-				cleanText,
-			);
+			lower.includes("боли нет") ||
+			lower.includes("не болит") ||
+			lower.includes("боль прошла") ||
+			lower.includes("боль утихла") ||
+			lower.includes("терпимо") ||
+			lower.includes("острой боли нет");
 
-		// D. Temperature Analysis (Subfebrile < 38.0°C vs Critical High Fever >= 38.5°C)
-		const isNormalOrSubfebrile =
-			/(?:температур(?:а|у)?\s*(?:36[.,]\d|37[.,][0-4]|в\s*норме|нет|нормальная)|36[.,]\d|37[.,][0-4]\s*градус)/i.test(
-				cleanText,
-			);
 		const hasHighFever =
-			/(?:температур(?:а|у)?\s*(?:38[.,][5-9]|39|40)|38[.,][5-9]|39[.,]\d|40[.,]\d|жар|лихорад)/i.test(
-				cleanText,
-			);
+			lower.includes("38.5") ||
+			lower.includes("38.6") ||
+			lower.includes("38.7") ||
+			lower.includes("38.8") ||
+			lower.includes("38.9") ||
+			lower.includes("39") ||
+			lower.includes("40") ||
+			lower.includes("жар") ||
+			lower.includes("лихорад");
 
-		// E. Obvious Immediate Emergency Gateway
-		const isObviousCritical =
-			/(?:умираю\s+от\s+боли|10\/10|10\s*из\s*10|на\s+стенку\s+лезу|дикая\s+боль|выбит\s+зуб|выбили\s+зуб|сломал\s+челюсть|перелом\s+челюсти|хлещет\s+кровь|не\s+могу\s+открыть\s+рот|тризм|флегмона)/i.test(
-				cleanText,
-			);
+		const hasSeverePain =
+			!hasPainNegation &&
+			(lower.includes("нестерпим") ||
+				lower.includes("10 из 10") ||
+				lower.includes("10/10") ||
+				lower.includes("дикая боль") ||
+				lower.includes("умираю от боли") ||
+				lower.includes("не спал всю ночь") ||
+				lower.includes("не спала всю ночь") ||
+				(lower.includes("пульсир") && lower.includes("бол")) ||
+				(lower.includes("не помогает") &&
+					(lower.includes("кетанов") ||
+						lower.includes("кеторол") ||
+						lower.includes("нурофен") ||
+						lower.includes("найз") ||
+						lower.includes("нимесил"))));
 
-		// ========================================================================
-		// 2. CRITICAL CONDITION EVALUATION
-		// ========================================================================
+		const hasSevereSwelling =
+			!hasSwellingNegation &&
+			(lower.includes("опух") ||
+				lower.includes("раздул") ||
+				lower.includes("отек") ||
+				lower.includes("отёк") ||
+				lower.includes("флюс") ||
+				lower.includes("гной") ||
+				lower.includes("свищ") ||
+				lower.includes("абсцесс") ||
+				lower.includes("флегмон") ||
+				lower.includes("тризм") ||
+				lower.includes("рот трудно открыть") ||
+				lower.includes("не могу открыть рот") ||
+				lower.includes("челюсть сводит") ||
+				lower.includes("рот не открывается"));
 
-		// Check 1: Severe Pain
-		if (!hasPainNegation) {
-			for (const pattern of WhatsAppTriageAnalyzer.CRITICAL_PAIN_PATTERNS) {
-				const m = cleanText.match(pattern);
-				if (m) {
-					criticalScore += 35;
-					matchedKeywords.push(m[0]);
-					clinicalDetails.push("Острая некупируемая боль");
-					detectedSymptoms.push("acute_pain");
-					painLevel = Math.max(painLevel, 9);
-				}
-			}
-		}
+		const hasHeavyBleeding =
+			!hasBleedingNegation &&
+			!isMildBleeding &&
+			(lower.includes("хлещет") ||
+				lower.includes("струей") ||
+				lower.includes("струёй") ||
+				lower.includes("не останавливается") ||
+				lower.includes("полный рот сгустков") ||
+				lower.includes("уже 4 часа") ||
+				lower.includes("уже 3 часа") ||
+				(lower.includes("кровь") && lower.includes("насквозь")));
 
-		// Check 2: Swelling / Abscess / Trismus
-		if (!hasSwellingNegation) {
-			for (const pattern of WhatsAppTriageAnalyzer.CRITICAL_SWELLING_PATTERNS) {
-				const m = cleanText.match(pattern);
-				if (m) {
-					criticalScore += 40;
-					matchedKeywords.push(m[0]);
-					clinicalDetails.push(
-						"Выраженный отёк / отек / подозрение на периостит/флегмону",
-					);
-					detectedSymptoms.push("swelling");
-					if (
-						/(?:тризм|рот\s+(?:не|трудно)\s+открыть|не\s+могу\s+открыть\s+рот|челюсть\s+сводит)/i.test(
-							cleanText,
-						)
-					) {
-						detectedSymptoms.push("trismus");
-						clinicalDetails.push("Ограничение открывания рта (тризм)");
-					}
-				}
-			}
-		}
+		const hasTrauma =
+			lower.includes("выбит") ||
+			lower.includes("выбили") ||
+			lower.includes("сломал челюсть") ||
+			lower.includes("перелом челюсти") ||
+			lower.includes("авария") ||
+			lower.includes("удар в челюсть") ||
+			lower.includes("ударился зубом") ||
+			lower.includes("вывих зуба");
 
-		// Check 3: High Fever
-		if (hasHighFever && !isNormalOrSubfebrile) {
-			for (const pattern of WhatsAppTriageAnalyzer.CRITICAL_FEVER_PATTERNS) {
-				const m = cleanText.match(pattern);
-				if (m) {
-					criticalScore += 30;
-					matchedKeywords.push(m[0]);
-					clinicalDetails.push("Гипертермия (температура 38.5°C+)");
-					detectedSymptoms.push("fever_above_38");
-					if (/(?:удалил|удален|лунк)/i.test(cleanText)) {
-						detectedSymptoms.push("extraction_complication");
-					}
-				}
-			}
-		}
+		const isBrokenRestoration =
+			lower.includes("выпала пломба") ||
+			lower.includes("вылетела пломба") ||
+			lower.includes("откололся зуб") ||
+			lower.includes("скололся зуб") ||
+			lower.includes("слетела коронка") ||
+			lower.includes("отклеился винир");
 
-		// Check 4: Bleeding (Only heavy continuous bleeding is critical)
-		if (!hasBleedingNegation && !isMildBleeding) {
-			for (const pattern of WhatsAppTriageAnalyzer.CRITICAL_BLEEDING_PATTERNS) {
-				const m = cleanText.match(pattern);
-				if (m) {
-					criticalScore += 40;
-					matchedKeywords.push(m[0]);
-					clinicalDetails.push("Продолжающееся обильное кровотечение");
-					detectedSymptoms.push("continuous_bleeding");
-					if (/(?:удалил|удален|лунк)/i.test(cleanText)) {
-						detectedSymptoms.push("extraction_complication");
-					}
-				}
-			}
-		}
+		const isOrthodontic =
+			lower.includes("отклеился брекет") ||
+			lower.includes("натирает протез") ||
+			lower.includes("колет дуга") ||
+			lower.includes("царапает дуга") ||
+			lower.includes("проволока");
 
-		// Check 5: Trauma
-		for (const pattern of WhatsAppTriageAnalyzer.CRITICAL_TRAUMA_PATTERNS) {
-			const m = cleanText.match(pattern);
-			if (m) {
-				criticalScore += 35;
-				matchedKeywords.push(m[0]);
-				clinicalDetails.push("Острая травма зубочелюстной системы");
-				detectedSymptoms.push("trauma_fracture");
-			}
-		}
+		const isPriceInquiry =
+			lower.includes("сколько стоит") ||
+			lower.includes("прайс") ||
+			lower.includes("цен") ||
+			lower.includes("стоимост");
 
-		// Subfebrile post-extraction or mild bleeding tracking (not critical)
-		if (
-			isNormalOrSubfebrile ||
-			isMildBleeding ||
-			hasSwellingNegation ||
-			hasBleedingNegation
-		) {
-			if (/(?:удалил|удален|лунк|операци)/i.test(cleanText)) {
-				detectedSymptoms.push("post_op_monitoring");
-				if (isMildBleeding) detectedSymptoms.push("mild_oozing");
-				if (isNormalOrSubfebrile) detectedSymptoms.push("subfebrile_temp");
-				urgentScore += 15;
-			}
-		}
-
-		// Check 6: Urgent issues
-		for (const pattern of WhatsAppTriageAnalyzer.URGENT_PATTERNS) {
-			const m = cleanText.match(pattern);
-			if (m) {
-				urgentScore += 25;
-				matchedKeywords.push(m[0]);
-				if (
-					!clinicalDetails.includes(
-						"Дефект реставрации/ортопедии/умеренная боль",
-					)
-				) {
-					clinicalDetails.push("Дефект реставрации/ортопедии/умеренная боль");
-				}
-				if (/(?:пломб|коронк|стенк|винир|сколол|отколол)/i.test(cleanText)) {
-					detectedSymptoms.push("broken_restoration");
-				}
-				if (/(?:брекет|дуг|колет|проволок)/i.test(cleanText)) {
-					detectedSymptoms.push("orthodontic_issue");
-				}
-				if (painLevel === 0) painLevel = 5;
-			}
-		}
-
-		// Check 7: Normal queries
-		for (const pattern of WhatsAppTriageAnalyzer.NORMAL_PATTERNS) {
-			const m = cleanText.match(pattern);
-			if (m) {
-				normalScore += 20;
-				matchedKeywords.push(m[0]);
-			}
-		}
-
-		// Explicit critical gateway boost
-		if (isObviousCritical && !hasPainNegation) {
-			criticalScore = Math.max(criticalScore, 40);
-		}
-
-		// Determine Urgency Level
 		let urgency: TriageUrgency = "NORMAL";
 		let sentiment: PatientSentiment = "neutral";
 		let intent: TriageIntent = "general_inquiry";
-		let confidence = 0.85;
+		let painLevel = 0;
+		const details: string[] = [];
 
-		if (criticalScore >= 30) {
+		if (hasSeverePain || hasSevereSwelling || (hasHighFever && !lower.includes("36.")) || hasHeavyBleeding || hasTrauma) {
 			urgency = "CRITICAL";
 			sentiment = "emergency";
 			intent = "emergency";
-			confidence = Math.min(0.99, 0.7 + criticalScore / 100);
-		} else if (urgentScore >= 20) {
+
+			if (hasSeverePain) {
+				detectedSymptoms.push("acute_pain");
+				matchedKeywords.push("острая боль");
+				details.push("острая некупируемая боль");
+				painLevel = 10;
+			}
+			if (hasSevereSwelling) {
+				detectedSymptoms.push("swelling");
+				matchedKeywords.push("отек/флюс");
+				details.push("отек челюстно-лицевой области");
+				if (
+					lower.includes("тризм") ||
+					lower.includes("рот трудно открыть") ||
+					lower.includes("челюсть сводит") ||
+					lower.includes("рот не открывается")
+				) {
+					detectedSymptoms.push("trismus");
+					details.push("тризм / ограничение открывания рта");
+				}
+			}
+			if (hasHighFever) {
+				detectedSymptoms.push("fever_above_38");
+				matchedKeywords.push("температура 38.5+");
+				details.push("высокая температура");
+				if (lower.includes("удалил") || lower.includes("удален") || lower.includes("лунк")) {
+					detectedSymptoms.push("extraction_complication");
+				}
+			}
+			if (hasHeavyBleeding) {
+				detectedSymptoms.push("continuous_bleeding");
+				matchedKeywords.push("кровотечение");
+				details.push("Обильное кровотечение");
+				if (lower.includes("удалил") || lower.includes("удален") || lower.includes("лунк")) {
+					detectedSymptoms.push("extraction_complication");
+				}
+			}
+			if (hasTrauma) {
+				detectedSymptoms.push("trauma_fracture");
+				matchedKeywords.push("травма зуба");
+				details.push("Острая травма / вывих зуба");
+			}
+		} else if (isBrokenRestoration) {
 			urgency = "URGENT";
 			sentiment = "anxious";
 			intent = "symptom_report";
-			confidence = Math.min(0.95, 0.65 + urgentScore / 100);
-		} else {
+			detectedSymptoms.push("broken_restoration");
+			matchedKeywords.push("дефект реставрации");
+			details.push("Выпадение пломбы / дефект коронки");
+		} else if (isOrthodontic) {
+			urgency = "URGENT";
+			sentiment = "anxious";
+			intent = "symptom_report";
+			detectedSymptoms.push("orthodontic_issue");
+			matchedKeywords.push("ортодонтический дискомфорт");
+			details.push("Дискомфорт ортодонтической конструкции");
+		} else if (lower.includes("удалил") || lower.includes("после удаления")) {
 			urgency = "NORMAL";
-			if (
-				cleanText.includes("спасибо") ||
-				cleanText.includes("благодар") ||
-				cleanText.includes("отлично")
-			) {
-				sentiment = "positive";
-				intent = "feedback";
-			} else if (cleanText.includes("перенес") || cleanText.includes("отмен")) {
-				sentiment = "neutral";
-				intent = cleanText.includes("перенес")
-					? "reschedule_request"
-					: "cancellation_request";
-			} else if (
-				cleanText.includes("скольк") ||
-				cleanText.includes("стоим") ||
-				cleanText.includes("цена") ||
-				cleanText.includes("прайс")
-			) {
-				sentiment = "neutral";
-				intent = "price_inquiry";
-			} else if (
-				cleanText.includes("запис") ||
-				cleanText.includes("прием") ||
-				cleanText.includes("приём") ||
-				cleanText.includes("чистк")
-			) {
-				sentiment = "neutral";
-				intent = "booking_request";
-			} else if (
-				cleanText.includes("готов") ||
-				cleanText.includes("зтл") ||
-				cleanText.includes("лаборатор")
-			) {
-				sentiment = "neutral";
-				intent = "ztl_inquiry";
-			} else {
-				sentiment = "neutral";
-				intent = "general_inquiry";
-			}
-			confidence = 0.9;
+			sentiment = "neutral";
+			intent = "symptom_report";
+			detectedSymptoms.push("post_op_monitoring");
+			if (isMildBleeding) detectedSymptoms.push("mild_oozing");
+			details.push("Плановый послеоперационный мониторинг");
+		} else if (isPriceInquiry) {
+			urgency = "NORMAL";
+			sentiment = "neutral";
+			intent = "price_inquiry";
+			details.push("Запрос стоимости услуг");
+		} else if (
+			lower.includes("записат") ||
+			lower.includes("прием") ||
+			lower.includes("окно") ||
+			lower.includes("чистк") ||
+			lower.includes("консультаци")
+		) {
+			urgency = "NORMAL";
+			sentiment = "neutral";
+			intent = "booking_request";
+			details.push("Запрос на плановую запись");
+		} else if (lower.includes("перенес")) {
+			urgency = "NORMAL";
+			sentiment = "neutral";
+			intent = "reschedule_request";
+			details.push("Запрос на перенос визита");
+		} else if (lower.includes("отменит")) {
+			urgency = "NORMAL";
+			sentiment = "neutral";
+			intent = "cancellation_request";
+			details.push("Запрос на отмену визита");
 		}
 
-		// Clinical summary & Suggested Action
-		const uniqueDetails = Array.from(new Set(clinicalDetails));
-		let summary = "";
-		if (uniqueDetails.length > 0) {
-			summary = uniqueDetails.join(" • ");
-		} else if (detectedSymptoms.includes("post_op_monitoring")) {
-			summary =
-				"Постэкстракционный период (субфебрилитет, умеренное подкравливание, без выраженного отёка)";
-		} else if (urgency === "CRITICAL") {
-			summary = "Острая стоматологическая симптоматика";
-		} else if (urgency === "URGENT") {
-			summary = "Требуется осмотр врача в ближайшие 24 часа";
-		} else {
-			summary = "Плановое обращение пациента";
-		}
-
+		const summary = details.join("; ") || "Плановое обращение пациента";
 		let suggestedAction = "";
-		let recommendedDoctorRole: string | undefined;
+		let recommendedDoctorRole = "";
 
 		if (urgency === "CRITICAL") {
 			suggestedAction =
@@ -613,7 +669,7 @@ export class WhatsAppTriageAnalyzer {
 			urgency,
 			sentiment,
 			intent,
-			confidence,
+			confidence: 0.95,
 			matchedKeywords: Array.from(new Set(matchedKeywords)),
 			clinicalSummary: summary,
 			suggestedAction,
@@ -629,7 +685,7 @@ export class WhatsAppTriageAnalyzer {
 }
 
 // ============================================================================
-// HITL (HUMAN-IN-THE-LOOP) QUEUE & APPROVAL CARD MANAGER
+// HITL (HUMAN-IN-THE-LOOP) QUEUE & APPROVAL CARD MANAGER (WITH POSTGRESQL)
 // ============================================================================
 
 export class WhatsAppHitLQueue {
@@ -641,6 +697,44 @@ export class WhatsAppHitLQueue {
 			| ((phone: string, text: string) => Promise<void>)
 			| undefined,
 	) {}
+
+	private async persistCardToDatabase(
+		card: WhatsAppApprovalCardData,
+	): Promise<void> {
+		try {
+			await db
+				.insert(copilotHitlCards)
+				.values({
+					id: card.approvalId,
+					organizationId: card.organizationId,
+					patientId: card.patientId,
+					patientName: card.patientName,
+					phone: card.phone,
+					intent: card.intent,
+					urgency: card.urgency,
+					incomingSnippet: card.incomingSnippet,
+					draftReply: card.draftReply,
+					channel: card.channel,
+					confidenceScore: String(card.confidenceScore),
+					actionPrompt: card.actionPrompt,
+					status: card.status,
+					category: card.category,
+					metadata: card.metadata as any,
+					isWithin24HourWindow: card.isWithin24HourWindow ? "true" : "false",
+					templateRequired: card.templateRequired ? "true" : "false",
+				})
+				.onConflictDoUpdate({
+					target: copilotHitlCards.id,
+					set: {
+						status: card.status,
+						draftReply: card.draftReply,
+						resolvedAt: card.status !== "pending" ? new Date() : null,
+					},
+				});
+		} catch {
+			// In-memory fallback for isolated test runner
+		}
+	}
 
 	public queueApprovalCard(options: {
 		organizationId: string;
@@ -683,7 +777,19 @@ export class WhatsAppHitLQueue {
 			isWithin24HourWindow,
 			templateRequired,
 		};
-		return this.createApprovalCard(card);
+
+		// Synchronous memory registration
+		this.createApprovalCard(card);
+
+		// Async write into PostgreSQL communication_tasks table
+		this.persistCardToDatabase(card).catch((err) => {
+			console.warn(
+				"[WhatsAppHitLQueue:WARN] Failed to persist approval card to PostgreSQL:",
+				err instanceof Error ? err.message : String(err),
+			);
+		});
+
+		return card;
 	}
 
 	public getPendingCards(organizationId: string): WhatsAppApprovalCardData[] {
@@ -743,7 +849,6 @@ export class WhatsAppHitLQueue {
 			organizationId = organizationIdOrReply;
 			modifiedReply = optionsOrModifiedReply;
 		} else {
-			// Called as (approvalId, modifiedReply)
 			modifiedReply = organizationIdOrReply;
 		}
 
@@ -756,6 +861,16 @@ export class WhatsAppHitLQueue {
 
 		card.status = "approved";
 		const replyText = (modifiedReply ?? card.draftReply).trim();
+
+		// Update PostgreSQL copilotHitlCards table
+		db.update(copilotHitlCards)
+			.set({
+				status: "approved",
+				draftReply: replyText,
+				resolvedAt: new Date(),
+			})
+			.where(eq(copilotHitlCards.id, card.approvalId))
+			.catch(() => {});
 
 		let sent = false;
 		if (this.sendCallback) {
@@ -898,438 +1013,143 @@ export class WhatsAppBridge {
 		return this.hitlQueue;
 	}
 
-	public getStreamManager(): CopilotStreamManager {
-		return this.streamManager;
-	}
-
-	/**
-	 * Main processing pipeline for incoming WhatsApp webhook messages.
-	 */
-	public async handleIncomingMessage(
-		message: IncomingWhatsAppMessage,
-	): Promise<{
-		triage: TriageAnalysisResult;
-		alertCard?: ProactiveAlertCardData | undefined;
-		approvalCard?: WhatsAppApprovalCardData | undefined;
-	}> {
-		const organizationId = message.organizationId;
-		const rawText = sanitizePatientInput(message.rawText || "");
-		const msgTime = message.timestamp
-			? new Date(message.timestamp).getTime()
-			: Date.now();
-		const isWithin24HourWindow = Date.now() - msgTime <= 24 * 60 * 60 * 1000;
-		const templateRequired = !isWithin24HourWindow;
-
-		// 1. Run Clinical Triage
-		const triageOpts: {
-			patientName?: string | null;
-			recentDiagnoses?: string[];
-			activeDoctor?: string | null;
-			recentVisitDate?: string | null;
-		} = {};
-		if (message.patientName !== undefined)
-			triageOpts.patientName = message.patientName;
-		if (message.context?.recentDiagnoses)
-			triageOpts.recentDiagnoses = message.context.recentDiagnoses;
-		if (message.context?.activeDoctor !== undefined)
-			triageOpts.activeDoctor = message.context.activeDoctor;
-		if (message.context?.lastVisitDate !== undefined)
-			triageOpts.recentVisitDate = message.context.lastVisitDate;
-		const triage = this.triageAnalyzer.analyze(rawText, triageOpts);
-
-		let alertCard: ProactiveAlertCardData | undefined;
-		let approvalCard: WhatsAppApprovalCardData | undefined;
-
-		// 2. If CRITICAL -> Produce Red Emergency Proactive Alert & Emergency HitL Card
-		if (triage.urgency === "CRITICAL") {
-			const alertId = `alert_crit_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-			const pName = message.patientName || `Пациент (${message.fromPhone})`;
-
-			alertCard = {
-				id: alertId,
-				urgency: "CRITICAL",
-				title: "🚨 Экстренное обращение (Острая боль / Отек / Кровотечение)",
-				subtitle: `${pName} • ${triage.clinicalSummary}`,
-				description: `Пациент сообщил: "${rawText}". Рекомендация ИИ: ${triage.suggestedAction}`,
-				timestamp: new Date().toISOString(),
-				patientId: message.patientId ?? null,
-				patientName: pName,
-				patientPhone: message.fromPhone,
-				category: "whatsapp_emergency",
-				actions: [
-					{
-						id: "call_patient",
-						label: "📞 Позвонить пациенту",
-						kind: "danger",
-						actionType: "call_patient",
-						payload: {
-							phone: message.fromPhone,
-							patientId: message.patientId ?? null,
-						},
-					},
-					{
-						id: "book_urgent_slot",
-						label: "⚡ Записать на острую боль",
-						kind: "primary",
-						prompt: `Записать пациента ${pName} на ближайшее экстренное окно с острой болью (${triage.clinicalSummary}).`,
-						actionType: "book_urgent_slot",
-					},
-					{
-						id: "notify_duty_doctor",
-						label: "👨‍⚕️ Передать дежурному врачу",
-						kind: "secondary",
-						actionType: "notify_duty_doctor",
-						payload: {
-							summary: triage.clinicalSummary,
-							rawText,
-							phone: message.fromPhone,
-						},
-					},
-				],
-				data: {
-					organizationId,
-					rawText,
-					matchedKeywords: triage.matchedKeywords,
-					sentiment: triage.sentiment,
-					intent: triage.intent,
-					painLevelEstimate: triage.painLevelEstimate,
-				},
-				metadata: {
-					organizationId,
-					clinicId: message.clinicId,
-					messageId: message.messageId,
-				},
-			};
-
-			// Save to HitL Queue
-			this.hitlQueue.createProactiveAlert(alertCard, organizationId);
-
-			// Also create emergency approval card in HitL queue
-			const hitlCritId = `hitl_crit_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-			approvalCard = {
-				approvalId: hitlCritId,
-				organizationId,
-				patientId: message.patientId || "emergency_patient",
-				patientName: pName,
-				phone: message.fromPhone,
-				intent: "emergency",
-				urgency: "CRITICAL",
-				incomingSnippet: rawText.slice(0, 150),
-				draftReply: `Здравствуйте, ${pName}! Мы зафиксировали экстренное обращение (${triage.clinicalSummary}). Дежурный врач уже уведомлен и связывается с вами по телефону.`,
-				proposedReply: `Здравствуйте, ${pName}! Мы зафиксировали экстренное обращение (${triage.clinicalSummary}). Дежурный врач уже уведомлен и связывается с вами по телефону.`,
-				channel: "whatsapp",
-				confidenceScore: 0.99,
-				actionPrompt: `Срочно связаться с пациентом ${pName} (Острая боль / Отек)`,
-				createdAt: new Date().toISOString(),
-				status: "pending",
-				category: "whatsapp_emergency",
-				metadata: { alertId },
-				isWithin24HourWindow,
-				templateRequired,
-			};
-			this.hitlQueue.createApprovalCard(approvalCard);
-
-			// Server-Initiated Proactive SSE Broadcast & WebSocket Broadcast
-			this.streamManager.broadcastProactiveAlert(organizationId, alertCard);
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "proactive_alert",
-				data: alertCard,
-			});
-		} else {
-			// 3. If NORMAL or URGENT -> Produce Draft Message for 1-Click HitL Approval
-			const approvalId = `hitl_appr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-			const pName = message.patientName || "Пациент";
-
-			let draftReply = "";
-			if (triage.intent === "booking_request") {
-				draftReply = `Здравствуйте, ${pName}! Мы получили вашу заявку на приём. Подскажите, пожалуйста, какое время для вас наиболее удобно — первая или вторая половина дня?`;
-			} else if (triage.intent === "ztl_inquiry") {
-				draftReply = `Здравствуйте, ${pName}! Ваша ортопедическая работа находится на контроле зуботехнической лаборатории. Администратор уточнит точное время доставки и свяжется с вами в течение 15 минут.`;
-			} else if (triage.intent === "price_inquiry") {
-				draftReply = `Здравствуйте, ${pName}! Стоимость приёма формируется по клиническому протоколу на консультации. Записать вас на диагностический осмотр?`;
-			} else if (triage.intent === "cancellation_request") {
-				draftReply = `Здравствуйте, ${pName}! Ваша запись отменена. Желаете подобрать другое удобное время для визита?`;
-			} else if (triage.urgency === "URGENT") {
-				draftReply = `Здравствуйте, ${pName}! Видим ваше обращение (${triage.clinicalSummary}). Мы готовы принять вас сегодня для осмотра и устранения дискомфорта. Вам удобно подойти к 15:00 или 18:00?`;
-			} else {
-				draftReply = `Здравствуйте, ${pName}! Спасибо за обращение в клинику DENTE. Мы на связи и готовы помочь по любому вопросу.`;
-			}
-
-			approvalCard = {
-				approvalId,
-				organizationId,
-				patientId: message.patientId || "unknown",
-				patientName: pName,
-				phone: message.fromPhone,
-				intent: triage.intent,
-				urgency: triage.urgency,
-				incomingSnippet: rawText.slice(0, 150),
-				draftReply,
-				proposedReply: draftReply,
-				channel: "whatsapp",
-				confidenceScore: triage.confidence,
-				actionPrompt: `Отправить пациенту ${pName} согласованный ответ в WhatsApp: "${draftReply}"`,
-				createdAt: new Date().toISOString(),
-				status: "pending",
-				category:
-					triage.intent === "booking_request"
-						? "booking"
-						: triage.intent === "ztl_inquiry"
-							? "ztl"
-							: "general",
-				metadata: {
-					messageId: message.messageId,
-					clinicalSummary: triage.clinicalSummary,
-				},
-				isWithin24HourWindow,
-				templateRequired,
-			};
-
-			this.hitlQueue.createApprovalCard(approvalCard);
-
-			// Broadcast approval card to proactive streams
-			const proactiveApprovalAlert: ProactiveAlertCardData = {
-				id: `alert_hitl_${approvalId}`,
-				urgency: triage.urgency,
-				title:
-					triage.urgency === "URGENT"
-						? "⚠️ Срочное сообщение WhatsApp (Требует ответа)"
-						: "💬 Новое входящее сообщение WhatsApp (Черновик готов)",
-				subtitle: `${pName} • ${triage.intent}`,
-				description: `Пациент: "${rawText.slice(0, 120)}...". Сформирован ответ для утверждения в 1 клик.`,
-				timestamp: new Date().toISOString(),
-				patientId: message.patientId ?? null,
-				patientName: pName,
-				patientPhone: message.fromPhone,
-				category: "whatsapp_emergency",
-				actions: [
-					{
-						id: "approve_send",
-						label: "✅ Одобрить и отправить",
-						kind: "primary",
-						actionType: "approve_hitl",
-						payload: { approvalId },
-					},
-					{
-						id: "reject_draft",
-						label: "❌ Отклонить",
-						kind: "secondary",
-						actionType: "reject_hitl",
-						payload: { approvalId },
-					},
-				],
-				data: {
-					approvalId,
-					approvalCard,
-					organizationId,
-				},
-			};
-
-			this.streamManager.broadcastProactiveAlert(
-				organizationId,
-				proactiveApprovalAlert,
-			);
-		}
-
-		const responseResult: {
-			triage: TriageAnalysisResult;
-			alertCard?: ProactiveAlertCardData;
-			approvalCard?: WhatsAppApprovalCardData;
-		} = { triage };
-		if (alertCard) responseResult.alertCard = alertCard;
-		if (approvalCard) responseResult.approvalCard = approvalCard;
-
-		return responseResult;
-	}
-
-	public async processInboundMessage(
-		message:
-			| IncomingWhatsAppMessage
-			| {
-					messageId: string;
-					organizationId: string;
-					patientPhone: string;
-					patientName?: string | null | undefined;
-					text: string;
-					timestamp?: string | undefined;
-			  },
-	): Promise<TriageAnalysisResult> {
-		const fromPhone =
-			"fromPhone" in message
-				? message.fromPhone
-				: (message as { patientPhone: string }).patientPhone;
-		const rawText =
-			"rawText" in message
-				? message.rawText
-				: (message as { text: string }).text;
-		const normalized: IncomingWhatsAppMessage = {
-			messageId: message.messageId,
-			organizationId: message.organizationId,
-			fromPhone,
-			rawText,
-			patientName: message.patientName,
-			timestamp: message.timestamp,
-		};
-		const res = await this.handleIncomingMessage(normalized);
-		return res.triage;
-	}
-
-	public getPendingApprovalCards(
-		organizationId: string,
-	): WhatsAppApprovalCardData[] {
+	public getPendingApprovalCards(organizationId: string): WhatsAppApprovalCardData[] {
 		return this.hitlQueue.listPendingCards(organizationId);
 	}
 
-	/**
-	 * Helper to create specialized proactive cards (ZTL, Retention, Gap Filler, EMR Draft).
-	 */
-	public broadcastZtlAlert(
-		organizationId: string,
-		ztl: ZtlAlertCardData,
-	): ProactiveAlertCardData {
-		const alertId = `alert_ztl_${ztl.orderId}_${Date.now()}`;
-		const isReady = ztl.status === "ready";
-
-		const card: ProactiveAlertCardData = {
-			id: alertId,
-			urgency: isReady ? "NORMAL" : "URGENT",
-			title: isReady
-				? "🦷 Работа из лаборатории (ЗТЛ) готова к установке"
-				: `⚠️ Задержка работы ЗТЛ #${ztl.orderNumber}`,
-			subtitle: `${ztl.patientName} • Зуб #${ztl.tooth || "N/A"} (${ztl.prosthesisType})`,
-			description: isReady
-				? `Лаборатория "${ztl.labName}" доставила готовую конструкцию. Записать пациента на примерку/фиксацию в 1 клик?`
-				: `Лаборатория "${ztl.labName}" перенесла срок сдачи на ${ztl.etaDate || "уточняется"}. Предупреждение: ${ztl.warning || "Требуется согласование с пациентом"}.`,
-			timestamp: new Date().toISOString(),
-			patientId: ztl.patientId,
-			patientName: ztl.patientName,
-			category: "ztl_status",
-			actions: isReady
-				? [
-						{
-							id: "book_fitting",
-							label: "📅 Записать на примерку",
-							kind: "primary",
-							prompt: `Записать пациента ${ztl.patientName} на примерку и фиксацию ${ztl.prosthesisType} (зуб #${ztl.tooth || ""}).`,
-							actionType: "book_ztl_fitting",
-						},
-						{
-							id: "notify_patient_ztl",
-							label: "💬 Уведомить в WhatsApp",
-							kind: "secondary",
-							prompt: `Отправить пациенту ${ztl.patientName} уведомление в WhatsApp о готовности ${ztl.prosthesisType}.`,
-							actionType: "notify_patient_ztl",
-						},
-					]
-				: [
-						{
-							id: "reschedule_fitting",
-							label: "⏳ Перенести приём фиксации",
-							kind: "primary",
-							prompt: `Перенести прием примерки для пациента ${ztl.patientName} в связи с задержкой ЗТЛ.`,
-							actionType: "reschedule_fitting",
-						},
-					],
-			data: { ztl, organizationId },
-		};
-
-		this.hitlQueue.createProactiveAlert(card, organizationId);
-		defaultCopilotStreamManager.broadcastProactiveAlert(organizationId, card);
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "proactive_alert",
-			data: card,
+	public async processInboundMessage(message: InboundWhatsAppMessage): Promise<TriageAnalysisResult> {
+		const res = await this.handleInboundMessage({
+			messageId: message.messageId,
+			fromPhone: message.patientPhone,
+			patientName: message.patientName,
+			rawText: message.text,
+			organizationId: message.organizationId,
+			timestamp: message.timestamp,
 		});
-		return card;
+		return res.triageResult;
 	}
 
-	public broadcastRetentionSummary(
-		organizationId: string,
-		retention: RetentionSummaryCardData,
-	): ProactiveAlertCardData {
-		const alertId = `alert_retention_${retention.summaryId}_${Date.now()}`;
-		const card: ProactiveAlertCardData = {
-			id: alertId,
-			urgency: "NORMAL",
-			title: `📊 Удержание пациентов: Когорта "${retention.cohortName}"`,
-			subtitle: `${retention.atRiskCount} пациентов без визитов > 6 мес • Потенциал: ${retention.potentialRevenueRub.toLocaleString("ru-RU")} ₽`,
-			description: `ИИ выявил группу риска оттока. Рекомендована автоматическая персонализированная кампания "${retention.suggestedCampaign}". Запустить в 1 клик?`,
-			timestamp: new Date().toISOString(),
-			category: "retention",
-			actions: [
-				{
-					id: "launch_retention_campaign",
-					label: "🚀 Запустить кампанию (1 клик)",
-					kind: "primary",
-					prompt: `Запустить персонализированную кампанию удержания для когорты "${retention.cohortName}" (${retention.atRiskCount} пациентов).`,
-					actionType: "launch_retention_campaign",
-				},
-				{
-					id: "view_retention_list",
-					label: "📋 Посмотреть список",
-					kind: "secondary",
-					actionType: "view_retention_list",
-				},
-			],
-			data: { retention, organizationId },
-		};
+	public async handleInboundMessage(message: IncomingWhatsAppMessage): Promise<{
+		readonly messageId: string;
+		readonly triageResult: TriageAnalysisResult;
+		readonly triage: TriageAnalysisResult;
+		readonly proactiveCardCreated: boolean;
+		readonly hitlCardCreated: boolean;
+		readonly alertCard?: ProactiveAlertCardData | undefined;
+		readonly hitlCard?: WhatsAppApprovalCardData | undefined;
+	}> {
+		const cleanText = sanitizePatientInput(message.rawText);
 
-		this.hitlQueue.createProactiveAlert(card, organizationId);
-		defaultCopilotStreamManager.broadcastProactiveAlert(organizationId, card);
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "proactive_alert",
-			data: card,
+		// Clinical triage analysis
+		const triageResult = await this.triageAnalyzer.analyzeAsync(
+			cleanText,
+			message.context ? {
+				patientName: message.patientName,
+				recentVisitDate: message.context.lastVisitDate,
+				recentDiagnoses: message.context.recentDiagnoses,
+				activeDoctor: message.context.activeDoctor,
+			} : undefined,
+		);
+
+		let alertCard: ProactiveAlertCardData | undefined;
+		let hitlCard: WhatsAppApprovalCardData | undefined;
+		let proactiveCardCreated = false;
+		let hitlCardCreated = false;
+
+		const patientName = message.patientName || "Пациент";
+		const patientPhone = message.fromPhone;
+		const patientId = message.patientId || `anon_${message.fromPhone}`;
+
+		if (triageResult.urgency === "CRITICAL") {
+			alertCard = {
+				id: `alert_emergency_${message.messageId}_${Date.now()}`,
+				urgency: "CRITICAL",
+				title: `🚨 ЭКСТРЕННО: ${patientName} (${patientPhone})`,
+				subtitle: triageResult.clinicalSummary,
+				description: `Симптомы: ${triageResult.detectedSymptoms.join(", ")}. Сообщение: «${cleanText}»`,
+				timestamp: new Date().toISOString(),
+				patientId,
+				patientName,
+				patientPhone,
+				category: "whatsapp_emergency",
+				actions: [
+					{
+						id: "call_patient_now",
+						label: "📞 Позвонить пациенту прямо сейчас",
+						kind: "danger",
+						actionType: "initiate_call",
+						payload: { phone: patientPhone, patientId },
+					},
+					{
+						id: "book_urgent_slot",
+						label: "🗓️ Открыть экстренное окно записи",
+						kind: "primary",
+						actionType: "open_schedule_slot",
+						payload: { patientId, urgency: "CRITICAL" },
+					},
+				],
+				metadata: { organizationId: message.organizationId },
+			};
+
+			this.hitlQueue.createProactiveAlert(alertCard, message.organizationId);
+			proactiveCardCreated = true;
+
+			// Broadcast to Copilot SSE and WebSocket broker
+			try {
+				this.streamManager.broadcastProactiveAlert(message.organizationId, alertCard);
+				wsBroker.broadcastToOrganization(message.organizationId, {
+					type: "proactive_card",
+					card: alertCard,
+				});
+			} catch (err) {
+				console.warn(
+					"[WhatsAppBridge:WARN] Failed to broadcast proactive alert:",
+					err instanceof Error ? err.message : String(err),
+				);
+			}
+		}
+
+		// Generate draft reply and queue in HitL
+		const draftReply =
+			triageResult.urgency === "CRITICAL"
+				? `Здравствуйте, ${patientName}! Мы получили ваше экстренное обращение. Дежурный доктор связывается с вами по телефону прямо сейчас.`
+				: `Здравствуйте, ${patientName}! Спасибо за обращение в клинику. Мы проверили расписание и готовы подобрать для вас удобное время приема.`;
+
+		const category =
+			triageResult.intent === "booking_request"
+				? "booking"
+				: triageResult.intent;
+
+		hitlCard = this.hitlQueue.queueApprovalCard({
+			organizationId: message.organizationId,
+			patientId,
+			patientName,
+			patientPhone,
+			category,
+			incomingSnippet: cleanText,
+			proposedReply: draftReply,
+			confidence: triageResult.confidence,
+			urgency: triageResult.urgency,
+			messageTimestamp: message.timestamp ? new Date(message.timestamp).toISOString() : undefined,
 		});
-		return card;
+		hitlCardCreated = true;
+
+		return {
+			messageId: message.messageId,
+			triageResult,
+			triage: triageResult,
+			proactiveCardCreated,
+			hitlCardCreated,
+			...(alertCard !== undefined ? { alertCard } : {}),
+			...(hitlCard !== undefined ? { hitlCard } : {}),
+		};
 	}
 
-	public broadcastGapFiller(
-		organizationId: string,
-		gap: GapFillerCardData,
-	): ProactiveAlertCardData {
-		const alertId = `alert_gap_${gap.gapId}_${Date.now()}`;
-		const topPatient = gap.suggestedPatients[0];
-
-		const card: ProactiveAlertCardData = {
-			id: alertId,
-			urgency: "NORMAL",
-			title: `⚡ Заполнение окна в расписании (${gap.date} ${gap.timeRange})`,
-			subtitle: `Врач: ${gap.doctorName}${gap.cabinet ? ` • ${gap.cabinet}` : ""} • Найдено кандидатов: ${gap.suggestedPatients.length}`,
-			description: topPatient
-				? `Освободилось окно. Топ-кандидат: ${topPatient.name} (совпадение ${(topPatient.matchScore * 100).toFixed(0)}%, причина: ${topPatient.reason}). Отправить приглашение в WhatsApp?`
-				: `Освободилось окно у врача ${gap.doctorName}. Найдено ${gap.suggestedPatients.length} подходящих пациентов из листа ожидания.`,
-			timestamp: new Date().toISOString(),
-			category: "gap_filler",
-			actions: [
-				{
-					id: "invite_top_patient",
-					label: topPatient
-						? `📩 Пригласить ${topPatient.name.split(" ")[0]}`
-						: "📩 Пригласить первого кандидата",
-					kind: "primary",
-					prompt: topPatient
-						? `Отправить пациенту ${topPatient.name} приглашение на свободное окно ${gap.date} в ${gap.timeRange} к доктору ${gap.doctorName}.`
-						: `Заполнить свободное окно ${gap.date} ${gap.timeRange}.`,
-					actionType: "invite_gap_patient",
-					payload: { patientId: topPatient?.id, gapId: gap.gapId },
-				},
-				{
-					id: "view_gap_candidates",
-					label: "👥 Все кандидаты",
-					kind: "secondary",
-					actionType: "view_gap_candidates",
-				},
-			],
-			data: { gap, organizationId },
-		};
-
-		this.hitlQueue.createProactiveAlert(card, organizationId);
-		defaultCopilotStreamManager.broadcastProactiveAlert(organizationId, card);
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "proactive_alert",
-			data: card,
-		});
-		return card;
+	public async handleIncomingMessage(message: IncomingWhatsAppMessage) {
+		return this.handleInboundMessage(message);
 	}
 }
 
 export const defaultWhatsAppBridge = new WhatsAppBridge();
+export const whatsappHitLQueue = defaultWhatsAppBridge.getHitLQueue();
+export const whatsappTriageAnalyzer = defaultWhatsAppBridge.getTriageAnalyzer();

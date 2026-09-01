@@ -1145,6 +1145,97 @@ export const insuranceContracts = pgTable(
 	}),
 );
 
+// DMS guarantee letters (Гарантийные письма ДМС)
+export const dmsGuaranteeLetters = pgTable(
+	"dms_guarantee_letters",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		contractId: uuid("contract_id").references(() => insuranceContracts.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		patientFullName: text("patient_full_name").notNull(),
+		patientBirthDate: text("patient_birth_date"),
+		policyNumber: text("policy_number").notNull(),
+		insurerKey: text("insurer_key").notNull().default("custom"),
+		insurerName: text("insurer_name").notNull(),
+		letterNumber: text("letter_number").notNull(),
+		issueDate: text("issue_date").notNull(),
+		validFrom: text("valid_from").notNull(),
+		validUntil: text("valid_until").notNull(),
+		maxCoverageRub: numeric("max_coverage_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		}).notNull(),
+		usedAmountRub: numeric("used_amount_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		franchisePct: numeric("franchise_pct", {
+			precision: 5,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		franchiseType: text("franchise_type").notNull().default("percent"),
+		franchiseFixedRub: numeric("franchise_fixed_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		programExclusions: jsonb("program_exclusions")
+			.$type<string[]>()
+			.notNull()
+			.default(sql`'[]'::jsonb`),
+		approvedServiceCodes: jsonb("approved_service_codes")
+			.$type<string[]>()
+			.notNull()
+			.default(sql`'[]'::jsonb`),
+		approvedTeethFdi: jsonb("approved_teeth_fdi")
+			.$type<string[]>()
+			.notNull()
+			.default(sql`'[]'::jsonb`),
+		approvedDiagnosisCodes: jsonb("approved_diagnosis_codes")
+			.$type<string[]>()
+			.notNull()
+			.default(sql`'[]'::jsonb`),
+		curatorFullName: text("curator_full_name"),
+		curatorPhone: text("curator_phone"),
+		notes: text("notes").notNull().default(""),
+		status: text("status").notNull().default("active"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("dms_guarantee_letters_organization_id_idx").on(
+			t.organizationId,
+		),
+		patientIdIdx: index("dms_guarantee_letters_patient_id_idx").on(
+			t.patientId,
+		),
+		statusIdx: index("dms_guarantee_letters_status_idx").on(t.status),
+		letterNumberIdx: index("dms_guarantee_letters_letter_number_idx").on(
+			t.organizationId,
+			t.letterNumber,
+		),
+	}),
+);
+
+
 // clinical audit logs (HIPAA-style access audit trail)
 export const clinicalAuditLogs = pgTable(
 	"clinical_audit_logs",

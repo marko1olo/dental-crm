@@ -22,6 +22,7 @@ import {
 import { getRequestIdentity } from "../security/identity.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { MissedCallService } from "../services/telephony/missedCallService.js";
 import { TelephonyGatewayService } from "../services/telephony/telephonyGatewayService.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
@@ -39,9 +40,16 @@ export const telephonyCallEventSchema = z.enum([
 	"call_ended",
 	"cdr",
 	"record_ready",
+	"missed",
+	"no-answer",
+	"no_answer",
+	"busy",
+	"cancel",
+	"lost_call",
 ]);
 
 export type TelephonyCallEvent = z.infer<typeof telephonyCallEventSchema>;
+
 
 export const telephonyWebhookPayloadSchema = z.object({
 	event: z.string().optional(),
@@ -438,9 +446,18 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			data.event_type ||
 			"ringing"
 		).toLowerCase();
-		let event: "ringing" | "answered" | "ended" = "ringing";
+		let event: "ringing" | "answered" | "ended" | "missed" = "ringing";
 
 		if (
+			rawEvent.includes("miss") ||
+			rawEvent.includes("no-answer") ||
+			rawEvent.includes("no_answer") ||
+			rawEvent.includes("lost") ||
+			rawEvent.includes("busy") ||
+			rawEvent.includes("cancel")
+		) {
+			event = "missed";
+		} else if (
 			rawEvent.includes("ring") ||
 			rawEvent.includes("start") ||
 			rawEvent.includes("dial-in")
@@ -664,6 +681,25 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 					success: true,
 					event: "ringing",
 					patientId: matchedPatient?.id || null,
+				};
+			}
+
+			if (event === "missed" || (event === "ended" && durationSeconds === 0)) {
+				const missedResult = await MissedCallService.handleMissedCall({
+					organizationId: resolvedOrgId,
+					phone: callerPhone.e164,
+					rawPhone: callerPhone.raw,
+					callId: callId || null,
+					provider: detectedProvider,
+					reason: event === "missed" ? "missed" : "zero_duration_hangup",
+				});
+
+				return {
+					success: true,
+					event: "missed",
+					taskId: missedResult.taskId,
+					patientId: missedResult.patientId,
+					isNewLead: missedResult.isNewLead,
 				};
 			}
 

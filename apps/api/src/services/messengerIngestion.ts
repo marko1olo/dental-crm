@@ -41,11 +41,13 @@ import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	clinics,
 	communicationEvents,
+	communicationTasks,
 	crmLeads,
 	messengerInboundEvents,
 	patientCommunicationConsents,
 	patients,
 } from "../db/schema.js";
+import { defaultWhatsAppBridge } from "./agent/whatsappBridge.js";
 import type { CommunicationChannelCode } from "./communications/channelRouter.js";
 import { enqueueMessage } from "./communications/dispatcher.js";
 import {
@@ -446,6 +448,46 @@ async function processSingleEvent(
 			payload: { channel, patientId, text: messageText, optOutIntent: intent },
 		});
 
+		// Semantic triage & HitL pipeline integration (MAX / WhatsApp / Telegram / VK / SMS)
+		if (intent === null) {
+			try {
+				const [p] = await db
+					.select({ fullName: patients.fullName, phone: patients.phone })
+					.from(patients)
+					.where(eq(patients.id, patientId))
+					.limit(1);
+
+				const triageResult = await defaultWhatsAppBridge.handleIncomingMessage({
+					messageId: event.id,
+					fromPhone: externalChatId || p?.phone || "Неизвестный номер",
+					rawText: messageText,
+					timestamp: event.createdAt,
+					patientId,
+					patientName: p?.fullName || null,
+					organizationId,
+					channel,
+				});
+
+				if (triageResult.triageResult.urgency === "CRITICAL") {
+					await db.insert(communicationTasks).values({
+						organizationId,
+						patientId,
+						assignedRole: "receptionist",
+						channel: channel as never,
+						intent: "general",
+						status: "needs_call",
+						priority: "urgent",
+						dueAt: new Date(Date.now() + 60 * 1000),
+						title: `🚨 Экстренное сообщение ${channel.toUpperCase()}: ${triageResult.triageResult.clinicalSummary}`,
+						body: messageText,
+						workflowCode: "OMNICHANNEL_EMERGENCY_TRIAGE",
+					});
+				}
+			} catch (err) {
+				console.warn("[MessengerIngestion] Triage processing failed:", err);
+			}
+		}
+
 		await markAsProcessed(event.id);
 		return;
 	}
@@ -485,6 +527,22 @@ async function processSingleEvent(
 		.returning({ id: crmLeads.id });
 
 	if (lead) report.leadsCreated += 1;
+
+	// Semantic triage for unknown lead
+	try {
+		await defaultWhatsAppBridge.handleIncomingMessage({
+			messageId: event.id,
+			fromPhone: externalChatId || "Неизвестный номер",
+			rawText: messageText,
+			timestamp: event.createdAt,
+			patientId: null,
+			patientName: `Лид (${channel.toUpperCase()}: ${externalChatId || "чат"})`,
+			organizationId,
+			channel,
+		});
+	} catch (err) {
+		console.warn("[MessengerIngestion] Lead triage processing failed:", err);
+	}
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "INBOX_NEW_MESSAGE",

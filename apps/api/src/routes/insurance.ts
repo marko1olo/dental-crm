@@ -14,7 +14,7 @@ import {
 	insuranceCalculationItemSchema,
 	nonNegativeMoneyRubSchema,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike, or, type SQL } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -22,7 +22,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { insuranceContracts } from "../db/schema.js";
+import { dmsGuaranteeLetters, insuranceContracts } from "../db/schema.js";
 
 const calculateCoverageBodySchema = z.object({
 	usedAnnualAmountRub: nonNegativeMoneyRubSchema.default(0),
@@ -43,51 +43,6 @@ const recordUsageBodySchema = z.object({
 	notes: z.string().optional(),
 });
 
-// Изолированное хранилище гарантийных писем в памяти (организационный скоуп)
-const guaranteeLettersByOrg = new Map<string, DmsGuaranteeLetter[]>();
-
-function getOrgGuaranteeLetters(orgId: string): DmsGuaranteeLetter[] {
-	let list = guaranteeLettersByOrg.get(orgId);
-	if (!list) {
-		list = [
-			{
-				id: "letter-demo-01",
-				organizationId: orgId,
-				patientId: "pat-demo-1",
-				patientFullName: "Иванов Иван Иванович",
-				policyNumber: "77-ДМС-987654",
-				insurerKey: "sogaz",
-				insurerName: "АО «СОГАЗ»",
-				letterNumber: "ГП-2026/8412",
-				issueDate: "2026-08-01",
-				validFrom: "2026-08-01",
-				validUntil: "2026-09-30",
-				maxCoverageRub: 50000,
-				usedAmountRub: 12500,
-				franchisePct: 0,
-				franchiseType: "percent",
-				franchiseFixedRub: 0,
-				programExclusions: ["orthodontics", "implantology", "whitening", "veneers"],
-				approvedServiceCodes: [
-					"A16.07.002.001",
-					"A16.07.002.002",
-					"A16.07.030.001",
-					"A16.07.008.001",
-					"B01.003.004.001",
-				],
-				approvedTeethFdi: ["16", "17", "26", "46"],
-				approvedDiagnosisCodes: ["K02.1", "K04.0"],
-				curatorFullName: "Иванова Елена (Врач-эксперт)",
-				curatorPhone: "8 (800) 333-08-88 доб. 142",
-				notes: "Согласовано лечение кариеса и эндодонтия по острой боли.",
-				status: "active",
-				createdAt: new Date().toISOString(),
-			},
-		];
-		guaranteeLettersByOrg.set(orgId, list);
-	}
-	return list;
-}
 
 /**
  * Тела договоров ДМС раньше читались через bare destructure `const { … } = request.body`.
@@ -131,6 +86,8 @@ const INSURANCE_COMPANY_NAME_REQUIRED =
 /** Договора нет: причина и оба действия, доступных администратору. */
 const INSURANCE_CONTRACT_NOT_FOUND =
 	"Этот договор ДМС в вашей клинике не найден: возможно, его уже убрали из работы с другого рабочего места. Обновите список договоров — если договор нужен, добавьте его заново.";
+
+export const insuranceRoutes = registerInsuranceRoutes;
 
 export async function registerInsuranceRoutes(app: FastifyInstance) {
 	// GET all insurance contracts for the organization
@@ -547,35 +504,59 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { patientId, status, search } = request.query;
-		const allLetters = getOrgGuaranteeLetters(orgId);
+		const conditions: SQL[] = [eq(dmsGuaranteeLetters.organizationId, orgId)];
 
-		let filtered = allLetters.filter((l) => {
-			if (patientId && l.patientId !== patientId) return false;
-			if (status && l.status !== status) return false;
-			if (search && search.trim()) {
-				const q = search.trim().toLowerCase();
-				const matchNum = l.letterNumber.toLowerCase().includes(q);
-				const matchPat = l.patientFullName.toLowerCase().includes(q);
-				const matchIns = l.insurerName.toLowerCase().includes(q);
-				const matchPol = l.policyNumber.toLowerCase().includes(q);
-				if (!matchNum && !matchPat && !matchIns && !matchPol) return false;
-			}
-			return true;
-		});
+		if (patientId) {
+			conditions.push(eq(dmsGuaranteeLetters.patientId, patientId));
+		}
+		if (status) {
+			conditions.push(eq(dmsGuaranteeLetters.status, status));
+		}
+		if (search && search.trim()) {
+			const term = `%${search.trim().toLowerCase()}%`;
+			conditions.push(
+				or(
+					ilike(dmsGuaranteeLetters.letterNumber, term),
+					ilike(dmsGuaranteeLetters.patientFullName, term),
+					ilike(dmsGuaranteeLetters.insurerName, term),
+					ilike(dmsGuaranteeLetters.policyNumber, term),
+				)!,
+			);
+		}
+
+		const letters = await db
+			.select()
+			.from(dmsGuaranteeLetters)
+			.where(and(...conditions))
+			.orderBy(dmsGuaranteeLetters.createdAt);
 
 		// Check for auto-expiration based on current date
 		const todayIso = new Date().toISOString().slice(0, 10);
-		filtered = filtered.map((l) => {
+		const formatted = letters.map((l) => {
+			let computedStatus = l.status;
 			if (l.status === "active" && l.validUntil && l.validUntil < todayIso) {
-				return { ...l, status: "expired" as const };
+				computedStatus = "expired";
+			} else if (l.status === "active" && Number(l.usedAmountRub) >= Number(l.maxCoverageRub)) {
+				computedStatus = "exhausted";
 			}
-			if (l.status === "active" && l.usedAmountRub >= l.maxCoverageRub) {
-				return { ...l, status: "exhausted" as const };
-			}
-			return l;
+			return {
+				...l,
+				status: computedStatus as DmsGuaranteeLetter["status"],
+				maxCoverageRub: Number(l.maxCoverageRub),
+				usedAmountRub: Number(l.usedAmountRub),
+				franchisePct: Number(l.franchisePct),
+				franchiseType: (l.franchiseType as "percent" | "fixed_rub") || "percent",
+				franchiseFixedRub: Number(l.franchiseFixedRub),
+				programExclusions: (l.programExclusions as string[]) || [],
+				approvedServiceCodes: (l.approvedServiceCodes as string[]) || [],
+				approvedTeethFdi: (l.approvedTeethFdi as string[]) || [],
+				approvedDiagnosisCodes: (l.approvedDiagnosisCodes as string[]) || [],
+				createdAt: l.createdAt ? l.createdAt.toISOString() : new Date().toISOString(),
+				updatedAt: l.updatedAt ? l.updatedAt.toISOString() : new Date().toISOString(),
+			};
 		});
 
-		return reply.code(200).send(filtered);
+		return reply.code(200).send(formatted);
 	});
 
 	// GET single guarantee letter by id
@@ -590,7 +571,16 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			const { letterId } = request.params;
-			const letter = getOrgGuaranteeLetters(orgId).find((l) => l.id === letterId);
+			const [letter] = await db
+				.select()
+				.from(dmsGuaranteeLetters)
+				.where(
+					and(
+						eq(dmsGuaranteeLetters.id, letterId),
+						eq(dmsGuaranteeLetters.organizationId, orgId),
+					),
+				)
+				.limit(1);
 
 			if (!letter) {
 				return reply.code(404).send({
@@ -599,7 +589,29 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 				});
 			}
 
-			return reply.code(200).send(letter);
+			const todayIso = new Date().toISOString().slice(0, 10);
+			let computedStatus = letter.status;
+			if (letter.status === "active" && letter.validUntil && letter.validUntil < todayIso) {
+				computedStatus = "expired";
+			} else if (letter.status === "active" && Number(letter.usedAmountRub) >= Number(letter.maxCoverageRub)) {
+				computedStatus = "exhausted";
+			}
+
+			return reply.code(200).send({
+				...letter,
+				status: computedStatus as DmsGuaranteeLetter["status"],
+				maxCoverageRub: Number(letter.maxCoverageRub),
+				usedAmountRub: Number(letter.usedAmountRub),
+				franchisePct: Number(letter.franchisePct),
+				franchiseType: (letter.franchiseType as "percent" | "fixed_rub") || "percent",
+				franchiseFixedRub: Number(letter.franchiseFixedRub),
+				programExclusions: (letter.programExclusions as string[]) || [],
+				approvedServiceCodes: (letter.approvedServiceCodes as string[]) || [],
+				approvedTeethFdi: (letter.approvedTeethFdi as string[]) || [],
+				approvedDiagnosisCodes: (letter.approvedDiagnosisCodes as string[]) || [],
+				createdAt: letter.createdAt ? letter.createdAt.toISOString() : new Date().toISOString(),
+				updatedAt: letter.updatedAt ? letter.updatedAt.toISOString() : new Date().toISOString(),
+			});
 		},
 	);
 
@@ -636,40 +648,60 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const letters = getOrgGuaranteeLetters(orgId);
-		const newLetter: DmsGuaranteeLetter = {
-			id: data.id || `letter-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
-			organizationId: orgId,
-			contractId: data.contractId ?? null,
-			patientId: data.patientId,
-			patientFullName: data.patientFullName.trim(),
-			patientBirthDate: data.patientBirthDate ?? null,
-			policyNumber: data.policyNumber.trim(),
-			insurerKey: data.insurerKey || "custom",
-			insurerName: data.insurerName.trim(),
-			letterNumber: data.letterNumber.trim(),
-			issueDate: data.issueDate,
-			validFrom: data.validFrom,
-			validUntil: data.validUntil,
-			maxCoverageRub: data.maxCoverageRub,
-			usedAmountRub: data.usedAmountRub ?? 0,
-			franchisePct: data.franchisePct ?? 0,
-			franchiseType: data.franchiseType ?? "percent",
-			franchiseFixedRub: data.franchiseFixedRub ?? 0,
-			programExclusions: data.programExclusions ?? [],
-			approvedServiceCodes: data.approvedServiceCodes ?? [],
-			approvedTeethFdi: data.approvedTeethFdi ?? [],
-			approvedDiagnosisCodes: data.approvedDiagnosisCodes ?? [],
-			curatorFullName: data.curatorFullName ?? null,
-			curatorPhone: data.curatorPhone ?? null,
-			notes: data.notes ?? "",
-			status: data.status ?? "active",
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-		};
+		const [created] = await db
+			.insert(dmsGuaranteeLetters)
+			.values({
+				...(data.id ? { id: data.id } : {}),
+				organizationId: orgId,
+				contractId: data.contractId ?? null,
+				patientId: data.patientId,
+				patientFullName: data.patientFullName.trim(),
+				patientBirthDate: data.patientBirthDate ?? null,
+				policyNumber: data.policyNumber.trim(),
+				insurerKey: data.insurerKey || "custom",
+				insurerName: data.insurerName.trim(),
+				letterNumber: data.letterNumber.trim(),
+				issueDate: data.issueDate,
+				validFrom: data.validFrom,
+				validUntil: data.validUntil,
+				maxCoverageRub: data.maxCoverageRub,
+				usedAmountRub: data.usedAmountRub ?? 0,
+				franchisePct: data.franchisePct ?? 0,
+				franchiseType: data.franchiseType ?? "percent",
+				franchiseFixedRub: data.franchiseFixedRub ?? 0,
+				programExclusions: data.programExclusions ?? [],
+				approvedServiceCodes: data.approvedServiceCodes ?? [],
+				approvedTeethFdi: data.approvedTeethFdi ?? [],
+				approvedDiagnosisCodes: data.approvedDiagnosisCodes ?? [],
+				curatorFullName: data.curatorFullName ?? null,
+				curatorPhone: data.curatorPhone ?? null,
+				notes: data.notes ?? "",
+				status: data.status ?? "active",
+			})
+			.returning();
 
-		letters.unshift(newLetter);
-		return reply.code(201).send(newLetter);
+		if (!created) {
+			return reply.code(500).send({
+				error: "LetterNotSaved",
+				message: "Не удалось сохранить гарантийное письмо ДМС в базе данных.",
+			});
+		}
+
+		return reply.code(201).send({
+			...created,
+			status: created.status as DmsGuaranteeLetter["status"],
+			maxCoverageRub: Number(created.maxCoverageRub),
+			usedAmountRub: Number(created.usedAmountRub),
+			franchisePct: Number(created.franchisePct),
+			franchiseType: (created.franchiseType as "percent" | "fixed_rub") || "percent",
+			franchiseFixedRub: Number(created.franchiseFixedRub),
+			programExclusions: (created.programExclusions as string[]) || [],
+			approvedServiceCodes: (created.approvedServiceCodes as string[]) || [],
+			approvedTeethFdi: (created.approvedTeethFdi as string[]) || [],
+			approvedDiagnosisCodes: (created.approvedDiagnosisCodes as string[]) || [],
+			createdAt: created.createdAt.toISOString(),
+			updatedAt: created.updatedAt.toISOString(),
+		});
 	});
 
 	// PUT update an existing guarantee letter
@@ -684,10 +716,18 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			const { letterId } = request.params;
-			const letters = getOrgGuaranteeLetters(orgId);
-			const existingIndex = letters.findIndex((l) => l.id === letterId);
+			const [existing] = await db
+				.select()
+				.from(dmsGuaranteeLetters)
+				.where(
+					and(
+						eq(dmsGuaranteeLetters.id, letterId),
+						eq(dmsGuaranteeLetters.organizationId, orgId),
+					),
+				)
+				.limit(1);
 
-			if (existingIndex === -1) {
+			if (!existing) {
 				return reply.code(404).send({
 					error: "LetterNotFound",
 					message: "Гарантийное письмо ДМС не найдено в вашей клинике.",
@@ -703,30 +743,68 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const existing = letters[existingIndex]!;
-			const cleanUpdates = Object.fromEntries(
-				Object.entries(parsed.data).filter(([_, v]) => v !== undefined),
-			);
+			const d = parsed.data;
+			const updateData: Partial<typeof dmsGuaranteeLetters.$inferInsert> = {
+				updatedAt: new Date(),
+			};
 
-			const updatedLetter: DmsGuaranteeLetter = {
-				...existing,
-				...cleanUpdates,
-				status: (cleanUpdates.status as DmsGuaranteeLetter["status"]) ?? existing.status,
-				id: existing.id,
-				organizationId: orgId,
-				updatedAt: new Date().toISOString(),
-			} as DmsGuaranteeLetter;
+			if (d.contractId !== undefined) updateData.contractId = d.contractId ?? null;
+			if (d.patientId !== undefined) updateData.patientId = d.patientId;
+			if (d.patientFullName !== undefined) updateData.patientFullName = d.patientFullName.trim();
+			if (d.patientBirthDate !== undefined) updateData.patientBirthDate = d.patientBirthDate ?? null;
+			if (d.policyNumber !== undefined) updateData.policyNumber = d.policyNumber.trim();
+			if (d.insurerKey !== undefined) updateData.insurerKey = d.insurerKey;
+			if (d.insurerName !== undefined) updateData.insurerName = d.insurerName.trim();
+			if (d.letterNumber !== undefined) updateData.letterNumber = d.letterNumber.trim();
+			if (d.issueDate !== undefined) updateData.issueDate = d.issueDate;
+			if (d.validFrom !== undefined) updateData.validFrom = d.validFrom;
+			if (d.validUntil !== undefined) updateData.validUntil = d.validUntil;
+			if (d.maxCoverageRub !== undefined) updateData.maxCoverageRub = d.maxCoverageRub;
+			if (d.usedAmountRub !== undefined) updateData.usedAmountRub = d.usedAmountRub;
+			if (d.franchisePct !== undefined) updateData.franchisePct = d.franchisePct;
+			if (d.franchiseType !== undefined) updateData.franchiseType = d.franchiseType;
+			if (d.franchiseFixedRub !== undefined) updateData.franchiseFixedRub = d.franchiseFixedRub;
+			if (d.programExclusions !== undefined) updateData.programExclusions = d.programExclusions;
+			if (d.approvedServiceCodes !== undefined) updateData.approvedServiceCodes = d.approvedServiceCodes;
+			if (d.approvedTeethFdi !== undefined) updateData.approvedTeethFdi = d.approvedTeethFdi;
+			if (d.approvedDiagnosisCodes !== undefined) updateData.approvedDiagnosisCodes = d.approvedDiagnosisCodes;
+			if (d.curatorFullName !== undefined) updateData.curatorFullName = d.curatorFullName ?? null;
+			if (d.curatorPhone !== undefined) updateData.curatorPhone = d.curatorPhone ?? null;
+			if (d.notes !== undefined) updateData.notes = d.notes;
+			if (d.status !== undefined) updateData.status = d.status;
 
-			// Auto status check on limit exhaustion
-			if (
-				updatedLetter.status === "active" &&
-				updatedLetter.usedAmountRub >= updatedLetter.maxCoverageRub
-			) {
-				updatedLetter.status = "exhausted";
+			const finalMax = updateData.maxCoverageRub !== undefined ? Number(updateData.maxCoverageRub) : Number(existing.maxCoverageRub);
+			const finalUsed = updateData.usedAmountRub !== undefined ? Number(updateData.usedAmountRub) : Number(existing.usedAmountRub);
+			if (finalUsed >= finalMax && updateData.status === undefined) {
+				updateData.status = "exhausted";
 			}
 
-			letters[existingIndex] = updatedLetter;
-			return reply.code(200).send(updatedLetter);
+			const [updated] = await db
+				.update(dmsGuaranteeLetters)
+				.set(updateData)
+				.where(
+					and(
+						eq(dmsGuaranteeLetters.id, letterId),
+						eq(dmsGuaranteeLetters.organizationId, orgId),
+					),
+				)
+				.returning();
+
+			return reply.code(200).send({
+				...updated,
+				status: updated!.status as DmsGuaranteeLetter["status"],
+				maxCoverageRub: Number(updated!.maxCoverageRub),
+				usedAmountRub: Number(updated!.usedAmountRub),
+				franchisePct: Number(updated!.franchisePct),
+				franchiseType: (updated!.franchiseType as "percent" | "fixed_rub") || "percent",
+				franchiseFixedRub: Number(updated!.franchiseFixedRub),
+				programExclusions: (updated!.programExclusions as string[]) || [],
+				approvedServiceCodes: (updated!.approvedServiceCodes as string[]) || [],
+				approvedTeethFdi: (updated!.approvedTeethFdi as string[]) || [],
+				approvedDiagnosisCodes: (updated!.approvedDiagnosisCodes as string[]) || [],
+				createdAt: updated!.createdAt.toISOString(),
+				updatedAt: updated!.updatedAt.toISOString(),
+			});
 		},
 	);
 
@@ -742,18 +820,33 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			const { letterId } = request.params;
-			const letters = getOrgGuaranteeLetters(orgId);
-			const letter = letters.find((l) => l.id === letterId);
+			const [existing] = await db
+				.select({ id: dmsGuaranteeLetters.id })
+				.from(dmsGuaranteeLetters)
+				.where(
+					and(
+						eq(dmsGuaranteeLetters.id, letterId),
+						eq(dmsGuaranteeLetters.organizationId, orgId),
+					),
+				)
+				.limit(1);
 
-			if (!letter) {
+			if (!existing) {
 				return reply.code(404).send({
 					error: "LetterNotFound",
 					message: "Гарантийное письмо ДМС не найдено в вашей клинике.",
 				});
 			}
 
-			letter.status = "cancelled";
-			letter.updatedAt = new Date().toISOString();
+			await db
+				.update(dmsGuaranteeLetters)
+				.set({ status: "cancelled", updatedAt: new Date() })
+				.where(
+					and(
+						eq(dmsGuaranteeLetters.id, letterId),
+						eq(dmsGuaranteeLetters.organizationId, orgId),
+					),
+				);
 
 			return reply.code(200).send({
 				success: true,
@@ -763,7 +856,7 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 		},
 	);
 
-	// POST record usage against a guarantee letter
+	// POST record usage against a guarantee letter (ACID Transaction)
 	app.post<{ Params: { letterId: string } }>(
 		"/api/insurance/guarantee-letters/:letterId/record-usage",
 		async (request, reply) => {
@@ -775,16 +868,6 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			const { letterId } = request.params;
-			const letters = getOrgGuaranteeLetters(orgId);
-			const letter = letters.find((l) => l.id === letterId);
-
-			if (!letter) {
-				return reply.code(404).send({
-					error: "LetterNotFound",
-					message: "Гарантийное письмо ДМС не найдено в вашей клинике.",
-				});
-			}
-
 			const parsed = recordUsageBodySchema.safeParse(request.body);
 			if (!parsed.success) {
 				const msg = parsed.error.issues[0]?.message ?? "Укажите корректную сумму списания по ГП.";
@@ -795,30 +878,103 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			}
 
 			const { amountRub } = parsed.data;
-			const remainingBefore = Math.max(0, letter.maxCoverageRub - letter.usedAmountRub);
 
-			if (amountRub > remainingBefore) {
-				return reply.code(400).send({
-					error: "LimitExceeded",
-					message: `Сумма списания (${amountRub} ₽) превышает остаток по гарантийному письму (${remainingBefore} ₽).`,
-				});
-			}
+			const result = await db.transaction(async (tx) => {
+				const [letter] = await tx
+					.select()
+					.from(dmsGuaranteeLetters)
+					.where(
+						and(
+							eq(dmsGuaranteeLetters.id, letterId),
+							eq(dmsGuaranteeLetters.organizationId, orgId),
+						),
+					)
+					.for("update")
+					.limit(1);
 
-			const newUsedAmount = Math.round((letter.usedAmountRub + amountRub) * 100) / 100;
-			letter.usedAmountRub = newUsedAmount;
-			if (letter.usedAmountRub >= letter.maxCoverageRub) {
-				letter.status = "exhausted";
-			}
-			letter.updatedAt = new Date().toISOString();
+				if (!letter) {
+					return {
+						status: 404,
+						error: {
+							error: "LetterNotFound",
+							message: "Гарантийное письмо ДМС не найдено в вашей клинике.",
+						},
+					};
+				}
 
-			return reply.code(200).send({
-				success: true,
-				letterId: letter.id,
-				debitedAmountRub: amountRub,
-				usedAmountRub: letter.usedAmountRub,
-				remainingCoverageRub: Math.max(0, letter.maxCoverageRub - letter.usedAmountRub),
-				status: letter.status,
+				if (letter.status === "cancelled") {
+					return {
+						status: 400,
+						error: {
+							error: "LetterCancelled",
+							message: "Гарантийное письмо аннулировано и не может быть использовано для списания.",
+						},
+					};
+				}
+
+				const todayIso = new Date().toISOString().slice(0, 10);
+				if (letter.validUntil && letter.validUntil < todayIso) {
+					return {
+						status: 400,
+						error: {
+							error: "LetterExpired",
+							message: `Срок действия гарантийного письма истёк (${letter.validUntil}).`,
+						},
+					};
+				}
+
+				const maxCoverage = Number(letter.maxCoverageRub);
+				const currentUsed = Number(letter.usedAmountRub);
+				const remainingBefore = Math.max(0, Math.round((maxCoverage - currentUsed) * 100) / 100);
+
+				if (amountRub > remainingBefore) {
+					return {
+						status: 400,
+						error: {
+							error: "LimitExceeded",
+							message: `Сумма списания (${amountRub} ₽) превышает остаток по гарантийному письму (${remainingBefore} ₽).`,
+						},
+					};
+				}
+
+				const newUsedAmount = Math.round((currentUsed + amountRub) * 100) / 100;
+				let newStatus = letter.status;
+				if (newUsedAmount >= maxCoverage) {
+					newStatus = "exhausted";
+				}
+
+				const [updated] = await tx
+					.update(dmsGuaranteeLetters)
+					.set({
+						usedAmountRub: newUsedAmount,
+						status: newStatus,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(dmsGuaranteeLetters.id, letterId),
+							eq(dmsGuaranteeLetters.organizationId, orgId),
+						),
+					)
+					.returning();
+
+				return {
+					status: 200,
+					data: {
+						success: true,
+						letterId: updated!.id,
+						debitedAmountRub: amountRub,
+						usedAmountRub: Number(updated!.usedAmountRub),
+						remainingCoverageRub: Math.max(0, Math.round((maxCoverage - newUsedAmount) * 100) / 100),
+						status: updated!.status,
+					},
+				};
 			});
+
+			if (result.status !== 200) {
+				return reply.code(result.status).send(result.error);
+			}
+			return reply.code(200).send(result.data);
 		},
 	);
 
@@ -842,10 +998,52 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 
 		const { letterId, contractId, visitDate, items } = parsed.data;
 
-		// 1. Поиск гарантийного письма
+		// 1. Поиск гарантийного письма из базы данных PostgreSQL
 		let letter: DmsGuaranteeLetter | null = null;
 		if (letterId) {
-			letter = getOrgGuaranteeLetters(orgId).find((l) => l.id === letterId) ?? null;
+			const [foundLetter] = await db
+				.select()
+				.from(dmsGuaranteeLetters)
+				.where(
+					and(
+						eq(dmsGuaranteeLetters.id, letterId),
+						eq(dmsGuaranteeLetters.organizationId, orgId),
+					),
+				)
+				.limit(1);
+
+			if (foundLetter) {
+				letter = {
+					id: foundLetter.id,
+					organizationId: foundLetter.organizationId,
+					contractId: foundLetter.contractId,
+					patientId: foundLetter.patientId,
+					patientFullName: foundLetter.patientFullName,
+					patientBirthDate: foundLetter.patientBirthDate,
+					policyNumber: foundLetter.policyNumber,
+					insurerKey: foundLetter.insurerKey,
+					insurerName: foundLetter.insurerName,
+					letterNumber: foundLetter.letterNumber,
+					issueDate: foundLetter.issueDate,
+					validFrom: foundLetter.validFrom,
+					validUntil: foundLetter.validUntil,
+					maxCoverageRub: Number(foundLetter.maxCoverageRub),
+					usedAmountRub: Number(foundLetter.usedAmountRub),
+					franchisePct: Number(foundLetter.franchisePct),
+					franchiseType: (foundLetter.franchiseType as "percent" | "fixed_rub") || "percent",
+					franchiseFixedRub: Number(foundLetter.franchiseFixedRub),
+					programExclusions: (foundLetter.programExclusions as string[]) || [],
+					approvedServiceCodes: (foundLetter.approvedServiceCodes as string[]) || [],
+					approvedTeethFdi: (foundLetter.approvedTeethFdi as string[]) || [],
+					approvedDiagnosisCodes: (foundLetter.approvedDiagnosisCodes as string[]) || [],
+					curatorFullName: foundLetter.curatorFullName,
+					curatorPhone: foundLetter.curatorPhone,
+					notes: foundLetter.notes,
+					status: (foundLetter.status as DmsGuaranteeLetter["status"]) || "active",
+					createdAt: foundLetter.createdAt.toISOString(),
+					updatedAt: foundLetter.updatedAt.toISOString(),
+				};
+			}
 		}
 
 		// 2. Поиск договора ДМС (если передан contractId)
@@ -888,4 +1086,5 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 		return reply.code(200).send(splitResult);
 	});
 }
+
 
