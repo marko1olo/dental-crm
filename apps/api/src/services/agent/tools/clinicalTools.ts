@@ -31,6 +31,7 @@ import {
 	type PlanStageKind,
 	type ToothSurface,
 	type Kopecks,
+	auditClinicalDrugSafety,
 } from "@dental/shared";
 import { and, desc, eq, gte, ilike, lte, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -207,7 +208,7 @@ export interface DrugSafetyAuditResult {
 	conditionContraindications: {
 		condition: string;
 		proposedDrug: string;
-		severity: "critical" | "high" | "warning";
+		severity: "critical" | "high" | "warning" | "moderate" | "minor";
 		reasonRu: string;
 		clinicalGuidanceRu: string;
 	}[];
@@ -233,7 +234,7 @@ export async function performClinicalDrugSafetyAudit(
 	const conditionContraindications: {
 		condition: string;
 		proposedDrug: string;
-		severity: "critical" | "high" | "warning";
+		severity: "critical" | "high" | "warning" | "moderate" | "minor";
 		reasonRu: string;
 		clinicalGuidanceRu: string;
 	}[] = [];
@@ -298,390 +299,47 @@ export async function performClinicalDrugSafetyAudit(
 		}
 	}
 
-	// 2. Allergy & Cross-Reactivity Auditing
-	for (const proposed of params.proposedMedications) {
-		const propLower = proposed.toLowerCase();
-
-		// Beta-lactams / Penicillins
-		const isBetaLactam =
-			propLower.includes("amox") ||
-			propLower.includes("penicil") ||
-			propLower.includes("амоксициллин") ||
-			propLower.includes("амоксиклав") ||
-			propLower.includes("аугментин") ||
-			propLower.includes("флемоксин") ||
-			propLower.includes("ампициллин") ||
-			propLower.includes("цефалоспорин") ||
-			propLower.includes("цефтриаксон");
-
-		const hasPenicillinAllergy = unifiedAllergies.some(
-			(a) =>
-				a.includes("пенициллин") ||
-				a.includes("пеницилин") ||
-				a.includes("бета-лактам") ||
-				a.includes("penicillin") ||
-				a.includes("amoxicillin") ||
-				a.includes("амоксиклав"),
-		);
-
-		if (isBetaLactam && hasPenicillinAllergy) {
-			blockedPrescriptions.add(proposed);
-			allergyWarnings.push({
-				allergenGroup: "Пенициллины и бета-лактамные антибиотики",
-				proposedDrug: proposed,
-				severity: "critical",
-				manifestations: "Анафилактический шок, ангионевротический отек Квинке, генерализованная крапивница",
-			});
-			safeAlternativeRecommendations.push({
-				originalDrug: proposed,
-				recommendedAlternatives: [
-					"Сумамед (Азитромицин 500 мг 1 раз/сут, 3 дня)",
-					"Клиндамицин (300 мг 3 раза/сут, 5–7 дней)",
-					"Линкомицин (500 мг 3 раза/сут)",
-				],
-				rationaleRu: "При аллергии на пенициллины препаратами выбора являются макролиды или линкозамиды.",
-			});
-		}
-
-		// NSAIDs / Aspirin (Samter's Triad)
-		const isNsaid =
-			propLower.includes("ibu") ||
-			propLower.includes("nimesul") ||
-			propLower.includes("ketorol") ||
-			propLower.includes("ketoprophen") ||
-			propLower.includes("diclofen") ||
-			propLower.includes("aspirin") ||
-			propLower.includes("ибупрофен") ||
-			propLower.includes("нимесил") ||
-			propLower.includes("нимесулид") ||
-			propLower.includes("кетанов") ||
-			propLower.includes("кеторолак") ||
-			propLower.includes("кетонал") ||
-			propLower.includes("дексалгин") ||
-			propLower.includes("дескетопрофен") ||
-			propLower.includes("аспирин") ||
-			propLower.includes("диклофенак");
-
-		const hasNsaidAllergy =
-			unifiedAllergies.some(
-				(a) =>
-					a.includes("нпвс") ||
-					a.includes("аспирин") ||
-					a.includes("nsaid") ||
-					a.includes("ибупрофен") ||
-					a.includes("нимесулид"),
-			) ||
-			unifiedConditions.some(
-				(c) =>
-					c.includes("samter") ||
-					c.includes("аспиринов") ||
-					c.includes("триада"),
-			);
-
-		if (isNsaid && hasNsaidAllergy) {
-			blockedPrescriptions.add(proposed);
-			allergyWarnings.push({
-				allergenGroup: "НПВС / Салицилаты (Аспириновая триада)",
-				proposedDrug: proposed,
-				severity: "critical",
-				manifestations: "Тяжелый бронхоспазм (аспириновая астма), отек гортани, анафилаксия",
-			});
-			safeAlternativeRecommendations.push({
-				originalDrug: proposed,
-				recommendedAlternatives: [
-					"Парацетамол (500–1000 мг до 3 раз/сут)",
-					"Трамадол (50 мг внутрь при выраженной постоперационной боли)",
-					"Местная холодовая гипотермия",
-				],
-				rationaleRu: "Парацетамол не ингибирует периферический синтез простагландинов и безопасен при аспириновой астме.",
-			});
-		}
-
-		// Sulfites (Vasoconstrictor stabilizers in Local Anesthetics)
-		const hasVasoconstrictor =
-			propLower.includes("1:100") ||
-			propLower.includes("1:200") ||
-			propLower.includes("эпинефрин") ||
-			propLower.includes("адреналин") ||
-			propLower.includes("ultracain") ||
-			propLower.includes("ультракаин дс") ||
-			propLower.includes("septanest") ||
-			propLower.includes("септанест") ||
-			propLower.includes("ubistesin") ||
-			propLower.includes("убистезин");
-
-		const hasSulfiteAllergy =
-			unifiedAllergies.some(
-				(a) =>
-					a.includes("сульфит") ||
-					a.includes("метабисульфит") ||
-					a.includes("sulfite"),
-			) ||
-			unifiedConditions.some(
-				(c) =>
-					c.includes("asthma") ||
-					c.includes("астма") ||
-					c.includes("bronchial_asthma"),
-			);
-
-		if (hasVasoconstrictor && hasSulfiteAllergy) {
-			blockedPrescriptions.add(proposed);
-			allergyWarnings.push({
-				allergenGroup: "Сульфиты / Метабисульфит натрия (стабилизатор адреналина)",
-				proposedDrug: proposed,
-				severity: "critical",
-				manifestations: "Острый анафилактоидный бронхоспазм у пациентов с астмой/сульфитной гиперчувствительностью",
-			});
-			safeAlternativeRecommendations.push({
-				originalDrug: proposed,
-				recommendedAlternatives: [
-					"Скандонест 3% без вазоконстриктора (Мепивакаин 30 мг/мл)",
-					"Мепивастезин 3% без адреналина",
-					"Ультракаин Д (без консервантов и сульфитов)",
-				],
-				rationaleRu: "Мепивакаин не содержит метабисульфита натрия и обладает собственной умеренной вазоконстрикторной активностью.",
-			});
-		}
-	}
-
-	// 3. Somatic & Pregnancy Contraindication Audits
-	for (const proposed of params.proposedMedications) {
-		const propLower = proposed.toLowerCase();
-		const isNsaid =
-			propLower.includes("ibu") ||
-			propLower.includes("nimesul") ||
-			propLower.includes("ketorol") ||
-			propLower.includes("ketoprophen") ||
-			propLower.includes("diclofen") ||
-			propLower.includes("ибупрофен") ||
-			propLower.includes("нимесил") ||
-			propLower.includes("нимесулид") ||
-			propLower.includes("кетанов") ||
-			propLower.includes("кеторолак") ||
-			propLower.includes("кетонал") ||
-			propLower.includes("дексалгин");
-
-		// Pregnancy 3rd Trimester
-		const isPregnancy3rd = unifiedConditions.some(
-			(c) =>
-				c.includes("pregnancy_3rd_trimester") ||
-				c.includes("3 триместр") ||
-				c.includes("третий триместр"),
-		);
-
-		if (isNsaid && isPregnancy3rd) {
-			blockedPrescriptions.add(proposed);
-			conditionContraindications.push({
-				condition: "Беременность (III триместр)",
-				proposedDrug: proposed,
-				severity: "critical",
-				reasonRu: "Абсолютное противопоказание: риск преждевременного закрытия артериального протока (ductus arteriosus) у плода, легочной гипертензии и маловодия.",
-				clinicalGuidanceRu: "Категорически отменить НПВС. Назначить Парацетамол 500 мг (максимально безопасный анальгетик при беременности).",
-			});
-			safeAlternativeRecommendations.push({
-				originalDrug: proposed,
-				recommendedAlternatives: ["Парацетамол 500 мг внутрь"],
-				rationaleRu: "Парацетамол разрешен на всех сроках беременности.",
-			});
-		}
-
-		// Peptic Ulcer Active
-		const hasPepticUlcer = unifiedConditions.some(
-			(c) =>
-				c.includes("peptic_ulcer") ||
-				c.includes("язва") ||
-				c.includes("эрозивный гастрит"),
-		);
-
-		if (isNsaid && hasPepticUlcer) {
-			conditionContraindications.push({
-				condition: "Язвенная болезнь желудка и 12-перстной кишки / Эрозивный гастрит",
-				proposedDrug: proposed,
-				severity: "high",
-				reasonRu: "Системные НПВС ингибируют ЦОГ-1 и гастропротективные простагландины, провоцируя рецидив язвенного кровотечения.",
-				clinicalGuidanceRu: "Заменить на Парацетамол либо обязательно комбинировать НПВС с ингибитором протонной помпы (Омепразол 20 мг утром за 30 мин до еды).",
-			});
-		}
-	}
-
-	// 4. Drug-Drug Interactions (DDI) via Formulary Engine & Pattern Matching
-	const allDrugs = [
-		...params.proposedMedications,
-		...(params.existingMedications || []),
-		...unifiedConditions,
-	];
-	const rawInteractions: DentalDrugInteractionRule[] =
-		checkDentalMedicationInteractions(allDrugs);
-
-	const formattedDdi: {
-		primaryDrug: string;
-		interactingDrug: string;
-		severity: "critical" | "high" | "moderate" | "minor";
-		effectDescriptionRu: string;
-		clinicalRecommendationRu: string;
-	}[] = rawInteractions.map((i) => ({
-		primaryDrug: i.drugAId,
-		interactingDrug: i.drugBId,
-		severity:
-			i.severity === "critical"
-				? "critical"
-				: i.severity === "warning"
-					? "high"
-					: "moderate",
-		effectDescriptionRu: i.riskDescriptionRu,
-		clinicalRecommendationRu: i.clinicalRecommendationRu,
-	}));
-
-	// Pattern-based DDI checks across proposed and existing medications
-	const allMedStrings = [
-		...params.proposedMedications.map((m) => ({ name: m, lower: m.toLowerCase(), isProposed: true })),
-		...(params.existingMedications || []).map((m) => ({ name: m, lower: m.toLowerCase(), isProposed: false })),
-	];
-
-	// Check NSAID + Anticoagulants
-	const nsaidItems = allMedStrings.filter(
-		(m) =>
-			m.lower.includes("ibu") ||
-			m.lower.includes("nimesul") ||
-			m.lower.includes("ketorol") ||
-			m.lower.includes("ketoprophen") ||
-			m.lower.includes("diclofen") ||
-			m.lower.includes("aspirin") ||
-			m.lower.includes("ибупрофен") ||
-			m.lower.includes("нимесил") ||
-			m.lower.includes("нимесулид") ||
-			m.lower.includes("кетанов") ||
-			m.lower.includes("кеторолак") ||
-			m.lower.includes("кетонал") ||
-			m.lower.includes("дексалгин") ||
-			m.lower.includes("диклофенак") ||
-			m.lower.includes("аспирин"),
-	);
-
-	const anticoags = allMedStrings.filter(
-		(m) =>
-			m.lower.includes("warfarin") ||
-			m.lower.includes("варфарин") ||
-			m.lower.includes("xarelto") ||
-			m.lower.includes("ксарелто") ||
-			m.lower.includes("rivaroxaban") ||
-			m.lower.includes("ривароксабан") ||
-			m.lower.includes("eliquis") ||
-			m.lower.includes("эликвис") ||
-			m.lower.includes("apixaban") ||
-			m.lower.includes("апиксабан") ||
-			m.lower.includes("pradaxa") ||
-			m.lower.includes("прадакса") ||
-			m.lower.includes("dabigatran") ||
-			m.lower.includes("дабигатран") ||
-			m.lower.includes("clopidogrel") ||
-			m.lower.includes("клопидогрел") ||
-			m.lower.includes("plavix") ||
-			m.lower.includes("плавикс") ||
-			m.lower.includes("anticoagulant") ||
-			m.lower.includes("антикоагулянт") ||
-			m.lower.includes("doac"),
-	);
-
-	if (nsaidItems.length > 0 && anticoags.length > 0) {
-		for (const nsaid of nsaidItems) {
-			for (const ac of anticoags) {
-				if (nsaid.name !== ac.name) {
-					if (!formattedDdi.some((d) => d.primaryDrug === nsaid.name && d.interactingDrug === ac.name)) {
-						formattedDdi.push({
-							primaryDrug: nsaid.name,
-							interactingDrug: ac.name,
-							severity: "critical",
-							effectDescriptionRu: "НПВП в комбинации с антикоагулянтами резко повышают риск желудочно-кишечных и постоперационных кровотечений",
-							clinicalRecommendationRu: "Заменить НПВП на парацетамол (до 2000 мг/сут). Избегать кеторолака и аспирина.",
-						});
-					}
-				}
-			}
-		}
-	}
-
-	// Check Epinephrine + Non-selective beta blockers
-	const epiItems = allMedStrings.filter(
-		(m) =>
-			m.lower.includes("1:100") ||
-			m.lower.includes("1:200") ||
-			m.lower.includes("эпинефрин") ||
-			m.lower.includes("адреналин") ||
-			m.lower.includes("ultracain") ||
-			m.lower.includes("septanest") ||
-			m.lower.includes("ubistesin"),
-	);
-
-	const betaBlockers = allMedStrings.filter(
-		(m) =>
-			m.lower.includes("propranolol") ||
-			m.lower.includes("пропранолол") ||
-			m.lower.includes("анаприлин") ||
-			m.lower.includes("sotalol") ||
-			m.lower.includes("соталол") ||
-			m.lower.includes("non_selective_beta_blockers"),
-	);
-
-	if (epiItems.length > 0 && betaBlockers.length > 0) {
-		for (const epi of epiItems) {
-			for (const bb of betaBlockers) {
-				if (!formattedDdi.some((d) => d.primaryDrug === epi.name && d.interactingDrug === bb.name)) {
-					formattedDdi.push({
-						primaryDrug: epi.name,
-						interactingDrug: bb.name,
-						severity: "critical",
-						effectDescriptionRu: "Эпинефрин на фоне неселективных бета-блокаторов (пропранолол) вызывает тяжелый гипертонический криз с рефлекторной брадикардией",
-						clinicalRecommendationRu: "Использовать местный анестетик БЕЗ вазоконстриктора (Мепивакаин 3%).",
-					});
-				}
-			}
-		}
-	}
-
-	for (const i of formattedDdi) {
-		if (i.severity === "critical" || i.severity === "high") {
-			blockedPrescriptions.add(i.primaryDrug);
-			blockedPrescriptions.add(i.interactingDrug);
-		}
-	}
-
-	const hasCriticalAllergy = allergyWarnings.some(
-		(w) => w.severity === "critical",
-	);
-	const hasCriticalDdi = formattedDdi.some((d) => d.severity === "critical");
-	const hasCriticalCondition = conditionContraindications.some(
-		(c) => c.severity === "critical",
-	);
-
-	const isSafe =
-		!hasCriticalAllergy && !hasCriticalDdi && !hasCriticalCondition;
-	const riskLevel: "safe" | "caution" | "critical_danger" = !isSafe
-		? "critical_danger"
-		: allergyWarnings.length > 0 ||
-			  formattedDdi.length > 0 ||
-			  conditionContraindications.length > 0
-			? "caution"
-			: "safe";
-
-	const summaryRu = !isSafe
-		? `ВНИМАНИЕ! Обнаружены критические противопоказания / несовместимость (${blockedPrescriptions.size} препаратов заблокировано). Назначение опасно для жизни пациента.`
-		: riskLevel === "caution"
-			? `Препараты назначены с предосторожностями (выявлены умеренные взаимодействия или соматические ограничения). Требуется учет рекомендаций.`
-			: `Фармакотерапевтический аудит пройден успешно: аллергических конфликтов, DDI несовместимости и противопоказаний не выявлено.`;
+	// 2. Execute clinical DDI & Allergy Drug Safety Audit via pure shared engine
+	const audit = auditClinicalDrugSafety({
+		proposedMedications: params.proposedMedications,
+		existingMedications: params.existingMedications || [],
+		patientConditions: unifiedConditions,
+		knownAllergies: unifiedAllergies,
+	});
 
 	return {
-		isSafe,
-		riskLevel,
-		hasAllergyClash: allergyWarnings.length > 0,
-		hasSevereDdi: formattedDdi.length > 0,
-		hasConditionContraindication: conditionContraindications.length > 0,
-		blockedPrescriptions: Array.from(blockedPrescriptions),
-		allergyWarnings,
-		drugInteractions: formattedDdi,
-		conditionContraindications,
-		safeAlternativeRecommendations,
-		summaryRu,
+		isSafe: audit.isSafe,
+		riskLevel: audit.riskLevel,
+		hasAllergyClash: audit.hasAllergyClash,
+		hasSevereDdi: audit.hasSevereDdi,
+		hasConditionContraindication: audit.hasConditionContraindication,
+		blockedPrescriptions: [...audit.blockedPrescriptions],
+		allergyWarnings: audit.allergyWarnings.map((w) => ({
+			allergenGroup: w.allergenGroup,
+			proposedDrug: w.proposedDrug,
+			severity: w.severity,
+			manifestations: w.manifestationsRu,
+		})),
+		drugInteractions: audit.drugInteractions.map((i) => ({
+			primaryDrug: i.primaryDrug,
+			interactingDrug: i.interactingDrug,
+			severity: i.severity,
+			effectDescriptionRu: i.effectDescriptionRu,
+			clinicalRecommendationRu: i.clinicalRecommendationRu,
+		})),
+		conditionContraindications: audit.conditionContraindications.map((c) => ({
+			condition: c.condition,
+			proposedDrug: c.proposedDrug,
+			severity: c.severity,
+			reasonRu: c.reasonRu,
+			clinicalGuidanceRu: c.clinicalGuidanceRu,
+		})),
+		safeAlternativeRecommendations: audit.safeAlternativeRecommendations.map((r) => ({
+			originalDrug: r.originalDrug,
+			recommendedAlternatives: [...r.recommendedAlternatives],
+			rationaleRu: r.rationaleRu,
+		})),
+		summaryRu: audit.summaryRu,
 	};
 }
 
