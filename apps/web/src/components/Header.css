@@ -52,6 +52,9 @@
 	align-items: center;
 	gap: 4.5px;
 	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	min-width: 0;
 }
 
 .dnt-pill-divider {
