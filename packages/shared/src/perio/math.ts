@@ -3,6 +3,7 @@ import {
 	PERIO_LOWER_ARCH_TEETH,
 	PERIO_SITE_KEYS,
 	PERIO_UPPER_ARCH_TEETH,
+	type PerioChartData,
 	type PerioChartSummary,
 	type PerioSiteKey,
 	type PerioToothRecord,
@@ -323,3 +324,55 @@ export function calculatePerioIndices(teeth: PerioToothRecord[]): PerioChartSumm
 }
 
 export { calculateClinicalAttachmentLevel as calculateSepaCal };
+
+/**
+ * Creates default intact periodontal dentition for 32 teeth (FDI 11..48).
+ * Standard healthy probing depth: default 2mm (1-3mm norm), 0mm recession, BOP 0%.
+ */
+export function createDefaultPerioTeeth(probingDepthMm = 2): PerioToothRecord[] {
+	const defaultSite = (pd: number) => ({
+		probingDepthMm: pd,
+		gingivalMarginMm: 0,
+		bleedingOnProbing: false,
+		suppuration: false,
+		plaque: false,
+		calculus: false,
+		calMm: pd,
+	});
+
+	return ALL_PERIO_TEETH.map((toothNumber) => ({
+		toothNumber,
+		isMissing: false,
+		isImplant: false,
+		mobility: 0 as const,
+		furcation: 0 as const,
+		distoBuccal: defaultSite(probingDepthMm),
+		midBuccal: defaultSite(probingDepthMm),
+		mesioBuccal: defaultSite(probingDepthMm),
+		distoLingual: defaultSite(probingDepthMm),
+		midLingual: defaultSite(probingDepthMm),
+		mesioLingual: defaultSite(probingDepthMm),
+	}));
+}
+
+/**
+ * Creates an intact periodontal chart entity ready for persistence or rendering.
+ */
+export function createIntactPerioChart(
+	patientId: string,
+	organizationId: string,
+	doctorId?: string | null,
+): PerioChartData {
+	const teeth = createDefaultPerioTeeth(2);
+	const summary = calculatePerioIndices(teeth);
+	return {
+		organizationId,
+		patientId,
+		doctorId: doctorId ?? null,
+		chartDate: new Date().toISOString(),
+		teeth,
+		summary,
+		praRisk: summary.riskCategory,
+	};
+}
+

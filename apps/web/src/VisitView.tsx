@@ -13,6 +13,7 @@ import { VisitMainTabs, type VisitSubViewTab } from "./components/visit/VisitMai
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import { VisitTimer } from "./components/visit/VisitTimer";
+import { PeriodontogramChart } from "./components/perio/PeriodontogramChart";
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { SmartParsePreview } from "./SmartParsePreview";
@@ -1057,36 +1058,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				)}
 
 				{visitSubViewTab === "perio" && activePatient?.id && (
-					<div className="p-6 bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] rounded-xl flex flex-col gap-4 text-[var(--ink,#f8fafc)]" style={{ margin: "16px 0" }}>
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-3">
-								<Activity size={22} className="text-teal-400 shrink-0" />
-								<div>
-									<h3 className="text-base font-bold text-teal-400">Пародонтальный скрининг (PSR / СтАР 2017)</h3>
-									<p className="text-xs text-[var(--muted,#94a3b8)]">Экспресс-оценка глубины зондирования и кровоточивости по 6 секстантам</p>
-								</div>
-							</div>
-							<span className="px-3 py-1 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded-full text-xs font-semibold">
-								Интактный пародонт (Код 0)
-							</span>
-						</div>
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-							<div className="p-3 bg-[var(--paper-soft,#1e293b)] rounded-lg border border-[var(--line,#334155)]">
-								<div className="font-semibold text-[var(--ink,#f8fafc)]">Фронтальный отдел (13–23, 33–43)</div>
-								<div className="text-emerald-400 font-mono mt-1">Зондирование: 1–2 мм • BOP: 0%</div>
-							</div>
-							<div className="p-3 bg-[var(--paper-soft,#1e293b)] rounded-lg border border-[var(--line,#334155)]">
-								<div className="font-semibold text-[var(--ink,#f8fafc)]">Правый боковой (18–14, 48–44)</div>
-								<div className="text-emerald-400 font-mono mt-1">Зондирование: 1–2 мм • BOP: 0%</div>
-							</div>
-							<div className="p-3 bg-[var(--paper-soft,#1e293b)] rounded-lg border border-[var(--line,#334155)]">
-								<div className="font-semibold text-[var(--ink,#f8fafc)]">Левый боковой (24–28, 34–38)</div>
-								<div className="text-emerald-400 font-mono mt-1">Зондирование: 1–2 мм • BOP: 0%</div>
-							</div>
-						</div>
-						<div className="text-xs text-[var(--ink,#f8fafc)] bg-[var(--paper-soft,#1e293b)] p-3 rounded-lg border border-[var(--line,#334155)]">
-							<strong>Заключение:</strong> Десна бледно-розовая, плотная, при зондировании не кровоточит. Патологическая подвижность и фуркационные дефекты отсутствуют. Скрининг соответствует норме (PSR 0-1).
-						</div>
+					<div style={{ margin: "16px 0" }}>
+						<PeriodontogramChart
+							patientId={activePatient.id}
+							patientName={activePatient.name ?? activePatient.fullName}
+							organizationId={activeDoctor?.organizationId ?? undefined}
+							doctorId={activeDoctor?.id}
+							doctorName={activeDoctor?.name}
+							onInsertToProtocol={(protocolText) => {
+								if (typeof appendToTranscript === "function") {
+									appendToTranscript(`\n\n${protocolText}`);
+								}
+							}}
+						/>
 					</div>
 				)}
 

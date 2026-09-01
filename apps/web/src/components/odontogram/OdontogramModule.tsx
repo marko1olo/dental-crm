@@ -49,6 +49,7 @@ import {
 import { PediatricMixedDentitionModal } from "./PediatricMixedDentitionModal";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
+import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import { FastCheckoutModal } from "../payments/checkout/FastCheckoutModal";
 import type { CheckoutPaymentMethodType } from "../payments/checkout/fastCheckoutPresets";
@@ -1369,19 +1370,29 @@ export const OdontogramModule = ({
 
 			{/* Collapsible Periodontal Examination Module below Odontogram */}
 			{isPerioOpen && (
-				<div className="w-full flex flex-col gap-3 mt-2 p-4 bg-slate-900 border border-slate-700 rounded-xl animate-in fade-in duration-200 text-slate-100">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<Activity size={18} className="text-emerald-400" />
-							<span className="text-sm font-bold text-emerald-400">Пародонтальный статус (PSR / Интактный пародонт)</span>
-						</div>
-						<span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold">
-							Норма: глубина 1–2 мм
-						</span>
-					</div>
-					<p className="text-xs text-slate-300">
-						Десна бледно-розовая, плотная, при зондировании не кровоточит (BOP &lt; 10%). Патологическая подвижность зубов и фуркационные дефекты отсутствуют.
-					</p>
+				<div className="w-full mt-2 animate-in fade-in duration-200">
+					<PeriodontogramChart
+						patientId={patientId}
+						patientName={activePatient?.name}
+						organizationId={auth?.organizationId}
+						doctorId={activeDoctor?.id}
+						doctorName={activeDoctor?.name}
+						onInsertToProtocol={(protocolText) => {
+							try {
+								window.dispatchEvent(
+									new CustomEvent("dente-apply-soap-protocol", {
+										detail: {
+											soap: protocolText,
+											mode: "smart_append",
+										},
+									}),
+								);
+								showToast("Протокол пародонтограммы добавлен в дневник 043/у", "success", 4000);
+							} catch {
+								// Safe fallback
+							}
+						}}
+					/>
 				</div>
 			)}
 

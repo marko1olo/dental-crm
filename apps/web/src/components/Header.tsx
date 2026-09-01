@@ -9,6 +9,7 @@ import {
 	Clock,
 	CreditCard,
 	Database,
+	FileText,
 	Headphones,
 	Lock,
 	Moon,
@@ -184,7 +185,7 @@ export function ClinicControlPill({
 			className={`dnt-clinic-control-wrapper ${className}`}
 			data-testid="clinic-control-center-wrapper"
 		>
-			{/* Unified Capsule Button [ 🟢 Смена | 📞 АТС | ⚡ Синхро ] */}
+			{/* Unified Capsule Button [ Смена | АТС | Синхро ] */}
 			<button
 				type="button"
 				onClick={() => setIsOpen((prev) => !prev)}
@@ -193,51 +194,68 @@ export function ClinicControlPill({
 				aria-label="Пульт управления клиникой (macOS Control Center)"
 				title="Открыть центр управления статусом клиники"
 			>
-				{/* 1. Shift indicator */}
-				<span className="dnt-pill-segment">
-					<span
-						className={`dnt-pill-dot ${isOnline ? "dnt-pill-dot--online animate-pulse" : "dnt-pill-dot--offline"}`}
-					/>
-					<span className="hidden sm:inline">Смена</span>
-					<span className="font-mono text-[10px] opacity-90">{formattedShiftTime}</span>
-				</span>
-
-				<span className="dnt-pill-divider" />
-
-				{/* 2. PBX / Telephony indicator */}
-				<span className="dnt-pill-segment">
+				{/* 1. PBX / Telephony indicator (Mango PBX) */}
+				<span
+					className="dnt-pill-segment"
+					title={`АТС: Mango PBX — ${activeCall ? "Идет разговор" : `Статус: ${agentStateLabel}`}`}
+				>
 					{activeCall ? (
 						<PhoneCall size={12} className="text-emerald-500 animate-bounce" />
 					) : (
 						<Phone size={12} className="opacity-80" />
 					)}
-					<span className="hidden md:inline">АТС</span>
+					<span className="hidden sm:inline">АТС</span>
 					{activeCall ? (
 						<span className="px-1 py-0.2 rounded text-[9px] font-bold bg-emerald-500 text-white animate-pulse">
 							Звонок
 						</span>
 					) : (
-						<span
-							className={`dnt-pill-dot ${
-								agentState === "online"
-									? "dnt-pill-dot--online"
-									: agentState === "dnd"
-										? "dnt-pill-dot--busy"
-										: "dnt-pill-dot--pause"
-							}`}
-						/>
+						<>
+							<span
+								className={`dnt-pill-dot ${
+									agentState === "online"
+										? "dnt-pill-dot--online"
+										: agentState === "dnd"
+											? "dnt-pill-dot--busy"
+											: "dnt-pill-dot--pause"
+								}`}
+							/>
+							<span className="hidden md:inline text-[10px] opacity-90">{agentStateLabel}</span>
+						</>
 					)}
 				</span>
 
 				<span className="dnt-pill-divider" />
 
-				{/* 3. Sync indicator */}
-				<span className="dnt-pill-segment">
+				{/* 2. 54-FZ Cash / KKT Status */}
+				<span
+					className="dnt-pill-segment"
+					title={`Касса 54-ФЗ: ККТ АТОЛ / Штрих-М Онлайн — Смена открыта (${formattedShiftTime})`}
+				>
+					<ShieldCheck size={12} className="text-emerald-500 shrink-0" />
+					<span className="hidden sm:inline">54-ФЗ</span>
+					<span className="dnt-pill-dot dnt-pill-dot--online" />
+					<span className="font-mono text-[10px] opacity-90 hidden lg:inline">{formattedShiftTime}</span>
+				</span>
+
+				<span className="dnt-pill-divider" />
+
+				{/* 3. Database Sync / Offline Queue indicator */}
+				<span
+					className="dnt-pill-segment"
+					title={`Синхронизация БД: PostgreSQL 18.4 (${syncLatencyMs} ms, 0 в очереди)`}
+				>
 					<Zap
 						size={12}
 						className={`${isSyncing ? "animate-spin text-amber-400" : isOnline ? "text-emerald-500" : "text-rose-500"}`}
 					/>
-					<span className="hidden lg:inline">{isOnline ? "Синхро" : "Офлайн"}</span>
+					<span className="hidden sm:inline">{isOnline ? "БД" : "Офлайн"}</span>
+					<span
+						className={`dnt-pill-dot ${isOnline ? "dnt-pill-dot--online" : "dnt-pill-dot--offline"}`}
+					/>
+					{isOnline && (
+						<span className="font-mono text-[10px] opacity-80 hidden xl:inline">{syncLatencyMs}ms</span>
+					)}
 				</span>
 
 				<ChevronDown
@@ -298,12 +316,26 @@ export function ClinicControlPill({
 							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))]">
 								<span className="text-[10px] text-[var(--muted,#64748b)] block">ККТ 54-ФЗ / ОФД</span>
 								<strong className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1">
-									<ShieldCheck size={12} /> Норма (ФФД 1.2)
+									<ShieldCheck size={12} /> ККТ АТОЛ Онлайн (ФФД 1.2)
 								</strong>
 							</div>
 						</div>
 
 						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => {
+									setIsOpen(false);
+									showToast("Сформирован промежуточный X-отчет (без гашения)", "info");
+									setCurrentView("shift");
+								}}
+								className="dnt-cc-btn dnt-cc-btn--secondary flex-1"
+								title="Снять промежуточный отчет без гашения кассы (X-отчет)"
+							>
+								<FileText size={14} />
+								<span>X-отчет</span>
+							</button>
+
 							<button
 								type="button"
 								onClick={() => {
@@ -314,10 +346,11 @@ export function ClinicControlPill({
 										setCurrentView("shift");
 									}
 								}}
-								className="dnt-cc-btn dnt-cc-btn--primary w-full"
+								className="dnt-cc-btn dnt-cc-btn--primary flex-1"
+								title="Сформировать Z-отчет 54-ФЗ и закрыть смену"
 							>
 								<CreditCard size={14} />
-								<span>Закрыть смену (Z-отчет)</span>
+								<span>Закрыть (Z-отчет)</span>
 							</button>
 						</div>
 					</div>

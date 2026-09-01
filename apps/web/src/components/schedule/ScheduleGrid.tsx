@@ -91,7 +91,7 @@ const HOURS = [
 	"20:00",
 ];
 
-export function ScheduleGrid(props: ScheduleGridProps) {
+export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGridProps) {
 	const {
 		dashboard,
 		dateKey,
@@ -294,21 +294,50 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 
 	return (
 		<div className="space-y-3">
+			{/* Day 0 Empty State Banner when no appointments for selected day */}
+			{dayAppointments.length === 0 && (
+				<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
+					<div className="flex items-center gap-3">
+						<CalendarCheck size={18} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+						<div>
+							<span className="font-bold text-[var(--ink)]">На выбранный день записей пока нет.</span>
+							<span className="text-[var(--muted)] ml-1">Нажмите на любой свободный интервал в сетке ниже или кнопку «+ Записать первого пациента».</span>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={() => {
+							const firstChair = chairs[0];
+							onSlotClick({
+								dateKey,
+								startTime: "09:00",
+								chairId: firstChair?.id || "chair-1",
+							});
+						}}
+						className="primary-button min-h-[38px] px-3.5 flex items-center gap-1.5 text-xs font-bold rounded-xl shadow-sm cursor-pointer"
+						data-testid="btn-grid-first-appointment"
+					>
+						<Plus size={14} aria-hidden="true" />
+						<span>+ Записать первого пациента</span>
+					</button>
+				</div>
+			)}
+
 			{/* Daily Chair & Doctor Occupancy Summary Bar */}
 			{dailyTally.totalAppointmentsCount > 0 && (
-				<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
-					<div className="flex items-center gap-3">
-						<span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<CalendarCheck size={16} className="text-[var(--teal,var(--brand-primary))]" />
+				<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs">
+					<div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+						<span className="font-bold text-[var(--ink)] flex items-center gap-1.5 whitespace-nowrap">
+							<CalendarCheck size={16} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 							Загрузка клиники: {countLabel(dailyTally.totalAppointmentsCount, "визит", "визита", "визитов")} ({dailyTally.clinicOccupancyPercent}%)
 						</span>
-						<span className="text-[var(--muted)]">·</span>
-						<span className="text-[var(--muted)]">
+						<span className="text-[var(--muted)] hidden sm:inline">·</span>
+						<span className="text-[var(--muted)] whitespace-nowrap">
 							Общее время приема: {Math.floor(dailyTally.totalDurationMinutes / 60)} ч {dailyTally.totalDurationMinutes % 60} мин
 						</span>
 					</div>
 					{dailyTally.totalRevenueRub > 0 && (
-						<div className="font-bold font-mono text-emerald-600 dark:text-emerald-400">
+						<div className="font-bold font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
 							Выручка дня: {dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽
 						</div>
 					)}
@@ -495,7 +524,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																	</span>
 																	{pBalance !== null ? (
 																		<span
-																			className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 ${
+																			className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap ${
 																				pBalance > 0
 																					? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
 																					: pBalance < 0
@@ -517,7 +546,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																					: "Оплата: 54-ФЗ (0 ₽)"}
 																		</span>
 																	) : (
-																		<span className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20">
+																		<span className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20 shrink-0 whitespace-nowrap">
 																			54-ФЗ: Баланс 0 ₽
 																		</span>
 																	)}
@@ -1235,7 +1264,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 						<span className="font-bold text-[var(--muted)]">Статус 54-ФЗ / Баланс:</span>
 						{mBalance !== null ? (
 							<span
-								className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono ${
+								className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono whitespace-nowrap shrink-0 ${
 									mBalance > 0
 										? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
 										: mBalance < 0
@@ -1250,7 +1279,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 										: "0 ₽ (Оплачено 54-ФЗ)"}
 							</span>
 						) : (
-							<span className="text-xs text-[var(--muted)]">0 ₽ (54-ФЗ)</span>
+							<span className="text-xs text-[var(--muted)] whitespace-nowrap shrink-0">0 ₽ (54-ФЗ)</span>
 						)}
 					</div>
 
@@ -1431,5 +1460,6 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 		);
 	})()}
 </div>
-);
-}
+	);
+});
+

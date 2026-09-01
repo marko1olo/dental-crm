@@ -44,6 +44,7 @@ import { EndoCanalLogModal, type EndoToothClinicalData } from "../odontogram/End
 import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { RadialToothMenu } from "../odontogram/RadialToothMenu";
+import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import "../odontogram/odontogram.css";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
@@ -585,33 +586,29 @@ export function ChairsiderPerspectiveView() {
 
 						{/* Rendering Branch: Anatomical SVG Arc vs Touch Tiles Matrix vs Florida Probe */}
 						{viewMode === "perio" ? (
-							<div className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl flex flex-col gap-3 text-slate-100">
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<Activity className="w-5 h-5 text-emerald-400 shrink-0" />
-										<span className="text-sm font-bold text-emerald-400">Пародонтальный скрининг PSR (СтАР 2017)</span>
-									</div>
-									<span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold">
-										Код 0: Интактный пародонт
-									</span>
-								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-									<div className="p-2.5 bg-slate-800 rounded-lg border border-slate-700">
-										<div className="text-slate-400">Фронт (13–23, 33–43)</div>
-										<div className="text-emerald-400 font-mono font-semibold">1–2 мм • BOP: 0%</div>
-									</div>
-									<div className="p-2.5 bg-slate-800 rounded-lg border border-slate-700">
-										<div className="text-slate-400">Справа (18–14, 48–44)</div>
-										<div className="text-emerald-400 font-mono font-semibold">1–2 мм • BOP: 0%</div>
-									</div>
-									<div className="p-2.5 bg-slate-800 rounded-lg border border-slate-700">
-										<div className="text-slate-400">Слева (24–28, 34–38)</div>
-										<div className="text-emerald-400 font-mono font-semibold">1–2 мм • BOP: 0%</div>
-									</div>
-								</div>
-								<p className="text-xs text-slate-300">
-									Десна бледно-розовая, плотная, при зондировании не кровоточит. Патологическая подвижность зубов и фуркационные дефекты отсутствуют.
-								</p>
+							<div className="w-full animate-in fade-in duration-200">
+								<PeriodontogramChart
+									patientId={activePatient?.id}
+									patientName={activePatient?.name}
+									organizationId={auth?.organizationId}
+									doctorId={activeDoctor?.id}
+									doctorName={activeDoctor?.name}
+									onInsertToProtocol={(protocolText) => {
+										try {
+											window.dispatchEvent(
+												new CustomEvent("dente-apply-soap-protocol", {
+													detail: {
+														soap: protocolText,
+														mode: "smart_append",
+													},
+												}),
+											);
+											showToast("Протокол пародонтограммы добавлен в дневник 043/у", "success", 4000);
+										} catch {
+											// Safe fallback
+										}
+									}}
+								/>
 							</div>
 						) : viewMode === "svg" ? (
 							<div className="w-full overflow-x-auto pb-2">

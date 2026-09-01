@@ -76,3 +76,20 @@ test("ClinicControlPill - Theme toggle and workspace safety", () => {
 	// Restore previous
 	themeStore.setThemeMode(prevTheme);
 });
+
+test("ClinicControlPill - 3-Sensor Status Capsule & Settings State", () => {
+	const settingsStore = useSettingsStore.getState();
+	assert.ok(settingsStore);
+
+	// 1. Verify clinic mode and capabilities
+	assert.ok(["solo_doctor", "single_clinic", "network", null].includes(settingsStore.clinicMode));
+
+	// 2. Telephony agent online indicator
+	const telStore = useTelephonyStore.getState();
+	telStore.setAgentState("online");
+	assert.strictEqual(useTelephonyStore.getState().agentState, "online");
+
+	// 3. PBX provider registration
+	assert.strictEqual(telStore.activeLineId, 1);
+});
+

@@ -7,6 +7,7 @@
  */
 
 import { z } from "zod";
+import type { PerioToothRecord } from "./types.js";
 
 export const olearySurfaceSchema = z.enum(["mesial", "distal", "buccal", "lingual"]);
 export type OlearySurface = z.infer<typeof olearySurfaceSchema>;
@@ -135,3 +136,59 @@ export function calculateOlearyPcr(
 		highestPlaqueQuadrant,
 	};
 }
+
+/**
+ * Calculates O'Leary PCR & Bleeding Index directly from full 6-point PerioToothRecord array.
+ * Maps 6 anatomical sites (MB, B, DB, ML, L, DL) into standard 4 O'Leary surfaces (Mesial, Distal, Buccal, Lingual).
+ */
+export function calculateOlearyFromPerioTeeth(
+	teeth: readonly PerioToothRecord[],
+): OlearyPcrSummary {
+	const olearyData: OlearyToothData[] = teeth.map((tooth) => {
+		const surfacesWithPlaque: OlearySurface[] = [];
+		const surfacesWithBleeding: OlearySurface[] = [];
+
+		// Mesial surface (plaque/bleeding on mesioBuccal or mesioLingual)
+		if (tooth.mesioBuccal?.plaque || tooth.mesioLingual?.plaque) {
+			surfacesWithPlaque.push("mesial");
+		}
+		if (tooth.mesioBuccal?.bleedingOnProbing || tooth.mesioLingual?.bleedingOnProbing) {
+			surfacesWithBleeding.push("mesial");
+		}
+
+		// Distal surface (plaque/bleeding on distoBuccal or distoLingual)
+		if (tooth.distoBuccal?.plaque || tooth.distoLingual?.plaque) {
+			surfacesWithPlaque.push("distal");
+		}
+		if (tooth.distoBuccal?.bleedingOnProbing || tooth.distoLingual?.bleedingOnProbing) {
+			surfacesWithBleeding.push("distal");
+		}
+
+		// Buccal / Vestibular surface
+		if (tooth.midBuccal?.plaque) {
+			surfacesWithPlaque.push("buccal");
+		}
+		if (tooth.midBuccal?.bleedingOnProbing) {
+			surfacesWithBleeding.push("buccal");
+		}
+
+		// Lingual / Palatal surface
+		if (tooth.midLingual?.plaque) {
+			surfacesWithPlaque.push("lingual");
+		}
+		if (tooth.midLingual?.bleedingOnProbing) {
+			surfacesWithBleeding.push("lingual");
+		}
+
+		return {
+			toothFdi: tooth.toothNumber,
+			isPresent: !tooth.isMissing,
+			isImplant: tooth.isImplant,
+			surfacesWithPlaque,
+			surfacesWithBleeding,
+		};
+	});
+
+	return calculateOlearyPcr(olearyData);
+}
+

@@ -667,3 +667,40 @@ body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
 	color: var(--ink, #f8fafc);
 }
 
+/* ================================================================
+   macOS HIG HOVER HUD & PROGRESSIVE DISCLOSURE (0.15s DELAY)
+   ================================================================ */
+.appointment-patient-hover-preview {
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
+	border-radius: 16px;
+	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.22), 0 0 20px 2px rgba(13, 148, 136, 0.1);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	z-index: 50;
+	transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+[data-theme="dark"] .appointment-patient-hover-preview {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line-strong, #334155);
+	color: var(--ink, #f8fafc);
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.65), 0 0 24px 2px rgba(13, 148, 136, 0.15);
+}
+
+[data-theme="night"] .appointment-patient-hover-preview {
+	background: var(--paper-strong, #181512);
+	border-color: var(--line-strong, #2d261e);
+	color: var(--ink, #f5efe6);
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.8), 0 0 20px 2px rgba(13, 148, 136, 0.1);
+}
+
+[data-theme="contrast"] .appointment-patient-hover-preview {
+	background: #000000;
+	border: 2px solid #ffffff;
+	color: #ffffff;
+	box-shadow: none;
+}
+
+
