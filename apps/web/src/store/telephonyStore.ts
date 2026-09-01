@@ -636,7 +636,21 @@ export function resolvePatientSomaticAlerts(
 		});
 	};
 
-	// 1. Check notes for allergies, somatics, contraindications
+	// 1. Check direct allergies property if present
+	if (patient && (patient as any).allergies) {
+		const rawAllergies = (patient as any).allergies;
+		if (Array.isArray(rawAllergies)) {
+			for (const a of rawAllergies) {
+				if (typeof a === "string" && a.trim()) {
+					addAlert(a.trim(), "allergy", "high", "AlertTriangle");
+				}
+			}
+		} else if (typeof rawAllergies === "string" && rawAllergies.trim()) {
+			addAlert(rawAllergies.trim(), "allergy", "high", "AlertTriangle");
+		}
+	}
+
+	// 2. Check notes for allergies, somatics, contraindications
 	if (patient?.notes) {
 		const rawNotes = patient.notes;
 		const lower = rawNotes.toLowerCase();
@@ -700,28 +714,43 @@ export function resolvePatientSomaticAlerts(
 		}
 		if (
 			lower.includes("острая боль") ||
+			lower.includes("зубная боль") ||
 			lower.includes("пульпит") ||
 			lower.includes("периодонтит") ||
-			lower.includes("отек")
+			lower.includes("отек") ||
+			lower.includes("флюс")
 		) {
 			addAlert("Острая боль / Экстренное состояние", "pain", "high", "Zap");
 		}
 	}
 
-	// 2. Check clinical flags from PatientInsight
+	// 3. Check clinical flags from PatientInsight
 	if (insight?.clinicalFlags && Array.isArray(insight.clinicalFlags)) {
 		for (const flag of insight.clinicalFlags) {
 			const lower = flag.toLowerCase();
-			const severity: PatientSomaticAlert["severity"] =
-				lower.includes("аллерг") || lower.includes("кардио") || lower.includes("беремен")
-					? "high"
-					: "medium";
-			const cat: PatientSomaticAlert["category"] = lower.includes("аллерг") ? "allergy" : "alert";
-			addAlert(flag, cat, severity, "AlertTriangle");
+			const isPain =
+				lower.includes("бол") ||
+				lower.includes("пульпит") ||
+				lower.includes("периодонтит") ||
+				lower.includes("экстрен");
+			const isAllergy = lower.includes("аллерг");
+			const isHigh =
+				isAllergy ||
+				isPain ||
+				lower.includes("кардио") ||
+				lower.includes("беремен");
+			const severity: PatientSomaticAlert["severity"] = isHigh ? "high" : "medium";
+			const cat: PatientSomaticAlert["category"] = isPain
+				? "pain"
+				: isAllergy
+					? "allergy"
+					: "alert";
+			const icon = isPain ? "Zap" : isAllergy ? "AlertTriangle" : "ShieldAlert";
+			addAlert(flag, cat, severity, icon);
 		}
 	}
 
-	// 3. High risk level from PatientInsight
+	// 4. High risk level from PatientInsight
 	if (insight?.riskLevel === "high") {
 		if (insight.riskReasons && insight.riskReasons.length > 0) {
 			for (const reason of insight.riskReasons) {

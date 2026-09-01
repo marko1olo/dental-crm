@@ -65,6 +65,7 @@ import {
 	type PlaybackSpeed,
 	resolvePatientFromPhone,
 	resolvePatientLastVisit,
+	resolvePatientSomaticAlerts,
 	resolvePatientUpcomingAppointment,
 	useTelephonyStore,
 } from "../../store/telephonyStore";
@@ -143,8 +144,11 @@ export function TelephonyFloatingWidget({
 			setIsOpen(true);
 			setIsExpanded(true);
 			setActiveTab("call");
+		} else if (!defaultExpanded) {
+			setIsOpen(false);
+			setIsExpanded(false);
 		}
-	}, [activeCall]);
+	}, [activeCall, defaultExpanded]);
 
 	// Call Duration Timer
 	useEffect(() => {
@@ -228,6 +232,18 @@ export function TelephonyFloatingWidget({
 		dashboard?.clinicSettings?.staff,
 		dashboard?.todayIso,
 	]);
+
+	const somaticAlerts = useMemo(() => {
+		return resolvePatientSomaticAlerts(resolvedPatient, patientInsight);
+	}, [resolvedPatient, patientInsight]);
+
+	const allergyAlerts = useMemo(() => {
+		return somaticAlerts.filter((a) => a.category === "allergy");
+	}, [somaticAlerts]);
+
+	const acutePainAlerts = useMemo(() => {
+		return somaticAlerts.filter((a) => a.category === "pain");
+	}, [somaticAlerts]);
 
 	const callerName =
 		resolvedPatient?.fullName || activeCall?.patientName || "Неизвестный номер";
@@ -537,6 +553,23 @@ export function TelephonyFloatingWidget({
 						>
 							<ChevronDown size={16} />
 						</button>
+
+						{/* Close / Dismiss pill button >= 44x44px */}
+						<button
+							type="button"
+							onClick={() => {
+								if (activeCall) {
+									dismissCall();
+								}
+								setIsOpen(false);
+								setIsExpanded(false);
+							}}
+							className="min-h-[44px] min-w-[44px] p-2 rounded-full text-[var(--muted,#64748b)] hover:text-rose-500 hover:bg-[var(--paper-soft,rgba(0,0,0,0.06))] transition-colors inline-flex items-center justify-center cursor-pointer"
+							title="Закрыть уведомление"
+							aria-label="Закрыть уведомление"
+						>
+							<X size={15} />
+						</button>
 					</div>
 				</div>
 			)}
@@ -631,6 +664,23 @@ export function TelephonyFloatingWidget({
 								aria-label="Свернуть в верхнюю капсулу"
 							>
 								<ChevronUp size={18} />
+							</button>
+
+							{/* Close softphone >= 44x44px */}
+							<button
+								type="button"
+								onClick={() => {
+									if (activeCall) {
+										dismissCall();
+									}
+									setIsOpen(false);
+									setIsExpanded(false);
+								}}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-[var(--muted,#64748b)] hover:text-rose-500 hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
+								title="Закрыть софтфон"
+								aria-label="Закрыть софтфон"
+							>
+								<X size={18} />
 							</button>
 						</div>
 					</div>
@@ -786,6 +836,44 @@ export function TelephonyFloatingWidget({
 												</div>
 											</div>
 										</div>
+
+										{/* 1. Critical Allergy Alert Banner */}
+										{allergyAlerts.length > 0 && (
+											<div
+												className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800/60 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2 shadow-xs animate-fade-in"
+												data-testid="telephony-widget-allergy-alert"
+											>
+												<AlertTriangle size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
+												<div className="min-w-0 flex-1">
+													<span className="font-bold text-rose-700 dark:text-rose-300 uppercase text-[9px] tracking-wider block">
+														Внимание: Аллергия в анамнезе
+													</span>
+													<span className="break-words line-clamp-2 text-[11px]">
+														{allergyAlerts.map((a) => a.label).join("; ")}
+													</span>
+												</div>
+											</div>
+										)}
+
+										{/* 2. Critical Acute Pain / Emergency Banner */}
+										{(acutePainAlerts.length > 0 || (activeCall as any)?.acutePain) && (
+											<div
+												className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700/60 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2 shadow-xs animate-fade-in"
+												data-testid="telephony-widget-acute-pain-alert"
+											>
+												<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
+												<div className="min-w-0 flex-1">
+													<span className="font-bold text-rose-700 dark:text-rose-300 uppercase text-[9px] tracking-wider block">
+														Экстренно: Острая боль
+													</span>
+													<span className="break-words line-clamp-2 text-[11px]">
+														{acutePainAlerts.length > 0
+															? acutePainAlerts.map((a) => a.label).join("; ")
+															: "Пациент с острой болью. Требуется экстренная помощь."}
+													</span>
+												</div>
+											</div>
+										)}
 
 										{/* Upcoming Appointment & 1-Click WhatsApp */}
 										{upcomingAppointment && (

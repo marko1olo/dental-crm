@@ -188,3 +188,54 @@ test("Telephony - agent readiness states and line switching", () => {
 	assert.strictEqual(useTelephonyStore.getState().isHeld, false);
 });
 
+test("Telephony - somatic alerts resolution (allergies & acute pain)", async () => {
+	const { resolvePatientSomaticAlerts } = await import("../../../store/telephonyStore");
+
+	// 1. Patient with allergies in notes
+	const patientWithAllergyNotes = {
+		id: "pat-allergy-1",
+		fullName: "Пациент с аллергией",
+		notes: "Аллергия на лидокаин и пенициллин!",
+	};
+	const alerts1 = resolvePatientSomaticAlerts(patientWithAllergyNotes as any);
+	const allergyAlerts1 = alerts1.filter((a) => a.category === "allergy");
+	assert.ok(allergyAlerts1.length >= 2, "Expected lidocaine and penicillin allergy alerts");
+	assert.ok(allergyAlerts1.some((a) => a.label.includes("лидокаин")));
+	assert.ok(allergyAlerts1.some((a) => a.label.includes("пенициллин")));
+
+	// 2. Patient with direct allergies array
+	const patientWithAllergiesArr = {
+		id: "pat-allergy-2",
+		fullName: "Пациент с массивом аллергий",
+		allergies: ["Ультракаин", "Латекс"],
+	};
+	const alerts2 = resolvePatientSomaticAlerts(patientWithAllergiesArr as any);
+	const allergyAlerts2 = alerts2.filter((a) => a.category === "allergy");
+	assert.ok(allergyAlerts2.length >= 2, "Expected direct array allergy alerts");
+
+	// 3. Patient with acute pain in notes
+	const patientWithPain = {
+		id: "pat-pain-1",
+		fullName: "Пациент с острой болью",
+		notes: "Острая боль в области зуба 46, пульпит",
+	};
+	const alerts3 = resolvePatientSomaticAlerts(patientWithPain as any);
+	const painAlerts = alerts3.filter((a) => a.category === "pain");
+	assert.ok(painAlerts.length >= 1, "Expected acute pain alert");
+	assert.strictEqual(painAlerts[0]?.severity, "high");
+
+	// 4. Clinical flags from PatientInsight
+	const insightWithFlags = {
+		patientId: "pat-flags-1",
+		riskLevel: "high" as const,
+		riskReasons: ["Высокий риск неявки"],
+		nextBestAction: "Позвонить",
+		recallDueAt: null,
+		balanceDueRub: 0,
+		clinicalFlags: ["Аллергия на новокаин", "Экстренная зубная боль"],
+	};
+	const alerts4 = resolvePatientSomaticAlerts(null, insightWithFlags as any);
+	assert.ok(alerts4.some((a) => a.category === "allergy"));
+	assert.ok(alerts4.some((a) => a.category === "pain"));
+});
+

@@ -61,6 +61,7 @@ import {
 	type PlaybackSpeed,
 	resolvePatientFromPhone,
 	resolvePatientLastVisit,
+	resolvePatientSomaticAlerts,
 	resolvePatientUpcomingAppointment,
 	useTelephonyStore,
 } from "../../store/telephonyStore";
@@ -586,8 +587,21 @@ export function IncomingCallPopup() {
 
 		return () => {
 			if (intervalId) clearInterval(intervalId);
+			if (audioCtxRef.current && audioCtxRef.current.state === "running") {
+				audioCtxRef.current.suspend().catch(() => {});
+			}
 		};
 	}, [activeCall, isMuted, volumeLevel]);
+
+	// Clean up AudioContext on component unmount
+	useEffect(() => {
+		return () => {
+			if (audioCtxRef.current) {
+				audioCtxRef.current.close().catch(() => {});
+				audioCtxRef.current = null;
+			}
+		};
+	}, []);
 
 	// Auto-dismiss call after 45 seconds if unhandled and still ringing
 	useEffect(() => {
@@ -659,6 +673,18 @@ export function IncomingCallPopup() {
 		dashboard?.clinicSettings?.staff,
 		dashboard?.todayIso,
 	]);
+
+	const somaticAlerts = useMemo(() => {
+		return resolvePatientSomaticAlerts(resolvedPatient, patientInsight);
+	}, [resolvedPatient, patientInsight]);
+
+	const allergyAlerts = useMemo(() => {
+		return somaticAlerts.filter((a) => a.category === "allergy");
+	}, [somaticAlerts]);
+
+	const acutePainAlerts = useMemo(() => {
+		return somaticAlerts.filter((a) => a.category === "pain");
+	}, [somaticAlerts]);
 
 	if (!activeCall) return null;
 
@@ -1096,6 +1122,44 @@ export function IncomingCallPopup() {
 
 			{/* Smart Telephony Script & Clinical Warnings */}
 			<div className="space-y-1.5 text-xs">
+				{/* 1. Critical Allergy Alert Banner */}
+				{allergyAlerts.length > 0 && (
+					<div
+						className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800/60 text-rose-900 dark:text-rose-200 px-3 py-2 rounded-xl font-semibold text-xs shadow-xs animate-fade-in"
+						data-testid="telephony-allergy-alert"
+					>
+						<AlertTriangle size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<div className="min-w-0 flex-1">
+							<span className="font-bold text-rose-700 dark:text-rose-300 uppercase text-[10px] tracking-wider block">
+								Внимание: Аллергия в анамнезе
+							</span>
+							<span className="break-words line-clamp-2">
+								{allergyAlerts.map((a) => a.label).join("; ")}
+							</span>
+						</div>
+					</div>
+				)}
+
+				{/* 2. Critical Acute Pain / Emergency Banner */}
+				{(acutePainAlerts.length > 0 || (activeCall as any)?.acutePain) && (
+					<div
+						className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700/60 text-rose-900 dark:text-rose-200 px-3 py-2 rounded-xl font-semibold text-xs shadow-xs animate-fade-in"
+						data-testid="telephony-acute-pain-alert"
+					>
+						<Zap size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<div className="min-w-0 flex-1">
+							<span className="font-bold text-rose-700 dark:text-rose-300 uppercase text-[10px] tracking-wider block">
+								Экстренно: Острая боль
+							</span>
+							<span className="break-words line-clamp-2">
+								{acutePainAlerts.length > 0
+									? acutePainAlerts.map((a) => a.label).join("; ")
+									: "Пациент с острой болью. Требуется экстренная помощь."}
+							</span>
+						</div>
+					</div>
+				)}
+
 				{!isKnownPatient && (
 					<div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-900 dark:text-amber-200 px-2.5 py-1.5 rounded-lg font-medium">
 						<AlertTriangle size={14} className="text-amber-500 flex-shrink-0" />
