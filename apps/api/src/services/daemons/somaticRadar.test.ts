@@ -2,17 +2,19 @@
  * somaticRadar.test.ts — Comprehensive Unit Tests for 07:30 AM Somatic Risk & DDI Radar.
  *
  * Verifies:
- * 1. Dual-factor high-precision trigger logic (no spam on routine appointments).
- * 2. Anticoagulant + Surgery threat detection (Warfarin, Xarelto, Plavix, Aspirin).
- * 3. Articaine / Amide local anesthetic allergy detection and safe alternatives (Mepivacaine 3% / Scandonest).
- * 4. Stage III Hypertension & Thyrotoxicosis vasoconstrictor contraindication (Adrenaline-free protocol).
- * 5. Bronchial Asthma / Sulfite allergy vs metabisulfite (E223) in adrenaline carpules.
- * 6. Bisphosphonate therapy (Aclasta / Prolia / Denosumab) + tooth extraction MRONJ risk.
- * 7. Penicillin allergy and safe macrolide/lincosamide recommendations (Sumamed / Clindamycin).
- * 8. NSAID allergy & Samter's triad contraindication.
- * 9. Zero false positives for healthy patients.
- * 10. Clinical NLP Negation Parser (negation detection for "отрицает", "отменен", "нет", "в норме", "в 2012 г.").
- * 11. Integration with DaemonScheduler (07:30 AM scheduled time and on-demand trigger).
+ * 1. OmniGateway SomaticAnamnesisExtractionSchema (Zod structured output schema).
+ * 2. Deterministic & LLM-compatible semantic extraction with negations.
+ * 3. Dual-factor high-precision trigger logic (no spam on routine appointments).
+ * 4. Anticoagulant + Surgery threat detection (Warfarin, Xarelto, Plavix, Aspirin).
+ * 5. Articaine / Amide local anesthetic allergy detection and safe alternatives (Mepivacaine 3% / Scandonest).
+ * 6. Stage III Hypertension & Thyrotoxicosis vasoconstrictor contraindication (Adrenaline-free protocol).
+ * 7. Bronchial Asthma / Sulfite allergy vs metabisulfite (E223) in adrenaline carpules.
+ * 8. Bisphosphonate therapy (Aclasta / Prolia / Denosumab) + tooth extraction MRONJ risk.
+ * 9. Penicillin allergy and safe macrolide/lincosamide recommendations (Sumamed / Clindamycin).
+ * 10. NSAID allergy & Samter's triad contraindication.
+ * 11. Zero false positives for healthy patients.
+ * 12. Clinical Negation parsing for natural language Russian notes ("отрицает", "отменен", "нет", "в норме", "в 2012 г.").
+ * 13. Integration with DaemonScheduler (07:30 AM scheduled time and on-demand trigger).
  */
 
 import assert from "node:assert/strict";
@@ -20,11 +22,11 @@ import { describe, test } from "node:test";
 import {
 	type AppointmentSomaticContextInput,
 	type PatientSomaticProfileInput,
+	SomaticAnamnesisExtractionSchema,
 	calculateAge,
 	evaluatePatientSomaticRisk,
-	findActiveNonNegatedKeywords,
+	extractSomaticRisksDeterministic,
 	isAnesthesiaIndicatedAppointment,
-	isKeywordNegatedInText,
 	isSurgicalAppointment,
 } from "./somaticRadarDaemon.js";
 import { DaemonScheduler } from "./daemonScheduler.js";
@@ -35,7 +37,29 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 	const doctorId = "doctor-uuid-001";
 	const doctorName = "д-р Смирнов А.В. (хирург-стоматолог)";
 
-	test("1. Anticoagulant + Surgery triggers high bleeding risk alert with hemostasis protocol", () => {
+	test("1. SomaticAnamnesisExtractionSchema validates structured LLM extraction output", () => {
+		const rawLlmOutput = {
+			activeAnticoagulants: ["Варфарин 2.5 мг", "Ксарелто 20 мг"],
+			isAnticoagulantActive: true,
+			hasArticaineAmideAllergy: false,
+			hasSevereHypertensionOrThyrotoxicosis: false,
+			hasBronchialAsthmaOrSulfiteAllergy: false,
+			activeBisphosphonates: [],
+			isBisphosphonateActive: false,
+			hasPenicillinAllergy: true,
+			penicillinAllergyDetails: "Отек Квинке на амоксиклав",
+			hasNsaidAllergyOrSamterTriad: false,
+			clinicalReasoning: "Пациент принимает варфарин и ксарелто. Аллергия на пенициллины.",
+		};
+
+		const parsed = SomaticAnamnesisExtractionSchema.parse(rawLlmOutput);
+		assert.strictEqual(parsed.isAnticoagulantActive, true);
+		assert.strictEqual(parsed.hasPenicillinAllergy, true);
+		assert.strictEqual(parsed.hasArticaineAmideAllergy, false);
+		assert.strictEqual(parsed.activeAnticoagulants.length, 2);
+	});
+
+	test("2. Anticoagulant + Surgery triggers high bleeding risk alert with hemostasis protocol", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-anticoagulant-01",
 			organizationId: orgId,
@@ -77,7 +101,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.strictEqual(alert.suggestedActions[0]!.actionId, "request_coagulogram");
 	});
 
-	test("2. Soft & Non-Intrusive Invariant: Anticoagulant patient with ROUTINE caries does NOT trigger surgery bleeding alert", () => {
+	test("3. Soft & Non-Intrusive Invariant: Anticoagulant patient with ROUTINE caries does NOT trigger surgery bleeding alert", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-anticoagulant-01",
 			organizationId: orgId,
@@ -101,12 +125,12 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 
 		const alerts = evaluatePatientSomaticRisk(patient, routineAppt, { now: fixedNow });
 
-		// Zero surgery bleeding alert! Routine caries does not cause surgical hemorrhage
+		// Zero surgery bleeding alert on non-surgical procedure
 		const bleedingAlerts = alerts.filter((a) => a.category === "anticoagulant_surgery");
 		assert.strictEqual(bleedingAlerts.length, 0);
 	});
 
-	test("3. Articaine / Amide allergy triggers Mepivacaine 3% (Scandonest) alternative recommendation", () => {
+	test("4. Articaine / Amide allergy triggers Mepivacaine 3% (Scandonest) alternative recommendation", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-allergy-02",
 			organizationId: orgId,
@@ -143,7 +167,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.ok(amideAlert?.suggestedActions.some((act) => act.actionId === "switch_to_mepivacaine"));
 	});
 
-	test("4. Stage III Hypertension / Thyrotoxicosis triggers Adrenaline-Free vasoconstrictor alert", () => {
+	test("5. Stage III Hypertension / Thyrotoxicosis triggers Adrenaline-Free vasoconstrictor alert", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-hyper-03",
 			organizationId: orgId,
@@ -173,7 +197,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.ok(vasoAlert?.suggestedActions.some((act) => act.actionId === "record_blood_pressure"));
 	});
 
-	test("5. Bronchial Asthma / Sulfite allergy triggers sulfite-free anesthetic protocol", () => {
+	test("6. Bronchial Asthma / Sulfite allergy triggers sulfite-free anesthetic protocol", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-asthma-04",
 			organizationId: orgId,
@@ -208,7 +232,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.ok(sulfiteAlert?.recommendedAlternatives.some((alt) => alt.includes("Ультракаин Д")));
 	});
 
-	test("6. Bisphosphonates + Surgery triggers MRONJ osteonecrosis risk alert", () => {
+	test("7. Bisphosphonates + Surgery triggers MRONJ osteonecrosis risk alert", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-mronj-05",
 			organizationId: orgId,
@@ -238,7 +262,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.ok(mronjAlert?.suggestedActions.some((act) => act.actionId === "mronj_protocol"));
 	});
 
-	test("7. Penicillin allergy triggers beta-lactam warning and macrolide alternative", () => {
+	test("8. Penicillin allergy triggers beta-lactam warning and macrolide alternative", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-pen-06",
 			organizationId: orgId,
@@ -270,7 +294,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.ok(penAlert?.contraindicatedDrugs.includes("Амоксиклав"));
 	});
 
-	test("8. Clean healthy patient produces 0 alerts", () => {
+	test("9. Clean healthy patient produces 0 alerts", () => {
 		const healthyPatient: PatientSomaticProfileInput = {
 			patientId: "pat-clean-07",
 			organizationId: orgId,
@@ -294,9 +318,9 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.strictEqual(alerts.length, 0);
 	});
 
-	// ─── PART 2: CLINICAL NLP NEGATION PARSER TESTS ──────────────────────────
+	// ─── PART 2: CLINICAL NLP NEGATION TESTS ─────────────────────────────────
 
-	test("9. Negation Parser: 'отрицает варфарин' and 'аспирин отменен' does NOT trigger bleeding alert", () => {
+	test("10. Negations: 'отрицает варфарин' and 'аспирин отменен' does NOT trigger bleeding alert", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-neg-01",
 			organizationId: orgId,
@@ -324,7 +348,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		);
 	});
 
-	test("10. Negation Parser: 'аллергии на артикаин нет' does NOT trigger anesthetic allergy alert", () => {
+	test("11. Negations: 'аллергии на артикаин нет' does NOT trigger anesthetic allergy alert", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-neg-02",
 			organizationId: orgId,
@@ -350,7 +374,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		);
 	});
 
-	test("11. Negation Parser: 'давление в норме' and 'криз в 2012 г.' does NOT trigger vasoconstrictor alert", () => {
+	test("12. Negations: 'давление в норме' and 'криз в 2012 г.' does NOT trigger vasoconstrictor alert", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-neg-03",
 			organizationId: orgId,
@@ -376,7 +400,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		);
 	});
 
-	test("12. Negation Parser: 'бронхиальной астмы нет' does NOT trigger sulfite alert", () => {
+	test("13. Negations: 'бронхиальной астмы нет' does NOT trigger sulfite alert", () => {
 		const patient: PatientSomaticProfileInput = {
 			patientId: "pat-neg-04",
 			organizationId: orgId,
@@ -402,30 +426,19 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		);
 	});
 
-	test("13. Negation Parser unit functions: isKeywordNegatedInText and findActiveNonNegatedKeywords", () => {
-		assert.strictEqual(isKeywordNegatedInText("Пациент отрицает варфарин", "варфарин"), true);
-		assert.strictEqual(isKeywordNegatedInText("Аспирин отменен врачом", "аспирин"), true);
-		assert.strictEqual(isKeywordNegatedInText("Аллергии на артикаин нет", "артикаин"), true);
-		assert.strictEqual(isKeywordNegatedInText("Давление в норме", "давление"), true);
-		assert.strictEqual(isKeywordNegatedInText("Криз был в 2012 г. (сейчас норма)", "криз"), true);
+	test("14. extractSomaticRisksDeterministic handles active vs negated text", () => {
+		const text = "Отрицает варфарин. Принимает Ксарелто 20 мг. Аллергии на артикаин нет.";
+		const risks = extractSomaticRisksDeterministic(text);
 
-		// Affirmative cases
-		assert.strictEqual(isKeywordNegatedInText("Постоянно принимает Варфарин", "варфарин"), false);
-		assert.strictEqual(isKeywordNegatedInText("Тяжелая аллергия на артикаин, отек", "артикаин"), false);
-		assert.strictEqual(isKeywordNegatedInText("Гипертоническая болезнь 3 степени, кризы", "криз"), false);
-
-		// findActiveNonNegatedKeywords
-		const sampleText = "Отрицает варфарин. Принимает Ксарелто 20 мг. Аллергии на артикаин нет.";
-		const activeAnticoags = findActiveNonNegatedKeywords(sampleText, ["варфарин", "ксарелто"]);
-		assert.deepStrictEqual(activeAnticoags, ["ксарелто"]);
-
-		const activeAnesthetics = findActiveNonNegatedKeywords(sampleText, ["артикаин"]);
-		assert.deepStrictEqual(activeAnesthetics, []);
+		assert.strictEqual(risks.isAnticoagulantActive, true);
+		assert.ok(risks.activeAnticoagulants.includes("ксарелто"));
+		assert.ok(!risks.activeAnticoagulants.includes("варфарин"));
+		assert.strictEqual(risks.hasArticaineAmideAllergy, false);
 	});
 
 	// ─── PART 3: HELPERS & SCHEDULER TESTS ───────────────────────────────────
 
-	test("14. Surgery detection helper identifies surgical codes and Russian terms", () => {
+	test("15. Surgery detection helper identifies surgical codes and Russian terms", () => {
 		assert.strictEqual(isSurgicalAppointment("Удаление зуба 38"), true);
 		assert.strictEqual(isSurgicalAppointment("Установка имплантата Osstem"), true);
 		assert.strictEqual(isSurgicalAppointment("Открытый синус-лифтинг"), true);
@@ -445,7 +458,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.strictEqual(isSurgicalAppointment("Снятие слепков"), false);
 	});
 
-	test("15. Age calculation helper works correctly with leap years and birthday thresholds", () => {
+	test("16. Age calculation helper works correctly with leap years and birthday thresholds", () => {
 		const refDate = new Date("2026-09-01T00:00:00.000Z");
 		// Birthday was in May (already passed this year)
 		assert.strictEqual(calculateAge("1990-05-10", refDate), 36);
@@ -456,7 +469,7 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.strictEqual(calculateAge("invalid-date", refDate), null);
 	});
 
-	test("16. DaemonScheduler registers somatic_radar_0730 at 07:30 and has on-demand method", () => {
+	test("17. DaemonScheduler registers somatic_radar_0730 at 07:30 and has on-demand method", () => {
 		const scheduler = new DaemonScheduler({
 			enableSomaticRadar: true,
 			enableZtlLookAhead: false,
