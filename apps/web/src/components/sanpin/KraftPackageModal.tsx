@@ -35,13 +35,18 @@ import {
 	Sparkles,
 	Tag,
 	Trash2,
+	Camera,
+	CameraOff,
+	Smartphone,
+	Zap,
 	X,
 	XCircle,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { isDesktopApp } from "../../native/desktopBridge";
 import { dispatchThermalLabelPrint } from "../../native/hardwareDispatcher";
+import { hardwareScanner } from "../../services/hardware/HardwareScanner.js";
 import {
 	calculateKraftBatchStatistics,
 	calculatePackageExpiration,
@@ -181,8 +186,100 @@ export function KraftPackageModal({
 	const [operatorName, setOperatorName] = useState<string>(initialOperatorName);
 	const [previewLabelSize, setPreviewLabelSize] = useState<"58x40" | "43x25">("58x40");
 
-	// 2. Quick Scanner State
+	// 2. Quick Scanner State & Camera Facade
 	const [scannedInput, setScannedInput] = useState<string>(initialBarcode || "");
+	const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+	const [cameraError, setCameraError] = useState<string | null>(null);
+	const [isTorchOn, setIsTorchOn] = useState<boolean>(false);
+	const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+	const videoRef = useRef<HTMLVideoElement | null>(null);
+
+	// Start Camera 60 FPS Stream
+	const startCamera = async (mode: "environment" | "user" = facingMode) => {
+		setCameraError(null);
+		if (!videoRef.current) return;
+		try {
+			await hardwareScanner.startCameraStream(videoRef.current, {
+				continuousFocus: true,
+				facingMode: mode,
+				targetFps: 60,
+			});
+			setIsCameraActive(true);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось запустить аппаратную камеру";
+			setCameraError(msg);
+			setIsCameraActive(false);
+		}
+	};
+
+	// Stop Camera Stream
+	const stopCamera = () => {
+		hardwareScanner.stopCameraStream();
+		setIsCameraActive(false);
+		setIsTorchOn(false);
+	};
+
+	// Toggle Torch / Flashlight
+	const handleToggleTorch = async () => {
+		const nextState = !isTorchOn;
+		const ok = await hardwareScanner.setTorch(nextState);
+		if (ok) {
+			setIsTorchOn(nextState);
+		}
+	};
+
+	// Toggle Camera Facing Mode (Back / Front)
+	const handleToggleFacingMode = async () => {
+		const next = facingMode === "environment" ? "user" : "environment";
+		setFacingMode(next);
+		if (isCameraActive) {
+			await startCamera(next);
+		}
+	};
+
+	// Trigger Native Mobile ML Kit Scanner
+	const handleNativeMlKitScan = async () => {
+		try {
+			const res = await hardwareScanner.scanSingleCode();
+			if (res.success && res.rawCode) {
+				setScannedInput(res.rawCode);
+				showToast(`Крафт-пакет распознан: ${res.rawCode}`, "success");
+			} else if (res.error && !res.error.includes("отменено")) {
+				showToast(res.error, "warning");
+			}
+		} catch {
+			showToast("Ошибка нативного сканера ML Kit", "error");
+		}
+	};
+
+	// Subscribe to HardwareScanner global events
+	useEffect(() => {
+		const unsubscribe = hardwareScanner.subscribe((result) => {
+			if (result.success && result.rawCode) {
+				setScannedInput(result.rawCode);
+				showToast(`Штрихкод крафт-пакета: ${result.rawCode}`, "success");
+			}
+		});
+
+		const unsubError = hardwareScanner.onError((err) => {
+			setCameraError(err);
+		});
+
+		return () => {
+			unsubscribe();
+			unsubError();
+			hardwareScanner.stopCameraStream();
+		};
+	}, []);
+
+	// Stop camera if leaving scan mode or modal closes
+	useEffect(() => {
+		if (!isOpen || mode !== "scan") {
+			hardwareScanner.stopCameraStream();
+			setIsCameraActive(false);
+			setIsTorchOn(false);
+		}
+	}, [isOpen, mode]);
 
 	// 3. Batch Register State
 	const [packages, setPackages] = useState<KraftPackageRecord[]>(() => {
@@ -757,6 +854,170 @@ export function KraftPackageModal({
 					{/* ─── MODE 2: QUICK SCANNER & 043/U LINK ─────────────────────────── */}
 					{mode === "scan" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", maxWidth: "720px", margin: "0 auto" }}>
+							{/* Hardware Camera Viewport & Stream Controls */}
+							<div
+								style={{
+									borderRadius: "10px",
+									background: "var(--paper-soft, #f8fafc)",
+									border: "1px solid var(--line, #e2e8f0)",
+									padding: "1rem",
+									display: "flex",
+									flexDirection: "column",
+									gap: "0.75rem",
+								}}
+							>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+										<Camera size={18} color="var(--brand-primary, #2563eb)" />
+										<span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
+											Аппаратный сканер 2D DataMatrix (СанПиН 3.3686-21)
+										</span>
+									</div>
+									<div style={{ display: "flex", gap: "0.4rem" }}>
+										{isCameraActive ? (
+											<>
+												<button
+													type="button"
+													onClick={handleToggleTorch}
+													className={`sanpin-btn ${isTorchOn ? "sanpin-btn-primary" : "sanpin-btn-secondary"}`}
+													style={{ minHeight: "36px", padding: "0.35rem 0.65rem", fontSize: "0.75rem" }}
+													title="Включить/выключить подсветку камеры"
+												>
+													<Zap size={14} />
+													<span>{isTorchOn ? "Подсветка ВКЛ" : "Подсветка"}</span>
+												</button>
+												<button
+													type="button"
+													onClick={handleToggleFacingMode}
+													className="sanpin-btn sanpin-btn-secondary"
+													style={{ minHeight: "36px", padding: "0.35rem 0.65rem", fontSize: "0.75rem" }}
+													title="Переключить камеру (задняя / передняя)"
+												>
+													<span>{facingMode === "environment" ? "Основная камера" : "Фронтальная"}</span>
+												</button>
+												<button
+													type="button"
+													onClick={stopCamera}
+													className="sanpin-btn sanpin-btn-secondary"
+													style={{ minHeight: "36px", padding: "0.35rem 0.65rem", fontSize: "0.75rem", color: "#dc2626" }}
+												>
+													<CameraOff size={14} />
+													<span>Остановить</span>
+												</button>
+											</>
+										) : (
+											<>
+												<button
+													type="button"
+													onClick={() => startCamera()}
+													className="sanpin-btn sanpin-btn-primary"
+													style={{ minHeight: "36px", padding: "0.35rem 0.85rem", fontSize: "0.8rem", fontWeight: 700, background: "var(--teal-600, #0d9488)", color: "#fff" }}
+													data-testid="start-camera-scan-btn"
+												>
+													<Camera size={15} />
+													<span>Запустить камеру 60 FPS</span>
+												</button>
+												{hardwareScanner.isCapacitorNative() && (
+													<button
+														type="button"
+														onClick={handleNativeMlKitScan}
+														className="sanpin-btn sanpin-btn-secondary"
+														style={{ minHeight: "36px", padding: "0.35rem 0.75rem", fontSize: "0.8rem" }}
+														data-testid="start-native-mlkit-btn"
+													>
+														<Smartphone size={15} />
+														<span>Сканер ML Kit</span>
+													</button>
+												)}
+											</>
+										)}
+									</div>
+								</div>
+
+								{/* Camera Video Viewfinder with Reticle Overlay */}
+								<div
+									style={{
+										position: "relative",
+										width: "100%",
+										height: isCameraActive ? "240px" : "80px",
+										background: "#0f172a",
+										borderRadius: "8px",
+										overflow: "hidden",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										transition: "height 0.2s ease",
+									}}
+								>
+									<video
+										ref={videoRef}
+										playsInline
+										muted
+										style={{
+											width: "100%",
+											height: "100%",
+											objectFit: "cover",
+											display: isCameraActive ? "block" : "none",
+										}}
+									/>
+
+									{isCameraActive ? (
+										<div
+											style={{
+												position: "absolute",
+												inset: 0,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												pointerEvents: "none",
+											}}
+										>
+											{/* 2D DataMatrix Aiming Reticle */}
+											<div
+												style={{
+													width: "160px",
+													height: "160px",
+													border: "2px solid #14b8a6",
+													borderRadius: "12px",
+													boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 15px rgba(20, 184, 166, 0.6)",
+													position: "relative",
+												}}
+											>
+												<div style={{ position: "absolute", top: "-20px", left: 0, right: 0, textAlign: "center", color: "#34d399", fontSize: "0.75rem", fontWeight: 700, textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+													Наведите на DataMatrix
+												</div>
+											</div>
+										</div>
+									) : (
+										<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#94a3b8", fontSize: "0.825rem" }}>
+											<Scan size={18} />
+											<span>Камера выключена. Нажмите «Запустить камеру 60 FPS» или введите код вручную.</span>
+										</div>
+									)}
+								</div>
+
+								{/* Camera Error Message with Fallback Instructions */}
+								{cameraError && (
+									<div
+										style={{
+											padding: "0.65rem 0.85rem",
+											borderRadius: "6px",
+											background: "rgba(220, 38, 38, 0.08)",
+											border: "1px solid rgba(220, 38, 38, 0.25)",
+											fontSize: "0.8rem",
+											color: "#b91c1c",
+											display: "flex",
+											alignItems: "center",
+											gap: "0.5rem",
+										}}
+									>
+										<AlertTriangle size={16} style={{ flexShrink: 0 }} />
+										<span>{cameraError} (доступен ручной ввод кода или USB-сканер)</span>
+									</div>
+								)}
+							</div>
+
+							{/* Manual Barcode Text Input & Samples */}
 							<div
 								style={{
 									padding: "1.25rem",
@@ -769,12 +1030,11 @@ export function KraftPackageModal({
 								}}
 							>
 								<label style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
-									Отсканируйте 1D/2D штрихкод крафт-пакета:
+									Штрихкод крафт-пакета (автоматически или вручную):
 								</label>
 								<div style={{ display: "flex", gap: "0.5rem" }}>
 									<input
 										type="text"
-										autoFocus
 										value={scannedInput}
 										onChange={(e) => setScannedInput(e.target.value)}
 										placeholder="Отсканируйте штрихкод сканером или введите KP-..."

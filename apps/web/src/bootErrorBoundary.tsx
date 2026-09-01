@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { recordBootCrashAndCheckRollback } from "./hooks/useAppUpdate";
 import { logger } from "./utils/logger";
 
 /**
@@ -120,23 +121,23 @@ export class BootErrorBoundary extends Component<
 
 	componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
 		/*
-		 * Журнал ведётся в ЛЮБОМ режиме, включая production. Раньше здесь стояло
-		 * `if (!import.meta.env.PROD)`, и в production падение не оставляло следа
-		 * нигде — это не «зато чисто в консоли», а буквально отсутствие улики.
-		 * Документация React: production- и development-сборки по-разному обходятся
-		 * с пойманным исключением, и в production оно НЕ всплывает до window, то есть
-		 * ни window.onerror, ни addEventListener('error') его уже не увидят. Отдельного
-		 * сборщика ошибок в apps/web нет ни одного (см. dependencies), заводить его
-		 * ради этой строки — отдельное решение, а не побочный эффект правки.
-		 * Соседняя граница разделов (workspaceRouteErrorBoundary.tsx) пишет в консоль
-		 * безусловно с той же мотивировкой; консоль сотруднику клиники не видна и
-		 * ничего ему не показывает.
+		 * Журнал ведётся в ЛЮБОМ режиме, включая production.
 		 */
 		logger.error(
 			`DENTE boot failed (${this.props.audience})`,
 			error,
 			errorInfo.componentStack,
 		);
+
+		// Защита от окирпичивания при сбоях OTA-бандла
+		if (this.props.audience === "clinic") {
+			const rollbackResult = recordBootCrashAndCheckRollback();
+			if (rollbackResult.shouldRollback) {
+				logger.warn(
+					`[OTA CRASH RECOVERY] Обнаружен фатальный сбой при запуске. Выполнен откат на стабильную версию ${rollbackResult.rollbackVersion}`,
+				);
+			}
+		}
 	}
 
 	render() {

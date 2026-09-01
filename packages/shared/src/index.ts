@@ -20,6 +20,7 @@ export * from "./cda/index.js";
 export * from "./egisz/index.js";
 export * from "./logging/index.js";
 export * from "./hardware/index.js";
+export * from "./mobile/index.js";
 export * from "./inventory/index.js";
 export * from "./lab/index.js";
 export * from "./communications/index.js";
@@ -41,6 +42,7 @@ export * from "./treatment-plans/index.js";
 export * from "./diagnostics/index.js";
 export * from "./branches/index.js";
 export * from "./warehouse/index.js";
+export * from "./mobile/index.js";
 export * as dispensaryRecall from "./recall/index.js";
 export {
 	clinicalRecallCategorySchema,

@@ -58,6 +58,8 @@ import {
 import { Order804nFiscalReceiptPrint } from "./Order804nFiscalReceiptPrint";
 import { OneCExportButton } from "./OneCExportButton";
 import { numberToWordsRu } from "./invoiceEngine";
+import { hardwarePrinter } from "../../services/hardware/HardwarePrinter";
+import type { FiscalReceiptPrintPayload } from "../../services/hardware/hardwareTypes";
 
 export type FiscalModalTab =
 	| "payment"
@@ -128,6 +130,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const [guaranteeLetterNumber, setGuaranteeLetterNumber] = useState<string>("");
 	const [customerContact, setCustomerContact] = useState<string>(patientPhone);
 	const [isFiscalizing, setIsFiscalizing] = useState<boolean>(false);
+	const inFlightRef = React.useRef(false);
+	const lastClickTimeRef = React.useRef(0);
 
 	// Refund state (Возврат прихода при отказе от части услуг)
 	const [refundItemSelection, setRefundItemSelection] = useState<Record<string, boolean>>({});
@@ -523,6 +527,11 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	}, [oneCExportParams]);
 
 	const handleExecuteFiscalization = async () => {
+		const now = Date.now();
+		if (inFlightRef.current || isFiscalizing || now - lastClickTimeRef.current < 600) {
+			return;
+		}
+
 		if (activeTab === "payment" && !allocation.isFullyAllocated) {
 			showToast(
 				`Сумма оплат не совпадает с суммой чека (остаток: ${formatMoneyRu(remainingRub)})`,
@@ -532,6 +541,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			return;
 		}
 
+		inFlightRef.current = true;
+		lastClickTimeRef.current = now;
 		setIsFiscalizing(true);
 		try {
 			await new Promise((resolve) => setTimeout(resolve, 800));
@@ -546,6 +557,36 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 				"success",
 				6000,
 			);
+			const printPayload: FiscalReceiptPrintPayload = {
+				clinicName: clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				cashierFullName: cashierFullName || "Кассир",
+				customerContact: patientPhone || patientName,
+				operationType: activeTab === "refund" ? "income_return" : "income",
+				items: (fiscalReceipt.items || []).map((it) => ({
+					name: it.name || "Стоматологическая услуга",
+					priceRub: it.unitPriceRub || 0,
+					quantity: it.quantity || 1,
+					amountRub: it.amountRub || 0,
+					vatRate: "vat_0",
+					medicalServiceCode804n: it.code804n,
+					markingCode: it.markingCode,
+				})),
+				totalRub: fiscalReceipt.totalRub || 0,
+				electronicRub: fiscalReceipt.payments?.cardRub || 0,
+				cashRub: fiscalReceipt.payments?.cashRub || 0,
+				sbpRub: fiscalReceipt.payments?.sbpRub || 0,
+				prepaidRub:
+					(fiscalReceipt.payments?.depositRub || 0) +
+					(fiscalReceipt.payments?.advanceOffsetRub || 0) +
+					(fiscalReceipt.payments?.familyWalletRub || 0),
+			};
+
+			try {
+				void hardwarePrinter.printFiscalReceipt(printPayload);
+			} catch (printErr) {
+				console.warn("[FiscalReceipt54FzModal] Thermal printer print deferred:", printErr);
+			}
+
 			if (onReceiptFiscalized) {
 				onReceiptFiscalized(fiscalReceipt.receiptNumber);
 			}
@@ -554,6 +595,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			showToast("Ошибка связи с фискальным регистратором ККТ", "error");
 		} finally {
 			setIsFiscalizing(false);
+			inFlightRef.current = false;
 		}
 	};
 
@@ -2091,8 +2133,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 							<div className="text-xs text-[var(--muted,#64748b)] flex items-center gap-2">
 								<span>К оплате: <strong className="text-sm font-mono text-[var(--ink,#0f172a)] font-bold">{formatMoneyRu(totalSumRub)}</strong></span>
 								<span>·</span>
-								<span className={allocation.isFullyAllocated ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-amber-600 dark:text-amber-400 font-bold"}>
-									{allocation.isFullyAllocated ? "✓ Сумма распределена" : `Остаток: ${formatMoneyRu(remainingRub)}`}
+								<span className={allocation.isFullyAllocated ? "text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1" : "text-amber-600 dark:text-amber-400 font-bold"}>
+									{allocation.isFullyAllocated ? (
+										<>
+											<Check size={14} className="shrink-0" />
+											<span>Сумма распределена</span>
+										</>
+									) : (
+										`Остаток: ${formatMoneyRu(remainingRub)}`
+									)}
 								</span>
 							</div>
 							<div className="flex items-center gap-2.5">

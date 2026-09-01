@@ -115,6 +115,11 @@
 			"types": "./dist/warehouse/index.d.ts",
 			"import": "./dist/warehouse/index.js",
 			"default": "./dist/warehouse/index.js"
+		},
+		"./mobile": {
+			"types": "./dist/mobile/index.d.ts",
+			"import": "./dist/mobile/index.js",
+			"default": "./dist/mobile/index.js"
 		}
 	},
 	"scripts": {

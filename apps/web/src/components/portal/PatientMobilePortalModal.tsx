@@ -50,6 +50,9 @@ import {
 	verifySmsOtpCode,
 } from "./patientPortalEngine";
 import { generateQrCodeSvg } from "./patientCabinet/patientCabinetEngine";
+import { UpcomingVisitCard } from "./UpcomingVisitCard";
+import { TreatmentPlanRoadmap } from "../treatment-plans/TreatmentPlanRoadmap";
+import { A2hsPromptModal } from "../../pwa/A2hsPromptModal";
 import {
 	SAMPLE_FISCAL_RECEIPT_1,
 	SAMPLE_PORTAL_DOCUMENTS,
@@ -74,15 +77,15 @@ export type PatientPortalTab = "visits" | "plan" | "scans" | "finances" | "docum
 export interface PatientMobilePortalModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	initialTab?: PatientPortalTab;
-	profile?: PatientPortalProfile;
-	visits?: VisitProtocol043[];
-	treatmentPlan?: PortalTreatmentPlan;
-	scans?: RadiologyScanItem[];
-	invoices?: PortalInvoiceItem[];
-	documents?: PortalDocumentItem[];
-	onBookOnlineClick?: () => void;
-	requireAuth?: boolean;
+	initialTab?: PatientPortalTab | undefined;
+	profile?: PatientPortalProfile | undefined;
+	visits?: VisitProtocol043[] | undefined;
+	treatmentPlan?: PortalTreatmentPlan | undefined;
+	scans?: RadiologyScanItem[] | undefined;
+	invoices?: PortalInvoiceItem[] | undefined;
+	documents?: PortalDocumentItem[] | undefined;
+	onBookOnlineClick?: (() => void) | undefined;
+	requireAuth?: boolean | undefined;
 }
 
 export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> = ({
@@ -129,6 +132,7 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 	const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
 	const [showTaxCertificate, setShowTaxCertificate] = useState<boolean>(false);
 	const [isReceptionQrOpen, setIsReceptionQrOpen] = useState<boolean>(false);
+	const [isA2hsModalOpen, setIsA2hsModalOpen] = useState<boolean>(false);
 
 	// 60-second SMS resend countdown timer
 	useEffect(() => {
@@ -279,6 +283,18 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 					</div>
 
 					<div className="flex items-center gap-2">
+						{/* PWA Install Button */}
+						<button
+							type="button"
+							onClick={() => setIsA2hsModalOpen(true)}
+							className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-[var(--brand,#0d9488)]/20 text-[var(--brand,#0d9488)] border border-[var(--brand,#0d9488)]/30 hover:bg-[var(--brand,#0d9488)]/30 transition-all flex items-center gap-1.5"
+							title="Установить DENTE на главный экран"
+							data-testid="open-a2hs-modal-btn"
+						>
+							<Download className="w-3.5 h-3.5" />
+							<span className="hidden sm:inline">PWA</span>
+						</button>
+
 						{/* Viewport Mode Toggle */}
 						<button
 							type="button"
@@ -545,97 +561,12 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							{/* ============================================================ */}
 							{activeTab === "visits" && (
 								<div className="space-y-4" data-testid="portal-tab-visits-content">
-									{/* Apple Health Consumer Next Appointment Hero Card */}
-									<div className="p-4 rounded-2xl bg-[var(--paper-soft,#1e293b)] border-2 border-teal-500/40 shadow-lg space-y-3" data-testid="next-appointment-hero-card">
-										<div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-[var(--line,rgba(255,255,255,0.08))]">
-											<div className="flex items-center gap-2">
-												<Calendar className="w-5 h-5 text-teal-400" />
-												<strong className="text-sm text-[var(--ink,#f8fafc)]">Ближайший запланированный прием</strong>
-											</div>
-											<div className="flex items-center gap-2">
-												<span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-													<CheckCircle2 className="w-3.5 h-3.5" />
-													<span>Запись подтверждена</span>
-												</span>
-												<button
-													type="button"
-													onClick={() => setIsReceptionQrOpen(true)}
-													className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-500 text-white hover:opacity-90 transition-all flex items-center gap-1.5 shadow-md"
-													data-testid="show-reception-qr-btn"
-												>
-													<QrCode className="w-3.5 h-3.5" />
-													<span>QR для ресепшена</span>
-												</button>
-											</div>
-										</div>
+									{/* Subway Offline Ready Upcoming Appointment Card */}
+									<UpcomingVisitCard
+										onRescheduleClick={onBookOnlineClick}
+									/>
 
-										<div className="flex items-start gap-3">
-											{profile.curatingDoctorAvatar && (
-												<img
-													src={profile.curatingDoctorAvatar}
-													alt={profile.curatingDoctor}
-													className="w-12 h-12 rounded-full object-cover border-2 border-teal-400 shrink-0"
-												/>
-											)}
-											<div className="space-y-1 text-xs flex-1 min-w-0">
-												<div className="flex items-center gap-2 flex-wrap">
-													<span className="px-2 py-0.5 rounded-lg bg-teal-500/20 text-teal-300 font-mono font-bold text-xs">
-														14:30 – 15:30
-													</span>
-													<strong className="text-sm text-[var(--ink,#f8fafc)]">
-														Вторник, 1 сентября 2026
-													</strong>
-													<span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1">
-														<Clock className="w-3 h-3 text-amber-400" />
-														<span>До приёма: {nextApptCountdown}</span>
-													</span>
-												</div>
-												<div className="text-[var(--muted,#94a3b8)]">
-													Врач: <strong className="text-[var(--ink,#f8fafc)]">{profile.curatingDoctor}</strong> ({profile.curatingDoctorSpecialty})
-												</div>
-												<div className="text-[var(--muted,#94a3b8)] flex items-center gap-1">
-													<MapPin className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-													<span>Клиника DENTE на Невском, Кабинет 104</span>
-												</div>
-											</div>
-										</div>
-
-										{/* 1-Tap Calendar Export Buttons */}
-										<div className="pt-2 border-t border-[var(--line,rgba(255,255,255,0.08))] flex items-center gap-2 flex-wrap">
-											<span className="text-[11px] text-[var(--muted,#94a3b8)] font-bold">
-												В календарь:
-											</span>
-											<button
-												type="button"
-												onClick={handleDownloadIcs}
-												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.1))] hover:border-teal-400 transition-all flex items-center gap-1.5 shadow-xs"
-												data-testid="add-apple-cal-btn"
-											>
-												<CalendarPlus className="w-3.5 h-3.5 text-teal-400" />
-												<span>Apple / iCal (.ics)</span>
-											</button>
-											<button
-												type="button"
-												onClick={handleOpenGoogleCalendar}
-												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.1))] hover:border-blue-400 transition-all flex items-center gap-1.5 shadow-xs"
-												data-testid="add-google-cal-btn"
-											>
-												<ExternalLink className="w-3.5 h-3.5 text-blue-400" />
-												<span>Google</span>
-											</button>
-											<button
-												type="button"
-												onClick={handleOpenYandexCalendar}
-												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.1))] hover:border-amber-400 transition-all flex items-center gap-1.5 shadow-xs"
-												data-testid="add-yandex-cal-btn"
-											>
-												<ExternalLink className="w-3.5 h-3.5 text-amber-400" />
-												<span>Яндекс</span>
-											</button>
-										</div>
-									</div>
-
-									<div className="flex items-center justify-between">
+									<div className="flex items-center justify-between pt-2">
 										<h3 className="text-sm font-bold text-[var(--ink,#f8fafc)] flex items-center gap-2">
 											<Clock className="w-4 h-4 text-teal-400" />
 											<span>История приемов & Клинические протоколы (ф. 043/у)</span>
@@ -769,149 +700,18 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 							)}
 
 							{/* ============================================================ */}
-							{/* TAB 2: ПЛАН ЛЕЧЕНИЯ (TREATMENT PLAN, FDI TEETH & STAGES) */}
+							{/* TAB 2: ПЛАН ЛЕЧЕНИЯ (TREATMENT PLAN ROADMAP & 13% NDFL) */}
 							{/* ============================================================ */}
 							{activeTab === "plan" && (
 								<div className="space-y-4" data-testid="portal-tab-plan-content">
-									{/* Treatment Plan Hero Progress Summary */}
-									<div className="treatment-plan-hero">
-										<div className="plan-progress-header">
-											<div>
-												<div className="text-[10px] text-teal-400 font-bold uppercase tracking-wider">
-													{treatmentPlan.planNumber} • Куратор: {treatmentPlan.curatingDoctorName}
-												</div>
-												<h3 className="text-sm font-black text-[var(--ink,#f8fafc)] mt-0.5">
-													{treatmentPlan.titleRu}
-												</h3>
-											</div>
-											<div className="text-right">
-												<span className="text-base font-black text-teal-400">
-													{treatmentPlan.progressPercent}%
-												</span>
-												<div className="text-[10px] text-[var(--muted,#94a3b8)]">выполнено</div>
-											</div>
-										</div>
-
-										{/* Progress Bar */}
-										<div className="plan-progress-bar-bg">
-											<div
-												className="plan-progress-bar-fill"
-												style={{ width: `${treatmentPlan.progressPercent}%` }}
-											/>
-										</div>
-
-										{/* Financial Metrics */}
-										<div className="plan-metrics-grid">
-											<div className="plan-metric-box">
-												<div className="plan-metric-box-label">Общая сумма</div>
-												<div className="plan-metric-box-val">
-													{treatmentPlan.totalAmountRub.toLocaleString("ru-RU")} ₽
-												</div>
-											</div>
-											<div className="plan-metric-box">
-												<div className="plan-metric-box-label">Выполнено</div>
-												<div className="plan-metric-box-val text-emerald-400">
-													{treatmentPlan.completedAmountRub.toLocaleString("ru-RU")} ₽
-												</div>
-											</div>
-											<div className="plan-metric-box">
-												<div className="plan-metric-box-label">Осталось</div>
-												<div className="plan-metric-box-val text-amber-400">
-													{treatmentPlan.remainingAmountRub.toLocaleString("ru-RU")} ₽
-												</div>
-											</div>
-										</div>
-
-										{/* FDI Teeth Summary Chips */}
-										<div className="space-y-1.5 pt-1 border-t border-[var(--line,rgba(255,255,255,0.08))]">
-											<div className="text-[11px] font-bold text-[var(--muted,#94a3b8)]">
-												Задействованные зубы (FDI):
-											</div>
-											<div className="plan-teeth-chips-row">
-												{treatmentPlan.teethFdiSummary.map((tooth, idx) => (
-													<span
-														key={idx}
-														className={`plan-tooth-chip ${
-															idx === 0
-																? "completed"
-																: idx === 1
-																	? "in_progress"
-																	: "planned"
-														}`}
-													>
-														<span>{formatFdiToothName(tooth)}</span>
-													</span>
-												))}
-											</div>
-										</div>
-									</div>
-
-									{/* Step-by-Step Stages List */}
-									<div className="space-y-3">
-										<h4 className="text-xs font-bold text-[var(--muted,#94a3b8)] uppercase tracking-wider">
-											Этапы реализации плана лечения ({treatmentPlan.stages.length}):
-										</h4>
-
-										{treatmentPlan.stages.map((stage) => (
-											<div
-												key={stage.id}
-												className={`plan-stage-card ${stage.status}`}
-												data-testid={`plan-stage-${stage.id}`}
-											>
-												<div className="plan-stage-header">
-													<div>
-														<div className="flex items-center gap-2">
-															<span className="font-bold text-xs text-[var(--ink,#f8fafc)]">
-																{stage.titleRu}
-															</span>
-															<span className={`stage-status-badge ${stage.status}`}>
-																{stage.status === "completed"
-																	? "Выполнен"
-																	: stage.status === "in_progress"
-																		? "В работе"
-																		: "Запланирован"}
-															</span>
-														</div>
-														{stage.descriptionRu && (
-															<p className="text-[11px] text-[var(--muted,#94a3b8)] mt-1">
-																{stage.descriptionRu}
-															</p>
-														)}
-													</div>
-
-													<div className="text-right shrink-0">
-														<div className="text-xs font-black text-[var(--ink,#f8fafc)]">
-															{stage.totalAmountRub.toLocaleString("ru-RU")} ₽
-														</div>
-														{stage.targetDateRu && (
-															<div className="text-[10px] text-[var(--muted,#94a3b8)]">
-																{stage.targetDateRu}
-															</div>
-														)}
-													</div>
-												</div>
-
-												{/* Procedures breakdown */}
-												<div className="stage-procedures-list">
-													{stage.procedures.map((proc) => (
-														<div key={proc.id} className="stage-proc-row">
-															<div>
-																<div className="font-semibold text-[var(--ink,#f8fafc)]">
-																	{proc.nameRu} {proc.toothFdi ? `(зуб ${proc.toothFdi})` : ""}
-																</div>
-																<div className="text-[10px] text-[var(--muted,#94a3b8)]">
-																	{proc.code804n ? `${proc.code804n} • ` : ""}{proc.doctorName || "Врач клиники"}
-																</div>
-															</div>
-															<div className="font-bold text-[var(--ink,#f8fafc)] shrink-0">
-																{proc.priceRub.toLocaleString("ru-RU")} ₽
-															</div>
-														</div>
-													))}
-												</div>
-											</div>
-										))}
-									</div>
+									<TreatmentPlanRoadmap
+										planTitle={treatmentPlan.titleRu}
+										planNumber={treatmentPlan.planNumber}
+										curatingDoctorName={treatmentPlan.curatingDoctorName}
+										patientFullName={profile.fullName}
+										onBookStage={() => onBookOnlineClick?.()}
+										onRequestTaxCertificate={() => setActiveTab("documents")}
+									/>
 								</div>
 							)}
 
@@ -1531,6 +1331,14 @@ export const PatientMobilePortalModal: React.FC<PatientMobilePortalModalProps> =
 					</div>
 				</div>
 			)}
+
+			{/* ============================================================ */}
+			{/* SUB-MODAL: ADD TO HOME SCREEN (A2HS) PROMPT */}
+			{/* ============================================================ */}
+			<A2hsPromptModal
+				isOpen={isA2hsModalOpen}
+				onClose={() => setIsA2hsModalOpen(false)}
+			/>
 		</div>
 	);
 };

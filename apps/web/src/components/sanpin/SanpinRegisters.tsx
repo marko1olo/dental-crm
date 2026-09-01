@@ -27,6 +27,7 @@ import {
 	Recycle,
 	Rocket,
 	RotateCcw,
+	Scan,
 	Search,
 	ShieldAlert,
 	ShieldCheck,
@@ -1107,6 +1108,28 @@ export function SanpinRegisters() {
 					>
 						<Sparkles size={16} />
 						<span>{autoFilling ? "Оформление смены..." : "1-Клик Автопилот смены СанПиН"}</span>
+					</button>
+
+					{/* Сканировать крафт-пакет (Камера / 2D сканер) */}
+					<button
+						type="button"
+						onClick={() => setIsKraftModalOpen(true)}
+						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+						style={{
+							minHeight: "44px",
+							padding: "0.5rem 0.95rem",
+							fontSize: "0.825rem",
+							fontWeight: 600,
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.4rem",
+							whiteSpace: "nowrap",
+						}}
+						data-testid="sanpin-scan-kraft-btn"
+						title="Сканировать крафт-пакет: проверка стерильности и срока годности через камеру или USB-сканер"
+					>
+						<Scan size={16} color="var(--brand-primary, #2563eb)" />
+						<span>Сканировать крафт-пакет</span>
 					</button>
 
 					{/* Dropdown: [⋮ Опции СанПиН] — All secondary actions aggregated cleanly */}

@@ -607,6 +607,52 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		}
 	};
 
+	// 0-Click Hands-Free Voice Dictation State & Auto-Apply
+	const [autoApplyDictation, setAutoApplyDictation] = useState(true);
+
+	const handleDictationResult = useCallback(
+		(text: string) => {
+			const current = transcript || "";
+			const newText = current ? `${current}\n${text}` : text;
+			setTranscript(newText);
+
+			const orchestratorResult = AiOrchestrator.processEmkDictation(newText);
+			const parsed =
+				orchestratorResult.source === "local_algorithm"
+					? orchestratorResult.data
+					: {
+							isAiTask: true,
+							prompt: orchestratorResult.suggestedPrompt,
+						};
+			setSmartParsedData(parsed);
+
+			if (autoApplyDictation && parsed && !("isAiTask" in parsed)) {
+				// Direct 0-click application to 043/u diary & tooth chart without blocking popup
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+				const data = parsed as any;
+				if (data.toothUpdates && Array.isArray(data.toothUpdates)) {
+					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+					data.toothUpdates.forEach((t: any) => {
+						if (t.code && t.state) {
+							setToothState(t.code, t.state);
+						}
+					});
+				}
+				if (data.emkUpdates) {
+					Object.entries(data.emkUpdates).forEach(([k, v]) => {
+						if (v) appendToEMKField(k, v as string);
+					});
+				}
+				showToast("Голос: 043/у и зубная формула обновлены (0 кликов)", "success");
+				setShowSmartPreview(false);
+			} else {
+				setShowSmartPreview(true);
+			}
+			setShowHints(false);
+		},
+		[transcript, autoApplyDictation, setToothState],
+	);
+
 	const closeClinicalModal = useCallback(() => {
 		setSelectedToothForMenu(null);
 		setMaterialCategory(null);
@@ -1435,24 +1481,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					>
 						<SmartMicrophoneButton
 							context="visit"
-							onResult={(text) => {
-								const current = transcript || "";
-								const newText = current ? `${current}\n${text}` : text;
-								setTranscript(newText);
-
-								const orchestratorResult =
-									AiOrchestrator.processEmkDictation(newText);
-								const parsed =
-									orchestratorResult.source === "local_algorithm"
-										? orchestratorResult.data
-										: {
-												isAiTask: true,
-												prompt: orchestratorResult.suggestedPrompt,
-											};
-								setSmartParsedData(parsed);
-								setShowSmartPreview(true);
-								setShowHints(false);
-							}}
+							onResult={handleDictationResult}
 							style={{
 								minHeight: "44px",
 								padding: "10px 16px",
@@ -1460,6 +1489,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								justifyContent: "center",
 							}}
 						/>
+
+						<label
+							className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,rgba(255,255,255,0.1))] text-xs font-bold text-[var(--ink)] cursor-pointer select-none"
+							title="Автоматически заполнять дневник 043/у без обязательного блокирующего окна"
+						>
+							<input
+								type="checkbox"
+								checked={autoApplyDictation}
+								onChange={(e) => setAutoApplyDictation(e.target.checked)}
+								className="w-4 h-4 accent-[var(--teal,#0d9488)] cursor-pointer"
+							/>
+							<span>0-клик авто-запись</span>
+						</label>
 
 						<button
 							className="primary-button min-h-[44px] px-3 py-2"
@@ -3501,6 +3543,32 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					);
 				}}
 			/>
+
+			{/* ─── HOT PATH TIER 1 FLOATING CHAIRSIDE VOICE HUD ─── */}
+			<aside
+				className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-[var(--paper,rgba(15,23,42,0.92))] backdrop-blur-md border border-[var(--line,rgba(255,255,255,0.15))] rounded-full p-2 shadow-2xl transition-all select-none"
+				aria-label="Голосовой ввод у кресла"
+				data-testid="chairside-floating-voice-hud"
+			>
+				<label
+					className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] cursor-pointer select-none"
+					title="Автоматически заполнять дневник 043/у без блокирующего попапа"
+				>
+					<input
+						type="checkbox"
+						checked={autoApplyDictation}
+						onChange={(e) => setAutoApplyDictation(e.target.checked)}
+						className="w-4 h-4 accent-[var(--teal,#0d9488)] cursor-pointer"
+					/>
+					<span className="hidden sm:inline font-mono">0-клик</span>
+				</label>
+				<SmartMicrophoneButton
+					context="visit"
+					onResult={handleDictationResult}
+					className="shadow-md"
+				/>
+			</aside>
 		</>
 	);
 }
+

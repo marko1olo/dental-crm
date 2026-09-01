@@ -44,5 +44,7 @@ export function formatKopecksToRubles(kopecks: number): string {
 	return (Math.round(kopecks) / 100).toFixed(2);
 }
 
+export const formatKopecksToRubExact = formatKopecksToRubles;
+
 export * from "./utils/money.js";
 

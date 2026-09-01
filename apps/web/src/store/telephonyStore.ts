@@ -1,7 +1,7 @@
 import type { Appointment, InsuranceContract, Patient, PatientInsight, StaffMember } from "@dental/shared";
 import { create } from "zustand";
 
-export type TelephonyProvider = "mango" | "uis" | "asterisk" | "zadarma" | "unknown";
+export type TelephonyProvider = "mango" | "uis" | "asterisk" | "zadarma" | "sip" | "unknown";
 export type TelephonyCallStatus = "ringing" | "answered" | "ended" | "rejected";
 export type PlaybackSpeed = 1 | 1.25 | 1.5 | 2;
 export type CallTransferType = "blind" | "attended";

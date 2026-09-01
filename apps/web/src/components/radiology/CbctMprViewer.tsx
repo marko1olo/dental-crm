@@ -731,10 +731,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<div
 								key={r.id}
 								style={{ left: `${midX}px`, top: `${midY}px`, transform: "translate(-50%, -50%)" }}
-								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
+								className={`absolute z-20 pointer-events-auto flex items-center gap-2 pl-2.5 pr-1 py-1 rounded-xl text-xs font-mono font-bold shadow-lg border transition-all ${
 									isSelected
-										? "bg-slate-950/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
-										: "bg-slate-950/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+										? "bg-slate-950/95 backdrop-blur text-amber-300 border-amber-500/80 ring-2 ring-amber-500/50"
+										: "bg-slate-950/90 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
 								}`}
 								data-testid={`cbct-ruler-overlay-badge-${r.id}`}
 							>
@@ -745,11 +745,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										e.stopPropagation();
 										handleDeleteRuler(r.id);
 									}}
-									className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+									className="min-w-[44px] min-h-[44px] -my-1.5 -mr-1 px-2.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500 hover:text-white text-red-300 border border-red-500/30 flex items-center justify-center text-sm font-black cursor-pointer transition-colors"
 									title="Удалить линейку [×]"
 									aria-label="Удалить линейку"
 								>
-									×
+									<span className="w-5 h-5 rounded-full bg-red-500/30 flex items-center justify-center">×</span>
 								</button>
 							</div>
 						);
@@ -769,10 +769,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<div
 								key={a.id}
 								style={{ left: `${badgePos.x}px`, top: `${badgePos.y}px`, transform: "translate(-50%, -50%)" }}
-								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
+								className={`absolute z-20 pointer-events-auto flex items-center gap-2 pl-2.5 pr-1 py-1 rounded-xl text-xs font-mono font-bold shadow-lg border transition-all ${
 									isSelected
-										? "bg-slate-950/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
-										: "bg-slate-950/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+										? "bg-slate-950/95 backdrop-blur text-amber-300 border-amber-500/80 ring-2 ring-amber-500/50"
+										: "bg-slate-950/90 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
 								}`}
 								data-testid={`cbct-angle-overlay-badge-${a.id}`}
 							>
@@ -783,11 +783,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										e.stopPropagation();
 										handleDeleteAngle(a.id);
 									}}
-									className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+									className="min-w-[44px] min-h-[44px] -my-1.5 -mr-1 px-2.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500 hover:text-white text-red-300 border border-red-500/30 flex items-center justify-center text-sm font-black cursor-pointer transition-colors"
 									title="Удалить угол [×]"
 									aria-label="Удалить угол"
 								>
-									×
+									<span className="w-5 h-5 rounded-full bg-red-500/30 flex items-center justify-center">×</span>
 								</button>
 							</div>
 						);
@@ -804,10 +804,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<div
 								key={pm.id}
 								style={{ left: `${pScreen.x + 12}px`, top: `${pScreen.y - 12}px`, transform: "translate(0, -50%)" }}
-								className={`absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold shadow-lg border transition-all ${
+								className={`absolute z-20 pointer-events-auto flex items-center gap-2 pl-2.5 pr-1 py-1 rounded-xl text-xs font-mono font-bold shadow-lg border transition-all ${
 									isSelected
-										? "bg-slate-950/90 backdrop-blur text-amber-300 border-amber-500/80 ring-1 ring-amber-500/40"
-										: "bg-slate-950/80 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
+										? "bg-slate-950/95 backdrop-blur text-amber-300 border-amber-500/80 ring-2 ring-amber-500/50"
+										: "bg-slate-950/90 backdrop-blur text-teal-300 border-slate-700/80 hover:border-teal-500/60"
 								}`}
 								title={formatMischTooltip(pm.hu)}
 								data-testid={`cbct-probe-overlay-badge-${pm.id}`}
@@ -819,11 +819,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										e.stopPropagation();
 										handleDeleteProbe(pm.id);
 									}}
-									className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+									className="min-w-[44px] min-h-[44px] -my-1.5 -mr-1 px-2.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500 hover:text-white text-red-300 border border-red-500/30 flex items-center justify-center text-sm font-black cursor-pointer transition-colors"
 									title="Удалить замер плотности [×]"
 									aria-label="Удалить замер плотности"
 								>
-									×
+									<span className="w-5 h-5 rounded-full bg-red-500/30 flex items-center justify-center">×</span>
 								</button>
 							</div>
 						);
@@ -843,7 +843,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					return (
 						<div
 							style={{ left: `${pMidScreen.x}px`, top: `${pMidScreen.y - 24}px`, transform: "translate(-50%, -50%)" }}
-							className="absolute z-20 pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-slate-950/80 backdrop-blur text-amber-300 border border-amber-500/60 shadow-lg"
+							className="absolute z-20 pointer-events-auto flex items-center gap-2 pl-3 pr-1 py-1 rounded-xl text-xs font-mono font-bold bg-slate-950/90 backdrop-blur text-amber-300 border border-amber-500/60 shadow-lg"
 							data-testid={`cbct-nerve-overlay-badge-${plane}`}
 						>
 							<span>Канал IAN (3D {nerveTotalLengthMm.toFixed(1)} мм · 2.0 мм буфер)</span>
@@ -853,11 +853,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									e.stopPropagation();
 									handleClearNerve();
 								}}
-								className="w-4 h-4 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/50 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
+								className="min-w-[44px] min-h-[44px] -my-1.5 -mr-1 px-2.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500 hover:text-white text-red-300 border border-red-500/30 flex items-center justify-center text-sm font-black cursor-pointer transition-colors"
 								title="Очистить трассировку нерва"
 								aria-label="Очистить трассировку нерва"
 							>
-								×
+								<span className="w-5 h-5 rounded-full bg-red-500/30 flex items-center justify-center">×</span>
 							</button>
 						</div>
 					);
@@ -1771,6 +1771,173 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 	const handleWheelScroll = handleWheelZoom;
 
+	// ─── 6b. MULTI-TOUCH GESTURE ENGINE (PINCH-TO-ZOOM, 2-FINGER PAN & 1-FINGER NAVIGATION) ───
+	const touchGestureRef = useRef<{
+		viewport: CbctViewportType;
+		mode: "pinch" | "pan" | "slice_drag" | "idle";
+		initialDistance: number;
+		initialZoom: number;
+		initialMidX: number;
+		initialMidY: number;
+		initialPanX: number;
+		initialPanY: number;
+		touchStartX: number;
+		touchStartY: number;
+		lastTapTime: number;
+		lastTapX: number;
+		lastTapY: number;
+	}>({
+		viewport: "axial",
+		mode: "idle",
+		initialDistance: 0,
+		initialZoom: 1,
+		initialMidX: 0,
+		initialMidY: 0,
+		initialPanX: 0,
+		initialPanY: 0,
+		touchStartX: 0,
+		touchStartY: 0,
+		lastTapTime: 0,
+		lastTapX: 0,
+		lastTapY: 0,
+	});
+
+	const handleCanvasTouchStart = useCallback(
+		(plane: CbctViewportType, e: React.TouchEvent<HTMLCanvasElement>) => {
+			if (e.touches.length === 2) {
+				// 2-Finger Multi-Touch -> Pinch-to-zoom & 2-finger pan
+				const t0 = e.touches[0];
+				const t1 = e.touches[1];
+				if (!t0 || !t1) return;
+				const dist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+				const midX = (t0.clientX + t1.clientX) / 2;
+				const midY = (t0.clientY + t1.clientY) / 2;
+				const curTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+
+				touchGestureRef.current = {
+					...touchGestureRef.current,
+					viewport: plane,
+					mode: "pinch",
+					initialDistance: Math.max(10, dist),
+					initialZoom: curTransform.zoom,
+					initialMidX: midX,
+					initialMidY: midY,
+					initialPanX: curTransform.panX,
+					initialPanY: curTransform.panY,
+				};
+				setActiveViewport(plane);
+			} else if (e.touches.length === 1) {
+				const t0 = e.touches[0];
+				if (!t0) return;
+				const now = Date.now();
+				const lastTap = touchGestureRef.current.lastTapTime;
+				const dxTap = Math.abs(t0.clientX - touchGestureRef.current.lastTapX);
+				const dyTap = Math.abs(t0.clientY - touchGestureRef.current.lastTapY);
+
+				// Double-tap -> Toggle maximize or reset view
+				if (now - lastTap < 300 && dxTap < 30 && dyTap < 30) {
+					handleToggleMaximize(plane);
+					touchGestureRef.current.lastTapTime = 0;
+					return;
+				}
+
+				const curTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+				touchGestureRef.current = {
+					...touchGestureRef.current,
+					viewport: plane,
+					mode: activeTool === "pan" ? "pan" : "slice_drag",
+					touchStartX: t0.clientX,
+					touchStartY: t0.clientY,
+					initialPanX: curTransform.panX,
+					initialPanY: curTransform.panY,
+					lastTapTime: now,
+					lastTapX: t0.clientX,
+					lastTapY: t0.clientY,
+				};
+				setActiveViewport(plane);
+
+				// 1-Finger tap -> Move crosshair slice
+				if (volume && (plane === "axial" || plane === "coronal" || plane === "sagittal")) {
+					const canvas = e.currentTarget;
+					const { x, y } = getCanvasPointerPos(canvas, t0.clientX, t0.clientY);
+					const clickedWorldMm = mapCanvasPointerToWorldMmWithTransform(
+						{ x, y },
+						{ width: canvas.width, height: canvas.height },
+						plane as MprPlane,
+						crosshairMm,
+						obliqueAngles,
+						curTransform,
+						volume,
+					);
+					setCrosshairMm(clickedWorldMm);
+				}
+			}
+		},
+		[transforms, activeTool, volume, crosshairMm, obliqueAngles, handleToggleMaximize],
+	);
+
+	const handleCanvasTouchMove = useCallback(
+		(plane: CbctViewportType, e: React.TouchEvent<HTMLCanvasElement>) => {
+			if (e.touches.length === 2 && touchGestureRef.current.mode === "pinch") {
+				const t0 = e.touches[0];
+				const t1 = e.touches[1];
+				if (!t0 || !t1) return;
+				const dist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+				const midX = (t0.clientX + t1.clientX) / 2;
+				const midY = (t0.clientY + t1.clientY) / 2;
+
+				const scale = dist / touchGestureRef.current.initialDistance;
+				const newZoom = Math.min(8.0, Math.max(0.2, Number((touchGestureRef.current.initialZoom * scale).toFixed(3))));
+				const newPanX = Number((touchGestureRef.current.initialPanX + (midX - touchGestureRef.current.initialMidX)).toFixed(1));
+				const newPanY = Number((touchGestureRef.current.initialPanY + (midY - touchGestureRef.current.initialMidY)).toFixed(1));
+
+				setTransforms((prev) => ({
+					...prev,
+					[plane]: {
+						zoom: newZoom,
+						panX: newPanX,
+						panY: newPanY,
+					},
+				}));
+			} else if (e.touches.length === 1) {
+				const t0 = e.touches[0];
+				if (!t0) return;
+
+				if (touchGestureRef.current.mode === "pan" || activeTool === "pan") {
+					const deltaX = t0.clientX - touchGestureRef.current.touchStartX;
+					const deltaY = t0.clientY - touchGestureRef.current.touchStartY;
+					setTransforms((prev) => ({
+						...prev,
+						[plane]: {
+							...prev[plane],
+							panX: Number((touchGestureRef.current.initialPanX + deltaX).toFixed(1)),
+							panY: Number((touchGestureRef.current.initialPanY + deltaY).toFixed(1)),
+						},
+					}));
+				} else if (volume && (plane === "axial" || plane === "coronal" || plane === "sagittal")) {
+					const canvas = e.currentTarget;
+					const { x, y } = getCanvasPointerPos(canvas, t0.clientX, t0.clientY);
+					const transform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+					const clickedWorldMm = mapCanvasPointerToWorldMmWithTransform(
+						{ x, y },
+						{ width: canvas.width, height: canvas.height },
+						plane as MprPlane,
+						crosshairMm,
+						obliqueAngles,
+						transform,
+						volume,
+					);
+					setCrosshairMm(clickedWorldMm);
+				}
+			}
+		},
+		[activeTool, volume, transforms, crosshairMm, obliqueAngles],
+	);
+
+	const handleCanvasTouchEnd = useCallback(() => {
+		touchGestureRef.current.mode = "idle";
+	}, []);
+
 	// ─── KEYBOARD HOTKEY NAVIGATION HANDLERS ─────────────────────────────────
 	const handleScrollSlice = useCallback((direction: "prev" | "next", stepCount: number) => {
 		if (!volume) return;
@@ -2367,8 +2534,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 												onPointerDown={(e) => handlePointerDown("axial", e)}
 												onPointerMove={(e) => handlePointerMove("axial", e)}
 												onPointerUp={handlePointerUp}
+												onTouchStart={(e) => handleCanvasTouchStart("axial", e)}
+												onTouchMove={(e) => handleCanvasTouchMove("axial", e)}
+												onTouchEnd={handleCanvasTouchEnd}
+												onTouchCancel={handleCanvasTouchEnd}
 												onWheel={(e) => handleWheelZoom("axial", e)}
-												style={{ cursor: getCanvasCursor("axial") }}
+												style={{ cursor: getCanvasCursor("axial"), touchAction: "none" }}
 												className="max-w-full max-h-full object-contain rounded-lg block m-auto"
 											/>
 											<CbctViewportHud
@@ -2418,8 +2589,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 												onPointerDown={(e) => handlePointerDown("coronal", e)}
 												onPointerMove={(e) => handlePointerMove("coronal", e)}
 												onPointerUp={handlePointerUp}
+												onTouchStart={(e) => handleCanvasTouchStart("coronal", e)}
+												onTouchMove={(e) => handleCanvasTouchMove("coronal", e)}
+												onTouchEnd={handleCanvasTouchEnd}
+												onTouchCancel={handleCanvasTouchEnd}
 												onWheel={(e) => handleWheelZoom("coronal", e)}
-												style={{ cursor: getCanvasCursor("coronal") }}
+												style={{ cursor: getCanvasCursor("coronal"), touchAction: "none" }}
 												className="max-w-full max-h-full object-contain rounded-lg block m-auto"
 											/>
 											<CbctViewportHud
@@ -2469,8 +2644,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 												onPointerDown={(e) => handlePointerDown("sagittal", e)}
 												onPointerMove={(e) => handlePointerMove("sagittal", e)}
 												onPointerUp={handlePointerUp}
+												onTouchStart={(e) => handleCanvasTouchStart("sagittal", e)}
+												onTouchMove={(e) => handleCanvasTouchMove("sagittal", e)}
+												onTouchEnd={handleCanvasTouchEnd}
+												onTouchCancel={handleCanvasTouchEnd}
 												onWheel={(e) => handleWheelZoom("sagittal", e)}
-												style={{ cursor: getCanvasCursor("sagittal") }}
+												style={{ cursor: getCanvasCursor("sagittal"), touchAction: "none" }}
 												className="max-w-full max-h-full object-contain rounded-lg block m-auto"
 											/>
 											<CbctViewportHud
@@ -2535,7 +2714,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 								<>
 									<canvas
 										ref={panoCanvasRef}
+										onTouchStart={(e) => handleCanvasTouchStart("panoramic", e)}
+										onTouchMove={(e) => handleCanvasTouchMove("panoramic", e)}
+										onTouchEnd={handleCanvasTouchEnd}
+										onTouchCancel={handleCanvasTouchEnd}
 										onWheel={(e) => handleWheelZoom("panoramic", e)}
+										style={{ touchAction: "none" }}
 										className="w-full h-full object-contain rounded-lg shadow-2xl cursor-pointer"
 										data-testid="cbct-panorama-canvas"
 									/>
@@ -2610,7 +2794,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									<>
 										<canvas
 											ref={crossSectionCanvasRef}
+											onTouchStart={(e) => handleCanvasTouchStart("cross_section", e)}
+											onTouchMove={(e) => handleCanvasTouchMove("cross_section", e)}
+											onTouchEnd={handleCanvasTouchEnd}
+											onTouchCancel={handleCanvasTouchEnd}
 											onWheel={(e) => handleWheelZoom("cross_section", e)}
+											style={{ touchAction: "none" }}
 											className="w-full h-full object-contain rounded-lg shadow-2xl"
 										/>
 										<CbctViewportHud

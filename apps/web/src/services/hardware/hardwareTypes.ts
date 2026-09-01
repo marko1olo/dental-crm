@@ -48,11 +48,12 @@ export interface FiscalReceiptLineItem {
 }
 
 export interface FiscalReceiptPrintPayload {
+	readonly clinicName?: string | undefined;
 	readonly clientMutationId?: string | undefined;
 	readonly patientId?: string | undefined;
 	readonly visitId?: string | undefined;
 	readonly operationType: "income" | "income_return" | "expense" | "expense_return";
-	readonly customerContact: string;
+	readonly customerContact?: string | undefined;
 	readonly cashierFullName: string;
 	readonly cashierInn?: string | undefined;
 	readonly items: FiscalReceiptLineItem[];

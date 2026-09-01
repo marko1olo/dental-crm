@@ -53,6 +53,8 @@ import {
 	rubToKopecks,
 } from "@dental/shared";
 import { useModalA11y } from "../../hooks/useModalA11y";
+import { hardwarePrinter } from "../../services/hardware/HardwarePrinter";
+import type { FiscalReceiptPrintPayload } from "../../services/hardware/hardwareTypes";
 
 export type CashRegisterTenderMethod =
 	| "card"
@@ -226,6 +228,38 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 			setFiscalSuccessReceipt(receiptResult);
 			setToastMsg(`Чек 54-ФЗ №${fiscalDocNumber} успешно фискализирован в ОФД!`);
+
+			// Dispatch thermal receipt print via HardwarePrinter Facade (Bluetooth LE / LAN TCP / Web)
+			const printPayload: FiscalReceiptPrintPayload = {
+				clinicName,
+				cashierInn: clinicInn,
+				cashierFullName,
+				customerContact: patientPhone || patientName,
+				operationType: initialOperationType,
+				items: effectiveItems.map((it) => ({
+					name: it.name,
+					priceRub: it.priceRub,
+					quantity: it.quantity,
+					amountRub: Math.max(0, it.priceRub * it.quantity - (it.discountRub || 0)),
+					vatRate: "vat_0" as const,
+					medicalServiceCode804n: it.code804n ? it.code804n : undefined,
+					markingCode: it.markingCode ? it.markingCode : undefined,
+				})),
+				totalRub: totalInvoiceRub,
+				cashRub: selectedTender === "cash" ? totalInvoiceRub : splitCashRub,
+				electronicRub: selectedTender === "card" ? totalInvoiceRub : splitCardRub,
+				sbpRub: selectedTender === "sbp" ? totalInvoiceRub : splitSbpRub,
+				prepaidRub:
+					selectedTender === "deposit" || selectedTender === "family"
+						? totalInvoiceRub
+						: splitDepositRub + splitFamilyRub,
+			};
+
+			try {
+				void hardwarePrinter.printFiscalReceipt(printPayload);
+			} catch (printErr) {
+				console.warn("[CashRegisterModal] HardwarePrinter print deferred:", printErr);
+			}
 
 			if (onPaymentComplete) {
 				onPaymentComplete(receiptResult);

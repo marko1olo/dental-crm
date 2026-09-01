@@ -63,6 +63,7 @@ import { registerLeadsRoutes } from "./routes/leads.js";
 import { registerLoyaltyRoutes } from "./routes/loyalty.js";
 import { registerMaxRoutes } from "./routes/max.js";
 import { registerMdlpRoutes } from "./routes/mdlp.js";
+import { registerMobileOtaRoutes } from "./routes/mobileOta.js";
 import { registerPharmacologyRoutes } from "./routes/pharmacology.js";
 import { registerPrescriptionRoutes } from "./routes/prescriptions.js";
 import { registerMigrationRoutes } from "./routes/migration.js";
@@ -89,6 +90,8 @@ import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
+import { registerSpeechLaboratoryRoutes } from "./routes/speechLaboratory.js";
+import { registerSpeechLiveRoutes } from "./routes/speechLive.js";
 import { registerSanpinRoutes } from "./routes/sanpin.js";
 import { registerSterilizationRoutes } from "./routes/sterilization.js";
 import { registerSyncRoutes } from "./routes/sync.js";
@@ -618,6 +621,7 @@ export async function createDenteApiApp(
 	});
 
 	await registerHealthRoutes(app);
+	await registerMobileOtaRoutes(app);
 
 	await registerAiRoutes(app);
 	await registerBillingRoutes(app);
@@ -691,6 +695,8 @@ export async function createDenteApiApp(
 	await registerScheduleRoutes(app);
 	await registerSettingsRoutes(app);
 	await registerSpeechRoutes(app);
+	await registerSpeechLaboratoryRoutes(app);
+	await registerSpeechLiveRoutes(app);
 	void registerSmartImportRoutes(app);
 	void registerYandexCalendarRoutes(app);
 	await registerClinicWorkflowsRoutes(app);

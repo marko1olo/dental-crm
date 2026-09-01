@@ -54,21 +54,62 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	onAddToInvoice,
 	onClose,
 }) => {
-	const menuRef = useRef<HTMLDivElement>(null);
-	const [isMobile, setIsMobile] = useState<boolean>(() => {
+	const [isTouchOrMobile, setIsTouchOrMobile] = useState<boolean>(() => {
 		if (typeof window !== "undefined") {
-			return window.innerWidth <= 640;
+			return (
+				window.innerWidth <= 1024 ||
+				"ontouchstart" in window ||
+				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
+			);
 		}
 		return false;
 	});
 
 	useEffect(() => {
 		const handleResize = () => {
-			setIsMobile(window.innerWidth <= 640);
+			setIsTouchOrMobile(
+				window.innerWidth <= 1024 ||
+				"ontouchstart" in window ||
+				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
+			);
 		};
 		window.addEventListener("resize", handleResize);
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
+
+	const menuRef = useRef<HTMLDivElement>(null);
+	// Touch swipe-to-dismiss gesture state for bottom sheet drawer
+	const [dragOffsetY, setDragOffsetY] = useState(0);
+	const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+	const touchStartYRef = useRef(0);
+	const isAtTopRef = useRef(true);
+
+	const handleSheetTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+		const touch = e.touches[0];
+		if (!touch) return;
+		touchStartYRef.current = touch.clientY;
+		const el = menuRef.current;
+		isAtTopRef.current = el ? el.scrollTop <= 0 : true;
+	};
+
+	const handleSheetTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+		const touch = e.touches[0];
+		if (!touch) return;
+		const deltaY = touch.clientY - touchStartYRef.current;
+		if (deltaY > 0 && isAtTopRef.current) {
+			setDragOffsetY(deltaY);
+			setIsDraggingSheet(true);
+		}
+	};
+
+	const handleSheetTouchEnd = () => {
+		if (dragOffsetY > 65) {
+			onClose();
+		} else {
+			setDragOffsetY(0);
+			setIsDraggingSheet(false);
+		}
+	};
 
 	const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>(() =>
 		surfaces ? [...surfaces] : [],
@@ -311,30 +352,46 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	const content = (
 		<div
 			className={`radial-tooth-menu-overlay fixed inset-0 z-[9999] pointer-events-auto bg-black/60 backdrop-blur-[4px] animate-fadeIn ${
-				isMobile ? "flex flex-col justify-end p-0 sm:p-4" : ""
+				isTouchOrMobile ? "flex flex-col justify-end p-0 sm:p-4" : ""
 			}`}
 			data-testid="tooth-radial-menu-overlay"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) {
+					onClose();
+				}
+			}}
 		>
-			{isMobile ? (
-				/* Mobile Bottom Sheet Drawer Layout (<= 640px / 390px) */
+			{isTouchOrMobile ? (
+				/* Mobile / Tablet Glove-Friendly Bottom Sheet Drawer Layout (<= 1024px & touch devices) */
 				<div
 					ref={menuRef}
-					className="radial-mobile-sheet w-full max-w-lg mx-auto bg-[var(--odontogram-paper)] border-t sm:border border-[var(--odontogram-border)] rounded-t-3xl sm:rounded-2xl shadow-2xl p-4 flex flex-col gap-3 max-h-[88vh] overflow-y-auto animate-slideUp select-none"
+					onTouchStart={handleSheetTouchStart}
+					onTouchMove={handleSheetTouchMove}
+					onTouchEnd={handleSheetTouchEnd}
+					style={{
+						transform: dragOffsetY > 0 ? `translateY(${dragOffsetY}px)` : undefined,
+						transition: isDraggingSheet ? "none" : "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+						touchAction: "pan-y",
+					}}
+					className="radial-mobile-sheet w-full max-w-xl mx-auto bg-[var(--odontogram-paper)] border-t sm:border border-[var(--odontogram-border)] rounded-t-3xl sm:rounded-2xl shadow-2xl p-4 sm:p-5 flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto animate-slideUp select-none"
 					role="dialog"
 					aria-label={`Меню статуса зуба ${toothNumber}`}
 					onClick={(e) => e.stopPropagation()}
 				>
-					{/* Sheet Drag Handle */}
-					<div className="w-12 h-1.5 rounded-full bg-[var(--odontogram-border-strong)] mx-auto opacity-60 mb-0.5" />
+					{/* Sheet Drag Handle - Enhanced touch grab zone */}
+					<div
+						className="w-16 h-2 rounded-full bg-[var(--odontogram-border-strong)] mx-auto opacity-70 mb-1 cursor-grab active:cursor-grabbing hover:opacity-100 transition-opacity"
+						title="Потяните вниз для закрытия"
+					/>
 
 					{/* Header with Tooth Number and Folk Name */}
-					<div className="flex items-center justify-between border-b border-[var(--odontogram-border-subtle)] pb-2.5">
-						<div className="flex items-center gap-2.5 min-w-0">
-							<span className="w-11 h-11 rounded-xl bg-teal-500/15 border border-teal-500/30 text-[var(--teal)] font-black text-xl flex items-center justify-center font-mono shrink-0 shadow-2xs">
+					<div className="flex items-center justify-between border-b border-[var(--odontogram-border-subtle)] pb-3">
+						<div className="flex items-center gap-3 min-w-0">
+							<span className="w-12 h-12 rounded-xl bg-teal-500/15 border border-teal-500/30 text-[var(--teal)] font-black text-2xl flex items-center justify-center font-mono shrink-0 shadow-2xs">
 								{toothNumber}
 							</span>
 							<div className="flex flex-col min-w-0">
-								<span className="text-sm font-extrabold text-[var(--odontogram-ink)] leading-tight truncate">
+								<span className="text-base font-extrabold text-[var(--odontogram-ink)] leading-tight truncate">
 									{getToothFolkAndAnatomicalNameRu(toothNumber)}
 								</span>
 								<span className="text-xs text-[var(--odontogram-ink-muted)] truncate">
@@ -346,15 +403,15 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							type="button"
 							onClick={onClose}
 							className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-full bg-[var(--odontogram-surface-hover)] hover:bg-rose-500 hover:text-white text-[var(--odontogram-ink-muted)] flex items-center justify-center transition-all cursor-pointer shrink-0"
-							title="Закрыть (Esc)"
+							title="Закрыть (Esc или свайп вниз)"
 							aria-label="Закрыть меню"
 						>
-							<X size={20} />
+							<X size={22} />
 						</button>
 					</div>
 
-					{/* 8 Status Buttons in 2-Column Touch Grid */}
-					<div className="grid grid-cols-2 gap-2 w-full">
+					{/* 8 Primary Diagnostic Buttons in 2-Column Touch Grid (>= 52px Touch Targets) */}
+					<div className="grid grid-cols-2 gap-2.5 w-full">
 						{items.map((item) => {
 							const isCurrent = currentState === item.state;
 							return (
@@ -366,7 +423,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										onClose();
 									}}
 									style={{ background: item.bgGradient }}
-									className={`radial-item-btn min-h-[48px] min-w-[48px] px-3.5 py-2.5 rounded-xl font-bold text-white flex items-center justify-between gap-2 shadow-sm transition-all active:scale-95 cursor-pointer touch-manipulation border border-white/25 ${
+									className={`radial-item-btn min-h-[52px] min-w-[48px] px-4 py-3 rounded-2xl font-bold text-white flex items-center justify-between gap-2.5 shadow-sm transition-all active:scale-95 cursor-pointer touch-manipulation border border-white/25 ${
 										isCurrent
 											? "ring-2 ring-white scale-[1.02] font-black"
 											: "opacity-90 hover:opacity-100"
@@ -374,11 +431,11 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									title={item.label}
 									data-testid={`radial-btn-${item.id}`}
 								>
-									<div className="flex items-center gap-2 min-w-0">
+									<div className="flex items-center gap-2.5 min-w-0">
 										<span className="shrink-0">{item.icon}</span>
-										<span className="text-sm font-black truncate">{item.shortLabel}</span>
+										<span className="text-sm sm:text-base font-black truncate">{item.shortLabel}</span>
 									</div>
-									<span className="text-[11px] px-1.5 py-0.5 rounded-md bg-black/30 text-white font-mono font-black shrink-0">
+									<span className="text-xs px-2 py-0.5 rounded-md bg-black/35 text-white font-mono font-black shrink-0">
 										{item.hotkey}
 									</span>
 								</button>
@@ -387,21 +444,21 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					</div>
 
 					{/* Quick Macro Bar (Black Classes I-VI / 6-Surface Shading / Resorption) */}
-					<div className="flex flex-col gap-2 p-2.5 rounded-2xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)]">
+					<div className="flex flex-col gap-2.5 p-3 rounded-2xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)]">
 						{isPrimaryTooth(toothNumber) ? (
 							<>
 								<div className="flex items-center justify-between">
 									<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1 shrink-0">Резорбция корней:</span>
-									<span className="text-[11px] text-[var(--odontogram-ink-muted)]">0–100%</span>
+									<span className="text-xs text-[var(--odontogram-ink-muted)]">0–100%</span>
 								</div>
-								<div className="grid grid-cols-4 gap-1.5 w-full">
+								<div className="grid grid-cols-4 gap-2 w-full">
 									<button
 										type="button"
 										onClick={() => {
 											onSelectState("Healthy", undefined, "resorption_1");
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
 										title="Физиологическая резорбция I степени (25%)"
 									>
 										[Рез I 25%]
@@ -412,7 +469,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Healthy", undefined, "resorption_2");
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
 										title="Физиологическая резорбция II степени (50%)"
 									>
 										[Рез II 50%]
@@ -423,7 +480,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Healthy", undefined, "resorption_3");
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
 										title="Физиологическая резорбция III степени (75%)"
 									>
 										[Рез III 75%]
@@ -434,7 +491,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Missing", undefined, "exfoliation");
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation text-center"
 										title="Физиологическая смена / Эксфолиация (100%)"
 									>
 										[Смена 100%]
@@ -443,10 +500,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							</>
 						) : (
 							<>
-								{/* 6-Surface Toggles */}
-								<div className="flex items-center justify-between gap-1">
+								{/* 6-Surface Toggles (>= 48x48px Touch Targets) */}
+								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
 									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1 shrink-0">6 Поверхностей:</span>
-									<div className="flex items-center gap-1">
+									<div className="grid grid-cols-6 gap-1.5 sm:flex sm:items-center">
 										{(["O", "V", "L", "M", "D", "C"] as const).map((surf) => {
 											const isActive = selectedSurfaces.includes(surf);
 											return (
@@ -454,7 +511,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 													key={surf}
 													type="button"
 													onClick={() => toggleSurface(surf)}
-													className={`min-h-[38px] min-w-[38px] px-2 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none ${
+													className={`min-h-[48px] min-w-[48px] px-2.5 py-1.5 rounded-xl text-sm font-mono font-black border transition-all cursor-pointer select-none flex items-center justify-center ${
 														isActive
 															? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
 															: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -468,18 +525,18 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									</div>
 								</div>
 
-								{/* Black Classes I - VI */}
-								<div className="flex items-center justify-between pt-1 border-t border-[var(--odontogram-border-subtle)]">
+								{/* Black Classes I - VI (>= 48px Touch Targets) */}
+								<div className="flex items-center justify-between pt-2 border-t border-[var(--odontogram-border-subtle)]">
 									<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1 shrink-0">Классы по Блэку:</span>
 								</div>
-								<div className="grid grid-cols-4 gap-1 w-full">
+								<div className="grid grid-cols-4 gap-1.5 w-full">
 									<button
 										type="button"
 										onClick={() => {
 											onSelectState("Caries", ["O"]);
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
 										title="I класс: Окклюзионные фиссуры и ямки (O)"
 									>
 										[I: O]
@@ -490,7 +547,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["M", "O", "D"]);
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
 										title="II класс: Медиально-окклюзионно-дистальная полость (MOD)"
 									>
 										[II: MOD]
@@ -501,7 +558,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["M", "O"]);
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
 										title="II класс: Медиально-окклюзионная полость (MO)"
 									>
 										[II: MO]
@@ -512,7 +569,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["O", "D"]);
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
 										title="II класс: Окклюзионно-дистальная полость (OD)"
 									>
 										[II: OD]
@@ -523,7 +580,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["M", "D"]);
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
 										title="III класс: Апроксимальные поверхности резцов/клыков без режущего края (M/D)"
 									>
 										[III: M/D]
@@ -534,7 +591,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["M", "O", "D"]);
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
 										title="IV класс: Апроксимальные поверхности резцов/клыков с поражением режущего края (MOD)"
 									>
 										[IV: Реж]
@@ -545,7 +602,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["C"]);
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
 										title="V класс: Пришеечная полость у шейки зуба (C/Cervical)"
 									>
 										[V: Приш]
@@ -556,7 +613,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["O"]);
 											onClose();
 										}}
-										className="min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
 										title="VI класс: Бугры моляров/премоляров или режущий край"
 									>
 										[VI: Бугры]
@@ -568,8 +625,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 					{/* IROPZ warning */}
 					{(Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") && (
-						<div className="flex items-center gap-2 bg-amber-500/15 text-amber-900 dark:text-amber-200 p-2.5 rounded-xl border border-amber-500/30 text-xs font-bold">
-							<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+						<div className="flex items-center gap-2 bg-amber-500/15 text-amber-900 dark:text-amber-200 p-3 rounded-xl border border-amber-500/30 text-xs font-bold">
+							<AlertTriangle size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
 							<span>ИРОПЗ &gt; 0.6: Рекомендовано ортопедическое восстановление (коронка Z51.8)</span>
 						</div>
 					)}
@@ -584,9 +641,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										onOpenEndo();
 										onClose();
 									}}
-									className="flex-1 min-h-[48px] min-w-[48px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								>
-									<Wrench size={16} />
+									<Wrench size={18} />
 									<span>Журнал каналов</span>
 								</button>
 							)}
@@ -597,9 +654,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										onAddToInvoice();
 										onClose();
 									}}
-									className="flex-1 min-h-[48px] min-w-[48px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black text-[var(--teal)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] border border-[var(--teal)]/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-[var(--teal)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] border border-[var(--teal)]/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								>
-									<Coins size={16} />
+									<Coins size={18} />
 									<span>В смету</span>
 								</button>
 							)}
