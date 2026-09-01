@@ -116,11 +116,12 @@ export function buildDictationSystemPrompt(
 
 export async function parseDictationWithLLM(
 	transcript: string,
-	context: ParserContext,
+	context: ParserContext = "schedule",
 	timeZone?: string | null,
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 ): Promise<any> {
-	const modelName = "llama-3.3-70b-versatile";
+	const modelName =
+		process.env.DENTAL_DICTATION_MODEL?.trim() || "qwen/qwen3.8-27b";
 	const baseUrl = "https://api.groq.com/openai/v1";
 	const keyProviderId = "groq_whisper"; // Assuming this key pool has Groq keys
 
@@ -142,53 +143,63 @@ export async function parseDictationWithLLM(
 		],
 	};
 
-	const triedFingerprints = new Set<string>();
-	const maxAttempts = keyRetryLimit(keyProviderId);
+	// 1. Попытка через Groq (qwen/qwen3.8-27b)
+	const groqCandidates = [
+		{ baseUrl: "https://api.groq.com/openai/v1", model: modelName, keyProviderId: "groq_whisper" as const },
+		{ baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.5-flash-lite", keyProviderId: "google_speech" as const },
+	];
 
-	for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-		const keyCandidate = selectProviderKey(keyProviderId, triedFingerprints);
-		if (!keyCandidate) break;
-		triedFingerprints.add(keyCandidate.fingerprint);
+	for (const providerConfig of groqCandidates) {
+		const triedFingerprints = new Set<string>();
+		const maxAttempts = keyRetryLimit(providerConfig.keyProviderId);
 
-		try {
-			const response = await fetchWithProviderTimeout(
-				`${baseUrl}/chat/completions`,
-				{
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${keyCandidate.value}`,
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify(requestBody),
-				},
-				15000,
-			);
+		for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+			const keyCandidate = selectProviderKey(providerConfig.keyProviderId, triedFingerprints);
+			if (!keyCandidate) break;
+			triedFingerprints.add(keyCandidate.fingerprint);
 
-			const payload = await response.json().catch(() => ({}));
-			if (!response.ok) throw new Error("Ошибка сервиса распознавания диктовки");
-
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			const content = (payload as any).choices?.[0]?.message?.content;
-			if (!content) throw new Error("Пустой ответ сервиса распознавания диктовки");
-
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			let parsed: any;
 			try {
-				parsed = JSON.parse(content.trim());
-			} catch {
-				const match = content.match(/\{[\s\S]*\}/);
-				if (match) parsed = JSON.parse(match[0]);
-				else throw new Error("Некорректный формат JSON в ответе распознавания");
+				const response = await fetchWithProviderTimeout(
+					`${providerConfig.baseUrl}/chat/completions`,
+					{
+						method: "POST",
+						headers: {
+							Authorization: `Bearer ${keyCandidate.value}`,
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({
+							...requestBody,
+							model: providerConfig.model,
+						}),
+					},
+					15000,
+				);
+
+				const payload = await response.json().catch(() => ({}));
+				if (!response.ok) throw new Error("Ошибка сервиса распознавания диктовки");
+
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+				const content = (payload as any).choices?.[0]?.message?.content;
+				if (!content) throw new Error("Пустой ответ сервиса распознавания диктовки");
+
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+				let parsed: any;
+				try {
+					parsed = JSON.parse(content.trim());
+				} catch {
+					const match = content.match(/\{[\s\S]*\}/);
+					if (match) parsed = JSON.parse(match[0]);
+					else throw new Error("Некорректный формат JSON в ответе распознавания");
+				}
+
+				recordProviderKeySuccess(providerConfig.keyProviderId, keyCandidate);
+				return parsed;
+			} catch (error) {
+				recordProviderKeyFailure(providerConfig.keyProviderId, keyCandidate, error);
+				if (!shouldTryNextProviderKey(error)) break;
 			}
-
-			recordProviderKeySuccess(keyProviderId, keyCandidate);
-
-			return parsed; // Returning raw parsed JSON from LLM
-		} catch (error) {
-			recordProviderKeyFailure(keyProviderId, keyCandidate, error);
-			if (!shouldTryNextProviderKey(error)) break;
 		}
 	}
 
-	throw new Error("Не удалось распарсить диктовку через ИИ.");
+	throw new Error("Не удалось распарсить диктовку через ИИ (Groq / Gemini).");
 }

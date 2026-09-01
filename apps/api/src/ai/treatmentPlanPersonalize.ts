@@ -290,12 +290,14 @@ const DENTAL_AI_CASCADING_MODELS: Array<{
 	provider: SpeechPolishProvider;
 	model: string;
 }> = [
-	{ provider: "gemini", model: "gemini-2.5-flash" },
-	{ provider: "gemini", model: "gemini-3-flash" },
+	{ provider: "gemini", model: "gemini-3.5-flash-lite" },
 	{ provider: "gemini", model: "gemini-3.1-flash-lite" },
+	{ provider: "gemini", model: "gemini-2.5-flash" },
+	{ provider: "gemini", model: "gemini-2.0-flash" },
+	{ provider: "groq", model: "qwen/qwen3.8-27b" },
+	{ provider: "groq", model: "qwen/qwen3.6-27b" },
 	{ provider: "groq", model: "llama-3.3-70b-versatile" },
-	{ provider: "groq", model: "meta-llama/llama-4-scout-17b-16e-instruct" },
-	{ provider: "groq", model: "openai/gpt-oss-120b" },
+	{ provider: "groq", model: "llama-3.1-8b-instant" },
 ];
 
 export async function personalizeTreatmentPlan(

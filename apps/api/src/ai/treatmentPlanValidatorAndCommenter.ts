@@ -384,52 +384,45 @@ ${s.items.map((it) => `    * [Зуб ${it.toothNumber || "—"}] ${it.code804n ?
 // ─── 4. OMNI-GATEWAY / MULTI-PROVIDER INFERENCE EXECUTION ───────────────────
 
 const AI_MODEL_CASCADE: Array<{
-	provider: "groq" | "gemini" | "deepseek" | "openai" | "anthropic";
+	provider: "groq" | "gemini";
 	model: string;
 	keyProviderId: SpeechGatewayProvider;
 	baseUrl: string;
 }> = [
-	// 1. Primary: Qwen 3.8 27B / Qwen 2.5 32B on Groq
+	// 1. Primary: Qwen 3.8 27B on Groq
 	{
 		provider: "groq",
 		model: "qwen/qwen3.8-27b",
 		keyProviderId: "groq_whisper",
 		baseUrl: "https://api.groq.com/openai/v1",
 	},
-	// 2. High-speed Fallback: Gemini 3.5 Flash-Lite
+	// 2. High-speed Fallback 1: Gemini 3.5 Flash-Lite
 	{
 		provider: "gemini",
 		model: "gemini-3.5-flash-lite",
 		keyProviderId: "google_speech",
 		baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
 	},
-	// 3. Gemini 3.1 Flash-Lite
+	// 3. High-speed Fallback 2: Gemini 3.1 Flash-Lite
 	{
 		provider: "gemini",
 		model: "gemini-3.1-flash-lite",
 		keyProviderId: "google_speech",
 		baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
 	},
-	// 4. Llama 3.3 70B Versatile on Groq
+	// 4. Gemini 2.5 Flash
+	{
+		provider: "gemini",
+		model: "gemini-2.5-flash",
+		keyProviderId: "google_speech",
+		baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+	},
+	// 5. Llama 3.3 70B Versatile on Groq
 	{
 		provider: "groq",
 		model: "llama-3.3-70b-versatile",
 		keyProviderId: "groq_whisper",
 		baseUrl: "https://api.groq.com/openai/v1",
-	},
-	// 5. DeepSeek Chat V3
-	{
-		provider: "deepseek",
-		model: "deepseek-chat",
-		keyProviderId: "openai_transcribe",
-		baseUrl: "https://api.deepseek.com/v1",
-	},
-	// 6. OpenAI GPT-4o-mini
-	{
-		provider: "openai",
-		model: "gpt-4o-mini",
-		keyProviderId: "openai_transcribe",
-		baseUrl: "https://api.openai.com/v1",
 	},
 ];
 
@@ -558,10 +551,6 @@ export async function validateAndCommentTreatmentPlan(
 				candidateApiKey = process.env.GROQ_API_KEY;
 			} else if (cascadeItem.provider === "gemini" && (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)) {
 				candidateApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || null;
-			} else if (cascadeItem.provider === "openai" && process.env.OPENAI_API_KEY) {
-				candidateApiKey = process.env.OPENAI_API_KEY;
-			} else if (cascadeItem.provider === "deepseek" && process.env.DEEPSEEK_API_KEY) {
-				candidateApiKey = process.env.DEEPSEEK_API_KEY;
 			}
 
 			// Or select from keyPool

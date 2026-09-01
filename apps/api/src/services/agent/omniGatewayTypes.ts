@@ -201,11 +201,8 @@ export const DEFAULT_CIRCUIT_BREAKER_CONFIG: CircuitBreakerConfig = {
 };
 
 export const DEFAULT_FALLBACK_CHAIN: readonly LlmProviderId[] = [
-	"deepseek",
 	"groq",
 	"gemini",
-	"openai",
-	"anthropic",
 ] as const;
 
 /**

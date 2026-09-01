@@ -307,19 +307,27 @@ export function createDefaultLlmProvider(): LLMProvider {
 		async *complete(params): AsyncIterable<LLMStreamEvent> {
 			const groqKey =
 				process.env.GROQ_API_KEY || selectProviderKey("groq_whisper")?.value;
+			const geminiKey =
+				process.env.GEMINI_API_KEY ||
+				process.env.GOOGLE_API_KEY ||
+				selectProviderKey("google_speech")?.value;
 			const openaiKey =
 				process.env.OPENAI_API_KEY || selectProviderKey("openai_transcribe")?.value;
-			const apiKey = groqKey || openaiKey;
+			const apiKey = groqKey || geminiKey || openaiKey;
 
 			if (apiKey) {
 				const baseUrl = groqKey
 					? "https://api.groq.com/openai/v1"
-					: (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1");
+					: geminiKey
+						? "https://generativelanguage.googleapis.com/v1beta/openai"
+						: (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1");
 				const model =
 					params.model ||
 					(groqKey
 						? "llama-3.3-70b-versatile"
-						: (process.env.OPENAI_MODEL || "gpt-4o-mini"));
+						: geminiKey
+							? "gemini-3.5-flash-lite"
+							: (process.env.OPENAI_MODEL || "gpt-4o-mini"));
 
 				const messages: Array<{
 					role: string;
