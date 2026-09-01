@@ -540,7 +540,7 @@ export function calculateVisitAnesthesiaSafety(
 		: Math.min(weightLimitMg, drug.absoluteMaxDoseMg);
 
 	let maxSafeCarpules =
-		drug.mgPerCarpule > 0 ? Math.round((maxSafeDoseMg / drug.mgPerCarpule) * 10) / 10 : 0;
+		drug.mgPerCarpule > 0 ? Math.floor((maxSafeDoseMg / drug.mgPerCarpule) * 10) / 10 : 0;
 
 	// Выполняем соматический кросс-чек
 	const crossCheck = checkAnesthesiaSomaticContraindications({
@@ -679,7 +679,7 @@ export function calculatePatientMrd(params: {
 	const isCappedByAbsoluteMax = !isPediatric && weightLimitMg > drug.absoluteMaxDoseMg;
 
 	let mrdCarpules =
-		drug.mgPerCarpule > 0 ? Math.round((mrdDoseMg / drug.mgPerCarpule) * 10) / 10 : 0;
+		drug.mgPerCarpule > 0 ? Math.floor((mrdDoseMg / drug.mgPerCarpule) * 10) / 10 : 0;
 
 	let isCappedByCardio = false;
 	let maxSafeEpinephrineMg = HEALTHY_MAX_EPINEPHRINE_MG;
@@ -919,6 +919,16 @@ export function formatAnesthesiaSoapText(params: AnesthesiaSoapRecordParams): st
 	}
 
 	const somaticStr = somaticNotes.length > 0 ? ` ${somaticNotes.join(" ")}` : "";
+	const batchPart = params.carpuleBatch?.seriesNumber
+		? ` [Серия: ${params.carpuleBatch.seriesNumber}, Партия: ${params.carpuleBatch.batchNumber}, Годен до: ${params.carpuleBatch.expirationDate}]`
+		: "";
+	const nursePart = params.nurseFullName ? ` Медсестра/ассистент: ${params.nurseFullName}.` : "";
+	const vitalsPart =
+		params.vitals &&
+		typeof params.vitals.bpSystolic === "number" &&
+		typeof params.vitals.heartRateBpm === "number"
+			? ` Исходные гемодинамические показатели: АД ${params.vitals.bpSystolic}/${params.vitals.bpDiastolic ?? 80} мм рт. ст., ЧСС ${params.vitals.heartRateBpm} уд/мин${typeof params.vitals.spo2Percent === "number" ? `, SpO2 ${params.vitals.spo2Percent}%` : ""}.`
+			: "";
 
-	return `Обезболивание: ${method.nameRu} анестезия${toothSuffix} препаратом «${drug.commercialName}» (${drug.activeSubstance}) в объеме ${calc.totalVolumeMl} мл (${params.carpulesCount} карп., ${calc.totalDoseMg} мг действующего вещества).${somaticStr} ${aspirationStr}${timeStr} Наступление анестезии через ${method.typicalOnsetMinutes} мин. Глубина обезболивания достаточная. ${reactionStr}`;
+	return `Обезболивание: ${method.nameRu} анестезия${toothSuffix} препаратом «${drug.commercialName}» (${drug.activeSubstance})${batchPart} в объеме ${calc.totalVolumeMl} мл (${params.carpulesCount} карп., ${calc.totalDoseMg} мг действующего вещества).${somaticStr}${vitalsPart} ${aspirationStr}${timeStr} Наступление анестезии через ${method.typicalOnsetMinutes} мин. Глубина обезболивания достаточная. ${reactionStr}${nursePart}`;
 }

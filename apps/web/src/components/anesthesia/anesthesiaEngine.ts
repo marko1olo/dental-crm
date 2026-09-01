@@ -33,6 +33,16 @@ export interface AnesthesiaCalculationInput {
 	needleType: NeedleGaugeType;
 	targetToothNumberFdi?: number | string | undefined;
 	aspirationNegativeConfirmed: boolean;
+	carpuleBatch?: {
+		seriesNumber: string;
+		batchNumber: string;
+		expirationDate: string;
+	} | undefined;
+	nurseFullName?: string | undefined;
+	bpSystolic?: number | undefined;
+	bpDiastolic?: number | undefined;
+	heartRateBpm?: number | undefined;
+	spo2Percent?: number | undefined;
 }
 
 export interface AnesthesiaCalculationResult {
@@ -98,13 +108,9 @@ export function determineAgeCategory(ageYears: number): PatientAgeCategory {
 	return 'adult';
 }
 
-export function calculateAgeReductionFactor(ageYears: number, weightKg: number): number {
+export function calculateAgeReductionFactor(ageYears: number, _weightKg: number): number {
 	if (ageYears >= 65) {
 		return 0.70; // 30% reduction for geriatric patients
-	}
-	if (ageYears < 18) {
-		// Clark's rule scaling by weight (standard adult = 70 kg)
-		return Math.max(0.2, Math.min(1.0, weightKg / 70));
 	}
 	return 1.0;
 }
@@ -116,7 +122,8 @@ export function calculateAgeReductionFactor(ageYears: number, weightKg: number):
 export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): AnesthesiaCalculationResult {
 	const drug = DENTAL_ANESTHETICS[input.drugId] || DENTAL_ANESTHETICS.articaine_1_100k;
 	const ageCategory = determineAgeCategory(input.patientAgeYears);
-	const ageFactor = calculateAgeReductionFactor(input.patientAgeYears, input.patientWeightKg);
+	const isPediatric = ageCategory === 'pediatric' || (input.patientWeightKg > 0 && input.patientWeightKg < 40);
+	const ageFactor = isPediatric ? 1.0 : calculateAgeReductionFactor(input.patientAgeYears, input.patientWeightKg);
 
 	const weight = Math.max(10, Math.min(200, input.patientWeightKg));
 	const carpules = Math.max(0, input.carpulesCount);
@@ -126,20 +133,32 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 	const injectedActiveMg = Number((carpules * drug.mgActivePerCarpule).toFixed(1));
 	const injectedEpinephrineMg = Number((carpules * drug.mgEpiPerCarpule).toFixed(4));
 
-	// Max safe limits
-	const maxActiveByWeight = weight * drug.maxDoseMgPerKgAdult * ageFactor;
-	const maxSafeActiveMg = Number(Math.min(drug.absoluteMaxDoseMgAdult * ageFactor, maxActiveByWeight).toFixed(1));
+	// Max safe limits (for pediatric patients: 5.0 mg/kg for articaine, 4.4 mg/kg for mepivacaine/lidocaine)
+	const effectiveMaxMgPerKg = isPediatric
+		? (drug.id.startsWith('articaine') ? 5.0 : drug.maxDoseMgPerKgAdult)
+		: drug.maxDoseMgPerKgAdult;
 
-	const isCardioRisk = input.hasCardiovascularRisk || input.asaStatus === 'asa_3' || input.asaStatus === 'asa_4';
+	const maxActiveByWeight = weight * effectiveMaxMgPerKg * ageFactor;
+	const maxSafeActiveMg = isPediatric
+		? Number(maxActiveByWeight.toFixed(1))
+		: Number(Math.min(drug.absoluteMaxDoseMgAdult * ageFactor, maxActiveByWeight).toFixed(1));
+
+	const isCardioRisk =
+		input.hasCardiovascularRisk ||
+		input.asaStatus === 'asa_3' ||
+		input.asaStatus === 'asa_4' ||
+		(typeof input.bpSystolic === 'number' && input.bpSystolic >= 140) ||
+		(typeof input.heartRateBpm === 'number' && input.heartRateBpm > 90);
+
 	const maxSafeEpinephrineMg = isCardioRisk ? EPINEPHRINE_CEILINGS_MG.cardiovascularRisk : EPINEPHRINE_CEILINGS_MG.healthyAdult;
 
-	// Max safe carpules calculations
-	const maxCarpulesByActive = drug.mgActivePerCarpule > 0 ? maxSafeActiveMg / drug.mgActivePerCarpule : 99;
+	// Max safe carpules calculations (strict downward floor rounding)
+	const maxCarpulesByActive = drug.mgActivePerCarpule > 0 ? (maxSafeActiveMg / drug.mgActivePerCarpule) : 99;
 	const maxCarpulesByEpi = !drug.isAdrenalineFree && drug.mgEpiPerCarpule > 0
 		? maxSafeEpinephrineMg / drug.mgEpiPerCarpule
 		: 99;
 
-	const maxSafeCarpulesCount = Number(Math.min(maxCarpulesByActive, maxCarpulesByEpi).toFixed(1));
+	const maxSafeCarpulesCount = Math.floor(Math.min(maxCarpulesByActive, maxCarpulesByEpi) * 10) / 10;
 
 	// Percentage of max dose
 	const percentOfMaxDose = maxSafeActiveMg > 0 ? Math.round((injectedActiveMg / maxSafeActiveMg) * 100) : 0;
@@ -205,7 +224,13 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 		techniqueId: input.techniqueId,
 		needleType: input.needleType,
 		targetToothNumberFdi: input.targetToothNumberFdi,
-		aspirationNegativeConfirmed: input.aspirationNegativeConfirmed
+		aspirationNegativeConfirmed: input.aspirationNegativeConfirmed,
+		carpuleBatch: input.carpuleBatch,
+		nurseFullName: input.nurseFullName,
+		bpSystolic: input.bpSystolic,
+		bpDiastolic: input.bpDiastolic,
+		heartRateBpm: input.heartRateBpm,
+		spo2Percent: input.spo2Percent,
 	});
 
 	return {
@@ -244,6 +269,16 @@ export function generateAnesthesiaDiaryEntry(params: {
 	needleType: NeedleGaugeType;
 	targetToothNumberFdi?: number | string | undefined;
 	aspirationNegativeConfirmed: boolean;
+	carpuleBatch?: {
+		seriesNumber: string;
+		batchNumber: string;
+		expirationDate: string;
+	} | undefined;
+	nurseFullName?: string | undefined;
+	bpSystolic?: number | undefined;
+	bpDiastolic?: number | undefined;
+	heartRateBpm?: number | undefined;
+	spo2Percent?: number | undefined;
 }): string {
 	const tech = INJECTION_TECHNIQUES[params.techniqueId] || INJECTION_TECHNIQUES.infiltration;
 	const needle = DENTAL_NEEDLES[params.needleType] || DENTAL_NEEDLES.g30_short_21mm;
@@ -257,5 +292,14 @@ export function generateAnesthesiaDiaryEntry(params: {
 		? `, вазоконстриктор ${params.drug.vasoconstrictorNameRu} (${params.injectedEpinephrineMg.toFixed(3)} мг)`
 		: ', без вазоконстриктора';
 
-	return `Проведена местная ${tech.nameRu.toLowerCase()} анестезия${toothPart}. Препарат: ${params.drug.tradeNamesRu[0]} (${params.drug.activeSubstanceRu}), объем ${params.injectedVolumeMl} мл (${params.carpulesCount} карп., ${params.injectedActiveMg} мг действующего вещества${epiText}). Игла: ${needle.nameRu}. ${aspText} Анестезия наступила через ${params.drug.onsetMinutes} мин, глубина достаточная, соматических реакций нет.`;
+	const batchText = params.carpuleBatch?.seriesNumber
+		? ` [Серия: ${params.carpuleBatch.seriesNumber}, Партия: ${params.carpuleBatch.batchNumber}, Годен до: ${params.carpuleBatch.expirationDate}]`
+		: '';
+	const nurseText = params.nurseFullName ? ` Медсестра/ассистент: ${params.nurseFullName}.` : '';
+	const vitalsText =
+		typeof params.bpSystolic === 'number' && typeof params.heartRateBpm === 'number'
+			? ` Исходные показатели гемодинамики: АД ${params.bpSystolic}/${params.bpDiastolic ?? 80} мм рт. ст., ЧСС ${params.heartRateBpm} уд/мин${typeof params.spo2Percent === 'number' ? `, SpO2 ${params.spo2Percent}%` : ''}.`
+			: '';
+
+	return `Проведена местная ${tech.nameRu.toLowerCase()} анестезия${toothPart}. Препарат: ${params.drug.tradeNamesRu[0]} (${params.drug.activeSubstanceRu})${batchText}, объем ${params.injectedVolumeMl} мл (${params.carpulesCount} карп., ${params.injectedActiveMg} мг действующего вещества${epiText}).${vitalsText} Игла: ${needle.nameRu}. ${aspText} Анестезия наступила через ${params.drug.onsetMinutes} мин, глубина достаточная, соматических реакций нет.${nurseText}`;
 }

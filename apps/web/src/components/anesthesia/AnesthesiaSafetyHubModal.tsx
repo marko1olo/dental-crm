@@ -23,7 +23,11 @@ import {
 	Stethoscope,
 	User,
 	Zap,
-	HelpCircle
+	HelpCircle,
+	Trash2,
+	Printer,
+	ChevronDown,
+	ChevronUp
 } from 'lucide-react';
 import {
 	AnestheticDrugId,
@@ -45,6 +49,15 @@ import {
 	generateEmergency112DispatchScript,
 	ExecutedEmergencyStepLog
 } from './emergencyProtocols';
+import {
+	validateCarpuleExpirationDate,
+	evaluatePreoperativeVitalsSafety,
+	createAnesthesiaPkuRecord,
+	generateAnesthesiaPkuDisposalAct,
+	generateAnesthesiaPkuDisposalHtml,
+	AnesthesiaDisposalReason,
+	AnesthesiaDisinfectionMethod
+} from '@dental/shared';
 import './anesthesia.css';
 
 export interface AnesthesiaSafetyHubModalProps {
@@ -52,16 +65,18 @@ export interface AnesthesiaSafetyHubModalProps {
 	onClose: () => void;
 	onApplyToDiary?: ((diaryText: string, calculation?: AnesthesiaCalculationResult) => void) | undefined;
 	initialPatientName?: string | undefined;
+	initialMedicalCard043?: string | undefined;
 	initialPatientWeightKg?: number | undefined;
 	initialPatientAgeYears?: number | undefined;
 	initialToothFdi?: string | number | undefined;
 	initialSelectedDrug?: AnestheticDrugId | undefined;
-	initialTab?: 'calculator' | 'emergency' | undefined;
+	initialTab?: 'calculator' | 'emergency' | 'pku_disposal' | undefined;
 	initialEmergencyScenario?: EmergencyScenarioId | undefined;
 	clinicName?: string | undefined;
 	clinicAddress?: string | undefined;
 	cabinetNumber?: string | undefined;
 	doctorFullName?: string | undefined;
+	nurseFullName?: string | undefined;
 }
 
 export function AnesthesiaSafetyHubModal({
@@ -69,6 +84,7 @@ export function AnesthesiaSafetyHubModal({
 	onClose,
 	onApplyToDiary,
 	initialPatientName = 'Иванов Иван Иванович',
+	initialMedicalCard043 = '043-2026/104',
 	initialPatientWeightKg = 70,
 	initialPatientAgeYears = 35,
 	initialToothFdi = 46,
@@ -78,10 +94,11 @@ export function AnesthesiaSafetyHubModal({
 	clinicName = 'Стоматологическая клиника DENTE',
 	clinicAddress = 'г. Москва, ул. Усачёва, д. 29',
 	cabinetNumber = '1',
-	doctorFullName = 'Д-р Волкова Е. С.'
+	doctorFullName = 'Д-р Волкова Е. С.',
+	nurseFullName = 'Смирнова А. В.'
 }: AnesthesiaSafetyHubModalProps) {
 	// Navigation State
-	const [activeTab, setActiveTab] = useState<'calculator' | 'emergency'>(initialTab);
+	const [activeTab, setActiveTab] = useState<'calculator' | 'emergency' | 'pku_disposal'>(initialTab);
 
 	// Calculator State
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(initialSelectedDrug);
@@ -91,6 +108,18 @@ export function AnesthesiaSafetyHubModal({
 	const [asaStatus, setAsaStatus] = useState<AsaClassification>('asa_1');
 	const [targetTooth, setTargetTooth] = useState<string | number>(initialToothFdi);
 	const [aspirationConfirmed, setAspirationConfirmed] = useState<boolean>(true);
+
+	// Preoperative Vitals State
+	const [bpSystolic, setBpSystolic] = useState<number>(120);
+	const [bpDiastolic, setBpDiastolic] = useState<number>(80);
+	const [heartRateBpm, setHeartRateBpm] = useState<number>(72);
+	const [spo2Percent, setSpo2Percent] = useState<number>(98);
+	const [assistantName, setAssistantName] = useState<string>(nurseFullName);
+
+	// Carpule Batch State
+	const [seriesNumber, setSeriesNumber] = useState<string>('ART-2026');
+	const [batchNumber, setBatchNumber] = useState<string>('84019');
+	const [expirationDate, setExpirationDate] = useState<string>('2027-06');
 
 	// Somatic Risk Checklist State
 	const [takesMaoInhibitors, setTakesMaoInhibitors] = useState<boolean>(false);
@@ -109,7 +138,14 @@ export function AnesthesiaSafetyHubModal({
 	const [timerSeconds, setTimerSeconds] = useState<number>(0);
 	const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
 	const [completedStepNumbers, setCompletedStepNumbers] = useState<Record<number, ExecutedEmergencyStepLog>>({});
-	const [show112ScriptModal, setShow112ScriptModal] = useState<boolean>(false);
+	const [show112ScriptInline, setShow112ScriptInline] = useState<boolean>(false);
+
+	// PKU & SanPiN Disposal State
+	const [disposalReason, setDisposalReason] = useState<AnesthesiaDisposalReason>('used_in_procedure');
+	const [disinfectionMethod, setDisinfectionMethod] = useState<AnesthesiaDisinfectionMethod>('chemical_disinfection');
+	const [disinfectantName, setDisinfectantName] = useState<string>('Аламинол 3%');
+	const [disinfectantExposureMinutes, setDisinfectantExposureMinutes] = useState<number>(60);
+	const [pkuPreviewMode, setPkuPreviewMode] = useState<'formatted_text' | 'print_layout'>('formatted_text');
 
 	// Feedback toast / copied state
 	const [isCopied, setIsCopied] = useState<boolean>(false);
@@ -142,6 +178,21 @@ export function AnesthesiaSafetyHubModal({
 		};
 	}, [isTimerRunning]);
 
+	// Live Vitals Evaluation
+	const vitalsEvaluation = useMemo(() => {
+		return evaluatePreoperativeVitalsSafety({
+			bpSystolic,
+			bpDiastolic,
+			heartRateBpm,
+			spo2Percent
+		});
+	}, [bpSystolic, bpDiastolic, heartRateBpm, spo2Percent]);
+
+	// Live Expiration Evaluation
+	const expValidation = useMemo(() => {
+		return validateCarpuleExpirationDate(expirationDate);
+	}, [expirationDate]);
+
 	// Core Calculation
 	const calcResult: AnesthesiaCalculationResult = useMemo(() => {
 		return calculateAnesthesiaSafety({
@@ -154,14 +205,24 @@ export function AnesthesiaSafetyHubModal({
 			takesTricyclicAntidepressants,
 			hasThyrotoxicosis,
 			hasCardiacArrhythmia,
-			hasCardiovascularRisk: hasCardiovascularRisk || hasHypertension || hasCardiacArrhythmia,
-			hasHypertension,
+			hasCardiovascularRisk: hasCardiovascularRisk || hasHypertension || hasCardiacArrhythmia || (bpSystolic >= 140) || (heartRateBpm > 90),
+			hasHypertension: hasHypertension || bpSystolic >= 140,
 			hasSulfiteAllergy,
 			hasBronchialAsthma: hasAsthma,
 			isPregnantOrLactating: isPregnant,
 			hasSevereLiverDisease: hasLiverDisease,
 			targetToothFdi: targetTooth,
-			aspirationConfirmed
+			aspirationConfirmed,
+			carpuleBatch: {
+				seriesNumber,
+				batchNumber,
+				expirationDate: expValidation.formattedExpDateRu
+			},
+			nurseFullName: assistantName,
+			bpSystolic,
+			bpDiastolic,
+			heartRateBpm,
+			spo2Percent
 		});
 	}, [
 		selectedDrugId,
@@ -180,7 +241,15 @@ export function AnesthesiaSafetyHubModal({
 		isPregnant,
 		hasLiverDisease,
 		targetTooth,
-		aspirationConfirmed
+		aspirationConfirmed,
+		seriesNumber,
+		batchNumber,
+		expValidation.formattedExpDateRu,
+		assistantName,
+		bpSystolic,
+		bpDiastolic,
+		heartRateBpm,
+		spo2Percent
 	]);
 
 	// Emergency Protocol Definition
@@ -193,6 +262,65 @@ export function AnesthesiaSafetyHubModal({
 		return calculateAllEmergencyDosagesForWeight(activeEmergencyScenario, patientWeightKg, patientAgeYears);
 	}, [activeEmergencyScenario, patientWeightKg, patientAgeYears]);
 
+	// PKU Disposal Record
+	const pkuRecord = useMemo(() => {
+		const now = new Date();
+		const dateIso = now.toISOString().slice(0, 10);
+		const time = now.toTimeString().slice(0, 5);
+		const drugSpec = ANESTHESIA_DRUG_CATALOG[selectedDrugId] || ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k;
+		const volumeMlTotal = Number((carpulesCount * (drugSpec?.standardCarpuleVolumeMl ?? 1.7)).toFixed(2));
+
+		return createAnesthesiaPkuRecord({
+			dateIso,
+			time,
+			clinicName,
+			cabinetNumber,
+			patientFullName: initialPatientName,
+			medicalCardNumber043: initialMedicalCard043,
+			doctorFullName,
+			nurseFullName: assistantName,
+			drugId: selectedDrugId,
+			drugNameRu: drugSpec.tradeNamesRu[0] ?? drugSpec.activeSubstanceRu,
+			activeSubstanceRu: drugSpec.activeSubstanceRu,
+			seriesNumber: seriesNumber || 'НЕ УКАЗАНА',
+			batchNumber: batchNumber || 'НЕ УКАЗАНА',
+			expirationDate: expValidation.formattedExpDateRu,
+			carpulesUsedCount: carpulesCount,
+			carpulesDisposedCount: carpulesCount,
+			volumeMlTotal,
+			disposalReason,
+			wasteClass: 'class_b_hazardous',
+			disinfectionMethod,
+			disinfectantNameRu: disinfectantName,
+			disinfectantExposureMinutes,
+			assistantSignatureConfirmed: true
+		});
+	}, [
+		clinicName,
+		cabinetNumber,
+		initialPatientName,
+		initialMedicalCard043,
+		doctorFullName,
+		assistantName,
+		selectedDrugId,
+		seriesNumber,
+		batchNumber,
+		expValidation.formattedExpDateRu,
+		carpulesCount,
+		disposalReason,
+		disinfectionMethod,
+		disinfectantName,
+		disinfectantExposureMinutes
+	]);
+
+	const pkuActText = useMemo(() => {
+		return generateAnesthesiaPkuDisposalAct(pkuRecord);
+	}, [pkuRecord]);
+
+	const pkuActHtml = useMemo(() => {
+		return generateAnesthesiaPkuDisposalHtml(pkuRecord);
+	}, [pkuRecord]);
+
 	// Handler to switch drug to recommended alternative
 	const handleSwitchToRecommended = () => {
 		if (calcResult.recommendedAlternativeId) {
@@ -202,18 +330,22 @@ export function AnesthesiaSafetyHubModal({
 		}
 	};
 
-	// Copy Diary Handler
-	const handleCopyText = (text: string, label: string) => {
-		navigator.clipboard.writeText(text);
-		setCopyNotificationText(label);
-		setIsCopied(true);
-		setTimeout(() => {
-			setIsCopied(false);
-			setCopyNotificationText('');
-		}, 2000);
+	// Copy Helper
+	const handleCopyText = async (text: string, notificationMsg: string) => {
+		try {
+			await navigator.clipboard.writeText(text);
+			setIsCopied(true);
+			setCopyNotificationText(notificationMsg);
+			setTimeout(() => {
+				setIsCopied(false);
+				setCopyNotificationText('');
+			}, 2500);
+		} catch {
+			// Fallback
+		}
 	};
 
-	// Apply Calculation to Diary Handler
+	// Apply Calculation to Diary
 	const handleApplyCalculation = () => {
 		if (onApplyToDiary) {
 			onApplyToDiary(calcResult.soapDiaryText, calcResult);
@@ -221,8 +353,8 @@ export function AnesthesiaSafetyHubModal({
 		onClose();
 	};
 
-	// Toggle emergency step checkbox
-	const handleToggleEmergencyStep = (stepNumber: number, stepTitle: string) => {
+	// Toggle Step in Emergency Protocol
+	const handleToggleStep = (stepNumber: number, stepTitle: string) => {
 		setCompletedStepNumbers(prev => {
 			const next = { ...prev };
 			if (next[stepNumber]) {
@@ -255,11 +387,11 @@ export function AnesthesiaSafetyHubModal({
 			clinicAddress,
 			cabinetNumber,
 			startTimeIso: new Date(Date.now() - timerSeconds * 1000).toISOString(),
-			initialBp: '80/50',
+			initialBp: `${bpSystolic}/${bpDiastolic}`,
 			finalBp: '120/80',
-			initialHr: '125',
+			initialHr: String(heartRateBpm),
 			finalHr: '78',
-			initialSpo2: '91',
+			initialSpo2: String(spo2Percent),
 			finalSpo2: '98',
 			executedSteps: Object.values(completedStepNumbers),
 			smpBrigadeCalled: Boolean(completedStepNumbers[3] || activeEmergencyScenario === 'anaphylaxis' || activeEmergencyScenario === 'last_toxicity'),
@@ -272,11 +404,32 @@ export function AnesthesiaSafetyHubModal({
 		}
 	};
 
+	const handlePrintPkuAct = () => {
+		const printWin = window.open('', '_blank', 'width=800,height=900');
+		if (printWin) {
+			printWin.document.write(`
+				<!DOCTYPE html>
+				<html>
+				<head>
+					<title>Акт списания анестетика (СанПиН 3.3686-21)</title>
+					<meta charset="utf-8">
+					<style>body { margin: 20px; font-family: Arial, sans-serif; }</style>
+				</head>
+				<body>
+					${pkuActHtml}
+					<script>window.onload = function() { window.print(); }</script>
+				</body>
+				</html>
+			`);
+			printWin.document.close();
+		}
+	};
+
 	if (!isOpen) return null;
 
 	return (
 		<div className="anesthesia-modal-overlay">
-			<div className="anesthesia-modal-container hub-container">
+			<div className="anesthesia-modal-container hub-container" style={{ maxWidth: '920px' }}>
 				{/* Modal Top Header */}
 				<div className="anesthesia-modal-header hub-header">
 					<div className="anesthesia-header-title">
@@ -286,10 +439,10 @@ export function AnesthesiaSafetyHubModal({
 						<div>
 							<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
 								<span className="hub-title-text">Центр безопасности анестезии & Экстренные протоколы</span>
-								<span className="anesthesia-header-badge">Приказ МЗ РФ № 786н</span>
+								<span className="anesthesia-header-badge">Приказ МЗ РФ № 786н & СанПиН</span>
 							</div>
 							<div className="hub-subtitle-text">
-								Фармакологический скрининг, калькулятор МРД карпул и пошаговые реанимационные алгоритмы
+								Фармакологический скрининг, калькулятор МРД, журнал учета ПКУ и пошаговая реанимация
 							</div>
 						</div>
 					</div>
@@ -313,8 +466,8 @@ export function AnesthesiaSafetyHubModal({
 						className={`hub-tab-btn ${activeTab === 'calculator' ? 'active' : ''}`}
 						onClick={() => setActiveTab('calculator')}
 					>
-						<Syringe size={18} />
-						<span>1. Калькулятор карпул & Скрининг безопасности</span>
+						<Syringe size={16} />
+						<span>1. Калькулятор МРД & Скрининг безопасности</span>
 					</button>
 
 					<button
@@ -322,32 +475,107 @@ export function AnesthesiaSafetyHubModal({
 						className={`hub-tab-btn emergency-tab ${activeTab === 'emergency' ? 'active' : ''}`}
 						onClick={() => setActiveTab('emergency')}
 					>
-						<AlertOctagon size={18} />
+						<AlertOctagon size={16} />
 						<span>2. Экстренные протоколы реанимации (МЗ РФ)</span>
 						<span className="emergency-pulse-dot" />
+					</button>
+
+					<button
+						type="button"
+						className={`hub-tab-btn ${activeTab === 'pku_disposal' ? 'active' : ''}`}
+						onClick={() => setActiveTab('pku_disposal')}
+					>
+						<Trash2 size={16} />
+						<span>3. Журнал ПКУ & Акт списания (СанПиН 3.3686-21)</span>
 					</button>
 				</div>
 
 				{/* Modal Body */}
-				<div className="anesthesia-modal-body">
+				<div className="anesthesia-modal-body" style={{ maxHeight: 'calc(88vh - 140px)', overflowY: 'auto' }}>
 					{/* ========================================================================= */}
 					{/* TAB 1: ANESTHESIA MRD & PHARMACOLOGICAL SAFETY CALCULATOR                 */}
 					{/* ========================================================================= */}
 					{activeTab === 'calculator' && (
 						<div className="hub-tab-content">
+							{/* Preoperative Vitals Banner (Live Safety Check) */}
+							{vitalsEvaluation.warnings.length > 0 && (
+								<div
+									style={{
+										padding: '0.75rem 1rem',
+										borderRadius: '8px',
+										background: vitalsEvaluation.isCrisis ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+										border: `1px solid ${vitalsEvaluation.isCrisis ? 'var(--bad, #ef4444)' : 'var(--warn-fg, #d97706)'}`,
+										color: vitalsEvaluation.isCrisis ? 'var(--bad-fg, #ef4444)' : 'var(--warn-fg, #d97706)',
+										fontSize: '0.8125rem',
+										fontWeight: 600,
+										marginBottom: '1rem',
+										display: 'flex',
+										flexDirection: 'column',
+										gap: '0.375rem'
+									}}
+								>
+									<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+										<Activity size={18} />
+										<span>ПРЕДОПЕРАЦИОННАЯ ОЦЕНКА ГЕМОДИНАМИКИ:</span>
+									</div>
+									<ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
+										{vitalsEvaluation.warnings.map((w, idx) => (
+											<li key={idx}>{w}</li>
+										))}
+									</ul>
+									{vitalsEvaluation.recommendedActionRu && (
+										<div style={{ fontWeight: 700, marginTop: '0.25rem' }}>
+											💡 Рекомендация: {vitalsEvaluation.recommendedActionRu}
+										</div>
+									)}
+								</div>
+							)}
+
+							{/* Expiration warning banner */}
+							{expValidation.warningRu && (
+								<div
+									style={{
+										padding: '0.625rem 1rem',
+										borderRadius: '8px',
+										background: expValidation.isExpired ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+										border: `1px solid ${expValidation.isExpired ? 'var(--bad, #ef4444)' : 'var(--warn-fg, #d97706)'}`,
+										color: expValidation.isExpired ? 'var(--bad-fg, #ef4444)' : 'var(--warn-fg, #d97706)',
+										fontSize: '0.8125rem',
+										fontWeight: 600,
+										marginBottom: '1rem',
+										display: 'flex',
+										alignItems: 'center',
+										gap: '0.5rem'
+									}}
+								>
+									<AlertTriangle size={18} />
+									<span>{expValidation.warningRu}</span>
+								</div>
+							)}
+
 							{/* Patient Vitals & Demographics Bar */}
 							<div className="hub-card patient-vitals-card">
 								<div className="card-section-title">
 									<User size={16} />
-									<span>Параметры пациента и соматический статус (ASA)</span>
+									<span>Параметры пациента, точный ввод массы и гемодинамика</span>
 								</div>
 
 								<div className="patient-inputs-grid">
-									{/* Weight Input */}
+									{/* Weight Input (Slider + Direct Keyboard Input) */}
 									<div className="input-group">
 										<div className="input-label-row">
-											<span className="input-label">Масса тела:</span>
-											<span className="input-val-badge"><strong>{patientWeightKg} кг</strong></span>
+											<span className="input-label">Масса тела (кг):</span>
+											<input
+												type="number"
+												autoFocus
+												min={5}
+												max={250}
+												step={1}
+												value={patientWeightKg}
+												onChange={e => setPatientWeightKg(Math.max(5, parseInt(e.target.value) || 70))}
+												className="hub-text-input"
+												style={{ width: '70px', height: '28px', textAlign: 'center', fontWeight: 700, padding: '0.125rem' }}
+											/>
 										</div>
 										<input
 											type="range"
@@ -360,13 +588,20 @@ export function AnesthesiaSafetyHubModal({
 										/>
 									</div>
 
-									{/* Age Input */}
+									{/* Age Input (Slider + Direct Keyboard Input) */}
 									<div className="input-group">
 										<div className="input-label-row">
-											<span className="input-label">Возраст:</span>
-											<span className="input-val-badge">
-												<strong>{patientAgeYears} лет</strong> ({calcResult.isPediatric ? 'Детский норматив' : calcResult.isGeriatric ? 'Пожилой (x0.8)' : 'Взрослый'})
-											</span>
+											<span className="input-label">Возраст (лет):</span>
+											<input
+												type="number"
+												min={1}
+												max={110}
+												step={1}
+												value={patientAgeYears}
+												onChange={e => setPatientAgeYears(Math.max(1, parseInt(e.target.value) || 35))}
+												className="hub-text-input"
+												style={{ width: '70px', height: '28px', textAlign: 'center', fontWeight: 700, padding: '0.125rem' }}
+											/>
 										</div>
 										<input
 											type="range"
@@ -379,30 +614,115 @@ export function AnesthesiaSafetyHubModal({
 										/>
 									</div>
 
-									{/* ASA Status */}
+									{/* Preoperative Hemodynamics (АД, ЧСС, SpO2) */}
 									<div className="input-group">
-										<span className="input-label">Категория ASA:</span>
-										<select
-											value={asaStatus}
-											onChange={e => setAsaStatus(e.target.value as AsaClassification)}
-											className="hub-select"
-										>
-											<option value="asa_1">ASA I: Здоровый пациент (Лимит адреналина 0.20 мг)</option>
-											<option value="asa_2">ASA II: Легкая патология (Лимит 0.20 мг)</option>
-											<option value="asa_3">ASA III: Тяжелая патология (Кардиолимит 0.04 мг)</option>
-											<option value="asa_4">ASA IV: Угроза жизни (Кардиолимит 0.04 мг / Адреналин-free)</option>
-										</select>
+										<span className="input-label">АД (мм рт. ст.) / ЧСС (уд/мин):</span>
+										<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.375rem' }}>
+											<input
+												type="number"
+												min={60}
+												max={260}
+												value={bpSystolic}
+												onChange={e => setBpSystolic(parseInt(e.target.value) || 120)}
+												className="hub-text-input"
+												placeholder="Систол."
+												title="Систолическое АД"
+											/>
+											<input
+												type="number"
+												min={40}
+												max={160}
+												value={bpDiastolic}
+												onChange={e => setBpDiastolic(parseInt(e.target.value) || 80)}
+												className="hub-text-input"
+												placeholder="Диастол."
+												title="Диастолическое АД"
+											/>
+											<input
+												type="number"
+												min={35}
+												max={200}
+												value={heartRateBpm}
+												onChange={e => setHeartRateBpm(parseInt(e.target.value) || 72)}
+												className="hub-text-input"
+												placeholder="ЧСС"
+												title="Пульс / ЧСС"
+											/>
+										</div>
 									</div>
 
-									{/* Tooth FDI */}
+									{/* ASA Status & Tooth FDI */}
 									<div className="input-group">
-										<span className="input-label">Зуб (FDI):</span>
+										<span className="input-label">Категория ASA & Зуб (FDI):</span>
+										<div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.375rem' }}>
+											<select
+												value={asaStatus}
+												onChange={e => setAsaStatus(e.target.value as AsaClassification)}
+												className="hub-select"
+											>
+												<option value="asa_1">ASA I: Здоровый</option>
+												<option value="asa_2">ASA II: Легкая патология</option>
+												<option value="asa_3">ASA III: Тяжелая патология</option>
+												<option value="asa_4">ASA IV: Угроза жизни</option>
+											</select>
+											<input
+												type="text"
+												value={targetTooth}
+												onChange={e => setTargetTooth(e.target.value)}
+												className="hub-text-input"
+												placeholder="FDI 46"
+											/>
+										</div>
+									</div>
+								</div>
+
+								{/* Carpule Batch Tracking & Assistant Row */}
+								<div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--line, #e2e8f0)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem' }}>
+									<div className="input-group">
+										<span className="input-label" style={{ fontSize: '0.75rem' }}>Серия карпулы:</span>
 										<input
 											type="text"
-											value={targetTooth}
-											onChange={e => setTargetTooth(e.target.value)}
+											value={seriesNumber}
+											onChange={e => setSeriesNumber(e.target.value)}
 											className="hub-text-input"
-											placeholder="напр. 46, 16, 24"
+											placeholder="ART-2026"
+											style={{ height: '32px', fontSize: '0.8125rem' }}
+										/>
+									</div>
+
+									<div className="input-group">
+										<span className="input-label" style={{ fontSize: '0.75rem' }}>Номер партии:</span>
+										<input
+											type="text"
+											value={batchNumber}
+											onChange={e => setBatchNumber(e.target.value)}
+											className="hub-text-input"
+											placeholder="84019"
+											style={{ height: '32px', fontSize: '0.8125rem' }}
+										/>
+									</div>
+
+									<div className="input-group">
+										<span className="input-label" style={{ fontSize: '0.75rem' }}>Срок годности:</span>
+										<input
+											type="text"
+											value={expirationDate}
+											onChange={e => setExpirationDate(e.target.value)}
+											className="hub-text-input"
+											placeholder="2027-06"
+											style={{ height: '32px', fontSize: '0.8125rem' }}
+										/>
+									</div>
+
+									<div className="input-group">
+										<span className="input-label" style={{ fontSize: '0.75rem' }}>Ассистент / Медсестра:</span>
+										<input
+											type="text"
+											value={assistantName}
+											onChange={e => setAssistantName(e.target.value)}
+											className="hub-text-input"
+											placeholder="ФИО медсестры"
+											style={{ height: '32px', fontSize: '0.8125rem' }}
 										/>
 									</div>
 								</div>
@@ -410,8 +730,8 @@ export function AnesthesiaSafetyHubModal({
 								{/* Somatic Screening Checklist */}
 								<div className="screening-checklist-container">
 									<div className="screening-header">
-										<AlertTriangle size={15} color="var(--warn-fg, #f59e0b)" />
-										<span>Скрининг анамнеза, фармакотерапии и противопоказаний (СтАР / МЗ РФ):</span>
+										<AlertTriangle size={15} color="var(--warn-fg, #d97706)" />
+										<span>Скрининг сопутствующей патологии и фармакотерапии (СтАР / МЗ РФ):</span>
 									</div>
 
 									<div className="screening-chips-grid">
@@ -505,78 +825,98 @@ export function AnesthesiaSafetyHubModal({
 								</div>
 							</div>
 
-							{/* Drug Selection Cards Grid */}
-							<div>
-								<div className="section-label-row">
-									<span className="section-label">Выберите препарат анестетика:</span>
-									<span className="section-hint">Каталог Минздрава РФ / СтАР</span>
+							{/* Drug Selector & Dosage Grid */}
+							<div className="hub-card drug-dosage-card">
+								<div className="card-section-title">
+									<Syringe size={16} />
+									<span>Выбор анестетика и дозирование</span>
 								</div>
 
-								<div className="anesthesia-drugs-grid">
+								<div className="drug-selection-grid">
 									{Object.values(ANESTHESIA_DRUG_CATALOG).map(drug => {
-										const isSelected = selectedDrugId === drug.id;
+										const isSelected = drug.id === selectedDrugId;
+										const isRestrictedForCardio = (hasCardiovascularRisk || hasHypertension || asaStatus === 'asa_3' || asaStatus === 'asa_4') && !drug.isAdrenalineFree;
+										const isSulfiteDanger = (hasSulfiteAllergy || hasAsthma) && !drug.isAdrenalineFree;
+
 										return (
-											<div
+											<button
 												key={drug.id}
-												className={`anesthesia-drug-card ${isSelected ? 'selected' : ''}`}
+												type="button"
+												className={`drug-tile-btn ${isSelected ? 'selected' : ''} ${isSulfiteDanger ? 'blocked' : ''}`}
 												onClick={() => setSelectedDrugId(drug.id)}
-												role="button"
-												tabIndex={0}
-												onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setSelectedDrugId(drug.id); }}
 											>
-												<div className="drug-card-header">
-													<span className="drug-card-title">{drug.tradeNamesRu[0]}</span>
-													<span className={`drug-epi-pill ${drug.isAdrenalineFree ? 'no-epi' : 'has-epi'}`}>
-														{drug.vasoconstrictorRatio === 'none' ? 'Без адреналина' : drug.vasoconstrictorRatio}
-													</span>
+												<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+													<div>
+														<div className="drug-tile-name">{drug.tradeNamesRu[0]}</div>
+														<div className="drug-tile-substance">{drug.activeSubstanceRu} {drug.activeConcentrationPercent}%</div>
+													</div>
+													{drug.isAdrenalineFree && (
+														<span className="drug-tile-badge safe">Free</span>
+													)}
+													{drug.vasoconstrictorRatio === '1:100000' && (
+														<span className="drug-tile-badge strong">1:100k</span>
+													)}
+													{drug.vasoconstrictorRatio === '1:200000' && (
+														<span className="drug-tile-badge standard">1:200k</span>
+													)}
 												</div>
-												<div className="drug-card-substance">{drug.activeSubstanceRu}</div>
-												<div className="drug-card-footer-info">
-													<span>Карпула: {drug.standardCarpuleVolumeMl} мл ({drug.mgActivePerCarpule} мг)</span>
-													<span>МДД: {calcResult.isPediatric ? drug.maxDoseMgPerKgPediatric : drug.maxDoseMgPerKgAdult} мг/кг</span>
+
+												<div className="drug-tile-details">
+													<span>Действие: {drug.durationSoftTissueMinutes} мин</span>
+													<span>МРД: {drug.maxDoseMgPerKgAdult} мг/кг</span>
 												</div>
-											</div>
+
+												{isSulfiteDanger && (
+													<div className="drug-tile-warning">
+														⛔ Сульфиты (Астма / Аллергия)
+													</div>
+												)}
+												{isRestrictedForCardio && !isSulfiteDanger && (
+													<div className="drug-tile-warning">
+														⚠️ Лимит адреналина ≤ 0.04 мг
+													</div>
+												)}
+											</button>
 										);
 									})}
 								</div>
-							</div>
 
-							{/* Carpules Stepper & Volume */}
-							<div className="hub-card carpules-stepper-card">
-								<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-									<div>
-										<span style={{ fontSize: '0.9375rem', fontWeight: 700 }}>
-											Количество карпул к введению:
-										</span>
-										<span style={{ marginLeft: '0.5rem', fontSize: '1.125rem', fontWeight: 800, color: 'var(--brand-primary, var(--teal))' }}>
-											{carpulesCount} шт. ({calcResult.injectedVolumeMl} мл)
-										</span>
+								{/* Carpule Volume & Count Controls */}
+								<div className="carpules-selector-bar">
+									<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+										<span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Объем анестетика:</span>
+										<div className="carpule-stepper-box">
+											<button
+												type="button"
+												className="stepper-btn"
+												onClick={() => setCarpulesCount(prev => Math.max(0.5, Number((prev - 0.5).toFixed(1))))}
+											>
+												-
+											</button>
+											<span className="stepper-value">{carpulesCount} карп. ({calcResult.injectedVolumeMl} мл)</span>
+											<button
+												type="button"
+												className="stepper-btn"
+												onClick={() => setCarpulesCount(prev => Math.min(10, Number((prev + 0.5).toFixed(1))))}
+											>
+												+
+											</button>
+										</div>
 									</div>
 
-									<div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-										{[0.5, 1.0, 1.5, 2.0, 3.0, 4.0].map(val => (
+									<div className="carpule-quick-chips">
+										{[0.5, 1.0, 1.5, 2.0, 3.0].map(val => (
 											<button
 												key={val}
 												type="button"
-												className={`carpule-quick-btn ${carpulesCount === val ? 'active' : ''}`}
+												className={`carpule-chip ${carpulesCount === val ? 'active' : ''}`}
 												onClick={() => setCarpulesCount(val)}
 											>
-												{val} к.
+												{val} карп.
 											</button>
 										))}
 									</div>
 								</div>
-
-								<input
-									type="range"
-									min={0.5}
-									max={6.0}
-									step={0.5}
-									value={carpulesCount}
-									onChange={e => setCarpulesCount(parseFloat(e.target.value) || 1.0)}
-									className="hub-slider"
-									style={{ marginTop: '0.75rem' }}
-								/>
 							</div>
 
 							{/* Live Safety Speedometer & Meter */}
@@ -590,8 +930,8 @@ export function AnesthesiaSafetyHubModal({
 										fontSize: '0.8125rem',
 										fontWeight: 800,
 										color: calcResult.safetyZone === 'safe' ? 'var(--ok-fg)'
-											: calcResult.safetyZone === 'caution' ? 'var(--warn-fg, #84cc16)'
-											: calcResult.safetyZone === 'warning' ? 'var(--warn-fg, #f59e0b)'
+											: calcResult.safetyZone === 'caution' ? 'var(--ok-fg)'
+											: calcResult.safetyZone === 'warning' ? 'var(--warn-fg, #d97706)'
 											: 'var(--bad-fg, #ef4444)'
 									}}>
 										{calcResult.safetyZone === 'safe' && 'БЕЗОПАСНО (ЗЕЛЕНАЯ ЗОНА)'}
@@ -725,6 +1065,7 @@ export function AnesthesiaSafetyHubModal({
 									type="button"
 									onClick={onClose}
 									className="anesthesia-btn"
+									style={{ minHeight: '36px' }}
 								>
 									Отмена
 								</button>
@@ -733,6 +1074,7 @@ export function AnesthesiaSafetyHubModal({
 									onClick={handleApplyCalculation}
 									disabled={calcResult.isBlocked}
 									className={`anesthesia-btn ${calcResult.isBlocked ? 'disabled' : 'anesthesia-btn-primary'}`}
+									style={{ minHeight: '36px' }}
 								>
 									<CheckCircle2 size={16} />
 									Применить протокол в карту (Форма 043/у)
@@ -748,175 +1090,179 @@ export function AnesthesiaSafetyHubModal({
 						<div className="hub-tab-content emergency-tab-content">
 							{/* Emergency Header Banner with Stopwatch & S.O.S. */}
 							<div className="emergency-header-banner" style={{ borderColor: emergencyProtocol.colorTheme.primary }}>
-								<div className="emergency-header-left">
-									<div className="emergency-title-box">
+								<div className="emergency-header-title-box">
+									<div className="scenario-icon-box" style={{ background: emergencyProtocol.colorTheme.bgLight }}>
 										<AlertOctagon size={24} color={emergencyProtocol.colorTheme.primary} />
-										<div>
-											<div className="emergency-title-text">{emergencyProtocol.titleRu}</div>
-											<div className="emergency-statutory-text">{emergencyProtocol.statutoryOrderRu}</div>
+									</div>
+									<div>
+										<div className="scenario-name-text">{emergencyProtocol.titleRu}</div>
+										<div className="scenario-statutory-text">
+											{emergencyProtocol.statutoryOrderRu} | {emergencyProtocol.subtitleRu}
 										</div>
 									</div>
 								</div>
 
-								{/* Stopwatch & Emergency Call */}
-								<div className="emergency-header-right">
-									{/* Stopwatch */}
-									<div className="emergency-stopwatch-box">
-										<div className="stopwatch-label">Таймер инцидента:</div>
-										<div className="stopwatch-display">
-											<Clock size={16} />
-											<span>{formatEmergencyStopwatchTime(timerSeconds)}</span>
-										</div>
-										<div className="stopwatch-controls">
-											<button
-												type="button"
-												className={`timer-ctrl-btn ${isTimerRunning ? 'pause' : 'play'}`}
-												onClick={() => setIsTimerRunning(!isTimerRunning)}
-												title={isTimerRunning ? 'Пауза' : 'Старт таймера'}
-											>
-												{isTimerRunning ? <Pause size={14} /> : <Play size={14} />}
-											</button>
-											<button
-												type="button"
-												className="timer-ctrl-btn reset"
-												onClick={() => { setIsTimerRunning(false); setTimerSeconds(0); setCompletedStepNumbers({}); }}
-												title="Сбросить таймер"
-											>
-												<RotateCcw size={14} />
-											</button>
-										</div>
+								{/* Stopwatch Widget */}
+								<div className="emergency-stopwatch-widget">
+									<div className="stopwatch-display">
+										<Clock size={16} />
+										<span className="stopwatch-digits">{formatEmergencyStopwatchTime(timerSeconds)}</span>
 									</div>
-
-									{/* 112 Dispatch S.O.S. Button */}
-									<button
-										type="button"
-										className="hub-btn-sos-112"
-										onClick={() => setShow112ScriptModal(true)}
-									>
-										<PhoneCall size={18} />
-										<span>ШПАРГАЛКА 112 / 103</span>
-									</button>
+									<div className="stopwatch-controls">
+										<button
+											type="button"
+											onClick={() => setIsTimerRunning(prev => !prev)}
+											className={`anesthesia-btn ${isTimerRunning ? 'stopwatch-btn-pause' : 'stopwatch-btn-play'}`}
+											title={isTimerRunning ? 'Пауза секундомера' : 'Старт секундомера'}
+											style={{ minHeight: '32px', minWidth: '32px', padding: '0.25rem' }}
+										>
+											{isTimerRunning ? <Pause size={14} /> : <Play size={14} />}
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setIsTimerRunning(false);
+												setTimerSeconds(0);
+												setCompletedStepNumbers({});
+											}}
+											className="anesthesia-btn"
+											title="Сбросить время и шаги"
+											style={{ minHeight: '32px', minWidth: '32px', padding: '0.25rem' }}
+										>
+											<RotateCcw size={14} />
+										</button>
+									</div>
 								</div>
 							</div>
 
-							{/* Scenario Selector Pills */}
-							<div className="emergency-scenarios-pills-row">
-								{Object.values(EMERGENCY_PROTOCOLS).map(scen => {
-									const isActive = activeEmergencyScenario === scen.id;
+							{/* Emergency Scenario Selector Grid */}
+							<div className="scenario-selector-grid">
+								{(Object.keys(EMERGENCY_PROTOCOLS) as EmergencyScenarioId[]).map(scId => {
+									const sc = EMERGENCY_PROTOCOLS[scId];
+									const isSelected = scId === activeEmergencyScenario;
 									return (
 										<button
-											key={scen.id}
+											key={scId}
 											type="button"
-											className={`emergency-scenario-pill ${isActive ? 'active' : ''}`}
+											className={`scenario-btn ${isSelected ? 'active' : ''}`}
 											onClick={() => {
-												setActiveEmergencyScenario(scen.id);
+												setActiveEmergencyScenario(scId);
 												setCompletedStepNumbers({});
 											}}
+											style={{ borderLeftColor: sc.colorTheme.primary }}
 										>
-											<span className="pill-dot" style={{ background: scen.colorTheme.primary }} />
-											<span>{scen.shortTitleRu}</span>
+											<div className="scenario-btn-title">{sc.titleRu}</div>
+											<div className="scenario-btn-sub">{sc.statutoryOrderRu.split('(')[0]}</div>
 										</button>
 									);
 								})}
 							</div>
 
-							{/* Golden Rule Banner */}
-							<div className="emergency-golden-rule-box">
-								<Info size={18} color={emergencyProtocol.colorTheme.primary} />
-								<div className="golden-rule-text">
+							{/* GOLDEN RULE BANNER */}
+							<div className="golden-rule-banner">
+								<div className="golden-rule-title">
+									<AlertTriangle size={18} />
+									<span>ЗОЛОТОЕ ПРАВИЛО / FIRST-LINE ДЕЙСТВИЕ:</span>
+								</div>
+								<div className="golden-rule-body">
 									{emergencyProtocol.immediateGoldenRuleRu}
 								</div>
 							</div>
 
-							{/* Weight-Adjusted Exact Drug Dosages Banner */}
-							<div className="hub-card emergency-doses-card">
-								<div className="card-section-title">
-									<Stethoscope size={16} />
-									<span>Точный расчет дозировок неотложных средств для массы <strong>{patientWeightKg} кг</strong>:</span>
+							{/* Weight-Adjusted Emergency Drug Dosages Card */}
+							<div className="hub-card emergency-dosages-card">
+								<div className="card-section-title" style={{ color: emergencyProtocol.colorTheme.primary }}>
+									<Syringe size={16} />
+									<span>Точные дозировки препаратов для пациента {patientWeightKg} кг ({calcResult.isPediatric ? 'Ребенок' : 'Взрослый'}):</span>
 								</div>
 
-								<div className="emergency-doses-grid">
-									{Object.entries(calculatedEmergencyDoses).map(([drugName, doseInfo], idx) => (
-										<div key={idx} className="emergency-dose-item">
-											<span className="dose-drug-name">{drugName}</span>
-											<span className="dose-val-main">{doseInfo.doseText} ({doseInfo.volumeText})</span>
-											{doseInfo.noteRu && <span className="dose-val-sub">{doseInfo.noteRu}</span>}
-										</div>
-									))}
+								<div className="emergency-drug-table-container">
+									<table className="emergency-drug-table">
+										<thead>
+											<tr>
+												<th>Препарат</th>
+												<th>Рассчитанная доза ({patientWeightKg} кг)</th>
+												<th>Путь введения</th>
+												<th>Место / Техника</th>
+												<th>Обоснование</th>
+											</tr>
+										</thead>
+										<tbody>
+											{emergencyProtocol.steps
+												.filter(s => s.drugDetail)
+												.map((step, idx) => {
+													const drug = step.drugDetail!;
+													const doseInfo = calculatedEmergencyDoses[drug.drugNameRu];
+
+													return (
+														<tr key={idx} className={step.isCriticalFirstAction ? 'first-line-row' : ''}>
+															<td className="drug-name-cell">
+																<strong>{drug.drugNameRu}</strong>
+																<div className="drug-conc-sub">{drug.activeSubstanceRu}</div>
+															</td>
+															<td className="drug-dose-cell">
+																<span className="dose-badge">{doseInfo?.doseText ?? drug.standardAdultDoseRu}</span>
+																{doseInfo?.volumeText && (
+																	<div style={{ fontSize: '0.6875rem', color: 'var(--muted, #64748b)' }}>{doseInfo.volumeText}</div>
+																)}
+															</td>
+															<td>{drug.administrationRouteRu}</td>
+															<td>{drug.ampoulePresentationRu}</td>
+															<td>{drug.clinicalRationaleRu}</td>
+														</tr>
+													);
+												})}
+										</tbody>
+									</table>
 								</div>
 							</div>
 
-							{/* Interactive Step-by-Step Resuscitation Timeline */}
-							<div className="emergency-timeline-container">
-								<div className="timeline-header-row">
-									<span className="timeline-header-title">Пошаговый протокол реанимационных действий (Чек-лист):</span>
-									<span className="timeline-progress-badge">
-										Выполнено: {Object.keys(completedStepNumbers).length} из {emergencyProtocol.steps.length} шагов
-									</span>
+							{/* Step-by-Step Action Timeline */}
+							<div className="hub-card timeline-card">
+								<div className="card-section-title">
+									<Activity size={16} />
+									<span>Пошаговый протокол действий (отмечайте выполненные пункты):</span>
 								</div>
 
-								<div className="timeline-steps-list">
-									{emergencyProtocol.steps.map((step) => {
+								<div className="emergency-timeline">
+									{emergencyProtocol.steps.map(step => {
 										const isDone = Boolean(completedStepNumbers[step.stepNumber]);
-										const doneInfo = completedStepNumbers[step.stepNumber];
+										const logEntry = completedStepNumbers[step.stepNumber];
 
 										return (
 											<div
 												key={step.stepNumber}
-												className={`timeline-step-card ${isDone ? 'completed' : ''} ${step.isCriticalFirstAction ? 'critical' : ''}`}
+												className={`timeline-item ${isDone ? 'completed' : ''} ${step.isCriticalFirstAction ? 'critical' : ''}`}
+												onClick={() => handleToggleStep(step.stepNumber, step.titleRu)}
 											>
-												<div className="step-card-header">
-													<div className="step-number-badge">
-														<span>Шаг {step.stepNumber}</span>
-														<span className="step-timeframe">({step.timeframeRu})</span>
-													</div>
-
-													<div className="step-title-text">{step.titleRu}</div>
-
-													<label className="step-checkbox-label">
-														<input
-															type="checkbox"
-															checked={isDone}
-															onChange={() => handleToggleEmergencyStep(step.stepNumber, step.titleRu)}
-														/>
-														<span className="step-checkbox-custom">
-															{isDone ? <Check size={14} /> : null}
-														</span>
-														<span>{isDone ? `Выполнено [${doneInfo?.timeFormatted}]` : 'Отметить'}</span>
-													</label>
+												<div className="timeline-marker">
+													{isDone ? <Check size={14} /> : step.stepNumber}
 												</div>
 
-												<div className="step-body-description">
-													{step.descriptionRu}
-												</div>
-
-												{step.drugDetail && (
-													<div className="step-drug-highlight-box">
-														<div className="drug-highlight-header">
-															<Syringe size={14} />
-															<strong>{step.drugDetail.drugNameRu}</strong> — {step.drugDetail.administrationRouteRu}
-														</div>
-														<div className="drug-highlight-doses">
-															<span>Взрослая доза: <strong>{step.drugDetail.standardAdultDoseRu}</strong></span>
-															<span>Детская доза: <strong>{step.drugDetail.standardPediatricDoseRu}</strong></span>
-														</div>
+												<div className="timeline-content">
+													<div className="timeline-step-header">
+														<span className="step-title-text">{step.titleRu}</span>
+														{isDone && logEntry && (
+															<span className="step-timestamp-badge">
+																<Clock size={12} />
+																{logEntry.timeFormatted}
+															</span>
+														)}
 													</div>
-												)}
 
-												{step.criticalWarningRu && (
-													<div className="step-critical-warning">
-														<AlertTriangle size={14} />
-														<span>{step.criticalWarningRu}</span>
-													</div>
-												)}
+													<div className="step-desc-text">{step.descriptionRu}</div>
 
-												<div className="step-checklist-items">
-													{step.checklistItemsRu.map((item, cIdx) => (
-														<div key={cIdx} className="step-sub-item">
-															<ArrowRight size={12} />
-															<span>{item}</span>
+													{step.drugDetail && (
+														<div className="step-drug-box">
+															💉 <strong>Дозировка:</strong> {step.drugDetail.standardAdultDoseRu} ({step.drugDetail.administrationRouteRu})
 														</div>
-													))}
+													)}
+
+													{step.criticalWarningRu && (
+														<div className="step-warning-box">
+															⚠️ <strong>Внимание:</strong> {step.criticalWarningRu}
+														</div>
+													)}
 												</div>
 											</div>
 										);
@@ -924,37 +1270,93 @@ export function AnesthesiaSafetyHubModal({
 								</div>
 							</div>
 
-							{/* Required Kit Items */}
-							<div className="hub-card kit-items-card">
-								<div className="card-section-title">
-									<ShieldCheck size={16} />
-									<span>Необходимое оснащение по укладке Приказа МЗ РФ № 786н:</span>
+							{/* INLINE COLLAPSIBLE CARD: 112 Dispatcher Script (Anti-Matryoshka / Zero Submodals) */}
+							<div className="hub-card" style={{ padding: '0.875rem 1rem', background: 'var(--paper-strong, #f8fafc)', border: '1px solid var(--line, #e2e8f0)' }}>
+								<div
+									style={{
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'space-between',
+										cursor: 'pointer'
+									}}
+									onClick={() => setShow112ScriptInline(prev => !prev)}
+								>
+									<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, color: 'var(--bad-fg, #ef4444)' }}>
+										<PhoneCall size={18} />
+										<span>Шпаргалка звонка в Службу 112 / 103 (Скорая медицинская помощь)</span>
+									</div>
+									<button
+										type="button"
+										className="anesthesia-btn"
+										style={{ minHeight: '30px', minWidth: '30px', padding: '0.125rem' }}
+									>
+										{show112ScriptInline ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+									</button>
 								</div>
-								<div className="kit-items-grid">
-									{emergencyProtocol.kitItemsRequiredRu.map((kitItem, idx) => (
-										<div key={idx} className="kit-item-row">
-											<CheckCircle2 size={14} color="var(--ok-fg)" />
-											<span>{kitItem}</span>
+
+								{show112ScriptInline && (
+									<div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--line, #e2e8f0)' }}>
+										<div className="dispatcher-script-box" style={{ background: 'var(--paper, #ffffff)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}>
+											<pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--ink, #0f172a)' }}>
+												{generateEmergency112DispatchScript({
+													scenarioId: activeEmergencyScenario,
+													clinicName,
+													clinicAddress,
+													cabinetNumber,
+													patientAgeYears,
+													currentBp: `${bpSystolic}/${bpDiastolic}`,
+													currentHr: String(heartRateBpm),
+													currentSpo2: String(spo2Percent),
+													adrenalineGivenMg: activeEmergencyScenario === 'anaphylaxis' ? 0.5 : undefined
+												})}
+											</pre>
 										</div>
-									))}
-								</div>
+
+										<div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+											<button
+												type="button"
+												onClick={() => {
+													const script = generateEmergency112DispatchScript({
+														scenarioId: activeEmergencyScenario,
+														clinicName,
+														clinicAddress,
+														cabinetNumber,
+														patientAgeYears,
+														currentBp: `${bpSystolic}/${bpDiastolic}`,
+														currentHr: String(heartRateBpm),
+														currentSpo2: String(spo2Percent),
+														adrenalineGivenMg: activeEmergencyScenario === 'anaphylaxis' ? 0.5 : undefined
+													});
+													handleCopyText(script, 'Текст для 112 скопирован!');
+												}}
+												className="anesthesia-btn anesthesia-btn-primary"
+												style={{ minHeight: '34px', fontSize: '0.8125rem' }}
+											>
+												<Copy size={14} />
+												{isCopied && copyNotificationText.includes('112') ? 'Скопировано!' : 'Скопировать шпаргалку 112'}
+											</button>
+										</div>
+									</div>
+								)}
 							</div>
 
-							{/* Emergency Tab Footer Actions */}
-							<div className="hub-footer-actions">
+							{/* Emergency Bottom Action Bar */}
+							<div className="emergency-footer-actions">
 								<button
 									type="button"
-									onClick={() => setShow112ScriptModal(true)}
+									onClick={() => setShow112ScriptInline(prev => !prev)}
 									className="anesthesia-btn"
+									style={{ borderColor: 'var(--bad, #ef4444)', color: 'var(--bad-fg, #ef4444)', minHeight: '36px' }}
 								>
 									<PhoneCall size={16} />
-									Текст для диспетчера 112
+									{show112ScriptInline ? 'Скрыть шпаргалку 112' : 'Шпаргалка 112 / 103'}
 								</button>
 
 								<button
 									type="button"
 									onClick={handleApplyEmergencyAct}
-									className="anesthesia-btn anesthesia-btn-primary"
+									className="anesthesia-btn anesthesia-btn-primary emergency-save-btn"
+									style={{ minHeight: '36px' }}
 								>
 									<FileText size={16} />
 									Сформировать протокол реанимации (Форма 043/у)
@@ -962,78 +1364,182 @@ export function AnesthesiaSafetyHubModal({
 							</div>
 						</div>
 					)}
-				</div>
 
-				{/* 112 Dispatcher Script Submodal / Drawer */}
-				{show112ScriptModal && (
-					<div className="hub-submodal-overlay">
-						<div className="hub-submodal-container">
-							<div className="hub-submodal-header">
-								<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}>
-									<PhoneCall size={18} color="var(--bad, #ef4444)" />
-									<span>Шпаргалка звонка в Службу 112 / 103 (Скорая помощь)</span>
+					{/* ========================================================================= */}
+					{/* TAB 3: SUBJECT-QUANTITATIVE ACCOUNTING (ПКУ) & SANPIN 3.3686-21 DISPOSAL */}
+					{/* ========================================================================= */}
+					{activeTab === 'pku_disposal' && (
+						<div className="hub-tab-content">
+							<div className="hub-card" style={{ padding: '0.875rem 1rem', marginBottom: '1rem' }}>
+								<div className="card-section-title" style={{ color: '#0284c7', marginBottom: '0.75rem' }}>
+									<Trash2 size={16} />
+									<span>Параметры утилизации медицинских отходов Класса Б (СанПиН 3.3686-21)</span>
 								</div>
-								<button
-									type="button"
-									onClick={() => setShow112ScriptModal(false)}
-									className="anesthesia-btn"
-									style={{ minHeight: '32px', minWidth: '32px', padding: '0.25rem', border: 'none' }}
-								>
-									<X size={16} />
-								</button>
+
+								<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
+									<div className="input-group">
+										<span className="input-label">Причина списания:</span>
+										<select
+											value={disposalReason}
+											onChange={e => setDisposalReason(e.target.value as AnesthesiaDisposalReason)}
+											className="hub-select"
+										>
+											<option value="used_in_procedure">Израсходовано на приеме (введено пациенту)</option>
+											<option value="damaged_broken">Механический бой / повреждение карпулы</option>
+											<option value="expired">Истечение установленного срока годности</option>
+											<option value="unsealed_unused">Вскрытая неиспользованная остаточная доза</option>
+										</select>
+									</div>
+
+									<div className="input-group">
+										<span className="input-label">Метод дезинфекции:</span>
+										<select
+											value={disinfectionMethod}
+											onChange={e => setDisinfectionMethod(e.target.value as AnesthesiaDisinfectionMethod)}
+											className="hub-select"
+										>
+											<option value="chemical_disinfection">Химическая дезинфекция (раствор ДС)</option>
+											<option value="autoclaving_destructive">Автоклавирование (деструктивный метод)</option>
+										</select>
+									</div>
+
+									{disinfectionMethod === 'chemical_disinfection' && (
+										<>
+											<div className="input-group">
+												<span className="input-label">Препарат дезинфекции:</span>
+												<input
+													type="text"
+													value={disinfectantName}
+													onChange={e => setDisinfectantName(e.target.value)}
+													className="hub-text-input"
+													placeholder="напр. Аламинол 3%"
+												/>
+											</div>
+
+											<div className="input-group">
+												<span className="input-label">Экспозиция (мин):</span>
+												<input
+													type="number"
+													min={15}
+													max={180}
+													step={5}
+													value={disinfectantExposureMinutes}
+													onChange={e => setDisinfectantExposureMinutes(parseInt(e.target.value) || 60)}
+													className="hub-text-input"
+													style={{ width: '80px', textAlign: 'center' }}
+												/>
+											</div>
+										</>
+									)}
+								</div>
 							</div>
 
-							<div className="hub-submodal-body">
-								<div className="dispatcher-script-box">
-									<pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.8125rem', lineHeight: 1.5 }}>
-										{generateEmergency112DispatchScript({
-											scenarioId: activeEmergencyScenario,
-											clinicName,
-											clinicAddress,
-											cabinetNumber,
-											patientAgeYears,
-											currentBp: '80/50',
-											currentHr: '120',
-											currentSpo2: '92',
-											adrenalineGivenMg: activeEmergencyScenario === 'anaphylaxis' ? 0.5 : undefined
-										})}
-									</pre>
+							{/* Preview Mode Switcher */}
+							<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+								<div style={{ display: 'flex', gap: '0.5rem' }}>
+									<button
+										type="button"
+										className={`hub-tab-btn ${pkuPreviewMode === 'formatted_text' ? 'active' : ''}`}
+										style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', minHeight: '30px' }}
+										onClick={() => setPkuPreviewMode('formatted_text')}
+									>
+										<FileText size={14} />
+										<span>Текстовый протокол (043/у)</span>
+									</button>
+
+									<button
+										type="button"
+										className={`hub-tab-btn ${pkuPreviewMode === 'print_layout' ? 'active' : ''}`}
+										style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', minHeight: '30px' }}
+										onClick={() => setPkuPreviewMode('print_layout')}
+									>
+										<Printer size={14} />
+										<span>Бланк для печати (СанПиН)</span>
+									</button>
+								</div>
+
+								<div style={{ display: 'flex', gap: '0.5rem' }}>
+									<button
+										type="button"
+										onClick={() => handleCopyText(pkuActText, 'Акт списания скопирован!')}
+										className="anesthesia-btn"
+										style={{ minHeight: '32px', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+									>
+										{isCopied && copyNotificationText.includes('списания') ? <Check size={14} color="var(--ok-fg)" /> : <Copy size={14} />}
+										<span>{isCopied && copyNotificationText.includes('списания') ? copyNotificationText : 'Скопировать акт'}</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={handlePrintPkuAct}
+										className="anesthesia-btn"
+										style={{ minHeight: '32px', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+									>
+										<Printer size={14} />
+										<span>Печать</span>
+									</button>
 								</div>
 							</div>
 
-							<div className="hub-submodal-footer">
-								<button
-									type="button"
-									onClick={() => {
-										const script = generateEmergency112DispatchScript({
-											scenarioId: activeEmergencyScenario,
-											clinicName,
-											clinicAddress,
-											cabinetNumber,
-											patientAgeYears,
-											currentBp: '80/50',
-											currentHr: '120',
-											currentSpo2: '92',
-											adrenalineGivenMg: activeEmergencyScenario === 'anaphylaxis' ? 0.5 : undefined
-										});
-										handleCopyText(script, 'Текст для 112 скопирован!');
+							{/* Document Preview */}
+							{pkuPreviewMode === 'formatted_text' ? (
+								<div
+									style={{
+										background: 'var(--paper-strong, #f8fafc)',
+										border: '1px solid var(--line, #e2e8f0)',
+										borderRadius: '8px',
+										padding: '0.875rem',
+										fontFamily: 'monospace',
+										fontSize: '0.75rem',
+										lineHeight: 1.4,
+										whiteSpace: 'pre-wrap',
+										color: 'var(--ink, #0f172a)'
 									}}
-									className="anesthesia-btn anesthesia-btn-primary"
 								>
-									<Copy size={14} />
-									Скопировать шпаргалку
-								</button>
+									{pkuActText}
+								</div>
+							) : (
+								<div
+									style={{
+										background: '#ffffff',
+										border: '1px solid #cbd5e1',
+										borderRadius: '8px',
+										padding: '1rem',
+										overflowX: 'auto'
+									}}
+									dangerouslySetInnerHTML={{ __html: pkuActHtml }}
+								/>
+							)}
+
+							{/* PKU Footer Actions */}
+							<div className="hub-footer-actions" style={{ marginTop: '1rem' }}>
 								<button
 									type="button"
-									onClick={() => setShow112ScriptModal(false)}
+									onClick={onClose}
 									className="anesthesia-btn"
+									style={{ minHeight: '36px' }}
 								>
 									Закрыть
 								</button>
+								<button
+									type="button"
+									onClick={() => {
+										handleCopyText(pkuActText, 'Акт списания скопирован!');
+										if (onApplyToDiary) {
+											onApplyToDiary(calcResult.soapDiaryText + '\n\n' + pkuActText, calcResult);
+										}
+										onClose();
+									}}
+									className="anesthesia-btn anesthesia-btn-primary"
+									style={{ minHeight: '36px', background: '#0284c7', borderColor: '#0284c7' }}
+								>
+									<CheckCircle2 size={16} />
+									Зафиксировать списание в ПКУ и карте 043/у
+								</button>
 							</div>
 						</div>
-					</div>
-				)}
+					)}
+				</div>
 			</div>
 		</div>
 	);

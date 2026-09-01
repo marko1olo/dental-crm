@@ -251,7 +251,7 @@ export function AnesthesiaQuickBar({
 						type="button"
 						disabled={disabled}
 						onClick={() => handleApplyCarpules(1.0)}
-						className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
 						title="Ввести 1 карпулу (1.7 мл) в протокол дневника"
 						data-testid="anesthesia-dose-1carp"
 					>
@@ -263,7 +263,7 @@ export function AnesthesiaQuickBar({
 						type="button"
 						disabled={disabled || maxSafeCarpules < 2.0}
 						onClick={() => handleApplyCarpules(2.0)}
-						className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
 						title="Ввести 2 карпулы (3.4 мл) — для проводниковых анестезий"
 						data-testid="anesthesia-dose-2carp"
 					>
@@ -275,7 +275,7 @@ export function AnesthesiaQuickBar({
 						type="button"
 						disabled={disabled}
 						onClick={() => handleApplyCarpules(0.5)}
-						className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
 						title="Ввести 0.5 карпулы (0.85 мл) — для интралигаментарной или нёбной анестезии"
 						data-testid="anesthesia-dose-halfcarp"
 					>

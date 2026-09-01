@@ -4,6 +4,7 @@ export * from './emergencyProtocols';
 export * from './AnesthesiaProtocolModal';
 export * from './AnesthesiaSafetyHubModal';
 export * from './AnesthesiaQuickBar';
+export * from './AnesthesiaPkuDisposalModal';
 export * from '../visit/anesthesiaMrdMath';
 export {
 	calculateAnesthesiaSafety as calculateAnesthesiaComprehensiveSafety,

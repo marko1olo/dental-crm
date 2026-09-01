@@ -107,7 +107,7 @@ export function screenPatientContraindications(
 		recommendedAlternativeId = "mepivacaine_3_plain";
 	}
 
-	// 6. Uncontrolled Hypertension
+	// 6. Uncontrolled Hypertension & Tachycardia / Vitals
 	const isSevereHypertension =
 		(typeof profile.bpSystolic === "number" && profile.bpSystolic >= 180) ||
 		(typeof profile.bpDiastolic === "number" && profile.bpDiastolic >= 110);
@@ -117,6 +117,12 @@ export function screenPatientContraindications(
 			`БЛОКИРУЮЩЕЕ ПРЕДУПРЕЖДЕНИЕ: Неконтролируемая артериальная гипертензия (АД ${profile.bpSystolic ?? 180}/${profile.bpDiastolic ?? 110} мм рт. ст.). Плановое лечение отложить! При неотложной помощи запрещены вазоконстрикторы — применять Мепивакаин 3%.`,
 		);
 		recommendedAlternativeId = "mepivacaine_3_plain";
+	}
+
+	if (typeof profile.heartRateBpm === "number" && profile.heartRateBpm > 100 && !drug.isAdrenalineFree) {
+		warnings.push(
+			`ТАХИКАРДИЯ (ЧСС ${profile.heartRateBpm} уд/мин): Риск аритмии и ишемии миокарда при введении адреналина. Рекомендуется Мепивакаин 3% без вазоконстриктора.`,
+		);
 	}
 
 	// 7. Pheochromocytoma & Glaucoma
@@ -212,6 +218,8 @@ export function calculateComprehensiveAnesthesiaSafety(
 		input.hasCardiovascularRisk ||
 			input.hasHypertension ||
 			input.hasCardiacArrhythmia ||
+			(typeof input.bpSystolic === "number" && input.bpSystolic >= 140) ||
+			(typeof input.heartRateBpm === "number" && input.heartRateBpm > 90) ||
 			input.takesTricyclicAntidepressants ||
 			input.asaStatus === "asa_3" ||
 			input.asaStatus === "asa_4",
@@ -322,7 +330,20 @@ export function calculateComprehensiveAnesthesiaSafety(
 	const cardioText = isCardioRestricted ? " [Кардиоконтроль: адреналин ≤ 0.04 мг]" : "";
 	const pediaText = isPediatric ? ` [Педиатрический расчет: ${effectiveMaxMgPerKg} мг/кг]` : "";
 
-	const soapDiaryText = `Проведена местная анестезия${toothPart}. Препарат: «${drug.tradeNamesRu[0]}» (${drug.activeSubstanceRu}), объем ${injectedVolumeMl} мл (${carpules} карп., ${injectedActiveMg} мг действ. в-ва${epiText}). МРД для пациента ${weight} кг: ${maxSafeActiveMg} мг (${maxSafeCarpulesCount} карп.)${cardioText}${pediaText}. ${aspPart} Анестезия наступила через ${drug.onsetMinutes} мин, глубина достаточная, соматических реакций нет.`;
+	const batchPart = input.carpuleBatch?.seriesNumber
+		? ` [Серия: ${input.carpuleBatch.seriesNumber}, Партия: ${input.carpuleBatch.batchNumber}, Годен до: ${input.carpuleBatch.expirationDate}]`
+		: "";
+	const nursePart = input.nurseFullName ? ` Медсестра/ассистент: ${input.nurseFullName}.` : "";
+	const vitalsPart =
+		typeof input.bpSystolic === "number" && typeof input.heartRateBpm === "number"
+			? ` Исходные гемодинамические показатели: АД ${input.bpSystolic}/${input.bpDiastolic ?? 80} мм рт. ст., ЧСС ${input.heartRateBpm} уд/мин${typeof input.spo2Percent === "number" ? `, SpO2 ${input.spo2Percent}%` : ""}.`
+			: "";
+
+	const soapDiaryText = `Проведена местная анестезия${toothPart}. Препарат: «${drug.tradeNamesRu[0]}» (${drug.activeSubstanceRu})${batchPart}, объем ${injectedVolumeMl} мл (${carpules} карп., ${injectedActiveMg} мг действ. в-ва${epiText}). МРД для пациента ${weight} кг: ${maxSafeActiveMg} мг (${maxSafeCarpulesCount} карп.)${cardioText}${pediaText}.${vitalsPart} ${aspPart} Анестезия наступила через ${drug.onsetMinutes} мин, глубина достаточная, соматических реакций нет.${nursePart}`;
+
+	const isSevereHypertension =
+		(typeof input.bpSystolic === "number" && input.bpSystolic >= 160) ||
+		(typeof input.bpDiastolic === "number" && input.bpDiastolic >= 100);
 
 	return {
 		drug,
@@ -356,5 +377,13 @@ export function calculateComprehensiveAnesthesiaSafety(
 		recommendedAlternativeKey: screening.recommendedAlternativeId,
 		clinicalAdviceRu,
 		soapDiaryText,
+		carpuleBatch: input.carpuleBatch,
+		vitalsSafety: {
+			bpSystolic: input.bpSystolic,
+			bpDiastolic: input.bpDiastolic,
+			heartRateBpm: input.heartRateBpm,
+			spo2Percent: input.spo2Percent,
+			isHemodynamicallyStable: !isSevereHypertension,
+		},
 	};
 }

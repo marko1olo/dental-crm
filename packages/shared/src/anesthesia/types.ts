@@ -90,6 +90,74 @@ export interface AnesthesiaDrugDefinition {
 	readonly description: string;
 }
 
+export interface AnesthesiaCarpuleBatchInfo {
+	readonly seriesNumber: string;
+	readonly batchNumber: string;
+	readonly expirationDate: string; // Формат ГГГГ-ММ или ГГГГ-ММ-ДД
+	readonly manufacturerRu?: string | undefined;
+	readonly isExpired?: boolean | undefined;
+}
+
+export interface PreoperativeVitalsChecklist {
+	readonly bpSystolic?: number | undefined;
+	readonly bpDiastolic?: number | undefined;
+	readonly heartRateBpm?: number | undefined;
+	readonly spo2Percent?: number | undefined;
+	readonly bodyTemperatureCelsius?: number | undefined;
+	readonly measuredAt?: string | undefined;
+	readonly isHemodynamicallyStable?: boolean | undefined;
+	readonly vitalWarnings?: readonly string[] | undefined;
+}
+
+export type AnesthesiaDisposalReason =
+	| "used_in_procedure"
+	| "damaged_broken"
+	| "expired"
+	| "unsealed_unused";
+
+export type AnesthesiaMedicalWasteClass = "class_b_hazardous";
+
+export type AnesthesiaDisinfectionMethod =
+	| "chemical_disinfection"
+	| "autoclaving_destructive";
+
+export interface AnesthesiaPkuDisposalRecord {
+	readonly id: string;
+	readonly recordNumber: string; // Номер записи в журнале ПКУ (напр. "ПКУ-АН-2026/084")
+	readonly dateIso: string;
+	readonly time: string;
+	readonly clinicName: string;
+	readonly cabinetNumber: string;
+	readonly patientFullName: string;
+	readonly medicalCardNumber043: string;
+	readonly doctorFullName: string;
+	readonly nurseFullName: string;
+	readonly drugId: AnestheticDrugId;
+	readonly drugNameRu: string;
+	readonly activeSubstanceRu: string;
+	readonly seriesNumber: string;
+	readonly batchNumber: string;
+	readonly expirationDate: string;
+	readonly carpulesUsedCount: number;
+	readonly carpulesDisposedCount: number;
+	readonly volumeMlTotal: number;
+	readonly disposalReason: AnesthesiaDisposalReason;
+	readonly wasteClass: AnesthesiaMedicalWasteClass;
+	readonly disinfectionMethod: AnesthesiaDisinfectionMethod;
+	readonly disinfectantNameRu: string;
+	readonly disinfectantExposureMinutes: number;
+	readonly assistantSignatureConfirmed: boolean;
+	readonly notesRu?: string | undefined;
+}
+
+export interface AnesthesiaPkuSummaryLedger {
+	readonly totalCarpulesUsed: number;
+	readonly totalCarpulesDisposed: number;
+	readonly totalVolumeMl: number;
+	readonly records: readonly AnesthesiaPkuDisposalRecord[];
+	readonly generatedAtIso: string;
+}
+
 export interface PatientAnesthesiaProfile {
 	patientWeightKg: number;
 	patientAgeYears?: number | undefined;
@@ -104,6 +172,10 @@ export interface PatientAnesthesiaProfile {
 	hasHypertension?: boolean | undefined;
 	bpSystolic?: number | undefined;
 	bpDiastolic?: number | undefined;
+	heartRateBpm?: number | undefined;
+	spo2Percent?: number | undefined;
+	preoperativeVitals?: PreoperativeVitalsChecklist | undefined;
+	carpuleBatch?: AnesthesiaCarpuleBatchInfo | undefined;
 	hasSulfiteAllergy?: boolean | undefined;
 	hasBronchialAsthma?: boolean | undefined;
 	isPregnantOrLactating?: boolean | undefined;
@@ -128,6 +200,11 @@ export interface SomaticRiskProfile {
 	readonly hasBronchialAsthma?: boolean | undefined;
 	readonly isPregnantOrLactating?: boolean | undefined;
 	readonly pregnancyTrimester?: "none" | "trimester_1" | "trimester_2" | "trimester_3" | "lactation" | undefined;
+	readonly bpSystolic?: number | undefined;
+	readonly bpDiastolic?: number | undefined;
+	readonly heartRateBpm?: number | undefined;
+	readonly spo2Percent?: number | undefined;
+	readonly vitalsChecklist?: PreoperativeVitalsChecklist | undefined;
 	readonly customNotes?: string | undefined;
 }
 
@@ -164,6 +241,8 @@ export interface AnesthesiaCalculationInput extends PatientAnesthesiaProfile {
 	carpuleVolumeMl?: number | undefined;
 	targetToothFdi?: string | number | undefined;
 	aspirationConfirmed?: boolean | undefined;
+	carpuleBatch?: AnesthesiaCarpuleBatchInfo | undefined;
+	nurseFullName?: string | undefined;
 }
 
 export interface ComprehensiveAnesthesiaCalculationResult {
@@ -204,6 +283,8 @@ export interface ComprehensiveAnesthesiaCalculationResult {
 	readonly recommendedAlternativeKey?: AnestheticDrugId | undefined;
 	readonly clinicalAdviceRu: string;
 	readonly soapDiaryText: string;
+	readonly carpuleBatch?: AnesthesiaCarpuleBatchInfo | undefined;
+	readonly vitalsSafety?: PreoperativeVitalsChecklist | undefined;
 }
 
 export interface AnesthesiaSafetyParams {
@@ -214,6 +295,8 @@ export interface AnesthesiaSafetyParams {
 	readonly patientAgeYears?: number | null | undefined;
 	readonly isPediatric?: boolean | undefined;
 	readonly somaticProfile?: SomaticRiskProfile | undefined;
+	readonly carpuleBatch?: AnesthesiaCarpuleBatchInfo | undefined;
+	readonly nurseFullName?: string | undefined;
 }
 
 export interface VisitAnesthesiaCalculationResult {
@@ -247,6 +330,7 @@ export interface VisitAnesthesiaCalculationResult {
 		readonly currentEpinephrineMg: number;
 		readonly isExceeded: boolean;
 	} | null;
+	readonly carpuleBatch?: AnesthesiaCarpuleBatchInfo | undefined;
 }
 
 export interface PatientMrdCalculation {
@@ -294,4 +378,7 @@ export interface AnesthesiaSoapRecordParams {
 	reactionNormal?: boolean | undefined;
 	anesthesiaStartTime?: string | undefined;
 	somaticProfile?: SomaticRiskProfile | undefined;
+	carpuleBatch?: AnesthesiaCarpuleBatchInfo | undefined;
+	nurseFullName?: string | undefined;
+	vitals?: PreoperativeVitalsChecklist | undefined;
 }
