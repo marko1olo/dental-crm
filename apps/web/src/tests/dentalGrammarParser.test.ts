@@ -13,6 +13,8 @@ import {
 	extractProcedures804n,
 	extractSoapNotes,
 	extractQuadrantIntent,
+	extractEndoCanalMeasurements,
+	extractPerioVoiceMeasurements,
 	parseDentalVoiceSpeech,
 	VALID_FDI_PERMANENT_TEETH,
 	VALID_FDI_PRIMARY_TEETH,
@@ -298,6 +300,99 @@ describe("Voice AI Dental STT Grammar Parser (dentalGrammarParser.ts)", () => {
 			const intentAll = parseDentalVoiceSpeech("все зубы");
 			assert.strictEqual(intentAll.type, "quadrant_switch");
 			assert.strictEqual(intentAll.targetQuadrant, "all");
+		});
+	});
+
+	describe("9. Endodontic Canal Working Length Voice Dictation (EndoCanalMeasurementDrawer)", () => {
+		it("extracts medial/MB canal with working length and apical stop: 'канал медиальный 21 миллиметр упор 25'", () => {
+			const items = extractEndoCanalMeasurements("канал медиальный 21 миллиметр упор 25");
+			assert.strictEqual(items.length, 1);
+			assert.strictEqual(items[0]?.canalName, "MB");
+			assert.strictEqual(items[0]?.workingLengthMm, 21);
+			assert.strictEqual(items[0]?.masterApicalFile, "ISO 25");
+		});
+
+		it("extracts MB1 canal with decimal length: 'канал мб1 длина 21.5 упор 25'", () => {
+			const items = extractEndoCanalMeasurements("канал мб1 длина 21.5 упор 25");
+			assert.strictEqual(items.length, 1);
+			assert.strictEqual(items[0]?.canalName, "MB1");
+			assert.strictEqual(items[0]?.workingLengthMm, 21.5);
+			assert.strictEqual(items[0]?.masterApicalFile, "ISO 25");
+		});
+
+		it("extracts distal canal with taper: 'канал дистальный 22 миллиметра конусность 06'", () => {
+			const items = extractEndoCanalMeasurements("канал дистальный 22 миллиметра конусность 06");
+			assert.strictEqual(items.length, 1);
+			assert.strictEqual(items[0]?.canalName, "D");
+			assert.strictEqual(items[0]?.workingLengthMm, 22);
+			assert.strictEqual(items[0]?.taper, ".06 (Конусность 6%)");
+		});
+
+		it("extracts palatal canal with sealer: 'канал небный длина 22.5 упор 30 силер аш плюс'", () => {
+			const items = extractEndoCanalMeasurements("канал небный длина 22.5 упор 30 силер аш плюс");
+			assert.strictEqual(items.length, 1);
+			assert.strictEqual(items[0]?.canalName, "P");
+			assert.strictEqual(items[0]?.workingLengthMm, 22.5);
+			assert.strictEqual(items[0]?.masterApicalFile, "ISO 30");
+			assert.strictEqual(items[0]?.sealer, "AH Plus");
+		});
+
+		it("creates structured 'endo_measurement' DentalVoiceIntent for spoken canal measurements", () => {
+			const intent = parseDentalVoiceSpeech("канал медиальный 21 миллиметр упор 25");
+			assert.strictEqual(intent.type, "endo_measurement");
+			assert.ok(intent.endoCanalMeasurements);
+			assert.strictEqual(intent.endoCanalMeasurements.length, 1);
+			assert.strictEqual(intent.endoCanalMeasurements[0]?.canalName, "MB");
+			assert.strictEqual(intent.endoCanalMeasurements[0]?.workingLengthMm, 21);
+			assert.strictEqual(intent.endoCanalMeasurements[0]?.masterApicalFile, "ISO 25");
+		});
+	});
+
+	describe("10. Periodontal Probing & Indices Voice Dictation (PeriodontalChartingModal)", () => {
+		it("extracts 6-point probing depths and BOP from Russian speech: 'зуб один шесть медиально три щечно два дистально три кровоточивость плюс'", () => {
+			const items = extractPerioVoiceMeasurements("зуб один шесть медиально три щечно два дистально три кровоточивость плюс");
+			assert.strictEqual(items.length, 1);
+			assert.strictEqual(items[0]?.toothNumber, 16);
+			assert.strictEqual(items[0]?.mesioBuccal?.probingDepthMm, 3);
+			assert.strictEqual(items[0]?.midBuccal?.probingDepthMm, 2);
+			assert.strictEqual(items[0]?.distoBuccal?.probingDepthMm, 3);
+			assert.strictEqual(items[0]?.bleedingOnProbing, true);
+		});
+
+		it("extracts triplet pocket depths with recession and bop: 'зуб 46 карманы 4 3 5 рецессия 1 bop плюс'", () => {
+			const items = extractPerioVoiceMeasurements("зуб 46 карманы 4 3 5 рецессия 1 bop плюс");
+			assert.strictEqual(items.length, 1);
+			assert.strictEqual(items[0]?.toothNumber, 46);
+			assert.strictEqual(items[0]?.mesioBuccal?.probingDepthMm, 4);
+			assert.strictEqual(items[0]?.midBuccal?.probingDepthMm, 3);
+			assert.strictEqual(items[0]?.distoBuccal?.probingDepthMm, 5);
+			assert.strictEqual(items[0]?.mesioBuccal?.gingivalMarginMm, 1);
+			assert.strictEqual(items[0]?.bleedingOnProbing, true);
+		});
+
+		it("extracts mobility and furcation: 'зуб 36 подвижность два фуркация один'", () => {
+			const items = extractPerioVoiceMeasurements("зуб 36 подвижность два фуркация один");
+			assert.strictEqual(items.length, 1);
+			assert.strictEqual(items[0]?.toothNumber, 36);
+			assert.strictEqual(items[0]?.mobility, 2);
+			assert.strictEqual(items[0]?.furcation, 1);
+		});
+
+		it("extracts missing tooth: 'зуб сорок восемь удален'", () => {
+			const items = extractPerioVoiceMeasurements("зуб сорок восемь удален");
+			assert.strictEqual(items.length, 1);
+			assert.strictEqual(items[0]?.toothNumber, 48);
+			assert.strictEqual(items[0]?.isMissing, true);
+		});
+
+		it("creates structured 'perio_measurement' DentalVoiceIntent for spoken periodontal pocket command", () => {
+			const intent = parseDentalVoiceSpeech("зуб один шесть медиально три щечно два дистально три кровоточивость плюс");
+			assert.strictEqual(intent.type, "perio_measurement");
+			assert.ok(intent.perioMeasurements);
+			assert.strictEqual(intent.perioMeasurements.length, 1);
+			assert.strictEqual(intent.perioMeasurements[0]?.toothNumber, 16);
+			assert.strictEqual(intent.perioMeasurements[0]?.mesioBuccal?.probingDepthMm, 3);
+			assert.strictEqual(intent.perioMeasurements[0]?.bleedingOnProbing, true);
 		});
 	});
 });

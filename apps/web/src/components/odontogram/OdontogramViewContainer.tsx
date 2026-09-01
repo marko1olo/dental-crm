@@ -29,6 +29,7 @@ import {
 	type ToothData,
 	type ToothState,
 	type OdontogramQuadrantId,
+	getQuadrantTitle,
 	TOP_TEETH,
 	BOTTOM_TEETH,
 	ALL_ADULT_TEETH_NUMBERS,
@@ -38,9 +39,12 @@ import {
 	PEDIATRIC_MOLARS,
 } from "./ToothChart";
 import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { RadialToothMenu } from "./RadialToothMenu";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { ToothContextDrawer } from "../diagnostic/ToothContextDrawer";
+import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
+import { PeriodontalChartingModal } from "./PeriodontalChartingModal";
 import { showToast } from "../GlobalToast";
 
 export interface OdontogramViewOption {
@@ -111,6 +115,7 @@ export interface OdontogramViewContainerProps {
 	isMultiSelectMode?: boolean | undefined;
 	onToggleMultiSelect?: ((enabled: boolean) => void) | undefined;
 	onSelectTeethGroup?: ((teeth: number[]) => void) | undefined;
+	patientId?: string | undefined;
 }
 
 export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = ({
@@ -145,6 +150,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	isMultiSelectMode,
 	onToggleMultiSelect,
 	onSelectTeethGroup,
+	patientId,
 }) => {
 	// 1. Read mode from zustand app store or initialViewMode or localStorage preferences
 	const storeMode = useAppStore((state) => state.odontogramViewMode);
@@ -168,7 +174,10 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	const [activeStampTool, setActiveStampTool] = useState<ToothState | null>(null);
 	const [isConfirmSanitationModalOpen, setIsConfirmSanitationModalOpen] = useState<boolean>(false);
 	const [contextDrawerTooth, setContextDrawerTooth] = useState<number | null>(null);
+	const [endoDrawerTooth, setEndoDrawerTooth] = useState<number | null>(null);
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
+	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
+	const [isLocalPerioOpen, setIsLocalPerioOpen] = useState<boolean>(false);
 
 	// 3. Radial Menu Active Anchor
 	const [radialMenuData, setRadialMenuData] = useState<{
@@ -260,24 +269,46 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
 	}, [activeStampTool]);
 
-	// Listen to global dental voice engine for real-time tooth updates
+	// Listen to global dental voice engine for real-time tooth updates & interim text streaming
 	useEffect(() => {
 		const unsub = globalDentalVoiceEngine.addListener({
-			onListeningChange: (isL) => setIsVoiceListening(isL),
+			onListeningChange: (isL) => {
+				setIsVoiceListening(isL);
+				if (!isL) setVoiceInterimText("");
+			},
+			onTranscriptChange: (interim, final) => {
+				setVoiceInterimText(interim || final || "");
+			},
 			onIntentParsed: (intent) => {
+				// 1. Голосовое переключение квадрантов
+				if (intent.targetQuadrant !== undefined && onQuadrantChange) {
+					onQuadrantChange(intent.targetQuadrant);
+					void SoundFeedbackService.getInstance().playActionSuccess();
+					showToast(`Голос: ${getQuadrantTitle(intent.targetQuadrant, Boolean(pediatricMode))}`, "info");
+				}
+
+				// 2. Голосовое выставление статуса зубов с аудио-фидбеком
 				if (onQuickStateChange && intent.teethUpdates.length > 0) {
 					for (const t of intent.teethUpdates) {
 						onQuickStateChange([t.toothNumber], t.state, t.surfaces);
 					}
+					void SoundFeedbackService.getInstance().playActionSuccess();
 					const summary = intent.teethUpdates
 						.map((t) => `Зуб ${t.toothNumber}: ${t.state}`)
 						.join(", ");
 					showToast(`Голос: ${summary}`, "success");
 				}
+
+				// 3. Голосовое открытие пародонтологической карты
+				if (intent.type === "perio_measurement" || (intent.perioMeasurements && intent.perioMeasurements.length > 0)) {
+					setIsLocalPerioOpen(true);
+					void SoundFeedbackService.getInstance().playActionSuccess();
+					showToast("Голос: Пародонтологическая карта", "info");
+				}
 			},
 		});
 		return () => unsub();
-	}, [onQuickStateChange]);
+	}, [onQuickStateChange, onQuadrantChange, pediatricMode]);
 
 	const handleRadialSelectState = useCallback(
 		(state: ToothState, surfaces?: readonly string[]) => {
@@ -525,21 +556,20 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						)}
 
 						{/* Periodontal Charting Module */}
-						{onTogglePerio && (
-							<button
-								type="button"
-								onClick={onTogglePerio}
-								className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 whitespace-nowrap cursor-pointer select-none ${
-									isPerioOpen
-										? "bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border-[var(--teal)]/50 shadow-xs font-black"
-										: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
-								}`}
-								title="Открыть / скрыть пародонтологическую карту PSR / 6 точек зондирования"
-							>
-								<Activity size={14} className="text-[var(--teal)] shrink-0" />
-								<span>Пародонтограмма</span>
-							</button>
-						)}
+						<button
+							type="button"
+							onClick={() => (onTogglePerio ? onTogglePerio() : setIsLocalPerioOpen((prev) => !prev))}
+							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 whitespace-nowrap cursor-pointer select-none ${
+								isPerioOpen || isLocalPerioOpen
+									? "bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border-[var(--teal)]/50 shadow-xs font-black"
+									: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
+							}`}
+							title="Пародонтологическая карта: 6 точек зондирования Florida Probe, индексы OHI-S / PLI / SBI, скрининг CPITN"
+							data-testid="btn-open-perio-chart"
+						>
+							<Activity size={14} className="text-[var(--teal)] shrink-0" />
+							<span>Пародонтограмма</span>
+						</button>
 
 						{/* Diagnocat AI Report */}
 						{onLoadDiagnocat && (
@@ -645,6 +675,25 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<span>{isVoiceListening ? "Слушаю..." : "Голос"}</span>
 						</button>
 					</div>
+				</div>
+			)}
+
+			{/* Live Voice Dictation Interim HUD Banner */}
+			{isVoiceListening && (
+				<div
+					className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-600 dark:text-blue-400 font-medium select-none shadow-xs animate-in fade-in duration-150"
+					data-testid="odontogram-voice-live-hud"
+				>
+					<span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping shrink-0" />
+					<span className="font-extrabold shrink-0 flex items-center gap-1">
+						<Sparkles size={14} className="text-blue-500" />
+						Gemini Live VAD:
+					</span>
+					<span className="italic animate-pulse truncate font-bold text-blue-700 dark:text-blue-300">
+						{voiceInterimText
+							? `«${voiceInterimText}»`
+							: "Диктуйте формулу: «16 кариес», «24 пломба», «36 удалить», «47 пульпит», «тотальная санация»..."}
+					</span>
 				</div>
 			)}
 
@@ -757,6 +806,28 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					}}
 				/>
 			)}
+
+			{/* Tier 2 Endo Canal Measurement Drawer */}
+			{endoDrawerTooth !== null && (
+				<EndoCanalMeasurementDrawer
+					isOpen={endoDrawerTooth !== null}
+					onClose={() => setEndoDrawerTooth(null)}
+					toothNumber={endoDrawerTooth}
+					toothState={teethData?.find((t) => t.toothNumber === endoDrawerTooth)?.state}
+					patientId={patientId}
+				/>
+			)}
+
+			{/* Tier 2/3 Periodontal Charting & CPITN Screening Modal */}
+			<PeriodontalChartingModal
+				isOpen={Boolean(isPerioOpen || isLocalPerioOpen)}
+				onClose={() => {
+					setIsLocalPerioOpen(false);
+					onTogglePerio?.();
+				}}
+				patientId={patientId}
+				patientName={patientId ? `Пациент #${patientId}` : undefined}
+			/>
 		</div>
 	);
 };

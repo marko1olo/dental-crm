@@ -43,7 +43,7 @@
  * 5. Раскладка в протокол SOAP (СтАР 043/у) и единый DentalVoiceIntent.
  */
 
-import type { ToothState } from "../../components/odontogram/ToothChart";
+import type { ToothState, OdontogramQuadrantId } from "../../components/odontogram/ToothChart";
 import { isValidFdiToothNumber } from "@dental/shared";
 
 export type ClinicalToothStatus =
@@ -101,11 +101,52 @@ export interface SoapSectionsVoiceNote {
 	readonly recommendations?: string | undefined;
 }
 
+export interface EndoCanalVoiceItem {
+	readonly canalName: string;
+	readonly workingLengthMm?: number | undefined;
+	readonly masterApicalFile?: string | undefined;
+	readonly taper?: string | undefined;
+	readonly sealer?: string | undefined;
+	readonly referencePoint?: string | undefined;
+}
+
+export interface PerioSiteVoiceMeasurement {
+	readonly probingDepthMm?: number | undefined;
+	readonly gingivalMarginMm?: number | undefined;
+	readonly bleedingOnProbing?: boolean | undefined;
+	readonly plaque?: boolean | undefined;
+	readonly suppuration?: boolean | undefined;
+	readonly calculus?: boolean | undefined;
+}
+
+export interface PerioToothVoiceItem {
+	readonly toothNumber: number;
+	readonly mesioBuccal?: PerioSiteVoiceMeasurement | undefined;
+	readonly midBuccal?: PerioSiteVoiceMeasurement | undefined;
+	readonly distoBuccal?: PerioSiteVoiceMeasurement | undefined;
+	readonly mesioLingual?: PerioSiteVoiceMeasurement | undefined;
+	readonly midLingual?: PerioSiteVoiceMeasurement | undefined;
+	readonly distoLingual?: PerioSiteVoiceMeasurement | undefined;
+	readonly mobility?: number | undefined;
+	readonly furcation?: number | undefined;
+	readonly bleedingOnProbing?: boolean | undefined;
+	readonly isMissing?: boolean | undefined;
+}
+
 export interface DentalVoiceIntent {
 	readonly id: string;
 	readonly timestamp: string;
 	readonly rawTranscript: string;
-	readonly type: "odontogram_update" | "soap_entry" | "anesthesia_record" | "manipulation_plan" | "invoice_items" | "full_visit_batch";
+	readonly type:
+		| "odontogram_update"
+		| "soap_entry"
+		| "anesthesia_record"
+		| "manipulation_plan"
+		| "invoice_items"
+		| "full_visit_batch"
+		| "quadrant_switch"
+		| "endo_measurement"
+		| "perio_measurement";
 	readonly confidence: number;
 	readonly confidenceLevel: "high" | "review";
 	readonly teethUpdates: readonly ToothUpdateVoiceItem[];
@@ -113,6 +154,9 @@ export interface DentalVoiceIntent {
 	readonly anesthesia: AnesthesiaVoiceItem | null;
 	readonly procedures804n: readonly Procedure804nVoiceItem[];
 	readonly soapNotes: SoapSectionsVoiceNote;
+	readonly targetQuadrant?: OdontogramQuadrantId | "all" | undefined;
+	readonly endoCanalMeasurements?: readonly EndoCanalVoiceItem[] | undefined;
+	readonly perioMeasurements?: readonly PerioToothVoiceItem[] | undefined;
 	readonly summary: string;
 }
 
@@ -405,6 +449,18 @@ export function extractFdiTeethNumbers(text: string): number[] {
 			const tooth = TEEN_NUMBER_WORDS[current];
 			if (tooth && isValidFdiToothNumber(tooth)) {
 				found.add(tooth);
+			}
+		}
+
+		// Поддержка произнесения цифрами: «зуб один шесть» -> 16, «два один» -> 21
+		if (current && ONES_WORDS[current] !== undefined && next && ONES_WORDS[next] !== undefined) {
+			const d1 = ONES_WORDS[current];
+			const d2 = ONES_WORDS[next];
+			if (d1 !== undefined && d2 !== undefined && d1 >= 1 && d1 <= 8 && d2 >= 1 && d2 <= 8) {
+				const tooth = d1 * 10 + d2;
+				if (isValidFdiToothNumber(tooth)) {
+					found.add(tooth);
+				}
 			}
 		}
 	}
@@ -1138,6 +1194,317 @@ export function extractSoapNotes(text: string): SoapSectionsVoiceNote {
 	return result;
 }
 
+/**
+ * Распознавание команд переключения квадранта (Q1, Q2, Q3, Q4, all)
+ */
+export function extractQuadrantIntent(text: string): OdontogramQuadrantId | null {
+	if (!text) return null;
+	const lower = text.toLowerCase().trim();
+
+	if (
+		lower.includes("все зубы") ||
+		lower.includes("вся челюсть") ||
+		lower.includes("все квадранты") ||
+		lower.includes("полная формула") ||
+		lower.includes("вся формула") ||
+		lower.includes("общий вид") ||
+		lower.includes("сброс квадрант") ||
+		lower.includes("сброс") ||
+		lower.includes("показать все") ||
+		lower.includes("вся дуга")
+	) {
+		return "all";
+	}
+
+	if (
+		lower.includes("первый квадрант") ||
+		lower.includes("1-й квадрант") ||
+		lower.includes("1 квадрант") ||
+		lower.includes("квадрант 1") ||
+		lower.includes("верх право") ||
+		lower.includes("верхний правый") ||
+		lower.includes("верхняя челюсть справа") ||
+		lower.includes("вверх справа") ||
+		/(?:^|[^a-zа-я0-9])(?:q1|к1|q-1|к-1)(?:$|[^a-zа-я0-9])/i.test(lower)
+	) {
+		return "Q1";
+	}
+	if (
+		lower.includes("второй квадрант") ||
+		lower.includes("2-й квадрант") ||
+		lower.includes("2 квадрант") ||
+		lower.includes("квадрант 2") ||
+		lower.includes("верх лево") ||
+		lower.includes("верхний левый") ||
+		lower.includes("верхняя челюсть слева") ||
+		lower.includes("вверх слева") ||
+		/(?:^|[^a-zа-я0-9])(?:q2|к2|q-2|к-2)(?:$|[^a-zа-я0-9])/i.test(lower)
+	) {
+		return "Q2";
+	}
+	if (
+		lower.includes("третий квадрант") ||
+		lower.includes("3-й квадрант") ||
+		lower.includes("3 квадрант") ||
+		lower.includes("квадрант 3") ||
+		lower.includes("низ лево") ||
+		lower.includes("нижний левый") ||
+		lower.includes("нижняя челюсть слева") ||
+		lower.includes("снизу слева") ||
+		/(?:^|[^a-zа-я0-9])(?:q3|к3|q-3|к-3)(?:$|[^a-zа-я0-9])/i.test(lower)
+	) {
+		return "Q3";
+	}
+	if (
+		lower.includes("четвертый квадрант") ||
+		lower.includes("4-й квадрант") ||
+		lower.includes("4 квадрант") ||
+		lower.includes("квадрант 4") ||
+		lower.includes("низ право") ||
+		lower.includes("нижний правый") ||
+		lower.includes("нижняя челюсть справа") ||
+		lower.includes("снизу справа") ||
+		/(?:^|[^a-zа-я0-9])(?:q4|к4|q-4|к-4)(?:$|[^a-zа-я0-9])/i.test(lower)
+	) {
+		return "Q4";
+	}
+	return null;
+}
+
+/**
+ * Распознавание замеров эндодонтических каналов (WL, MAF, конусность, силер)
+ */
+export function extractEndoCanalMeasurements(text: string): EndoCanalVoiceItem[] {
+	if (!text || typeof text !== "string") return [];
+	const lower = text.toLowerCase().replace(/ё/g, "е");
+	if (!/(?:канал|упор|стоп|маф|maf|конус|силер|апекс|working\s*length|wl)/i.test(lower)) {
+		return [];
+	}
+	const results: EndoCanalVoiceItem[] = [];
+
+	const canalPatterns: Array<{
+		name: string;
+		aliases: string[];
+	}> = [
+		{ name: "MB1", aliases: ["мв1", "mb1", "медиально-щечный 1", "медиально щечный первый", "медиально щечный 1", "медиальный 1", "мб1", "мб 1"] },
+		{ name: "MB2", aliases: ["мв2", "mb2", "медиально-щечный 2", "медиально щечный второй", "медиально щечный 2", "медиальный 2", "мб2", "мб 2"] },
+		{ name: "MB", aliases: ["мв", "mb", "медиально-щечный", "медиально щечный", "медиальный щечный", "мезиально-щечный", "мб", "медиальный", "медиального", "mesial"] },
+		{ name: "DB", aliases: ["дв", "db", "дистально-щечный", "дистально щечный", "дистальный щечный", "дб"] },
+		{ name: "ML", aliases: ["мл", "ml", "медиально-язычный", "медиально-небный"] },
+		{ name: "DL", aliases: ["дл", "dl", "дистально-язычный", "дистально-небный"] },
+		{ name: "P", aliases: ["небный", "небного", "palatal", "палатальный"] },
+		{ name: "D", aliases: ["дистальный", "дистального", "distal"] },
+		{ name: "L", aliases: ["язычный", "язычного", "lingual"] },
+	];
+
+	for (const pattern of canalPatterns) {
+		let matched = false;
+		for (const alias of pattern.aliases) {
+			const aliasRegex = new RegExp(`(?:канал\\s*)?(?:^|[^a-zа-я0-9])${alias}(?:$|[^a-zа-я0-9])`, "i");
+			if (aliasRegex.test(lower)) {
+				matched = true;
+				break;
+			}
+		}
+
+		if (matched) {
+			let workingLengthMm: number | undefined;
+			const bodyAfterAlias = lower.replace(
+				/(?:канал\s*)?(?:mb1|mb2|mb|db|ml|dl|p|d|m|l|мв1|мв2|мв|дв|мл|дл|мб1|мб2|мб|медиально[-\s]?щечн\w*\s*[12]?|дистально[-\s]?щечн\w*|медиально[-\s]?язычн\w*|дистально[-\s]?язычн\w*|небн\w*|дистальн\w*|медиальн\w*|язычн\w*)/i,
+				"",
+			);
+			const lenMatch = bodyAfterAlias.match(/(?:длина|рабочая длина|рл)?\s*(\d+(?:[,.]\d+)?)\s*(?:мм|миллиметр[а-я]*)?/i);
+			if (lenMatch && lenMatch[1]) {
+				workingLengthMm = Number.parseFloat(lenMatch[1].replace(",", "."));
+			} else if (lower.includes("двадцать один")) workingLengthMm = 21;
+			else if (lower.includes("двадцать два")) workingLengthMm = 22;
+			else if (lower.includes("двадцать три")) workingLengthMm = 23;
+			else if (lower.includes("двадцать четыре")) workingLengthMm = 24;
+			else if (lower.includes("двадцать пять")) workingLengthMm = 25;
+			else if (lower.includes("двадцать")) workingLengthMm = 20;
+
+			let masterApicalFile: string | undefined;
+			const mafMatch = lower.match(/(?:маф|maf|упор|стоп|файл|инструмент)\s*(?:iso\s*)?([a-z0-9#]+|двадцать\s*пять|двадцать|тридцать\s*пять|тридцать|сорок)/i);
+			if (mafMatch && mafMatch[1]) {
+				const rawMaf = mafMatch[1].trim();
+				if (/^\d+$/.test(rawMaf)) masterApicalFile = `ISO ${rawMaf}`;
+				else if (rawMaf.includes("двадцать пять")) masterApicalFile = "ISO 25";
+				else if (rawMaf.includes("тридцать пять")) masterApicalFile = "ISO 35";
+				else if (rawMaf.includes("тридцать")) masterApicalFile = "ISO 30";
+				else if (rawMaf.includes("двадцать")) masterApicalFile = "ISO 20";
+				else if (rawMaf.includes("сорок")) masterApicalFile = "ISO 40";
+				else masterApicalFile = rawMaf;
+			}
+
+			let taper: string | undefined;
+			const taperMatch = lower.match(/(?:конус|конусность)\s*([.\d]+|шесть|четыре|два)/i);
+			if (taperMatch && taperMatch[1]) {
+				const rawT = taperMatch[1].trim();
+				if (rawT === "06" || rawT === "6" || rawT === "шесть" || rawT === ".06") taper = ".06 (Конусность 6%)";
+				else if (rawT === "04" || rawT === "4" || rawT === "четыре" || rawT === ".04") taper = ".04 (Конусность 4%)";
+				else if (rawT === "02" || rawT === "2" || rawT === "два" || rawT === ".02") taper = ".02 (Стандартная 2%)";
+				else taper = rawT;
+			}
+
+			let sealer: string | undefined;
+			const sealerMatch = lower.match(/(?:силер|паста)\s*([a-zа-я0-9\s+]+)/i);
+			if (sealerMatch && sealerMatch[1]) {
+				const rawS = sealerMatch[1].trim();
+				if (/аш\s*плюс|ah\s*plus/i.test(rawS)) sealer = "AH Plus";
+				else if (/биорут|bioroot/i.test(rawS)) sealer = "BioRoot RCS";
+				else if (/тоталфилл|totalfill/i.test(rawS)) sealer = "TotalFill BC";
+				else sealer = rawS;
+			}
+
+			results.push({
+				canalName: pattern.name,
+				...(workingLengthMm !== undefined ? { workingLengthMm } : {}),
+				...(masterApicalFile ? { masterApicalFile } : {}),
+				...(taper ? { taper } : {}),
+				...(sealer ? { sealer } : {}),
+			});
+			break;
+		}
+	}
+
+	return results;
+}
+
+/**
+ * Распознавание замеров пародонтологической карты (глубина карманов, BOP, налет, подвижность)
+ */
+export function extractPerioVoiceMeasurements(text: string): PerioToothVoiceItem[] {
+	if (!text || typeof text !== "string") return [];
+	const lower = text.toLowerCase().replace(/ё/g, "е");
+	if (!/(?:карман|глубин|пародонт|перио|bop|боп|кровоточив|кровит|рецесси|подвижност|фуркаци|удален|отсутствует|адентия)/i.test(lower)) {
+		return [];
+	}
+	const teeth = extractFdiTeethNumbers(text);
+	if (teeth.length === 0) return [];
+
+	const DIGIT_WORDS_MAP: Record<string, number> = {
+		"один": 1, "единица": 1, "первая": 1, "первый": 1, "1": 1,
+		"два": 2, "двойка": 2, "вторая": 2, "второй": 2, "2": 2,
+		"три": 3, "тройка": 3, "третья": 3, "третий": 3, "3": 3,
+		"четыре": 4, "четверка": 4, "четвертая": 4, "четвертый": 4, "4": 4,
+		"пять": 5, "пятерка": 5, "пятая": 5, "пятый": 5, "5": 5,
+		"шесть": 6, "шестерка": 6, "шестая": 6, "шестой": 6, "6": 6,
+		"семь": 7, "семерка": 7, "седьмая": 7, "седьмой": 7, "7": 7,
+		"восемь": 8, "восьмерка": 8, "восьмая": 8, "восьмой": 8, "8": 8,
+		"девять": 9, "девятка": 9, "девятая": 9, "девятый": 9, "9": 9,
+		"десять": 10, "десятка": 10, "10": 10,
+	};
+
+	function parseDepthNumber(s: string): number | undefined {
+		const trimmed = s.trim().toLowerCase();
+		if (/^\d{1,2}$/.test(trimmed)) {
+			const n = Number.parseInt(trimmed, 10);
+			return n >= 0 && n <= 15 ? n : undefined;
+		}
+		if (DIGIT_WORDS_MAP[trimmed] !== undefined) {
+			return DIGIT_WORDS_MAP[trimmed];
+		}
+		return undefined;
+	}
+
+	const results: PerioToothVoiceItem[] = [];
+
+	for (const toothNum of teeth) {
+		let mbDepth: number | undefined;
+		let bDepth: number | undefined;
+		let dbDepth: number | undefined;
+		let mlDepth: number | undefined;
+		let lDepth: number | undefined;
+		let dlDepth: number | undefined;
+
+		const mbMatch = lower.match(/(?:медиально-щечн[а-я]*|мезиально-щечн[а-я]*|мб|mb|медиально|медиальный)\s*(\d+|один|два|три|четыре|пять|шесть|семь|восемь|девять|десять)/i);
+		if (mbMatch && mbMatch[1]) mbDepth = parseDepthNumber(mbMatch[1]);
+
+		const bMatch = lower.match(/(?:щечн[а-я]*|вестибулярн[а-я]*|щечно)\s*(\d+|один|два|три|четыре|пять|шесть|семь|восемь|девять|десять)/i);
+		if (bMatch && bMatch[1]) bDepth = parseDepthNumber(bMatch[1]);
+
+		const dbMatch = lower.match(/(?:дистально-щечн[а-я]*|дистально|дб|db|дистальный)\s*(\d+|один|два|три|четыре|пять|шесть|семь|восемь|девять|десять)/i);
+		if (dbMatch && dbMatch[1]) dbDepth = parseDepthNumber(dbMatch[1]);
+
+		const mlMatch = lower.match(/(?:медиально-язычн[а-я]*|медиально-небн[а-я]*|мл|ml)\s*(\d+|один|два|три|четыре|пять|шесть|семь|восемь|девять|десять)/i);
+		if (mlMatch && mlMatch[1]) mlDepth = parseDepthNumber(mlMatch[1]);
+
+		const lMatch = lower.match(/(?:язычн[а-я]*|небн[а-я]*|небно|язычно)\s*(\d+|один|два|три|четыре|пять|шесть|семь|восемь|девять|десять)/i);
+		if (lMatch && lMatch[1]) lDepth = parseDepthNumber(lMatch[1]);
+
+		const dlMatch = lower.match(/(?:дистально-язычн[а-я]*|дистально-небн[а-я]*|дл|dl)\s*(\d+|один|два|три|четыре|пять|шесть|семь|восемь|девять|десять)/i);
+		if (dlMatch && dlMatch[1]) dlDepth = parseDepthNumber(dlMatch[1]);
+
+		const seqMatch = lower.match(/(?:карман[а-я]*|глубин[а-я]*|зондирование)\s*(\d+|один|два|три|четыре|пять|шесть|семь|восемь|девять|десять)\s+(\d+|один|два|три|четыре|пять|шесть|семь|восемь|девять|десять)\s+(\d+|один|два|три|четыре|пять|шесть|семь|восемь|девять|десять)/i);
+		if (seqMatch && seqMatch[1] && seqMatch[2] && seqMatch[3]) {
+			mbDepth = parseDepthNumber(seqMatch[1]);
+			bDepth = parseDepthNumber(seqMatch[2]);
+			dbDepth = parseDepthNumber(seqMatch[3]);
+		}
+
+		let recessionMm: number | undefined;
+		const recMatch = lower.match(/рецесси[а-я]*\s*(\d+|один|два|три|четыре|пять|шесть|семь|восемь)/i);
+		if (recMatch && recMatch[1]) {
+			recessionMm = parseDepthNumber(recMatch[1]);
+		}
+
+		const hasBop = lower.includes("кровоточивость") || lower.includes("кровь") || lower.includes("bop") || lower.includes("плюс") || lower.includes("кровит");
+		const hasPlaque = lower.includes("налет") || lower.includes("бляшка") || lower.includes("plaque");
+		const hasSuppuration = lower.includes("гной") || lower.includes("экссудация") || lower.includes("нагноение");
+		const hasCalculus = lower.includes("камень") || lower.includes("зубной камень");
+		const isMissing = lower.includes("удален") || lower.includes("отсутствует") || lower.includes("адентия");
+
+		let mobility: number | undefined;
+		const mobMatch = lower.match(/подвижност[а-я]*\s*(?:степен[а-я]*|ст\b|)?\s*(\d+|один|два|три|первая|вторая|третья|i{1,3})/i);
+		if (mobMatch && mobMatch[1]) {
+			const m = parseDepthNumber(mobMatch[1]);
+			if (m !== undefined && m >= 1 && m <= 3) mobility = m;
+			else if (mobMatch[1].includes("i")) mobility = mobMatch[1].length;
+		}
+
+		let furcation: number | undefined;
+		const furcMatch = lower.match(/фуркаци[а-я]*\s*(?:класс[а-я]*|ст\b|)?\s*(\d+|один|два|три|первая|вторая|третья|i{1,3})/i);
+		if (furcMatch && furcMatch[1]) {
+			const f = parseDepthNumber(furcMatch[1]);
+			if (f !== undefined && f >= 1 && f <= 3) furcation = f;
+		}
+
+		const hasAnyMeasure =
+			mbDepth !== undefined ||
+			bDepth !== undefined ||
+			dbDepth !== undefined ||
+			mlDepth !== undefined ||
+			lDepth !== undefined ||
+			dlDepth !== undefined ||
+			recessionMm !== undefined ||
+			hasBop ||
+			hasPlaque ||
+			hasSuppuration ||
+			hasCalculus ||
+			mobility !== undefined ||
+			furcation !== undefined ||
+			isMissing;
+
+		if (hasAnyMeasure) {
+			results.push({
+				toothNumber: toothNum,
+				...(mbDepth !== undefined || recessionMm !== undefined ? { mesioBuccal: { probingDepthMm: mbDepth ?? 0, gingivalMarginMm: recessionMm, bleedingOnProbing: hasBop, plaque: hasPlaque, suppuration: hasSuppuration, calculus: hasCalculus } } : {}),
+				...(bDepth !== undefined ? { midBuccal: { probingDepthMm: bDepth, gingivalMarginMm: recessionMm, bleedingOnProbing: hasBop, plaque: hasPlaque, suppuration: hasSuppuration, calculus: hasCalculus } } : {}),
+				...(dbDepth !== undefined ? { distoBuccal: { probingDepthMm: dbDepth, gingivalMarginMm: recessionMm, bleedingOnProbing: hasBop, plaque: hasPlaque, suppuration: hasSuppuration, calculus: hasCalculus } } : {}),
+				...(mlDepth !== undefined ? { mesioLingual: { probingDepthMm: mlDepth, bleedingOnProbing: hasBop, plaque: hasPlaque } } : {}),
+				...(lDepth !== undefined ? { midLingual: { probingDepthMm: lDepth, bleedingOnProbing: hasBop, plaque: hasPlaque } } : {}),
+				...(dlDepth !== undefined ? { distoLingual: { probingDepthMm: dlDepth, bleedingOnProbing: hasBop, plaque: hasPlaque } } : {}),
+				...(mobility !== undefined ? { mobility } : {}),
+				...(furcation !== undefined ? { furcation } : {}),
+				...(hasBop ? { bleedingOnProbing: true } : {}),
+				...(isMissing ? { isMissing: true } : {}),
+			});
+		}
+	}
+
+	return results;
+}
+
 function splitSpeechClauses(text: string): string[] {
 	if (!text) return [];
 	return text
@@ -1259,15 +1626,40 @@ export function parseDentalVoiceSpeech(rawTranscript: string): DentalVoiceIntent
 		summaryParts.push(`${procedures804n.length} манип.`);
 	}
 
+	const targetQuadrant = extractQuadrantIntent(transcript) || undefined;
+	const endoCanalMeasurements = extractEndoCanalMeasurements(transcript);
+	const perioMeasurements = extractPerioVoiceMeasurements(transcript);
+
+	let intentType: DentalVoiceIntent["type"] = "full_visit_batch";
+	if (targetQuadrant) {
+		intentType = "quadrant_switch";
+	} else if (endoCanalMeasurements.length > 0) {
+		intentType = "endo_measurement";
+	} else if (perioMeasurements.length > 0) {
+		intentType = "perio_measurement";
+	} else if (teethUpdates.length > 0 && !anesthesia && procedures804n.length === 0) {
+		intentType = "odontogram_update";
+	}
+
+	if (targetQuadrant) {
+		summaryParts.unshift(`Квадрант: ${targetQuadrant}`);
+	}
+	if (endoCanalMeasurements.length > 0) {
+		summaryParts.push(`Эндо: ${endoCanalMeasurements.map((c) => c.canalName).join(", ")}`);
+	}
+	if (perioMeasurements.length > 0) {
+		summaryParts.push(`Перио: ${perioMeasurements.map((p) => p.toothNumber).join(", ")}`);
+	}
+
 	const summary = summaryParts.length > 0 ? summaryParts.join(" | ") : "Клинический голосовой ввод";
-	const confidence = teethUpdates.length > 0 || anesthesia || procedures804n.length > 0 ? 0.95 : 0.8;
+	const confidence = teethUpdates.length > 0 || anesthesia || procedures804n.length > 0 || targetQuadrant || endoCanalMeasurements.length > 0 || perioMeasurements.length > 0 ? 0.95 : 0.8;
 	const confidenceLevel = confidence >= 0.9 ? "high" : "review";
 
 	return {
 		id: intentId,
 		timestamp: now,
 		rawTranscript: transcript,
-		type: "full_visit_batch",
+		type: intentType,
 		confidence,
 		confidenceLevel,
 		teethUpdates,
@@ -1275,6 +1667,9 @@ export function parseDentalVoiceSpeech(rawTranscript: string): DentalVoiceIntent
 		anesthesia,
 		procedures804n,
 		soapNotes: enrichedSoap,
+		...(targetQuadrant ? { targetQuadrant } : {}),
+		...(endoCanalMeasurements.length > 0 ? { endoCanalMeasurements } : {}),
+		...(perioMeasurements.length > 0 ? { perioMeasurements } : {}),
 		summary,
 	};
 }
