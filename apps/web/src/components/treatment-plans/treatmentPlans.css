@@ -26,7 +26,7 @@
 	--tp-text-main: var(--ink, #0f172a);
 	--tp-text-muted: var(--muted, #64748b);
 	--tp-primary: var(--teal, #0d9488);
-	--tp-primary-hover: var(--teal-hover, #0f766e);
+	--tp-primary-hover: var(--teal-dark, #0f766e);
 	--tp-primary-light: var(--teal-surface, rgba(13, 148, 136, 0.1));
 	--tp-accent: #f59e0b;
 	--tp-accent-light: rgba(245, 158, 11, 0.12);

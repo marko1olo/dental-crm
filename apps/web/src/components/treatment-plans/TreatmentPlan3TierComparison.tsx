@@ -377,7 +377,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							<span>Материалы и технологии</span>
 						</h4>
 						<ul className="space-y-1 text-xs text-[var(--muted,#64748b)] m-0 list-none p-0">
-							{tier.materialsList.map((mat, i) => (
+							{(tier.materialsList ?? []).map((mat, i) => (
 								<li key={i} className="flex items-start gap-2 text-[11px] leading-tight">
 									<CheckCircle2
 										size={13}

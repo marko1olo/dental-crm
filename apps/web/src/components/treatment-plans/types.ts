@@ -26,7 +26,8 @@ export interface Order804nProcedureDefinition {
 
 export interface TreatmentPlanItem {
 	readonly id: string;
-	readonly toothNumber?: number;
+	readonly toothNumber?: number | undefined;
+	readonly relatedToothNumbers?: readonly number[] | undefined;
 	readonly code804n: string;
 	readonly name: string;
 	readonly category: string;
@@ -36,11 +37,13 @@ export interface TreatmentPlanItem {
 	readonly quantity: number;
 	readonly phase: number; // 1, 2, 3
 	readonly stageKind: TreatmentPlanStageKind;
-	readonly isAuto?: boolean;
-	readonly priceId?: string | null;
-	readonly fromCatalog?: boolean;
-	readonly materials?: string;
-	readonly clinicalRationale?: string;
+	readonly isAuto?: boolean | undefined;
+	readonly priceId?: string | null | undefined;
+	readonly fromCatalog?: boolean | undefined;
+	readonly materials?: string | undefined;
+	readonly clinicalRationale?: string | undefined;
+	readonly isDraft?: boolean | undefined;
+	readonly requiresManualPricing?: boolean | undefined;
 }
 
 export interface TreatmentPlanStage {

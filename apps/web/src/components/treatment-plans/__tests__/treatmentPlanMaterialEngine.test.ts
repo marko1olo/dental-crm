@@ -79,7 +79,7 @@ describe("treatmentPlanMaterialEngine: Order 804n Material Consumption Norms", (
 			{ toothNumber: 26, state: "Caries" },
 		];
 
-		const stages = generateTreatmentPlanStages(teeth);
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
 		const stage1 = stages[0]!;
 
 		const mockInventory: InventoryItemLookup[] = [
@@ -118,7 +118,7 @@ describe("treatmentPlanMaterialEngine: Order 804n Material Consumption Norms", (
 			{ toothNumber: 36, state: "Missing" },
 		];
 
-		const stages = generateTreatmentPlanStages(teeth);
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
 		const total = calculatePlanTotalMaterialCost(stages);
 
 		assert.equal(total.summaries.length, 3, "Должно быть 3 сводки по этапам");
@@ -130,7 +130,7 @@ describe("treatmentPlanMaterialEngine: Order 804n Material Consumption Norms", (
 
 	test("generateCompletedWorksActAndWriteOff формирует официальный Акт сдачи-приемки и спецификацию ТМЦ", () => {
 		const teeth: ToothData[] = [{ toothNumber: 16, state: "Caries" }];
-		const stages = generateTreatmentPlanStages(teeth);
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
 		const stage1 = stages[0]!;
 
 		const act = generateCompletedWorksActAndWriteOff({

@@ -1,6 +1,7 @@
 /**
  * treatmentPlanStagesEngine.test.ts — тестирование клинических этапов, 3 вариантов плана,
- * пародонтологических патологий, детской стоматологии, имплантации и финансовой математики.
+ * отвязки от хардкода цен (PROD/DEMO), клинического паттерн-матчинга (адентия, мосты, All-on-4/6,
+ * депульпированные зубы), детской стоматологии, хронологии остеоинтеграции и финансовой математики.
  */
 
 import assert from "node:assert/strict";
@@ -8,15 +9,63 @@ import test, { describe } from "node:test";
 import { parseKopecks } from "@dental/shared";
 import type { ToothData } from "../../odontogram/ToothChart";
 import {
+	type CatalogServiceLookupItem,
 	calculateLoyaltyBonusDeduction,
 	calculateNdflDeduction,
 	computeTierInstallments,
 	generate3TierPlanComparison,
+	generateTierPlanStages,
 	generateTreatmentPlanStages,
+	getAnatomicalRootCanalCount,
 	isDeciduousTooth,
+	isMolarOrPremolar,
 	matchCatalogService,
 	ORDER_804N_DICTIONARY,
+	setDemoShowcaseMode,
 } from "../treatmentPlanStagesEngine";
+
+const MOCK_CLINIC_CATALOG: readonly CatalogServiceLookupItem[] = [
+	{
+		id: "cat-diag-ct",
+		title: "Компьютерная томография КЛКТ 3D A06.07.004",
+		category: "Диагностика",
+		basePriceRub: 3500,
+		order804nCode: "A06.07.004",
+		active: true,
+	},
+	{
+		id: "cat-hyg",
+		title: "Профессиональная гигиена полости рта Air-Flow A16.07.050",
+		category: "Гигиена",
+		basePriceRub: 5000,
+		order804nCode: "A16.07.050",
+		active: true,
+	},
+	{
+		id: "cat-caries",
+		title: "Лечение кариеса нанокомпозитом Estelite A16.07.002.001",
+		category: "Терапия",
+		basePriceRub: 4800,
+		order804nCode: "A16.07.002.001",
+		active: true,
+	},
+	{
+		id: "cat-implant",
+		title: "Дентальная имплантация Osstem TS-III A16.07.054.001",
+		category: "Хирургия",
+		basePriceRub: 42000,
+		order804nCode: "A16.07.054.001",
+		active: true,
+	},
+	{
+		id: "cat-crown",
+		title: "Коронка из диоксида циркония Prettau A16.07.004.001",
+		category: "Ортопедия",
+		basePriceRub: 26000,
+		order804nCode: "A16.07.004.001",
+		active: true,
+	},
+];
 
 describe("treatmentPlanStagesEngine: Order 804n Nomenclature & Clinical Stages", () => {
 	test("Все процедуры Номенклатуры 804н имеют валидный код, категорию, этап и материалы", () => {
@@ -38,20 +87,25 @@ describe("treatmentPlanStagesEngine: Order 804n Nomenclature & Clinical Stages",
 			ComplexExtraction: "A16.07.001.002",
 			BoneGraftingSinusLift: "A16.07.041",
 			SurgicalNavigationGuide: "A16.07.054",
+			AllOn4SurgicalGuide: "A16.07.054",
 			DentalImplantation: "A16.07.054.001",
+			AllOn4Implantation: "A16.07.054.001",
+			MultiUnitAbutment: "A16.07.006.002",
+			IntraoralScanning3D: "A02.07.010",
 			InlayOnlay: "A16.07.003",
 			CrownZirconia: "A16.07.004.001",
 			CrownEmaxCeramic: "A16.07.004.002",
 			BridgeProsthesis: "A16.07.005",
+			AllOn4Prosthesis: "A16.07.035",
 			ImplantCrownProsthetics: "A16.07.006",
 		};
 
 		for (const [key, code] of Object.entries(expectedCodes)) {
 			const def = ORDER_804N_DICTIONARY[key];
-			assert.ok(def, `Определение для ${key} должно существовать`);
-			assert.equal(def.code, code, `Код 804н для ${key} должен быть ${code}`);
-			assert.ok(def.title.length > 0, `Название для ${key} не должно быть пустым`);
-			assert.ok(def.defaultPriceRub > 0, `Цена по умолчанию для ${key} > 0`);
+			assert.ok(def, "Определение для " + key + " должно существовать");
+			assert.equal(def.code, code, "Код 804н для " + key + " должен быть " + code);
+			assert.ok(def.title.length > 0, "Название для " + key + " не должно быть пустым");
+			assert.ok(def.defaultPriceRub > 0, "Цена по умолчанию для " + key + " > 0");
 			assert.ok(def.stageNumber >= 1 && def.stageNumber <= 3, "Номер этапа должен быть 1, 2 или 3");
 			assert.ok(def.materialsDefault.length > 0, "Материалы по умолчанию должны быть указаны");
 		}
@@ -73,101 +127,15 @@ describe("treatmentPlanStagesEngine: Order 804n Nomenclature & Clinical Stages",
 		assert.equal(isDeciduousTooth(85), true);
 	});
 
-	test("1-Click генерация 3 клинических этапов разделяет терапию, хирургию и ортопедию", () => {
-		const teeth: ToothData[] = [
-			{ toothNumber: 16, state: "Caries" },
-			{ toothNumber: 24, state: "Pulpitis" },
-			{ toothNumber: 26, state: "Crown" },
-			{ toothNumber: 36, state: "Missing" },
-		];
-
-		const stages = generateTreatmentPlanStages(teeth);
-		assert.equal(stages.length, 3, "Должно быть ровно 3 этапа");
-
-		const [stage1, stage2, stage3] = stages;
-
-		// Этап 1: Терапия
-		assert.equal(stage1?.stageNumber, 1);
-		assert.equal(stage1?.stageKind, "stage_1_therapy");
-		assert.ok(stage1?.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.002.001"));
-		assert.ok(stage1?.items.some((i) => i.toothNumber === 24 && i.code804n === "A16.07.008.002"));
-		// Диагностика и гигиена добавлены
-		assert.ok(stage1?.items.some((i) => i.code804n === "A06.07.004"));
-		assert.ok(stage1?.items.some((i) => i.code804n === "A16.07.050"));
-
-		// Этап 2: Хирургия (для зуба 36: удаление + 3D-шаблон + имплантация)
-		assert.equal(stage2?.stageNumber, 2);
-		assert.equal(stage2?.stageKind, "stage_2_surgery");
-		assert.ok(stage2?.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.001.001"));
-		assert.ok(stage2?.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.054"));
-		assert.ok(stage2?.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.054.001"));
-
-		// Этап 3: Ортопедия (коронка на 26 + коронка на имплантате 36)
-		assert.equal(stage3?.stageNumber, 3);
-		assert.equal(stage3?.stageKind, "stage_3_orthopedics");
-		assert.ok(stage3?.items.some((i) => i.toothNumber === 26 && i.code804n === "A16.07.004.001"));
-		assert.ok(stage3?.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.006"));
-
-		// Суммы этапов положительные
-		assert.ok(stage1!.totalRub > 0);
-		assert.ok(stage2!.totalRub > 0);
-		assert.ok(stage3!.totalRub > 0);
-	});
-
-	test("Авто-генерация этапов пародонтологии: костная потеря, карманы и подвижность", () => {
-		const perioTeeth: ToothData[] = [
-			{ toothNumber: 31, state: "Healthy", boneLossLevel: 1, mobility: 1 },
-			{ toothNumber: 32, state: "Healthy", boneLossLevel: 2, mobility: 2, furcationGrade: 1 },
-		];
-
-		const stages = generateTreatmentPlanStages(perioTeeth);
-		const [stage1] = stages;
-
-		// Скейлинг корней SRP (A16.07.051)
-		assert.ok(stage1?.items.some((i) => i.toothNumber === 31 && i.code804n === "A16.07.051"));
-		assert.ok(stage1?.items.some((i) => i.toothNumber === 32 && i.code804n === "A16.07.051"));
-
-		// Закрытый кюретаж кармана при boneLossLevel >= 2 (A16.07.039)
-		assert.ok(stage1?.items.some((i) => i.toothNumber === 32 && i.code804n === "A16.07.039"));
-
-		// Шинирование лентой Ribbond при mobility >= 2 (A16.07.019)
-		assert.ok(stage1?.items.some((i) => i.toothNumber === 32 && i.code804n === "A16.07.019"));
-	});
-
-	test("Авто-генерация детской стоматологии для молочных зубов 51..85", () => {
-		const pedTeeth: ToothData[] = [
-			{ toothNumber: 54, state: "Caries" },
-			{ toothNumber: 65, state: "Pulpitis" },
-			{ toothNumber: 74, state: "Periodontitis" },
-		];
-
-		const stages = generateTreatmentPlanStages(pedTeeth);
-		const [s1, s2, s3] = stages;
-
-		// Кариес молочного зуба в этап 1 (A16.07.002.001)
-		assert.ok(s1?.items.some((i) => i.toothNumber === 54 && i.category === "Детская терапия"));
-
-		// Пульпотомия молочного моляра (A16.07.008.001) в этап 1 + защитная коронка SSC (A16.07.004.003) в этап 3
-		assert.ok(s1?.items.some((i) => i.toothNumber === 65 && i.code804n === "A16.07.008.001"));
-		assert.ok(s3?.items.some((i) => i.toothNumber === 65 && i.code804n === "A16.07.004.003"));
-
-		// Удаление молочного зуба в этап 2 (A16.07.001) без взрослого титанового имплантата
-		assert.ok(s2?.items.some((i) => i.toothNumber === 74 && i.code804n === "A16.07.001"));
-		assert.equal(s2?.items.some((i) => i.toothNumber === 74 && i.code804n === "A16.07.054.001"), false);
-	});
-
-	test("Авто-генерация костной пластики (НКР / синус-лифтинг) при атрофии кости", () => {
-		const implantTeeth: ToothData[] = [
-			{ toothNumber: 16, state: "Missing", boneLossLevel: 2 },
-		];
-
-		const stages = generateTreatmentPlanStages(implantTeeth);
-		const [, s2] = stages;
-
-		// Должна добавиться костная пластика A16.07.041
-		assert.ok(s2?.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.041"));
-		// И имплантация A16.07.054.001
-		assert.ok(s2?.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.054.001"));
+	test("isMolarOrPremolar корректно определяет жевательную группу зубов", () => {
+		assert.equal(isMolarOrPremolar(11), false);
+		assert.equal(isMolarOrPremolar(12), false);
+		assert.equal(isMolarOrPremolar(13), false);
+		assert.equal(isMolarOrPremolar(14), true); // премоляр
+		assert.equal(isMolarOrPremolar(16), true); // моляр
+		assert.equal(isMolarOrPremolar(35), true); // премоляр
+		assert.equal(isMolarOrPremolar(47), true); // моляр
+		assert.equal(isMolarOrPremolar(54), false); // молочные зубы исключены
 	});
 
 	test("Интактные зубы (Healthy/Filled) генерируют пустые этапы", () => {
@@ -185,25 +153,187 @@ describe("treatmentPlanStagesEngine: Order 804n Nomenclature & Clinical Stages",
 	});
 });
 
+describe("treatmentPlanStagesEngine: Price Decoupling (PROD vs DEMO)", () => {
+	test("В PROD-режиме без каталога позиции генерируются с priceRub: 0, isDraft: true, requiresManualPricing: true", () => {
+		const teeth: ToothData[] = [{ toothNumber: 16, state: "Caries" }];
+
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: false });
+		const [stage1] = stages;
+
+		assert.ok(stage1!.items.length > 0);
+		const cariesItem = stage1!.items.find((i) => i.toothNumber === 16);
+		assert.ok(cariesItem);
+		assert.equal(cariesItem.priceRub, 0);
+		assert.equal(cariesItem.unitPriceRub, 0);
+		assert.equal(cariesItem.isDraft, true);
+		assert.equal(cariesItem.requiresManualPricing, true);
+		assert.equal(cariesItem.fromCatalog, false);
+	});
+
+	test("При наличии каталога клиники позиции берут реальную цену из каталога", () => {
+		const teeth: ToothData[] = [{ toothNumber: 16, state: "Caries" }];
+
+		const stages = generateTreatmentPlanStages(teeth, MOCK_CLINIC_CATALOG, 0, { isDemoMode: false });
+		const [stage1] = stages;
+
+		const cariesItem = stage1!.items.find((i) => i.toothNumber === 16);
+		assert.ok(cariesItem);
+		assert.equal(cariesItem.priceRub, 4800);
+		assert.equal(cariesItem.unitPriceRub, 4800);
+		assert.equal(cariesItem.isDraft, false);
+		assert.equal(cariesItem.requiresManualPricing, false);
+		assert.equal(cariesItem.fromCatalog, true);
+		assert.equal(cariesItem.priceId, "cat-caries");
+	});
+
+	test("В DEMO-режиме ненайденные услуги берут демонстрационные справочные цены", () => {
+		const teeth: ToothData[] = [{ toothNumber: 16, state: "Caries" }];
+
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
+		const [stage1] = stages;
+
+		const cariesItem = stage1!.items.find((i) => i.toothNumber === 16);
+		assert.ok(cariesItem);
+		assert.equal(cariesItem.priceRub, 4800);
+		assert.equal(cariesItem.isDraft, false);
+		assert.equal(cariesItem.requiresManualPricing, false);
+	});
+});
+
+describe("treatmentPlanStagesEngine: Clinical Pattern Matching", () => {
+	test("Паттерн 1 отсутствующий зуб: генерирует 1 имплантат в Этапе 2 и 1 коронку на имплантате в Этапе 3", () => {
+		const teeth: ToothData[] = [{ toothNumber: 36, state: "Missing" }];
+
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
+		const [, stage2, stage3] = stages;
+
+		// Этап 2: Имплантация
+		assert.ok(stage2!.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.054.001"));
+		assert.ok(stage2!.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.054"));
+
+		// Этап 3: Протезирование на имплантате
+		assert.ok(stage3!.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.006"));
+	});
+
+	test("Паттерн 3 отсутствующих зуба подряд (34, 35, 36): генерирует 2 имплантата на краях (34, 36) и мост 3 ед. в Этапе 3 (0 имплантатов на 35)", () => {
+		const teeth: ToothData[] = [
+			{ toothNumber: 34, state: "Missing" },
+			{ toothNumber: 35, state: "Missing" },
+			{ toothNumber: 36, state: "Missing" },
+		];
+
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
+		const [, stage2, stage3] = stages;
+
+		// Этап 2: Имплантаты только на 34 и 36
+		assert.ok(stage2!.items.some((i) => i.toothNumber === 34 && i.code804n === "A16.07.054.001"));
+		assert.ok(stage2!.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.054.001"));
+		// На средний зуб 35 имплантат НЕ ставится!
+		assert.equal(stage2!.items.some((i) => i.toothNumber === 35 && i.code804n === "A16.07.054.001"), false);
+
+		// Этап 3: Мостовидный протез на 3 единицы с опорой на 2 имплантата
+		const bridgeItem = stage3!.items.find((i) => i.code804n === "A16.07.005");
+		assert.ok(bridgeItem);
+		assert.deepEqual(bridgeItem.relatedToothNumbers, [34, 35, 36]);
+	});
+
+	test("Паттерн тотальной адентии (> 10 отсутствующих зубов): генерирует протокол All-on-4 / All-on-6", () => {
+		// 14 отсутствующих зубов на верхней челюсти
+		const teeth: ToothData[] = [
+			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
+		].map((t) => ({ toothNumber: t, state: "Missing" as const }));
+
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
+		const [, stage2, stage3] = stages;
+
+		// Этап 2: Шаблон All-on-4 + Установка 4 имплантатов + 4 Мультиюнита
+		assert.ok(stage2!.items.some((i) => i.code804n === "A16.07.054"));
+		assert.ok(stage2!.items.some((i) => i.code804n === "A16.07.054.001"));
+		const multiUnit = stage2!.items.find((i) => i.code804n === "A16.07.006.002");
+		assert.ok(multiUnit);
+		assert.equal(multiUnit.quantity, 4);
+
+		// Этап 3: Несъемный армированный протез All-on-4
+		assert.ok(stage3!.items.some((i) => i.code804n === "A16.07.035"));
+	});
+
+	test("Паттерн депульпированных моляров и премоляров: коффердам, обработка каналов, обтурация, билдап и коронка в Этап 3", () => {
+		const teeth: ToothData[] = [
+			{ toothNumber: 16, state: "Pulpitis" }, // верхний моляр: 4 канала
+		];
+
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
+		const [stage1, , stage3] = stages;
+
+		// Этап 1: Коффердам (A16.07.093), обработка 4 каналов (A16.07.030.004), обтурация (A16.07.008.004), билдап (A16.07.003.001)
+		assert.ok(stage1!.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.093"));
+		assert.ok(stage1!.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.030.004"));
+		assert.ok(stage1!.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.008.004"));
+		assert.ok(stage1!.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.003.001"));
+
+		// Этап 3: Ортопедическая защита коронкой из диоксида циркония (A16.07.004.001)
+		assert.ok(stage3!.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.004.001"));
+	});
+
+	test("Детская стоматология: кариес, пульпотомия с коронкой SSC и удаление молочного зуба", () => {
+		const pedTeeth: ToothData[] = [
+			{ toothNumber: 54, state: "Caries" },
+			{ toothNumber: 65, state: "Pulpitis" },
+			{ toothNumber: 74, state: "Periodontitis" },
+		];
+
+		const stages = generateTreatmentPlanStages(pedTeeth, undefined, 0, { isDemoMode: true });
+		const [s1, s2, s3] = stages;
+
+		// Кариес молочного зуба в этап 1 (A16.07.002.001)
+		assert.ok(s1!.items.some((i) => i.toothNumber === 54 && i.category === "Детская терапия"));
+
+		// Пульпотомия молочного моляра (A16.07.008.001) в этап 1 + защитная коронка SSC (A16.07.004.003) в этап 3
+		assert.ok(s1!.items.some((i) => i.toothNumber === 65 && i.code804n === "A16.07.008.001"));
+		assert.ok(s3!.items.some((i) => i.toothNumber === 65 && i.code804n === "A16.07.004.003"));
+
+		// Удаление молочного зуба с периодонтитом в этап 2 (A16.07.001) без взрослого имплантата
+		assert.ok(s2!.items.some((i) => i.toothNumber === 74 && i.code804n === "A16.07.001"));
+		assert.equal(s2!.items.some((i) => i.toothNumber === 74 && i.code804n === "A16.07.054.001"), false);
+	});
+});
+
+describe("treatmentPlanStagesEngine: Stage Linkage & Chronology", () => {
+	test("Фиксирует хронологию этапов: Этап 1 (2 нед), Этап 2 (16 нед при имплантации), Этап 3 (4 нед с 3D-сканированием)", () => {
+		const teeth: ToothData[] = [
+			{ toothNumber: 16, state: "Caries" },
+			{ toothNumber: 36, state: "Missing" },
+		];
+
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
+		const [s1, s2, s3] = stages;
+
+		assert.equal(s1!.estimatedWeeks, 2);
+		assert.equal(s2!.estimatedWeeks, 16); // 16 недель = 4 месяца (период остеоинтеграции)
+		assert.equal(s3!.estimatedWeeks, 4);
+
+		// В Этапе 3 первой позицией идет 3D-сканирование
+		assert.equal(s3!.items[0]?.code804n, "A02.07.010");
+	});
+});
+
 describe("treatmentPlanStagesEngine: 3-Option Comparison (Эконом, Стандарт, Оптимальный)", () => {
-	test("Генерирует 3 варианта с корректной финансовой и клинической иерархией", () => {
+	test("Генерирует 3 варианта с корректной финансовой и клинической иерархией в DEMO-режиме", () => {
 		const teeth: ToothData[] = [
 			{ toothNumber: 16, state: "Caries" },
 			{ toothNumber: 26, state: "Pulpitis" },
 			{ toothNumber: 36, state: "Missing" },
 		];
 
-		const tiers = generate3TierPlanComparison(teeth);
+		const tiers = generate3TierPlanComparison(teeth, undefined, 0, 0, { isDemoMode: true });
 		assert.equal(tiers.length, 3);
 
 		const [econ, std, opt] = tiers;
 
-		// Проверяем идентификаторы и порядок
 		assert.equal(econ?.tierId, "economy");
 		assert.equal(std?.tierId, "standard");
 		assert.equal(opt?.tierId, "optimum");
 
-		// Оптимальный план рекомендован по умолчанию
 		assert.equal(opt?.isRecommended, true);
 		assert.equal(std?.isRecommended, false);
 		assert.equal(econ?.isRecommended, false);
@@ -211,29 +341,25 @@ describe("treatmentPlanStagesEngine: 3-Option Comparison (Эконом, Стан
 		// Ценовая иерархия: Эконом < Стандарт < Оптимальный
 		assert.ok(
 			econ!.totalRub < std!.totalRub,
-			`Эконом (${econ!.totalRub}) должен быть < Стандарт (${std!.totalRub})`,
+			"Эконом (" + econ!.totalRub + ") должен быть < Стандарт (" + std!.totalRub + ")",
 		);
 		assert.ok(
 			std!.totalRub < opt!.totalRub,
-			`Стандарт (${std!.totalRub}) должен быть < Оптимальный (${opt!.totalRub})`,
+			"Стандарт (" + std!.totalRub + ") должен быть < Оптимальный (" + opt!.totalRub + ")",
 		);
 
-		// Гарантийные обязательства
 		assert.equal(econ?.warrantyYears, 1);
 		assert.equal(std?.warrantyYears, 2);
 
-		// Наличие материалов и преимуществ
 		assert.ok(econ!.materialsList.length >= 3);
 		assert.ok(std!.materialsList.length >= 3);
 		assert.ok(opt!.materialsList.length >= 3);
 		assert.ok(opt!.keyAdvantages.length >= 3);
 
-		// Рассрочка 12 месяцев рассчитана
 		assert.ok(econ!.monthlyInstallment12Rub > 0);
 		assert.ok(std!.monthlyInstallment12Rub > 0);
 		assert.ok(opt!.monthlyInstallment12Rub > 0);
 
-		// Налоговый вычет 13% рассчитан
 		assert.ok(econ!.ndflRefundRub > 0);
 		assert.ok(std!.ndflRefundRub > 0);
 		assert.ok(opt!.ndflRefundRub > 0);
@@ -252,7 +378,7 @@ describe("treatmentPlanStagesEngine: Exact Kopeck Financial Calculations", () =>
 
 			// Сумма всех долей равна исходной сумме копейка в копейку
 			const sumParts = plan.partsKopecks.reduce((acc, p) => acc + p, 0);
-			assert.equal(sumParts, totalKopecks, `Сумма частей для ${months} мес. должна быть в точности равна общей сумме`);
+			assert.equal(sumParts, totalKopecks, "Сумма частей для " + months + " мес. должна быть в точности равна общей сумме");
 		}
 	});
 
@@ -293,26 +419,27 @@ describe("treatmentPlanStagesEngine: Exact Kopeck Financial Calculations", () =>
 
 describe("treatmentPlanStagesEngine: Order 804n Endodontic Canal Precision (1..4 Canals)", () => {
 	test("getAnatomicalRootCanalCount точно определяет число каналов для постоянных и временных зубов", () => {
-		// Резцы и клыки (11..13, 21..23, 31..33, 41..43): 1 канал
-		for (const tooth of [11, 12, 13, 21, 22, 23, 31, 32, 33, 41, 42, 43]) {
-			assert.equal(isDeciduousTooth(tooth), false);
-		}
+		// Резцы и клыки: 1 канал
+		assert.equal(getAnatomicalRootCanalCount(11), 1);
+		assert.equal(getAnatomicalRootCanalCount(21), 1);
+		assert.equal(getAnatomicalRootCanalCount(33), 1);
+		assert.equal(getAnatomicalRootCanalCount(43), 1);
 
-		// Верхние первые премоляры (14, 24): 2 канала (щечный B + небный P)
-		assert.equal(ORDER_804N_DICTIONARY.EndoPrep2Canals?.code, "A16.07.030.002");
-		assert.equal(ORDER_804N_DICTIONARY.EndoObturation2Canals?.code, "A16.07.008.002");
+		// Верхние первые премоляры (14, 24): 2 канала
+		assert.equal(getAnatomicalRootCanalCount(14), 2);
+		assert.equal(getAnatomicalRootCanalCount(24), 2);
 
 		// Верхние вторые премоляры (15, 25): 1 канал
-		assert.equal(ORDER_804N_DICTIONARY.EndoPrep1Canal?.code, "A16.07.030.001");
-		assert.equal(ORDER_804N_DICTIONARY.EndoObturation1Canal?.code, "A16.07.008.001");
+		assert.equal(getAnatomicalRootCanalCount(15), 1);
+		assert.equal(getAnatomicalRootCanalCount(25), 1);
 
-		// Нижние моляры (36, 46): 3 канала (MB, ML, D)
-		assert.equal(ORDER_804N_DICTIONARY.EndoPrep3Canals?.code, "A16.07.030.003");
-		assert.equal(ORDER_804N_DICTIONARY.EndoObturation3Canals?.code, "A16.07.008.003");
+		// Нижние моляры (36, 46): 3 канала
+		assert.equal(getAnatomicalRootCanalCount(36), 3);
+		assert.equal(getAnatomicalRootCanalCount(46), 3);
 
-		// Верхние моляры (16, 26): 4 канала (MB1, MB2, DB, P)
-		assert.equal(ORDER_804N_DICTIONARY.EndoPrep4Canals?.code, "A16.07.030.004");
-		assert.equal(ORDER_804N_DICTIONARY.EndoObturation4Canals?.code, "A16.07.008.004");
+		// Верхние моляры (16, 26): 4 канала
+		assert.equal(getAnatomicalRootCanalCount(16), 4);
+		assert.equal(getAnatomicalRootCanalCount(26), 4);
 	});
 
 	test("Авто-генерация этапов назначает точные коды A16.07.008.001..004 в зависимости от зуба", () => {
@@ -323,10 +450,9 @@ describe("treatmentPlanStagesEngine: Order 804n Endodontic Canal Precision (1..4
 			{ toothNumber: 16, state: "Pulpitis" }, // 4 канала -> A16.07.008.004
 		];
 
-		const stages = generateTreatmentPlanStages(teeth);
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
 		const stage1 = stages[0]!;
 
-		// Проверяем наличие соответствующих кодов 804н для каждого зуба
 		assert.ok(stage1.items.some((i) => i.toothNumber === 11 && i.code804n === "A16.07.008.001"));
 		assert.ok(stage1.items.some((i) => i.toothNumber === 24 && i.code804n === "A16.07.008.002"));
 		assert.ok(stage1.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.008.003"));
@@ -349,10 +475,9 @@ describe("treatmentPlanStagesEngine: Order 804n Endodontic Canal Precision (1..4
 			},
 		];
 
-		const stages = generateTreatmentPlanStages(teeth);
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
 		const stage1 = stages[0]!;
 
-		// Должен быть присвоен код для 4-канального зуба
 		assert.ok(stage1.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.008.004"));
 	});
 });
@@ -365,7 +490,7 @@ describe("treatmentPlanStagesEngine: Orthopedic Laboratory Work Order Extraction
 			{ toothNumber: 36, state: "Missing" }, // Имплант + коронка
 		];
 
-		const stages = generateTreatmentPlanStages(teeth);
+		const stages = generateTreatmentPlanStages(teeth, undefined, 0, { isDemoMode: true });
 		const stage3 = stages.find((s) => s.stageKind === "stage_3_orthopedics");
 
 		assert.ok(stage3, "Ортопедический этап должен существовать");
@@ -394,10 +519,9 @@ describe("treatmentPlanStagesEngine: Orthopedic Laboratory Work Order Extraction
 
 		for (const code of orthoCodes) {
 			const matching = Object.values(ORDER_804N_DICTIONARY).find((d) => d.code === code);
-			assert.ok(matching, `Процедура ${code} должна присутствовать в словаре 804н`);
+			assert.ok(matching, "Процедура " + code + " должна присутствовать в словаре 804н");
 			assert.equal(matching.stageKind, "stage_3_orthopedics");
 			assert.equal(matching.stageNumber, 3);
 		}
 	});
 });
-

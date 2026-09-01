@@ -6,6 +6,7 @@ export * from "./types";
 export * from "./treatmentPlanStagesEngine";
 export * from "./treatmentPlanMaterialEngine";
 export * from "./TreatmentPlanStageCard";
+export * from "./MissingPriceAlert";
 export * from "./TreatmentPlan3TierComparison";
 export * from "./TreatmentPlanSignatureModal";
 export * from "./TreatmentPlanContractPrint";

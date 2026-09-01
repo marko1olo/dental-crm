@@ -84,6 +84,7 @@ export interface ToothData {
 	pocketDepth?: number;
 	pocketDepthMm?: number;
 	maxPocketDepth?: number;
+	canalCount?: number;
 	notes?: string;
 	clinicalData?: EndoToothClinicalData | Record<string, unknown>;
 }

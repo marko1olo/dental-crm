@@ -14,8 +14,9 @@
  * 6. Полная поддержка темной/светлой темы на токенах DENTE и сенсорных экранов (Chairside Tablet).
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
+	Bot,
 	Calendar,
 	Check,
 	CheckCircle2,
@@ -31,14 +32,23 @@ import {
 	Percent,
 	Printer,
 	RotateCcw,
+	Send,
 	Shield,
 	ShieldCheck,
 	Sparkles,
 	Star,
 	Tablet,
 	User,
+	Wand2,
 	X,
 } from "lucide-react";
+import {
+	type Kopecks,
+	parseKopecks,
+	sumKopecks,
+	calculatePlanTaxDeductionBreakdown,
+	calculateStaged304030Schedule,
+} from "@dental/shared";
 import type {
 	NdflDeductionResult,
 	TreatmentPlanItem,
@@ -47,32 +57,42 @@ import type {
 	TreatmentPlanTierId,
 } from "./types";
 import type { ToothData } from "../odontogram/ToothChart";
-import { generate3TierPlanComparison } from "./treatmentPlanStagesEngine";
+import {
+	generate3TierPlanComparison,
+	computeTierInstallments,
+} from "./treatmentPlanStagesEngine";
+import { MissingPriceAlert } from "./MissingPriceAlert";
+import {
+	applyCopilotCommandToPlan,
+	COPILOT_PRESET_ACTIONS,
+	type CopilotCommandType,
+} from "../../services/ai/treatmentPlanCopilot";
 import "./treatmentPlans.css";
 
 export interface TreatmentPlanPresenterModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientName?: string;
-	readonly patientId?: string;
-	readonly patientPhone?: string;
-	readonly patientBirthDate?: string;
-	readonly doctorFullName?: string;
-	readonly doctorSpecialty?: string;
-	readonly clinicName?: string;
-	readonly clinicLegalName?: string;
-	readonly clinicInn?: string;
-	readonly clinicOgrn?: string;
-	readonly clinicAddress?: string;
-	readonly clinicLicense?: string;
-	readonly contractNumber?: string;
-	readonly teeth?: readonly ToothData[];
-	readonly tiers?: readonly TreatmentPlanTier[];
-	readonly initialSelectedTierId?: TreatmentPlanTierId;
-	readonly onSelectPlan?: (tier: TreatmentPlanTier) => void;
-	readonly onConfirmSelection?: (tier: TreatmentPlanTier) => void;
-	readonly onPrintContract?: (tier: TreatmentPlanTier) => void;
-	readonly className?: string;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly patientBirthDate?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorSpecialty?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly clinicLegalName?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly clinicOgrn?: string | undefined;
+	readonly clinicAddress?: string | undefined;
+	readonly clinicLicense?: string | undefined;
+	readonly contractNumber?: string | undefined;
+	readonly teeth?: readonly ToothData[] | undefined;
+	readonly tiers?: readonly TreatmentPlanTier[] | undefined;
+	readonly initialSelectedTierId?: TreatmentPlanTierId | undefined;
+	readonly onSelectPlan?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onConfirmSelection?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onPrintContract?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
+	readonly className?: string | undefined;
 }
 
 const DEFAULT_SAMPLE_TEETH: ToothData[] = [
@@ -118,12 +138,13 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	onSelectPlan,
 	onConfirmSelection,
 	onPrintContract,
+	onUpdateItemPrice: onUpdateItemPriceProp,
 	className = "",
 }) => {
 	if (!isOpen) return null;
 
 	// Генерация 3-х вариантов при отсутствии явно переданных
-	const allTiers = useMemo(() => {
+	const initialTiers = useMemo(() => {
 		if (customTiers && customTiers.length === 3) {
 			return customTiers;
 		}
@@ -131,6 +152,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		return generate3TierPlanComparison(effectiveTeeth);
 	}, [customTiers, teeth]);
 
+	const [activeTiers, setActiveTiers] = useState<readonly TreatmentPlanTier[]>(initialTiers);
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
 	const [activeTab, setActiveTab] = useState<"comparison" | "stages" | "finance" | "print_appendix">("comparison");
 	const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({
@@ -141,6 +163,17 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	const [selectionConfirmed, setSelectionConfirmed] = useState<boolean>(false);
 	const [confirmedNotice, setConfirmedNotice] = useState<string | null>(null);
 	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(12);
+
+	// AI Copilot state
+	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
+	const [customPrompt, setCustomPrompt] = useState<string>("");
+	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
+
+	useEffect(() => {
+		setActiveTiers(initialTiers);
+	}, [initialTiers]);
+
+	const allTiers = activeTiers;
 
 	const selectedTier = useMemo<TreatmentPlanTier>(() => {
 		return allTiers.find((t) => t.tierId === selectedTierId) ?? allTiers[1] ?? allTiers[0]!;
@@ -171,6 +204,112 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		setSelectionConfirmed(false);
 		setConfirmedNotice(null);
 		onSelectPlan?.(tier);
+	};
+
+	const recalculateTierFromStages = (
+		tier: TreatmentPlanTier,
+		updatedStages: readonly TreatmentPlanStage[],
+	): TreatmentPlanTier => {
+		const totalKopecks = sumKopecks(updatedStages.map((s) => s.totalKopecks));
+		const totalRub = Math.round(totalKopecks / 100);
+		const allItems = updatedStages.flatMap((s) => s.items);
+		const ndflBreakdown = calculatePlanTaxDeductionBreakdown(allItems);
+		const isHighCost = ndflBreakdown.hasCode02ExpensiveServices;
+		const ndflDetails: NdflDeductionResult = {
+			code: isHighCost ? "02" : "01",
+			codeDescription: isHighCost
+				? "Код 02 — Дорогостоящее лечение (имплантация, костная пластика, синус-лифтинг) — налоговый вычет 13% со всей суммы без ограничений"
+				: "Код 01 — Обычное медицинское лечение (терапия, гигиена, ортопедия) — налоговый вычет 13% с лимитом базы 150 000 ₽ (макс. возврат 19 500 ₽)",
+			isHighCostCode02: isHighCost,
+			baseKopecks: (isHighCost ? totalKopecks : Math.min(totalKopecks, parseKopecks(150000))) as Kopecks,
+			refundKopecks: parseKopecks(ndflBreakdown.grandTotalRefund13Rub),
+			refundRub: ndflBreakdown.grandTotalRefund13Rub,
+			finalPriceWithRefundRub: ndflBreakdown.netPriceWithRefundRub,
+			annualLimitRub: isHighCost ? undefined : 150000,
+		};
+		const installments = computeTierInstallments(totalKopecks);
+		const stagedSchedule = calculateStaged304030Schedule(totalKopecks, true);
+
+		return {
+			...tier,
+			stages: updatedStages,
+			itemsCount: allItems.length,
+			totalRub,
+			totalKopecks,
+			monthlyInstallment12Rub: installments[12].monthlyPaymentRub,
+			installments,
+			ndflDetails,
+			ndflRefundRub: ndflBreakdown.grandTotalRefund13Rub,
+			priceWithNdflRefundRub: ndflBreakdown.netPriceWithRefundRub,
+			stagedSchedule,
+		};
+	};
+
+	const handleUpdateItemPrice = (itemId: string, newPriceRub: number) => {
+		setActiveTiers((prevTiers) => {
+			return prevTiers.map((tier) => {
+				let tierModified = false;
+				const updatedStages = tier.stages.map((st) => {
+					let stageModified = false;
+					const updatedItems = st.items.map((it) => {
+						if (it.id === itemId) {
+							tierModified = true;
+							stageModified = true;
+							return {
+								...it,
+								priceRub: newPriceRub,
+								unitPriceRub: newPriceRub,
+								requiresManualPricing: false,
+							};
+						}
+						return it;
+					});
+
+					if (!stageModified) return st;
+
+					const stTotalRub = updatedItems.reduce((acc, it) => acc + it.priceRub, 0);
+					const stTotalKopecks = parseKopecks(stTotalRub);
+					return {
+						...st,
+						items: updatedItems,
+						totalRub: stTotalRub,
+						totalKopecks: stTotalKopecks,
+					};
+				});
+
+				if (!tierModified) return tier;
+
+				const updatedTier = recalculateTierFromStages(tier, updatedStages);
+
+				if (tier.tierId === selectedTierId) {
+					onSelectPlan?.(updatedTier);
+				}
+
+				return updatedTier;
+			});
+		});
+
+		onUpdateItemPriceProp?.(itemId, newPriceRub);
+	};
+
+	const handleExecuteCopilot = (cmdOrText: CopilotCommandType | string) => {
+		setIsCopilotExecuting(true);
+		try {
+			const res = applyCopilotCommandToPlan(selectedTier.stages, cmdOrText);
+			if (res.success) {
+				setActiveTiers((prevTiers) => {
+					return prevTiers.map((t) => {
+						if (t.tierId !== selectedTierId) return t;
+						const updated = recalculateTierFromStages(t, res.stages);
+						onSelectPlan?.(updated);
+						return updated;
+					});
+				});
+				setCopilotFeedback(res.explanation);
+			}
+		} finally {
+			setIsCopilotExecuting(false);
+		}
 	};
 
 	const handleConfirmPatientChoice = () => {
@@ -296,6 +435,82 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						</button>
 					</nav>
 				</header>
+
+				{/* AI Copilot Chairside Quick Toolbar */}
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print">
+					<div className="flex items-center gap-2 flex-wrap">
+						<div className="inline-flex items-center gap-1 text-xs font-bold text-[var(--tp-primary)] mr-1">
+							<Sparkles size={14} className="text-amber-500" />
+							<span>AI Copilot у кресла:</span>
+						</div>
+						{COPILOT_PRESET_ACTIONS.map((act) => (
+							<button
+								key={act.id}
+								type="button"
+								disabled={isCopilotExecuting}
+								onClick={() => handleExecuteCopilot(act.id)}
+								className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] hover:text-[var(--tp-primary)] border border-[var(--tp-border)] cursor-pointer transition-colors disabled:opacity-50"
+								title={act.description}
+								data-testid={`presenter-copilot-btn-${act.id}`}
+							>
+								{act.title}
+							</button>
+						))}
+					</div>
+
+					<div className="flex items-center gap-1.5 min-w-[200px] max-w-sm">
+						<input
+							type="text"
+							value={customPrompt}
+							onChange={(e) => setCustomPrompt(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && customPrompt.trim()) {
+									e.preventDefault();
+									handleExecuteCopilot(customPrompt.trim());
+									setCustomPrompt("");
+								}
+							}}
+							placeholder="Команда ассистенту (напр. 'бюджет 120к')"
+							className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-[var(--tp-border)] bg-[var(--tp-bg)] text-[var(--tp-text-main)] outline-none"
+							data-testid="presenter-copilot-input"
+						/>
+						<button
+							type="button"
+							disabled={!customPrompt.trim() || isCopilotExecuting}
+							onClick={() => {
+								if (customPrompt.trim()) {
+									handleExecuteCopilot(customPrompt.trim());
+									setCustomPrompt("");
+								}
+							}}
+							className="p-1.5 rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] disabled:opacity-40 cursor-pointer"
+							title="Отправить команду"
+							data-testid="presenter-copilot-send-btn"
+						>
+							<Send size={12} />
+						</button>
+					</div>
+				</div>
+
+				{/* AI Copilot Feedback Alert */}
+				{copilotFeedback && (
+					<div
+						className="px-6 py-2 bg-indigo-500/10 border-b border-indigo-500/30 text-indigo-950 dark:text-indigo-200 text-xs flex items-center justify-between no-print"
+						data-testid="presenter-copilot-feedback-banner"
+					>
+						<div className="flex items-center gap-2">
+							<Bot size={15} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+							<span>{copilotFeedback}</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => setCopilotFeedback(null)}
+							className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer ml-4 shrink-0"
+						>
+							Скрыть
+						</button>
+					</div>
+				)}
 
 				{/* Confirmation Notice Banner */}
 				{confirmedNotice && (
@@ -582,12 +797,25 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																					{item.clinicalRationale}
 																				</div>
 																			)}
+																			{(item.requiresManualPricing || item.priceRub === 0) && (
+																				<div className="mt-1">
+																					<MissingPriceAlert
+																						item={item}
+																						onUpdatePrice={handleUpdateItemPrice}
+																						variant="inline"
+																					/>
+																				</div>
+																			)}
 																		</td>
 																		<td className="text-center font-semibold">{item.quantity}</td>
 																		<td className="text-right text-[var(--tp-text-muted)]">
 																			{item.unitPriceRub.toLocaleString("ru-RU")} ₽
 																		</td>
-																		<td className="text-right font-bold text-[var(--tp-text-main)]">
+																		<td className={`text-right font-bold ${
+																			item.requiresManualPricing || item.priceRub === 0
+																				? "text-amber-600 dark:text-amber-400"
+																				: "text-[var(--tp-text-main)]"
+																		}`}>
 																			{item.priceRub.toLocaleString("ru-RU")} ₽
 																		</td>
 																	</tr>
@@ -685,12 +913,25 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																		Материал: {it.materials}
 																	</div>
 																)}
+																{(it.requiresManualPricing || it.priceRub === 0) && (
+																	<div className="mt-1">
+																		<MissingPriceAlert
+																			item={it}
+																			onUpdatePrice={handleUpdateItemPrice}
+																			variant="inline"
+																		/>
+																	</div>
+																)}
 															</td>
 															<td className="text-center font-semibold">{it.quantity}</td>
 															<td className="text-right text-[var(--tp-text-muted)]">
 																{it.unitPriceRub.toLocaleString("ru-RU")} ₽
 															</td>
-															<td className="text-right font-bold text-[var(--tp-text-main)]">
+															<td className={`text-right font-bold ${
+																it.requiresManualPricing || it.priceRub === 0
+																	? "text-amber-600 dark:text-amber-400"
+																	: "text-[var(--tp-text-main)]"
+															}`}>
 																{it.priceRub.toLocaleString("ru-RU")} ₽
 															</td>
 														</tr>

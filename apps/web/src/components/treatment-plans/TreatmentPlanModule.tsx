@@ -41,6 +41,14 @@ import {
 	type InventoryItemLookup,
 	generateCompletedWorksActAndWriteOff,
 } from "./treatmentPlanMaterialEngine";
+import { MissingPriceAlert } from "./MissingPriceAlert";
+import {
+	applyCopilotCommandToPlan,
+	COPILOT_PRESET_ACTIONS,
+	type CopilotCommandType,
+} from "../../services/ai/treatmentPlanCopilot";
+import { parseKopecks } from "@dental/shared";
+import { Bot, Send, Wand2 } from "lucide-react";
 import { TreatmentPlan3TierComparison } from "./TreatmentPlan3TierComparison";
 import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
 import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
@@ -100,6 +108,12 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(false);
 	const optionsMenuRef = useRef<HTMLDivElement>(null);
 
+	// AI Copilot & Custom Stages State
+	const [customStages, setCustomStages] = useState<TreatmentPlanStage[] | null>(null);
+	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
+	const [customCopilotPrompt, setCustomCopilotPrompt] = useState<string>("");
+	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
+
 	useEffect(() => {
 		const handleOutside = (e: MouseEvent) => {
 			if (optionsMenuRef.current && !optionsMenuRef.current.contains(e.target as Node)) {
@@ -136,10 +150,57 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		return planTiers.find((t) => t.tierId === selectedTierId) ?? planTiers[2]!;
 	}, [planTiers, selectedTierId]);
 
-	// 2. Generate granular 3 clinical stages
-	const stages = useMemo(() => {
+	// 2. Generate granular 3 clinical stages (auto or AI-customized)
+	const autoStages = useMemo(() => {
 		return generateTreatmentPlanStages(teethData, catalog, discountPercent);
 	}, [teethData, catalog, discountPercent]);
+
+	const stages = customStages ?? autoStages;
+
+	const handleUpdateItemPrice = (itemId: string, newPriceRub: number) => {
+		const updated = stages.map((st) => {
+			let modified = false;
+			const updatedItems = st.items.map((it) => {
+				if (it.id === itemId) {
+					modified = true;
+					return {
+						...it,
+						priceRub: newPriceRub,
+						unitPriceRub: newPriceRub,
+						requiresManualPricing: false,
+					};
+				}
+				return it;
+			});
+			if (!modified) return st;
+
+			const stTotalRub = updatedItems.reduce((acc, it) => acc + it.priceRub, 0);
+			const stTotalKopecks = parseKopecks(stTotalRub);
+			return {
+				...st,
+				items: updatedItems,
+				totalRub: stTotalRub,
+				totalKopecks: stTotalKopecks,
+			};
+		});
+
+		setCustomStages(updated);
+		showToast(`Цена услуги обновлена: ${newPriceRub.toLocaleString("ru-RU")} ₽`, "success");
+	};
+
+	const handleExecuteCopilot = (cmdOrText: CopilotCommandType | string) => {
+		setIsCopilotExecuting(true);
+		try {
+			const res = applyCopilotCommandToPlan(stages, cmdOrText);
+			if (res.success) {
+				setCustomStages([...res.stages]);
+				setCopilotFeedback(res.explanation);
+				showToast(`AI Copilot: ${res.commandTitle} применено`, "success");
+			}
+		} finally {
+			setIsCopilotExecuting(false);
+		}
+	};
 
 	const totalItemsCount = useMemo(() => {
 		return stages.reduce((acc, s) => acc + s.items.length, 0);
@@ -639,6 +700,106 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				</div>
 			</div>
 
+			{/* AI Copilot Clinical Assistant Bar */}
+			<div className="flex flex-col gap-2.5 p-4 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs shadow-xs">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+					<div className="flex items-center gap-2 flex-wrap">
+						<div className="inline-flex items-center gap-1.5 font-bold text-[var(--teal-dark,var(--teal))]">
+							<Sparkles size={16} className="text-amber-500" />
+							<span>AI Copilot (Ассистент врача):</span>
+						</div>
+
+						{COPILOT_PRESET_ACTIONS.map((action) => (
+							<button
+								key={action.id}
+								type="button"
+								disabled={isCopilotExecuting}
+								onClick={() => handleExecuteCopilot(action.id)}
+								className="px-3 py-1.5 rounded-xl font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all disabled:opacity-50 shadow-2xs text-[11px]"
+								title={action.description}
+								data-testid={`module-copilot-btn-${action.id}`}
+							>
+								{action.title}
+							</button>
+						))}
+					</div>
+
+					<div className="flex items-center gap-2 shrink-0">
+						{customStages && (
+							<button
+								type="button"
+								onClick={() => {
+									setCustomStages(null);
+									setCopilotFeedback(null);
+									showToast("План сброшен к исходной одонтограмме", "info");
+								}}
+								className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 cursor-pointer"
+								title="Сбросить все ручные правки и AI модификации"
+								data-testid="copilot-reset-plan-btn"
+							>
+								Сбросить к исходному
+							</button>
+						)}
+					</div>
+				</div>
+
+				<div className="flex items-center gap-2 pt-1 border-t border-[var(--border,#cbd5e1)]/60">
+					<div className="relative flex-1">
+						<input
+							type="text"
+							value={customCopilotPrompt}
+							onChange={(e) => setCustomCopilotPrompt(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && customCopilotPrompt.trim()) {
+									e.preventDefault();
+									handleExecuteCopilot(customCopilotPrompt.trim());
+									setCustomCopilotPrompt("");
+								}
+							}}
+							placeholder="Введите команду врачебного ассистента (например: 'Оптимизировать под бюджет 180000', 'Заменить имплантацию на мост')..."
+							className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] outline-none focus:border-[var(--teal,var(--brand-primary))]"
+							data-testid="module-copilot-input"
+						/>
+						<Wand2 size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)]" />
+					</div>
+
+					<button
+						type="button"
+						disabled={!customCopilotPrompt.trim() || isCopilotExecuting}
+						onClick={() => {
+							if (customCopilotPrompt.trim()) {
+								handleExecuteCopilot(customCopilotPrompt.trim());
+								setCustomCopilotPrompt("");
+							}
+						}}
+						className="flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] text-white cursor-pointer transition-colors disabled:opacity-40 shadow-xs text-xs shrink-0"
+						data-testid="module-copilot-send-btn"
+					>
+						<Send size={13} />
+						<span>Применить</span>
+					</button>
+				</div>
+
+				{copilotFeedback && (
+					<div
+						className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-950 dark:text-indigo-100 text-xs mt-1"
+						data-testid="module-copilot-feedback"
+					>
+						<div className="flex items-center gap-2">
+							<Bot size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+							<span>{copilotFeedback}</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => setCopilotFeedback(null)}
+							className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer ml-4 shrink-0"
+						>
+							Скрыть
+						</button>
+					</div>
+				)}
+			</div>
+
 			{/* Main Content Area */}
 			{activeViewTab === "3tier" ? (
 				<TreatmentPlan3TierComparison
@@ -692,6 +853,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							{...(Array.isArray(dashboard?.inventoryItems) && dashboard.inventoryItems.length > 0
 								? { inventoryItems: dashboard.inventoryItems as InventoryItemLookup[] }
 								: {})}
+							onUpdateItemPrice={handleUpdateItemPrice}
 							onExecuteWriteOffStage={handleExecuteWriteOffStage}
 							onOpenLabOrder={handleOpenLabOrder}
 							onOpenInstallment={(stageToFinance) => {

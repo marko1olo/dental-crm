@@ -22,18 +22,21 @@ import {
 	type InventoryItemLookup,
 	calculateStageMaterialRequirements,
 } from "./treatmentPlanMaterialEngine";
-import type { TreatmentPlanStage } from "./types";
+import type { TreatmentPlanItem, TreatmentPlanStage } from "./types";
+import { MissingPriceAlert } from "./MissingPriceAlert";
 
 interface TreatmentPlanStageCardProps {
 	readonly stage: TreatmentPlanStage;
-	readonly defaultExpanded?: boolean;
+	readonly defaultExpanded?: boolean | undefined;
 	readonly inventoryItems?: readonly InventoryItemLookup[] | undefined;
-	readonly onUpdateItemQuantity?: (itemId: string, newQty: number) => void;
-	readonly onRemoveItem?: (itemId: string) => void;
-	readonly onExecuteWriteOffStage?: (stage: TreatmentPlanStage) => void;
-	readonly onOpenLabOrder?: (teeth?: number[]) => void;
-	readonly onOpenInstallment?: (stage: TreatmentPlanStage) => void;
-	readonly className?: string;
+	readonly onUpdateItemQuantity?: ((itemId: string, newQty: number) => void) | undefined;
+	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
+	readonly onUpdateItem?: ((updatedItem: TreatmentPlanItem) => void) | undefined;
+	readonly onRemoveItem?: ((itemId: string) => void) | undefined;
+	readonly onExecuteWriteOffStage?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly onOpenLabOrder?: ((teeth?: number[]) => void) | undefined;
+	readonly onOpenInstallment?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly className?: string | undefined;
 }
 
 export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
@@ -41,6 +44,8 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	defaultExpanded = true,
 	inventoryItems,
 	onUpdateItemQuantity,
+	onUpdateItemPrice,
+	onUpdateItem,
 	onRemoveItem,
 	onExecuteWriteOffStage,
 	onOpenLabOrder,
@@ -169,73 +174,90 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							stage.items.map((item, idx) => (
 								<div
 									key={item.id || idx}
-									className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors"
+									className="flex flex-col gap-2 px-4 py-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors"
 								>
-									<div className="flex flex-col gap-0.5 min-w-0 flex-1">
-										<div className="flex items-center gap-1.5 flex-wrap">
-											{item.toothNumber && (
-												<span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 whitespace-nowrap">
-													#{item.toothNumber}
+									<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+										<div className="flex flex-col gap-0.5 min-w-0 flex-1">
+											<div className="flex items-center gap-1.5 flex-wrap">
+												{item.toothNumber && (
+													<span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 whitespace-nowrap">
+														#{item.toothNumber}
+													</span>
+												)}
+												<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-[var(--line,#e2e8f0)] whitespace-nowrap">
+													{item.code804n}
 												</span>
-											)}
-											<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-[var(--line,#e2e8f0)] whitespace-nowrap">
-												{item.code804n}
+												<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
+													{item.category}
+												</span>
+											</div>
+
+											<span className="text-xs font-semibold text-[var(--ink,#0f172a)] leading-snug">
+												{item.name}
 											</span>
-											<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
-												{item.category}
-											</span>
-										</div>
 
-										<span className="text-xs font-semibold text-[var(--ink,#0f172a)] leading-snug">
-											{item.name}
-										</span>
-
-										{item.materials && (
-											<p className="text-[11px] text-[var(--muted,#64748b)] italic m-0">
-												Материал: {item.materials}
-											</p>
-										)}
-									</div>
-
-									<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0">
-										{onOpenLabOrder &&
-											(item.category === "Ортопедия" ||
-												item.category === "Детская ортопедия" ||
-												item.stageKind === "stage_3_orthopedics" ||
-												/коронк|мост|протез|винир|вкладк|абатмент|бюгел|all-on|onlay|inlay/i.test(
-													item.name,
-												) ||
-												item.code804n.startsWith("A16.07.003") ||
-												item.code804n.startsWith("A16.07.004") ||
-												item.code804n.startsWith("A16.07.005") ||
-												item.code804n.startsWith("A16.07.006")) && (
-												<button
-													type="button"
-													onClick={() =>
-														onOpenLabOrder(
-															item.toothNumber ? [item.toothNumber] : undefined,
-														)
-													}
-													className="min-h-[30px] h-[30px] flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0"
-													title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
-													data-testid={`item-lab-order-btn-${item.id}`}
-												>
-													<FlaskConical size={12} className="text-[var(--teal,var(--brand-primary))]" />
-													<span>Наряд в ЗТЛ</span>
-												</button>
-											)}
-
-										<div className="text-right">
-											<span className="text-xs font-bold text-[var(--ink,#0f172a)] font-mono">
-												{item.priceRub.toLocaleString("ru-RU")} ₽
-											</span>
-											{item.discountRub > 0 && (
-												<div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
-													Скидка: −{item.discountRub.toLocaleString("ru-RU")} ₽
-												</div>
+											{item.materials && (
+												<p className="text-[11px] text-[var(--muted,#64748b)] italic m-0">
+													Материал: {item.materials}
+												</p>
 											)}
 										</div>
+
+										<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0">
+											{onOpenLabOrder &&
+												(item.category === "Ортопедия" ||
+													item.category === "Детская ортопедия" ||
+													item.stageKind === "stage_3_orthopedics" ||
+													/коронк|мост|протез|винир|вкладк|абатмент|бюгел|all-on|onlay|inlay/i.test(
+														item.name,
+													) ||
+													item.code804n.startsWith("A16.07.003") ||
+													item.code804n.startsWith("A16.07.004") ||
+													item.code804n.startsWith("A16.07.005") ||
+													item.code804n.startsWith("A16.07.006")) && (
+													<button
+														type="button"
+														onClick={() =>
+															onOpenLabOrder(
+																item.toothNumber ? [item.toothNumber] : undefined,
+															)
+														}
+														className="min-h-[30px] h-[30px] flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0"
+														title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
+														data-testid={`item-lab-order-btn-${item.id}`}
+													>
+														<FlaskConical size={12} className="text-[var(--teal,var(--brand-primary))]" />
+														<span>Наряд в ЗТЛ</span>
+													</button>
+												)}
+
+											<div className="text-right">
+												<span className={`text-xs font-bold font-mono ${
+													item.requiresManualPricing || item.priceRub === 0
+														? "text-amber-600 dark:text-amber-400"
+														: "text-[var(--ink,#0f172a)]"
+												}`}>
+													{item.priceRub.toLocaleString("ru-RU")} ₽
+												</span>
+												{item.discountRub > 0 && (
+													<div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
+														Скидка: −{item.discountRub.toLocaleString("ru-RU")} ₽
+													</div>
+												)}
+											</div>
+										</div>
 									</div>
+
+									{/* Missing Price Alert Banner */}
+									{(item.requiresManualPricing || item.priceRub === 0) && (
+										<MissingPriceAlert
+											item={item}
+											onUpdatePrice={onUpdateItemPrice}
+											onUpdateItem={onUpdateItem}
+											variant="full"
+											className="mt-1"
+										/>
+									)}
 								</div>
 							))
 						)}
