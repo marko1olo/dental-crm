@@ -129,8 +129,9 @@ describe("Offline CRDT & Conflict Resolution (Odontogram LWW + Schedule 409)", (
 		if (!databaseAvailable) return;
 
 		const toothNumber = 36;
-		const timestampOlder = "2026-09-01T10:00:00.000Z";
-		const timestampNewer = "2026-09-01T11:00:00.000Z";
+		const baseTime = Date.now() - 3600 * 1000;
+		const timestampOlder = new Date(baseTime - 10 * 60 * 1000).toISOString();
+		const timestampNewer = new Date(baseTime).toISOString();
 
 		// Step A: Doctor B (offline, timestampNewer) sets tooth 36 to 'Pulpitis'
 		const resDocB = await app.inject({
