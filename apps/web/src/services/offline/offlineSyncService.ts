@@ -498,6 +498,14 @@ export class OfflineSyncService {
 						throw new Error(`Server error HTTP ${res.status}: ${errorText || res.statusText}`);
 					}
 
+					const contentType = res.headers?.get ? res.headers.get("content-type") || "" : "";
+					if (!contentType.includes("application/json")) {
+						const textBody = await res.text().catch(() => "");
+						throw new Error(
+							`Invalid gateway response (expected JSON, got ${contentType || "unknown"}): ${textBody.substring(0, 120)}`,
+						);
+					}
+
 					const data = (await res.json()) as SyncPushBatchResponse;
 					serverResponse = data;
 					break; // Успешно, выходим из цикла ретраев

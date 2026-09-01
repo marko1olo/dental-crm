@@ -414,36 +414,36 @@
 		max-width: 100%;
 	}
 	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-svg-wrapper {
-		min-width: 0 !important;
-		min-height: 0 !important;
-		padding: 0 !important;
+		min-width: 44px !important;
+		min-height: 48px !important;
+		padding: 2px !important;
 		margin: 0 !important;
 	}
 	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-svg-wrapper::before {
-		min-width: 0 !important;
-		min-height: 0 !important;
+		min-width: 44px !important;
+		min-height: 44px !important;
 	}
 	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-number-badge {
-		min-width: 0 !important;
-		padding: 1px 1px !important;
-		gap: 1px !important;
-		font-size: 8px !important;
+		min-width: 20px !important;
+		padding: 2px 4px !important;
+		gap: 2px !important;
+		font-size: 10px !important;
 		border-radius: 4px !important;
 	}
 	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-status-dot {
-		width: 3px !important;
-		height: 3px !important;
+		width: 4px !important;
+		height: 4px !important;
 	}
 	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-number-text {
-		font-size: 8px !important;
+		font-size: 10px !important;
 		line-height: 1 !important;
 	}
 	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .tooth-quadrant-group {
-		gap: 0px !important;
+		gap: 2px !important;
 	}
 	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) .teeth-row {
-		gap: 0px !important;
-		width: 100% !important;
+		gap: 2px !important;
+		width: max-content !important;
 		justify-content: center !important;
 	}
 

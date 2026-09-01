@@ -463,7 +463,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("3tier")}
-							className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								activeViewTab === "3tier"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -474,7 +474,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("stages")}
-							className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								activeViewTab === "stages"
 									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -485,7 +485,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("phased4")}
-							className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								activeViewTab === "phased4"
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"

@@ -252,6 +252,19 @@ export class HardwareScanner {
 			return stream;
 		} catch (playErr: unknown) {
 			this.state = "error";
+			if (stream) {
+				for (const track of stream.getTracks()) {
+					try {
+						track.stop();
+					} catch {}
+				}
+			}
+			this.activeMediaStream = null;
+			if (videoElement) {
+				try {
+					videoElement.srcObject = null;
+				} catch {}
+			}
 			const code = this.classifyCameraErrorCode(playErr);
 			const errorMsg = this.classifyCameraError(playErr);
 			this.emitError(errorMsg, code);
@@ -601,8 +614,8 @@ export class HardwareScanner {
 			};
 		}
 
-		// 4. Generic 1D/2D Barcode fallback (e.g. KP-20260822-01-04)
-		if (clean.startsWith("KP-") || clean.startsWith("KB-") || clean.startsWith("SANPIN-")) {
+		// 4. Generic 1D/2D Barcode fallback (e.g. KP-20260822-01-04, SANPIN:CSO-01)
+		if (clean.startsWith("KP-") || clean.startsWith("KB-") || clean.startsWith("SANPIN-") || clean.startsWith("SANPIN:")) {
 			return {
 				isValid: true,
 				rawBarcode: clean,

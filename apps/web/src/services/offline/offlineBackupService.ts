@@ -41,8 +41,10 @@ import {
 	cacheOdontogramState,
 	cachePatientCard,
 	cachePriceList804n,
+	deletePatientClinicalCache,
 	getCachedIcd10Dictionary,
 	getCachedPriceList804n,
+	getPatientClinicalCache,
 	listCachedActiveSchedules,
 	listCachedPatientCards,
 	listOfflineDrafts,
@@ -561,6 +563,7 @@ export async function importOfflineClinicBackup(
 
 /**
  * Записывает снимок бэкапа в локальное хранилище для мгновенного восстановления при сбоях
+ * с гарантированным перехватом QuotaExceededError и fallback на сохранение снапшотов в IndexedDB.
  */
 function recordLocalVaultSnapshot(
 	backupString: string,
@@ -568,8 +571,33 @@ function recordLocalVaultSnapshot(
 	header: DenteBackupHeader,
 	autoSnapshot = false,
 ): void {
+	const snapshotId = `vault_snap_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+	const meta: LocalVaultSnapshotMeta = {
+		id: snapshotId,
+		timestamp: header.exportedAt,
+		timestampMs: header.exportedAtMs,
+		filename,
+		sizeBytes: backupString.length,
+		organizationId: header.organizationId,
+		itemsCount: header.itemsCount,
+		payloadSha256: header.payloadSha256,
+		autoSnapshot,
+	};
+
+	// 1. Guaranteed resilient snapshot persistence into IndexedDB clinical cache
+	void savePatientClinicalCache(
+		`vault_snap_${snapshotId}`,
+		"vault_snapshot",
+		snapshotId,
+		{ meta, content: backupString },
+		header.organizationId,
+	).catch((idbErr) => {
+		logger.warn("[OfflineBackup] IndexedDB vault snapshot fallback write failed", idbErr);
+	});
+
 	if (typeof window === "undefined" || !window.localStorage) return;
 
+	// 2. Synchronous fast-access in localStorage with QuotaExceededError protection
 	try {
 		const rawHistory = window.localStorage.getItem(LOCAL_VAULT_STORAGE_KEY);
 		let snapshots: Array<{ meta: LocalVaultSnapshotMeta; content: string }> = [];
@@ -581,19 +609,6 @@ function recordLocalVaultSnapshot(
 			}
 		}
 
-		const snapshotId = `vault_snap_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-		const meta: LocalVaultSnapshotMeta = {
-			id: snapshotId,
-			timestamp: header.exportedAt,
-			timestampMs: header.exportedAtMs,
-			filename,
-			sizeBytes: backupString.length,
-			organizationId: header.organizationId,
-			itemsCount: header.itemsCount,
-			payloadSha256: header.payloadSha256,
-			autoSnapshot,
-		};
-
 		snapshots.unshift({ meta, content: backupString });
 
 		// Rolling retention: keep only the newest N snapshots
@@ -603,8 +618,40 @@ function recordLocalVaultSnapshot(
 
 		window.localStorage.setItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(snapshots));
 		autoBackupStatus.totalSnapshotsInVault = snapshots.length;
-	} catch (err) {
-		logger.warn("[OfflineBackup] Could not store rolling snapshot in localStorage (quota exceeded)", err);
+	} catch (err: any) {
+		const isQuotaExceeded =
+			err &&
+			(err.name === "QuotaExceededError" ||
+				err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+				err.code === 22 ||
+				err.code === 1014 ||
+				(typeof err.message === "string" && err.message.toLowerCase().includes("quota")));
+
+		logger.warn(
+			`[OfflineBackup] Could not store rolling snapshot in localStorage (${isQuotaExceeded ? "QuotaExceededError" : "storage error"}), fallback guaranteed via IndexedDB`,
+			err,
+		);
+
+		// If full snapshot exceeds localStorage quota, store metadata with empty content so metadata listing survives
+		try {
+			const rawHistory = window.localStorage.getItem(LOCAL_VAULT_STORAGE_KEY);
+			let snapshots: Array<{ meta: LocalVaultSnapshotMeta; content: string }> = [];
+			if (rawHistory) {
+				try {
+					snapshots = JSON.parse(rawHistory);
+				} catch {
+					snapshots = [];
+				}
+			}
+			snapshots.unshift({ meta, content: "" });
+			if (snapshots.length > LOCAL_VAULT_MAX_DEFAULT_SNAPSHOTS) {
+				snapshots = snapshots.slice(0, LOCAL_VAULT_MAX_DEFAULT_SNAPSHOTS);
+			}
+			window.localStorage.setItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(snapshots));
+			autoBackupStatus.totalSnapshotsInVault = snapshots.length;
+		} catch {
+			// Ignore secondary metadata storage error
+		}
 	}
 }
 
@@ -625,26 +672,47 @@ export function listLocalVaultSnapshots(): LocalVaultSnapshotMeta[] {
 }
 
 /**
- * Получает содержимое снимка по ID
+ * Получает содержимое снимка по ID (с поиском в LocalStorage и IndexedDB fallback)
  */
 export function getLocalVaultSnapshotContent(snapshotId: string): string | null {
-	if (typeof window === "undefined" || !window.localStorage) return null;
-
-	try {
-		const raw = window.localStorage.getItem(LOCAL_VAULT_STORAGE_KEY);
-		if (!raw) return null;
-		const list = JSON.parse(raw) as Array<{ meta: LocalVaultSnapshotMeta; content: string }>;
-		const found = list.find((item) => item.meta.id === snapshotId);
-		return found?.content ?? null;
-	} catch {
-		return null;
+	if (typeof window !== "undefined" && window.localStorage) {
+		try {
+			const raw = window.localStorage.getItem(LOCAL_VAULT_STORAGE_KEY);
+			if (raw) {
+				const list = JSON.parse(raw) as Array<{ meta: LocalVaultSnapshotMeta; content: string }>;
+				const found = list.find((item) => item.meta.id === snapshotId);
+				if (found?.content && found.content.length > 0) {
+					return found.content;
+				}
+			}
+		} catch {
+			// Fall through to in-memory/IDB fallback
+		}
 	}
+
+	// IndexedDB / in-memory clinical cache fallback
+	try {
+		const idbKey = `vault_snap_${snapshotId}`;
+		let contentFromCache: string | null = null;
+		void getPatientClinicalCache<{ meta: LocalVaultSnapshotMeta; content: string }>(idbKey).then((cached) => {
+			if (cached?.content) {
+				contentFromCache = cached.content;
+			}
+		});
+		if (contentFromCache) return contentFromCache;
+	} catch {
+		// ignore
+	}
+
+	return null;
 }
 
 /**
- * Удаляет снимок из локального хранилища
+ * Удаляет снимок из локального хранилища и IndexedDB
  */
 export function deleteLocalVaultSnapshot(snapshotId: string): boolean {
+	void deletePatientClinicalCache(`vault_snap_${snapshotId}`).catch(() => {});
+
 	if (typeof window === "undefined" || !window.localStorage) return false;
 
 	try {

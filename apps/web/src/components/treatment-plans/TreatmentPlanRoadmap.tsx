@@ -95,6 +95,8 @@ export interface TreatmentPlanRoadmapProps {
 	curatingDoctorName?: string;
 	patientFullName?: string;
 	onBookStage?: (stage: RoadmapStageData) => void;
+	onSelectStage?: (stage: RoadmapStageData) => void;
+	onBookStageSlot?: (stageNumber: number, stage: RoadmapStageData) => void;
 	onRequestTaxCertificate?: () => void;
 	className?: string;
 }
@@ -298,6 +300,8 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 	curatingDoctorName = "Д-р Смирнов Алексей Петрович",
 	patientFullName = "Смирнова Екатерина Васильевна",
 	onBookStage,
+	onSelectStage,
+	onBookStageSlot,
 	onRequestTaxCertificate,
 	className = "",
 }) => {
@@ -510,26 +514,26 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 						<Coins className="w-5 h-5" />
 					</div>
 					<div>
-						<div className="text-sm font-bold text-white flex items-center gap-2">
+						<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white flex items-center gap-2">
 							<span>Налоговый вычет 13% (Возврат от ФНС России)</span>
-							<span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold">
+							<span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold">
 								+{formatKopecksToRubExact(taxBreakdown.grandTotalRefund13Kopecks)} ₽
 							</span>
 						</div>
-						<div className="text-xs text-[var(--ink-muted,#94a3b8)] mt-1 leading-relaxed">
+						<div className="text-xs text-[var(--ink-muted,#64748b)] dark:text-[var(--ink-muted,#94a3b8)] mt-1 leading-relaxed">
 							{taxBreakdown.hasCode02ExpensiveServices ? (
 								<>
 									План включает дорогостоящее лечение (Код 02: имплантация) — вычет 13% рассчитывается{" "}
-									<strong className="text-white">со всей суммы без лимита</strong>.
+									<strong className="text-[var(--ink,#0f172a)] dark:text-white">со всей суммы без лимита</strong>.
 								</>
 							) : (
 								<>
 									Стандартное лечение (Код 01) — лимит вычета до 150 000 ₽ в год (возврат до 19 500 ₽).
 								</>
 							)}
-							<div className="mt-0.5 text-slate-200">
+							<div className="mt-0.5 text-slate-700 dark:text-slate-200">
 								Итоговая стоимость с учетом возврата:{" "}
-								<strong className="text-emerald-400 font-bold">
+								<strong className="text-emerald-600 dark:text-emerald-400 font-bold">
 									{formatKopecksToRubExact(taxBreakdown.netPriceWithRefundKopecks)} ₽
 								</strong>
 							</div>
@@ -541,7 +545,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 					<button
 						type="button"
 						onClick={onRequestTaxCertificate}
-						className="h-9 px-3.5 rounded-xl bg-[var(--paper-strong,#0f172a)] border border-sky-500/30 text-sky-300 hover:text-white hover:bg-sky-500/20 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+						className="h-9 px-3.5 rounded-xl bg-[var(--paper-strong,#0f172a)] border border-sky-500/30 text-sky-600 dark:text-sky-300 hover:text-sky-700 dark:hover:text-white hover:bg-sky-500/20 text-xs font-semibold flex items-center gap-1.5 transition-colors"
 						data-testid="request-tax-cert-btn"
 					>
 						<FileBadge className="w-4 h-4" />
@@ -602,7 +606,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 									<button
 										type="button"
 										onClick={() => toggleStage(stage.stageNumber)}
-										className="p-1 rounded-md hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink-muted,#94a3b8)] hover:text-white"
+										className="p-1 rounded-md hover:bg-[var(--paper-soft,#1e293b)] text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white"
 										aria-label={isExpanded ? "Свернуть" : "Развернуть"}
 										data-testid={`toggle-stage-btn-${stage.stageNumber}`}
 									>
@@ -612,8 +616,8 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 							</div>
 
 							{/* Stage Goal Explanation */}
-							<div className="text-xs text-[var(--ink-muted,#94a3b8)] bg-[var(--paper-soft,#1e293b)]/40 p-2.5 rounded-lg border border-[var(--line-subtle,rgba(255,255,255,0.03))] mb-3 leading-relaxed">
-								<strong className="text-slate-300">Цель этапа: </strong>
+							<div className="text-xs text-[var(--ink-muted,#64748b)] dark:text-[var(--ink-muted,#94a3b8)] bg-[var(--paper-soft,#1e293b)]/40 p-2.5 rounded-lg border border-[var(--line-subtle,rgba(255,255,255,0.03))] mb-3 leading-relaxed">
+								<strong className="text-slate-800 dark:text-slate-200">Цель этапа: </strong>
 								{stage.patientGoalRu}
 							</div>
 
@@ -685,7 +689,11 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 								{stage.status !== "completed" && (
 									<button
 										type="button"
-										onClick={() => onBookStage?.(stage)}
+										onClick={() => {
+											onBookStage?.(stage);
+											onSelectStage?.(stage);
+											onBookStageSlot?.(stage.stageNumber, stage);
+										}}
 										className="roadmap-book-stage-btn"
 										data-testid={`book-stage-btn-${stage.stageNumber}`}
 									>

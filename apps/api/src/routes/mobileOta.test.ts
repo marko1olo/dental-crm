@@ -260,6 +260,41 @@ describe("Over-The-Air (OTA) Updates & Dynamic Shell API", () => {
 			const json = res.json();
 			assert.equal(json.error, "ValidationError");
 		});
+
+		it("блокирует неавторизованную публикацию при включенном DENTE_CLINICAL_ADMIN_SECRET", async () => {
+			const oldSecret = process.env.DENTE_CLINICAL_ADMIN_SECRET;
+			process.env.DENTE_CLINICAL_ADMIN_SECRET = "test-secret-value-12345678901234567890";
+			try {
+				const app = await buildTestApp();
+
+				// 1. Без заголовка x-dente-admin-secret -> 403
+				const unauthRes = await app.inject({
+					method: "POST",
+					url: "/api/mobile/publish",
+					payload: { version: "4.0.0" },
+				});
+				assert.equal(unauthRes.statusCode, 403);
+				assert.equal(unauthRes.json().error, "ClinicalAdminSecretRequired");
+
+				// 2. С валидным x-dente-admin-secret -> 200
+				const authRes = await app.inject({
+					method: "POST",
+					url: "/api/mobile/publish",
+					headers: {
+						"x-dente-admin-secret": "test-secret-value-12345678901234567890",
+					},
+					payload: { version: "4.0.0" },
+				});
+				assert.equal(authRes.statusCode, 200);
+				assert.equal(authRes.json().version, "4.0.0");
+			} finally {
+				if (oldSecret !== undefined) {
+					process.env.DENTE_CLINICAL_ADMIN_SECRET = oldSecret;
+				} else {
+					delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+				}
+			}
+		});
 	});
 
 	describe("Semver & Policy Unit Verification", () => {
@@ -337,6 +372,34 @@ describe("Over-The-Air (OTA) Updates & Dynamic Shell API", () => {
 			]);
 			assert.ok(zip.length > 30);
 			assert.equal(zip.readUInt32LE(0), 0x04034b50);
+		});
+
+		it("Zip Slip Guard: блокирует попытки path traversal при создании архива", () => {
+			const testData = Buffer.from("malicious payload", "utf-8");
+
+			// 1. Попытка выхода вверх по директориям
+			assert.throws(
+				() => {
+					createZipArchive([{ name: "../etc/passwd", data: testData }]);
+				},
+				/Zip Slip Security Guard/,
+			);
+
+			// 2. Вложенный выход наверх
+			assert.throws(
+				() => {
+					createZipArchive([{ name: "static/../../secret.key", data: testData }]);
+				},
+				/Zip Slip Security Guard/,
+			);
+
+			// 3. Пустой путь или нулевой байт
+			assert.throws(
+				() => {
+					createZipArchive([{ name: "safe\0file.txt", data: testData }]);
+				},
+				/Zip Slip Security Guard/,
+			);
 		});
 	});
 });

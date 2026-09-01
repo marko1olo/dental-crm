@@ -90,7 +90,7 @@ export const AdultToothChart: React.FC<AdultToothChartProps> = ({
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant(getAdjacentQuadrant(activeQuadrant, "prev", false))}
-							className="min-h-[36px] min-w-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+							className="min-h-[44px] min-w-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors touch-manipulation"
 							title="Предыдущий квадрант"
 							data-testid="adult-quadrant-prev-btn"
 						>
@@ -102,7 +102,7 @@ export const AdultToothChart: React.FC<AdultToothChartProps> = ({
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant(getAdjacentQuadrant(activeQuadrant, "next", false))}
-							className="min-h-[36px] min-w-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+							className="min-h-[44px] min-w-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors touch-manipulation"
 							title="Следующий квадрант"
 							data-testid="adult-quadrant-next-btn"
 						>

@@ -222,11 +222,11 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																item.toothNumber ? [item.toothNumber] : undefined,
 															)
 														}
-														className="min-h-[30px] h-[30px] flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0"
+														className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation"
 														title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
 														data-testid={`item-lab-order-btn-${item.id}`}
 													>
-														<FlaskConical size={12} className="text-[var(--teal,var(--brand-primary))]" />
+														<FlaskConical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 														<span>Наряд в ЗТЛ</span>
 													</button>
 												)}

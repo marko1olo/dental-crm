@@ -216,8 +216,9 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	padding: 6px 12px;
-	min-height: 34px;
+	padding: 8px 14px;
+	min-height: 44px;
+	min-width: 44px;
 	border-radius: var(--tp-radius-sm);
 	font-size: 12px;
 	font-weight: 700;
@@ -227,6 +228,7 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 	white-space: nowrap;
+	touch-action: manipulation;
 }
 
 .treatment-presenter-tab-btn:hover {
@@ -253,10 +255,11 @@
 
 .treatment-mobile-tier-btn {
 	flex: 1;
-	min-height: 36px;
-	padding: 4px 8px;
+	min-height: 44px;
+	min-width: 44px;
+	padding: 8px 10px;
 	border-radius: var(--tp-radius-sm);
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 800;
 	color: var(--tp-text-muted);
 	background: transparent;
@@ -268,6 +271,7 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 	white-space: nowrap;
+	touch-action: manipulation;
 }
 
 .treatment-mobile-tier-btn.active {
@@ -339,11 +343,12 @@
 		display: none;
 	}
 	.treatment-presenter-tab-btn {
-		padding: 5px 10px;
-		font-size: 11px;
-		min-height: 30px;
+		padding: 8px 12px;
+		font-size: 12px;
+		min-height: 44px;
 		flex-shrink: 0;
 		white-space: nowrap;
+		touch-action: manipulation;
 	}
 	.treatment-presenter-body {
 		padding: 10px 12px;

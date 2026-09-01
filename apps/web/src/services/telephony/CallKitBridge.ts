@@ -155,7 +155,7 @@ export class CallKitBridge {
 		this.activeCallId = callId;
 
 		// 1. Mobile Native App -> Display Native Incoming Call Screen (wakes phone screen)
-		if (this.isSupported() && window.RNCallKeep) {
+		if (this.isSupported() && typeof window !== "undefined" && window.RNCallKeep) {
 			try {
 				const callerTitle = call.patientName || "Пациент DENTE CRM";
 				const phoneNumber = call.phone || "Неизвестный номер";
@@ -236,7 +236,7 @@ export class CallKitBridge {
 			useTelephonyStore.getState().rejectCall();
 		} catch {}
 
-		if (window.RNCallKeep) {
+		if (typeof window !== "undefined" && window.RNCallKeep) {
 			try {
 				window.RNCallKeep.endCall(callId);
 			} catch {}

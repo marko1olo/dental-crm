@@ -38,6 +38,7 @@ export interface IncomingCallPayload {
 	recordingUrl?: string | undefined;
 	callStartedAt?: number | undefined;
 	lineId?: 1 | 2 | undefined;
+	direction?: "inbound" | "outbound" | undefined;
 }
 
 export type CallOutcome =

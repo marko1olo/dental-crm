@@ -21,6 +21,7 @@ import {
 	mobileOtaVersionResponseSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { requireClinicalMutationAccess } from "../accessGuard.js";
 
 /**
  * Конфигурация OTA по умолчанию.
@@ -83,7 +84,24 @@ export function createZipArchive(
 	let offset = 0;
 
 	for (const entry of entries) {
-		const nameBuffer = Buffer.from(entry.name, "utf-8");
+		const rawName = entry.name.replace(/\\/g, "/");
+		const normalized = path.posix.normalize(rawName);
+		const cleanName = normalized.replace(/^\/+/, "");
+
+		if (
+			!cleanName ||
+			cleanName.includes("\0") ||
+			cleanName.startsWith("../") ||
+			cleanName === ".." ||
+			path.posix.isAbsolute(normalized) ||
+			cleanName.split("/").includes("..")
+		) {
+			throw new Error(
+				`Zip Slip Security Guard: некорректный или небезопасный путь записи в архив: "${entry.name}"`,
+			);
+		}
+
+		const nameBuffer = Buffer.from(cleanName, "utf-8");
 		const uncompressedSize = entry.data.length;
 		const crc = calculateCrc32(entry.data);
 
@@ -351,6 +369,13 @@ export async function registerMobileOtaRoutes(
 	app.post(
 		"/api/mobile/publish",
 		async (request: FastifyRequest, reply: FastifyReply) => {
+			const accessGranted = await requireClinicalMutationAccess(
+				request,
+				reply,
+				"ota_publish",
+			);
+			if (!accessGranted) return;
+
 			const body = (request.body ?? {}) as {
 				version?: string;
 				minSupportedVersion?: string;

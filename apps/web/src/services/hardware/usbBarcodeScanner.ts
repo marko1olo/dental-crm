@@ -169,14 +169,15 @@ export function parseSanpinBarcode(rawCode: string): ParsedSanpinSterilizationBa
 		};
 	}
 
-	// Format 2: 1D Barcode SANPIN-AUTOCLAVE-CYC-DATE-SERIAL
-	if (clean.startsWith("SANPIN-") || clean.startsWith("SAN-")) {
-		const parts = clean.split("-");
-		if (parts.length >= 4) {
-			const autoclaveId = parts[1] || "";
-			const cycleNumber = Number.parseInt(parts[2] || "0", 10);
-			const packDate = parts[3] || "";
-			const serialNumber = parts[4] ? Number.parseInt(parts[4], 10) : undefined;
+	// Format 2: 1D/2D Barcode SANPIN-AUTOCLAVE-CYC-DATE-SERIAL or SANPIN:AUTOCLAVE-CYC-DATE-SERIAL
+	if (clean.startsWith("SANPIN-") || clean.startsWith("SAN-") || clean.startsWith("SANPIN:") || clean.startsWith("SAN:")) {
+		const rawTail = clean.replace(/^(?:SANPIN|SAN)[:\-]/i, "");
+		const parts = rawTail.split(/[\-:]/);
+		if (parts.length >= 3) {
+			const autoclaveId = parts[0] || "";
+			const cycleNumber = Number.parseInt(parts[1] || "0", 10);
+			const packDate = parts[2] || "";
+			const serialNumber = parts[3] ? Number.parseInt(parts[3], 10) : undefined;
 			return {
 				batchId: clean,
 				autoclaveId,
@@ -185,6 +186,12 @@ export function parseSanpinBarcode(rawCode: string): ParsedSanpinSterilizationBa
 				serialNumber,
 			};
 		}
+		return {
+			batchId: clean,
+			autoclaveId: parts[0] || "CSO-01",
+			cycleNumber: 1,
+			packDate: new Date().toISOString().slice(0, 10),
+		};
 	}
 
 	// Format 3: Kraft 1D prefix KB{BATCH}{SERIAL}

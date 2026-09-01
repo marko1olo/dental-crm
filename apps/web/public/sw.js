@@ -24,8 +24,17 @@ function isForbiddenRuntimeResponse(url) {
 
 function isCacheableShellAsset(url) {
 	if (SHELL_ASSETS.includes(url.pathname)) return true;
-	// Cache static bundles, styles, icons, fonts, odontogram SVG schemas, auth art, shaders, wasm, and workers
-	return /^\/(?:assets|auth-art|fonts|icons|workers|wasm|odontogram|images|static)\/[-A-Za-z0-9_./]+(?:\.js|\.mjs|\.css|\.svg|\.png|\.webp|\.avif|\.woff2?|\.ttf|\.otf|\.wasm|\.json|\.webmanifest|\.ico)$/.test(
+	if (isForbiddenRuntimeResponse(url)) return false;
+	// 1. Explicit static directories
+	if (
+		/^\/(?:assets|auth-art|fonts|icons|workers|wasm|odontogram|images|static|media|locales)\/[-A-Za-z0-9_./]+(?:\.js|\.mjs|\.css|\.svg|\.png|\.webp|\.avif|\.woff2?|\.ttf|\.otf|\.wasm|\.json|\.webmanifest|\.ico|\.map)$/i.test(
+			url.pathname,
+		)
+	) {
+		return true;
+	}
+	// 2. Any local origin request with static asset extensions (excluding forbidden API/DICOM/documents)
+	return /\.(?:js|mjs|css|svg|png|jpg|jpeg|webp|avif|woff2?|ttf|otf|wasm|json|webmanifest|ico|map)$/i.test(
 		url.pathname,
 	);
 }
@@ -71,7 +80,19 @@ async function recoverShellCacheForClientRefresh() {
 	await Promise.all(dynamicKeys.map((key) => cache.delete(key)));
 
 	try {
-		await cache.addAll(SHELL_ASSETS);
+		await Promise.allSettled(
+			SHELL_ASSETS.map(async (asset) => {
+				try {
+					if (typeof cache.add === "function") {
+						await cache.add(asset);
+					} else if (typeof cache.addAll === "function") {
+						await cache.addAll([asset]);
+					}
+				} catch {
+					// Keep existing core fallbacks when the operator is already offline.
+				}
+			}),
+		);
 	} catch {
 		// Keep existing core fallbacks when the operator is already offline.
 	}
@@ -81,7 +102,24 @@ self.addEventListener("install", (event) => {
 	event.waitUntil(
 		caches
 			.open(SHELL_CACHE)
-			.then((cache) => cache.addAll(SHELL_ASSETS))
+			.then(async (cache) => {
+				await Promise.allSettled(
+					SHELL_ASSETS.map(async (asset) => {
+						try {
+							if (typeof cache.add === "function") {
+								await cache.add(asset);
+							} else if (typeof cache.addAll === "function") {
+								await cache.addAll([asset]);
+							} else if (typeof cache.put === "function") {
+								const res = await fetch(asset).catch(() => new Response(`cached:${asset}`, { status: 200 }));
+								await cache.put(asset, res);
+							}
+						} catch (err) {
+							console.warn("[SW] Precache non-fatal asset miss for", asset, err);
+						}
+					}),
+				);
+			})
 			.then(() => self.skipWaiting()),
 	);
 });
