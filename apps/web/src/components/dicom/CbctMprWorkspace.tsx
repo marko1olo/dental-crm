@@ -88,6 +88,149 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 	const [sagittalSliceX, setSagittalSliceX] = useState<number>(50); // 0..100
 	const [activeCrossSectionIdx, setActiveCrossSectionIdx] = useState<number>(10);
 
+	// Multi-touch Pinch-to-Zoom & Pan State per MPR Viewport
+	type ViewportType = "axial" | "coronal" | "sagittal" | "panoramic";
+	interface ViewportTransform {
+		zoom: number; // 0.5 .. 4.0
+		panX: number;
+		panY: number;
+	}
+	const [transforms, setTransforms] = useState<Record<ViewportType, ViewportTransform>>({
+		axial: { zoom: 1.0, panX: 0, panY: 0 },
+		coronal: { zoom: 1.0, panX: 0, panY: 0 },
+		sagittal: { zoom: 1.0, panX: 0, panY: 0 },
+		panoramic: { zoom: 1.0, panX: 0, panY: 0 },
+	});
+
+	const gestureStateRef = useRef<{
+		viewport: ViewportType | null;
+		initialTouches: { id: number; clientX: number; clientY: number }[];
+		initialDistance: number;
+		initialZoom: number;
+		initialPanX: number;
+		initialPanY: number;
+		startMidX: number;
+		startMidY: number;
+	}>({
+		viewport: null,
+		initialTouches: [],
+		initialDistance: 0,
+		initialZoom: 1.0,
+		initialPanX: 0,
+		initialPanY: 0,
+		startMidX: 0,
+		startMidY: 0,
+	});
+
+	const handleTouchStart = (viewport: ViewportType, e: React.TouchEvent<HTMLDivElement>) => {
+		if (e.touches.length === 2) {
+			const t1 = e.touches[0]!;
+			const t2 = e.touches[1]!;
+			const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+			const midX = (t1.clientX + t2.clientX) / 2;
+			const midY = (t1.clientY + t2.clientY) / 2;
+			const cur = transforms[viewport];
+
+			gestureStateRef.current = {
+				viewport,
+				initialTouches: [
+					{ id: t1.identifier, clientX: t1.clientX, clientY: t1.clientY },
+					{ id: t2.identifier, clientX: t2.clientX, clientY: t2.clientY },
+				],
+				initialDistance: dist,
+				initialZoom: cur.zoom,
+				initialPanX: cur.panX,
+				initialPanY: cur.panY,
+				startMidX: midX,
+				startMidY: midY,
+			};
+		} else if (e.touches.length === 1) {
+			const t = e.touches[0]!;
+			const cur = transforms[viewport];
+			gestureStateRef.current = {
+				viewport,
+				initialTouches: [{ id: t.identifier, clientX: t.clientX, clientY: t.clientY }],
+				initialDistance: 0,
+				initialZoom: cur.zoom,
+				initialPanX: cur.panX,
+				initialPanY: cur.panY,
+				startMidX: t.clientX,
+				startMidY: t.clientY,
+			};
+		}
+	};
+
+	const handleTouchMove = (viewport: ViewportType, e: React.TouchEvent<HTMLDivElement>) => {
+		const state = gestureStateRef.current;
+		if (state.viewport !== viewport) return;
+
+		if (e.touches.length === 2 && state.initialDistance > 0) {
+			const t1 = e.touches[0]!;
+			const t2 = e.touches[1]!;
+			const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+			const scale = currentDist / state.initialDistance;
+			const nextZoom = Math.min(4.0, Math.max(0.5, state.initialZoom * scale));
+
+			const midX = (t1.clientX + t2.clientX) / 2;
+			const midY = (t1.clientY + t2.clientY) / 2;
+			const deltaPanX = midX - state.startMidX;
+			const deltaPanY = midY - state.startMidY;
+
+			setTransforms((prev) => ({
+				...prev,
+				[viewport]: {
+					zoom: Number(nextZoom.toFixed(3)),
+					panX: Math.round(state.initialPanX + deltaPanX),
+					panY: Math.round(state.initialPanY + deltaPanY),
+				},
+			}));
+		} else if (e.touches.length === 1 && state.initialTouches.length === 1) {
+			const t = e.touches[0]!;
+			const deltaX = t.clientX - state.startMidX;
+			const deltaY = t.clientY - state.startMidY;
+
+			if (state.initialZoom > 1.01) {
+				setTransforms((prev) => ({
+					...prev,
+					[viewport]: {
+						...prev[viewport],
+						panX: Math.round(state.initialPanX + deltaX),
+						panY: Math.round(state.initialPanY + deltaY),
+					},
+				}));
+			}
+		}
+	};
+
+	const handleTouchEnd = (viewport: ViewportType) => {
+		if (gestureStateRef.current.viewport === viewport) {
+			gestureStateRef.current.viewport = null;
+		}
+	};
+
+	const handleWheel = (viewport: ViewportType, e: React.WheelEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		const zoomDelta = -e.deltaY * 0.0015;
+		setTransforms((prev) => {
+			const cur = prev[viewport];
+			const nextZoom = Math.min(4.0, Math.max(0.5, cur.zoom * (1 + zoomDelta)));
+			return {
+				...prev,
+				[viewport]: {
+					...cur,
+					zoom: Number(nextZoom.toFixed(3)),
+				},
+			};
+		});
+	};
+
+	const resetZoom = (viewport: ViewportType) => {
+		setTransforms((prev) => ({
+			...prev,
+			[viewport]: { zoom: 1.0, panX: 0, panY: 0 },
+		}));
+	};
+
 	// Presets & View Controls
 	const [activePreset, setActivePreset] = useState<VisiographPresetId>("bone");
 	const [activeTool, setActiveTool] = useState<"navigate" | "caliper_nerve" | "caliper_sinus" | "density">("caliper_nerve");
@@ -198,19 +341,8 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 				ctx.lineTo(w, h / 2);
 				ctx.stroke();
 			}
-
-			// Slice Coordinate Annotation
-			ctx.fillStyle = "#a1a1aa";
-			ctx.font = "11px Inter, system-ui, sans-serif";
-			if (type === "axial") ctx.fillText(`Z: ${axialSliceZ} мм`, 12, h - 12);
-			if (type === "coronal") ctx.fillText(`Y: ${coronalSliceY} мм`, 12, h - 12);
-			if (type === "sagittal") ctx.fillText(`X: ${sagittalSliceX} мм`, 12, h - 12);
-			if (type === "panoramic") ctx.fillText("Curved 3D Panorama (FDI 11..48)", 12, h - 12);
 		},
 		[
-			axialSliceZ,
-			coronalSliceY,
-			sagittalSliceX,
 			nerveMeasurement.safetyZone,
 			crosshairActive,
 		],
@@ -222,6 +354,26 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 		renderSlice(sagittalCanvasRef.current, "sagittal");
 		renderSlice(panoramicCanvasRef.current, "panoramic");
 	}, [renderSlice]);
+
+	// Cleanup canvas buffers and 2D contexts upon unmount to prevent memory leaks
+	useEffect(() => {
+		const canvases = [
+			axialCanvasRef.current,
+			coronalCanvasRef.current,
+			sagittalCanvasRef.current,
+			panoramicCanvasRef.current,
+		];
+		return () => {
+			for (const c of canvases) {
+				if (c) {
+					const ctx = c.getContext("2d");
+					if (ctx) {
+						ctx.clearRect(0, 0, c.width, c.height);
+					}
+				}
+			}
+		};
+	}, []);
 
 	if (!isOpen) return null;
 
@@ -370,26 +522,26 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 						type="button"
 						onClick={handleExportTo043}
 						disabled={isExporting}
-						className="h-8 px-3 rounded-lg bg-[var(--teal)] hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow transition-all cursor-pointer"
+						className="min-h-[44px] px-3.5 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow transition-all cursor-pointer"
 					>
-						<Camera className="w-3.5 h-3.5" />
+						<Camera className="w-4 h-4" />
 						<span>В карту 043/у</span>
 					</button>
 					<button
 						type="button"
 						onClick={handleDownloadJpg}
-						className="h-8 px-3 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+						className="min-h-[44px] px-3.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
 					>
-						<Download className="w-3.5 h-3.5" />
+						<Download className="w-4 h-4" />
 						<span>JPG</span>
 					</button>
 					<button
 						type="button"
 						onClick={onClose}
 						aria-label="Закрыть 3D MPR просмотрщик"
-						className="w-8 h-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+						className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
 					>
-						<X className="w-4 h-4" />
+						<X className="w-5 h-5" />
 					</button>
 				</div>
 			</div>
@@ -399,44 +551,160 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 				{/* 1. AXIAL VIEWPORT (Z-PLANE) */}
 				<div className="cbct-viewport-box">
 					<div className="cbct-viewport-header">
-						<span className="text-[var(--teal)]">1. Аксиальный срез (Axial)</span>
-						<span className="text-neutral-400">Z: {axialSliceZ} мм</span>
+						<span className="text-[var(--teal)] font-bold text-xs">1. Аксиальный срез (Axial)</span>
 					</div>
-					<div className="cbct-viewport-canvas-container">
-						<canvas ref={axialCanvasRef} width={480} height={320} className="w-full h-full object-contain" />
+					<div
+						className="cbct-viewport-canvas-container"
+						onTouchStart={(e) => handleTouchStart("axial", e)}
+						onTouchMove={(e) => handleTouchMove("axial", e)}
+						onTouchEnd={() => handleTouchEnd("axial")}
+						onWheel={(e) => handleWheel("axial", e)}
+					>
+						<canvas
+							ref={axialCanvasRef}
+							width={480}
+							height={320}
+							className="w-full h-full object-contain pointer-events-none select-none transition-transform duration-75"
+							style={{
+								transform: `translate(${transforms.axial.panX}px, ${transforms.axial.panY}px) scale(${transforms.axial.zoom})`,
+								transformOrigin: "center center",
+							}}
+						/>
+					</div>
+					{/* High-contrast DOM coordinate badge (>=13px bold with backdrop-blur-md) */}
+					<div className="cbct-slice-coord-badge">
+						<span className="cbct-coord-label">Срез:</span>
+						<span className="cbct-coord-value text-[var(--teal)]">Z: {axialSliceZ} мм</span>
+						{transforms.axial.zoom !== 1 && (
+							<button
+								type="button"
+								onClick={() => resetZoom("axial")}
+								className="cbct-zoom-indicator"
+								title="Сбросить масштаб (1x)"
+							>
+								{(transforms.axial.zoom * 100).toFixed(0)}% ↺
+							</button>
+						)}
 					</div>
 				</div>
 
 				{/* 2. CORONAL VIEWPORT (Y-PLANE) */}
 				<div className="cbct-viewport-box">
 					<div className="cbct-viewport-header">
-						<span className="text-blue-400">2. Фронтальный срез (Coronal)</span>
-						<span className="text-neutral-400">Y: {coronalSliceY} мм</span>
+						<span className="text-blue-400 font-bold text-xs">2. Фронтальный срез (Coronal)</span>
 					</div>
-					<div className="cbct-viewport-canvas-container">
-						<canvas ref={coronalCanvasRef} width={480} height={320} className="w-full h-full object-contain" />
+					<div
+						className="cbct-viewport-canvas-container"
+						onTouchStart={(e) => handleTouchStart("coronal", e)}
+						onTouchMove={(e) => handleTouchMove("coronal", e)}
+						onTouchEnd={() => handleTouchEnd("coronal")}
+						onWheel={(e) => handleWheel("coronal", e)}
+					>
+						<canvas
+							ref={coronalCanvasRef}
+							width={480}
+							height={320}
+							className="w-full h-full object-contain pointer-events-none select-none transition-transform duration-75"
+							style={{
+								transform: `translate(${transforms.coronal.panX}px, ${transforms.coronal.panY}px) scale(${transforms.coronal.zoom})`,
+								transformOrigin: "center center",
+							}}
+						/>
+					</div>
+					{/* High-contrast DOM coordinate badge (>=13px bold with backdrop-blur-md) */}
+					<div className="cbct-slice-coord-badge">
+						<span className="cbct-coord-label">Срез:</span>
+						<span className="cbct-coord-value text-blue-400">Y: {coronalSliceY} мм</span>
+						{transforms.coronal.zoom !== 1 && (
+							<button
+								type="button"
+								onClick={() => resetZoom("coronal")}
+								className="cbct-zoom-indicator"
+								title="Сбросить масштаб (1x)"
+							>
+								{(transforms.coronal.zoom * 100).toFixed(0)}% ↺
+							</button>
+						)}
 					</div>
 				</div>
 
 				{/* 3. SAGITTAL VIEWPORT (X-PLANE) */}
 				<div className="cbct-viewport-box">
 					<div className="cbct-viewport-header">
-						<span className="text-amber-400">3. Сагиттальный срез (Sagittal)</span>
-						<span className="text-neutral-400">X: {sagittalSliceX} мм</span>
+						<span className="text-amber-400 font-bold text-xs">3. Сагиттальный срез (Sagittal)</span>
 					</div>
-					<div className="cbct-viewport-canvas-container">
-						<canvas ref={sagittalCanvasRef} width={480} height={320} className="w-full h-full object-contain" />
+					<div
+						className="cbct-viewport-canvas-container"
+						onTouchStart={(e) => handleTouchStart("sagittal", e)}
+						onTouchMove={(e) => handleTouchMove("sagittal", e)}
+						onTouchEnd={() => handleTouchEnd("sagittal")}
+						onWheel={(e) => handleWheel("sagittal", e)}
+					>
+						<canvas
+							ref={sagittalCanvasRef}
+							width={480}
+							height={320}
+							className="w-full h-full object-contain pointer-events-none select-none transition-transform duration-75"
+							style={{
+								transform: `translate(${transforms.sagittal.panX}px, ${transforms.sagittal.panY}px) scale(${transforms.sagittal.zoom})`,
+								transformOrigin: "center center",
+							}}
+						/>
+					</div>
+					{/* High-contrast DOM coordinate badge (>=13px bold with backdrop-blur-md) */}
+					<div className="cbct-slice-coord-badge">
+						<span className="cbct-coord-label">Срез:</span>
+						<span className="cbct-coord-value text-amber-400">X: {sagittalSliceX} мм</span>
+						{transforms.sagittal.zoom !== 1 && (
+							<button
+								type="button"
+								onClick={() => resetZoom("sagittal")}
+								className="cbct-zoom-indicator"
+								title="Сбросить масштаб (1x)"
+							>
+								{(transforms.sagittal.zoom * 100).toFixed(0)}% ↺
+							</button>
+						)}
 					</div>
 				</div>
 
 				{/* 4. CURVED PANORAMIC / 3D RECONSTRUCTION */}
 				<div className="cbct-viewport-box">
 					<div className="cbct-viewport-header">
-						<span className="text-emerald-400">4. Панорамная кривая дуги (Curved MPR)</span>
-						<span className="text-neutral-400">FDI 11..48</span>
+						<span className="text-emerald-400 font-bold text-xs">4. Панорамная кривая дуги (Curved MPR)</span>
 					</div>
-					<div className="cbct-viewport-canvas-container">
-						<canvas ref={panoramicCanvasRef} width={480} height={320} className="w-full h-full object-contain" />
+					<div
+						className="cbct-viewport-canvas-container"
+						onTouchStart={(e) => handleTouchStart("panoramic", e)}
+						onTouchMove={(e) => handleTouchMove("panoramic", e)}
+						onTouchEnd={() => handleTouchEnd("panoramic")}
+						onWheel={(e) => handleWheel("panoramic", e)}
+					>
+						<canvas
+							ref={panoramicCanvasRef}
+							width={480}
+							height={320}
+							className="w-full h-full object-contain pointer-events-none select-none transition-transform duration-75"
+							style={{
+								transform: `translate(${transforms.panoramic.panX}px, ${transforms.panoramic.panY}px) scale(${transforms.panoramic.zoom})`,
+								transformOrigin: "center center",
+							}}
+						/>
+					</div>
+					{/* High-contrast DOM coordinate badge (>=13px bold with backdrop-blur-md) */}
+					<div className="cbct-slice-coord-badge">
+						<span className="cbct-coord-label">Дуга:</span>
+						<span className="cbct-coord-value text-emerald-400">FDI 11..48</span>
+						{transforms.panoramic.zoom !== 1 && (
+							<button
+								type="button"
+								onClick={() => resetZoom("panoramic")}
+								className="cbct-zoom-indicator"
+								title="Сбросить масштаб (1x)"
+							>
+								{(transforms.panoramic.zoom * 100).toFixed(0)}% ↺
+							</button>
+						)}
 					</div>
 				</div>
 			</div>
