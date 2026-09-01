@@ -99,13 +99,10 @@ export async function registerSpeechLiveRoutes(
 		},
 	);
 
-	// WebSocket Live Transcription Endpoint
+	// WebSocket Live Transcription Handler
 	const wsApp = app as unknown as { get: WebsocketRouteRegistrar };
 
-	wsApp.get(
-		"/api/v1/speech/live",
-		{ websocket: true },
-		(clientSocket: WebSocket, request: FastifyRequest) => {
+	const liveWsHandler = (clientSocket: WebSocket, request: FastifyRequest) => {
 			const query = (request.query || {}) as SpeechLiveQueryParams;
 			const specialty = query.specialty as DentalSpecialty | undefined;
 			const sampleRate = query.sampleRate
@@ -122,8 +119,8 @@ export async function registerSpeechLiveRoutes(
 			const orgId = identity.organizationId || "anonymous";
 
 			request.log.info(
-				{ orgId, specialty, sampleRate },
-				"[speechLive] Inbound client WebSocket connected to /api/v1/speech/live",
+				{ orgId, specialty, sampleRate, url: request.url },
+				"[speechLive] Inbound client WebSocket connected to Gemini 3.5 Transcribe Live BiDi",
 			);
 
 			// Instantiate BiDi bridge to Google Gemini
@@ -318,6 +315,8 @@ export async function registerSpeechLiveRoutes(
 				);
 				bridge.close(1011, err.message);
 			});
-		},
-	);
+	};
+
+	wsApp.get("/api/v1/speech/live", { websocket: true }, liveWsHandler);
+	wsApp.get("/api/speech/live", { websocket: true }, liveWsHandler);
 }
