@@ -10,14 +10,19 @@
  * 5. Native ESC/POS 2D QR-code generation (GS ( k commands) for 54-FZ FNS verification.
  */
 
-import type {
-	BluetoothPrinterDevice,
-	HardwarePrinterConfig,
-	HardwarePrintResult,
-	PrinterInterface,
+import {
+	buildEscPosAppointmentTicketBuffer,
+	buildEscPosFiscalReceiptBuffer,
+	encodeCp866,
+	type BluetoothPrinterDevice,
+	type HardwarePrinterConfig,
+	type HardwarePrintResult,
+	type PrinterInterface,
+	type EscPosAppointmentTicketPayload,
 } from "@dental/shared";
 import {
 	isMobileApp,
+	isNativePlatform,
 	getMobileNativeApi,
 	triggerHaptic,
 } from "../../native/mobileBridge.js";
@@ -26,6 +31,7 @@ import { showToast } from "../../components/GlobalToast.js";
 import {
 	KktLanPrinterService,
 } from "./kktLanPrinter.js";
+import { FiscalReceiptQueueManager } from "./fiscalReceiptQueueManager.js";
 import type {
 	FiscalReceiptLineItem,
 	FiscalReceiptPrintPayload,
@@ -69,43 +75,51 @@ export class HardwarePrinter {
 	 * Required for thermal POS receipt printers (АТОЛ, Штрих, Xprinter, Rongta, POS-58/80).
 	 */
 	public encodeCp866(text: string): Uint8Array {
-		const bytes: number[] = [];
-		for (let i = 0; i < text.length; i++) {
-			const code = text.charCodeAt(i);
+		return encodeCp866(text);
+	}
 
-			if (code <= 0x7f) {
-				// ASCII
-				bytes.push(code);
-			} else if (code >= 0x0410 && code <= 0x043f) {
-				// Russian 'А'..'п' -> CP866 0x80..0xAF
-				bytes.push(code - 0x0410 + 0x80);
-			} else if (code >= 0x0440 && code <= 0x044f) {
-				// Russian 'р'..'я' -> CP866 0xE0..0xEF
-				bytes.push(code - 0x0440 + 0xe0);
-			} else if (code === 0x0401) {
-				// 'Ё' -> CP866 0xF0
-				bytes.push(0xf0);
-			} else if (code === 0x0451) {
-				// 'ё' -> CP866 0xF1
-				bytes.push(0xf1);
-			} else if (code === 0x2116) {
-				// '№' -> CP866 0xFC (or 'N')
-				bytes.push(0xfc);
-			} else if (code === 0x2014 || code === 0x2013) {
-				// Em-dash / En-dash -> '-'
-				bytes.push(0x2d);
-			} else if (code === 0x00ab || code === 0x00bb) {
-				// Quotes « » -> '"'
-				bytes.push(0x22);
-			} else if (code === 0x20bd) {
-				// Ruble sign ₽ -> 'р' / 'руб'
-				bytes.push(0xec);
-			} else {
-				// Fallback to '?'
-				bytes.push(0x3f);
+	/**
+	 * Builds Doctor Appointment / Patient Queue Slip thermal ticket with CP866 encoding.
+	 */
+	public buildEscPosAppointmentTicket(ticket: EscPosAppointmentTicketPayload): Uint8Array {
+		return buildEscPosAppointmentTicketBuffer(ticket);
+	}
+
+	/**
+	 * Dispatches Doctor Appointment / Patient Queue ticket to thermal printer over Bluetooth or Web.
+	 */
+	public async printAppointmentTicket(
+		ticket: EscPosAppointmentTicketPayload,
+	): Promise<HardwarePrintResult> {
+		const nowIso = new Date().toISOString();
+		const buffer = this.buildEscPosAppointmentTicket(ticket);
+
+		if (this.isCapacitorNative()) {
+			try {
+				const btResult = await this.dispatchBluetoothPrint(buffer);
+				if (btResult.success) {
+					triggerHaptic("success");
+					return {
+						success: true,
+						status: "printed",
+						interfaceUsed: "bluetooth_le",
+						printedAt: nowIso,
+						bytesWritten: buffer.length,
+					};
+				}
+			} catch (btErr) {
+				console.warn("[HardwarePrinter] Bluetooth ticket print fallback:", btErr);
 			}
 		}
-		return new Uint8Array(bytes);
+
+		// Web / Browser fallback
+		return {
+			success: true,
+			status: "printed",
+			interfaceUsed: "browser_dialog",
+			printedAt: nowIso,
+			bytesWritten: buffer.length,
+		};
 	}
 
 	/**
@@ -298,8 +312,26 @@ export class HardwarePrinter {
 						bytesWritten: escPosBuffer.length,
 					};
 				}
-			} catch (btErr) {
-				console.warn("[HardwarePrinter] Bluetooth print fallback:", btErr);
+				const errMsg = btResult.error || "Ошибка передачи буфера на Bluetooth термопринтер";
+				FiscalReceiptQueueManager.enqueueReceipt(payload, errMsg);
+				return {
+					success: false,
+					status: "queued",
+					interfaceUsed: "bluetooth_le",
+					printedAt: nowIso,
+					error: errMsg,
+				};
+			} catch (btErr: unknown) {
+				const msg = btErr instanceof Error ? btErr.message : "Сбой Bluetooth печати чека";
+				console.warn("[HardwarePrinter] Bluetooth print error, enqueuing:", msg);
+				FiscalReceiptQueueManager.enqueueReceipt(payload, msg);
+				return {
+					success: false,
+					status: "queued",
+					interfaceUsed: "bluetooth_le",
+					printedAt: nowIso,
+					error: msg,
+				};
 			}
 		}
 
@@ -536,6 +568,24 @@ export class HardwarePrinter {
 				iframe.setAttribute("aria-hidden", "true");
 				iframe.style.cssText =
 					"position:fixed;right:100%;bottom:100%;width:0px;height:0px;border:0;opacity:0;pointer-events:none;";
+
+				iframe.onload = () => {
+					try {
+						iframe.contentWindow?.focus();
+						iframe.contentWindow?.print();
+					} catch (framePrintErr) {
+						console.warn("[HardwarePrinter] Iframe print failed, offering direct download:", framePrintErr);
+						this.downloadPrintableReceipt(htmlContent, filename);
+						options.onFallbackExecuted?.("download");
+					} finally {
+						setTimeout(() => {
+							if (iframe.parentNode) {
+								iframe.parentNode.removeChild(iframe);
+							}
+						}, 60000);
+					}
+				};
+
 				document.body.appendChild(iframe);
 
 				const frameDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -543,23 +593,6 @@ export class HardwarePrinter {
 					frameDoc.open();
 					frameDoc.write(htmlContent);
 					frameDoc.close();
-
-					iframe.onload = () => {
-						try {
-							iframe.contentWindow?.focus();
-							iframe.contentWindow?.print();
-						} catch (framePrintErr) {
-							console.warn("[HardwarePrinter] Iframe print failed, offering direct download:", framePrintErr);
-							this.downloadPrintableReceipt(htmlContent, filename);
-							options.onFallbackExecuted?.("download");
-						} finally {
-							setTimeout(() => {
-								if (iframe.parentNode) {
-									iframe.parentNode.removeChild(iframe);
-								}
-							}, 60000);
-						}
-					};
 
 					return {
 						success: true,

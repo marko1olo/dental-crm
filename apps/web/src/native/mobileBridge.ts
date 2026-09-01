@@ -54,6 +54,25 @@ export type HapticFeedbackType =
 	| "warning"
 	| "error";
 
+export interface MobilePushNotificationPayload {
+	readonly id?: string | undefined;
+	readonly title?: string | undefined;
+	readonly body?: string | undefined;
+	readonly data?: Record<string, unknown> | undefined;
+	readonly clickAction?: string | undefined;
+	readonly isUrgentWakeUp?: boolean | undefined;
+}
+
+export interface MobilePushNotificationHandlers {
+	readonly onRegistration?: (token: string) => void;
+	readonly onRegistrationError?: (error: string) => void;
+	readonly onNotificationReceived?: (notification: MobilePushNotificationPayload) => void;
+	readonly onNotificationActionPerformed?: (
+		notification: MobilePushNotificationPayload,
+		actionId?: string,
+	) => void;
+}
+
 export interface MobileNativeApi {
 	isMobileApp: boolean;
 	platform: "android" | "ios" | "web";
@@ -66,6 +85,23 @@ export interface MobileNativeApi {
 	getSecureSecret?: (key: string) => Promise<{ success: boolean; value?: string | undefined; error?: string | undefined }>;
 	removeSecureSecret?: (key: string) => Promise<{ success: boolean; error?: string | undefined }>;
 	registerPushNotifications?: () => Promise<{ success: boolean; token?: string | undefined; error?: string | undefined }>;
+	printThermalBinary?: (bytes: number[]) => Promise<{ success: boolean; error?: string | undefined }>;
+	acquireWakeLock?: () => Promise<{ success: boolean }>;
+	releaseWakeLock?: () => Promise<{ success: boolean }>;
+}
+
+export interface CapacitorPushNotificationSchema {
+	title?: string;
+	body?: string;
+	id?: string;
+	data?: Record<string, unknown>;
+	click_action?: string;
+}
+
+export interface CapacitorPushNotificationActionResult {
+	actionId: string;
+	inputValue?: string;
+	notification: CapacitorPushNotificationSchema;
 }
 
 declare global {
@@ -74,15 +110,91 @@ declare global {
 		Capacitor?: {
 			isNativePlatform?: () => boolean;
 			getPlatform?: () => string;
+			Plugins?: {
+				App?: {
+					addListener?: (
+						event: string,
+						callback: (data: { canGoBack: boolean }) => void,
+					) => { remove: () => void };
+					exitApp?: () => void;
+				};
+				PushNotifications?: {
+					requestPermissions?: () => Promise<{ receive: "granted" | "denied" | "prompt" }>;
+					register?: () => Promise<void>;
+					createChannel?: (channel: {
+						id: string;
+						name: string;
+						description?: string;
+						importance: number;
+						visibility?: number;
+						sound?: string;
+						vibration?: boolean;
+						lights?: boolean;
+						lightColor?: string;
+					}) => Promise<void>;
+					addListener?: (
+						event: "registration" | "registrationError" | "pushNotificationReceived" | "pushNotificationActionPerformed",
+						// biome-ignore lint/suspicious/noExplicitAny: Capacitor plugin listener signature
+						callback: (data: any) => void,
+					) => { remove: () => void };
+					removeAllListeners?: () => Promise<void>;
+				};
+				Badge?: {
+					set?: (options: { count: number }) => Promise<void>;
+					clear?: () => Promise<void>;
+				};
+				BluetoothLe?: {
+					initialize?: () => Promise<void>;
+					requestDevice?: (options?: Record<string, unknown>) => Promise<{ deviceId: string; name?: string }>;
+					connect?: (options: { deviceId: string }) => Promise<void>;
+					disconnect?: (options: { deviceId: string }) => Promise<void>;
+					write?: (options: {
+						deviceId: string;
+						service: string;
+						characteristic: string;
+						value: string; // base64 or hex
+					}) => Promise<void>;
+				};
+			};
 		} | undefined;
 	}
 }
 
-export function isMobileApp(): boolean {
+/**
+ * Returns true if the app is running in native Capacitor shell (Android / iOS)
+ * or has native Android/iOS bridge bindings injected.
+ */
+export function isNativePlatform(): boolean {
 	if (typeof window === "undefined") return false;
-	if (window.denteMobileNative?.isMobileApp) return true;
 	if (window.Capacitor?.isNativePlatform?.()) return true;
+	if (window.denteMobileNative?.isMobileApp === true) return true;
 	return false;
+}
+
+export function isMobileApp(): boolean {
+	return isNativePlatform();
+}
+
+/**
+ * Returns detected mobile operating system platform ('android', 'ios', or 'web').
+ */
+export function getMobilePlatform(): "android" | "ios" | "web" {
+	if (typeof window === "undefined") return "web";
+	if (window.denteMobileNative?.platform) return window.denteMobileNative.platform;
+	if (window.Capacitor?.getPlatform) {
+		const plat = window.Capacitor.getPlatform();
+		if (plat === "android" || plat === "ios") return plat;
+	}
+	if (typeof navigator !== "undefined") {
+		const ua = navigator.userAgent || "";
+		if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+			return "ios";
+		}
+		if (/Android/.test(ua)) {
+			return "android";
+		}
+	}
+	return "web";
 }
 
 export function getMobileNativeApi(): MobileNativeApi | null {
@@ -439,6 +551,22 @@ export async function requestPushNotificationPermission(): Promise<{
 	granted: boolean;
 	status: "granted" | "denied" | "default";
 }> {
+	if (isNativePlatform()) {
+		const pushPlugin = window.Capacitor?.Plugins?.PushNotifications;
+		if (pushPlugin?.requestPermissions) {
+			try {
+				const result = await pushPlugin.requestPermissions();
+				const granted = result.receive === "granted";
+				return {
+					granted,
+					status: granted ? "granted" : result.receive === "prompt" ? "default" : "denied",
+				};
+			} catch (err) {
+				console.warn("[Push] Capacitor push permission request error:", err);
+			}
+		}
+	}
+
 	if (typeof window === "undefined" || !("Notification" in window)) {
 		return { granted: false, status: "denied" };
 	}
@@ -454,6 +582,290 @@ export async function requestPushNotificationPermission(): Promise<{
 	} catch {
 		return { granted: false, status: "denied" };
 	}
+}
+
+/**
+ * Creates high-priority Android notification channels for urgent clinical calls and alarms.
+ */
+export async function createAndroidNotificationChannels(): Promise<void> {
+	if (!isNativePlatform()) return;
+
+	const pushPlugin = window.Capacitor?.Plugins?.PushNotifications;
+	if (!pushPlugin?.createChannel) return;
+
+	try {
+		// 1. High-priority channel for incoming doctor calls / telephony
+		await pushPlugin.createChannel({
+			id: "dente_urgent_calls",
+			name: "Входящие звонки и вызовы клиники",
+			description: "Экстренные звонки пациентов и селекторная связь клиники",
+			importance: 5, // NotificationManager.IMPORTANCE_HIGH / MAX
+			visibility: 1, // Notification.VISIBILITY_PUBLIC (Lockscreen)
+			sound: "custom_ringtone.wav",
+			vibration: true,
+			lights: true,
+			lightColor: "#ef4444",
+		});
+
+		// 2. Clinical urgent alerts (Allergy alarms, patient in acute pain, doctor summons)
+		await pushPlugin.createChannel({
+			id: "dente_clinical_alerts",
+			name: "Клинические оповещения и острая боль",
+			description: "Оповещения об острой боли, статусе стерилизации и вызовах ассистента",
+			importance: 4,
+			visibility: 1,
+			sound: "custom_ringtone.wav",
+			vibration: true,
+			lights: true,
+			lightColor: "#f59e0b",
+		});
+
+		// 3. General appointment reminders & schedule updates
+		await pushPlugin.createChannel({
+			id: "dente_appointments_channel",
+			name: "Записи пациентов и расписание",
+			description: "Напоминания о приемах и изменения в расписании",
+			importance: 3, // NotificationManager.IMPORTANCE_DEFAULT
+			visibility: 0,
+			vibration: true,
+		});
+	} catch (err) {
+		console.warn("[Push] Error creating Android notification channels:", err);
+	}
+}
+
+/**
+ * Triggers background wake-up and alert effects when receiving high-priority clinical pushes.
+ */
+export function triggerBackgroundWakeUp(payload: MobilePushNotificationPayload): void {
+	if (typeof window === "undefined") return;
+
+	const isUrgent =
+		payload.isUrgentWakeUp ||
+		payload.data?.urgent === "true" ||
+		payload.data?.type === "incoming_call" ||
+		payload.data?.type === "doctor_summon" ||
+		payload.data?.type === "emergency_pain";
+
+	if (isUrgent) {
+		triggerHaptic("error");
+		playClinicalAudioFeedback("warning");
+		void acquireScreenWakeLock();
+	} else {
+		triggerHaptic("light");
+		playClinicalAudioFeedback("click");
+	}
+
+	// Dispatch custom DOM event for active UI screens (e.g. ScheduleView, PatientCard, TelephonyModal)
+	try {
+		const customEv = new CustomEvent("dente:fcm-wake-up", {
+			detail: payload,
+			bubbles: true,
+		});
+		window.dispatchEvent(customEv);
+	} catch {}
+}
+
+/**
+ * Initializes FCM background push notification listeners with full Android/iOS/Web resilience.
+ */
+export async function initMobilePushNotifications(
+	handlers: MobilePushNotificationHandlers = {},
+): Promise<{ success: boolean; token?: string | undefined; error?: string | undefined }> {
+	// 1. Native Capacitor / Android / iOS Shell
+	if (isNativePlatform()) {
+		const pushPlugin = window.Capacitor?.Plugins?.PushNotifications;
+		if (pushPlugin) {
+			try {
+				await createAndroidNotificationChannels();
+
+				const perm = await pushPlugin.requestPermissions?.();
+				if (perm && perm.receive !== "granted") {
+					return {
+						success: false,
+						error: "Разрешение на push-уведомления отклонено пользователем",
+					};
+				}
+
+				if (pushPlugin.addListener) {
+					pushPlugin.addListener("registration", (tokenData: { value?: string; token?: string }) => {
+						const token = tokenData?.value || tokenData?.token || "";
+						if (token) {
+							void saveSecureToken("fcm_device_token", token);
+							handlers.onRegistration?.(token);
+						}
+					});
+
+					pushPlugin.addListener("registrationError", (err: { error?: string }) => {
+						const errorMsg = err?.error || "Ошибка регистрации FCM токена";
+						handlers.onRegistrationError?.(errorMsg);
+					});
+
+					pushPlugin.addListener("pushNotificationReceived", (notification: CapacitorPushNotificationSchema) => {
+						const payload: MobilePushNotificationPayload = {
+							id: notification.id,
+							title: notification.title,
+							body: notification.body,
+							data: notification.data,
+							clickAction: notification.click_action,
+							isUrgentWakeUp: notification.data?.urgent === "true",
+						};
+						triggerBackgroundWakeUp(payload);
+						handlers.onNotificationReceived?.(payload);
+					});
+
+					pushPlugin.addListener(
+						"pushNotificationActionPerformed",
+						(action: CapacitorPushNotificationActionResult) => {
+							const payload: MobilePushNotificationPayload = {
+								id: action.notification?.id,
+								title: action.notification?.title,
+								body: action.notification?.body,
+								data: action.notification?.data,
+								clickAction: action.notification?.click_action,
+							};
+							handlers.onNotificationActionPerformed?.(payload, action.actionId);
+						},
+					);
+				}
+
+				await pushPlugin.register?.();
+
+				return { success: true };
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : "Ошибка инициализации FCM push";
+				return { success: false, error: msg };
+			}
+		}
+
+		// Fallback to native custom bridge if present
+		const nativeApi = getMobileNativeApi();
+		if (nativeApi?.registerPushNotifications) {
+			return nativeApi.registerPushNotifications();
+		}
+	}
+
+	// 2. Pure Web / PWA Environment Fallback
+	const webPerm = await requestPushNotificationPermission();
+	if (!webPerm.granted) {
+		return {
+			success: false,
+			error: "Уведомления в браузере отклонены",
+		};
+	}
+
+	return {
+		success: true,
+		token: "pwa-web-notification-granted",
+	};
+}
+
+/**
+ * Updates app icon badge count on iOS / Android or Web App Badging API.
+ */
+export async function setAppBadgeCount(count: number): Promise<void> {
+	if (typeof window === "undefined") return;
+
+	// 1. Native Capacitor Badge Plugin
+	const badgePlugin = window.Capacitor?.Plugins?.Badge;
+	if (badgePlugin?.set) {
+		try {
+			await badgePlugin.set({ count: Math.max(0, count) });
+			return;
+		} catch {}
+	}
+
+	// 2. Modern Web App Badging API (navigator.setAppBadge)
+	if (typeof navigator !== "undefined" && "setAppBadge" in navigator && typeof (navigator as any).setAppBadge === "function") {
+		try {
+			if (count > 0) {
+				await (navigator as any).setAppBadge(count);
+			} else {
+				await (navigator as any).clearAppBadge();
+			}
+		} catch {}
+	}
+}
+
+/**
+ * Clears app icon badge.
+ */
+export async function clearAppBadgeCount(): Promise<void> {
+	await setAppBadgeCount(0);
+}
+
+// ============================================================================
+// SCREEN WAKE LOCK API (DOCTOR IPAD / SURGICAL OPERATORY SUPPORT)
+// ============================================================================
+
+// biome-ignore lint/suspicious/noExplicitAny: Screen Wake Lock Sentinel instance
+let activeWakeLockSentinel: any = null;
+
+/**
+ * Acquires Screen Wake Lock to prevent iPad / tablet screen dimming during clinical appointments.
+ */
+export async function acquireScreenWakeLock(): Promise<boolean> {
+	if (typeof window === "undefined") return false;
+
+	// 1. Native Bridge if available
+	const nativeApi = getMobileNativeApi();
+	if (nativeApi?.acquireWakeLock) {
+		try {
+			const res = await nativeApi.acquireWakeLock();
+			return res.success;
+		} catch {}
+	}
+
+	// 2. HTML5 Screen Wake Lock API (iPadOS Safari 16.4+ / Chrome Android)
+	if (typeof navigator !== "undefined" && "wakeLock" in navigator && typeof (navigator as any).wakeLock?.request === "function") {
+		try {
+			if (!activeWakeLockSentinel) {
+				activeWakeLockSentinel = await (navigator as any).wakeLock.request("screen");
+				activeWakeLockSentinel.addEventListener?.("release", () => {
+					activeWakeLockSentinel = null;
+				});
+			}
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Releases Screen Wake Lock allowing normal OS power management.
+ */
+export async function releaseScreenWakeLock(): Promise<boolean> {
+	if (typeof window === "undefined") return true;
+
+	const nativeApi = getMobileNativeApi();
+	if (nativeApi?.releaseWakeLock) {
+		try {
+			const res = await nativeApi.releaseWakeLock();
+			return res.success;
+		} catch {}
+	}
+
+	if (activeWakeLockSentinel) {
+		try {
+			await activeWakeLockSentinel.release();
+			activeWakeLockSentinel = null;
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Checks if screen wake lock is actively held.
+ */
+export function isScreenWakeLockActive(): boolean {
+	return activeWakeLockSentinel !== null;
 }
 
 export type DeviceFormFactor = "tablet" | "phone" | "desktop";

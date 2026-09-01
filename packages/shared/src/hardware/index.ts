@@ -7,3 +7,4 @@ export * from "./atolDriverKkt10.js";
 export * from "./shtrihMDriver.js";
 export * from "./scannerProtocol.js";
 export * from "./offlineDatabaseEngine.js";
+export * from "./escposGenerator.js";

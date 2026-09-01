@@ -1,40 +1,52 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+	acquireScreenWakeLock,
 	authenticateBiometricStaff,
 	classifyBiometricFallbackReason,
+	clearAppBadgeCount,
 	clearModalBackStack,
+	createAndroidNotificationChannels,
 	createDenteDeepLink,
 	generateTelegramDocShareLink,
 	generateWhatsAppDocShareLink,
 	getDeviceFormFactor,
 	getModalBackStackDepth,
 	getMobileNativeApi,
+	getMobilePlatform,
 	getSafeAreaInsets,
 	getSecureToken,
 	handleHardwareBackAction,
 	initHardwareBackButtonListener,
+	initMobilePushNotifications,
+	isClinicalAudioMuted,
 	isMobileApp,
 	isMobileSmartphone,
+	isNativePlatform,
+	isScreenWakeLockActive,
 	isTabletDevice,
 	isValidStaffPinFormat,
-	isClinicalAudioMuted,
 	parseDenteDeepLink,
 	parseGs1DataMatrix,
 	playClinicalAudioFeedback,
 	popModalBackHandler,
 	pushModalBackHandler,
 	registerSafeSwipeGesture,
+	releaseScreenWakeLock,
 	removeSecureToken,
 	requestPushNotificationPermission,
 	saveSecureToken,
 	scanDataMatrixWithCamera,
+	setAppBadgeCount,
 	setClinicalAudioMuted,
 	shareClinicalDocumentMobile,
+	triggerBackgroundWakeUp,
 	triggerHaptic,
 	verifyStaffPinCode,
 	type MobileNativeApi,
 } from "../native/mobileBridge";
+import { callKitBridge } from "../services/telephony/CallKitBridge";
+import { hardwarePrinter } from "../services/hardware/HardwarePrinter";
 
 test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 	await t.test("parseGs1DataMatrix correctly parses standard Russian MDLP / Chestny ZNAK codes", () => {
@@ -515,6 +527,283 @@ test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 			assert.equal(errorSuccess, true);
 		} finally {
 			(globalThis as any).window = originalWindow;
+		}
+	});
+
+	await t.test("isNativePlatform and getMobilePlatform correctly identify Capacitor vs Web PWA", () => {
+		// 1. Web PWA default
+		const origWin = (globalThis as any).window;
+		(globalThis as any).window = undefined;
+		assert.equal(isNativePlatform(), false);
+		assert.equal(getMobilePlatform(), "web");
+
+		// 2. Simulated Android Capacitor .APK
+		(globalThis as any).window = {
+			Capacitor: {
+				isNativePlatform: () => true,
+				getPlatform: () => "android",
+			},
+		};
+		assert.equal(isNativePlatform(), true);
+		assert.equal(isMobileApp(), true);
+		assert.equal(getMobilePlatform(), "android");
+
+		// 3. Simulated iOS / iPadOS Capacitor App
+		(globalThis as any).window = {
+			Capacitor: {
+				isNativePlatform: () => true,
+				getPlatform: () => "ios",
+			},
+		};
+		assert.equal(isNativePlatform(), true);
+		assert.equal(getMobilePlatform(), "ios");
+
+		// 4. Injected custom native bridge
+		(globalThis as any).window = {
+			denteMobileNative: {
+				isMobileApp: true,
+				platform: "android",
+				appVersion: "1.2.0",
+			},
+		};
+		assert.equal(isNativePlatform(), true);
+		assert.equal(getMobilePlatform(), "android");
+
+		(globalThis as any).window = origWin;
+	});
+
+	await t.test("FCM Push Notifications & Android Channels initialize and trigger background wake-up", async () => {
+		const origWin = (globalThis as any).window;
+		const createdChannels: string[] = [];
+		const registeredListeners: string[] = [];
+		let pushRegistrationCalled = false;
+		let receivedToken = "";
+
+		const mockPushPlugin = {
+			createChannel: async (channel: { id: string }) => {
+				createdChannels.push(channel.id);
+			},
+			requestPermissions: async () => ({ receive: "granted" as const }),
+			register: async () => {
+				pushRegistrationCalled = true;
+			},
+			addListener: (event: string, callback: (data: any) => void) => {
+				registeredListeners.push(event);
+				if (event === "registration") {
+					setTimeout(() => callback({ value: "fcm_token_doctor_ipad_2026" }), 10);
+				}
+				return { remove: () => {} };
+			},
+		};
+
+		(globalThis as any).window = {
+			Capacitor: {
+				isNativePlatform: () => true,
+				getPlatform: () => "android",
+				Plugins: {
+					PushNotifications: mockPushPlugin,
+				},
+			},
+			dispatchEvent: () => true,
+		};
+
+		try {
+			const initRes = await initMobilePushNotifications({
+				onRegistration: (t) => {
+					receivedToken = t;
+				},
+			});
+
+			assert.equal(initRes.success, true);
+			assert.equal(pushRegistrationCalled, true);
+			assert.ok(createdChannels.includes("dente_urgent_calls"));
+			assert.ok(createdChannels.includes("dente_clinical_alerts"));
+			assert.ok(createdChannels.includes("dente_appointments_channel"));
+
+			// Test background wake up trigger
+			assert.doesNotThrow(() => {
+				triggerBackgroundWakeUp({
+					title: "ЭКСТРЕННЫЙ ВЫЗОВ ВРАЧА",
+					body: "Пациент в кресле №2: острая боль пульпит FDI 26",
+					isUrgentWakeUp: true,
+					data: { urgent: "true", type: "doctor_summon" },
+				});
+			});
+		} finally {
+			(globalThis as any).window = origWin;
+		}
+	});
+
+	await t.test("Screen Wake Lock API prevents iPad screen dimming in dental operatory", async () => {
+		const origWin = (globalThis as any).window;
+		const origNav = (globalThis as any).navigator;
+
+		let lockRequested = false;
+		let lockReleased = false;
+
+		const mockWakeLock = {
+			request: async (type: string) => {
+				lockRequested = true;
+				return {
+					type,
+					release: async () => {
+						lockReleased = true;
+					},
+					addEventListener: () => {},
+				};
+			},
+		};
+
+		(globalThis as any).window = {};
+		(globalThis.navigator as any).wakeLock = mockWakeLock;
+
+		try {
+			assert.equal(isScreenWakeLockActive(), false);
+			const acquired = await acquireScreenWakeLock();
+			assert.equal(acquired, true);
+			assert.equal(lockRequested, true);
+			assert.equal(isScreenWakeLockActive(), true);
+
+			const released = await releaseScreenWakeLock();
+			assert.equal(released, true);
+			assert.equal(lockReleased, true);
+			assert.equal(isScreenWakeLockActive(), false);
+		} finally {
+			(globalThis as any).window = origWin;
+			delete (globalThis.navigator as any).wakeLock;
+		}
+	});
+
+	await t.test("App Badge counter updates safely on mobile and web", async () => {
+		const origWin = (globalThis as any).window;
+		let badgeCount = 0;
+
+		(globalThis as any).window = {
+			Capacitor: {
+				isNativePlatform: () => true,
+				Plugins: {
+					Badge: {
+						set: async (opt: { count: number }) => {
+							badgeCount = opt.count;
+						},
+						clear: async () => {
+							badgeCount = 0;
+						},
+					},
+				},
+			},
+		};
+
+		try {
+			await setAppBadgeCount(5);
+			assert.equal(badgeCount, 5);
+			await clearAppBadgeCount();
+			assert.equal(badgeCount, 0);
+		} finally {
+			(globalThis as any).window = origWin;
+		}
+	});
+
+	await t.test("Hardware thermal printer creates ESC/POS CP866 receipt and appointment ticket buffers", async () => {
+		// 1. CP866 encoding
+		const encoded = hardwarePrinter.encodeCp866("ООО «ДЕНТЕ» — Чек 54-ФЗ");
+		assert.ok(encoded instanceof Uint8Array);
+		assert.ok(encoded.length > 0);
+
+		// 2. Doctor Appointment Ticket
+		const ticketBuffer = hardwarePrinter.buildEscPosAppointmentTicket({
+			clinicName: "DENTE КЛИНИКА",
+			ticketNumber: "B-104",
+			patientFullName: "Иванов Петр Сергеевич",
+			doctorFullName: "Барабаш С. В.",
+			doctorSpecialtyRu: "Стоматолог-хирург",
+			cabinetName: "Хирургический кабинет №1",
+			appointmentDateRu: "02.09.2026",
+			appointmentTimeRu: "16:00",
+			toothCodes: ["48"],
+			plannedProcedures: ["Атипичное удаление ретинированного зуба мудрости"],
+			checkInQrPayload: "DENTE:CHECKIN:vis-204-pat-12",
+			paperWidthMm: 58,
+			autoCut: true,
+		});
+
+		assert.ok(ticketBuffer instanceof Uint8Array);
+		assert.ok(ticketBuffer.length > 100);
+
+		// 3. Dispatch appointment ticket print
+		const printRes = await hardwarePrinter.printAppointmentTicket({
+			ticketNumber: "B-104",
+			patientFullName: "Иванов Петр Сергеевич",
+			doctorFullName: "Барабаш С. В.",
+			cabinetName: "Кабинет №1",
+			appointmentDateRu: "02.09.2026",
+			appointmentTimeRu: "16:00",
+		});
+		assert.equal(printRes.success, true);
+		assert.equal(printRes.status, "printed");
+	});
+
+	await t.test("CallKit & ConnectionService bridge reports and handles incoming SIP calls without web crashes", async () => {
+		let nativeCallDisplayed = false;
+		let displayedUuid = "";
+		let nativeCallEnded = false;
+
+		const origWin = (globalThis as any).window;
+		(globalThis as any).window = {
+			RNCallKeep: {
+				setup: async () => {},
+				displayIncomingCall: (uuid: string) => {
+					nativeCallDisplayed = true;
+					displayedUuid = uuid;
+				},
+				answerIncomingCall: () => {},
+				endCall: () => {
+					nativeCallEnded = true;
+				},
+				endAllCalls: () => {},
+				setMutedCall: () => {},
+				setOnHold: () => {},
+				addEventListener: () => {},
+				removeEventListener: () => {},
+			},
+			Capacitor: {
+				isNativePlatform: () => true,
+				getPlatform: () => "ios",
+			},
+		};
+
+		try {
+			assert.equal(callKitBridge.isSupported(), true);
+			await callKitBridge.initialize();
+
+			// 1. Incoming Call Report
+			await callKitBridge.reportIncomingCall({
+				callId: "sip_call_9901",
+				phone: "+7 (999) 555-44-33",
+				patientName: "Кузнецова Ольга Ивановна",
+				patientId: "pat-9901",
+				direction: "incoming",
+				timestamp: new Date().toISOString(),
+			});
+
+			assert.equal(nativeCallDisplayed, true);
+			assert.equal(displayedUuid, "sip_call_9901");
+			assert.equal(callKitBridge.getActiveCallId(), "sip_call_9901");
+
+			// 2. Answer Call
+			await callKitBridge.handleNativeCallAnswered("sip_call_9901");
+			assert.equal(callKitBridge.getActiveCallId(), "sip_call_9901");
+
+			// 3. Mute & Hold
+			assert.doesNotThrow(() => callKitBridge.handleNativeMuteToggled("sip_call_9901", true));
+			assert.doesNotThrow(() => callKitBridge.handleNativeHoldToggled("sip_call_9901", true));
+
+			// 4. End Call
+			callKitBridge.endCall("sip_call_9901");
+			assert.equal(nativeCallEnded, true);
+			assert.equal(callKitBridge.getActiveCallId(), null);
+		} finally {
+			(globalThis as any).window = origWin;
 		}
 	});
 });

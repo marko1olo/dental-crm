@@ -152,6 +152,7 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 		clientPatch,
 		clientVector = {},
 		clientUpdatedAt,
+		serverUpdatedAt,
 		clientId,
 		authorUserId,
 	} = options;
@@ -223,8 +224,16 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 			continue;
 		}
 
-		// Case A: Field was not present on server or server has no recorded vector timestamp
-		if (serverVal === undefined || serverFieldTime === 0) {
+		const fallbackServerTime = parseIsoTimestamp(
+			serverUpdatedAt ||
+				(serverEntity?.updatedAt as string) ||
+				(serverEntity?.updated_at as string),
+		);
+		const effectiveServerFieldTime =
+			serverFieldTime > 0 ? serverFieldTime : fallbackServerTime;
+
+		// Case A: Field was not present on server at all
+		if (serverVal === undefined) {
 			merged[field] = clientVal;
 			changedFields.push(field);
 			mergedVector[field] = {
@@ -236,8 +245,8 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 			continue;
 		}
 
-		// Case B: Both have timestamps for this field
-		if (clientFieldTime > serverFieldTime) {
+		// Case B: Both have values - compare timestamps
+		if (clientFieldTime > effectiveServerFieldTime) {
 			// Client's edit is strictly newer
 			merged[field] = clientVal;
 			changedFields.push(field);
@@ -255,9 +264,9 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 				resolvedValue: clientVal,
 				strategy: "lww",
 				winner: "client",
-				reason: `Client field timestamp (${clientFieldTime}) is newer than server timestamp (${serverFieldTime})`,
+				reason: `Client field timestamp (${clientFieldTime}) is newer than server timestamp (${effectiveServerFieldTime})`,
 			});
-		} else if (serverFieldTime > clientFieldTime) {
+		} else if (effectiveServerFieldTime > clientFieldTime) {
 			// Server's edit is strictly newer -> Server wins this field
 			conflicts.push({
 				field,
@@ -266,7 +275,7 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 				resolvedValue: serverVal,
 				strategy: "lww",
 				winner: "server",
-				reason: `Server field timestamp (${serverFieldTime}) is newer than client timestamp (${clientFieldTime})`,
+				reason: `Server field timestamp (${effectiveServerFieldTime}) is newer than client timestamp (${clientFieldTime})`,
 			});
 		} else {
 			// Exact timestamp tie -> Deterministic tie-breaking (lexical comparison of serialized value)
