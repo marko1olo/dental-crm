@@ -3,6 +3,7 @@ import {
 	aiRecognitionJobSchema,
 	createAiRecognitionJobSchema,
 	treatmentPlanPayloadSchema,
+	treatmentPlanValidateAndCommentRequestSchema,
 	visitFlowRequestSchema,
 	visitNoteDraftRequestSchema,
 	visitNoteDraftSchema,
@@ -20,6 +21,7 @@ import { parseDictationWithLLM } from "../ai/dictationParser.js";
 import { parseDictationLocally } from "../ai/localDictationParser.js";
 import { personalizePostVisitRecommendations } from "../ai/postVisitPersonalize.js";
 import { personalizeTreatmentPlan } from "../ai/treatmentPlanPersonalize.js";
+import { validateAndCommentTreatmentPlan } from "../ai/treatmentPlanValidatorAndCommenter.js";
 import { buildVisitDraftFromTranscript } from "../ai/visitDraft.js";
 import { runVisitFlow } from "../ai/visitFlowOrchestrator.js";
 import {
@@ -322,6 +324,46 @@ export async function registerAiRoutes(app: FastifyInstance) {
 			});
 		}
 	});
+
+	app.post(
+		"/api/ai/treatment-plan-validate-and-comment",
+		async (request, reply) => {
+			try {
+				if (
+					!(await requireClinicalReadAccess(
+						request,
+						reply,
+						"validate and comment treatment plan",
+					))
+				)
+					return;
+				const parsedInput =
+					treatmentPlanValidateAndCommentRequestSchema.safeParse(
+						request.body,
+					);
+				if (!parsedInput.success) {
+					return reply.code(400).send({
+						error: "TreatmentPlanValidationError",
+						message:
+							"Некорректный формат плана лечения для клинической валидации и ИИ-комментария.",
+						details: parsedInput.error.format(),
+					});
+				}
+				const result = await validateAndCommentTreatmentPlan(
+					parsedInput.data,
+				);
+				return reply.send(result);
+				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			} catch (error: any) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message:
+						"Ошибка при валидации и ИИ-комментировании плана лечения.",
+				});
+			}
+		},
+	);
 
 	app.post("/api/ai/post-visit-personalize", async (request, reply) => {
 		try {

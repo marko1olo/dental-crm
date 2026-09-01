@@ -41,6 +41,9 @@ import {
 	User,
 	Wand2,
 	X,
+	Copy,
+	AlertCircle,
+	ThumbsUp,
 } from "lucide-react";
 import {
 	type Kopecks,
@@ -48,6 +51,7 @@ import {
 	sumKopecks,
 	calculatePlanTaxDeductionBreakdown,
 	calculateStaged304030Schedule,
+	type TreatmentPlanValidateAndCommentResponse,
 } from "@dental/shared";
 import type {
 	NdflDeductionResult,
@@ -66,6 +70,7 @@ import {
 	applyCopilotCommandToPlan,
 	COPILOT_PRESET_ACTIONS,
 	type CopilotCommandType,
+	requestTreatmentPlanAiValidationAndComment,
 } from "../../services/ai/treatmentPlanCopilot";
 import "./treatmentPlans.css";
 
@@ -154,7 +159,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 	const [activeTiers, setActiveTiers] = useState<readonly TreatmentPlanTier[]>(initialTiers);
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
-	const [activeTab, setActiveTab] = useState<"comparison" | "stages" | "finance" | "print_appendix">("comparison");
+	const [activeTab, setActiveTab] = useState<"comparison" | "stages" | "finance" | "print_appendix" | "ai_audit">("comparison");
 	const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({
 		1: true,
 		2: true,
@@ -164,10 +169,45 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	const [confirmedNotice, setConfirmedNotice] = useState<string | null>(null);
 	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(12);
 
-	// AI Copilot state
+	// AI Copilot & AI Audit state
 	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
 	const [customPrompt, setCustomPrompt] = useState<string>("");
 	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
+	const [aiAuditResult, setAiAuditResult] = useState<TreatmentPlanValidateAndCommentResponse | null>(null);
+	const [isAiAuditing, setIsAiAuditing] = useState<boolean>(false);
+	const [aiAuditError, setAiAuditError] = useState<string | null>(null);
+	const [copiedField, setCopiedField] = useState<string | null>(null);
+
+	const handleCopyText = (text: string, fieldKey: string) => {
+		navigator.clipboard.writeText(text);
+		setCopiedField(fieldKey);
+		setTimeout(() => setCopiedField(null), 2500);
+	};
+
+	const handleRunAiAudit = async () => {
+		setIsAiAuditing(true);
+		setAiAuditError(null);
+		try {
+			const res = await requestTreatmentPlanAiValidationAndComment(selectedTier.stages, {
+				patientContext: {
+					patientId,
+					patientName,
+					diagnosisSummary: selectedTier.title,
+					clinicalReason: selectedTier.subtitle,
+				},
+				targetBudgetRub: selectedTier.totalRub,
+				installmentMonths,
+				doctorFullName,
+				doctorSpecialty,
+				clinicName,
+			});
+			setAiAuditResult(res);
+		} catch (err) {
+			setAiAuditError("Не удалось связаться с ИИ-сервером. Отображаются локальные клинические правила СтАР.");
+		} finally {
+			setIsAiAuditing(false);
+		}
+	};
 
 	useEffect(() => {
 		setActiveTiers(initialTiers);
@@ -432,6 +472,20 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						>
 							<FileText size={14} />
 							<span>Приложение №1</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setActiveTab("ai_audit");
+								if (!aiAuditResult && !isAiAuditing) {
+									handleRunAiAudit();
+								}
+							}}
+							className={"treatment-presenter-tab-btn " + (activeTab === "ai_audit" ? "active" : "")}
+							data-testid="tab-ai-audit-btn"
+						>
+							<Bot size={14} className="text-amber-500" />
+							<span>ИИ-Аудит & Комментарий</span>
 						</button>
 					</nav>
 				</header>
@@ -1195,6 +1249,279 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									</div>
 								</div>
 							</div>
+						</div>
+					)}
+
+					{/* TAB 5: AI Clinical Audit & Chairside Commentary */}
+					{activeTab === "ai_audit" && (
+						<div className="flex flex-col gap-6" data-testid="ai-audit-view">
+							{/* AI Status & Header Bar */}
+							<div className="p-4 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+								<div className="flex items-center gap-3">
+									<div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-indigo-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
+										<Bot size={22} />
+									</div>
+									<div>
+										<div className="flex items-center gap-2 flex-wrap">
+											<h3 className="text-sm font-bold text-[var(--tp-text-main)] m-0">
+												Клинический ИИ-Аудитор и Ассистент DENTE
+											</h3>
+											<span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+												{aiAuditResult?.modelUsed ? `Модель: ${aiAuditResult.modelUsed}` : "Omni-Gateway (Qwen 3.8 27B / Gemini)"}
+											</span>
+										</div>
+										<p className="text-xs text-[var(--tp-text-muted)] m-0 mt-0.5">
+											Валидация анатомии зубов FDI, протоколов СтАР, Номенклатуры 804н и перевод для пациента
+										</p>
+									</div>
+								</div>
+
+								<div className="flex items-center gap-2 shrink-0">
+									{aiAuditResult && (
+										<div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-[var(--tp-bg)]">
+											<span className="text-xs text-[var(--tp-text-muted)]">Соответствие:</span>
+											<span className={`text-sm font-black ${
+												aiAuditResult.clinicalValidation.complianceScorePercent >= 90
+													? "text-emerald-600 dark:text-emerald-400"
+													: aiAuditResult.clinicalValidation.complianceScorePercent >= 70
+														? "text-amber-600 dark:text-amber-400"
+														: "text-rose-600 dark:text-rose-400"
+											}`}>
+												{aiAuditResult.clinicalValidation.complianceScorePercent}%
+											</span>
+										</div>
+									)}
+
+									<button
+										type="button"
+										onClick={handleRunAiAudit}
+										disabled={isAiAuditing}
+										className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--tp-primary)] text-white hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+										data-testid="refresh-ai-audit-btn"
+									>
+										{isAiAuditing ? (
+											<>
+												<div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+												<span>Анализ...</span>
+											</>
+										) : (
+											<>
+												<Sparkles size={14} />
+												<span>{aiAuditResult ? "Обновить анализ" : "Запустить ИИ-аудит"}</span>
+											</>
+										)}
+									</button>
+								</div>
+							</div>
+
+							{/* Loading State */}
+							{isAiAuditing && !aiAuditResult && (
+								<div className="p-12 text-center rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col items-center justify-center gap-3">
+									<div className="w-8 h-8 border-3 border-[var(--tp-primary)]/20 border-t-[var(--tp-primary)] rounded-full animate-spin" />
+									<div className="text-sm font-bold text-[var(--tp-text-main)]">
+										ИИ-эксперт DENTE анализирует план лечения...
+									</div>
+									<div className="text-xs text-[var(--tp-text-muted)] max-w-md">
+										Проверка анатомии корневых каналов FDI, интервалов остеоинтеграции, защиты депульпированных зубов и расчет вычета 13% НДФЛ
+									</div>
+								</div>
+							)}
+
+							{/* Content when ready */}
+							{aiAuditResult && (
+								<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+									{/* LEFT COLUMN: Clinical Validation & FDI Anatomy */}
+									<div className="flex flex-col gap-4">
+										{/* Status Banner */}
+										<div className={`p-4 rounded-2xl border flex items-start gap-3 ${
+											aiAuditResult.clinicalValidation.overallStatus === "FULL_COMPLIANCE"
+												? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-100"
+												: aiAuditResult.clinicalValidation.overallStatus === "COMPLIANT_WITH_RECOMMENDATIONS"
+													? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100"
+													: "bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-100"
+										}`}>
+											{aiAuditResult.clinicalValidation.overallStatus === "FULL_COMPLIANCE" ? (
+												<CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+											) : (
+												<AlertCircle size={20} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+											)}
+											<div>
+												<div className="font-bold text-sm">
+													{aiAuditResult.clinicalValidation.overallStatus === "FULL_COMPLIANCE"
+														? "Полное клиническое соответствие стандартам СтАР"
+														: aiAuditResult.clinicalValidation.overallStatus === "COMPLIANT_WITH_RECOMMENDATIONS"
+															? "План соответствует стандартам с клиническими рекомендациями"
+															: "Выявлены критические несоответствия клиническим протоколам"}
+												</div>
+												<div className="text-xs opacity-90 mt-1">
+													Проверено {aiAuditResult.clinicalValidation.totalChecksCount} параметров: {aiAuditResult.clinicalValidation.passedChecksCount} пройдено, {aiAuditResult.clinicalValidation.warningsCount} предупреждений, {aiAuditResult.clinicalValidation.errorsCount} ошибок.
+												</div>
+											</div>
+										</div>
+
+										{/* Critical Warnings if any */}
+										{aiAuditResult.clinicalValidation.criticalWarnings.length > 0 && (
+											<div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs">
+												<div className="font-bold text-rose-900 dark:text-rose-200 mb-2 flex items-center gap-1.5">
+													<AlertCircle size={15} />
+													<span>Клинические риски и предупреждения:</span>
+												</div>
+												<ul className="list-disc list-inside space-y-1.5 text-rose-800 dark:text-rose-300">
+													{aiAuditResult.clinicalValidation.criticalWarnings.map((w, idx) => (
+														<li key={idx}>{w}</li>
+													))}
+												</ul>
+											</div>
+										)}
+
+										{/* Anatomical Checks Box */}
+										<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)]">
+											<h4 className="text-sm font-bold text-[var(--tp-text-main)] mb-3 flex items-center gap-2">
+												<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400" />
+												<span>Анатомический аудит зубов и каналов (FDI ISO 3950):</span>
+											</h4>
+
+											{aiAuditResult.clinicalValidation.anatomicalChecks.length > 0 ? (
+												<div className="space-y-2.5">
+													{aiAuditResult.clinicalValidation.anatomicalChecks.map((check, idx) => (
+														<div
+															key={idx}
+															className={`p-3 rounded-xl border text-xs ${
+																check.status === "pass"
+																	? "bg-emerald-500/5 border-emerald-500/20 text-[var(--tp-text-main)]"
+																	: check.status === "warning"
+																		? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100"
+																		: "bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-100"
+															}`}
+														>
+															<div className="flex items-center justify-between gap-2 font-bold mb-1">
+																<div className="flex items-center gap-2">
+																	{check.toothNumber && (
+																		<span className="px-1.5 py-0.5 rounded bg-[var(--tp-bg)] font-mono text-[11px]">
+																			Зуб {check.toothNumber}
+																		</span>
+																	)}
+																	<span>{check.message}</span>
+																</div>
+															</div>
+															{check.recommendation && (
+																<div className="text-[11px] opacity-85 mt-1">
+																	💡 Рекомендация: {check.recommendation}
+																</div>
+															)}
+														</div>
+													))}
+												</div>
+											) : (
+												<div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300">
+													✓ Все манипуляции соответствуют анатомии зубов и числу корневых каналов.
+												</div>
+											)}
+										</div>
+
+										{/* Clinical Recommendations */}
+										{aiAuditResult.clinicalValidation.clinicalRecommendations.length > 0 && (
+											<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)]">
+												<h4 className="text-sm font-bold text-[var(--tp-text-main)] mb-2 flex items-center gap-2">
+													<Sparkles size={16} className="text-amber-500" />
+													<span>Клинические рекомендации для врача:</span>
+												</h4>
+												<ul className="space-y-1.5 text-xs text-[var(--tp-text-muted)]">
+													{aiAuditResult.clinicalValidation.clinicalRecommendations.map((rec, idx) => (
+														<li key={idx} className="flex items-start gap-2">
+															<span className="text-amber-500 font-bold">•</span>
+															<span>{rec}</span>
+														</li>
+													))}
+												</ul>
+											</div>
+										)}
+									</div>
+
+									{/* RIGHT COLUMN: Chairside Patient Commentary & Metaphors */}
+									<div className="flex flex-col gap-4">
+										{/* Patient Explanation Card */}
+										<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col gap-3">
+											<div className="flex items-center justify-between">
+												<h4 className="text-sm font-bold text-[var(--tp-text-main)] m-0 flex items-center gap-2">
+													<User size={16} className="text-[var(--tp-primary)]" />
+													<span>Перевод плана для пациента (Chairside):</span>
+												</h4>
+												<button
+													type="button"
+													onClick={() => handleCopyText(aiAuditResult.chairsideCommentary.patientFriendlySummary, "summary")}
+													className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-primary-light)] text-[var(--tp-text-main)] border border-[var(--tp-border)] cursor-pointer transition-colors"
+												>
+													{copiedField === "summary" ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+													<span>{copiedField === "summary" ? "Скопировано" : "Копировать"}</span>
+												</button>
+											</div>
+
+											<div className="p-4 rounded-xl bg-[var(--tp-bg)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-main)] leading-relaxed whitespace-pre-wrap">
+												{aiAuditResult.chairsideCommentary.patientFriendlySummary}
+											</div>
+										</div>
+
+										{/* Urgency & Health Math Card */}
+										<div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex flex-col gap-3">
+											<div className="flex items-center justify-between">
+												<h4 className="text-sm font-bold text-amber-950 dark:text-amber-200 m-0 flex items-center gap-2">
+													<Coins size={16} className="text-amber-600 dark:text-amber-400" />
+													<span>Математика здоровья (Экономический аргумент):</span>
+												</h4>
+												<button
+													type="button"
+													onClick={() => handleCopyText(aiAuditResult.chairsideCommentary.urgencyArgument, "urgency")}
+													className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 cursor-pointer transition-colors"
+												>
+													{copiedField === "urgency" ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+													<span>{copiedField === "urgency" ? "Скопировано" : "Копировать"}</span>
+												</button>
+											</div>
+
+											<div className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed whitespace-pre-wrap">
+												{aiAuditResult.chairsideCommentary.urgencyArgument}
+											</div>
+										</div>
+
+										{/* Hygiene & Care Instructions */}
+										<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col gap-3">
+											<h4 className="text-sm font-bold text-[var(--tp-text-main)] m-0 flex items-center gap-2">
+												<Sparkles size={16} className="text-teal-600 dark:text-teal-400" />
+												<span>Индивидуальные советы по домашней гигиене:</span>
+											</h4>
+											<div className="p-4 rounded-xl bg-[var(--tp-bg)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-main)] leading-relaxed whitespace-pre-wrap">
+												{aiAuditResult.chairsideCommentary.hygieneAndCareAdvice}
+											</div>
+										</div>
+
+										{/* Financial & Tax Strategy Pitch */}
+										<div className="p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 flex flex-col gap-3">
+											<h4 className="text-sm font-bold text-emerald-950 dark:text-emerald-200 m-0 flex items-center gap-2">
+												<Percent size={16} className="text-emerald-600 dark:text-emerald-400" />
+												<span>Финансовая аргументация и вычет 13% НДФЛ:</span>
+											</h4>
+											<div className="text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
+												{aiAuditResult.financialArgumentation.ndflDeduction.explanation}
+											</div>
+											<div className="grid grid-cols-2 gap-3 pt-2 border-t border-emerald-500/20">
+												<div className="p-2.5 rounded-xl bg-[var(--tp-bg)] text-xs">
+													<div className="text-[10px] text-[var(--tp-text-muted)]">К возврату от ФНС:</div>
+													<div className="text-base font-black text-emerald-600 dark:text-emerald-400">
+														+{aiAuditResult.financialArgumentation.ndflDeduction.totalRefundRub.toLocaleString("ru-RU")} ₽
+													</div>
+												</div>
+												<div className="p-2.5 rounded-xl bg-[var(--tp-bg)] text-xs">
+													<div className="text-[10px] text-[var(--tp-text-muted)]">Чистая стоимость:</div>
+													<div className="text-base font-black text-[var(--tp-text-main)]">
+														{aiAuditResult.financialArgumentation.ndflDeduction.netPriceWithRefundRub.toLocaleString("ru-RU")} ₽
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							)}
 						</div>
 					)}
 				</main>

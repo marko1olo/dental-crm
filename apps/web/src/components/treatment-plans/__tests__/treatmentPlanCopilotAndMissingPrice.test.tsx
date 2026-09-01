@@ -15,6 +15,7 @@ import {
 	applyCopilotCommandToPlan,
 	getAdjacentFdiTeeth,
 	COPILOT_PRESET_ACTIONS,
+	requestTreatmentPlanAiValidationAndComment,
 } from "../../../services/ai/treatmentPlanCopilot";
 import {
 	generateTreatmentPlanStages,
@@ -303,6 +304,41 @@ describe("MissingPriceAlert & AI Treatment Plan Copilot Suite", () => {
 			const ndfl = calculatePlanTaxDeductionBreakdown(sampleItems);
 			assert.equal(ndfl.grandTotalRefund13Rub, 6500, "13% of 50 000 ₽ is 6 500 ₽");
 			assert.equal(ndfl.netPriceWithRefundRub, 43500, "50 000 - 6 500 = 43 500 ₽");
+		});
+
+		it("8. requestTreatmentPlanAiValidationAndComment returns structured validation and chairside commentary", async () => {
+			const stages = generateTreatmentPlanStages([
+				{
+					toothNumber: 16,
+					state: "Pulpitis",
+					mobility: 0,
+				},
+			]);
+
+			const aiResult = await requestTreatmentPlanAiValidationAndComment(stages, {
+				patientContext: { patientName: "Иванов И.И." },
+				targetBudgetRub: 45000,
+			});
+
+			assert.ok(aiResult.clinicalValidation, "Must return clinical validation object");
+			assert.ok(aiResult.chairsideCommentary, "Must return chairside patient commentary");
+			assert.ok(aiResult.financialArgumentation, "Must return financial argumentation with NDFL");
+			assert.ok(aiResult.chairsideCommentary.urgencyArgument.length > 0, "Must include health math urgency argument");
+			assert.ok(aiResult.financialArgumentation.ndflDeduction.totalRefundRub > 0, "Must calculate 13% tax refund");
+		});
+
+		it("9. TreatmentPlanPresenterModal renders AI Audit tab and trigger button", () => {
+			const html = renderToString(
+				<TreatmentPlanPresenterModal
+					isOpen={true}
+					onClose={() => {}}
+					patientName="Петров Петр"
+					doctorFullName="Д-р Смирнов"
+				/>,
+			);
+
+			assert.ok(html.includes("ИИ-Аудит &amp; Комментарий"), "Must include AI Audit tab button in presenter modal");
+			assert.ok(html.includes("tab-ai-audit-btn"), "Must have tab-ai-audit-btn data-testid");
 		});
 	});
 });

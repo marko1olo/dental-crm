@@ -329,3 +329,147 @@ export function recalculateTreatmentPlanTotals(
 		completionPercentage,
 	};
 }
+
+// ─── 4. TREATMENT PLAN AI VALIDATION & COMMENTARY SCHEMAS ───────────────────
+
+export const treatmentPlanValidationItemSchema = z.object({
+	id: z.string(),
+	toothNumber: z.number().int().min(11).max(85).nullable().optional(),
+	code804n: z.string().default(""),
+	name: z.string().min(1),
+	category: z.string().default("Общее"),
+	priceRub: z.number().nonnegative().default(0),
+	unitPriceRub: z.number().nonnegative().optional(),
+	quantity: z.number().positive().default(1),
+	materials: z.string().optional(),
+	clinicalRationale: z.string().optional(),
+	requiresManualPricing: z.boolean().optional(),
+});
+export type TreatmentPlanValidationItem = z.infer<typeof treatmentPlanValidationItemSchema>;
+
+export const treatmentPlanValidationStageSchema = z.object({
+	stageNumber: z.number().int().min(1).max(10),
+	title: z.string().trim().min(1),
+	clinicalGoal: z.string().trim().optional(),
+	stageKind: z.string().optional(),
+	estimatedWeeks: z.number().optional(),
+	estimatedVisits: z.number().optional(),
+	totalRub: z.number().nonnegative().default(0),
+	items: z.array(treatmentPlanValidationItemSchema).default([]),
+});
+export type TreatmentPlanValidationStage = z.infer<typeof treatmentPlanValidationStageSchema>;
+
+export const treatmentPlanValidateAndCommentRequestSchema = z.object({
+	stages: z.array(treatmentPlanValidationStageSchema).min(1),
+	patientContext: z
+		.object({
+			patientId: z.string().optional(),
+			patientName: z.string().optional(),
+			diagnosisSummary: z.string().optional(),
+			clinicalReason: z.string().optional(),
+			complaint: z.string().optional(),
+		})
+		.optional(),
+	targetBudgetRub: z.number().positive().optional(),
+	installmentMonths: z.union([z.literal(3), z.literal(6), z.literal(12), z.literal(24), z.number()]).optional(),
+	doctorFullName: z.string().optional(),
+	doctorSpecialty: z.string().optional(),
+	clinicName: z.string().optional(),
+	userPrompt: z.string().optional(),
+});
+export type TreatmentPlanValidateAndCommentRequest = z.infer<
+	typeof treatmentPlanValidateAndCommentRequestSchema
+>;
+
+export const starComplianceStatusSchema = z.enum([
+	"FULL_COMPLIANCE",
+	"COMPLIANT_WITH_RECOMMENDATIONS",
+	"NON_COMPLIANT_DEFECTS",
+]);
+export type StarComplianceStatus = z.infer<typeof starComplianceStatusSchema>;
+
+export const anatomicalCheckSeveritySchema = z.enum(["pass", "warning", "error"]);
+export type AnatomicalCheckSeverity = z.infer<typeof anatomicalCheckSeveritySchema>;
+
+export const treatmentPlanAnatomicalCheckSchema = z.object({
+	toothNumber: z.number().int().min(11).max(85).optional(),
+	rule: z.string(),
+	status: anatomicalCheckSeveritySchema,
+	message: z.string(),
+	recommendation: z.string().optional(),
+	code804nRelated: z.array(z.string()).optional(),
+});
+export type TreatmentPlanAnatomicalCheck = z.infer<typeof treatmentPlanAnatomicalCheckSchema>;
+
+export const treatmentPlanValidateAndCommentResponseSchema = z.object({
+	clinicalValidation: z.object({
+		overallStatus: starComplianceStatusSchema,
+		complianceScorePercent: z.number().min(0).max(100),
+		totalChecksCount: z.number().int().nonnegative(),
+		passedChecksCount: z.number().int().nonnegative(),
+		warningsCount: z.number().int().nonnegative(),
+		errorsCount: z.number().int().nonnegative(),
+		criticalWarnings: z.array(z.string()),
+		clinicalRecommendations: z.array(z.string()),
+		anatomicalChecks: z.array(treatmentPlanAnatomicalCheckSchema),
+	}),
+	chairsideCommentary: z.object({
+		patientFriendlySummary: z.string(),
+		urgencyArgument: z.string(),
+		hygieneAndCareAdvice: z.string(),
+		stageByStageExplanation: z.array(
+			z.object({
+				stageNumber: z.number().int(),
+				stageTitle: z.string(),
+				plainRussianDescription: z.string(),
+				patientBenefit: z.string(),
+			}),
+		),
+	}),
+	financialArgumentation: z.object({
+		totalRub: z.number().nonnegative(),
+		ndflDeduction: z.object({
+			code01AmountRub: z.number().nonnegative(),
+			code01RefundRub: z.number().nonnegative(),
+			code02AmountRub: z.number().nonnegative(),
+			code02RefundRub: z.number().nonnegative(),
+			totalRefundRub: z.number().nonnegative(),
+			netPriceWithRefundRub: z.number().nonnegative(),
+			explanation: z.string(),
+		}),
+		installments: z.record(
+			z.string(),
+			z.object({
+				months: z.number().int(),
+				monthlyPaymentRub: z.number().nonnegative(),
+				totalPaymentRub: z.number().nonnegative(),
+				overpaymentRub: z.literal(0),
+			}),
+		),
+		stagedPaymentSchedule: z.object({
+			stage1AdvanceRub: z.number().nonnegative(),
+			stage2SurgicalRub: z.number().nonnegative(),
+			stage3FinalRub: z.number().nonnegative(),
+			explanation: z.string(),
+		}),
+	}),
+	copilotSuggestions: z.object({
+		budgetOptimizationAdvice: z.string().optional(),
+		suggestedModifications: z.array(
+			z.object({
+				type: z.string(),
+				title: z.string(),
+				description: z.string(),
+				estimatedDeltaRub: z.number(),
+			}),
+		),
+		modifiedStages: z.array(z.any()).optional(),
+	}),
+	modelUsed: z.string().optional(),
+	providerUsed: z.string().optional(),
+	validatedAtIso: z.string(),
+});
+export type TreatmentPlanValidateAndCommentResponse = z.infer<
+	typeof treatmentPlanValidateAndCommentResponseSchema
+>;
+

@@ -43,7 +43,7 @@ export const drugSafetyAuditInputSchema = z.object({
 	patientAgeYears: z.number().optional(),
 	patientWeightKg: z.number().optional(),
 });
-export type DrugSafetyAuditInput = z.infer<typeof drugSafetyAuditInputSchema>;
+export type DrugSafetyAuditInput = z.input<typeof drugSafetyAuditInputSchema>;
 
 export interface ClinicalAllergyWarning {
 	readonly allergenGroup: string;
