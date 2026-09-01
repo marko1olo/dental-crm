@@ -397,6 +397,249 @@ html.dark .snk-close-btn {
 	background: var(--paper, #1e293b);
 	border-color: var(--line, #334155);
 	color: var(--muted, #94a3b8);
+/* ─── Web Camera Live Viewfinder & Scanner Overlay ─── */
+.snk-camera-section {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	width: 100%;
+}
+
+.snk-camera-viewfinder {
+	position: relative;
+	width: 100%;
+	height: 280px;
+	border-radius: 20px;
+	overflow: hidden;
+	background: #000000;
+	border: 2px solid var(--line, #cbd5e1);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.snk-camera-video {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.snk-camera-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem;
+	pointer-events: none;
+	background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.snk-scan-target {
+	position: relative;
+	width: 200px;
+	height: 200px;
+	border: 2px solid rgba(255, 255, 255, 0.35);
+	border-radius: 16px;
+	box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+}
+
+.snk-scan-corner {
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	border-color: #14b8a6;
+	border-style: solid;
+	border-width: 0;
+}
+
+.snk-scan-corner.tl {
+	top: 0;
+	left: 0;
+	border-top-width: 4px;
+	border-left-width: 4px;
+	border-top-left-radius: 12px;
+}
+
+.snk-scan-corner.tr {
+	top: 0;
+	right: 0;
+	border-top-width: 4px;
+	border-right-width: 4px;
+	border-top-right-radius: 12px;
+}
+
+.snk-scan-corner.bl {
+	bottom: 0;
+	left: 0;
+	border-bottom-width: 4px;
+	border-left-width: 4px;
+	border-bottom-left-radius: 12px;
+}
+
+.snk-scan-corner.br {
+	bottom: 0;
+	right: 0;
+	border-bottom-width: 4px;
+	border-right-width: 4px;
+	border-bottom-right-radius: 12px;
+}
+
+.snk-scan-laser {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: linear-gradient(90deg, transparent 0%, #14b8a6 50%, transparent 100%);
+	box-shadow: 0 0 12px #14b8a6, 0 0 24px #14b8a6;
+	animation: snkLaserScan 2s ease-in-out infinite;
+}
+
+.snk-camera-hint-pill {
+	background: rgba(15, 23, 42, 0.85);
+	color: #ffffff;
+	font-size: 0.8rem;
+	font-weight: 700;
+	padding: 0.35rem 0.85rem;
+	border-radius: 20px;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.snk-camera-controls {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	width: 100%;
+}
+
+.snk-camera-ctrl-btn {
+	flex: 1;
+	min-height: 44px;
+	padding: 0.5rem 1rem;
+	border-radius: 12px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	font-size: 0.88rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.snk-camera-ctrl-btn:hover {
+	background: var(--paper-strong, #f1f5f9);
+	border-color: #0d9488;
+}
+
+.snk-camera-ctrl-btn.active {
+	background: #0d9488;
+	color: #ffffff;
+	border-color: #0d9488;
+}
+
+/* ─── Polite Camera Denied / Error Card ─── */
+.snk-camera-denied-card {
+	border-radius: 18px;
+	padding: 1.25rem;
+	background: rgba(245, 158, 11, 0.08);
+	border: 2px dashed rgba(245, 158, 11, 0.4);
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.snk-denied-head {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.snk-denied-icon {
+	color: #d97706;
+	flex-shrink: 0;
+}
+
+.snk-denied-title {
+	font-size: 1.05rem;
+	font-weight: 800;
+	color: #b45309;
+	margin: 0;
+}
+
+.snk-denied-text {
+	font-size: 0.88rem;
+	line-height: 1.4;
+	color: var(--ink, #0f172a);
+	margin: 0;
+}
+
+.snk-denied-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.25rem;
+}
+
+.snk-denied-retry-btn {
+	min-height: 40px;
+	padding: 0.4rem 1rem;
+	border-radius: 10px;
+	border: 1px solid #d97706;
+	background: #d97706;
+	color: #ffffff;
+	font-size: 0.85rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.snk-denied-retry-btn:hover {
+	background: #b45309;
+}
+
+/* ── Dark Mode & OLED Night Overrides (WCAG AA >= 4.5:1) ── */
+[data-theme="dark"] .snk-modal,
+[data-theme="night"] .snk-modal,
+[data-theme="oled"] .snk-modal,
+html.dark .snk-modal {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .snk-header,
+[data-theme="night"] .snk-header,
+[data-theme="oled"] .snk-header,
+html.dark .snk-header {
+	background: var(--paper-soft, #1e293b);
+	border-bottom-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .snk-title,
+[data-theme="night"] .snk-title,
+[data-theme="oled"] .snk-title,
+html.dark .snk-title {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .snk-close-btn,
+[data-theme="night"] .snk-close-btn,
+[data-theme="oled"] .snk-close-btn,
+html.dark .snk-close-btn {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--muted, #94a3b8);
 }
 
 [data-theme="dark"] .snk-close-btn:hover,
@@ -423,6 +666,44 @@ html.dark .snk-text-input {
 	background: var(--paper, #1e293b);
 	border-color: var(--line, #334155);
 	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .snk-camera-ctrl-btn,
+[data-theme="night"] .snk-camera-ctrl-btn,
+[data-theme="oled"] .snk-camera-ctrl-btn,
+html.dark .snk-camera-ctrl-btn {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .snk-camera-ctrl-btn:hover,
+[data-theme="night"] .snk-camera-ctrl-btn:hover,
+[data-theme="oled"] .snk-camera-ctrl-btn:hover,
+html.dark .snk-camera-ctrl-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .snk-camera-denied-card,
+[data-theme="night"] .snk-camera-denied-card,
+[data-theme="oled"] .snk-camera-denied-card,
+html.dark .snk-camera-denied-card {
+	background: rgba(245, 158, 11, 0.12);
+	border-color: rgba(245, 158, 11, 0.5);
+}
+
+[data-theme="dark"] .snk-denied-title,
+[data-theme="night"] .snk-denied-title,
+[data-theme="oled"] .snk-denied-title,
+html.dark .snk-denied-title {
+	color: #fbbf24;
+}
+
+[data-theme="dark"] .snk-denied-text,
+[data-theme="night"] .snk-denied-text,
+[data-theme="oled"] .snk-denied-text,
+html.dark .snk-denied-text {
+	color: #f8fafc;
 }
 
 [data-theme="dark"] .snk-package-info-grid,
@@ -477,4 +758,10 @@ html.dark .snk-btn-secondary:hover {
 @keyframes snkPulse {
 	from { transform: scale(1); }
 	to { transform: scale(1.02); }
+}
+
+@keyframes snkLaserScan {
+	0% { top: 0%; opacity: 0.8; }
+	50% { top: 96%; opacity: 1; }
+	100% { top: 0%; opacity: 0.8; }
 }

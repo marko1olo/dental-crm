@@ -15,6 +15,7 @@ import {
 	Coins,
 	Copy,
 	CreditCard,
+	Download,
 	Eye,
 	FileCheck,
 	FileText,
@@ -270,6 +271,52 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			setIsProcessing(false);
 			inFlightRef.current = false;
 		}
+	};
+
+	const buildPrintPayload = (): FiscalReceiptPrintPayload => {
+		return {
+			operationType,
+			items: effectiveItems.map((it) => ({
+				name: it.name,
+				priceRub: it.priceRub,
+				quantity: it.quantity,
+				amountRub: it.priceRub * it.quantity - (it.discountRub || 0),
+				medicalServiceCode804n: it.code804n || undefined,
+				markingCode: it.markingCode || undefined,
+			})),
+			totalRub: totalInvoiceRub,
+			electronicRub: selectedTender === "card" ? totalInvoiceRub : splitCardRub,
+			cashRub: selectedTender === "cash" ? totalInvoiceRub : splitCashRub,
+			sbpRub: selectedTender === "sbp" ? totalInvoiceRub : splitSbpRub,
+			prepaidRub:
+				selectedTender === "deposit" || selectedTender === "family"
+					? totalInvoiceRub
+					: splitDepositRub + splitFamilyRub,
+			cashierFullName,
+			cashierInn: "7701234567",
+			clinicName,
+			customerContact: patientPhone || patientName,
+		};
+	};
+
+	const handlePrintThermalReceipt = async () => {
+		const payload = buildPrintPayload();
+		try {
+			const res = await hardwarePrinter.printFiscalReceipt(payload);
+			if (res.success) {
+				setToastMsg("Чек успешно отправлен на печать");
+			} else {
+				setToastMsg(res.error || "Ошибка отправки чека на печать");
+			}
+		} catch {
+			setToastMsg("Ошибка печати чека");
+		}
+	};
+
+	const handleDownloadThermalReceipt = () => {
+		const payload = buildPrintPayload();
+		hardwarePrinter.downloadPrintableReceipt(payload, `check_54fz_${Date.now()}.html`);
+		setToastMsg("Файл кассового чека загружен");
 	};
 
 	const primaryInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -783,43 +830,68 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 					)}
 
 					{activeTab === "thermal" && (
-						<div className="max-w-md mx-auto p-4 sm:p-6 rounded-2xl border-2 border-dashed border-[var(--line)] bg-[var(--paper)] font-mono text-xs space-y-2.5 shadow-inner">
-							<div className="text-center pb-2 border-b border-[var(--line)]">
-								<div className="font-bold text-sm uppercase">{clinicName}</div>
-								<div className="text-[10px] text-[var(--muted)]">ИНН: {clinicInn} • Лицензия: {clinicLicense}</div>
-								<div className="font-bold text-xs mt-1 text-teal-700 dark:text-teal-300">
-									КАССОВЫЙ ЧЕК / {operationType === "income" ? "ПРИХОД" : "ВОЗВРАТ ПРИХОДА"}
-								</div>
+						<div className="max-w-md mx-auto space-y-3" data-testid="cash-thermal-view">
+							{/* 1-Click Print & Download Toolbar */}
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={handlePrintThermalReceipt}
+									className="flex-1 min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shadow-xs"
+									data-testid="btn-print-thermal-receipt"
+								>
+									<Printer className="w-4 h-4" />
+									<span>Напечатать термочек (54-ФЗ)</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleDownloadThermalReceipt}
+									className="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+									data-testid="btn-download-thermal-receipt"
+									title="Скачать чек в формате HTML"
+								>
+									<Download className="w-4 h-4" />
+									<span>Скачать HTML</span>
+								</button>
 							</div>
 
-							<div className="space-y-1 divide-y divide-[var(--line)]/40">
-								{effectiveItems.map((it, idx) => (
-									<div key={idx} className="pt-1 flex justify-between">
-										<div className="flex-1 pr-2 truncate">
-											{idx + 1}. {it.name}
-										</div>
-										<div className="font-bold shrink-0">
-											{(it.priceRub * it.quantity).toFixed(2)} ₽
-										</div>
+							<div className="p-4 sm:p-6 rounded-2xl border-2 border-dashed border-[var(--line)] bg-[var(--paper)] font-mono text-xs space-y-2.5 shadow-inner">
+								<div className="text-center pb-2 border-b border-[var(--line)]">
+									<div className="font-bold text-sm uppercase">{clinicName}</div>
+									<div className="text-[10px] text-[var(--muted)]">ИНН: {clinicInn} • Лицензия: {clinicLicense}</div>
+									<div className="font-bold text-xs mt-1 text-teal-700 dark:text-teal-300">
+										КАССОВЫЙ ЧЕК / {operationType === "income" ? "ПРИХОД" : "ВОЗВРАТ ПРИХОДА"}
 									</div>
-								))}
-							</div>
-
-							<div className="pt-2 border-t-2 border-[var(--line)] space-y-1 font-bold">
-								<div className="flex justify-between text-sm">
-									<span>ИТОГ:</span>
-									<span>{totalInvoiceRub.toFixed(2)} ₽</span>
 								</div>
-								<div className="flex justify-between text-[11px] text-[var(--muted)]">
-									<span>СНО: УСН Доходы (0% НДС)</span>
-									<span>БЕЗ НДС</span>
-								</div>
-							</div>
 
-							<div className="pt-2 border-t border-[var(--line)] text-[10px] text-[var(--muted)] space-y-0.5">
-								<div>ФН: 9960440301849201</div>
-								<div>ФД: {fiscalSuccessReceipt?.fiscalDocNumber || 1042} • ФП: {fiscalSuccessReceipt?.fiscalSign || "3849102948"}</div>
-								<div>Сайт ФНС: www.nalog.gov.ru</div>
+								<div className="space-y-1 divide-y divide-[var(--line)]/40">
+									{effectiveItems.map((it, idx) => (
+										<div key={idx} className="pt-1 flex justify-between">
+											<div className="flex-1 pr-2 truncate">
+												{idx + 1}. {it.name}
+											</div>
+											<div className="font-bold shrink-0">
+												{(it.priceRub * it.quantity).toFixed(2)} ₽
+											</div>
+										</div>
+									))}
+								</div>
+
+								<div className="pt-2 border-t-2 border-[var(--line)] space-y-1 font-bold">
+									<div className="flex justify-between text-sm">
+										<span>ИТОГ:</span>
+										<span>{totalInvoiceRub.toFixed(2)} ₽</span>
+									</div>
+									<div className="flex justify-between text-[11px] text-[var(--muted)]">
+										<span>СНО: УСН Доходы (0% НДС)</span>
+										<span>БЕЗ НДС</span>
+									</div>
+								</div>
+
+								<div className="pt-2 border-t border-[var(--line)] text-[10px] text-[var(--muted)] space-y-0.5">
+									<div>ФН: 9960440301849201</div>
+									<div>ФД: {fiscalSuccessReceipt?.fiscalDocNumber || 1042} • ФП: {fiscalSuccessReceipt?.fiscalSign || "3849102948"}</div>
+									<div>Сайт ФНС: www.nalog.gov.ru</div>
+								</div>
 							</div>
 						</div>
 					)}

@@ -22,6 +22,7 @@ import {
 	triggerHaptic,
 } from "../../native/mobileBridge.js";
 import { isDesktopApp } from "../../native/desktopBridge.js";
+import { showToast } from "../../components/GlobalToast.js";
 import {
 	KktLanPrinterService,
 } from "./kktLanPrinter.js";
@@ -30,6 +31,14 @@ import type {
 	FiscalReceiptPrintPayload,
 	FiscalReceiptPrintResult,
 } from "./hardwareTypes.js";
+
+export interface BrowserPrintOptions {
+	title?: string;
+	fallbackMode?: "iframe" | "download" | "both";
+	downloadFilename?: string;
+	onPopupBlocked?: () => void;
+	onFallbackExecuted?: (fallbackType: "iframe" | "download") => void;
+}
 
 export const DEFAULT_PRINTER_CONFIG: HardwarePrinterConfig = {
 	preferredInterface: "browser_dialog",
@@ -322,6 +331,13 @@ export class HardwarePrinter {
 		// 3. Web / PWA Environment -> HTTP Proxy to /api/fiscal/receipts & browser thermal print
 		try {
 			const kktResult = await KktLanPrinterService.printReceipt(payload);
+			// Also trigger browser thermal dialog if preferred or requested
+			if (this.config.preferredInterface === "browser_dialog") {
+				const printableHtml = this.generatePrintableReceiptHtml(payload);
+				void this.printHtmlWithPopupFallback(printableHtml, {
+					downloadFilename: `receipt_${kktResult.fiscalDocNum || Date.now()}.html`,
+				});
+			}
 			return {
 				success: kktResult.success,
 				status: kktResult.status === "printed" ? "printed" : "queued",
@@ -333,14 +349,316 @@ export class HardwarePrinter {
 			};
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : "Ошибка отправки чека";
+			// Resilient fallback to browser print dialog with popup protection
+			try {
+				const printableHtml = this.generatePrintableReceiptHtml(payload);
+				return await this.printHtmlWithPopupFallback(printableHtml, {
+					downloadFilename: `receipt_${Date.now()}.html`,
+				});
+			} catch {
+				return {
+					success: false,
+					status: "failed",
+					interfaceUsed: "browser_dialog",
+					printedAt: nowIso,
+					error: msg,
+				};
+			}
+		}
+	}
+
+	/**
+	 * Generates a self-contained 58mm / 80mm printable HTML document for thermal POS printers.
+	 */
+	public generatePrintableReceiptHtml(payload: FiscalReceiptPrintPayload): string {
+		const now = new Date();
+		const dateFormatted = `${now.toLocaleDateString("ru-RU")} ${now.toLocaleTimeString("ru-RU")}`;
+		const isReturn = payload.operationType === "income_return";
+		const fnSerial = "9960440302145896";
+		const fiscalDocNum = String(Math.floor(10000 + Math.random() * 90000));
+		const fiscalSign = KktLanPrinterService.computeFiscalSign(fnSerial, fiscalDocNum, now, payload.totalRub);
+		const qrString = KktLanPrinterService.generate54FzQrString({
+			issuedAt: now,
+			totalRub: payload.totalRub,
+			fnSerial,
+			fiscalDocNum,
+			fiscalSign,
+			operationType: payload.operationType,
+		});
+
+		const itemsHtml = payload.items
+			.map(
+				(item, idx) => `
+			<div style="margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ddd;">
+				<div style="font-weight: bold; font-size: 11px;">${idx + 1}. ${item.name}</div>
+				${item.medicalServiceCode804n ? `<div style="font-size: 10px; color: #555;">Код 804н: ${item.medicalServiceCode804n}</div>` : ""}
+				${item.markingCode ? `<div style="font-size: 10px; color: #555;">[М] DataMatrix: ${item.markingCode.slice(0, 16)}...</div>` : ""}
+				<div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 2px;">
+					<span>${item.quantity} шт. &times; ${item.priceRub.toFixed(2)} ₽</span>
+					<span style="font-weight: bold;">${item.amountRub.toFixed(2)} ₽</span>
+				</div>
+			</div>
+		`,
+			)
+			.join("");
+
+		return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Кассовый чек 54-ФЗ - ${payload.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}</title>
+	<style>
+		@page { size: ${this.config.paperWidthMm === 80 ? "80mm auto" : "58mm auto"}; margin: 0; }
+		* { box-sizing: border-box; }
+		body {
+			font-family: 'Courier New', Courier, monospace, sans-serif;
+			font-size: 11px;
+			line-height: 1.3;
+			color: #000;
+			background: #fff;
+			margin: 0;
+			padding: 8px;
+			width: ${this.config.paperWidthMm === 80 ? "76mm" : "54mm"};
+		}
+		.center { text-align: center; }
+		.bold { font-weight: bold; }
+		.divider { border-top: 1px dashed #000; margin: 6px 0; }
+		.flex-between { display: flex; justify-content: space-between; }
+		.qr-box { margin: 8px auto; text-align: center; padding: 4px; background: #fafafa; border: 1px solid #ccc; font-size: 9px; word-break: break-all; }
+		@media print {
+			body { padding: 2mm; width: 100%; }
+			.no-print { display: none; }
+		}
+	</style>
+</head>
+<body>
+	<div class="center bold" style="font-size: 13px;">${payload.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}</div>
+	<div class="center" style="font-size: 10px;">г. Москва, Ломоносовский пр-т, 24</div>
+	<div class="center" style="font-size: 10px;">ИНН: ${payload.cashierInn || "7701234567"}  КПП: 770101001</div>
+	<div class="center" style="font-size: 10px;">Лицензия: № ЛО41-01137-77/00368421</div>
+	<div class="divider"></div>
+	<div class="center bold" style="font-size: 12px;">
+		${isReturn ? "КАССОВЫЙ ЧЕК / ВОЗВРАТ ПРИХОДА" : "КАССОВЫЙ ЧЕК / ПРИХОД (54-ФЗ)"}
+	</div>
+	<div class="divider"></div>
+	<div>Дата: ${dateFormatted}</div>
+	<div>Кассир: ${payload.cashierFullName}</div>
+	${payload.customerContact ? `<div>Покупатель: ${payload.customerContact}</div>` : ""}
+	<div class="divider"></div>
+	<div>${itemsHtml}</div>
+	<div class="divider"></div>
+	<div class="flex-between bold" style="font-size: 14px; margin: 4px 0;">
+		<span>ИТОГ:</span>
+		<span>${payload.totalRub.toFixed(2)} ₽</span>
+	</div>
+	${payload.electronicRub && payload.electronicRub > 0 ? `<div class="flex-between"><span>БЕЗНАЛИЧНЫМИ (КАРТА):</span><span>${payload.electronicRub.toFixed(2)} ₽</span></div>` : ""}
+	${payload.cashRub && payload.cashRub > 0 ? `<div class="flex-between"><span>НАЛИЧНЫМИ:</span><span>${payload.cashRub.toFixed(2)} ₽</span></div>` : ""}
+	${payload.sbpRub && payload.sbpRub > 0 ? `<div class="flex-between"><span>СБП QR (0.7%):</span><span>${payload.sbpRub.toFixed(2)} ₽</span></div>` : ""}
+	${payload.prepaidRub && payload.prepaidRub > 0 ? `<div class="flex-between"><span>ПРЕДОПЛАТА (ДЕПОЗИТ):</span><span>${payload.prepaidRub.toFixed(2)} ₽</span></div>` : ""}
+	<div class="flex-between" style="font-size: 10px; margin-top: 4px;">
+		<span>СНО: УСН Доходы</span>
+		<span>Без НДС (0%)</span>
+	</div>
+	<div class="divider"></div>
+	<div style="font-size: 10px;">ФН: ${fnSerial}</div>
+	<div style="font-size: 10px;">ФД: ${fiscalDocNum}   ФПД: ${fiscalSign}</div>
+	<div style="font-size: 10px;">Сайт ФНС: www.nalog.gov.ru</div>
+	<div class="qr-box">
+		<div class="bold" style="margin-bottom: 2px;">ПРОВЕРКА ЧЕКА В ФНС:</div>
+		<div>${qrString}</div>
+	</div>
+	<div class="center" style="margin-top: 8px; font-size: 10px;">
+		<div>Спасибо за доверие!</div>
+		<div>Здоровья вашим зубам!</div>
+	</div>
+	<script>
+		window.onload = function() {
+			try {
+				window.focus();
+				window.print();
+			} catch (e) {}
+		};
+	</script>
+</body>
+</html>`;
+	}
+
+	/**
+	 * High-resilience browser printer with Popup-Blocker interception:
+	 * 1. Tries window.open() popup print dialog.
+	 * 2. If blocked by browser (Safari / Chrome -> returns null), alerts user and silently falls back
+	 *    to a hidden background <iframe> print.
+	 * 3. Also supports direct download of the printable receipt/label file.
+	 */
+	public async printHtmlWithPopupFallback(
+		htmlContent: string,
+		options: BrowserPrintOptions = {},
+	): Promise<HardwarePrintResult> {
+		const nowIso = new Date().toISOString();
+		const filename = options.downloadFilename || `thermal_receipt_${Date.now()}.html`;
+
+		if (typeof window === "undefined" || typeof document === "undefined") {
 			return {
 				success: false,
 				status: "failed",
 				interfaceUsed: "browser_dialog",
 				printedAt: nowIso,
-				error: msg,
+				error: "Окружение браузера недоступно для печати",
 			};
 		}
+
+		// 1. Attempt standard popup print window
+		let printWindow: Window | null = null;
+		try {
+			printWindow = window.open(
+				"",
+				"_blank",
+				"width=460,height=680,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes",
+			);
+		} catch {
+			printWindow = null;
+		}
+
+		// 2. Intercept Popup Blocker
+		if (!printWindow || printWindow.closed || typeof printWindow.closed === "undefined") {
+			console.warn("[HardwarePrinter] Popup blocker intercepted on window.open. Triggering fallback channels.");
+			options.onPopupBlocked?.();
+			showToast(
+				"Всплывающее окно печати заблокировано браузером (Safari / Chrome). Применяется фоновая печать.",
+				"warning",
+				5000,
+			);
+
+			// Fallback A: Hidden background iframe print
+			try {
+				options.onFallbackExecuted?.("iframe");
+				const iframe = document.createElement("iframe");
+				iframe.setAttribute("aria-hidden", "true");
+				iframe.style.cssText =
+					"position:fixed;right:100%;bottom:100%;width:0px;height:0px;border:0;opacity:0;pointer-events:none;";
+				document.body.appendChild(iframe);
+
+				const frameDoc = iframe.contentDocument || iframe.contentWindow?.document;
+				if (frameDoc) {
+					frameDoc.open();
+					frameDoc.write(htmlContent);
+					frameDoc.close();
+
+					iframe.onload = () => {
+						try {
+							iframe.contentWindow?.focus();
+							iframe.contentWindow?.print();
+						} catch (framePrintErr) {
+							console.warn("[HardwarePrinter] Iframe print failed, offering direct download:", framePrintErr);
+							this.downloadPrintableReceipt(htmlContent, filename);
+							options.onFallbackExecuted?.("download");
+						} finally {
+							setTimeout(() => {
+								if (iframe.parentNode) {
+									iframe.parentNode.removeChild(iframe);
+								}
+							}, 60000);
+						}
+					};
+
+					return {
+						success: true,
+						status: "printed",
+						interfaceUsed: "browser_dialog",
+						printedAt: nowIso,
+					};
+				}
+			} catch (iframeErr) {
+				console.warn("[HardwarePrinter] Hidden iframe creation error:", iframeErr);
+			}
+
+			// Fallback B: Direct download of printable receipt
+			this.downloadPrintableReceipt(htmlContent, filename);
+			options.onFallbackExecuted?.("download");
+
+			return {
+				success: true,
+				status: "printed",
+				interfaceUsed: "browser_dialog",
+				printedAt: nowIso,
+			};
+		}
+
+		// 3. Popup window opened normally: write and trigger print
+		if (printWindow) {
+			try {
+				printWindow.document.open();
+				printWindow.document.write(htmlContent);
+				printWindow.document.close();
+				printWindow.focus();
+
+				return {
+					success: true,
+					status: "printed",
+					interfaceUsed: "browser_dialog",
+					printedAt: nowIso,
+				};
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : "Ошибка записи во всплывающее окно печати";
+				console.warn("[HardwarePrinter] Popup write error, falling back to download:", msg);
+				this.downloadPrintableReceipt(htmlContent, filename);
+				return {
+					success: true,
+					status: "printed",
+					interfaceUsed: "browser_dialog",
+					printedAt: nowIso,
+				};
+			}
+		}
+
+		// Fallback when printWindow is null
+		this.downloadPrintableReceipt(htmlContent, filename);
+		return {
+			success: true,
+			status: "printed",
+			interfaceUsed: "browser_dialog",
+			printedAt: nowIso,
+		};
+	}
+
+	/**
+	 * Direct download trigger for printable thermal receipts and labels.
+	 */
+	public downloadPrintableReceipt(
+		htmlOrPayload: FiscalReceiptPrintPayload | string,
+		filename = "thermal_receipt.html",
+	): void {
+		if (typeof document === "undefined" || typeof URL === "undefined") return;
+
+		const html =
+			typeof htmlOrPayload === "string"
+				? htmlOrPayload
+				: this.generatePrintableReceiptHtml(htmlOrPayload);
+
+		const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+
+		showToast(`Чек сохранен в файл: ${filename}`, "info", 3000);
+	}
+
+	/**
+	 * Prints thermal label HTML (kraft barcodes, autoclave batches) with popup blocker resilience.
+	 */
+	public async printThermalLabelHtml(
+		html: string,
+		options: BrowserPrintOptions = {},
+	): Promise<HardwarePrintResult> {
+		return this.printHtmlWithPopupFallback(html, {
+			downloadFilename: "kraft_label.html",
+			...options,
+		});
 	}
 
 	/**

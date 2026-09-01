@@ -57,6 +57,8 @@ const TOOTH_SHORT_CODES: Record<ToothState, { code: string; dotColor: string }> 
 	Implant: { code: "Имп", dotColor: "#f59e0b" },
 	Planned_Implant: { code: "ПлИ", dotColor: "#6366f1" },
 	Missing: { code: "Отс", dotColor: "#64748b" },
+	Retained: { code: "Рет", dotColor: "#a855f7" },
+	Root: { code: "Кор", dotColor: "#78716c" },
 };
 
 const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{

@@ -69,7 +69,7 @@ export class HardwareScanner {
 	private async initDetectorIfAvailable(): Promise<void> {
 		if (typeof window !== "undefined" && window.BarcodeDetector) {
 			try {
-				const formats = [
+				let supportedFormats = [
 					"data_matrix",
 					"qr_code",
 					"code_128",
@@ -78,7 +78,17 @@ export class HardwareScanner {
 					"code_39",
 					"upc_a",
 				];
-				this.barcodeDetectorInstance = new window.BarcodeDetector({ formats });
+				if (typeof window.BarcodeDetector.getSupportedFormats === "function") {
+					try {
+						const available = await window.BarcodeDetector.getSupportedFormats();
+						if (Array.isArray(available) && available.length > 0) {
+							supportedFormats = supportedFormats.filter((f) => available.includes(f));
+						}
+					} catch {}
+				}
+				this.barcodeDetectorInstance = new window.BarcodeDetector({
+					formats: supportedFormats.length > 0 ? supportedFormats : ["qr_code", "data_matrix", "code_128"],
+				});
 			} catch (err) {
 				console.warn("[HardwareScanner] BarcodeDetector init fallback:", err);
 			}
@@ -104,6 +114,21 @@ export class HardwareScanner {
 		}
 	}
 
+	/**
+	 * Enumerates all available video input devices (front/rear cameras, external USB scanners).
+	 */
+	public async getCameraDevices(): Promise<MediaDeviceInfo[]> {
+		if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
+			return [];
+		}
+		try {
+			const devices = await navigator.mediaDevices.enumerateDevices();
+			return devices.filter((d) => d.kind === "videoinput");
+		} catch {
+			return [];
+		}
+	}
+
 	public getState(): HardwareScannerState {
 		return this.state;
 	}
@@ -124,6 +149,7 @@ export class HardwareScanner {
 
 	/**
 	 * Starts the WebRTC camera stream on a specified <video> element.
+	 * Runs progressive constraint fallback (1080p continuous -> 720p -> standard -> default).
 	 * Runs a 60 FPS detection loop for 2D DataMatrix and barcodes.
 	 */
 	public async startCameraStream(
@@ -138,25 +164,77 @@ export class HardwareScanner {
 		const facingMode = options.facingMode ?? "environment";
 		const idealFps = options.targetFps ?? 60;
 
-		// Video constraints optimized for 60 FPS 2D DataMatrix scanning with autofocus
-		const constraints: MediaStreamConstraints = {
-			audio: false,
-			video: {
-				facingMode: { ideal: facingMode },
-				width: { ideal: 1920, min: 640 },
-				height: { ideal: 1080, min: 480 },
-				frameRate: { ideal: idealFps, min: 30 },
-				// @ts-expect-error advanced constraint focusMode is standard on mobile Chrome
-				advanced: [{ focusMode: "continuous" }],
+		if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+			const errText = "API камеры (getUserMedia) недоступно в данном браузере или среде выполнения (требуется HTTPS).";
+			this.state = "error";
+			this.emitError(errText, "CAMERA_NOT_SUPPORTED");
+			throw new Error(errText);
+		}
+
+		// Progressive constraint ladder to prevent OverconstrainedError on low-end cameras
+		const constraintLadder: MediaStreamConstraints[] = [
+			// Tier 1: Continuous autofocus + High-res 1080p @ 60 FPS (Clinical Ideal)
+			{
+				audio: false,
+				video: {
+					facingMode: { ideal: facingMode },
+					width: { ideal: 1920, min: 640 },
+					height: { ideal: 1080, min: 480 },
+					frameRate: { ideal: idealFps, min: 24 },
+					// @ts-expect-error advanced continuous focus constraint on mobile Chrome
+					advanced: [{ focusMode: "continuous" }],
+				},
 			},
-		};
+			// Tier 2: 720p @ 30 FPS
+			{
+				audio: false,
+				video: {
+					facingMode: { ideal: facingMode },
+					width: { ideal: 1280, min: 640 },
+					height: { ideal: 720, min: 480 },
+					frameRate: { ideal: 30 },
+				},
+			},
+			// Tier 3: Standard facingMode
+			{
+				audio: false,
+				video: {
+					facingMode: { ideal: facingMode },
+				},
+			},
+			// Tier 4: Basic video fallback
+			{
+				audio: false,
+				video: true,
+			},
+		];
+
+		let stream: MediaStream | null = null;
+		let lastError: unknown = null;
+
+		for (const constraints of constraintLadder) {
+			try {
+				stream = await navigator.mediaDevices.getUserMedia(constraints);
+				if (stream) break;
+			} catch (err: unknown) {
+				lastError = err;
+				// If user explicitly denied permission or security blocked, do not retry ladder
+				const errName = (err as { name?: string })?.name || "";
+				if (errName === "NotAllowedError" || errName === "PermissionDeniedError" || errName === "SecurityError") {
+					break;
+				}
+			}
+		}
+
+		if (!stream) {
+			this.state = "error";
+			const code = this.classifyCameraErrorCode(lastError);
+			const errorMsg = this.classifyCameraError(lastError);
+			this.emitError(errorMsg, code);
+			throw new Error(errorMsg);
+		}
 
 		try {
-			if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-				throw new Error("API камеры недоступно в данном браузере или среде выполнения.");
-			}
-
-			const stream = await navigator.mediaDevices.getUserMedia(constraints);
 			this.activeMediaStream = stream;
 			videoElement.srcObject = stream;
 			videoElement.setAttribute("playsinline", "true");
@@ -172,10 +250,11 @@ export class HardwareScanner {
 
 			this.startDetectionLoop(videoElement);
 			return stream;
-		} catch (err: unknown) {
+		} catch (playErr: unknown) {
 			this.state = "error";
-			const errorMsg = this.classifyCameraError(err);
-			this.emitError(errorMsg, (err as { name?: string })?.name || "CAMERA_ERROR");
+			const code = this.classifyCameraErrorCode(playErr);
+			const errorMsg = this.classifyCameraError(playErr);
+			this.emitError(errorMsg, code);
 			throw new Error(errorMsg);
 		}
 	}
@@ -568,6 +647,89 @@ export class HardwareScanner {
 		}
 	}
 
+	public isTorchSupported(): boolean {
+		if (!this.activeMediaStream) return false;
+		const videoTrack = this.activeMediaStream.getVideoTracks()[0];
+		if (!videoTrack) return false;
+		try {
+			const capabilities =
+				typeof videoTrack.getCapabilities === "function"
+					? (videoTrack.getCapabilities() as Record<string, unknown>)
+					: null;
+			return Boolean(capabilities?.torch);
+		} catch {
+			return false;
+		}
+	}
+
+	/**
+	 * Single-shot WebRTC barcode scanner that opens camera, awaits first valid detection, and cleans up.
+	 */
+	public async scanSingleWebcamCode(
+		videoElement: HTMLVideoElement,
+		timeoutMs = 15000,
+	): Promise<HardwareScanResult> {
+		return new Promise<HardwareScanResult>((resolve, reject) => {
+			let unsubscribe: (() => void) | null = null;
+			let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
+
+			const cleanup = () => {
+				if (timeoutTimer) {
+					clearTimeout(timeoutTimer);
+					timeoutTimer = null;
+				}
+				if (unsubscribe) {
+					unsubscribe();
+					unsubscribe = null;
+				}
+				this.stopCameraStream();
+			};
+
+			unsubscribe = this.subscribe((result) => {
+				cleanup();
+				resolve(result);
+			});
+
+			timeoutTimer = setTimeout(() => {
+				cleanup();
+				resolve({
+					success: false,
+					rawCode: "",
+					format: "unknown",
+					timestamp: Date.now(),
+					source: "camera_webrtc",
+					error: "Таймаут сканирования камеры",
+				});
+			}, timeoutMs);
+
+			this.startCameraStream(videoElement, { facingMode: "environment" }).catch((err) => {
+				cleanup();
+				reject(err);
+			});
+		});
+	}
+
+	private classifyCameraErrorCode(err: unknown): string {
+		const name = (err as { name?: string })?.name || "";
+		switch (name) {
+			case "NotAllowedError":
+			case "PermissionDeniedError":
+				return "PERMISSION_DENIED";
+			case "NotFoundError":
+			case "DevicesNotFoundError":
+				return "DEVICE_NOT_FOUND";
+			case "NotReadableError":
+			case "TrackStartError":
+				return "CAMERA_BUSY";
+			case "OverconstrainedError":
+				return "OVERCONSTRAINED";
+			case "SecurityError":
+				return "SECURITY_ERROR";
+			default:
+				return "CAMERA_ERROR";
+		}
+	}
+
 	private classifyCameraError(err: unknown): string {
 		const name = (err as { name?: string })?.name || "";
 		switch (name) {
@@ -582,6 +744,8 @@ export class HardwareScanner {
 				return "Камера занята другим приложением или системным процессом.";
 			case "OverconstrainedError":
 				return "Запрошенное разрешение или частота кадров не поддерживаются камерой устройства.";
+			case "SecurityError":
+				return "Доступ к камере заблокирован политикой безопасности браузера (требуется защищенный протокол HTTPS).";
 			default:
 				return err instanceof Error ? err.message : "Ошибка запуска аппаратной камеры";
 		}

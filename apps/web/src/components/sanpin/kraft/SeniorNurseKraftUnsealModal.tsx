@@ -4,9 +4,13 @@ import {
 	AlertTriangle,
 	Barcode,
 	Camera,
+	CameraOff,
 	CheckCircle2,
+	Flashlight,
+	FlashlightOff,
 	PackageCheck,
 	QrCode,
+	RefreshCw,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
@@ -14,15 +18,16 @@ import {
 	X,
 	XCircle,
 } from "lucide-react";
-import { showToast } from "../../GlobalToast";
+import { showToast } from "../../GlobalToast.js";
 import {
 	type KraftPackageRecord,
 	generateDataMatrixSvg,
-} from "./kraftPackageEngine";
+} from "./kraftPackageEngine.js";
 import {
 	playSterileSuccessTone,
 	playExpiredErrorTone,
-} from "./seniorNurseKraftAudio";
+} from "./seniorNurseKraftAudio.js";
+import { hardwareScanner } from "../../../services/hardware/HardwareScanner.js";
 import "./seniorNurseKraft.css";
 
 export interface SeniorNurseKraftUnsealModalProps {
@@ -139,7 +144,12 @@ export function SeniorNurseKraftUnsealModal({
 
 	const [selectedPackageId, setSelectedPackageId] = useState<string>(availablePackages[0]?.id || "");
 	const [barcodeInput, setBarcodeInput] = useState<string>("");
-	const [isScanningSimulated, setIsScanningSimulated] = useState<boolean>(false);
+	const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+	const [cameraError, setCameraError] = useState<string | null>(null);
+	const [isTorchOn, setIsTorchOn] = useState<boolean>(false);
+	const [torchSupported, setTorchSupported] = useState<boolean>(false);
+
+	const videoRef = useRef<HTMLVideoElement>(null);
 	const barcodeInputRef = useRef<HTMLInputElement>(null);
 
 	const activePackage = useMemo(() => {
@@ -161,17 +171,108 @@ export function SeniorNurseKraftUnsealModal({
 		}
 	};
 
+	const startCamera = () => {
+		setCameraError(null);
+		setIsCameraActive(true);
+	};
+
+	const stopCamera = () => {
+		hardwareScanner.stopCameraStream();
+		setIsCameraActive(false);
+		setIsTorchOn(false);
+		setTorchSupported(false);
+	};
+
+	// Clean up camera on modal close
+	useEffect(() => {
+		if (!isOpen) {
+			stopCamera();
+			setCameraError(null);
+		}
+	}, [isOpen]);
+
+	// Live WebRTC Camera Detection Lifecycle
+	useEffect(() => {
+		if (!isCameraActive || !videoRef.current) return;
+
+		let isMounted = true;
+		const videoEl = videoRef.current;
+
+		// 1. Subscribe to hardwareScanner detection events
+		const unsubscribe = hardwareScanner.subscribe((scanResult) => {
+			if (!scanResult.success || !scanResult.rawCode) return;
+			const clean = scanResult.rawCode.trim();
+			if (!clean) return;
+
+			// Check against available local batch packages
+			const matched = availablePackages.find(
+				(p) =>
+					p.barcode128.toUpperCase() === clean.toUpperCase() ||
+					p.id.toUpperCase() === clean.toUpperCase() ||
+					clean.toUpperCase().includes(p.barcode128.toUpperCase()),
+			);
+
+			if (matched) {
+				handleSelectAndVerify(matched);
+				setBarcodeInput(matched.barcode128);
+			} else {
+				// Dynamic SanPiN / GS1 verification
+				const verdict = hardwareScanner.verifyKraftPackage(clean);
+				if (verdict.isValid) {
+					playSterileSuccessTone();
+					showToast(`Крафт-пакет ${clean} верифицирован по СанПиН 3.3686-21`, "success", 4000);
+				} else {
+					playExpiredErrorTone();
+					showToast(`ВНИМАНИЕ: ${verdict.failureReasonRu || "Ошибка штрихкода"}`, "error", 5000);
+				}
+				setBarcodeInput(clean);
+			}
+
+			// Turn off camera on successful read
+			stopCamera();
+		});
+
+		// 2. Start progressive WebRTC camera stream
+		hardwareScanner
+			.startCameraStream(videoEl, { facingMode: "environment", targetFps: 60 })
+			.then(() => {
+				if (!isMounted) return;
+				setCameraError(null);
+				setTorchSupported(hardwareScanner.isTorchSupported());
+			})
+			.catch((err) => {
+				if (!isMounted) return;
+				const msg = err instanceof Error ? err.message : "Не удалось получить доступ к видеокамере";
+				setCameraError(msg);
+				setIsCameraActive(false);
+				// Automatically focus manual barcode input for effortless fallback
+				setTimeout(() => {
+					barcodeInputRef.current?.focus();
+				}, 100);
+			});
+
+		return () => {
+			isMounted = false;
+			unsubscribe();
+			hardwareScanner.stopCameraStream();
+		};
+	}, [isCameraActive, availablePackages]);
+
+	const handleToggleTorch = async () => {
+		const nextState = !isTorchOn;
+		const ok = await hardwareScanner.setTorch(nextState);
+		if (ok) {
+			setIsTorchOn(nextState);
+		}
+	};
+
 	// Big Scan Button Trigger
 	const handleHeroScanClick = () => {
-		setIsScanningSimulated(true);
-		setTimeout(() => {
-			setIsScanningSimulated(false);
-			// Auto pick first valid package
-			const validPack = availablePackages.find((p) => p.status === "sterile_valid" && p.daysRemaining > 0) || availablePackages[0];
-			if (validPack) {
-				handleSelectAndVerify(validPack);
-			}
-		}, 600);
+		if (isCameraActive) {
+			stopCamera();
+		} else {
+			startCamera();
+		}
 	};
 
 	// Manual barcode submission
@@ -187,8 +288,14 @@ export function SeniorNurseKraftUnsealModal({
 		if (matched) {
 			handleSelectAndVerify(matched);
 		} else {
-			playSterileSuccessTone();
-			showToast(`Внешний крафт-пакет ${clean} верифицирован по СанПиН 3.3686-21`, "info");
+			const verdict = hardwareScanner.verifyKraftPackage(clean);
+			if (verdict.isValid) {
+				playSterileSuccessTone();
+				showToast(`Внешний крафт-пакет ${clean} верифицирован по СанПиН 3.3686-21`, "info");
+			} else {
+				playExpiredErrorTone();
+				showToast(`Ошибка: ${verdict.failureReasonRu || "Некорректный штрихкод"}`, "error");
+			}
 		}
 		setBarcodeInput("");
 	};
@@ -232,7 +339,7 @@ export function SeniorNurseKraftUnsealModal({
 			aria-modal="true"
 			aria-labelledby="snk-modal-title"
 			onClick={(e) => e.target === e.currentTarget && onClose()}
-			data-testid="senior-nurse-kraft-modal"
+			data-testid="seniorNurse-kraft-modal"
 		>
 			<div className="snk-modal">
 				{/* Header */}
@@ -263,16 +370,93 @@ export function SeniorNurseKraftUnsealModal({
 
 				{/* Body */}
 				<div className="snk-body">
-					{/* Giant 1-Click Scan Button */}
-					<button
-						type="button"
-						onClick={handleHeroScanClick}
-						className={`snk-scan-button-hero ${isScanningSimulated ? "scanning" : ""}`}
-						data-testid="snk-hero-scan-btn"
-					>
-						<Camera size={28} />
-						<span>Скан крафт-пакета (или нажать для выбора)</span>
-					</button>
+					{/* Live Camera Viewfinder or Hero Button */}
+					{isCameraActive ? (
+						<div className="snk-camera-section" data-testid="snk-camera-section">
+							<div className="snk-camera-viewfinder">
+								<video
+									ref={videoRef}
+									autoPlay
+									playsInline
+									muted
+									className="snk-camera-video"
+									data-testid="snk-camera-video"
+								/>
+								<div className="snk-camera-overlay">
+									<div className="snk-camera-hint-pill">
+										<Camera size={16} />
+										<span>Наведите 2D DataMatrix крафт-пакета в рамку</span>
+									</div>
+									<div className="snk-scan-target">
+										<div className="snk-scan-corner tl" />
+										<div className="snk-scan-corner tr" />
+										<div className="snk-scan-corner bl" />
+										<div className="snk-scan-corner br" />
+										<div className="snk-scan-laser" />
+									</div>
+									<div className="snk-camera-hint-pill" style={{ opacity: 0.85 }}>
+										<span>60 FPS • Авто-распознавание</span>
+									</div>
+								</div>
+							</div>
+							<div className="snk-camera-controls">
+								{torchSupported && (
+									<button
+										type="button"
+										onClick={handleToggleTorch}
+										className={`snk-camera-ctrl-btn ${isTorchOn ? "active" : ""}`}
+										data-testid="snk-torch-btn"
+									>
+										{isTorchOn ? <FlashlightOff size={18} /> : <Flashlight size={18} />}
+										<span>{isTorchOn ? "Выключить подсветку" : "Фонарик (подсветка)"}</span>
+									</button>
+								)}
+								<button
+									type="button"
+									onClick={stopCamera}
+									className="snk-camera-ctrl-btn"
+									data-testid="snk-stop-camera-btn"
+								>
+									<CameraOff size={18} />
+									<span>Остановить камеру</span>
+								</button>
+							</div>
+						</div>
+					) : cameraError ? (
+						<div className="snk-camera-denied-card" data-testid="snk-camera-denied-card">
+							<div className="snk-denied-head">
+								<CameraOff size={28} className="snk-denied-icon" />
+								<div>
+									<h4 className="snk-denied-title">Доступ к веб-камере не предоставлен</h4>
+									<p className="snk-denied-text">{cameraError}</p>
+								</div>
+							</div>
+							<div className="snk-denied-actions">
+								<button
+									type="button"
+									onClick={startCamera}
+									className="snk-denied-retry-btn"
+									data-testid="snk-camera-retry-btn"
+								>
+									<RefreshCw size={16} />
+									<span>Повторить запрос камеры</span>
+								</button>
+								<span style={{ fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
+									Или введите номер пакета вручную ниже:
+								</span>
+							</div>
+						</div>
+					) : (
+						<button
+							type="button"
+							onClick={handleHeroScanClick}
+							className="snk-scan-button-hero"
+							data-testid="snk-hero-scan-btn"
+						>
+							<Camera size={28} />
+							<span>Включить камеру для сканирования 2D DataMatrix</span>
+						</button>
+					)}
 
 					{/* Manual Barcode / USB Scanner Field */}
 					<form onSubmit={handleBarcodeSubmit} className="snk-input-row">

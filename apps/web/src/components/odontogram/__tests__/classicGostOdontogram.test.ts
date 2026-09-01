@@ -61,6 +61,8 @@ describe("Classic GOST 043/u — Official Abbreviations & Clinical State Mapping
 			Planned_Implant: "Ип",
 			Missing: "0",
 			Healthy: "Зд",
+			Retained: "Р",
+			Root: "R",
 		};
 
 		for (const [state, expectedAbbr] of Object.entries(expectedMappings)) {
@@ -85,13 +87,17 @@ describe("Classic GOST 043/u — Official Abbreviations & Clinical State Mapping
 		assert.equal(GOST_ABBREVIATIONS["Ип"], "Planned_Implant");
 		assert.equal(GOST_ABBREVIATIONS["0"], "Missing");
 		assert.equal(GOST_ABBREVIATIONS["Зд"], "Healthy");
-		assert.equal(GOST_ABBREVIATIONS["R"], "Missing");
+		assert.equal(GOST_ABBREVIATIONS["Р"], "Retained");
+		assert.equal(GOST_ABBREVIATIONS["R"], "Root");
 	});
 
 	test("Граничные случаи getGostAbbreviation (undefined, null, спецстатусы)", () => {
 		assert.equal(getGostAbbreviation(undefined), "Зд");
 		assert.equal(getGostAbbreviation(""), "Зд");
+		assert.equal(getGostAbbreviation("Root"), "R");
 		assert.equal(getGostAbbreviation("Root_Canal_Treated"), "R");
+		assert.equal(getGostAbbreviation("Retained"), "Р");
+		assert.equal(getGostAbbreviation("Impacted"), "Р");
 		assert.equal(getGostAbbreviation("Extracted"), "0");
 		assert.equal(getGostAbbreviation("Unknown_Value"), "Зд");
 	});
@@ -370,6 +376,8 @@ describe("Classic GOST 043/u — Mobile (390x844) & Tablet (1024x768) Touch Keyp
 			"Planned_Implant",
 			"Missing",
 			"Healthy",
+			"Retained",
+			"Root",
 		];
 
 		for (const state of requiredStates) {

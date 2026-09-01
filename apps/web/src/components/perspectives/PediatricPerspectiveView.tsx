@@ -103,6 +103,8 @@ const MILK_TOOTH_SHORT_CODES: Record<ToothState, { code: string; dotColor: strin
 	Implant: { code: "Имп", dotColor: "#f59e0b" },
 	Planned_Implant: { code: "ПлИ", dotColor: "#6366f1" },
 	Missing: { code: "Отс", dotColor: "#64748b" },
+	Retained: { code: "Рет", dotColor: "#a855f7" },
+	Root: { code: "Кор", dotColor: "#78716c" },
 };
 
 const PEDIATRIC_STATUS_OPTIONS: ReadonlyArray<{
