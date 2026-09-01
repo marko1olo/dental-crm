@@ -6,7 +6,7 @@
 	border-radius: 1rem;
 	padding: 1.25rem;
 	box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.3);
-	color: var(--ink-strong, #ffffff);
+	color: var(--ink, #e4e4e7);
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
@@ -77,7 +77,7 @@
 	gap: 0.5rem;
 	font-size: 0.9375rem; /* 15px */
 	font-weight: 800;
-	color: var(--ink-strong, #ffffff);
+	color: var(--ink);
 }
 
 .postop-checklist {
@@ -88,15 +88,16 @@
 
 .postop-check-item {
 	display: flex;
-	align-items: flex-start;
-	gap: 0.625rem;
+	align-items: center;
+	gap: 0.75rem;
 	font-size: 0.8125rem; /* 13px */
 	line-height: 1.35;
 	color: var(--ink, #e4e4e7);
 	cursor: pointer;
 	user-select: none;
-	padding: 0.375rem 0.5rem;
+	padding: 0.5rem 0.625rem;
 	border-radius: 0.5rem;
+	min-height: 44px;
 	transition: background 0.15s ease;
 }
 
@@ -105,16 +106,16 @@
 }
 
 .postop-checkbox {
-	width: 1.25rem; /* 20px */
-	height: 1.25rem;
-	min-width: 1.25rem;
+	width: 1.5rem; /* 24px */
+	height: 1.5rem;
+	min-width: 1.5rem;
 	border-radius: 0.375rem;
 	border: 1.5px solid var(--border-soft, #71717a);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	background: rgba(0, 0, 0, 0.2);
-	margin-top: 0.0625rem;
+	flex-shrink: 0;
 	transition: all 0.15s ease;
 }
 
@@ -122,6 +123,19 @@
 	background: #10b981;
 	border-color: #10b981;
 	color: #ffffff;
+}
+
+.postop-surgery-pill-btn {
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	padding: 0.5rem 0.875rem;
+	border-radius: 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	cursor: pointer;
 }
 
 .postop-prohibition-box {

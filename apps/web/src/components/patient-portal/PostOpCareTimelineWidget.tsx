@@ -336,7 +336,7 @@ export const PostOpCareTimelineWidget: React.FC<PostOpCareTimelineWidgetProps> =
 							setSelectedDayIdx(0);
 							triggerHaptic("light");
 						}}
-						className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+						className={`min-h-[44px] inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
 							activeSurgery === st
 								? "bg-teal-500 text-white shadow-sm"
 								: "bg-neutral-800 text-neutral-400 hover:text-white"

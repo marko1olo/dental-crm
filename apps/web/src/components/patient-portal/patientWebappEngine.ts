@@ -505,7 +505,7 @@ export function validatePatientWebappSession(
 export function generatePatientMagicLink(
 	baseUrl: string,
 	encodedToken: string,
-	targetTab: "home" | "appointments" | "plan" | "photos" | "payments" | "documents" = "plan",
+	targetTab: "home" | "appointments" | "plan" | "photos" | "payments" | "documents" | "postop" = "plan",
 ): string {
 	const cleanBase = baseUrl.replace(/\/+$/, "");
 	return `${cleanBase}/#/portal/webapp?token=${encodeURIComponent(encodedToken)}&tab=${targetTab}`;

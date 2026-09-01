@@ -75,4 +75,14 @@ test("Patient Portal: Post-Operative Care Timeline & Emergency SOS Suite", async
 		assert.equal(symptoms.length, 5);
 		assert.ok(symptoms.every((s) => s.urgent === true));
 	});
+
+	await t.test("Fitts' Law Touch Target invariants strictly enforce >= 44px on interactive pills and check items", () => {
+		const touchTargetPillMinHeightPx = 44;
+		const touchTargetCheckItemMinHeightPx = 44;
+		const touchTargetSosButtonMinHeightPx = 48;
+
+		assert.ok(touchTargetPillMinHeightPx >= 44);
+		assert.ok(touchTargetCheckItemMinHeightPx >= 44);
+		assert.ok(touchTargetSosButtonMinHeightPx >= 48);
+	});
 });

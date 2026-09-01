@@ -38,6 +38,7 @@ import {
 	FileText,
 	Flame,
 	Heart,
+	HeartPulse,
 	HelpCircle,
 	Info,
 	Layers,
@@ -61,10 +62,12 @@ import {
 	Sparkles,
 	Trash2,
 	User,
+	Wallet,
 	X,
 	XCircle,
 	Zap,
 } from "lucide-react";
+import { showToast } from "../GlobalToast";
 import {
 	assemblePatientWebappProfile,
 	calculatePlanFinancials,
@@ -90,13 +93,15 @@ import {
 	type SbpDynamicQrModel,
 	type SignableStatutoryDocument,
 } from "./patientWebappEngine.js";
+import { PostOpCareTimelineWidget } from "./PostOpCareTimelineWidget.js";
+import { FamilyBalanceShareWidget } from "./FamilyBalanceShareWidget.js";
 import "./patientWebapp.css";
 
 export interface PatientWebappPortalModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly initialPatientId?: string | undefined;
-	readonly initialTab?: "home" | "appointments" | "plan" | "photos" | "payments" | "documents" | undefined;
+	readonly initialTab?: "home" | "appointments" | "plan" | "photos" | "payments" | "documents" | "postop" | undefined;
 	readonly customProfile?: PatientWebappAggregatedProfile | undefined;
 	readonly onAppointmentBook?: (() => void) | undefined;
 	readonly onAppointmentReschedule?: ((appointmentId: string) => void) | undefined;
@@ -116,7 +121,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 	onDocumentSigned,
 }) => {
 	// Active Tab State
-	const [activeTab, setActiveTab] = useState<"home" | "appointments" | "plan" | "photos" | "payments">(
+	const [activeTab, setActiveTab] = useState<"home" | "appointments" | "plan" | "photos" | "payments" | "postop">(
 		initialTab === "documents" ? "payments" : initialTab,
 	);
 
@@ -125,8 +130,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 	const [showShareModal, setShowShareModal] = useState<boolean>(false);
 	const [magicLinkCopied, setMagicLinkCopied] = useState<boolean>(false);
 
-	// Appointments Sub-tab (upcoming vs history)
-	const [appointmentsSubTab, setAppointmentsSubTab] = useState<"upcoming" | "history">("upcoming");
+	// Appointments Sub-tab (upcoming vs history vs postop)
+	const [appointmentsSubTab, setAppointmentsSubTab] = useState<"upcoming" | "history" | "postop">("upcoming");
 
 	// Before/After Photo Protocol State
 	const [galleries, setGalleries] = useState<readonly BeforeAfterComparisonPair[]>([]);
@@ -381,7 +386,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 			phone: profile.phone,
 			ttlHours: 72,
 		});
-		return generatePatientMagicLink(window.location.origin, encodedToken, activeTab === "home" ? "plan" : activeTab);
+		const targetTab = (activeTab === "home" || activeTab === "postop" ? "plan" : activeTab) as "plan" | "home" | "appointments" | "photos" | "payments" | "documents" | undefined;
+		return generatePatientMagicLink(window.location.origin, encodedToken, targetTab);
 	}, [profile.patientId, profile.phone, activeTab]);
 
 	// OTP Timer countdown
@@ -871,6 +877,62 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 										</button>
 									</div>
 
+									{/* Family Wallet Quick Banner */}
+									<div
+										className="pwa-card"
+										style={{
+											background: "linear-gradient(135deg, var(--teal-soft, #f0fdfa) 0%, var(--paper-strong, #ffffff) 100%)",
+											border: "1px solid var(--teal-surface, rgba(13, 148, 136, 0.25))",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											padding: "12px 14px",
+										}}
+									>
+										<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+											<div
+												style={{
+													width: "34px",
+													height: "34px",
+													borderRadius: "8px",
+													backgroundColor: "var(--teal, #0d9488)",
+													color: "#ffffff",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													flexShrink: 0,
+												}}
+											>
+												<Wallet size={18} />
+											</div>
+											<div>
+												<div style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
+													Семейный кошелёк (323-ФЗ)
+												</div>
+												<div style={{ fontSize: "11px", color: "var(--teal-strong, #0f766e)", fontWeight: 600 }}>
+													Доступно 45 000 ₽ • Скидка 7%
+												</div>
+											</div>
+										</div>
+
+										<button
+											type="button"
+											onClick={() => setActiveTab("payments")}
+											style={{
+												padding: "6px 10px",
+												borderRadius: "6px",
+												backgroundColor: "var(--teal, #0d9488)",
+												color: "#ffffff",
+												border: "none",
+												fontSize: "11px",
+												fontWeight: 700,
+												cursor: "pointer",
+											}}
+										>
+											Кошелёк
+										</button>
+									</div>
+
 									{/* 24/7 SOS Emergency Doctor Hotline */}
 									<div className="pwa-card" style={{ borderLeft: "4px solid var(--danger, #ef4444)" }}>
 										<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -885,21 +947,33 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 										<p style={{ margin: 0, fontSize: "11px", color: "var(--muted, #64748b)", lineHeight: "1.4" }}>
 											Если после лечения возникла ноющая боль или отек — напишите дежурному врачу в WhatsApp или позвоните в клинику.
 										</p>
-										<div style={{ display: "flex", gap: "8px" }}>
+										<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+											<button
+												type="button"
+												onClick={() => {
+													setActiveTab("appointments");
+													setAppointmentsSubTab("postop");
+												}}
+												className="pwa-action-btn-secondary"
+												style={{ fontSize: "12px", minHeight: "44px", flex: "1 1 100%", background: "rgba(13, 148, 136, 0.12)", color: "var(--brand-500, #0d9488)", border: "1px solid rgba(13, 148, 136, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontWeight: 700 }}
+											>
+												<HeartPulse size={15} />
+												<span>Памятка и календарь после операции</span>
+											</button>
 											<a
 												href="https://wa.me/79991234567"
 												target="_blank"
 												rel="noreferrer"
 												className="pwa-action-btn-primary"
-												style={{ background: "#25d366", fontSize: "12px", minHeight: "44px" }}
+												style={{ background: "#25d366", fontSize: "12px", minHeight: "44px", flex: 1 }}
 											>
 												<MessageCircle size={15} />
-												<span>WhatsApp дежурного</span>
+												<span>WhatsApp</span>
 											</a>
 											<a
 												href={`tel:${profile.clinicPhone.replace(/\D/g, "")}`}
 												className="pwa-action-btn-secondary"
-												style={{ fontSize: "12px", minHeight: "44px" }}
+												style={{ fontSize: "12px", minHeight: "44px", flex: 1 }}
 											>
 												<Phone size={15} />
 												<span>Позвонить</span>
@@ -913,7 +987,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 							{activeTab === "appointments" && (
 								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 									{/* Sub-tab pills */}
-									<div style={{ display: "flex", background: "var(--paper, #ffffff)", padding: "4px", borderRadius: "12px", border: "1px solid var(--border, #e2e8f0)" }}>
+									<div style={{ display: "flex", background: "var(--paper, #ffffff)", padding: "4px", borderRadius: "12px", border: "1px solid var(--border, #e2e8f0)", gap: "4px", overflowX: "auto" }}>
 										<button
 											type="button"
 											onClick={() => setAppointmentsSubTab("upcoming")}
@@ -927,6 +1001,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												fontSize: "12px",
 												fontWeight: 700,
 												cursor: "pointer",
+												whiteSpace: "nowrap",
+												padding: "0 8px",
 											}}
 										>
 											Предстоящие ({profile.upcomingAppointments.length})
@@ -944,13 +1020,39 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												fontSize: "12px",
 												fontWeight: 700,
 												cursor: "pointer",
+												whiteSpace: "nowrap",
+												padding: "0 8px",
 											}}
 										>
-											История приемов ({profile.pastAppointments.length})
+											История ({profile.pastAppointments.length})
+										</button>
+										<button
+											type="button"
+											onClick={() => setAppointmentsSubTab("postop")}
+											style={{
+												flex: 1.2,
+												minHeight: "40px",
+												borderRadius: "8px",
+												border: "none",
+												background: appointmentsSubTab === "postop" ? "var(--brand-500, #0d9488)" : "transparent",
+												color: appointmentsSubTab === "postop" ? "#ffffff" : "var(--muted, #64748b)",
+												fontSize: "12px",
+												fontWeight: 700,
+												cursor: "pointer",
+												whiteSpace: "nowrap",
+												padding: "0 8px",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												gap: "4px",
+											}}
+										>
+											<HeartPulse size={14} />
+											<span>После операции</span>
 										</button>
 									</div>
 
-									{appointmentsSubTab === "upcoming" ? (
+									{appointmentsSubTab === "upcoming" && (
 										profile.upcomingAppointments.length > 0 ? (
 											profile.upcomingAppointments.map((apt) => (
 												<div key={apt.id} className="pwa-card">
@@ -1005,7 +1107,9 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												</p>
 											</div>
 										)
-									) : (
+									)}
+
+									{appointmentsSubTab === "history" && (
 										profile.pastAppointments.map((apt) => (
 											<div key={apt.id} className="pwa-card">
 												<div className="pwa-card-header">
@@ -1031,6 +1135,41 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											</div>
 										))
 									)}
+
+									{appointmentsSubTab === "postop" && (
+										<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+											<PostOpCareTimelineWidget
+												patientName={profile.fullName}
+												clinicName={profile.clinicName}
+												emergencyPhone={profile.clinicPhone}
+												toothFdiCodes={profile.activeTreatmentPlan ? ["48", "36"] : ["48"]}
+												onEmergencyCallRequested={(reason) => {
+													showToast(`Экстренный вызов передан дежурному врачу: ${reason}`, "success");
+												}}
+												onSutureRemovalBooked={() => {
+													onAppointmentBook?.();
+												}}
+											/>
+										</div>
+									)}
+								</div>
+							)}
+
+							{/* TAB: ПОСЛЕ ОПЕРАЦИИ / РЕАБИЛИТАЦИЯ (POST-OP) */}
+							{activeTab === "postop" && (
+								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+									<PostOpCareTimelineWidget
+										patientName={profile.fullName}
+										clinicName={profile.clinicName}
+										emergencyPhone={profile.clinicPhone}
+										toothFdiCodes={profile.activeTreatmentPlan ? ["48", "36"] : ["48"]}
+										onEmergencyCallRequested={(reason) => {
+											showToast(`Экстренный вызов передан дежурному врачу: ${reason}`, "success");
+										}}
+										onSutureRemovalBooked={() => {
+											onAppointmentBook?.();
+										}}
+									/>
 								</div>
 							)}
 
@@ -1293,6 +1432,16 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 							{/* TAB 5: ОПЛАТА И ДОКУМЕНТЫ (PAYMENTS & DOCUMENTS) */}
 							{activeTab === "payments" && (
 								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+									{/* Семейный баланс и кошелек 323-ФЗ */}
+									<FamilyBalanceShareWidget
+										currentPatientId={profile.patientId}
+										onTopUpSuccess={(amountKopecks) => {
+											if (onPaymentComplete) {
+												onPaymentComplete("FAMILY-TOPUP", kopecksToRubles(amountKopecks));
+											}
+										}}
+									/>
+
 									{/* Unpaid Invoices Section */}
 									<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
 										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
