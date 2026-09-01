@@ -9,6 +9,7 @@
  * 4. «Дата рождения» / «Паспорт» — опциональные строгие режимы.
  */
 
+import { validateStaffSnils } from "@dental/shared";
 import { z } from "zod";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safeLocalStorage";
 
@@ -229,19 +230,24 @@ export function validatePatientDraftWithRequirements(
 		}
 	}
 
-	// 4. СНИЛС (по настройке)
+	// 4. СНИЛС (по настройке с проверкой контрольной суммы 192-П)
 	const snilsRaw = (draft.snils || "").trim();
-	const snilsDigits = snilsRaw.replace(/\D/g, "");
 	if (requirements.requireSnils) {
 		if (!snilsRaw) {
 			errors.snils = "СНИЛС обязателен для передачи данных в ЕГИСЗ (РЭМД)";
 			missingRequiredLabels.push("СНИЛС");
-		} else if (snilsDigits.length !== 11) {
-			errors.snils = "СНИЛС должен содержать ровно 11 цифр (формат 000-000-000 00)";
-			missingRequiredLabels.push("СНИЛС (11 цифр)");
+		} else {
+			const snilsVal = validateStaffSnils(snilsRaw);
+			if (!snilsVal.isValid) {
+				errors.snils = snilsVal.error || "Некорректный СНИЛС (ошибка контрольной суммы)";
+				missingRequiredLabels.push("СНИЛС (контрольная сумма)");
+			}
 		}
-	} else if (snilsRaw && snilsDigits.length > 0 && snilsDigits.length !== 11) {
-		errors.snils = "Некорректный формат СНИЛС (требуется 11 цифр)";
+	} else if (snilsRaw) {
+		const snilsVal = validateStaffSnils(snilsRaw);
+		if (!snilsVal.isValid) {
+			errors.snils = snilsVal.error || "Некорректный формат СНИЛС";
+		}
 	}
 
 	// 5. Дата рождения (по настройке)

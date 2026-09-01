@@ -427,7 +427,7 @@ export function calculateDepartmentBreakdown(
 		inputMap.set(item.departmentKey, item);
 	}
 
-	return EXECUTIVE_DEPARTMENT_DEFINITIONS.map((def) => {
+	const departments = EXECUTIVE_DEPARTMENT_DEFINITIONS.map((def) => {
 		const raw = inputMap.get(def.key) || {
 			departmentKey: def.key,
 			planRevenueKopecks: 0,
@@ -495,6 +495,8 @@ export function calculateDepartmentBreakdown(
 			accentColor: def.accentColor,
 		};
 	});
+
+	return departments;
 }
 
 export interface CalculateExecutiveKpisParams {

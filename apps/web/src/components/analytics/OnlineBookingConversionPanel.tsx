@@ -12,7 +12,7 @@
  * 3. Расчет экономии времени администраторов, конверсии в явку и выручки.
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
 	Activity,
 	ArrowRight,
@@ -35,7 +35,7 @@ import {
 	Users,
 	XCircle,
 } from "lucide-react";
-import { formatKopecksRu, parseKopecks } from "@dental/shared";
+import { formatKopecksRu, parseKopecks, type Kopecks } from "@dental/shared";
 
 export type OnlineBookingPeriod = "7d" | "30d" | "90d" | "all";
 
@@ -167,12 +167,76 @@ export function OnlineBookingConversionPanel() {
 	const [period, setPeriod] = useState<OnlineBookingPeriod>("30d");
 	const [selectedChannelKey, setSelectedChannelKey] = useState<string>("all");
 	const [activeTab, setActiveTab] = useState<"self_booking" | "admin_comparison" | "funnel">("self_booking");
+	const [channels, setChannels] = useState<readonly SelfBookingChannelMetric[]>(DEFAULT_ONLINE_CHANNELS);
+	const [adminFunnel, setAdminFunnel] = useState<AdminPhoneFunnelMetric>(DEFAULT_ADMIN_PHONE_FUNNEL);
+	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		let isMounted = true;
+		async function loadLiveAttribution() {
+			try {
+				setLoading(true);
+				const res = await fetch("/api/marketing/attribution");
+				if (!res.ok) return;
+				const data = await res.json();
+				if (isMounted && data.selfBookingChannels && Array.isArray(data.selfBookingChannels)) {
+					const mapped = data.selfBookingChannels.map((c: any) => ({
+						key: c.key,
+						nameRu: c.nameRu,
+						categoryRu: c.categoryRu,
+						iconType:
+							c.key === "website_widget"
+								? "globe"
+								: c.key === "yandex_maps"
+									? "yandex"
+									: c.key === "gis_2"
+										? "gis"
+										: c.key === "prodoctorov"
+											? "prodoctorov"
+											: c.key === "tg_bot"
+												? "telegram"
+												: "whatsapp",
+						viewsCount: c.viewsCount || 0,
+						slotSelectedCount: c.slotSelectedCount || 0,
+						bookingsCount: c.bookingsCount || 0,
+						attendedCount: c.attendedCount || 0,
+						noShowCount: c.noShowCount || 0,
+						paidPatientsCount: c.paidPatientsCount || 0,
+						revenueKopecks: (c.revenueKopecks || 0) as Kopecks,
+						spentKopecks: (c.spentKopecks || 0) as Kopecks,
+					}));
+					setChannels(mapped);
+				}
+				if (isMounted && data.telephonyAdminFunnel) {
+					setAdminFunnel({
+						incomingCallsCount: data.telephonyAdminFunnel.incomingCallsCount || 0,
+						answeredCallsCount: data.telephonyAdminFunnel.answeredCallsCount || 0,
+						bookedAppointmentsCount: data.telephonyAdminFunnel.bookedAppointmentsCount || 0,
+						attendedCount: data.telephonyAdminFunnel.attendedCount || 0,
+						noShowCount: data.telephonyAdminFunnel.noShowCount || 0,
+						paidPatientsCount: data.telephonyAdminFunnel.paidPatientsCount || 0,
+						revenueKopecks: (data.telephonyAdminFunnel.revenueKopecks || 0) as Kopecks,
+						avgCallDurationSeconds: data.telephonyAdminFunnel.avgCallDurationSeconds || 120,
+					});
+				}
+			} catch {
+				// Graceful fallback
+			} finally {
+				if (isMounted) setLoading(false);
+			}
+		}
+		loadLiveAttribution();
+		return () => {
+			isMounted = false;
+		};
+	}, []);
 
 	// Aggregated self-booking totals
 	const onlineSummary = useMemo(() => {
-		const filtered = selectedChannelKey === "all"
-			? DEFAULT_ONLINE_CHANNELS
-			: DEFAULT_ONLINE_CHANNELS.filter((c) => c.key === selectedChannelKey);
+		const filtered =
+			selectedChannelKey === "all"
+				? channels
+				: channels.filter((c) => c.key === selectedChannelKey);
 
 		const totalViews = filtered.reduce((acc, c) => acc + c.viewsCount, 0);
 		const totalSlotSelected = filtered.reduce((acc, c) => acc + c.slotSelectedCount, 0);
@@ -208,12 +272,12 @@ export function OnlineBookingConversionPanel() {
 			romiPercent,
 			channelsCount: filtered.length,
 		};
-	}, [selectedChannelKey]);
+	}, [selectedChannelKey, channels]);
 
 	// Comparison of Online Self-Booking vs Administrator Phone Funnel
 	const comparison = useMemo(() => {
 		const onlineBookings = onlineSummary.totalBookings;
-		const adminBookings = DEFAULT_ADMIN_PHONE_FUNNEL.bookedAppointmentsCount;
+		const adminBookings = adminFunnel.bookedAppointmentsCount;
 		const grandTotalBookings = onlineBookings + adminBookings;
 
 		const onlineSharePercent = grandTotalBookings > 0
@@ -224,8 +288,8 @@ export function OnlineBookingConversionPanel() {
 		const onlineAttendancePercent = onlineSummary.totalBookings > 0
 			? Math.round((onlineSummary.totalAttended / onlineSummary.totalBookings) * 100)
 			: 0;
-		const adminAttendancePercent = DEFAULT_ADMIN_PHONE_FUNNEL.bookedAppointmentsCount > 0
-			? Math.round((DEFAULT_ADMIN_PHONE_FUNNEL.attendedCount / DEFAULT_ADMIN_PHONE_FUNNEL.bookedAppointmentsCount) * 100)
+		const adminAttendancePercent = adminFunnel.bookedAppointmentsCount > 0
+			? Math.round((adminFunnel.attendedCount / adminFunnel.bookedAppointmentsCount) * 100)
 			: 0;
 
 		// Saved administrative work time in hours (3.5 mins per call/booking)
@@ -242,7 +306,7 @@ export function OnlineBookingConversionPanel() {
 			adminAttendancePercent,
 			savedHours,
 		};
-	}, [onlineSummary]);
+	}, [onlineSummary, adminFunnel]);
 
 	const renderIcon = (type: SelfBookingChannelMetric["iconType"]) => {
 		switch (type) {
@@ -304,7 +368,7 @@ export function OnlineBookingConversionPanel() {
 								key={p.key}
 								type="button"
 								onClick={() => setPeriod(p.key)}
-								className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors border-0 cursor-pointer min-h-[32px] ${
+								className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors border-0 cursor-pointer min-h-[44px] flex items-center justify-center ${
 									period === p.key
 										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -381,35 +445,35 @@ export function OnlineBookingConversionPanel() {
 				<button
 					type="button"
 					onClick={() => setActiveTab("self_booking")}
-					className={`px-4 py-2 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[36px] ${
+					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] ${
 						activeTab === "self_booking"
 							? "bg-[var(--teal)] text-white shadow-sm"
 							: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
 				>
-					🌐 Каналы онлайн-самозаписи ({DEFAULT_ONLINE_CHANNELS.length})
+					Каналы онлайн-самозаписи ({DEFAULT_ONLINE_CHANNELS.length})
 				</button>
 				<button
 					type="button"
 					onClick={() => setActiveTab("admin_comparison")}
-					className={`px-4 py-2 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[36px] ${
+					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] ${
 						activeTab === "admin_comparison"
 							? "bg-[var(--teal)] text-white shadow-sm"
 							: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
 				>
-					⚖️ Сравнение: Онлайн vs Администраторы (АТС)
+					Сравнение: Онлайн vs Администраторы (АТС)
 				</button>
 				<button
 					type="button"
 					onClick={() => setActiveTab("funnel")}
-					className={`px-4 py-2 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[36px] ${
+					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] ${
 						activeTab === "funnel"
 							? "bg-[var(--teal)] text-white shadow-sm"
 							: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
 				>
-					🎯 Пошаговая воронка конверсии виджета
+					Пошаговая воронка конверсии виджета
 				</button>
 			</div>
 

@@ -574,6 +574,21 @@ export function calculateLabWorkflowFinancials(
 
 // ─── 5. МОДЕЛЬ НАРЯД-ЗАКАЗА ЗТЛ И ФАБРИКА ─────────────────────────────────────
 
+export interface LabStlScanAttachment {
+	readonly id: string;
+	readonly fileName: string;
+	readonly fileSizeBytes?: number | undefined;
+	readonly fileSizeMb?: number | undefined;
+	readonly archType?: "upper" | "lower" | "bite" | "prep" | "antagonist" | undefined;
+	readonly type?: "upper_jaw" | "lower_jaw" | "bite_registration" | "prep_scan" | "other" | undefined;
+	readonly scanType?: "upper_jaw" | "lower_jaw" | "bite_registration" | "prep_scan" | "other" | undefined;
+	readonly uploadDateIso?: string | undefined;
+	readonly uploadedAtIso?: string | undefined;
+	readonly isEncrypted152Fz?: boolean | undefined;
+	readonly url?: string | undefined;
+	readonly downloadUrl?: string | undefined;
+}
+
 export interface DentalLabWorkflowOrder {
 	readonly id: string;
 	readonly orderNumber: string;

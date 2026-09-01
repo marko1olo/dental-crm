@@ -6,7 +6,7 @@
 	border-radius: 1.25rem;
 	padding: 1.25rem;
 	box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.35);
-	color: var(--ink-strong, #ffffff);
+	color: var(--ink, #0f172a);
 	display: flex;
 	flex-direction: column;
 	gap: 1.25rem;

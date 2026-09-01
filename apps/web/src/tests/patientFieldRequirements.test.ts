@@ -120,7 +120,7 @@ describe("Patient Field Requirements & Validation Engine (Feature #35)", () => {
 			{
 				fullName: "Кузнецов Петр Сергеевич",
 				phone: "+7 (903) 111-22-33",
-				snils: "123-456-789 01",
+				snils: "112-233-445 95",
 			},
 			egiszReqs,
 		);
