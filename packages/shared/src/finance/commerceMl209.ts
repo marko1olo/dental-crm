@@ -644,10 +644,14 @@ function renderMedicalActItemsCommerceMl(items: readonly OneCMedicalActItem[]): 
 			const vatRub = formatKopToRub(it.vatAmountKopecks ?? 0);
 			const vatRate = it.vatRate || "Без НДС";
 
+			const toothTag = it.toothNumber
+				? `\n\t\t\t\t\t<Зуб>${it.toothNumber}</Зуб>\n\t\t\t\t\t<НомерЗуба>${it.toothNumber}</НомерЗуба>`
+				: "";
+
 			return `\t\t\t\t<Товар>
 \t\t\t\t\t<Ид>${escapeXml(it.id)}</Ид>
 \t\t\t\t\t<Артикул>${escapeXml(it.code804n || it.id)}</Артикул>
-\t\t\t\t\t<Код804н>${escapeXml(it.code804n || "")}</Код804н>
+\t\t\t\t\t<Код804н>${escapeXml(it.code804n || "")}</Код804н>${toothTag}
 \t\t\t\t\t<Наименование>${escapeXml(fullName)}</Наименование>
 \t\t\t\t\t<БазоваяЕдиница Код="${escapeXml(unitCode)}" НаименованиеПолное="${escapeXml(unitName)}">${escapeXml(unitName)}</БазоваяЕдиница>
 \t\t\t\t\t<СтавкаНДС>${escapeXml(vatRate)}</СтавкаНДС>
@@ -1175,6 +1179,9 @@ export function generatePayrollReflectionCsv(doc: OneCPayrollDocument): string {
 
 	return `\uFEFF${header}${rows.join("\n")}`;
 }
+
+export const generateMaterialsWriteoffCsv = generateMaterialWriteoffCsv;
+export const generatePayrollCsv = generatePayrollReflectionCsv;
 
 export function generateCombinedCsvBundle(pkg: OneCCommerceMlPackage): {
 	retailSalesCsv: string;
