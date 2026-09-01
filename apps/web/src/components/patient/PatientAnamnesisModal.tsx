@@ -258,7 +258,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 							<button
 								type="button"
 								onClick={onClose}
-								className="safety-btn safety-btn--ghost"
+								className="safety-btn safety-btn--ghost min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 								aria-label="Закрыть модальное окно"
 							>
 								<X className="w-5 h-5" />

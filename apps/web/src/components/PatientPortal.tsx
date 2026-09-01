@@ -1072,15 +1072,9 @@ export const PatientPortal: React.FC = () => {
 								type="button"
 								className="doc-close-btn"
 								onClick={() => setViewingDoc(null)}
-								style={{
-									background: "none",
-									border: "none",
-									fontSize: "24px",
-									cursor: "pointer",
-									color: "var(--muted)",
-								}}
+								aria-label="Закрыть документ"
 							>
-								×
+								<X size={20} />
 							</button>
 						</div>
 						<div

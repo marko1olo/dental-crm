@@ -421,7 +421,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 										<th>MAF (ISO)</th>
 										<th>Конусность</th>
 										<th>Обтурация</th>
-										<th style={{ width: 36 }}></th>
+										<th style={{ width: 48 }}></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -510,7 +510,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 													className="dente-row-del-btn"
 													title="Удалить канал"
 												>
-													<Trash2 size={13} />
+													<Trash2 size={16} />
 												</button>
 											</td>
 										</tr>

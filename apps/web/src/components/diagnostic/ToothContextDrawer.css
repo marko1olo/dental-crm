@@ -584,8 +584,8 @@
 }
 
 .dente-row-del-btn {
-	min-width: 28px;
-	min-height: 28px;
+	min-width: 44px;
+	min-height: 44px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -593,7 +593,8 @@
 	border: none;
 	color: #dc2626;
 	cursor: pointer;
-	border-radius: 6px;
+	border-radius: 8px;
+	transition: all 0.15s ease;
 }
 
 .dente-row-del-btn:hover {
