@@ -334,6 +334,167 @@ export const DRUG_CLASS_MATCHERS: readonly DrugClassMatcher[] = [
 			"джозамицин",
 			"vilprafen",
 			"вильпрафен",
+			"эритромицин",
+			"erythromycin",
+		],
+	},
+	{
+		classId: "macrolide_cyp3a4_inhibitor",
+		labelRu: "Макролиды — ингибиторы CYP3A4 (Кларитромицин, Эритромицин)",
+		keywords: [
+			"clarithro",
+			"кларитромицин",
+			"fromilid",
+			"фромилид",
+			"klacid",
+			"клацид",
+			"erythromycin",
+			"эритромицин",
+		],
+	},
+	{
+		classId: "azalide_macrolide",
+		labelRu: "Азалиды / Макролиды (Азитромицин)",
+		keywords: [
+			"azithro",
+			"азитромицин",
+			"sumamed",
+			"сумамед",
+			"azitral",
+			"азитрал",
+			"zitrolid",
+			"зитролид",
+			"josamycin",
+			"джозамицин",
+			"vilprafen",
+			"вильпрафен",
+		],
+	},
+	{
+		classId: "lincosamide",
+		labelRu: "Линкозамиды (Клиндамицин, Линкомицин)",
+		keywords: [
+			"clindamycin",
+			"клиндамицин",
+			"dalacin",
+			"далацин",
+			"lincomycin",
+			"линкомицин",
+			"клиндацин",
+		],
+	},
+	{
+		classId: "fluoroquinolone",
+		labelRu: "Фторхинолоны (Ципрофлоксацин, Офлоксацин, Левофлоксацин)",
+		keywords: [
+			"cipro",
+			"ципрофлоксацин",
+			"ciprofloxacin",
+			"ципролет",
+			"цифран",
+			"ofloxacin",
+			"офлоксацин",
+			"levofloxacin",
+			"левофлоксацин",
+			"tavanic",
+			"таваник",
+			"moxifloxacin",
+			"моксифлоксацин",
+			"avelox",
+			"авелокс",
+		],
+	},
+	{
+		classId: "opioid_analgesic",
+		labelRu: "Опиоидные анальгетики (Трамадол, Промедол)",
+		keywords: [
+			"tramadol",
+			"трамадол",
+			"tramal",
+			"трамал",
+			"promedol",
+			"промедол",
+			"опиоид",
+		],
+	},
+	{
+		classId: "benzodiazepine_sedative",
+		labelRu: "Бензодиазепины и седативные (Диазепам, Реланиум, Феназепам)",
+		keywords: [
+			"diazepam",
+			"диазепам",
+			"relanium",
+			"реланиум",
+			"seduxen",
+			"седуксен",
+			"phenazepam",
+			"феназепам",
+			"бензодиазепин",
+		],
+	},
+	{
+		classId: "alcohol_ethanol",
+		labelRu: "Алкоголь / Этанолсодержащие препараты",
+		keywords: [
+			"alcohol",
+			"алкоголь",
+			"этанол",
+			"спирт",
+			"настойка",
+		],
+	},
+	{
+		classId: "iodine_antiseptic",
+		labelRu: "Препараты йода и йодоформа (Бетадин, Метапекс, Альвожил)",
+		keywords: [
+			"йод",
+			"йодоформ",
+			"повидон-йод",
+			"povidone",
+			"betadine",
+			"бетадин",
+			"metapex",
+			"метапекс",
+			"йодинол",
+			"yodinol",
+			"alveogyl",
+			"альвожил",
+			"люголь",
+			"lugol",
+			"iodine",
+		],
+	},
+	{
+		classId: "ester_anesthetic",
+		labelRu: "Эфирные местные анестетики (Новокаин, Прокаин, Бензокаин, Дикаин)",
+		keywords: [
+			"novocaine",
+			"новокаин",
+			"procaine",
+			"прокаин",
+			"benzocaine",
+			"бензокаин",
+			"анестезин",
+			"dicaine",
+			"дикаин",
+			"tetracaine",
+			"тетракаин",
+			"hurricaine",
+			"харрикейн",
+			"dispodent",
+			"topex",
+			"топекс",
+			"дентинокс",
+		],
+	},
+	{
+		classId: "latex_material",
+		labelRu: "Изделия из натурального латекса (перчатки, коффердам)",
+		keywords: [
+			"латекс",
+			"latex",
+			"коффердам латекс",
+			"перчатки латекс",
 		],
 	},
 	{
@@ -463,6 +624,53 @@ export function auditClinicalDrugSafety(
 			c.includes("гипертония 3") ||
 			c.includes("криз") ||
 			c.includes("severe_hypertension"),
+	);
+
+	const hasPheochromocytoma = normalizedConditions.some(
+		(c) =>
+			c.includes("феохромоцитом") ||
+			c.includes("pheochromocytoma") ||
+			c.includes("c74.1") ||
+			c.includes("d35.0") ||
+			c.includes("опухоль надпочечников"),
+	);
+
+	const hasThyrotoxicosis = normalizedConditions.some(
+		(c) =>
+			c.includes("тиреотоксикоз") ||
+			c.includes("гипертиреоз") ||
+			c.includes("базедова") ||
+			c.includes("зоб") ||
+			c.includes("thyrotoxicosis") ||
+			c.includes("hyperthyroidism") ||
+			c.includes("e05"),
+	);
+
+	const hasIodineAllergy = normalizedAllergies.some(
+		(a) =>
+			a.includes("йод") ||
+			a.includes("йодоформ") ||
+			a.includes("повидон") ||
+			a.includes("бетадин") ||
+			a.includes("метапекс") ||
+			a.includes("йодинол") ||
+			a.includes("iodine"),
+	);
+
+	const hasEsterAnestheticsAllergy = normalizedAllergies.some(
+		(a) =>
+			a.includes("эфир") ||
+			a.includes("новокаин") ||
+			a.includes("прокаин") ||
+			a.includes("бензокаин") ||
+			a.includes("анестезин") ||
+			a.includes("дикаин") ||
+			a.includes("тетракаин") ||
+			a.includes("ester"),
+	);
+
+	const hasLatexAllergy = normalizedAllergies.some(
+		(a) => a.includes("латекс") || a.includes("latex"),
 	);
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -600,6 +808,112 @@ export function auditClinicalDrugSafety(
 					"Анестетики без адреналина минимизируют гемодинамическую нагрузку на миокард и сосудистое русло.",
 			});
 		}
+
+		// 7. Ester Anesthetics Allergy vs Ester Local Anesthetics
+		if (classes.includes("ester_anesthetic") && hasEsterAnestheticsAllergy) {
+			blockedPrescriptions.add(proposed);
+			allergyWarnings.push({
+				allergenGroup: "Эфирные анестетики (Новокаин, Прокаин, Бензокаин, Дикаин)",
+				proposedDrug: proposed,
+				severity: "critical",
+				manifestationsRu:
+					"Истинная IgE-опосредованная аллергическая реакция на метаболит ПАБК: ангионевротический отек Квинке, контактный стоматит, анафилаксия",
+				clinicalActionRu:
+					"Категорически отменить эфирные анестетики и аппликационные гели на основе бензокаина (Hurricaine, Dispodent). Назначить амидные анестетики (Артикаин 4%, Мепивакаин 3%, Лидокаин 2%).",
+			});
+			safeAlternativeRecommendations.push({
+				originalDrug: proposed,
+				recommendedAlternatives: [
+					"Ультракаин Д-С (Артикаин 4% с эпинефрином)",
+					"Скандонест 3% (Мепивакаин без вазоконстриктора)",
+					"Лидокаин-гель 2–5% для аппликационной анестезии",
+				],
+				rationaleRu:
+					"Амидные местные анестетики не метаболизируются в парааминобензойную кислоту (ПАБК) и не дают перекрестной аллергии с новокаином/бензокаином.",
+			});
+		}
+
+		// 8. Iodine Allergy vs Iodine Antiseptics & Iodoform Pastes
+		if (classes.includes("iodine_antiseptic") && hasIodineAllergy) {
+			blockedPrescriptions.add(proposed);
+			allergyWarnings.push({
+				allergenGroup: "Препараты йода и йодоформа (Бетадин, Метапекс, Альвожил)",
+				proposedDrug: proposed,
+				severity: "critical",
+				manifestationsRu:
+					"Острый токсико-аллергический дерматит/стоматит, отек слизистых полости рта, анафилактоидная реакция",
+				clinicalActionRu:
+					"Категорически исключить йодсодержащие антисептики, пасты для каналов (Metapex) и турунды (Alveogyl). Использовать безиодные аналоги (Хлоргексидин, Мирамистин, чистый гидроксид кальция).",
+			});
+			safeAlternativeRecommendations.push({
+				originalDrug: proposed,
+				recommendedAlternatives: [
+					"Раствор Хлоргексидина биглюконата 0.05–0.2%",
+					"Мирамистин 0.01% (антисептическая обработка)",
+					"UltraCal XS / Calcicur (чистый гидроксид кальция для временной обтурации каналов без йодоформа)",
+				],
+				rationaleRu:
+					"Хлоргексидин и чистый гидроксид кальция обладают широким антибактериальным спектром и абсолютно безопасны для пациентов с непереносимостью йода.",
+			});
+		}
+
+		// 9. Latex Allergy vs Latex Products
+		if (classes.includes("latex_material") && hasLatexAllergy) {
+			blockedPrescriptions.add(proposed);
+			allergyWarnings.push({
+				allergenGroup: "Натуральный каучуковый латекс",
+				proposedDrug: proposed,
+				severity: "critical",
+				manifestationsRu:
+					"Контактный аллергический хейлит, крапивница, отек гортани, анафилактический шок",
+				clinicalActionRu:
+					"Соблюдать строгий беслатексный протокол (нитриловые перчатки, беслатексный раббердам).",
+			});
+		}
+
+		// 10. Pheochromocytoma vs Epinephrine Anesthetics
+		if (classes.includes("epinephrine_anesthetic") && hasPheochromocytoma) {
+			blockedPrescriptions.add(proposed);
+			conditionContraindications.push({
+				condition: "Феохромоцитома (C74.1 / D35.0)",
+				proposedDrug: proposed,
+				severity: "critical",
+				reasonRu:
+					"Абсолютное противопоказание: гормонально-активная опухоль надпочечников. Экзогенное введение адреналина несет критический риск фатального гипертонического криза, отека легких и фибрилляции желудочков.",
+				clinicalGuidanceRu:
+					"Использовать исключительно анестетики без вазоконстриктора (Мепивакаин 3% / Скандонест). Плановые вмешательства отложить до хирургического лечения опухоли.",
+			});
+			safeAlternativeRecommendations.push({
+				originalDrug: proposed,
+				recommendedAlternatives: [
+					"Скандонест 3% (Мепивакаин 30 мг/мл без вазоконстриктора)",
+				],
+				rationaleRu:
+					"Мепивакаин 3% не содержит адреналина и не провоцирует катехоламиновый криз.",
+			});
+		}
+
+		// 11. Thyrotoxicosis vs Epinephrine Anesthetics
+		if (classes.includes("epinephrine_anesthetic") && hasThyrotoxicosis) {
+			blockedPrescriptions.add(proposed);
+			conditionContraindications.push({
+				condition: "Декомпенсированный тиреотоксикоз / Гипертиреоз (E05)",
+				proposedDrug: proposed,
+				severity: "critical",
+				reasonRu:
+					"Абсолютное противопоказание: гипертиреоз резко сенсибилизирует миокард к катехоламинам. Введение адреналина провоцирует тиреотоксический криз, тяжелую тахиаритмию и ишемию миокарда.",
+				clinicalGuidanceRu:
+					"Запрещено вводить анестетики с адреналином и ретракционные нити с эпинефрином. Применять Мепивакаин 3% (Скандонест).",
+			});
+			safeAlternativeRecommendations.push({
+				originalDrug: proposed,
+				recommendedAlternatives: [
+					"Скандонест 3% (Мепивакаин 30 мг/мл без вазоконстриктора)",
+				],
+				rationaleRu:
+					"Скандонест 3% обеспечивает качественную анестезию без адреналина и не нагружает кардиоваскулярную систему.",
+			});
+		}
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -730,6 +1044,119 @@ export function auditClinicalDrugSafety(
 						"Ибупрофен и другие неселективные НПВС обратимо конкурируют с аспирином за активный центр фермента ЦОГ-1 тромбоцитов, блокируя антиагрегантный и кардиопротективный эффект низких доз аспирина.",
 					clinicalRecommendationRu:
 						"Принимать НПВС не ранее чем через 2 часа после аспирина, либо предпочесть Парацетамол.",
+				});
+			}
+
+			// E. Fluoroquinolones + NSAIDs (Seizure Risk)
+			if (hasPair("fluoroquinolone", "nsaid")) {
+				const fqName = d1.classes.includes("fluoroquinolone") ? d1.name : d2.name;
+				const nsaidName = d1.classes.includes("nsaid") ? d1.name : d2.name;
+
+				drugInteractions.push({
+					primaryDrug: fqName,
+					interactingDrug: nsaidName,
+					severity: "high",
+					effectDescriptionRu:
+						"Совместный прием фторхинолонов (Ципрофлоксацин, Офлоксацин, Левофлоксацин) с НПВС усиливает возбуждающее действие на ЦНС и повышает риск генерализованного судорожного синдрома.",
+					clinicalRecommendationRu:
+						"Заменить антибиотик на защищенный пенициллин (Амоксиклав) или линкозамид (Клиндамицин), либо заменить НПВС на Парацетамол.",
+				});
+				safeAlternativeRecommendations.push({
+					originalDrug: fqName,
+					recommendedAlternatives: [
+						"Амоксиклав (875/125 мг 2 раза/сут при отсутствии аллергии)",
+						"Клиндамицин (300 мг 3 раза/сут)",
+					],
+					rationaleRu:
+						"Бета-лактамы и линкозамиды не потенцируют судорожное действие НПВП.",
+				});
+			}
+
+			// F. Opioids + Benzodiazepines / Sedatives (Black Box Warning: Respiratory Depression)
+			if (hasPair("opioid_analgesic", "benzodiazepine_sedative")) {
+				const opName = d1.classes.includes("opioid_analgesic") ? d1.name : d2.name;
+				const bzName = d1.classes.includes("benzodiazepine_sedative") ? d1.name : d2.name;
+
+				blockedPrescriptions.add(opName);
+				if (d1.isProposed && d1.name === bzName) blockedPrescriptions.add(bzName);
+				if (d2.isProposed && d2.name === bzName) blockedPrescriptions.add(bzName);
+
+				drugInteractions.push({
+					primaryDrug: opName,
+					interactingDrug: bzName,
+					severity: "critical",
+					effectDescriptionRu:
+						"Комбинация опиоидного анальгетика (Трамадол) и бензодиазепина (Диазепам, Феназепам) — Black Box Warning FDA/Минздрава: взаимное синергическое угнетение дыхательного центра, глубокая седация, гиповентиляция, кома и летальный исход.",
+					clinicalRecommendationRu:
+						"Категорически запрещено одновременное амбулаторное назначение. При умеренной/сильной боли предпочесть НПВС или Парацетамол без седативных.",
+				});
+				safeAlternativeRecommendations.push({
+					originalDrug: opName,
+					recommendedAlternatives: [
+						"Кеторолак 10 мг (при отсутствии противопоказаний со стороны ЖКТ и гемостаза)",
+						"Парацетамол 1000 мг",
+					],
+					rationaleRu:
+						"Неопиоидные анальгетики не угнетают дыхательный центр при сопутствующей седации.",
+				});
+			}
+
+			// G. Metronidazole + Alcohol / Ethanol (Disulfiram-like Reaction)
+			if (hasPair("metronidazole", "alcohol_ethanol")) {
+				const metronName = d1.classes.includes("metronidazole") ? d1.name : d2.name;
+				const alcName = d1.classes.includes("alcohol_ethanol") ? d1.name : d2.name;
+
+				blockedPrescriptions.add(metronName);
+				drugInteractions.push({
+					primaryDrug: metronName,
+					interactingDrug: alcName,
+					severity: "critical",
+					effectDescriptionRu:
+						"Метронидазол блокирует фермент ацетальдегиддегидрогеназу, приводя к накоплению токсичного ацетальдегида: мучительная тошнота, неукротимая рвота, коллапс, резкое падение АД, тахикардия (дисульфирамоподобный синдром).",
+					clinicalRecommendationRu:
+						"Категорический запрет на прием алкоголя и спиртосодержащих лекарственных капель во время курса метронидазола и в течение 48 часов после его окончания.",
+				});
+			}
+
+			// H. Clarithromycin (CYP3A4 Inhibitor) + Anticoagulants (Rivaroxaban / Apixaban / Warfarin)
+			if (hasPair("macrolide_cyp3a4_inhibitor", "anticoagulant_antiplatelet")) {
+				const clarithroName = d1.classes.includes("macrolide_cyp3a4_inhibitor") ? d1.name : d2.name;
+				const acName = d1.classes.includes("anticoagulant_antiplatelet") ? d1.name : d2.name;
+
+				blockedPrescriptions.add(clarithroName);
+				drugInteractions.push({
+					primaryDrug: clarithroName,
+					interactingDrug: acName,
+					severity: "high",
+					effectDescriptionRu:
+						"Кларитромицин и эритромицин являются мощными ингибиторами изофермента цитохрома CYP3A4 и P-гликопротеина, нарушая клиренс ПОАК (Ксарелто / Ривароксабан, Эликвис / Апиксабан) и варфарина. Концентрация антикоагулянта возрастает в 2–3 раза с высоким риском тяжелых кровотечений.",
+					clinicalRecommendationRu:
+						"Заменить макролид на Амоксициллин (при отсутствии аллергии), Азитромицин или Клиндамицин (не оказывают клинически значимого ингибирования CYP3A4).",
+				});
+				safeAlternativeRecommendations.push({
+					originalDrug: clarithroName,
+					recommendedAlternatives: [
+						"Амоксициллин 500 мг (при отсутствии аллергии)",
+						"Азитромицин 500 мг (Сумамед — минимальное влияние на CYP3A4)",
+						"Клиндамицин 300 мг (не ингибирует CYP3A4)",
+					],
+					rationaleRu:
+						"Азитромицин и клиндамицин безопасны для пациентов, получающих современные прямые оральные антикоагулянты (ПОАК).",
+				});
+			}
+
+			// I. Duplicate NSAID + NSAID
+			if (d1.classes.includes("nsaid") && d2.classes.includes("nsaid") && d1.name.toLowerCase() !== d2.name.toLowerCase()) {
+				const n1 = d1.name;
+				const n2 = d2.name;
+				drugInteractions.push({
+					primaryDrug: n1,
+					interactingDrug: n2,
+					severity: "high",
+					effectDescriptionRu:
+						"Одновременный прием двух и более системных НПВП (например, Нимесулид + Кеторолак или Ибупрофен) не усиливает обезболивающий эффект, но многократно повышает риск эрозивно-язвенных поражений ЖКТ, перфораций, кровотечений и токсической нефропатии.",
+					clinicalRecommendationRu:
+						"Отменить дублирующий НПВП. Использовать монотерапию одним НПВП в минимально эффективной дозе под прикрытием ИПП (Омепразол 20 мг).",
 				});
 			}
 		}

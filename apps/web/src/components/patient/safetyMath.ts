@@ -57,6 +57,7 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasMepivacaineAllergy?: boolean | undefined;
 	readonly hasEsterAnestheticsAllergy?: boolean | undefined;
 	readonly hasSulfiteAllergy?: boolean | undefined;
+	readonly hasIodineAllergy?: boolean | undefined;
 	readonly hasAnaphylaxisHistory?: boolean | undefined;
 
 	// 2. ЭКС / Кардиостимулятор & Кардиология
@@ -67,6 +68,7 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasIhd?: boolean | undefined;
 	readonly hasArrhythmia?: boolean | undefined;
 	readonly takesBetaBlockers?: boolean | undefined;
+	readonly hasPheochromocytoma?: boolean | undefined;
 
 	// 3. Гематология & Антикоагулянты
 	readonly takesAnticoagulants?: boolean | undefined;
@@ -227,6 +229,26 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		recommendedAnesthesiaNotes: "Ультракаин Д-С (Артикаин 1:200 000) при отсутствии аллергии на артикаин.",
 		icd10Codes: ["Z88.4"],
 		keywords: ["мепивакаин", "скандонест", "мепивастезин", "изокаин"],
+	},
+	{
+		id: "allergy_ester_anesthetics",
+		category: "anesthesia_allergy",
+		severity: "critical",
+		shortBadge: "⛔ АЛЛЕРГИЯ: ЭФИРНЫЕ АНЕСТЕТИКИ (НОВОКАИН / АНЕСТЕЗИН / БЕНЗОКАИН)",
+		titleRu: "Аллергия на эфирные анестетики (Новокаин, Прокаин, Бензокаин, Дикаин)",
+		fullDescription:
+			"Истинная IgE-гиперчувствительность к сложным эфирам парааминобензойной кислоты (ПАБК). Противопоказаны инъекции новокаина/прокаина, дикаина/тетракаина и аппликационные гели на основе бензокаина/анестезина (Hurricaine, Dispodent, Topex).",
+		forbiddenProcedures: [
+			"Инъекции Новокаина (Прокаина) и Дикаина (Тетракаина)",
+			"Аппликационная анестезия гелями и спреями на основе Бензокаина (Hurricaine, Dispodent, Topex, Дентинокс)",
+		],
+		mandatoryPrecautions: [
+			"Применять современные амидные анестетики (Артикаин 4%, Мепивакаин 3%, Лидокаин 2%) при отсутствии индивидуальной непереносимости",
+			"Аппликационное обезболивание выполнять Лидокаин-гелем 2–5% или контактным охлаждением",
+		],
+		recommendedAnesthesiaNotes: "Препараты выбора: амидные анестетики (Артикаин 4% / Ультракаин Д-С, Мепивакаин 3% / Скандонест, Лидокаин 2%).",
+		icd10Codes: ["Z88.4", "T88.6"],
+		keywords: ["новокаин", "прокаин", "дикаин", "тетракаин", "анестезин", "бензокаин", "hurricaine", "dispodent", "аллергия на новокаин", "аллергия на бензокаин"],
 	},
 	{
 		id: "allergy_sulfites",
@@ -452,6 +474,47 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		keywords: ["латекс", "аллергия на латекс", "коффердам", "перчатки"],
 	},
 	{
+		id: "allergy_iodine",
+		category: "general_allergy",
+		severity: "critical",
+		shortBadge: "⛔ АЛЛЕРГИЯ: ЙОД И ЙОДОФОРМ (ЗАПРЕТ БЕТАДИНА/МЕТАПЕКСА)",
+		titleRu: "Аллергия на йод, йодоформ и повидон-йод",
+		fullDescription:
+			"Тяжелая контактная и системная гиперчувствительность к препаратам йода. Категорически противопоказано применение антисептиков на основе йода (Бетадин, Повидон-йод, Раствор Люголя, Йодинол), йодоформсодержащих паст для корневых каналов (Metapex, Апексдент с йодоформом) и хирургических турунд (Альвожил / Alveogyl с йодоформом).",
+		forbiddenProcedures: [
+			"Ирригация и антисептическая обработка Повидон-йодом (Бетадин, Йодинол, Люголь)",
+			"Временное пломбирование каналов пастами с йодоформом (Metapex)",
+			"Внесение йодоформных турунд и паст в лунку удаленного зуба (Альвожил / Alveogyl)",
+		],
+		mandatoryPrecautions: [
+			"Применять безиодные антисептики: Хлоргексидин 0.05–0.2%, Мирамистин 0.01%, Октенисепт",
+			"Для временной дезинфекции каналов — препараты чистого гидроксида кальция (UltraCal XS, Calcicur, Каласепт)",
+			"При альвеолите — кюретаж, коллагеновая губка с хлоргексидином без йодоформа",
+		],
+		icd10Codes: ["Z88.8", "T78.4"],
+		keywords: ["йод", "йодоформ", "повидон-йод", "бетадин", "метапекс", "metapex", "йодинол", "альвожил", "alveogyl", "люголь", "аллергия на йод"],
+	},
+	{
+		id: "pheochromocytoma_catecholamines",
+		category: "chronic_somatic",
+		severity: "critical",
+		shortBadge: "⛔ ФЕОХРОМОЦИТОМА: АБСОЛЮТНЫЙ ЗАПРЕТ ВАЗОКОНСТРИКТОРОВ",
+		titleRu: "Феохромоцитома (МКБ-10 C74.1 / D35.0)",
+		fullDescription:
+			"Гормонально-активная опухоль хромаффинной ткани надпочечников, секретирующая катехоламины. Экзогенное введение адреналина (эпинефрина) категорически противопоказано из-за риска смертельного гипертонического криза, отека легких и фибрилляции желудочков.",
+		forbiddenProcedures: [
+			"Местная анестезия с вазоконстрикторами (адреналин / эпинефрин 1:100 000 и 1:200 000)",
+			"Ретракционные нити с адреналином / эпинефрином",
+		],
+		mandatoryPrecautions: [
+			"Анестезия строго Скандонест 3% (Мепивакаин) без вазоконстриктора",
+			"Все плановые стоматологические вмешательства строго после хирургического лечения феохромоцитомы и стабилизации гемодинамики",
+		],
+		recommendedAnesthesiaNotes: "Скандонест 3% (Мепивакаин без вазоконстриктора).",
+		icd10Codes: ["C74.1", "D35.0"],
+		keywords: ["феохромоцитома", "феохромоцитом", "опухоль надпочечников", "c74.1", "d35.0"],
+	},
+	{
 		id: "thyrotoxicosis_hyperthyroidism",
 		category: "chronic_somatic",
 		severity: "critical",
@@ -585,6 +648,7 @@ export function evaluatePatientSafetyFlags(
 	if (profile.hasArticaineAllergy) addFlagFromCatalog("allergy_articaine");
 	if (profile.hasLidocaineAllergy) addFlagFromCatalog("allergy_lidocaine");
 	if (profile.hasMepivacaineAllergy) addFlagFromCatalog("allergy_mepivacaine");
+	if (profile.hasEsterAnestheticsAllergy) addFlagFromCatalog("allergy_ester_anesthetics");
 	if (profile.hasSulfiteAllergy) addFlagFromCatalog("allergy_sulfites");
 
 	// 2. ЭКС / Кардиостимулятор
@@ -615,6 +679,9 @@ export function evaluatePatientSafetyFlags(
 	if (profile.hasSevereHypertensionStage3) {
 		addFlagFromCatalog("severe_hypertension_stage_3");
 	}
+	if (profile.hasPheochromocytoma) {
+		addFlagFromCatalog("pheochromocytoma_catecholamines");
+	}
 	if (profile.hasThyrotoxicosis) {
 		addFlagFromCatalog("thyrotoxicosis_hyperthyroidism");
 	}
@@ -630,6 +697,7 @@ export function evaluatePatientSafetyFlags(
 	if (profile.hasHepatitis || profile.hasHiv) addFlagFromCatalog("hepatitis_hiv_infection");
 	if (profile.hasPenicillinAllergy) addFlagFromCatalog("allergy_penicillin");
 	if (profile.hasLatexAllergy) addFlagFromCatalog("allergy_latex");
+	if (profile.hasIodineAllergy) addFlagFromCatalog("allergy_iodine");
 
 	// Расчет сводных метрик
 	const hasCriticalStopFlags = activeFlags.some((f) => f.severity === "critical");
@@ -849,6 +917,23 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 	const hasLatex =
 		raw.includes("латекс");
 
+	const hasIodine =
+		raw.includes("йод") ||
+		raw.includes("йодоформ") ||
+		raw.includes("повидон-йод") ||
+		raw.includes("бетадин") ||
+		raw.includes("метапекс") ||
+		raw.includes("йодинол") ||
+		raw.includes("альвожил") ||
+		raw.includes("alveogyl") ||
+		raw.includes("люголь");
+
+	const hasPheochromocytoma =
+		raw.includes("феохромоцитом") ||
+		raw.includes("надпочечник") ||
+		raw.includes("c74.1") ||
+		raw.includes("d35.0");
+
 	return {
 		hasArticaineAllergy: hasArticaine,
 		hasLidocaineAllergy: hasLidocaine,
@@ -863,6 +948,7 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		hasHypertension,
 		hasIhd,
 		hasArrhythmia,
+		hasPheochromocytoma,
 		hasDiabetesMellitus: hasDiabetes,
 		hasBronchialAsthma: hasAsthma,
 		hasEpilepsy: hasEpilepsy,
@@ -870,6 +956,7 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		hasHiv: hasHiv,
 		hasPenicillinAllergy: hasPenicillin,
 		hasLatexAllergy: hasLatex,
+		hasIodineAllergy: hasIodine,
 		customChronicNotes: text ? text : undefined,
 	};
 }
@@ -888,10 +975,11 @@ export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinical
 	if (profile.hasArticaineAllergy) allergies.push("Артикаин (Ультракаин)");
 	if (profile.hasLidocaineAllergy) allergies.push("Лидокаин");
 	if (profile.hasMepivacaineAllergy) allergies.push("Мепивакаин");
-	if (profile.hasEsterAnestheticsAllergy) allergies.push("Эфирные анестетики (Новокаин / Дикаин / Анестезин)");
+	if (profile.hasEsterAnestheticsAllergy) allergies.push("Эфирные анестетики (Новокаин / Дикаин / Анестезин / Бензокаин)");
 	if (profile.hasSulfiteAllergy) allergies.push("Сульфиты / метабисульфит");
 	if (profile.hasPenicillinAllergy) allergies.push("Пенициллины (Амоксиклав)");
 	if (profile.hasLatexAllergy) allergies.push("Латекс");
+	if (profile.hasIodineAllergy) allergies.push("Йод и йодоформсодержащие препараты (Бетадин, Метапекс, Альвожил)");
 	if (profile.customAllergyNotes) allergies.push(profile.customAllergyNotes);
 
 	if (allergies.length > 0) {
@@ -910,6 +998,9 @@ export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinical
 	}
 	if (profile.takesAnticoagulants) {
 		criticals.push(`Прием антикоагулянтов/дезагрегантов (${profile.anticoagulantName || "варфарин/НОАК"}${profile.lastInrValue !== undefined ? `, МНО: ${profile.lastInrValue}` : ""}) — риск геморрагий`);
+	}
+	if (profile.hasPheochromocytoma) {
+		criticals.push("Феохромоцитома (абсолютный запрет адреналина и вазоконстрикторов)");
 	}
 	if (profile.pregnancyTrimester && profile.pregnancyTrimester !== "none") {
 		const trimLabel =
@@ -1000,6 +1091,30 @@ export function checkProcedureSafety(
 		severity = "critical";
 		warnings.push("Компьютерная томография (КТ/ОПТГ) в 1-м триместре беременности несет тератогенный риск и запрещена!");
 		alternatives.push("Отложить до 2-го триместра либо при острой боли выполнить прицельный снимок на визиографе с двойным свинцовым фартуком.");
+	}
+
+	// 6. Эфирные анестетики и аппликационный бензокаин
+	if (profile.hasEsterAnestheticsAllergy && (pLower.includes("бензокаин") || pLower.includes("анестезин") || pLower.includes("новокаин") || pLower.includes("дикаин") || pLower.includes("hurricaine") || pLower.includes("dispodent") || (pLower.includes("аппликацион") && (pLower.includes("гель") || pLower.includes("спрей"))))) {
+		isAllowed = false;
+		severity = "critical";
+		warnings.push("Аппликационные гели на основе бензокаина (Hurricaine, Dispodent) и новокаин категорически запрещены при аллергии на эфирные анестетики!");
+		alternatives.push("Использовать аппликационный Лидокаин-гель 2–5% (при отсутствии аллергии на лидокаин) либо контактное охлаждение.");
+	}
+
+	// 7. Йодсодержащие антисептики и материалы
+	if (profile.hasIodineAllergy && (pLower.includes("йод") || pLower.includes("бетадин") || pLower.includes("метапекс") || pLower.includes("альвожил") || pLower.includes("йодинол") || pLower.includes("йодоформ"))) {
+		isAllowed = false;
+		severity = "critical";
+		warnings.push("Препараты йода (Повидон-йод / Бетадин), йодоформные пасты (Metapex) и турунды (Альвожил) абсолютно противопоказаны при аллергии на йод!");
+		alternatives.push("Использовать Хлоргексидин 0.05–0.2%, Мирамистин 0.01%, чистый гидроксид кальция (UltraCal XS) без йодоформа.");
+	}
+
+	// 8. Вазоконстрикторы при феохромоцитоме
+	if (profile.hasPheochromocytoma && (pLower.includes("адреналин") || pLower.includes("эпинефрин") || pLower.includes("1:100") || pLower.includes("1:200") || pLower.includes("ультракаин д-с") || pLower.includes("ретракцион"))) {
+		isAllowed = false;
+		severity = "critical";
+		warnings.push("Анестетики и ретракционные нити с адреналином/эпинефрином абсолютно противопоказаны при феохромоцитоме (угроза смертельного криза)!");
+		alternatives.push("Использовать Скандонест 3% (Мепивакаин без вазоконстриктора) и безадреналиновые ретракционные нити.");
 	}
 
 	return {

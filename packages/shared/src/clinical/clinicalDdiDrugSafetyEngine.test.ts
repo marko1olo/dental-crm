@@ -303,7 +303,199 @@ describe("Inquisitor 8: Clinical DDI, Allergy & Drug Safety Engine", () => {
 			assert.ok(matchDrugClasses("Ультракаин Д-С").includes("epinephrine_anesthetic"));
 			assert.ok(matchDrugClasses("Скандонест 3%").includes("mepivacaine_plain"));
 			assert.ok(matchDrugClasses("Сумамед").includes("macrolide_lincosamide"));
-			assert.ok(matchDrugClasses("Клиндамицин").includes("macrolide_lincosamide"));
+			assert.ok(matchDrugClasses("Сумамед").includes("azalide_macrolide"));
+			assert.ok(matchDrugClasses("Клиндамицин").includes("lincosamide"));
+			assert.ok(matchDrugClasses("Кларитромицин (Клацид)").includes("macrolide_cyp3a4_inhibitor"));
+			assert.ok(matchDrugClasses("Ципрофлоксацин").includes("fluoroquinolone"));
+			assert.ok(matchDrugClasses("Трамадол").includes("opioid_analgesic"));
+			assert.ok(matchDrugClasses("Диазепам").includes("benzodiazepine_sedative"));
+			assert.ok(matchDrugClasses("Бетадин (повидон-йод)").includes("iodine_antiseptic"));
+			assert.ok(matchDrugClasses("Новокаин").includes("ester_anesthetic"));
+			assert.ok(matchDrugClasses("Hurricaine гель (бензокаин)").includes("ester_anesthetic"));
+		});
+	});
+
+	describe("9. Ester Local Anesthetics & Topical Benzocaine Allergy Blocking", () => {
+		it("should 100% block Novocaine and Hurricaine / Benzocaine topical gel on ester allergy", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: [
+					"Новокаин 0.5%",
+					"Hurricaine гель (Бензокаин 20%)",
+				],
+				knownAllergies: ["Аллергия на новокаин и эфирные анестетики"],
+			});
+
+			assert.strictEqual(result.isSafe, false);
+			assert.strictEqual(result.riskLevel, "critical_danger");
+			assert.strictEqual(result.hasAllergyClash, true);
+			assert.strictEqual(result.blockedPrescriptions.length, 2);
+			assert.ok(result.blockedPrescriptions.includes("Новокаин 0.5%"));
+			assert.ok(result.blockedPrescriptions.includes("Hurricaine гель (Бензокаин 20%)"));
+			assert.ok(
+				result.allergyWarnings.some(
+					(w) =>
+						w.severity === "critical" &&
+						w.allergenGroup.includes("Эфирные анестетики"),
+				),
+			);
+			assert.ok(
+				result.safeAlternativeRecommendations.some(
+					(r) =>
+						r.recommendedAlternatives.some((a) => a.includes("Ультракаин") || a.includes("Скандонест") || a.includes("Лидокаин")),
+				),
+			);
+		});
+	});
+
+	describe("10. Iodine & Iodoform (Betadine, Metapex, Alveogyl) Allergy Blocking", () => {
+		it("should 100% block Betadine and Metapex when patient has iodine allergy", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: [
+					"Бетадин (раствор повидон-йода 10%)",
+					"Metapex (паста с йодоформом)",
+				],
+				knownAllergies: ["Аллергия на йод и морепродукты"],
+			});
+
+			assert.strictEqual(result.isSafe, false);
+			assert.strictEqual(result.riskLevel, "critical_danger");
+			assert.strictEqual(result.hasAllergyClash, true);
+			assert.strictEqual(result.blockedPrescriptions.length, 2);
+			assert.ok(
+				result.allergyWarnings.some(
+					(w) =>
+						w.severity === "critical" &&
+						w.allergenGroup.includes("йода и йодоформа"),
+				),
+			);
+			assert.ok(
+				result.safeAlternativeRecommendations.some(
+					(r) =>
+						r.recommendedAlternatives.some((a) => a.includes("Хлоргексидин") || a.includes("UltraCal XS")),
+				),
+			);
+		});
+	});
+
+	describe("11. Pheochromocytoma & Thyrotoxicosis Adrenaline Absolute Blocking", () => {
+		it("should 100% block Epinephrine anesthetics in Pheochromocytoma", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: ["Ультракаин Д-С форте 1:100 000"],
+				patientConditions: ["Феохромоцитома левого надпочечника"],
+			});
+
+			assert.strictEqual(result.isSafe, false);
+			assert.strictEqual(result.riskLevel, "critical_danger");
+			assert.strictEqual(result.hasConditionContraindication, true);
+			assert.ok(result.blockedPrescriptions.includes("Ультракаин Д-С форте 1:100 000"));
+			assert.ok(
+				result.conditionContraindications.some(
+					(c) =>
+						c.severity === "critical" &&
+						c.condition.includes("Феохромоцитома"),
+				),
+			);
+			assert.ok(
+				result.safeAlternativeRecommendations.some(
+					(r) => r.recommendedAlternatives.some((a) => a.includes("Скандонест 3%")),
+				),
+			);
+		});
+
+		it("should 100% block Epinephrine anesthetics in Thyrotoxicosis", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: ["Септанест 1:100 000 (Артикаин с адреналином)"],
+				patientConditions: ["Диффузный токсический зоб, тиреотоксикоз"],
+			});
+
+			assert.strictEqual(result.isSafe, false);
+			assert.strictEqual(result.riskLevel, "critical_danger");
+			assert.strictEqual(result.hasConditionContraindication, true);
+			assert.ok(result.blockedPrescriptions.includes("Септанест 1:100 000 (Артикаин с адреналином)"));
+			assert.ok(
+				result.conditionContraindications.some(
+					(c) =>
+						c.severity === "critical" &&
+						c.condition.includes("тиреотоксикоз"),
+				),
+			);
+		});
+	});
+
+	describe("12. Fluoroquinolone + NSAID Seizure Hazard Detection", () => {
+		it("should detect high severity seizure interaction between Ciprofloxacin and Ketorolac", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: ["Ципрофлоксацин 500 мг (Цифран)", "Кеторолак 10 мг"],
+			});
+
+			assert.strictEqual(result.hasSevereDdi, true);
+			assert.ok(
+				result.drugInteractions.some(
+					(i) =>
+						i.severity === "high" &&
+						i.effectDescriptionRu.includes("судорож"),
+				),
+			);
+		});
+	});
+
+	describe("13. Opioid (Tramadol) + Benzodiazepine (Diazepam) Black Box Warning", () => {
+		it("should 100% block Tramadol and Diazepam combination due to fatal respiratory depression risk", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: ["Трамадол 50 мг"],
+				existingMedications: ["Диазепам 5 мг (Реланиум)"],
+			});
+
+			assert.strictEqual(result.isSafe, false);
+			assert.strictEqual(result.riskLevel, "critical_danger");
+			assert.strictEqual(result.hasSevereDdi, true);
+			assert.ok(result.blockedPrescriptions.includes("Трамадол 50 мг"));
+			assert.ok(
+				result.drugInteractions.some(
+					(i) =>
+						i.severity === "critical" &&
+						i.effectDescriptionRu.includes("Black Box Warning"),
+				),
+			);
+		});
+	});
+
+	describe("14. Metronidazole + Alcohol / Ethanol Disulfiram-like Reaction", () => {
+		it("should 100% block Metronidazole when alcohol is concurrently reported", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: ["Метронидазол 500 мг"],
+				existingMedications: ["Спиртовые настойки (алкоголь)"],
+			});
+
+			assert.strictEqual(result.isSafe, false);
+			assert.strictEqual(result.riskLevel, "critical_danger");
+			assert.ok(result.blockedPrescriptions.includes("Метронидазол 500 мг"));
+			assert.ok(
+				result.drugInteractions.some(
+					(i) =>
+						i.severity === "critical" &&
+						i.effectDescriptionRu.includes("дисульфирамоподобный"),
+				),
+			);
+		});
+	});
+
+	describe("15. Clarithromycin (CYP3A4 Inhibitor) vs DOACs (Xarelto)", () => {
+		it("should detect CYP3A4 interaction between Clarithromycin and Rivaroxaban", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: ["Кларитромицин 500 мг (Клацид)"],
+				existingMedications: ["Ксарелто 20 мг (Ривароксабан)"],
+			});
+
+			assert.strictEqual(result.hasSevereDdi, true);
+			assert.ok(result.blockedPrescriptions.includes("Кларитромицин 500 мг (Клацид)"));
+			assert.ok(
+				result.drugInteractions.some(
+					(i) =>
+						i.severity === "high" &&
+						i.effectDescriptionRu.includes("CYP3A4"),
+				),
+			);
 		});
 	});
 });
