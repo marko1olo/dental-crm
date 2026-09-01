@@ -808,7 +808,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 										<button
 											type="button"
 											onClick={() => setJournalSearch("")}
-											className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--ink)]"
+											className="h-full min-w-[44px] flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 										>
 											<X className="w-3.5 h-3.5" />
 										</button>

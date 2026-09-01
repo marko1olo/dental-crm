@@ -2,27 +2,38 @@
 -- Vector knowledge base for clinical RAG, nomenclature 804n, protocols, and patient EHR memory (SQUAD MU)
 -- Requires pgvector extension for dense 1536-dimensional embeddings and HNSW cosine similarity search
 
-CREATE EXTENSION IF NOT EXISTS vector;
+DO $$ BEGIN
+    CREATE EXTENSION IF NOT EXISTS vector;
+EXCEPTION
+    WHEN OTHERS THEN null;
+END $$;
 
-CREATE TABLE IF NOT EXISTS "clinical_knowledge_embeddings" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"organization_id" uuid NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
-	"category" text NOT NULL,
-	"title" text NOT NULL,
-	"content" text NOT NULL,
-	"embedding" vector(1536),
-	"metadata" jsonb NOT NULL DEFAULT '{}'::jsonb,
-	"created_at" timestamp with time zone NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS "clinical_knowledge_embeddings_org_idx"
-	ON "clinical_knowledge_embeddings" USING btree ("organization_id");
-
-CREATE INDEX IF NOT EXISTS "clinical_knowledge_embeddings_org_category_idx"
-	ON "clinical_knowledge_embeddings" USING btree ("organization_id", "category");
-
-CREATE INDEX IF NOT EXISTS "clinical_knowledge_embeddings_vector_idx"
-	ON "clinical_knowledge_embeddings" USING hnsw ("embedding" vector_cosine_ops);
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vector') THEN
+        CREATE TABLE IF NOT EXISTS "clinical_knowledge_embeddings" (
+            "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            "organization_id" uuid NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+            "category" text NOT NULL,
+            "title" text NOT NULL,
+            "content" text NOT NULL,
+            "embedding" vector(1536),
+            "metadata" jsonb NOT NULL DEFAULT '{}'::jsonb,
+            "created_at" timestamp with time zone NOT NULL DEFAULT now()
+        );
+        EXECUTE 'CREATE INDEX IF NOT EXISTS "clinical_knowledge_embeddings_vector_idx" ON "clinical_knowledge_embeddings" USING hnsw ("embedding" vector_cosine_ops)';
+    ELSE
+        CREATE TABLE IF NOT EXISTS "clinical_knowledge_embeddings" (
+            "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            "organization_id" uuid NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+            "category" text NOT NULL,
+            "title" text NOT NULL,
+            "content" text NOT NULL,
+            "embedding" jsonb,
+            "metadata" jsonb NOT NULL DEFAULT '{}'::jsonb,
+            "created_at" timestamp with time zone NOT NULL DEFAULT now()
+        );
+    END IF;
+END $$;
 
 -- Row Level Security (RLS) Policies
 ALTER TABLE "clinical_knowledge_embeddings" ENABLE ROW LEVEL SECURITY;

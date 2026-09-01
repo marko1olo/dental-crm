@@ -865,7 +865,7 @@ export const PatientPortal: React.FC = () => {
 							<button
 								type="button"
 								onClick={() => setIsReceptionQrOpen(false)}
-								className="p-1 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+								className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 							>
 								<X size={18} />
 							</button>
@@ -915,7 +915,7 @@ export const PatientPortal: React.FC = () => {
 							<button
 								type="button"
 								onClick={() => setShowTaxCertificate(false)}
-								className="p-1 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+								className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 								data-testid="close-portal-tax-modal-btn"
 							>
 								<X size={18} />
@@ -1000,7 +1000,7 @@ export const PatientPortal: React.FC = () => {
 							<button
 								type="button"
 								onClick={() => setActiveFiscalReceipt(null)}
-								className="p-1 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+								className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 							>
 								<X size={18} />
 							</button>

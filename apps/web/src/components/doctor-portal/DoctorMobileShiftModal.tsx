@@ -225,7 +225,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-7 h-7 rounded-full bg-[var(--paper-soft,#1e293b)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer border border-[var(--line,#334155)]"
+							className="min-h-[44px] min-w-[44px] p-2 rounded-full bg-[var(--paper-soft,#1e293b)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer border border-[var(--line,#334155)]"
 							aria-label="Закрыть"
 							data-testid="close-doctor-shift-btn"
 						>
@@ -559,7 +559,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 								<button
 									type="button"
 									onClick={() => setSigningSession(null)}
-									className="w-7 h-7 rounded-full bg-[var(--paper,#121826)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center border border-[var(--line,#334155)] cursor-pointer"
+									className="min-h-[44px] min-w-[44px] p-2 rounded-full bg-[var(--paper,#121826)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center border border-[var(--line,#334155)] cursor-pointer"
 								>
 									<X size={15} />
 								</button>

@@ -42,12 +42,12 @@
 
 ---
 
-### РАЗДЕЛ 4: ШКАЛА Z-INDEX И ИЗОЛЯЦИЯ СЛОЕВ (INQUISITOR 2)
+### РАЗДЕЛ 4: ШКАЛА Z-INDEX И ИЗОЛЯЦИЯ СЛОЕВ (INQUISITOR 2 — УСТРАНЕНО И ЗАФИКСИРОВАНО)
 
-| ID | Файл и строки | Суть дефекта | Требуемое исправление |
+| ID | Файл и строки | Суть дефекта | Статус |
 |---|---|---|---|
-| **ZX-1** | `apps/web/src/styles/shadow-analyst.css#L10`, `L46` | Дефект `z-index: 9999` вместо стандарта `99999` для плавающих системных алертов. | Заменить на `z-index: 99999;` / `var(--z-toast)`. |
-| **ZX-2** | `apps/web/src/styles/marketingRoi.css#L9`, `apps/web/src/styles/anesthesia.css#L17` | Легаси-хардкоды `z-index: 9999/10000` в локальных стилях модалок. | Унифицировать на `var(--z-modal-overlay)` (`z-index: 1000`). |
+| **ZX-1** | `apps/web/src/styles/shadow-analyst.css#L10`, `L46` | Дефект `z-index: 9999` вместо стандарта `99999` для плавающих системных алертов. | ИСПРАВЛЕНО (Унифицировано на `z-index: 99999`). |
+| **ZX-2** | `apps/web/src/components/analytics/marketingRoi.css#L9`, `apps/web/src/components/anesthesia/anesthesia.css#L17`, `L1197` | Легаси-хардкоды `z-index: 9999/10000` в локальных стилях модалок. | ИСПРАВЛЕНО (Унифицировано на канонический `z-index: 1000`). |
 
 ---
 

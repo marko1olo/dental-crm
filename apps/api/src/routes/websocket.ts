@@ -79,13 +79,15 @@ function identityFromTokens(clinicToken: unknown, staffToken: unknown) {
 }
 
 export async function registerWebsocketRoutes(app: FastifyInstance) {
-	await app.register(fastifyWebsocket, {
-		options: {
-			// Кадры здесь маленькие (JSON-уведомления), большой лимит не нужен
-			// и только расширяет поверхность для злоупотреблений.
-			maxPayload: 64 * 1024,
-		},
-	});
+	if (!app.hasRequestDecorator("ws")) {
+		await app.register(fastifyWebsocket, {
+			options: {
+				// Кадры здесь маленькие (JSON-уведомления), большой лимит не нужен
+				// и только расширяет поверхность для злоупотреблений.
+				maxPayload: 1024 * 1024,
+			},
+		});
+	}
 
 	// Приводится САМ app, а не вынимается app.get в переменную: fastify
 	// внутри route() читает this[kSupportedHTTPMethods], поэтому оторванный

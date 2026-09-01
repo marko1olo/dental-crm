@@ -668,13 +668,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						>
 							{/* 1. Крупное ФИО пациента + Статус 54-ФЗ (Баланс / Долг / Аванс) */}
 							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
-								<span className="text-[17px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate">
+								<span className="text-[17px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate min-w-0">
 									<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
-									{appointmentPatientName || "Пациент"}
+									<span className="truncate">{appointmentPatientName || "Пациент"}</span>
 								</span>
 								{patientBalance !== null ? (
 									<span
-										className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 ${
+										className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap ${
 											patientBalance > 0
 												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
 												: patientBalance < 0
@@ -696,7 +696,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												: "Оплата: 54-ФЗ (0 ₽)"}
 									</span>
 								) : (
-									<span className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20">
+									<span className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20 shrink-0 whitespace-nowrap">
 										54-ФЗ: Баланс 0 ₽
 									</span>
 								)}
@@ -741,7 +741,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													showToast(`Текст напоминания для ${appointmentPatientName} скопирован в буфер`, "success");
 												}
 											}}
-											className="p-1 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer"
+											className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-1 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer flex items-center justify-center"
 											title="Скопировать SMS напоминание"
 										>
 											<Copy size={13} />
@@ -955,23 +955,23 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							{patientBalance !== null ? (
 								patientBalance < 0 ? (
 									<span
-										className="px-2.5 py-1 rounded-lg text-xs font-black font-mono tracking-tight bg-rose-500/15 text-rose-800 dark:text-rose-100 dark:bg-rose-950/70 border-2 border-rose-500 shadow-xs flex items-center gap-1 shrink-0"
+										className="px-2.5 py-1 rounded-lg text-xs font-black font-mono tracking-tight bg-rose-500/15 text-rose-800 dark:text-rose-100 dark:bg-rose-950/70 border-2 border-rose-500 shadow-xs flex items-center gap-1 shrink-0 whitespace-nowrap"
 										title={`Задолженность пациента: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`}
 										data-testid="appointment-debt-badge"
 									>
 										<CreditCard size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
-										<span>Долг: {Math.abs(patientBalance).toLocaleString("ru-RU")} ₽</span>
+										<span className="whitespace-nowrap">Долг: {Math.abs(patientBalance).toLocaleString("ru-RU")} ₽</span>
 									</span>
 								) : patientBalance > 0 ? (
 									<span
-										className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono tracking-tight bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 dark:bg-emerald-950/50 border border-emerald-500/40 shadow-xs"
+										className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono tracking-tight bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 dark:bg-emerald-950/50 border border-emerald-500/40 shadow-xs shrink-0 whitespace-nowrap"
 										title={`Аванс/депозит пациента: ${patientBalance.toLocaleString("ru-RU")} ₽`}
 									>
 										Аванс: {patientBalance.toLocaleString("ru-RU")} ₽
 									</span>
 								) : (
 									<span
-										className="px-2 py-0.5 rounded-lg text-xs font-medium font-mono text-slate-600 dark:text-slate-400 bg-slate-500/10 dark:bg-slate-800/50 border border-slate-500/20"
+										className="px-2 py-0.5 rounded-lg text-xs font-medium font-mono text-slate-600 dark:text-slate-400 bg-slate-500/10 dark:bg-slate-800/50 border border-slate-500/20 shrink-0 whitespace-nowrap"
 										title="Баланс пациента: 0 ₽"
 									>
 										Баланс: 0 ₽
@@ -1847,7 +1847,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								<span className="font-bold text-[var(--muted)]">Статус 54-ФЗ / Баланс:</span>
 								{patientBalance !== null ? (
 									<span
-										className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono ${
+										className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono whitespace-nowrap shrink-0 ${
 											patientBalance > 0
 												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
 												: patientBalance < 0
@@ -1862,7 +1862,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												: "0 ₽ (Оплачено 54-ФЗ)"}
 									</span>
 								) : (
-									<span className="text-xs text-[var(--muted)]">0 ₽ (54-ФЗ)</span>
+									<span className="text-xs text-[var(--muted)] whitespace-nowrap shrink-0">0 ₽ (54-ФЗ)</span>
 								)}
 							</div>
 

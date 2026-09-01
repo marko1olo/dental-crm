@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Calendar,
 	Check,
@@ -11,6 +11,7 @@ import {
 	Layers,
 	Link,
 	Loader2,
+	MoreVertical,
 	Palette,
 	Plus,
 	RefreshCw,
@@ -104,6 +105,28 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
 	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
 	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
+	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
+	const cardMenuRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (!openMenuOrderId) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
+				setOpenMenuOrderId(null);
+			}
+		};
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setOpenMenuOrderId(null);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		document.addEventListener("keydown", handleKeyDown);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [openMenuOrderId]);
 
 	// Quick Inline Create State
 	const [showQuickForm, setShowQuickForm] = useState(false);
@@ -542,7 +565,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					</div>
 
 					{/* Interactive VITA Shade Palette with Tone Previews */}
-					<div className="space-y-2 p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+					<div className="space-y-2 p-2.5 rounded-lg bg-[var(--paper)]">
 						<div className="flex items-center justify-between flex-wrap gap-2">
 							<div className="flex items-center gap-1.5">
 								<span className="text-[11px] font-bold text-[var(--ink)]">
@@ -752,8 +775,39 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					Загрузка нарядов лаборатории...
 				</div>
 			) : orders.length === 0 ? (
-				<div className="lab-orders-empty">
-					Нет оформленных нарядов в зуботехническую лабораторию по данному пациенту
+				<div
+					style={{
+						padding: "2rem 1.5rem",
+						textAlign: "center",
+						background: "var(--paper-soft)",
+						borderRadius: "12px",
+						border: "1px dashed var(--line)",
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						gap: "0.75rem",
+						margin: "0.5rem 0",
+					}}
+				>
+					<FlaskConical size={36} color="var(--teal, #0d9488)" />
+					<div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--ink)" }}>
+						Нет оформленных нарядов в зуботехническую лабораторию
+					</div>
+					<div style={{ fontSize: "0.825rem", color: "var(--muted)", maxWidth: "420px" }}>
+						Оформите заказ-наряд на изготовление коронок, виниров, вкладок или съемных протезов по данному пациенту.
+					</div>
+					<button
+						type="button"
+						onClick={() => {
+							setSelectedOrderForEdit(null);
+							setIsOrderModalOpen(true);
+						}}
+						className="primary-button min-h-[40px] px-4 flex items-center gap-1.5 text-xs font-bold rounded-xl shadow-sm cursor-pointer"
+						data-testid="empty-state-add-first-patient-lab-order-btn"
+					>
+						<Plus size={15} />
+						<span>+ Оформить заказ-наряд в лабораторию</span>
+					</button>
 				</div>
 			) : (
 				<div className="lab-orders-list">
@@ -836,63 +890,102 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									</div>
 
 									<div className="lab-card-actions">
-										{order.dueDate && (
+										<button
+											type="button"
+											onClick={() => handleScheduleAppointment(order)}
+											className="lab-btn-32 is-primary"
+											title="Запланировать слот приема в расписании на дату готовности работы (Primary Action)"
+										>
+											<Calendar className="w-3.5 h-3.5" />
+											<span>Запланировать прием</span>
+										</button>
+
+										<div
+											className="relative inline-flex"
+											ref={openMenuOrderId === order.id ? cardMenuRef : null}
+										>
 											<button
 												type="button"
-												onClick={() => handleScheduleAppointment(order)}
-												className="lab-btn-32 is-primary"
-												title="Запланировать слот приема в расписании на дату готовности работы"
+												onClick={() =>
+													setOpenMenuOrderId((prev) =>
+														prev === order.id ? null : order.id,
+													)
+												}
+												className="lab-btn-32 !px-2"
+												title="Дополнительные действия с нарядом"
+												aria-label="Меню действий"
+												aria-haspopup="menu"
+												aria-expanded={openMenuOrderId === order.id}
 											>
-												<Calendar className="w-3.5 h-3.5" />
-												Запланировать прием
+												<MoreVertical className="w-3.5 h-3.5" />
 											</button>
-										)}
 
-										{order.secureToken && (
-											<button
-												type="button"
-												onClick={() => copyPortalLink(order.secureToken)}
-												className="lab-btn-32"
-												title="Скопировать ссылку для зубного техника"
-											>
-												<Link className="w-3.5 h-3.5" />
-												Ссылка технику
-											</button>
-										)}
+											{openMenuOrderId === order.id && (
+												<div
+													className="absolute right-0 bottom-full mb-1 w-48 p-1.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#cbd5e1)] shadow-xl z-50 flex flex-col gap-1 text-xs text-[var(--ink,#0f172a)] backdrop-blur-md"
+													role="menu"
+													aria-label="Меню действий наряда"
+												>
+													<button
+														type="button"
+														onClick={() => {
+															setOpenMenuOrderId(null);
+															setSelectedOrderForEdit(order as any);
+															setIsOrderModalOpen(true);
+														}}
+														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
+														role="menuitem"
+													>
+														<FlaskConical className="w-3.5 h-3.5 text-[var(--teal)]" />
+														<span>Детали наряда</span>
+													</button>
 
-										<button
-											type="button"
-											onClick={() => {
-												setSelectedOrderForTracking(order as any);
-												setIsTrackingDrawerOpen(true);
-											}}
-											className="lab-btn-32"
-											title="Открыть трекер этапов ЗТЛ"
-										>
-											<Layers className="w-3.5 h-3.5" />
-											Трекинг
-										</button>
+													<button
+														type="button"
+														onClick={() => {
+															setOpenMenuOrderId(null);
+															setSelectedOrderForTracking(order as any);
+															setIsTrackingDrawerOpen(true);
+														}}
+														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
+														role="menuitem"
+													>
+														<Layers className="w-3.5 h-3.5 text-indigo-500" />
+														<span>Трекинг этапов</span>
+													</button>
 
-										<button
-											type="button"
-											onClick={() => {
-												setSelectedOrderForEdit(order as any);
-												setIsOrderModalOpen(true);
-											}}
-											className="lab-btn-32"
-											title="Открыть полный наряд для редактирования"
-										>
-											Детали
-										</button>
+													{order.secureToken && (
+														<button
+															type="button"
+															onClick={() => {
+																setOpenMenuOrderId(null);
+																copyPortalLink(order.secureToken);
+															}}
+															className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
+															role="menuitem"
+														>
+															<Link className="w-3.5 h-3.5 text-sky-500" />
+															<span>Ссылка технику</span>
+														</button>
+													)}
 
-										<button
-											type="button"
-											onClick={() => handleDeleteOrder(order.id)}
-											className="lab-btn-32 text-rose-600 hover:text-rose-700"
-											title="Удалить наряд ЗТЛ"
-										>
-											<Trash2 className="w-3.5 h-3.5" />
-										</button>
+													<div className="h-[1px] bg-[var(--line,#e2e8f0)] my-0.5" />
+
+													<button
+														type="button"
+														onClick={() => {
+															setOpenMenuOrderId(null);
+															handleDeleteOrder(order.id);
+														}}
+														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer font-semibold"
+														role="menuitem"
+													>
+														<Trash2 className="w-3.5 h-3.5" />
+														<span>Удалить наряд</span>
+													</button>
+												</div>
+											)}
+										</div>
 									</div>
 								</div>
 							</div>

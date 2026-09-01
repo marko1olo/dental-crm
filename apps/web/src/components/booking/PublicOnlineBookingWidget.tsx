@@ -1736,7 +1736,7 @@ export const PublicOnlineBookingWidget: React.FC<
 							<button
 								type="button"
 								onClick={handleCopyTicket}
-								className="text-slate-400 hover:text-teal-600 ml-1 p-1 rounded transition-colors"
+								className="text-slate-400 hover:text-teal-600 ml-1 min-h-[44px] min-w-[44px] p-2.5 inline-flex items-center justify-center rounded transition-colors"
 								title="Скопировать номер талона"
 								aria-label="Скопировать номер талона"
 							>

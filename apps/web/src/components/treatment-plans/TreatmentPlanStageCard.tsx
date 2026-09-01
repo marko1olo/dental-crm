@@ -364,8 +364,8 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									title={`Оформить беспроцентную банковскую рассрочку (Сбер / Т-Банк / Подели) на этап №${stage.stageNumber}`}
 									data-testid={`stage-${stage.stageNumber}-installment-btn`}
 								>
-									<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400" />
-									<span>💳 Оформить рассрочку на этап</span>
+									<CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span>Оформить рассрочку на этап</span>
 								</button>
 							)}
 

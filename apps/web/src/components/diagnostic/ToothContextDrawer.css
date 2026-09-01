@@ -122,8 +122,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 32px;
-	min-height: 32px;
+	min-width: 44px;
+	min-height: 44px;
 	border-radius: 8px;
 	border: none;
 	background: transparent;
@@ -1342,8 +1342,15 @@
 	.dente-resorption-btn,
 	.dente-primary-action-btn,
 	.dente-secondary-btn,
-	.dente-drawer-btn-secondary {
+	.dente-drawer-btn-secondary,
+	.dente-drawer-close-btn {
 		min-height: 44px;
+		min-width: 44px;
+	}
+
+	.dente-row-del-btn {
+		min-width: 44px !important;
+		min-height: 44px !important;
 	}
 }
 

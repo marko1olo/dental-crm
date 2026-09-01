@@ -619,10 +619,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								<button
 									type="button"
 									onClick={() => setOpenMenu("none")}
-									className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+									className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
 									aria-label="Закрыть меню"
 								>
-									<X className="w-3.5 h-3.5" />
+									<X className="w-4 h-4" />
 								</button>
 							</div>
 
@@ -769,10 +769,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								<button
 									type="button"
 									onClick={() => setOpenMenu("none")}
-									className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+									className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
 									aria-label="Закрыть меню"
 								>
-									<X className="w-3.5 h-3.5" />
+									<X className="w-4 h-4" />
 								</button>
 							</div>
 
@@ -795,7 +795,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 												<span className="text-xs font-semibold truncate text-zinc-100">
 													{p.label}
 												</span>
-												<span className="text-[10px] text-zinc-500 font-mono">
+												<span className="text-[10px] text-zinc-400 font-mono">
 													W: {p.windowWidth} / L: {p.windowLevel}
 												</span>
 											</div>
@@ -928,7 +928,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								<button
 									type="button"
 									onClick={() => setOpenMenu("none")}
-									className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+									className="min-h-[36px] min-w-[36px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
 									aria-label="Закрыть меню"
 								>
 									<X className="w-3.5 h-3.5" />

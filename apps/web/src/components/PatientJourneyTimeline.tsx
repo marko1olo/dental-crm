@@ -292,7 +292,7 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 				</div>
 
 				{/* ── Мгновенный поиск по ключевым словам (043/у) ── */}
-				<div className="timeline-search-bar flex flex-col gap-2 p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
+				<div className="timeline-search-bar flex flex-col gap-2 p-3 rounded-2xl bg-[var(--paper-soft)]">
 					<div className="relative flex items-center w-full">
 						<Search size={16} className="absolute left-3.5 text-[var(--muted)] pointer-events-none" />
 						<input
@@ -306,7 +306,7 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="absolute right-2.5 p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+								className="absolute right-0 top-0 bottom-0 h-full min-w-[44px] flex items-center justify-center rounded-r-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 								title="Очистить поиск"
 							>
 								<X size={16} />

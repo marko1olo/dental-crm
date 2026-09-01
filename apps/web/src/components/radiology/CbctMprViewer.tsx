@@ -2663,7 +2663,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<button
 								type="button"
 								onClick={() => setCbctImplantMode(false)}
-								className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+								className="min-h-[36px] min-w-[36px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
 								title="Закрыть панель имплантации"
 							>
 								<X className="w-4 h-4" />

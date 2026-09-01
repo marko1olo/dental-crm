@@ -291,11 +291,11 @@ export function ClinicControlPill({
 						</div>
 
 						<div className="grid grid-cols-2 gap-2 text-xs mb-3">
-							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)]">
+							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))]">
 								<span className="text-[10px] text-[var(--muted,#64748b)] block">Смена №</span>
 								<strong className="text-[var(--ink,#0f172a)] font-mono text-sm">№ 14</strong>
 							</div>
-							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)]">
+							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))]">
 								<span className="text-[10px] text-[var(--muted,#64748b)] block">ККТ 54-ФЗ / ОФД</span>
 								<strong className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1">
 									<ShieldCheck size={12} /> Норма (ФФД 1.2)
@@ -314,21 +314,10 @@ export function ClinicControlPill({
 										setCurrentView("shift");
 									}
 								}}
-								className="dnt-cc-btn dnt-cc-btn--secondary flex-1"
+								className="dnt-cc-btn dnt-cc-btn--primary w-full"
 							>
 								<CreditCard size={14} />
-								<span>Z-Отчет / Смена</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setIsOpen(false);
-									setCurrentView("shift");
-								}}
-								className="dnt-cc-btn dnt-cc-btn--primary flex-1"
-							>
-								<Activity size={14} />
-								<span>Открыть Смену</span>
+								<span>Закрыть смену (Z-отчет)</span>
 							</button>
 						</div>
 					</div>

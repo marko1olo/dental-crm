@@ -7,7 +7,7 @@
 	position: fixed;
 	bottom: 1.5rem;
 	left: 1.5rem;
-	z-index: 9999;
+	z-index: 99999;
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
@@ -43,7 +43,7 @@ body:has(.cbct-viewport-container-axial) .sa-toast {
 	top: auto !important;
 	transform: translateX(-50%) !important;
 	max-width: 440px !important;
-	z-index: 9999 !important;
+	z-index: 99999 !important;
 }
 
 @keyframes sa-slide-up {

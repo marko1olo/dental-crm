@@ -4,6 +4,7 @@ import {
 	ArrowUpFromLine,
 	ChevronDown,
 	Edit2,
+	MoreVertical,
 	Package,
 	PackageCheck,
 	Plus,
@@ -169,18 +170,23 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
 	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
 	const opsMenuRef = React.useRef<HTMLDivElement>(null);
+	const [activeMenuRowId, setActiveMenuRowId] = useState<string | null>(null);
+	const rowMenuRef = React.useRef<HTMLDivElement>(null);
 
 	React.useEffect(() => {
 		const handleOutside = (e: MouseEvent) => {
 			if (opsMenuRef.current && !opsMenuRef.current.contains(e.target as Node)) {
 				setIsOpsMenuOpen(false);
 			}
+			if (rowMenuRef.current && !rowMenuRef.current.contains(e.target as Node)) {
+				setActiveMenuRowId(null);
+			}
 		};
-		if (isOpsMenuOpen) {
+		if (isOpsMenuOpen || activeMenuRowId) {
 			document.addEventListener("mousedown", handleOutside);
 		}
 		return () => document.removeEventListener("mousedown", handleOutside);
-	}, [isOpsMenuOpen]);
+	}, [isOpsMenuOpen, activeMenuRowId]);
 
 	/*
 	 * ЭТО ЗНАЧЕНИЯ CSS, А НЕ ИМЕНА КЛАССОВ.
@@ -921,9 +927,65 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 											) : !organizationId ? (
 												"Склад не загружен: клиника не определена. Обновите страницу или войдите в кабинет заново — добавлять материалы сейчас нельзя, настоящие остатки не показаны."
 											) : searchQuery ? (
-												"Материалы не найдены по запросу"
+												<div
+													style={{
+														display: "flex",
+														flexDirection: "column",
+														alignItems: "center",
+														gap: 8,
+													}}
+												>
+													<Search size={28} style={{ color: "var(--muted)" }} />
+													<span style={{ color: "var(--ink)", fontWeight: 600, fontSize: 14 }}>
+														Материалы не найдены по запросу «{searchQuery}»
+													</span>
+													<span style={{ color: "var(--muted)", fontSize: 12 }}>
+														Проверьте правильность наименования, артикула SKU или штрихкода партии.
+													</span>
+												</div>
 											) : (
-												"Склад пуст. Добавьте первый материал."
+												<div
+													style={{
+														display: "flex",
+														flexDirection: "column",
+														alignItems: "center",
+														gap: 12,
+														maxWidth: 480,
+														margin: "0 auto",
+													}}
+												>
+													<Package size={40} style={{ color: "var(--teal, #0d9488)" }} />
+													<span style={{ color: "var(--ink)", fontWeight: 700, fontSize: 16 }}>
+														На складе пока нет материалов и партий
+													</span>
+													<span style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>
+														Оформите первую приходную накладную для оприходования медикаментов, анестетиков, пломбировочных материалов и расходников.
+													</span>
+													<button
+														type="button"
+														onClick={() => openAddModal()}
+														style={{
+															minHeight: "44px",
+															padding: "10px 24px",
+															borderRadius: 10,
+															background: "var(--teal, #0d9488)",
+															color: "#ffffff",
+															fontWeight: 700,
+															fontSize: 14,
+															border: "none",
+															boxShadow: "var(--shadow-1)",
+															cursor: "pointer",
+															display: "inline-flex",
+															alignItems: "center",
+															gap: 8,
+															marginTop: 6,
+														}}
+														data-testid="empty-state-add-first-material-btn"
+													>
+														<Plus size={16} />
+														<span>+ Оформить первую приходную накладную</span>
+													</button>
+												</div>
 											)}
 										</td>
 									</tr>
@@ -1137,50 +1199,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														style={{
 															display: "flex",
 															justifyContent: "flex-end",
+															alignItems: "center",
 															gap: 6,
-															flexWrap: "wrap",
 														}}
 													>
-														<button
-															type="button"
-															onClick={() => openEditModal(item)}
-															style={{
-																background: "var(--warn-bg, rgba(245, 158, 11, 0.1))",
-																color: "var(--warn-fg, #d97706)",
-																border: "none",
-																width: 32,
-																height: 32,
-																borderRadius: 6,
-																cursor: "pointer",
-																display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-															}}
-															title="Редактировать"
-														>
-															<Edit2 size={14} />
-														</button>
-														<button
-															type="button"
-															onClick={() =>
-																handleDeleteItem(item.id, item.name)
-															}
-															style={{
-																background: "var(--bad-bg, rgba(239, 68, 68, 0.1))",
-																color: "var(--bad-fg, var(--tomato))",
-																border: "none",
-																width: 32,
-																height: 32,
-																borderRadius: 6,
-																cursor: "pointer",
-																display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-															}}
-															title="Удалить"
-														>
-															<Trash2 size={14} />
-														</button>
 														<button
 															type="button"
 															onClick={() => {
@@ -1200,35 +1222,156 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																alignItems: "center",
 																gap: 5,
 																fontSize: 13,
+																minHeight: 32,
 															}}
-															title="Оприходовать"
+															title="Оприходовать материал на склад (Primary Action)"
 														>
 															<ArrowDownToLine size={14} /> ПРИХОД
 														</button>
-														<button
-															type="button"
-															onClick={() => {
-																setAdjustingItem(item);
-																setAdjustType("out");
-																setAdjustAmount("");
-															}}
-															style={{
-																background: "rgba(239, 68, 68, 0.1)",
-																color: "var(--tomato)",
-																border: "none",
-																padding: "6px 12px",
-																borderRadius: 6,
-																fontWeight: 600,
-																cursor: "pointer",
-																display: "flex",
-																alignItems: "center",
-																gap: 5,
-																fontSize: 13,
-															}}
-															title="Списать"
+														<div
+															style={{ position: "relative", display: "inline-flex" }}
+															ref={activeMenuRowId === item.id ? rowMenuRef : null}
 														>
-															<ArrowUpFromLine size={14} /> РАСХОД
-														</button>
+															<button
+																type="button"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	setActiveMenuRowId((prev) =>
+																		prev === item.id ? null : item.id,
+																	);
+																}}
+																style={{
+																	background: "var(--paper-soft, rgba(0,0,0,0.04))",
+																	color: "var(--muted)",
+																	border: "1px solid var(--line, rgba(0,0,0,0.08))",
+																	width: 32,
+																	height: 32,
+																	borderRadius: 6,
+																	cursor: "pointer",
+																	display: "flex",
+																	alignItems: "center",
+																	justifyContent: "center",
+																}}
+																title="Действия с позицией"
+																aria-label="Действия с позицией склада"
+																aria-haspopup="menu"
+																aria-expanded={activeMenuRowId === item.id}
+															>
+																<MoreVertical size={15} />
+															</button>
+															{activeMenuRowId === item.id && (
+																<div
+																	style={{
+																		position: "absolute",
+																		right: 0,
+																		top: "100%",
+																		marginTop: 4,
+																		background: "var(--paper-strong, #ffffff)",
+																		border: "1px solid var(--line, #e2e8f0)",
+																		borderRadius: 8,
+																		boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+																		padding: 4,
+																		zIndex: 50,
+																		minWidth: 160,
+																		display: "flex",
+																		flexDirection: "column",
+																		gap: 2,
+																		textAlign: "left",
+																	}}
+																	role="menu"
+																	aria-label="Меню позиции склада"
+																	onClick={(e) => e.stopPropagation()}
+																>
+																	<button
+																		type="button"
+																		onClick={() => {
+																			setActiveMenuRowId(null);
+																			setAdjustingItem(item);
+																			setAdjustType("out");
+																			setAdjustAmount("");
+																		}}
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: 8,
+																			padding: "8px 12px",
+																			fontSize: 12,
+																			fontWeight: 500,
+																			color: "var(--ink)",
+																			background: "none",
+																			border: "none",
+																			borderRadius: 6,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																		}}
+																		role="menuitem"
+																	>
+																		<ArrowUpFromLine size={14} color="var(--bad-fg, #ef4444)" />
+																		<span>Списать (Расход)</span>
+																	</button>
+																	<button
+																		type="button"
+																		onClick={() => {
+																			setActiveMenuRowId(null);
+																			openEditModal(item);
+																		}}
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: 8,
+																			padding: "8px 12px",
+																			fontSize: 12,
+																			fontWeight: 500,
+																			color: "var(--ink)",
+																			background: "none",
+																			border: "none",
+																			borderRadius: 6,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																		}}
+																		role="menuitem"
+																	>
+																		<Edit2 size={14} color="var(--warn-fg, #d97706)" />
+																		<span>Редактировать</span>
+																	</button>
+																	<div
+																		style={{
+																			height: 1,
+																			background: "var(--line, #e2e8f0)",
+																			margin: "2px 0",
+																		}}
+																	/>
+																	<button
+																		type="button"
+																		onClick={() => {
+																			setActiveMenuRowId(null);
+																			handleDeleteItem(item.id, item.name);
+																		}}
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: 8,
+																			padding: "8px 12px",
+																			fontSize: 12,
+																			fontWeight: 600,
+																			color: "var(--bad-fg, #ef4444)",
+																			background: "none",
+																			border: "none",
+																			borderRadius: 6,
+																			cursor: "pointer",
+																			width: "100%",
+																			textAlign: "left",
+																		}}
+																		role="menuitem"
+																	>
+																		<Trash2 size={14} />
+																		<span>Удалить</span>
+																	</button>
+																</div>
+															)}
+														</div>
 													</div>
 												</td>
 											</tr>
