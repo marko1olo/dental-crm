@@ -104,7 +104,6 @@ import { registerSystemRoutes } from "./routes/system.js";
 import {
 	registerTelegramRoutes,
 	registerTelegramWebhookRoutes,
-	startDenteTelegramOutboxDueWorker,
 } from "./routes/telegram.js";
 import {
 	startEgiszQueueWorker,
@@ -815,14 +814,8 @@ export async function createDenteApiApp(
 	// очереди ждали звонка, которого никто не делал.
 	await registerWaitlistMatchRoutes(app);
 
-	if (options.startTelegramWorker !== false) {
-		const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({
-			logger: app.log,
-		});
-		app.addHook("onClose", async () => {
-			telegramOutboxDueWorker.stop();
-		});
-	}
+	// Бутафорский воркер Telegram отключен (крутил in-memory массив sampleData.ts).
+	// Реальная очередь сообщений клиники разбирается через communicationWorker ниже.
 
 	// Разбор очереди исходящих сообщений. Прежний services/notificationWorker.ts
 	// объявлял setInterval и ниоткуда не вызывался — очередь не разбиралась.

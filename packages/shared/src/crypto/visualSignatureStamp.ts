@@ -154,7 +154,7 @@ export function injectVisualSignatureStampIntoHtml(
 	if (!html || !stampHtml) return html;
 
 	// Если штамп уже внедрен — не дублируем
-	if (html.includes("BEGIN_GOST_SIGNATURE_STAMP") || html.includes("gost-digital-stamp")) {
+	if (html.includes("BEGIN_GOST_SIGNATURE_STAMP") || html.includes("<div class=\"gost-digital-stamp\"")) {
 		return html;
 	}
 

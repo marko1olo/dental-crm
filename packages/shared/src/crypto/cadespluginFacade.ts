@@ -56,7 +56,7 @@ export const CADES_GOST_CRYPTO_OIDS = {
 	EGISZ_HEALTHCARE_ORG: "1.2.643.5.1.13.13.1.2",
 } as const;
 
-const GOST_CRYPTO_OIDS = CADES_GOST_CRYPTO_OIDS;
+export const GOST_CRYPTO_OIDS = CADES_GOST_CRYPTO_OIDS;
 
 // ─── Strict TypeScript Interfaces for CAdESCOM / cadesplugin ──────────────
 
