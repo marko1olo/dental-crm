@@ -304,13 +304,8 @@ describe("Prosecutor 3 Red-Team: Hammer Inquisition Wave 2 (Decree 659 & Upsell 
 		console.log(`HTTP Status: ${response.statusCode}`);
 		console.log(`Response Body: ${response.body}`);
 
-		// АНАЛИЗ УЯЗВИМОСТИ:
-		// В billingQuery.ts:245: Upsell Consent Shield проверяется ТОЛЬКО `if (targetServiceId)`.
-		// Если serviceId опущен, система позволяет принять деньги и пробить чек 54-ФЗ!
-		if (response.statusCode === 201) {
-			console.log("[CRITICAL DEFECT DETECTED] Касса приняла 45 000 ₽ аванса на навязанную услугу в обход Upsell Consent Shield!");
-			console.log("[DEFECT CLASSIFICATION] БРАК: Отсутствие serviceId позволяет обойти защиту от навязывания услуг!");
-		}
+		assert.equal(response.statusCode, 422, "Касса обязана отклонять авансы на несогласованные услуги с кодом 422");
+		assert.equal(response.json()?.error, "UpsellConsentShieldViolationError");
 	});
 
 	it("RED-TEAM 1.3: Попытка выставить счет/наряд на навязанную услугу через /api/invoices/generate-from-plan", async (t) => {
@@ -350,14 +345,8 @@ describe("Prosecutor 3 Red-Team: Hammer Inquisition Wave 2 (Decree 659 & Upsell 
 		console.log(`HTTP Status: ${response.statusCode}`);
 		console.log(`Response Body: ${response.body}`);
 
-		// АНАЛИЗ УЯЗВИМОСТИ:
-		// Проверяет ли /api/invoices/generate-from-plan утвержденный план лечения?
-		// Нет! В routes/invoices.ts нет проверки утвержденного плана лечения пациента!
-		if (response.statusCode === 201) {
-			const invoiceResult = JSON.parse(response.body);
-			console.log("[CRITICAL DEFECT DETECTED] Выставлен официальный счет на навязанную услугу! Номер счета:", invoiceResult.invoiceNumber);
-			console.log("[DEFECT CLASSIFICATION] БРАК: Маршрут /api/invoices/generate-from-plan позволяет выписывать счета на любые несогласованные услуги в обход плана лечения!");
-		}
+		assert.equal(response.statusCode, 422, "Маршрут /api/invoices/generate-from-plan обязан блокировать несогласованные услуги с кодом 422");
+		assert.equal(response.json()?.error, "UpsellConsentShieldViolationError");
 	});
 
 	// =========================================================================
@@ -491,14 +480,8 @@ describe("Prosecutor 3 Red-Team: Hammer Inquisition Wave 2 (Decree 659 & Upsell 
 		console.log(`HTTP Status: ${response.statusCode}`);
 		console.log(`Response Body: ${response.body}`);
 
-		// АНАЛИЗ УЯЗВИМОСТИ:
-		// В billingQuery.ts:289 написано: ne(schema.generatedDocuments.status, "voided")
-		// Для draft это условие возвращает ИСТИНУ!
-		// Если оплата прошла (201) — это БРАК: неподписанный черновик позволяет списать деньги!
-		if (response.statusCode === 201) {
-			console.log("[CRITICAL DEFECT DETECTED] Касса списала 45 000 ₽ на основании неподписанного ЧЕРНОВИКА (draft)!");
-			console.log("[DEFECT CLASSIFICATION] БРАК: Статус 'draft' не имеет юридической силы, но обошел Upsell Consent Shield!");
-		}
+		assert.equal(response.statusCode, 422, "Оплата по неподписанному черновику Допсоглашения (status: draft) обязана быть заблокирована с кодом 422");
+		assert.equal(response.json()?.error, "UpsellConsentShieldViolationError");
 	});
 
 	it("RED-TEAM 3.3: Атака подмены: Допсоглашение оформлено на отбеливание (5 000 ₽), а пробивается имплантация (45 000 ₽)", async (t) => {
@@ -542,14 +525,7 @@ describe("Prosecutor 3 Red-Team: Hammer Inquisition Wave 2 (Decree 659 & Upsell 
 		console.log(`HTTP Status: ${response.statusCode}`);
 		console.log(`Response Body: ${response.body}`);
 
-		// АНАЛИЗ УЯЗВИМОСТИ:
-		// В billingQuery.ts:289 проверяется ЛИШЬ наличие хоть одного treatment_plan_acceptance у пациента!
-		// Совпадение услуги или суммы ВООБЩЕ НЕ ПРОВЕРЯЕТСЯ!
-		// Если оплата прошла (201) — это БРАК: допсоглашение на 5 000 ₽ отбеливание
-		// открыло неограниченную кассу на 45 000 ₽ имплантацию!
-		if (response.statusCode === 201) {
-			console.log("[CRITICAL DEFECT DETECTED] Касса списала 45 000 ₽ за имплантацию по допсоглашению на 5 000 ₽ отбеливание!");
-			console.log("[DEFECT CLASSIFICATION] БРАК: Отсутствует сверка конкретных позиций и лимита суммы в Дополнительном соглашении!");
-		}
+		assert.equal(response.statusCode, 422, "Оплата услуги с несоответствующим Допсоглашением/превышением лимита обязана блокироваться с кодом 422");
+		assert.equal(response.json()?.error, "UpsellConsentShieldViolationError");
 	});
 });

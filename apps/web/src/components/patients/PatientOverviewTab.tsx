@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
-import { PatientArchiveReasonsAndBlacklistsWidget } from "../crm/PatientArchiveReasonsAndBlacklistsWidget";
 import { PatientCommunicationTimelinesWidget } from "../crm/PatientCommunicationTimelinesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
 import { LabOrdersPanel } from "../LabOrdersPanel";
@@ -270,7 +269,6 @@ export function PatientOverviewTab() {
 							</summary>
 							<div className="patient-secondary-accordion__body">
 								<PatientCommunicationTimelinesWidget patientId={selectedPatientId} />
-								<PatientArchiveReasonsAndBlacklistsWidget patientId={selectedPatientId} />
 								<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
 								<PatientDuplicateMergeQueuesWidget />
 							</div>

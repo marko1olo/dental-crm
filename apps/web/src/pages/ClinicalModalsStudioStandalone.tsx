@@ -63,7 +63,6 @@ import { ToothAnesthesiaCalculator } from "../components/diagnostic/ToothAnesthe
 import { PrescriptionModal } from "../components/visit/PrescriptionModal";
 import { ChairsideTabletConsentModal } from "../components/chairside/ChairsideTabletConsentModal";
 import { CashShiftClosingModal } from "../components/billing/CashShiftClosingModal";
-import { InformedConsentModal } from "../components/documents/InformedConsentModal";
 import {
 	RadiologyModule,
 	RadiologyReferralModal,
@@ -113,7 +112,7 @@ import type { ToothData } from "../components/odontogram/ToothChart";
 import { WarehouseTransferModal } from "../components/inventory/transfers/WarehouseTransferModal";
 import { PatientPortalTimelineModal } from "../components/portal/timeline/PatientPortalTimelineModal";
 import { VoiceDictationAssistantModal } from "../components/voice/VoiceDictationAssistantModal";
-import { InformedConsentModal as InformedConsent323FzModal } from "../components/consents/InformedConsentModal";
+import { InformedConsentModal } from "../components/consents/InformedConsentModal";
 import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProtocolModal";
 import { AnesthesiaSafetyHubModal } from "../components/anesthesia/AnesthesiaSafetyHubModal";
 import { SterilizationJournalModal } from "../components/sanpin/SterilizationJournalModal";
@@ -3638,10 +3637,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<InformedConsentModal
 					isOpen={isConsentOpen}
 					onClose={() => setIsConsentOpen(false)}
+					initialTemplateKey="CONSENT_THERAPY"
 					patient={SAMPLE_PATIENT}
-					diary={SAMPLE_DIARY}
 					doctorName="Д-р Смирнов Алексей Петрович"
-					doctorSpecialty="Врач-стоматолог терапевт-эндодонтист"
 					clinicName="ООО «Денте Стоматология»"
 				/>
 			)}
@@ -3910,7 +3908,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			)}
 
 			{isConsent323Open && (
-				<InformedConsent323FzModal
+				<InformedConsentModal
 					isOpen={isConsent323Open}
 					onClose={() => setIsConsent323Open(false)}
 					initialTemplateKey="CONSENT_THERAPY"

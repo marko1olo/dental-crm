@@ -273,7 +273,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	};
 
 	const copyPortalLink = (token: string) => {
-		const url = `${window.location.origin}/#${LAB_ORDER_PORTAL_PATH}${token}`;
+		const url = `${window.location.origin}/#/portal/lab-order/${token}`;
 		navigator.clipboard.writeText(url);
 		showToast("Ссылка для зуботехника скопирована в буфер обмена", "success");
 	};

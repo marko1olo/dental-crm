@@ -52,7 +52,6 @@ import { TemperatureHumidityRegisterTab } from "./TemperatureHumidityRegisterTab
 import { RetroactiveBatchTab } from "./RetroactiveBatchTab";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { SanpinCycleModal } from "./SanpinCycleModal";
-import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { KraftPackageModal } from "./KraftPackageModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
@@ -570,7 +569,6 @@ export function SanpinRegisters() {
 	const [summary, setSummary] = useState<any>(null);
 	const [loadingSummary, setLoadingSummary] = useState(true);
 	const [isCycleModalOpen, setIsCycleModalOpen] = useState(false);
-	const [isSterilizationModalOpen, setIsSterilizationModalOpen] = useState(false);
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isRetroactiveBatchModalOpen, setIsRetroactiveBatchModalOpen] = useState(false);
@@ -1181,7 +1179,7 @@ export function SanpinRegisters() {
 									type="button"
 									onClick={() => {
 										setIsExportMenuOpen(false);
-										setIsSterilizationModalOpen(true);
+										setIsCycleModalOpen(true);
 									}}
 									className="sanpin-dropdown-item"
 									style={{
@@ -1668,16 +1666,6 @@ export function SanpinRegisters() {
 			{activeTab === "disinfectants" && <DisinfectantsRegisterTab />}
 			{activeTab === "bac_lab" && <BacLabRegisterTab />}
 			{activeTab === "needle_disposal" && <NeedleDisposalRegisterTab />}
-
-			{/* Canonical SanPiN Form 257/u Sterilization Cycle Modal */}
-			<SterilizationCycleModal
-				isOpen={isSterilizationModalOpen}
-				onClose={() => setIsSterilizationModalOpen(false)}
-				onSaveCycle={() => {
-					setIsSterilizationModalOpen(false);
-					fetchSummary();
-				}}
-			/>
 
 			{/* SanPiN Sterilization Cycle Modal */}
 			<SanpinCycleModal

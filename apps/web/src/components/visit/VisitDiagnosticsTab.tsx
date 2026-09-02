@@ -7,7 +7,7 @@ import { EMPTY_DIARY } from "../useVisitDiaryLogic";
 import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
 import { EndoCanalLogModal } from "../odontogram/EndoCanalLogModal";
 import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
-import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
+import { LabOrdersPanel } from "../LabOrdersPanel";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
 import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
 import { ImplantSurgicalPassportModal } from "../implant/ImplantSurgicalPassportModal";
