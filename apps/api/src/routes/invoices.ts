@@ -369,7 +369,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 					it.effectiveUnitPriceRub ??
 					it.planUnitPriceRub ??
 					it.unitPriceRub ??
-					Number(matchingCatalog?.priceRub ?? matchingCatalog?.basePriceRub ?? 0);
+					Number(matchingCatalog?.basePriceRub ?? 0);
 				const planPriceRub =
 					it.planUnitPriceRub ??
 					it.unitPriceRub ??

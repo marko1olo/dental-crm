@@ -1,6 +1,7 @@
 import {
 	acceptVisitDraftResponseSchema,
 	acceptVisitDraftSchema,
+	applyPlanItemsToVisitSchema,
 	visitDraftAutosaveRequestSchema,
 	visitDraftAutosaveResponseSchema,
 } from "@dental/shared";
@@ -49,7 +50,11 @@ import { chairs } from "../db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { createPatientInDb } from "../db/patientsQuery.js";
 import { createAppointmentInDb } from "../db/appointmentsQuery.js";
-import type { RequestIdentity } from "../security/identity.js";
+import { getRequestIdentity, type RequestIdentity } from "../security/identity.js";
+import {
+	VisitWorkOrderService,
+	VisitWorkOrderError,
+} from "../services/clinical/VisitWorkOrderService.js";
 
 type VisitPayloadSchema<T> = {
 	safeParse: (
@@ -657,6 +662,56 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 			return {
 				error: "NotFound",
 				message: "Приём не найден или недоступен для контроля качества.",
+			};
+		}
+	});
+
+	// Перенос согласованных услуг из плана лечения в наряд / протокол приёма (Feature #41, ЗоЗПП ст. 16, ПП РФ № 736)
+	app.post("/api/visits/:visitId/apply-plan-items", async (request, reply) => {
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"visit work order apply plan items",
+		);
+		if (!context) return;
+
+		const { visitId } = request.params as { visitId: string };
+		const parsed = applyPlanItemsToVisitSchema.safeParse(request.body);
+		if (!parsed.success) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры запроса переноса услуг плана лечения.",
+				issues: parsed.error.issues,
+			};
+		}
+
+		try {
+			const identity = getRequestIdentity(request);
+			const result = await VisitWorkOrderService.applyPlanItemsToVisit({
+				organizationId: context.organizationId,
+				visitId,
+				planId: parsed.data.planId,
+				itemIds: parsed.data.itemIds,
+				actorUserId: identity.userId ?? null,
+			});
+			return result;
+		} catch (error) {
+			if (error instanceof VisitWorkOrderError) {
+				reply.code(error.statusCode);
+				return {
+					error: error.code,
+					message: error.message,
+				};
+			}
+			request.log.error(
+				error,
+				"Непредвиденная ошибка переноса позиций плана лечения в наряд приёма",
+			);
+			reply.code(500);
+			return {
+				error: "InternalServerError",
+				message: "Не удалось перенести позиции плана лечения в наряд приёма.",
 			};
 		}
 	});

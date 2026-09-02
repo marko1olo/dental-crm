@@ -76,6 +76,35 @@ describe("visits routes - accept visit draft errors", () => {
 				"Прием не найден. Обновите рабочий экран и выберите актуальный прием.",
 		});
 	});
+
+	test("apply plan items validation error on empty payload", async () => {
+		const fakeUuid = "7f3a91c4-5b2e-4d18-9a06-2c7e845fb013";
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/visits/${fakeUuid}/apply-plan-items`,
+			headers: clinicHeaders,
+			payload: {},
+		});
+
+		assert.strictEqual(response.statusCode, 400);
+		assert.strictEqual(response.json().error, "ValidationError");
+	});
+
+	test("apply plan items validation error on invalid itemIds", async () => {
+		const fakeUuid = "7f3a91c4-5b2e-4d18-9a06-2c7e845fb013";
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/visits/${fakeUuid}/apply-plan-items`,
+			headers: clinicHeaders,
+			payload: {
+				planId: "7f3a91c4-5b2e-4d18-9a06-2c7e845fb014",
+				itemIds: ["invalid-id"],
+			},
+		});
+
+		assert.strictEqual(response.statusCode, 400);
+		assert.strictEqual(response.json().error, "ValidationError");
+	});
 });
 
 /*
@@ -92,7 +121,8 @@ describe("visits routes - accept visit draft errors", () => {
  *   GET  /api/visits/:id/draft/autosave     401 без токена -> 200 с токеном (отдало ответ)
  *   PUT  /api/visits/:id/draft/autosave     401 без токена -> 400 с токеном (дошло до разбора тела)
  *   POST /api/visits/:id/draft/accept       401 без токена -> 400 с токеном (дошло до разбора тела)
- * ПОСЛЕ ПРАВКИ все восемь ответов — 403 с названным участком.
+ *   POST /api/visits/:id/apply-plan-items   401 без токена -> 400 с токеном (дошло до разбора тела)
+ * ПОСЛЕ ПРАВКИ все десять ответов — 403 с названным участком.
  */
 describe("visits routes - охрана каждого маршрута", () => {
 	const zero = "00000000-0000-0000-0000-000000000000";
@@ -122,6 +152,12 @@ describe("visits routes - охрана каждого маршрута", () => {
 		{
 			method: "POST",
 			url: `/api/visits/${zero}/draft/accept`,
+			mutating: true,
+			error: "ClinicalAdminSecretRequired",
+		},
+		{
+			method: "POST",
+			url: `/api/visits/${zero}/apply-plan-items`,
 			mutating: true,
 			error: "ClinicalAdminSecretRequired",
 		},
