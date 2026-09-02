@@ -149,45 +149,6 @@ export async function mergePatients(
 		return { ok: false, reason: "Указана одна и та же карточка." };
 	}
 
-	const bothPatients = await withTenantCtx(input.organizationId, async (tx) =>
-		tx
-			.select({
-				id: patients.id,
-				fullName: patients.fullName,
-				phone: patients.phone,
-				email: patients.email,
-				birthDate: patients.birthDate,
-				notes: patients.notes,
-				status: patients.status,
-				mergedInto: patients.mergedIntoPatientId,
-			})
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, input.organizationId),
-					sql`${patients.id} in (${input.primaryPatientId}, ${input.duplicatePatientId})`,
-				),
-			),
-	);
-
-	const primary = bothPatients.find((row) => row.id === input.primaryPatientId);
-	const duplicate = bothPatients.find(
-		(row) => row.id === input.duplicatePatientId,
-	);
-	if (!primary || !duplicate) {
-		return { ok: false, reason: "Одна из карточек не найдена в этой клинике." };
-	}
-	if (duplicate.mergedInto) {
-		return { ok: false, reason: "Эта карточка уже объединена с другой." };
-	}
-	if (primary.mergedInto) {
-		return {
-			ok: false,
-			reason:
-				"Основная карточка сама объединена с другой — выберите ту, что осталась.",
-		};
-	}
-
 	const columns = await patientReferenceColumns();
 	const availableReferenceColumns = new Set(
 		columns.map((column) => `${column.tableName}.${column.columnName}`),
@@ -209,8 +170,91 @@ export async function mergePatients(
 	const filledFields: string[] = [];
 
 	try {
-		await withTenantCtx(input.organizationId, async (tx) =>
+		const outcome = await withTenantCtx(input.organizationId, async (tx) =>
 			tx.transaction(async (inner) => {
+				// 1. Детерминированный порядок блокировки строк: сортируем UUID для предотвращения взаимных блокировок (deadlocks)
+				const [firstId, secondId] = [
+					input.primaryPatientId,
+					input.duplicatePatientId,
+				].sort();
+
+				// 2. Пессимистическая блокировка строк пациентов в порядке возрастания ID (SELECT FOR UPDATE)
+				const lockedRowsResult = await inner.execute(sql`
+					select 
+						id,
+						full_name as "fullName",
+						phone,
+						email,
+						birth_date as "birthDate",
+						notes,
+						status,
+						merged_into_patient_id as "mergedInto"
+					from patients
+					where organization_id = ${input.organizationId}
+						and id in (${firstId}, ${secondId})
+					order by id asc
+					for update
+				`);
+
+				const lockedRows = (lockedRowsResult.rows ?? []) as Array<{
+					id: string;
+					fullName: string;
+					phone: string | null;
+					email: string | null;
+					birthDate: string | null;
+					notes: string | null;
+					status: string;
+					mergedInto: string | null;
+				}>;
+
+				const primary = lockedRows.find((row) => row.id === input.primaryPatientId);
+				const duplicate = lockedRows.find(
+					(row) => row.id === input.duplicatePatientId,
+				);
+
+				if (!primary || !duplicate) {
+					return {
+						ok: false as const,
+						reason: "Одна из карточек не найдена в этой клинике.",
+					};
+				}
+				if (duplicate.mergedInto) {
+					return {
+						ok: false as const,
+						reason: "Эта карточка уже объединена с другой.",
+					};
+				}
+				if (primary.mergedInto) {
+					return {
+						ok: false as const,
+						reason:
+							"Основная карточка сама объединена с другой — выберите ту, что осталась.",
+					};
+				}
+
+				// 3. Защита от циклических слияний: проверяем, что primary по цепочке не ссылается на duplicate
+				const cycleCheck = await inner.execute(sql`
+					with recursive merge_chain as (
+						select id, merged_into_patient_id
+						from patients
+						where organization_id = ${input.organizationId}
+							and id = ${input.primaryPatientId}
+						union all
+						select p.id, p.merged_into_patient_id
+						from patients p
+						inner join merge_chain mc on p.id = mc.merged_into_patient_id
+						where mc.merged_into_patient_id is not null
+							and p.organization_id = ${input.organizationId}
+					)
+					select 1 as cycle_detected from merge_chain where id = ${input.duplicatePatientId} limit 1
+				`);
+				if ((cycleCheck.rows ?? []).length > 0) {
+					return {
+						ok: false as const,
+						reason: "Обнаружена циклическая зависимость слияния карточек.",
+					};
+				}
+
 				// Бонусные баллы: объединяем балансы перед удалением строки дубля
 				if (
 					existingConflictTables.some((t) => t.table === "patient_bonus_balances")
@@ -361,8 +405,13 @@ export async function mergePatients(
 							decidedAt: new Date(),
 						},
 					});
+
+				return { ok: true as const };
 			}),
 		);
+		if (outcome && !outcome.ok) {
+			return outcome;
+		}
 	} catch (error) {
 		return {
 			ok: false,

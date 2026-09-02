@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
@@ -646,5 +646,100 @@ describe("поиск и слияние дублей", () => {
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).patientId, KIN_MOTHER);
+	});
+
+	test("обратное слияние в уже объединённую карточку (B -> A) отклоняется", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		// Попытка объединить DUP_PRIMARY в DUP_SECOND (где DUP_SECOND уже объединен в DUP_PRIMARY)
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/patients/duplicates/merge",
+			headers: ORG_HEADERS,
+			payload: {
+				primaryPatientId: DUP_SECOND,
+				duplicatePatientId: DUP_PRIMARY,
+			},
+		});
+		assert.equal(response.statusCode, 409, response.body);
+		const err = JSON.parse(response.body);
+		assert.ok(
+			err.message.includes("уже объединена") ||
+				err.message.includes("Основная карточка сама объединена"),
+			err.message,
+		);
+	});
+
+	test("параллельные встречные слияния (A -> B и B -> A) не вызывают deadlock и не создают цикл", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const PAT_X = "dce70000-0000-4000-8000-000000000841";
+		const PAT_Y = "dce70000-0000-4000-8000-000000000842";
+
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(patients).values([
+				{
+					id: PAT_X,
+					organizationId: ORG_ID,
+					fullName: "Параллельный Пациент X",
+					birthDate: "1990-01-01",
+					phone: "+7 999 111-22-33",
+				},
+				{
+					id: PAT_Y,
+					organizationId: ORG_ID,
+					fullName: "Параллельный Пациент Y",
+					birthDate: "1990-01-01",
+					phone: "+7 999 111-22-33",
+				},
+			]);
+		});
+
+		// Одновременно запускаем слияние X -> Y и Y -> X
+		const [res1, res2] = await Promise.all([
+			app.inject({
+				method: "POST",
+				url: "/api/patients/duplicates/merge",
+				headers: ORG_HEADERS,
+				payload: {
+					primaryPatientId: PAT_Y,
+					duplicatePatientId: PAT_X,
+				},
+			}),
+			app.inject({
+				method: "POST",
+				url: "/api/patients/duplicates/merge",
+				headers: ORG_HEADERS,
+				payload: {
+					primaryPatientId: PAT_X,
+					duplicatePatientId: PAT_Y,
+				},
+			}),
+		]);
+
+		const statuses = [res1.statusCode, res2.statusCode].sort();
+		assert.deepEqual(
+			statuses,
+			[200, 409],
+			`Ожидались статусы [200, 409], получены: [${res1.statusCode}, ${res2.statusCode}]`,
+		);
+
+		// Проверяем физическое состояние в БД: отсутствие циклов!
+		const dbRows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({ id: patients.id, mergedInto: patients.mergedIntoPatientId, status: patients.status })
+				.from(patients)
+				.where(and(eq(patients.organizationId, ORG_ID), sql`${patients.id} in (${PAT_X}, ${PAT_Y})`)),
+		);
+
+		const dbX = dbRows.find((r) => r.id === PAT_X);
+		const dbY = dbRows.find((r) => r.id === PAT_Y);
+		assert.ok(dbX && dbY, "Обе карточки должны остаться в базе данных");
+		const mergedCount = [dbX.mergedInto, dbY.mergedInto].filter(Boolean).length;
+		assert.equal(mergedCount, 1, "Ровно одна карточка должна быть объединена");
+		assert.ok(
+			!(dbX.mergedInto === PAT_Y && dbY.mergedInto === PAT_X),
+			"КРИТИЧЕСКИЙ БРАК: Обнаружен взаимный цикл слияния X <-> Y!",
+		);
 	});
 });
