@@ -150,6 +150,34 @@ test("Telephony - incoming call lifecycle and store transitions", () => {
 	assert.strictEqual(history[0]?.actionTaken, "accepted");
 });
 
+test("Telephony - connectCall keeps call active in connected status without destroying activeCall", () => {
+	useTelephonyStore.getState().clearHistory();
+
+	useTelephonyStore.getState().triggerIncomingCall({
+		callId: "call-connect-test",
+		phone: "+79269998877",
+		patientId: "pat-99",
+		patientName: "Михаил Васильев",
+		provider: "mango",
+		status: "ringing",
+	});
+
+	let active = useTelephonyStore.getState().activeCall;
+	assert.ok(active !== null);
+	assert.strictEqual(active?.status, "ringing");
+
+	// When doctor opens card, connectCall is invoked: activeCall is NOT destroyed
+	useTelephonyStore.getState().connectCall();
+	active = useTelephonyStore.getState().activeCall;
+	assert.ok(active !== null, "Active call must not be null when opening patient card");
+	assert.strictEqual(active?.status, "connected", "Active call status must be connected");
+
+	const historyItem = useTelephonyStore.getState().callHistory[0];
+	assert.strictEqual(historyItem?.status, "connected");
+
+	useTelephonyStore.getState().dismissCall();
+});
+
 test("Telephony - agent readiness states and line switching", () => {
 	// 1. Agent readiness status transitions
 	assert.strictEqual(useTelephonyStore.getState().agentState, "online");

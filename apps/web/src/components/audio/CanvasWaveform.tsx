@@ -219,25 +219,11 @@ export function CanvasWaveform({
 					ctx.stroke();
 				}
 			} else {
-				// === СОСТОЯНИЕ ПОКОЯ / ДЫХАНИЕ (IDLE PULSE) ===
+				// === СОСТОЯНИЕ ПОКОЯ (FLAT REST BASELINE) ===
 				const midY = displayHeight / 2;
 				ctx.beginPath();
 				ctx.moveTo(0, midY);
-
-				const waveCount = 3;
-				const amplitude = 3 + Math.sin(phaseRef.current * 0.8) * 1.5;
-
-				for (let x = 0; x <= displayWidth; x += 4) {
-					const progress = x / displayWidth;
-					const envelope = Math.sin(progress * Math.PI);
-					const y =
-						midY +
-						Math.sin(progress * Math.PI * 2 * waveCount + phaseRef.current) *
-							amplitude *
-							envelope;
-					ctx.lineTo(x, y);
-				}
-
+				ctx.lineTo(displayWidth, midY);
 				ctx.lineWidth = 1.5;
 				ctx.strokeStyle = lineSubtleColor;
 				ctx.lineCap = "round";

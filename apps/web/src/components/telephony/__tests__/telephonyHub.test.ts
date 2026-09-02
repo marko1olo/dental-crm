@@ -670,7 +670,7 @@ describe("Telephony & Reception Live Hub Suite", () => {
 			assert.equal(t1[1]?.speaker, t2[1]?.speaker);
 		});
 
-		test("incoming call trigger automatically attaches realistic transcript to call history", () => {
+		test("incoming call trigger does NOT attach transcript while call is ringing", () => {
 			useTelephonyStore.getState().triggerIncomingCall({
 				callId: "call-with-transcript",
 				phone: "+79998887766",
@@ -681,8 +681,7 @@ describe("Telephony & Reception Live Hub Suite", () => {
 
 			const historyItem = useTelephonyStore.getState().callHistory[0];
 			assert.ok(historyItem);
-			assert.ok(historyItem.transcript, "Transcript should be attached to history item");
-			assert.ok((historyItem.transcript?.length ?? 0) >= 3);
+			assert.strictEqual(historyItem.transcript, undefined, "Transcript must be undefined while call is ringing");
 			useTelephonyStore.getState().dismissCall();
 		});
 	});

@@ -32,6 +32,7 @@ import {
 import { ClinicControlPill } from "./components/Header";
 import { IncomingCallPopup } from "./components/telephony/IncomingCallPopup";
 import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
+import { useTelephonyStore } from "./store/telephonyStore";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
@@ -610,6 +611,8 @@ export function WorkspaceTopbar({
 		clinicMode,
 		selectedWorkspaceRole,
 	);
+	const activeCall = useTelephonyStore((s) => s.activeCall);
+	const isIncomingCall = Boolean(activeCall && activeCall.status !== "connected");
 
 	return (
 		<header className="topbar">
@@ -904,8 +907,11 @@ export function WorkspaceTopbar({
 					</button>
 				) : null}
 			</div>
-			<IncomingCallPopup />
-			<TelephonyFloatingWidget />
+			{isIncomingCall ? (
+				<IncomingCallPopup />
+			) : (
+				<TelephonyFloatingWidget defaultExpanded={false} />
+			)}
 		</header>
 	);
 }

@@ -3,7 +3,7 @@
  */
 
 export type TelephonyProvider = "mango" | "uis" | "asterisk" | "zadarma" | "unknown" | "sip";
-export type TelephonyCallStatus = "ringing" | "answered" | "ended" | "rejected" | "missed";
+export type TelephonyCallStatus = "ringing" | "answered" | "connected" | "ended" | "rejected" | "missed";
 export type TelephonyAgentState = "online" | "dnd" | "pause" | "offline";
 export type PlaybackSpeed = 1 | 1.25 | 1.5 | 2;
 export type CallTransferType = "blind" | "attended";

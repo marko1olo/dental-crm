@@ -115,7 +115,7 @@ export function IncomingCallPopupModal({
 	const effectiveRecordingUrl =
 		recordingUrl ||
 		activeCall?.recordingUrl ||
-		"https://actions.google.com/sounds/v1/telephones/phone_ring.ogg";
+		"";
 
 	// Live Duration Timer
 	useEffect(() => {
@@ -277,7 +277,7 @@ export function IncomingCallPopupModal({
 	const formattedPhoneDisplayStr = formatPhoneDisplay(effectivePhone);
 	const initials = formatPatientInitials(callerDisplayName);
 	const avatarColors = getAvatarColor(callerDisplayName);
-	const isCallAnswered = activeCall?.status === "answered";
+	const isCallAnswered = activeCall?.status === "answered" || activeCall?.status === "connected";
 
 	const providerName =
 		effectiveProvider === "mango"

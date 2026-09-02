@@ -118,7 +118,7 @@ export function TelephonyFloatingWidget({
 	const setCurrentView = useAppStore((s) => s.setCurrentView);
 	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
-	const [isExpanded, setIsExpanded] = useState(defaultExpanded || Boolean(activeCall));
+	const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 	const [isOpen, setIsOpen] = useState(defaultExpanded || Boolean(activeCall));
 	const [activeTab, setActiveTab] = useState<"call" | "dialer" | "history">(
 		showDialerDefault ? "dialer" : "call",
@@ -138,11 +138,13 @@ export function TelephonyFloatingWidget({
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const waveformRef = useRef<HTMLDivElement | null>(null);
 
-	// Auto-expand and open when an incoming call arrives
+	// Auto-open compact dynamic island when an active call exists
 	useEffect(() => {
 		if (activeCall) {
 			setIsOpen(true);
-			setIsExpanded(true);
+			if (defaultExpanded) {
+				setIsExpanded(true);
+			}
 			setActiveTab("call");
 		} else if (!defaultExpanded) {
 			setIsOpen(false);
@@ -250,7 +252,7 @@ export function TelephonyFloatingWidget({
 	const formattedPhone = formatPhoneDisplay(activeCall?.phone || dialNumber);
 	const initials = formatPatientInitials(callerName);
 	const avatarColors = getAvatarColor(callerName);
-	const isCallAnswered = activeCall?.status === "answered";
+	const isCallAnswered = activeCall?.status === "answered" || activeCall?.status === "connected";
 
 	const waveformBars = useMemo(() => {
 		return generateWaveformBars(activeCall?.callId || activeCall?.phone || "sample-rec", 36);
@@ -373,7 +375,6 @@ export function TelephonyFloatingWidget({
 			timestamp: new Date().toISOString(),
 			status: "answered",
 			callStartedAt: Date.now(),
-			recordingUrl: `https://records.mango-office.ru/out-${Date.now()}.mp3`,
 		});
 
 		showToast(`Исходящий вызов на номер ${formatPhoneDisplay(e164)}`, "success");
@@ -1384,14 +1385,14 @@ export function TelephonyFloatingWidget({
 											<div className="flex items-center gap-2.5 min-w-0">
 												<div
 													className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-														item.status === "answered"
+														item.status === "answered" || item.status === "connected"
 															? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
 															: item.status === "rejected"
 																? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
 																: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
 													}`}
 												>
-													{item.status === "answered" ? (
+													{item.status === "answered" || item.status === "connected" ? (
 														<PhoneIncoming size={13} />
 													) : item.status === "rejected" ? (
 														<PhoneOff size={13} />

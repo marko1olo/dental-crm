@@ -2,7 +2,7 @@ import type { Appointment, InsuranceContract, Patient, PatientInsight, StaffMemb
 import { create } from "zustand";
 
 export type TelephonyProvider = "mango" | "uis" | "asterisk" | "zadarma" | "sip" | "unknown";
-export type TelephonyCallStatus = "ringing" | "answered" | "ended" | "rejected";
+export type TelephonyCallStatus = "ringing" | "answered" | "connected" | "ended" | "rejected" | "missed";
 export type PlaybackSpeed = 1 | 1.25 | 1.5 | 2;
 export type CallTransferType = "blind" | "attended";
 
@@ -45,55 +45,89 @@ export type CallOutcome =
 	| "accepted"
 	| "rejected"
 	| "dismissed"
-	| "missed"
-	| "whatsapp_sent"
-	| "sms_sent"
 	| "transferred";
 
-export interface CallOutcomeMeta {
-	readonly id: CallOutcome;
-	readonly label: string;
-	readonly shortLabel: string;
-	readonly iconName: string;
-	readonly color: string;
-	readonly badgeBg: string;
-	readonly badgeBorder: string;
-	readonly descriptionRu: string;
+export interface CallOutcomeConfig {
+	id: CallOutcome;
+	label: string;
+	shortLabel: string;
+	iconName: string;
+	color: string;
+	badgeBg: string;
+	badgeBorder: string;
+	descriptionRu: string;
 }
 
-export const CALL_OUTCOME_PRESETS: Record<
-	"booked" | "callback_15m" | "consultation" | "spam",
-	CallOutcomeMeta
-> = {
+export const CALL_OUTCOME_REGISTRY: Record<CallOutcome, CallOutcomeConfig> = {
 	booked: {
 		id: "booked",
-		label: "Записан на прием",
+		label: "Записан на приём",
 		shortLabel: "Записан",
 		iconName: "CalendarCheck",
 		color: "#0d9488",
 		badgeBg: "rgba(13, 148, 136, 0.12)",
 		badgeBorder: "rgba(13, 148, 136, 0.35)",
-		descriptionRu: "Пациент записан на прием в клинику",
+		descriptionRu: "Пациент успешно записан в расписание на консультацию или лечение",
 	},
 	callback_15m: {
 		id: "callback_15m",
 		label: "Перезвонить через 15 мин",
-		shortLabel: "Перезвонить 15м",
-		iconName: "PhoneCall",
-		color: "#d97706",
-		badgeBg: "rgba(245, 158, 11, 0.12)",
-		badgeBorder: "rgba(245, 158, 11, 0.35)",
-		descriptionRu: "Требуется обратный звонок через 15 минут",
+		shortLabel: "Перезвонить",
+		iconName: "Clock",
+		color: "#eab308",
+		badgeBg: "rgba(234, 179, 8, 0.12)",
+		badgeBorder: "rgba(234, 179, 8, 0.35)",
+		descriptionRu: "Пациент занят или просил уточнить график врача и перезвонить позже",
 	},
 	consultation: {
 		id: "consultation",
-		label: "Консультация",
+		label: "Консультация по ценам / услугам",
 		shortLabel: "Консультация",
-		iconName: "Info",
+		iconName: "MessageCircle",
 		color: "#0284c7",
 		badgeBg: "rgba(2, 132, 199, 0.12)",
 		badgeBorder: "rgba(2, 132, 199, 0.35)",
-		descriptionRu: "Проведена устная телефонная консультация",
+		descriptionRu: "Предоставлена справка по прейскуранту, режиму работы или врачам",
+	},
+	accepted: {
+		id: "accepted",
+		label: "Принят / Обработан",
+		shortLabel: "Обработан",
+		iconName: "CheckCircle2",
+		color: "#10b981",
+		badgeBg: "rgba(16, 185, 129, 0.12)",
+		badgeBorder: "rgba(16, 185, 129, 0.35)",
+		descriptionRu: "Звонок успешно завершён администратором или врачом",
+	},
+	rejected: {
+		id: "rejected",
+		label: "Отклонён",
+		shortLabel: "Отклонён",
+		iconName: "PhoneOff",
+		color: "#f43f5e",
+		badgeBg: "rgba(244, 63, 94, 0.12)",
+		badgeBorder: "rgba(244, 63, 94, 0.35)",
+		descriptionRu: "Вызов был отклонён администратором или завершён без результата",
+	},
+	dismissed: {
+		id: "dismissed",
+		label: "Пропущен / Свёрнут",
+		shortLabel: "Пропущен",
+		iconName: "BellOff",
+		color: "#64748b",
+		badgeBg: "rgba(100, 116, 139, 0.12)",
+		badgeBorder: "rgba(100, 116, 139, 0.35)",
+		descriptionRu: "Уведомление о звонке было закрыто без явного фиксирования исхода",
+	},
+	transferred: {
+		id: "transferred",
+		label: "Переведён на добавочный",
+		shortLabel: "Переведён",
+		iconName: "PhoneForwarded",
+		color: "#8b5cf6",
+		badgeBg: "rgba(139, 92, 246, 0.12)",
+		badgeBorder: "rgba(139, 92, 246, 0.35)",
+		descriptionRu: "Звонок перенаправлен на другого сотрудника или кабинет",
 	},
 	spam: {
 		id: "spam",
@@ -106,6 +140,8 @@ export const CALL_OUTCOME_PRESETS: Record<
 		descriptionRu: "Спам-звонок, рекламный робот или ошибочный номер",
 	},
 };
+
+export const CALL_OUTCOME_PRESETS = CALL_OUTCOME_REGISTRY;
 
 export interface CallHistoryItem extends IncomingCallPayload {
 	id: string;
@@ -154,6 +190,7 @@ export interface TelephonyStore {
 	toggleHold: () => void;
 	triggerIncomingCall: (call: IncomingCallPayload) => void;
 	answerCall: () => void;
+	connectCall: () => void;
 	acceptCall: () => void;
 	rejectCall: () => void;
 	dismissCall: () => void;
@@ -972,28 +1009,13 @@ export function formatDurationTimer(totalSeconds: number): string {
 }
 
 /**
- * Deterministically generates an array of normalized amplitude bars (0.15 to 1.0)
- * based on a seed string (e.g. callId or recording URL) for audio waveform scrubbing.
+ * Generates an array of normalized baseline amplitude bars (0.2)
+ * representing resting state when raw audio stream buffer is absent,
+ * without procedural Math.sin noise or artificial speech falsification.
  */
-export function generateWaveformBars(seed: string | null | undefined, count = 48): number[] {
-	const safeSeed = seed || "dente-audio-waveform-seed";
-	let hash = 0;
-	for (let i = 0; i < safeSeed.length; i++) {
-		hash = (hash << 5) - hash + safeSeed.charCodeAt(i);
-		hash |= 0;
-	}
-
-	const bars: number[] = [];
-	for (let i = 0; i < count; i++) {
-		// Pseudo-random deterministic amplitude with natural speech dynamics
-		const t = i / count;
-		const sineFactor = Math.sin(t * Math.PI * 3 + (hash % 10)) * 0.3;
-		const noise = Math.abs(Math.sin((hash + i * 37) * 12.9898) * 43758.5453) % 1;
-		const envelope = Math.sin(t * Math.PI); // tapering edges
-		const amp = Math.max(0.15, Math.min(1.0, 0.2 + (noise * 0.5 + sineFactor) * envelope));
-		bars.push(Math.round(amp * 100) / 100);
-	}
-	return bars;
+export function generateWaveformBars(_seed?: string | null | undefined, count = 48): number[] {
+	const defaultAmplitude = 0.2;
+	return Array.from({ length: count }, () => defaultAmplitude);
 }
 
 /**
@@ -1245,7 +1267,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 			status: call.status ?? "ringing",
 			callStartedAt: call.callStartedAt ?? Date.now(),
 			actionTaken: undefined,
-			transcript: generateCallTranscript(call.callId || call.phone, call.durationSeconds || 45),
+			transcript: undefined,
 		};
 
 		set((state) => ({
@@ -1272,6 +1294,23 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 
 		set({
 			activeCall: { ...activeCall, status: "answered" as const },
+			callHistory: updatedHistory,
+		});
+	},
+
+	connectCall: () => {
+		const { activeCall, callHistory } = get();
+		if (!activeCall) return;
+
+		const updatedHistory = callHistory.map((item, idx) => {
+			if (idx === 0 && item.phone === activeCall.phone) {
+				return { ...item, status: "connected" as const };
+			}
+			return item;
+		});
+
+		set({
+			activeCall: { ...activeCall, status: "connected" as const },
 			callHistory: updatedHistory,
 		});
 	},
@@ -1391,7 +1430,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 			acutePain: true,
 			callStartedAt: Date.now(),
 			durationSeconds: 60,
-			transcript: generateCallTranscript(phone, 60),
+			transcript: undefined,
 		};
 
 		set((state) => ({

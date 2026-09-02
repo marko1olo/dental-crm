@@ -491,6 +491,7 @@ export function IncomingCallPopup() {
 	const activeCall = useTelephonyStore((s) => s.activeCall);
 	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
 	const answerCall = useTelephonyStore((s) => s.answerCall);
+	const connectCall = useTelephonyStore((s) => s.connectCall);
 	const acceptCall = useTelephonyStore((s) => s.acceptCall);
 	const rejectCall = useTelephonyStore((s) => s.rejectCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
@@ -557,7 +558,7 @@ export function IncomingCallPopup() {
 
 	// Ringtone playback loop while active call is ringing
 	useEffect(() => {
-		if (!activeCall || activeCall.status === "answered" || isMuted) return;
+		if (!activeCall || activeCall.status === "answered" || activeCall.status === "connected" || isMuted) return;
 
 		let intervalId: ReturnType<typeof setInterval> | null = null;
 		try {
@@ -605,7 +606,7 @@ export function IncomingCallPopup() {
 
 	// Auto-dismiss call after 45 seconds if unhandled and still ringing
 	useEffect(() => {
-		if (!activeCall || activeCall.status === "answered") return;
+		if (!activeCall || activeCall.status === "answered" || activeCall.status === "connected") return;
 
 		const timer = setTimeout(() => {
 			dismissCall();
@@ -686,7 +687,7 @@ export function IncomingCallPopup() {
 		return somaticAlerts.filter((a) => a.category === "pain");
 	}, [somaticAlerts]);
 
-	if (!activeCall) return null;
+	if (!activeCall || activeCall.status === "connected") return null;
 
 	const callerName = resolvedPatient?.fullName || activeCall.patientName || "Неизвестный номер";
 	const formattedPhone = formatPhoneDisplay(activeCall.phone);
@@ -759,12 +760,12 @@ export function IncomingCallPopup() {
 		if (resolvedPatient) {
 			setSelectedPatientId(resolvedPatient.id);
 			setCurrentView("patients");
-			acceptCall();
+			connectCall();
 			showToast(`Открыта карта: ${resolvedPatient.fullName}`, "info");
 		} else {
 			setNewPatientPhone(activeCall.phone);
 			setCurrentView("patients");
-			acceptCall();
+			connectCall();
 			showToast(`Регистрация нового пациента с номером ${formattedPhone}`, "info");
 		}
 	};
