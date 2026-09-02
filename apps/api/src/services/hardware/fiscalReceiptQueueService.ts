@@ -443,3 +443,6 @@ export class FiscalQueueRetryWorker {
 		return this.isRunning;
 	}
 }
+
+export const FiscalReceiptQueueService = FiscalQueueRetryWorker;
+

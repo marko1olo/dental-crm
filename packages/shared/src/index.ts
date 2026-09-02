@@ -3420,6 +3420,7 @@ export const patientSchema = z.object({
 	phone: z.string().nullable(),
 	email: z.string().email().nullable(),
 	notes: z.string().nullable(),
+	weightKg: z.number().positive().max(500).nullable().optional(),
 	isAnonymous: z.boolean().nullable().optional(),
 	anonymousCode: z.string().nullable().optional(),
 	administrativeProfile: patientAdministrativeProfileSchema
@@ -6630,6 +6631,7 @@ export const createPatientSchema = z.object({
 	phone: patientPhoneInputSchema,
 	email: z.string().trim().email().nullable().optional(),
 	notes: z.string().trim().max(1000).nullable().optional(),
+	weightKg: z.number().positive().max(500).nullable().optional(),
 	isAnonymous: z.boolean().optional().default(false),
 	anonymousCode: z.string().trim().max(80).optional().nullable(),
 	administrativeProfile: patientAdministrativeProfileSchema
@@ -6644,6 +6646,7 @@ export const updatePatientSchema = z.object({
 	phone: patientPhoneInputSchema,
 	email: z.string().trim().email().nullable().optional(),
 	notes: z.string().trim().max(1000).nullable().optional(),
+	weightKg: z.number().positive().max(500).nullable().optional(),
 	isAnonymous: z.boolean().optional(),
 	anonymousCode: z.string().trim().max(80).optional().nullable(),
 	/*
@@ -12754,13 +12757,41 @@ export function calculateAnestheticSafety(params: {
 		carpuleVolumeMl,
 		carpulesAdministered,
 		patientWeightKg,
-		patientAgeYears = 35,
+		patientAgeYears,
 		asaClass = "ASA_I",
 		hasCardiovascularDisease = false,
 	} = params;
 
-	const weight = Math.max(5, Math.min(250, patientWeightKg));
 	const warnings: string[] = [];
+	const isPediatric =
+		typeof patientAgeYears === "number" && patientAgeYears > 0 && patientAgeYears < 18;
+	const hasValidWeight =
+		typeof patientWeightKg === "number" &&
+		Number.isFinite(patientWeightKg) &&
+		patientWeightKg > 0;
+
+	if (!hasValidWeight || (isPediatric && (!patientWeightKg || patientWeightKg <= 0))) {
+		warnings.push(
+			isPediatric
+				? "Укажите фактический вес ребенка для расчета анестезии! Расчет заблокирован."
+				: "Укажите фактический вес пациента для расчета анестезии! Расчет заблокирован.",
+		);
+		return {
+			totalAnestheticMg: 0,
+			maxRecommendedAnestheticMg: 0,
+			anestheticUtilizationPct: 100,
+			totalEpinephrineMg: 0,
+			maxRecommendedEpinephrineMg: 0,
+			epinephrineUtilizationPct: 100,
+			isAnestheticOverdose: false,
+			isEpinephrineOverdose: false,
+			maxSafeCarpules: 0,
+			remainingSafeCarpules: 0,
+			clinicalWarnings: warnings,
+		};
+	}
+
+	const weight = Math.max(5, Math.min(250, patientWeightKg));
 
 	// 1. Определение предельной дозы на 1 кг массы тела (MRD) и абсолютного максимума
 	let mrdPerKg = 7.0; // мг/кг
@@ -12769,9 +12800,9 @@ export function calculateAnestheticSafety(params: {
 	if (drug === "articaine") {
 		mrdPerKg = 7.0;
 		absoluteMaxMg = 500;
-		if (patientAgeYears < 4) {
+		if (typeof patientAgeYears === "number" && patientAgeYears < 4) {
 			warnings.push("Артикаин противопоказан детям в возрасте до 4 лет.");
-		} else if (patientAgeYears < 12) {
+		} else if (typeof patientAgeYears === "number" && patientAgeYears < 12) {
 			mrdPerKg = 5.0; // консервативный педиатрический предел
 		}
 	} else if (drug === "mepivacaine") {
@@ -13900,6 +13931,8 @@ export * from "./security/index.js";
 export * from "./clinical/index.js";
 export * from "./analytics/callTrackingEngine.js";
 export * from "./marketing/marketingRomiEngine.js";
+export * from "./crypto/index.js";
+
 
 
 

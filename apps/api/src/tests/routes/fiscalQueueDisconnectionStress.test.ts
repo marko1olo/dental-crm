@@ -28,7 +28,7 @@ import {
 } from "../../db/schema.js";
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerFiscalReceiptRoutes } from "../../routes/fiscal/fiscalReceiptRoutes.js";
-import { LanKktDriverService } from "../../services/kkt/lanKktDriverService.js";
+import { FiscalQueueRetryWorker } from "../../services/hardware/fiscalReceiptQueueService.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -126,7 +126,10 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 			};
 
 			const signature = buildFiscalReceiptPayloadSignature(samplePayload);
-			const clientMutationId = createFiscalCompositeIdempotencyKey(rawUuid, signature);
+			const clientMutationId = createFiscalCompositeIdempotencyKey(
+				rawUuid,
+				signature,
+			);
 
 			const res = await app.inject({
 				method: "POST",
@@ -155,13 +158,21 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 				return await db
 					.select()
 					.from(fiscalReceiptQueue)
-					.where(and(eq(fiscalReceiptQueue.id, json.queueId), eq(fiscalReceiptQueue.organizationId, ORG_ID)));
+					.where(
+						and(
+							eq(fiscalReceiptQueue.id, json.queueId),
+							eq(fiscalReceiptQueue.organizationId, ORG_ID),
+						),
+					);
 			});
 
 			assert.ok(storedQueue);
 			assert.equal(storedQueue.status, "hardware_offline");
 			assert.equal(storedQueue.retryCount, 1);
-			assert.match(storedQueue.lastError || "", /offline|лента|недоступна|timed out|unreachable/i);
+			assert.match(
+				storedQueue.lastError || "",
+				/offline|лента|недоступна|timed out|unreachable/i,
+			);
 		});
 
 		it("1.2 Prevents duplicate execution on identical clientMutationId replay (Idempotency Contract)", async () => {
@@ -193,7 +204,10 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 			};
 
 			const signature = buildFiscalReceiptPayloadSignature(payload);
-			const clientMutationId = createFiscalCompositeIdempotencyKey(rawUuid, signature);
+			const clientMutationId = createFiscalCompositeIdempotencyKey(
+				rawUuid,
+				signature,
+			);
 
 			// First call (creates queued entry)
 			const res1 = await app.inject({
@@ -258,19 +272,53 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 
 	describe("2. Exponential Backoff & Retry Logic", () => {
 		it("2.1 Computes statutory exponential backoff progression (1s -> 2s -> 4s -> 8s -> max)", () => {
-			const b0 = LanKktDriverService.calculateExponentialBackoff(0);
-			const b1 = LanKktDriverService.calculateExponentialBackoff(1);
-			const b2 = LanKktDriverService.calculateExponentialBackoff(2);
-			const b3 = LanKktDriverService.calculateExponentialBackoff(3);
-			const b4 = LanKktDriverService.calculateExponentialBackoff(4);
-			const b10 = LanKktDriverService.calculateExponentialBackoff(10, 1000, 30000);
+			const b0 = FiscalQueueRetryWorker.calculateExponentialBackoff(
+				0,
+				1000,
+				60000,
+				false,
+			);
+			const b1 = FiscalQueueRetryWorker.calculateExponentialBackoff(
+				1,
+				1000,
+				60000,
+				false,
+			);
+			const b2 = FiscalQueueRetryWorker.calculateExponentialBackoff(
+				2,
+				1000,
+				60000,
+				false,
+			);
+			const b3 = FiscalQueueRetryWorker.calculateExponentialBackoff(
+				3,
+				1000,
+				60000,
+				false,
+			);
+			const b4 = FiscalQueueRetryWorker.calculateExponentialBackoff(
+				4,
+				1000,
+				60000,
+				false,
+			);
+			const b10 = FiscalQueueRetryWorker.calculateExponentialBackoff(
+				10,
+				1000,
+				30000,
+				false,
+			);
 
 			assert.equal(b0, 1000, "Retry 0 backoff should be 1000ms (1s)");
 			assert.equal(b1, 2000, "Retry 1 backoff should be 2000ms (2s)");
 			assert.equal(b2, 4000, "Retry 2 backoff should be 4000ms (4s)");
 			assert.equal(b3, 8000, "Retry 3 backoff should be 8000ms (8s)");
 			assert.equal(b4, 16000, "Retry 4 backoff should be 16000ms (16s)");
-			assert.equal(b10, 30000, "Retry 10 backoff should be capped at maxBackoffMs (30000ms)");
+			assert.equal(
+				b10,
+				30000,
+				"Retry 10 backoff should be capped at maxBackoffMs (30000ms)",
+			);
 		});
 
 		it("2.2 Increments retryCount on each retry while KKT is offline", async () => {
@@ -328,7 +376,10 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 			assert.equal(flushRes.statusCode, 200);
 			const flushJson = flushRes.json();
 			assert.equal(flushJson.success, true);
-			assert.ok(flushJson.printedCount > 0, "All offline items must be transitioned to printed");
+			assert.ok(
+				flushJson.printedCount > 0,
+				"All offline items must be transitioned to printed",
+			);
 			assert.equal(flushJson.failedCount, 0);
 
 			// Verify in DB that no hardware_offline items remain
@@ -336,10 +387,19 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 				return await db
 					.select()
 					.from(fiscalReceiptQueue)
-					.where(and(eq(fiscalReceiptQueue.organizationId, ORG_ID), eq(fiscalReceiptQueue.status, "hardware_offline")));
+					.where(
+						and(
+							eq(fiscalReceiptQueue.organizationId, ORG_ID),
+							eq(fiscalReceiptQueue.status, "hardware_offline"),
+						),
+					);
 			});
 
-			assert.equal(remainingOffline.length, 0, "No offline items should remain after successful flush");
+			assert.equal(
+				remainingOffline.length,
+				0,
+				"No offline items should remain after successful flush",
+			);
 		});
 	});
 

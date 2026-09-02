@@ -2180,10 +2180,6 @@ export const portalRoutes: FastifyPluginAsync = async (
 
 		const now = new Date();
 		const nowIso = now.toISOString();
-		const receiptNumber = `ФД-${Math.floor(100000 + Math.random() * 900000)}`;
-		const fiscalSign = `ФП-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
-		const fpd = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-		const fiscalReceiptUrl = `https://receipt.nalog.ru/v1/check/${sbpTxId}?fn=999907890000&fd=${receiptNumber.replace(/\D/g, "")}&fpd=${fpd}&t=${nowIso.replace(/[-:]/g, "").slice(0, 15)}`;
 
 		return withTenantCtx(auth.organizationId, async () => {
 			let totalAmount = explicitAmount;
@@ -2214,7 +2210,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 				}
 			}
 
-			// Insert payment record
+			// Insert payment record (fiscal receipt will be issued via KKT queue, not fake numbers)
 			const [insertedPayment] = await db
 				.insert(payments)
 				.values({
@@ -2224,17 +2220,10 @@ export const portalRoutes: FastifyPluginAsync = async (
 					method: "online",
 					status: "paid",
 					paidAt: now,
-					fiscalReceiptNumber: receiptNumber,
-					fiscalReceiptIssuedAt: nowIso,
-					fiscalReceiptUrl: fiscalReceiptUrl,
-					fiscalReceipt: {
-						receiptNumber,
-						fiscalDocumentNumber: receiptNumber,
-						fiscalSign,
-						fnsSiteUrl: fiscalReceiptUrl,
-						issuedAt: nowIso,
-						totalAmountRub: totalAmount,
-					} as any,
+					fiscalReceiptNumber: null,
+					fiscalReceiptIssuedAt: null,
+					fiscalReceiptUrl: null,
+					fiscalReceipt: null,
 					note: `Онлайн-оплата через СБП (${sbpTxId}) ${stageId ? `по этапу ${stageId}` : ""}`,
 				})
 				.returning({ id: payments.id });
@@ -2246,14 +2235,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 				stageId: stageId || undefined,
 				status: "paid",
 				amountRub: totalAmount,
-				fiscalReceipt: {
-					receiptNumber,
-					fiscalSign,
-					fpd,
-					nalogUrl: fiscalReceiptUrl,
-					issuedAtIso: nowIso,
-					amountRub: totalAmount,
-				},
+				fiscalReceipt: null,
 			};
 		});
 	});

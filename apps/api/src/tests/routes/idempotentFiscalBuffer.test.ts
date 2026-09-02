@@ -57,7 +57,7 @@ import { OfflineFiscalSpooler } from "../../services/finance/OfflineFiscalSpoole
 import {
 	FiscalQueueRetryWorker,
 	LanKktDriverService,
-} from "../../services/kkt/lanKktDriverService.js";
+} from "../../services/hardware/index.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,

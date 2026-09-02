@@ -5,7 +5,8 @@ import {
 	type UpdatePatientAdministrativeProfileInput,
 	type UpdatePatientInput,
 } from "@dental/shared";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { canonicalizeHomoglyphs } from "../services/patients/duplicateDetection.js";
 import {
 	buildPatientLedgers,
 	MoneyPrecisionError,
@@ -244,6 +245,10 @@ export function rowToPatient(
 		phone: p.phone,
 		email: p.email,
 		notes: p.notes,
+		weightKg:
+			p.weightKg !== null && p.weightKg !== undefined && p.weightKg !== ""
+				? Number(p.weightKg)
+				: null,
 		administrativeProfile: p.administrativeProfile ?? null,
 		/*
 		 * Привязка к семейной группе (общий кошелёк).
@@ -359,6 +364,10 @@ export async function createPatientInDb(
 				phone: input.phone ?? null,
 				email: input.email ?? null,
 				notes: input.notes ?? null,
+				weightKg:
+					input.weightKg !== undefined && input.weightKg !== null
+						? String(input.weightKg)
+						: null,
 				administrativeProfile: (input.administrativeProfile as any) ?? null,
 			})
 			.returning();
@@ -440,6 +449,7 @@ export async function updatePatientInDb(
 			phone?: string | null;
 			email?: string | null;
 			notes?: string | null;
+			weightKg?: string | null;
 			familyGroupId?: string | null;
 			updatedAt: Date;
 		} = {
@@ -450,6 +460,9 @@ export async function updatePatientInDb(
 		if (input.phone !== undefined) updateData.phone = input.phone;
 		if (input.email !== undefined) updateData.email = input.email;
 		if (input.notes !== undefined) updateData.notes = input.notes;
+		if (input.weightKg !== undefined)
+			updateData.weightKg =
+				input.weightKg !== null ? String(input.weightKg) : null;
 
 		if (input.familyGroupId !== undefined) {
 			/*
@@ -647,6 +660,32 @@ export async function createPatientSafeInDb(
 	}
 
 	return await db.transaction(async (tx) => {
+		const phoneDigits = (input.phone ?? "").replace(/\D/g, "");
+		const phoneKey = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
+		const normalizedName = canonicalizeHomoglyphs(input.fullName ?? "")
+			.toLowerCase()
+			.replace(/ё/g, "е")
+			.replace(/-/g, " ")
+			.replace(/[^\p{L}\s]/gu, "")
+			.split(/\s+/)
+			.filter(Boolean)
+			.sort()
+			.join(" ");
+
+		if (phoneKey) {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${organizationId}::text, 'phone', ${phoneKey}::text)))`,
+			);
+		}
+		if (normalizedName) {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${organizationId}::text, 'name', ${normalizedName}::text)))`,
+			);
+		}
+		await tx.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${organizationId}::text, ${phoneKey}::text, ${normalizedName}::text)))`,
+		);
+
 		const rawPatients = await tx
 			.select()
 			.from(schema.patients)

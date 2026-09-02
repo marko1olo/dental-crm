@@ -35,7 +35,7 @@ import {
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerFamilyFinanceRoutes } from "../../routes/finance_family.js";
 import { registerFiscalReceiptRoutes } from "../../routes/fiscal/fiscalReceiptRoutes.js";
-import { FiscalQueueRetryWorker, LanKktDriverService } from "../../services/kkt/lanKktDriverService.js";
+import { FiscalQueueRetryWorker, LanKktDriverService } from "../../services/hardware/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

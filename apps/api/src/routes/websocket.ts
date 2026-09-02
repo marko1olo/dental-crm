@@ -145,7 +145,13 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 					? payload.patientId.trim()
 					: undefined;
 
-			wsBroker.addClient(socket, identity.organizationId, patientId);
+			const isClinical =
+				identity.role === "doctor" ||
+				identity.role === "admin" ||
+				identity.role === "assistant" ||
+				identity.role === "chief_doctor";
+
+			wsBroker.addClient(socket, identity.organizationId, patientId, isClinical);
 			authorized = true;
 			clearTimeout(authTimer);
 

@@ -10935,6 +10935,7 @@ export function createPatient(input: {
 	phone?: string | null | undefined;
 	email?: string | null | undefined;
 	notes?: string | null | undefined;
+	weightKg?: number | null | undefined;
 	administrativeProfile?: PatientAdministrativeProfilePatch | null | undefined;
 }): Patient {
 	const createdAt = new Date().toISOString();
@@ -10959,6 +10960,7 @@ export function createPatient(input: {
 		phone: nullableTrimmed(input.phone),
 		email: nullableTrimmed(input.email),
 		notes: nullableTrimmed(input.notes),
+		weightKg: input.weightKg ?? null,
 		isAnonymous: false,
 		anonymousCode: null,
 		administrativeProfile: normalizePatientAdministrativeProfile(
@@ -11007,6 +11009,7 @@ export function updatePatient(
 	if (input.phone !== undefined) patient.phone = nullableTrimmed(input.phone);
 	if (input.email !== undefined) patient.email = nullableTrimmed(input.email);
 	if (input.notes !== undefined) patient.notes = nullableTrimmed(input.notes);
+	if (input.weightKg !== undefined) patient.weightKg = input.weightKg ?? null;
 	/*
 	 * Привязка к семейной группе (общий кошелёк).
 	 * БЫЛО: поле игнорировалось — UI слал familyGroupId, ответ 200, а в памяти

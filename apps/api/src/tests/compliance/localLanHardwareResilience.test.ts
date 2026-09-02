@@ -38,7 +38,7 @@ import { LocalPacsStorageService } from "../../services/imaging/localPacsStorage
 import {
 	FiscalQueueRetryWorker,
 	LanKktDriverService,
-} from "../../services/kkt/lanKktDriverService.js";
+} from "../../services/hardware/index.js";
 import { TelephonyGatewayService } from "../../services/telephony/telephonyGatewayService.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

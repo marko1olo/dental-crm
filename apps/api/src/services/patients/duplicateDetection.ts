@@ -108,24 +108,90 @@ const REASON_META: Readonly<
 	},
 };
 
+/**
+ * Канонизация визуальных латинских гомоглифов в кириллицу (Cyrillic vs Latin spoofing defense).
+ * Предотвращает создание дублей с подменой визуально идентичных букв:
+ * a->а, c->с, e->е, o->о, p->р, x->х, y->у, k->к, t->т, m->м, h->н, b->в.
+ */
+export function canonicalizeHomoglyphs(raw: string): string {
+	return (raw ?? "").replace(/[a-zA-Z]/g, (char) => {
+		switch (char) {
+			case "a":
+			case "A":
+				return "а";
+			case "b":
+			case "B":
+				return "в";
+			case "c":
+			case "C":
+				return "с";
+			case "e":
+			case "E":
+				return "е";
+			case "h":
+			case "H":
+				return "н";
+			case "k":
+			case "K":
+				return "к";
+			case "m":
+			case "M":
+				return "м";
+			case "o":
+			case "O":
+				return "о";
+			case "p":
+			case "P":
+				return "р";
+			case "t":
+			case "T":
+				return "т";
+			case "x":
+			case "X":
+				return "х";
+			case "y":
+			case "Y":
+				return "у";
+			default:
+				return char;
+		}
+	});
+}
+
 /** «+7 (916) 123-45-67» и «89161234567» — один номер. Сравниваем последние 10 цифр. */
 export function phoneKey(raw: string | null): string | null {
 	const digits = (raw ?? "").replace(/\D/g, "");
 	return digits.length >= 10 ? digits.slice(-10) : null;
 }
 
-/** Нормализация имени: регистр, «ё», двойные пробелы, дефисы в фамилиях. */
+/**
+ * Нормализация имени: гомоглифы в кириллицу, регистр, «ё», дефис в пробел для составных фамилий,
+ * токенизация и сортировка слов (token-sort).
+ * Обеспечивает строгую инвариантность к порядку слов и частям двойных фамилий:
+ * «Мамин-Сибиряк» === «Мамин Сибиряк» === «Сибиряк-Мамин».
+ */
 export function nameKey(raw: string): string {
-	return raw
+	const canonical = canonicalizeHomoglyphs(raw ?? "");
+	return canonical
 		.toLowerCase()
 		.replace(/ё/g, "е")
-		.replace(/[^\p{L}\s-]/gu, "")
-		.replace(/\s+/g, " ")
-		.trim();
+		.replace(/-/g, " ")
+		.replace(/[^\p{L}\s]/gu, "")
+		.split(/\s+/)
+		.filter(Boolean)
+		.sort()
+		.join(" ");
 }
 
 export function surnameOf(fullName: string): string {
-	return nameKey(fullName).split(" ")[0] ?? "";
+	const canonical = canonicalizeHomoglyphs(fullName ?? "");
+	const cleaned = canonical
+		.toLowerCase()
+		.replace(/ё/g, "е")
+		.replace(/-/g, " ")
+		.replace(/[^\p{L}\s]/gu, "")
+		.trim();
+	return cleaned.split(/\s+/)[0] ?? "";
 }
 
 /**

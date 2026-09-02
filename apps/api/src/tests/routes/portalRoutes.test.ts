@@ -379,15 +379,13 @@ describe("Patient Personal Portal API Routes", () => {
 				fpd: string;
 				nalogUrl: string;
 				issuedAtIso: string;
-			};
+			} | null;
 		};
 
 		assert.equal(payBody.success, true);
 		assert.equal(payBody.status, "paid");
 		assert.equal(payBody.amountRub, 35000);
-		assert.match(payBody.fiscalReceipt.receiptNumber, /^ФД-\d+/);
-		assert.match(payBody.fiscalReceipt.fiscalSign, /^ФП-\d+/);
-		assert.ok(payBody.fiscalReceipt.nalogUrl.includes("receipt.nalog.ru"));
+		assert.equal(payBody.fiscalReceipt, null);
 
 		const updatedInvoices = await withFixtureTenant(ORG_ID, async () =>
 			db

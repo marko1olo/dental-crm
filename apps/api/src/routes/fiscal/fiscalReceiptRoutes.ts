@@ -41,7 +41,7 @@ import {
 	FiscalQueueRetryWorker,
 	type KktLanConfig,
 	LanKktDriverService,
-} from "../../services/kkt/lanKktDriverService.js";
+} from "../../services/hardware/index.js";
 
 export async function registerFiscalReceiptRoutes(
 	app: FastifyInstance,

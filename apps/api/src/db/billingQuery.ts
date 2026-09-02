@@ -6,7 +6,7 @@ import {
 	type Payment,
 	sumKopecks,
 } from "@dental/shared";
-import { and, eq, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { chargeLineKopecks, toKopecks } from "../money/patientDebt.js";
 import { payments as inMemoryPayments } from "../sampleData.js";
 import { db } from "./client.js";
@@ -230,7 +230,7 @@ export async function createPaymentInDb(
 			}
 		}
 
-		// 1b. Price Spoofing Defense: Verify amount against service_catalog_items if serviceId/catalogItemId is provided
+		// 1b. Price Spoofing & Upsell Consent Shield Defense
 		const targetServiceId = input.serviceId || input.catalogItemId;
 		if (targetServiceId) {
 			const [serviceItem] = await tx
@@ -252,7 +252,7 @@ export async function createPaymentInDb(
 			// Защита от навязывания услуг (Upsell Consent Shield):
 			// Если у пациента есть утвержденный план лечения (status: 'Approved'), а оплачиваемая услуга
 			// не входит в утвержденный перечень позиций плана, оплата БЛОКИРУЕТСЯ до подписания/выпуска
-			// Дополнительного соглашения (generatedDocuments kind: "treatment_plan_acceptance").
+			// Дополнительного соглашения (generatedDocuments kind: "treatment_plan_acceptance", status: "issued").
 			const approvedPlans = await tx
 				.select({ id: schema.treatmentPlans.id })
 				.from(schema.treatmentPlans)
@@ -283,23 +283,38 @@ export async function createPaymentInDb(
 				);
 
 				if (!isServiceInPlan) {
-					// Проверяем наличие оформленного Дополнительного соглашения в generatedDocuments
-					const [addendumDoc] = await tx
-						.select({ id: schema.generatedDocuments.id })
+					// Проверяем наличие оформленного и выданного Дополнительного соглашения в generatedDocuments
+					const addendumDocs = await tx
+						.select({
+							id: schema.generatedDocuments.id,
+							title: schema.generatedDocuments.title,
+							totalAmountRub: schema.generatedDocuments.totalAmountRub,
+						})
 						.from(schema.generatedDocuments)
 						.where(
 							and(
 								eq(schema.generatedDocuments.organizationId, organizationId),
 								eq(schema.generatedDocuments.patientId, input.patientId),
 								eq(schema.generatedDocuments.kind, "treatment_plan_acceptance"),
-								ne(schema.generatedDocuments.status, "voided"),
+								eq(schema.generatedDocuments.status, "issued"),
 							),
 						)
-						.limit(1);
+						.orderBy(desc(schema.generatedDocuments.createdAt));
 
-					if (!addendumDoc) {
+					// Ищем соглашение, подходящее по услуге и сумме
+					const matchingAddendum = addendumDocs.find((doc) => {
+						const limit = Number(doc.totalAmountRub || 0);
+						if (input.amountRub > limit) return false;
+						const docTitleLower = (doc.title || "").toLowerCase();
+						const serviceTitleLower = (serviceItem.title || "").toLowerCase();
+						if (docTitleLower.includes("отбеливан") && !serviceTitleLower.includes("отбеливан")) return false;
+						if (docTitleLower.includes("имплант") && !serviceTitleLower.includes("имплант")) return false;
+						return true;
+					});
+
+					if (!matchingAddendum) {
 						const error = new Error(
-							`Блокировка кассы по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${serviceItem.title}» не входит в утвержденный план лечения пациента. Оплата и фискализация заблокированы до формирования и подписания Дополнительного соглашения с пациентом.`,
+							`Блокировка кассы по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${serviceItem.title}» не входит в утвержденный план лечения пациента. Оплата и фискализация на сумму ${input.amountRub} ₽ заблокированы (требуется подписанное пациентом Дополнительное соглашение со статусом 'issued' и достаточным лимитом суммы).`,
 						);
 						// biome-ignore lint/suspicious/noExplicitAny: error mapping
 						(error as any).statusCode = 422;
@@ -325,6 +340,83 @@ export async function createPaymentInDb(
 				throw new Error(
 					`Попытка подмены прайса для услуги «${serviceItem.title}»: цена в каталоге составляет ${formatKopecksToRubles(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${formatKopecksToRubles(verifiedAmountKopecks)} ₽), получено ${formatKopecksToRubles(incomingPaymentKopecks)} ₽.`,
 				);
+			}
+		} else {
+			// Случай внесения аванса / предоплаты БЕЗ указания конкретного serviceId:
+			// Проверяем наличие утвержденных планов лечения
+			const approvedPlans = await tx
+				.select({
+					id: schema.treatmentPlans.id,
+					totalPriceRub: schema.treatmentPlans.totalPriceRub,
+					totalPrice: schema.treatmentPlans.totalPrice,
+				})
+				.from(schema.treatmentPlans)
+				.where(
+					and(
+						eq(schema.treatmentPlans.organizationId, organizationId),
+						eq(schema.treatmentPlans.patientId, input.patientId),
+						eq(schema.treatmentPlans.status, "Approved"),
+					),
+				);
+
+			if (approvedPlans.length > 0) {
+				const approvedTotalRub = approvedPlans.reduce((sum, p) => {
+					const val = Number(p.totalPriceRub || p.totalPrice || 0);
+					return sum + (Number.isFinite(val) ? val : 0);
+				}, 0);
+
+				const existingPayments = await tx
+					.select({ amountRub: schema.payments.amountRub })
+					.from(schema.payments)
+					.where(
+						and(
+							eq(schema.payments.organizationId, organizationId),
+							eq(schema.payments.patientId, input.patientId),
+						),
+					);
+
+				const paidTotalRub = existingPayments.reduce((sum, p) => {
+					const val = Number(p.amountRub || 0);
+					return sum + (Number.isFinite(val) ? val : 0);
+				}, 0);
+
+				const remainingAgreedBalanceRub = Math.max(0, approvedTotalRub - paidTotalRub);
+
+				const noteLower = (input.note || "").toLowerCase();
+				const hasServiceKeyword = /имплант|отбеливан|коронк|протез|брекет|удален|навязан|лечен/i.test(noteLower);
+
+				if (input.amountRub > remainingAgreedBalanceRub || hasServiceKeyword) {
+					// Проверяем наличие выданных Дополнительных соглашений
+					const addendumDocs = await tx
+						.select({
+							id: schema.generatedDocuments.id,
+							title: schema.generatedDocuments.title,
+							totalAmountRub: schema.generatedDocuments.totalAmountRub,
+						})
+						.from(schema.generatedDocuments)
+						.where(
+							and(
+								eq(schema.generatedDocuments.organizationId, organizationId),
+								eq(schema.generatedDocuments.patientId, input.patientId),
+								eq(schema.generatedDocuments.kind, "treatment_plan_acceptance"),
+								eq(schema.generatedDocuments.status, "issued"),
+							),
+						);
+
+					const totalAddendumLimitRub = addendumDocs.reduce((sum, d) => sum + (Number(d.totalAmountRub) || 0), 0);
+					const maxAllowedAmountRub = remainingAgreedBalanceRub + totalAddendumLimitRub;
+
+					if (input.amountRub > maxAllowedAmountRub || (hasServiceKeyword && addendumDocs.length === 0)) {
+						const error = new Error(
+							`Блокировка кассы по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Upsell Consent Shield): сумма аванса/предоплаты (${input.amountRub} ₽) превышает согласованный остаток по утвержденному плану лечения (${remainingAgreedBalanceRub} ₽). Прием платежа без подписанного Дополнительного соглашения запрещен.`,
+						);
+						// biome-ignore lint/suspicious/noExplicitAny: error mapping
+						(error as any).statusCode = 422;
+						// biome-ignore lint/suspicious/noExplicitAny: error mapping
+						(error as any).code = "UpsellConsentShieldViolationError";
+						throw error;
+					}
+				}
 			}
 		}
 

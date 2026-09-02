@@ -160,17 +160,45 @@ export function buildKnd1151156Xml(
 		firstPayment.payerRelationship === "self" || 
 		firstPayment.payerRelationship === "patient";
 
-	const payerFullNameStr = cleanString(firstPayment.payerFullName) || cleanString(patient.fullName) || "Иванов Иван Иванович";
+	const payerFullNameStr = cleanString(firstPayment.payerFullName) || cleanString(patient.fullName);
+	if (!payerFullNameStr) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error: "Не указано ФИО налогоплательщика. Формирование официальной справки ФНС невозможно.",
+		};
+	}
 	const payerFio = parseFio(payerFullNameStr);
 	const payerInn = cleanString(firstPayment.payerInn) || cleanString(patient.administrativeProfile?.taxpayerInn);
-	const payerBirthDate = cleanString(firstPayment.payerBirthDate) || cleanString(patient.birthDate) || "1980-01-01";
+	const payerBirthDate = cleanString(firstPayment.payerBirthDate) || cleanString(patient.birthDate);
+	if (!payerBirthDate) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error: "Не указана дата рождения налогоплательщика. Поле обязательно для формата ФНС КНД 1151156.",
+		};
+	}
 	const payerIdentity = parseIdentityDoc(firstPayment.payerIdentityDocument || patient.administrativeProfile?.identityDocument);
 
 	const kinshipCode = mapRelationshipToKinshipCode(firstPayment.payerRelationship);
 
-	const patientFullNameStr = cleanString(patient.fullName) || "Иванов Иван Иванович";
+	const patientFullNameStr = cleanString(patient.fullName);
+	if (!patientFullNameStr) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error: "Не указано ФИО пациента. Формирование официальной справки ФНС невозможно.",
+		};
+	}
 	const patientFio = parseFio(patientFullNameStr);
-	const patientBirthDate = cleanString(patient.birthDate) || "1980-01-01";
+	const patientBirthDate = cleanString(patient.birthDate);
+	if (!patientBirthDate) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error: "Не указана дата рождения пациента. Поле обязательно для формата ФНС КНД 1151156.",
+		};
+	}
 	const patientInn = cleanString(patient.administrativeProfile?.taxpayerInn);
 	const patientIdentity = parseIdentityDoc(patient.administrativeProfile?.identityDocument);
 

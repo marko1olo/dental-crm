@@ -34,6 +34,7 @@ export const patients = pgTable(
 		phone: text("phone"),
 		email: text("email"),
 		notes: text("notes"),
+		weightKg: numeric("weight_kg", { precision: 5, scale: 2 }),
 		administrativeProfile: jsonb(
 			"administrative_profile",
 		).$type<PatientAdministrativeProfile | null>(),

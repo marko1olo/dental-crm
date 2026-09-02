@@ -27,7 +27,7 @@ import {
 	payments,
 } from "../../db/schema/billing.js";
 import { FiscalReceiptFactory } from "../kkt/FiscalReceiptFactory.js";
-import { LanKktDriverService } from "../kkt/lanKktDriverService.js";
+import { LanKktDriverService } from "../hardware/lanKktDriverService.js";
 
 export interface EnqueueReceiptParams {
 	readonly organizationId: string;

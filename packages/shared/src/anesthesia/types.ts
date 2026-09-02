@@ -25,8 +25,8 @@ export type LegacyAnestheticDrugKey = AnestheticDrugId;
 
 export type VasoconstrictorRatio = "1:100000" | "1:200000" | "1:50000" | "none";
 
-export type AnesthesiaSafetyZone = "safe" | "caution" | "warning" | "overdose_danger";
-export type AnesthesiaSafetyLevel = "safe" | "caution" | "warning" | "danger";
+export type AnesthesiaSafetyZone = "safe" | "caution" | "warning" | "overdose_danger" | "REQUIRES_WEIGHT_INPUT";
+export type AnesthesiaSafetyLevel = "safe" | "caution" | "warning" | "danger" | "REQUIRES_WEIGHT_INPUT";
 export type SomaticAlertSeverity = "danger" | "warning" | "caution" | "info" | "safe";
 
 export type AsaClassification = "asa_1" | "asa_2" | "asa_3" | "asa_4";
@@ -285,6 +285,8 @@ export interface ComprehensiveAnesthesiaCalculationResult {
 	readonly soapDiaryText: string;
 	readonly carpuleBatch?: AnesthesiaCarpuleBatchInfo | undefined;
 	readonly vitalsSafety?: PreoperativeVitalsChecklist | undefined;
+	readonly status?: "OK" | "REQUIRES_WEIGHT_INPUT" | undefined;
+	readonly requiresWeightInput?: boolean | undefined;
 }
 
 export interface AnesthesiaSafetyParams {
@@ -331,6 +333,8 @@ export interface VisitAnesthesiaCalculationResult {
 		readonly isExceeded: boolean;
 	} | null;
 	readonly carpuleBatch?: AnesthesiaCarpuleBatchInfo | undefined;
+	readonly status?: "OK" | "REQUIRES_WEIGHT_INPUT" | undefined;
+	readonly requiresWeightInput?: boolean | undefined;
 }
 
 export interface PatientMrdCalculation {
@@ -348,6 +352,8 @@ export interface PatientMrdCalculation {
 	readonly maxSafeEpinephrineMg: number;
 	readonly cardioLimitBadgeText: string | null;
 	readonly formattedNoteRu: string;
+	readonly status?: "OK" | "REQUIRES_WEIGHT_INPUT" | undefined;
+	readonly requiresWeightInput?: boolean | undefined;
 }
 
 export interface AutopilotResolutionResult {

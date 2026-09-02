@@ -498,25 +498,58 @@ export function calculateVisitAnesthesiaSafety(
 	params: AnesthesiaSafetyParams,
 ): VisitAnesthesiaCalculationResult {
 	const drug = ANESTHESIA_DRUGS[params.drugKey] ?? ANESTHESIA_DRUGS.ultracain_ds;
-	const weight = Math.max(
-		5,
-		Math.min(
-			250,
-			Number.isFinite(params.patientWeightKg) && params.patientWeightKg > 0
-				? params.patientWeightKg
-				: 70,
-		),
-	);
-	const carpules = Math.max(
-		0,
-		Number.isFinite(params.carpulesCount) ? params.carpulesCount : 1,
-	);
-
 	const isPediatric = Boolean(
 		params.isPediatric ||
 			(params.patientAgeYears !== null &&
 				params.patientAgeYears !== undefined &&
 				params.patientAgeYears < 18),
+	);
+	const hasValidWeight =
+		typeof params.patientWeightKg === "number" &&
+		Number.isFinite(params.patientWeightKg) &&
+		params.patientWeightKg > 0;
+
+	// Ликвидация смертельного хардкода 70 кг для детей или при отсутствии веса
+	if (!hasValidWeight || (isPediatric && (!params.patientWeightKg || params.patientWeightKg <= 0))) {
+		const warningMessage = isPediatric
+			? "Укажите фактический вес ребенка для расчета анестезии!"
+			: "Укажите фактический вес пациента для расчета анестезии!";
+		return {
+			drug,
+			patientWeightKg: 0,
+			isPediatric,
+			effectiveMaxMgPerKg: 0,
+			carpulesCount: params.carpulesCount || 0,
+			totalVolumeMl: 0,
+			totalDoseMg: 0,
+			maxSafeDoseMg: 0,
+			maxSafeVolumeMl: 0,
+			maxSafeCarpules: 0,
+			mrdDoseMg: 0,
+			mrdVolumeMl: 0,
+			mrdCarpules: 0,
+			totalEpinephrineMg: 0,
+			maxSafeEpinephrineMg: 0,
+			safetyRatio: 1,
+			safetyLevel: "REQUIRES_WEIGHT_INPUT",
+			safetyPercentage: 100,
+			warningMessage,
+			status: "REQUIRES_WEIGHT_INPUT",
+			requiresWeightInput: true,
+			somaticProfile: params.somaticProfile,
+			somaticAlerts: [],
+			recommendedDrugKey: null,
+			isCardioRestricted: false,
+			cardioLimitBadgeText: null,
+			cardioLimitDetails: null,
+			carpuleBatch: params.carpuleBatch,
+		};
+	}
+
+	const weight = Math.max(5, Math.min(250, params.patientWeightKg));
+	const carpules = Math.max(
+		0,
+		Number.isFinite(params.carpulesCount) ? params.carpulesCount : 1,
 	);
 	const effectiveMaxMgPerKg =
 		isPediatric && drug.maxDoseMgPerKgPediatric
@@ -654,21 +687,42 @@ export function calculatePatientMrd(params: {
 	isEpinephrineBlocked?: boolean | undefined;
 }): PatientMrdCalculation {
 	const drug = ANESTHESIA_DRUGS[params.drugKey] ?? ANESTHESIA_DRUGS.ultracain_ds;
-	const weight = Math.max(
-		5,
-		Math.min(
-			250,
-			Number.isFinite(params.patientWeightKg) && params.patientWeightKg > 0
-				? params.patientWeightKg
-				: 70,
-		),
-	);
 	const isPediatric = Boolean(
 		params.isPediatric ||
 			(params.patientAgeYears !== null &&
 				params.patientAgeYears !== undefined &&
 				params.patientAgeYears < 18),
 	);
+	const hasValidWeight =
+		typeof params.patientWeightKg === "number" &&
+		Number.isFinite(params.patientWeightKg) &&
+		params.patientWeightKg > 0;
+
+	// Ликвидация смертельного хардкода 70 кг для детей или при отсутствии веса
+	if (!hasValidWeight || (isPediatric && (!params.patientWeightKg || params.patientWeightKg <= 0))) {
+		return {
+			drugKey: drug.key,
+			commercialName: drug.commercialName,
+			activeSubstance: drug.activeSubstance,
+			patientWeightKg: 0,
+			isPediatric,
+			maxDoseMgPerKg: 0,
+			mrdDoseMg: 0,
+			mrdVolumeMl: 0,
+			mrdCarpules: 0,
+			isCappedByAbsoluteMax: false,
+			isCappedByCardio: false,
+			maxSafeEpinephrineMg: 0,
+			cardioLimitBadgeText: null,
+			formattedNoteRu: isPediatric
+				? "Укажите фактический вес ребенка для расчета анестезии! Тихий дефолт на 70 кг запрещен."
+				: "Укажите фактический вес пациента для расчета анестезии! Тихий дефолт запрещен.",
+			status: "REQUIRES_WEIGHT_INPUT",
+			requiresWeightInput: true,
+		};
+	}
+
+	const weight = Math.max(5, Math.min(250, params.patientWeightKg));
 	const maxDoseMgPerKg =
 		isPediatric && drug.maxDoseMgPerKgPediatric
 			? drug.maxDoseMgPerKgPediatric
@@ -814,13 +868,23 @@ export function resolveAutopilotAnesthesia(params: {
 		badgeText = "Скандонест 3% (Кардио-безопасный)";
 	}
 
-	const weight = params.patientWeightKg ?? 70;
+	const isPediatric = Boolean(
+		params.isPediatric ||
+			(params.patientAgeYears !== null &&
+				params.patientAgeYears !== undefined &&
+				params.patientAgeYears < 18),
+	);
+	const hasValidWeight =
+		typeof params.patientWeightKg === "number" &&
+		Number.isFinite(params.patientWeightKg) &&
+		params.patientWeightKg > 0;
+	const weight = hasValidWeight ? params.patientWeightKg! : 0;
 	const isCardioRestricted = hasCardio && !ANESTHESIA_DRUGS[selectedDrugKey].isAdrenalineFree;
 	const mrd = calculatePatientMrd({
 		drugKey: selectedDrugKey,
 		patientWeightKg: weight,
 		patientAgeYears: params.patientAgeYears,
-		isPediatric: params.isPediatric,
+		isPediatric,
 		isCardioRestricted: hasCardio,
 		isEpinephrineBlocked,
 	});
@@ -857,12 +921,22 @@ export function resolveAutopilotAnesthesia(params: {
 export function formatAnesthesiaSoapText(params: AnesthesiaSoapRecordParams): string {
 	const drug = ANESTHESIA_DRUGS[params.drugKey] ?? ANESTHESIA_DRUGS.ultracain_ds;
 	const method = ANESTHESIA_METHODS[params.methodKey] ?? ANESTHESIA_METHODS.infiltration;
+	const isSoapPediatric = Boolean(
+		params.isPediatric ||
+			(params.patientAgeYears !== null &&
+				params.patientAgeYears !== undefined &&
+				params.patientAgeYears < 18),
+	);
+	const hasSoapValidWeight =
+		typeof params.patientWeightKg === "number" &&
+		Number.isFinite(params.patientWeightKg) &&
+		params.patientWeightKg > 0;
 	const calc = calculateVisitAnesthesiaSafety({
 		drugKey: params.drugKey,
-		patientWeightKg: params.patientWeightKg ?? 70,
+		patientWeightKg: hasSoapValidWeight ? params.patientWeightKg! : 0,
 		carpulesCount: params.carpulesCount,
 		patientAgeYears: params.patientAgeYears,
-		isPediatric: params.isPediatric,
+		isPediatric: isSoapPediatric,
 		somaticProfile: params.somaticProfile,
 		...(params.customVolumeMl !== undefined ? { customVolumeMl: params.customVolumeMl } : {}),
 	});

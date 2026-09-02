@@ -8,6 +8,7 @@
  * 4. GET /api/invoices/:id: Get invoice details.
  */
 
+import { randomUUID } from "node:crypto";
 import {
 	type CatalogServiceLookup,
 	type PlanItemForValidation,
@@ -15,7 +16,7 @@ import {
 	type PriceLockResolutionPolicy,
 	validatePlanToInvoice,
 } from "@dental/shared";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -27,7 +28,14 @@ import { db } from "../db/client.js";
 import { getServiceCatalogForOrganization } from "../db/pricelistQuery.js";
 import { users } from "../db/schema/auth.js";
 import { payments } from "../db/schema/billing.js";
-import { serviceCatalogItems, treatmentItems, visits } from "../db/schema/clinical.js";
+import {
+	generatedDocuments,
+	serviceCatalogItems,
+	treatmentItems,
+	treatmentPlanItemsNew,
+	treatmentPlans,
+	visits,
+} from "../db/schema/clinical.js";
 import { patients } from "../db/schema/patients.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { verifyCredential } from "../utils/cryptoHelper.js";
@@ -236,6 +244,86 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			});
 		}
 
+		// 1.2 БЛОКИРУЮЩИЙ ГЕЙТ №2 (ПОСТАНОВЛЕНИЕ №659 И СТ. 16 ЗОЗПП):
+		// Проверка позиций выставляемого счета на соответствие утвержденному плану лечения (status: 'Approved')
+		const approvedPlans = await db
+			.select({ id: treatmentPlans.id })
+			.from(treatmentPlans)
+			.where(
+				and(
+					eq(treatmentPlans.organizationId, orgId),
+					eq(treatmentPlans.patientId, data.patientId),
+					eq(treatmentPlans.status, "Approved"),
+				),
+			);
+
+		if (approvedPlans.length > 0) {
+			const approvedPlanIds = approvedPlans.map((p) => p.id);
+
+			const planItems = await db
+				.select({ priceId: treatmentPlanItemsNew.priceId })
+				.from(treatmentPlanItemsNew)
+				.where(
+					and(
+						eq(treatmentPlanItemsNew.organizationId, orgId),
+						inArray(treatmentPlanItemsNew.planId, approvedPlanIds),
+					),
+				);
+
+			const approvedTreatmentItems = await db
+				.select({ serviceId: treatmentItems.serviceId, title: treatmentItems.title })
+				.from(treatmentItems)
+				.where(
+					and(
+						eq(treatmentItems.organizationId, orgId),
+						eq(treatmentItems.patientId, data.patientId),
+						eq(treatmentItems.status, "approved"),
+					),
+				);
+
+			for (const item of data.items) {
+				const itemServiceId = item.serviceId || item.analogueServiceId;
+				const isApproved =
+					planItems.some((pi) => {
+						if (!pi.priceId) return false;
+						if (itemServiceId && (pi.priceId === itemServiceId || pi.priceId.startsWith(`${itemServiceId}::`))) return true;
+						if (item.nameRu && pi.priceId.includes(item.nameRu)) return true;
+						return false;
+					}) ||
+					approvedTreatmentItems.some((ti) => {
+						if (itemServiceId && ti.serviceId === itemServiceId) return true;
+						if (item.nameRu && ti.title === item.nameRu) return true;
+						return false;
+					});
+
+				if (!isApproved) {
+					// Проверяем наличие оформленного и выданного Дополнительного соглашения
+					const [addendumDoc] = await db
+						.select({
+							id: generatedDocuments.id,
+							totalAmountRub: generatedDocuments.totalAmountRub,
+						})
+						.from(generatedDocuments)
+						.where(
+							and(
+								eq(generatedDocuments.organizationId, orgId),
+								eq(generatedDocuments.patientId, data.patientId),
+								eq(generatedDocuments.kind, "treatment_plan_acceptance"),
+								eq(generatedDocuments.status, "issued"),
+							),
+						)
+						.limit(1);
+
+					if (!addendumDoc) {
+						return reply.code(422).send({
+							error: "UpsellConsentShieldViolationError",
+							message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
+						});
+					}
+				}
+			}
+		}
+
 		// 2. Получаем актуальный прайс-лист для валидации
 		const catalogRows = await getServiceCatalogForOrganization(orgId);
 		const catalogLookup: CatalogServiceLookup[] = catalogRows.map((c) => ({
@@ -365,7 +453,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
 		return reply.code(201).send({
 			success: true,
-			invoiceId: sql`uuidv7()`,
+			invoiceId: randomUUID(),
 			invoiceNumber,
 			documentType: data.documentType,
 			patientId: data.patientId,

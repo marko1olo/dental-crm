@@ -394,6 +394,283 @@ export async function registerLabRoutes(app: FastifyInstance) {
 	});
 
 	/**
+	 * Вспомогательное сопоставление клинического этапа ЗТЛ на допустимый статус lab_orders.status (0042 CHECK).
+	 */
+	function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
+		switch (stage) {
+			case "sent_to_lab":
+			case "sent":
+				return "sent";
+			case "in_progress":
+			case "model_cad_design":
+			case "framework_wax_milling":
+			case "sintering_ceramic_layering":
+			case "final_glaze":
+				return "in_progress";
+			case "shipped":
+			case "shipped_to_clinic":
+				return "shipped";
+			case "delivered_to_clinic":
+			case "received":
+			case "clinic_received":
+				return "received";
+			case "fitting_scheduled":
+			case "fitting_in_mouth":
+			case "correction_remake":
+			case "refitting":
+				return "refitting";
+			case "delivered_completed":
+			case "completed":
+				return "completed";
+			case "cancelled":
+				return "cancelled";
+			case "draft":
+				return "draft";
+			default:
+				return null;
+		}
+	}
+
+	/**
+	 * Сопоставление этапа или статуса на майлстоун для таблицы аудита labOrderEvents.
+	 */
+	function mapStageOrStatusToMilestone(stageOrStatus: string): z.infer<typeof labOrderMilestoneSchema> {
+		switch (stageOrStatus) {
+			case "draft":
+				return "draft";
+			case "sent":
+			case "sent_to_lab":
+				return "submitted";
+			case "in_progress":
+				return "cad_intake_verified";
+			case "model_cad_design":
+			case "digital_design_cad":
+				return "digital_design_cad";
+			case "framework_wax_milling":
+			case "cam_production":
+				return "cam_production";
+			case "sintering_ceramic_layering":
+			case "sintering_crystallization":
+				return "sintering_crystallization";
+			case "final_glaze":
+			case "ceramic_glaze_finish":
+				return "ceramic_glaze_finish";
+			case "shipped":
+			case "shipped_courier":
+				return "shipped_courier";
+			case "received":
+			case "delivered_to_clinic":
+			case "clinic_received":
+				return "clinic_received";
+			case "fitting_scheduled":
+			case "fitting_in_mouth":
+			case "clinical_try_in":
+				return "clinical_try_in";
+			case "refitting":
+			case "correction_remake":
+			case "refitting_remake":
+				return "refitting_remake";
+			case "delivered_completed":
+			case "completed":
+			case "final_cementation":
+				return "final_cementation";
+			case "closed_warranty":
+				return "closed_warranty";
+			case "cancelled":
+				return "cancelled";
+			default:
+				return "submitted";
+		}
+	}
+
+	/**
+	 * PATCH /api/lab/orders/:id and /api/clinical/lab-orders/:id
+	 * Частичное обновление наряда ЗТЛ (статус, этап, клинические заметки, фиксация события в labOrderEvents).
+	 */
+	const patchLabOrderHandler = async (request: any, reply: any) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"lab orders write",
+		);
+		if (!orgId) return;
+
+		const { id } = request.params as { id: string };
+
+		const patchSchema = z.object({
+			stage: z.string().trim().optional(),
+			status: labOrderStatusSchema.optional(),
+			notes: z.string().trim().max(2000).optional().nullable(),
+			clinicalNotes: z.string().trim().max(2000).optional().nullable(),
+			labComments: z.string().trim().max(2000).optional().nullable(),
+			dueDate: z.string().optional().nullable(),
+		});
+
+		const parsed = patchSchema.safeParse(request.body);
+		if (!parsed.success) {
+			const firstError = parsed.error.issues[0]?.message ?? "Некорректные параметры обновления заказа ЗТЛ.";
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: firstError,
+			});
+		}
+
+		const body = parsed.data;
+
+		// Маппинг этапа на допустимый статус lab_orders.status (миграция 0042)
+		let targetStatus: LabOrderStatus | undefined = body.status;
+		if (!targetStatus && body.stage) {
+			const mapped = mapStageToLabOrderStatus(body.stage);
+			if (mapped) {
+				targetStatus = mapped;
+			}
+		}
+
+		const result = await withTenantCtx(orgId, async (tx) => {
+			const [currentOrder] = await tx
+				.select()
+				.from(labOrders)
+				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+				.limit(1);
+
+			if (!currentOrder) {
+				return { kind: "not_found" as const };
+			}
+
+			// Проверка автомата состояний при смене статуса
+			if (targetStatus && targetStatus !== currentOrder.status) {
+				const currentStatus = currentOrder.status as LabOrderStatus;
+				const allowed = LAB_ORDER_CLINIC_TRANSITIONS[currentStatus];
+
+				const isPermittedShortcut =
+					(currentStatus === "in_progress" &&
+						["received", "refitting", "completed", "shipped", "cancelled"].includes(targetStatus)) ||
+					(currentStatus === "received" &&
+						["completed", "refitting", "in_progress", "cancelled"].includes(targetStatus)) ||
+					(currentStatus === "refitting" &&
+						["in_progress", "received", "completed", "cancelled"].includes(targetStatus)) ||
+					(currentStatus === "sent" &&
+						["in_progress", "shipped", "received", "cancelled"].includes(targetStatus)) ||
+					targetStatus === "cancelled";
+
+				if ((!allowed || !allowed.includes(targetStatus)) && !isPermittedShortcut) {
+					return {
+						kind: "invalid_transition" as const,
+						currentStatus,
+						targetStatus,
+					};
+				}
+			}
+
+			const now = new Date();
+			const auditFields: Partial<{
+				sentAt: Date;
+				completedAt: Date;
+				cancelledAt: Date;
+			}> = {};
+
+			if (targetStatus === "sent" && !currentOrder.sentAt) {
+				auditFields.sentAt = now;
+			} else if (targetStatus === "completed" && !currentOrder.completedAt) {
+				auditFields.completedAt = now;
+			} else if (targetStatus === "cancelled" && !currentOrder.cancelledAt) {
+				auditFields.cancelledAt = now;
+			}
+
+			// Подготовка заметок
+			let updatedClinicalNotes = currentOrder.clinicalNotes;
+			if (body.clinicalNotes !== undefined) {
+				updatedClinicalNotes = body.clinicalNotes;
+			} else if (body.notes && body.notes.trim()) {
+				const notePrefix = `[${now.toLocaleDateString("ru-RU")}]: `;
+				updatedClinicalNotes = updatedClinicalNotes
+					? `${updatedClinicalNotes}\n${notePrefix}${body.notes.trim()}`
+					: `${notePrefix}${body.notes.trim()}`;
+			}
+
+			let updatedLabComments = currentOrder.labComments;
+			if (body.labComments !== undefined) {
+				updatedLabComments = body.labComments;
+			}
+
+			const updateValues: Record<string, any> = {
+				updatedAt: now,
+				...auditFields,
+			};
+
+			if (targetStatus) {
+				updateValues.status = targetStatus;
+			}
+			if (updatedClinicalNotes !== undefined) {
+				updateValues.clinicalNotes = updatedClinicalNotes;
+			}
+			if (updatedLabComments !== undefined) {
+				updateValues.labComments = updatedLabComments;
+			}
+			if (body.dueDate !== undefined) {
+				updateValues.dueDate = body.dueDate ? new Date(body.dueDate) : null;
+			}
+
+			const [updated] = await tx
+				.update(labOrders)
+				.set(updateValues)
+				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+				.returning();
+
+			// Логирование события в labOrderEvents
+			const milestone = mapStageOrStatusToMilestone(body.stage || targetStatus || currentOrder.status);
+			await tx.insert(labOrderEvents).values({
+				organizationId: orgId,
+				labOrderId: currentOrder.id,
+				milestone,
+				actorType: "clinic_doctor",
+				actorName: "Клиника",
+				notes: body.notes || `Смена этапа: ${body.stage || targetStatus || ""}`,
+				photoUrls: [],
+			});
+
+			return { kind: "ok" as const, updated };
+		});
+
+		if (result.kind === "not_found") {
+			return reply.code(404).send({
+				error: "LabOrderNotFound",
+				message: "Заказ ЗТЛ не найден.",
+			});
+		}
+
+		if (result.kind === "invalid_transition") {
+			return reply.code(409).send({
+				error: "InvalidStateTransition",
+				message: `Недопустимый переход статуса заказа ЗТЛ из «${result.currentStatus}» в «${result.targetStatus}».`,
+			});
+		}
+
+		const updated = result.updated;
+		if (!updated) {
+			return reply.code(404).send({
+				error: "LabOrderNotFound",
+				message: "Заказ ЗТЛ не найден.",
+			});
+		}
+
+		// Уведомление через веб-сокет
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "LAB_ORDER_UPDATED",
+			payload: {
+				patientId: updated.patientId,
+				orderId: updated.id,
+				status: updated.status,
+			},
+		});
+
+		return reply.send({ success: true, order: updated });
+	};
+
+	app.patch("/api/lab/orders/:id", patchLabOrderHandler);
+	app.patch("/api/clinical/lab-orders/:id", patchLabOrderHandler);
+
+	/**
 	 * DELETE /api/clinical/lab-orders/:id
 	 * Удаление заказа ЗТЛ (только черновики или отмененные).
 	 */

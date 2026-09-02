@@ -41,3 +41,13 @@ export {
 	type CdaSemd043_1uParams,
 } from "@dental/shared";
 
+import { generateDentalCdaXml, type CdaResult, type EgiszCdaParams } from "./cda/index.js";
+
+/**
+ * Generates SEMD 108 / 101 (CDA R3/R2) XML directly for Form 043/у outpatient visit diary.
+ * Enforces deterministic sorting of odontogram surfaces, Order 804n services, and C14N canonicalization.
+ */
+export function generateVisit043CdaXml(params: unknown): CdaResult {
+	return generateDentalCdaXml(params);
+}
+

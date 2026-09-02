@@ -16,6 +16,7 @@ import {
 } from "../EgiszQueueWorker.js";
 import {
 	generateDentalCdaXml,
+	generateVisit043CdaXml,
 	canonicalizeCdaXml,
 	buildEgiszRemdSubmissionPackage,
 	type EgiszRemdPackage,
@@ -39,7 +40,7 @@ describe("EGISZ REMD Background Queue & CDA R3 Determinism", () => {
 		const sampleParams = {
 			documentId: "d0000000-0000-4000-8000-000000000001",
 			visitId: "v0000000-0000-4000-8000-000000000001",
-			visitDate: "2026-09-02T10:00:00.000Z",
+			visitDate: new Date("2026-09-02T10:00:00.000Z"),
 			clinicOid: "1.2.643.5.1.13.13.12.2.77.9999",
 			clinicName: "Клиника ДЕНТЕ",
 			clinicAddress: "г. Москва, ул. Стоматологическая, д. 1",
@@ -94,6 +95,13 @@ describe("EGISZ REMD Background Queue & CDA R3 Determinism", () => {
 		// Verify canonical invariants: no BOM, LF line breaks, trimmed
 		assert.equal(res1.canonicalXml.charCodeAt(0) !== 0xfeff, true, "BOM must be stripped");
 		assert.equal(res1.canonicalXml.includes("\r\n"), false, "CRLF must be normalized to LF");
+
+		// Test Form 043/у dedicated generator helper
+		const res043 = generateVisit043CdaXml(sampleParams);
+		assert.equal(res043.success, true, "generateVisit043CdaXml must succeed");
+		if (res043.success) {
+			assert.equal(res043.canonicalXml, res1.canonicalXml, "generateVisit043CdaXml must match deterministic CDA XML");
+		}
 	});
 
 	it("3. Zero-Mock Policy: OutboxDispatcher strictly rejects unsigned packages and never generates fake detached signatures", async () => {
