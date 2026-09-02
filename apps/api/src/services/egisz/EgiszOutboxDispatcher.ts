@@ -382,7 +382,7 @@ export class EgiszOutboxDispatcher {
 					const nextAttempt = row.attempts + 1;
 					const delayMs = calculateEgiszRetryDelayMs(nextAttempt);
 					const isTerminal = nextAttempt >= row.maxAttempts || submissionRes.status === "Rejected";
-					const nextStatus = isTerminal ? (submissionRes.status === "Rejected" ? "rejected_by_remd" : "failed") : "failed";
+					const nextStatus = isTerminal ? "rejected_by_remd" : "failed";
 
 					await db
 						.update(egiszOutbox)
@@ -445,11 +445,13 @@ export class EgiszOutboxDispatcher {
 				const errorMsg = err instanceof Error ? err.message : String(err);
 				const nextAttempt = row.attempts + 1;
 				const delayMs = calculateEgiszRetryDelayMs(nextAttempt);
+				const isTerminal = nextAttempt >= row.maxAttempts;
+				const nextStatus = isTerminal ? "rejected_by_remd" : "failed";
 
 				await db
 					.update(egiszOutbox)
 					.set({
-						status: "failed",
+						status: nextStatus,
 						attempts: nextAttempt,
 						nextAttemptAt: new Date(Date.now() + delayMs),
 						lastErrorClass: "Exception",
@@ -460,11 +462,26 @@ export class EgiszOutboxDispatcher {
 					})
 					.where(eq(egiszOutbox.id, row.id));
 
+				await appendEgiszAuditLog(db, {
+					organizationId: row.organizationId,
+					eventType: isTerminal ? "REMD_SEMD_REJECTED" : "REMD_SEMD_RETRY_SCHEDULED",
+					entityType: "egisz_outbox",
+					entityId: row.id,
+					patientId: row.patientId,
+					payload: {
+						outboxId: row.id,
+						visitId: row.visitId,
+						attempts: nextAttempt,
+						errorMessage: errorMsg,
+						retryScheduledInMs: isTerminal ? null : delayMs,
+					},
+				});
+
 				result.failedCount++;
 				result.results.push({
 					outboxId: row.id,
 					visitId: row.visitId,
-					status: "failed",
+					status: nextStatus,
 					error: errorMsg,
 				});
 			}

@@ -521,6 +521,7 @@ export function validateGostCmsPkcs7Signature(
 	if (typeof signatureBase64 !== "string" || signatureBase64.trim().length === 0) {
 		return {
 			valid: false,
+			errorCode: "EmptySignature",
 			error: "Подпись отсутствует или пуста.",
 		};
 	}
@@ -534,6 +535,7 @@ export function validateGostCmsPkcs7Signature(
 	if (!/^[A-Za-z0-9+/=]+$/.test(cleaned) || cleaned.length % 4 !== 0) {
 		return {
 			valid: false,
+			errorCode: "InvalidBase64",
 			error: "Подпись не является валидной строкой Base64.",
 		};
 	}
@@ -544,6 +546,7 @@ export function validateGostCmsPkcs7Signature(
 	} catch {
 		return {
 			valid: false,
+			errorCode: "InvalidBase64",
 			error: "Не удалось декодировать Base64-контейнер электронной подписи.",
 		};
 	}
@@ -552,15 +555,67 @@ export function validateGostCmsPkcs7Signature(
 	if (buf.length < 64) {
 		return {
 			valid: false,
+			errorCode: "ContainerTooSmall",
 			error: `Размер бинарного контейнера подписи слишком мал (${buf.length} байт). Требуется полноценный CMS (PKCS#7) контейнер.`,
 		};
 	}
 
 	// Корень DER обязан начинаться с SEQUENCE (0x30)
-	if (buf[0] !== 0x30) {
+	const firstByte = buf[0];
+	if (firstByte === undefined || firstByte !== 0x30) {
 		return {
 			valid: false,
-			error: "Контейнер подписи поврежден: начальный тег ASN.1 DER не является SEQUENCE (0x30).",
+			errorCode: "InvalidAsn1Tag",
+			error: `Контейнер подписи поврежден: начальный тег ASN.1 DER (0x${(firstByte ?? 0).toString(16)}) не является SEQUENCE (0x30).`,
+		};
+	}
+
+	// Валидация заголовка длины корневой структуры ASN.1 DER SEQUENCE (ITU-T X.690)
+	const lenByte = buf[1];
+	if (lenByte === undefined) {
+		return {
+			valid: false,
+			errorCode: "InvalidAsn1Der",
+			error: "Контейнер подписи поврежден: отсутствует заголовок длины ASN.1 DER.",
+		};
+	}
+
+	let headerLength: number;
+	let declaredContentLength: number;
+
+	if (lenByte === 0x80) {
+		// Indefinite form запрещена стандартом ASN.1 DER
+		return {
+			valid: false,
+			errorCode: "InvalidAsn1Der",
+			error: "Контейнер подписи нарушает правила ASN.1 DER: обнаружена неопределенная форма длины (indefinite length 0x80).",
+		};
+	} else if (lenByte < 0x80) {
+		headerLength = 2;
+		declaredContentLength = lenByte;
+	} else {
+		const numLenBytes = lenByte & 0x7f;
+		if (numLenBytes === 0 || numLenBytes > 4 || buf.length < 2 + numLenBytes) {
+			return {
+				valid: false,
+				errorCode: "InvalidAsn1Der",
+				error: "Контейнер подписи поврежден: некорректная структура длины ASN.1 DER.",
+			};
+		}
+		declaredContentLength = 0;
+		for (let i = 0; i < numLenBytes; i++) {
+			const b = buf[2 + i] ?? 0;
+			declaredContentLength = (declaredContentLength << 8) | b;
+		}
+		headerLength = 2 + numLenBytes;
+	}
+
+	const expectedTotalLength = headerLength + declaredContentLength;
+	if (buf.length < expectedTotalLength) {
+		return {
+			valid: false,
+			errorCode: "TruncatedAsn1Der",
+			error: `Контейнер подписи обрезан: фактический размер (${buf.length} байт) меньше объявленного в заголовке ASN.1 SEQUENCE (${expectedTotalLength} байт).`,
 		};
 	}
 
@@ -571,6 +626,7 @@ export function validateGostCmsPkcs7Signature(
 	if (!hasSignedDataOid) {
 		return {
 			valid: false,
+			errorCode: "MissingSignedDataOid",
 			error: "Контейнер не содержит обязательного OID CMS SignedData (1.2.840.113549.1.7.2). Произвольные строки запрещены.",
 		};
 	}
@@ -587,6 +643,7 @@ export function validateGostCmsPkcs7Signature(
 	if (!hasGostOid) {
 		return {
 			valid: false,
+			errorCode: "NonGostAlgorithmForbidden",
 			error: "Контейнер подписи не содержит криптографических OID ГОСТ Р 34.10-2012 / 34.11-2012. Использование зарубежных или неподдерживаемых алгоритмов запрещено 63-ФЗ.",
 		};
 	}

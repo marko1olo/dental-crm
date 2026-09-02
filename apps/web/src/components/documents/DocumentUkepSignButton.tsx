@@ -1,83 +1,17 @@
-import { AlertCircle, FileSignature, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileSignature, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
 	operatorReadableErrorDetailFromUnknown,
 	responseErrorMessage,
 } from "../../AppHelpers";
-import { actionFailureToast } from "../../lib/panelStateText";
 import {
 	type CryptoProCertificate,
 	checkCryptoProPlugin,
 	getPersonalCertificates,
+	parseCryptoProError,
 	signBase64WithCertificate,
 } from "../../utils/cryptoPro";
 import { showToast } from "../GlobalToast";
-
-/**
- * Подписание документа УКЭП (КриптоПро): отказ теперь виден и объяснён.
- *
- * ЧТО БЫЛО СЛОМАНО.
- *
- * 1. ОТКАЗ ХРАНИЛИЩА ПОКАЗЫВАЛСЯ КАК ПУСТОТА. Чтение личных сертификатов
- *    (getPersonalCertificates) падает, если не вставлен носитель, не запущен
- *    КриптоПро CSP или хранилище не открывается. Обработчик показывал всплывающую
- *    подсказку на четыре секунды и оставлял список пустым — а панель дальше
- *    навсегда писала «Личные сертификаты в хранилище не найдены». Это неправда:
- *    хранилище не прочитано, а не пусто. Повторить чтение было нечем, кроме
- *    перезагрузки страницы, и об этом на экране не было ни слова.
- *
- * 2. СЛУЖЕБНЫЙ ТЕКСТ СЕРВЕРА УХОДИЛ ЧЕЛОВЕКУ ДОСЛОВНО. Отказ сохранения подписи
- *    показывался как `err.message` без разбора. У самого маршрута сообщение
- *    английское («ID and pkcs7Signature are required»), у двух его отказов
- *    сообщения нет вовсе (`{ error: "DocumentNotFound" }`,
- *    `{ error: "DatabaseError" }`), а пока маршрут не подключён (см. долг ниже)
- *    Fastify отвечает своим телом, и администратор читал в подсказке
- *    «Route POST:/api/documents/<идентификатор>/sign-ukep not found». Обрыв сети
- *    давал английское «Failed to fetch». Теперь отказ проходит через тот же
- *    разбор, что и весь остальной экран (responseErrorMessage в AppHelpers:
- *    служебное и нерусское заменяется человеческой причиной по коду ответа), и к
- *    причине добавляется следующий шаг.
- *
- * 3. ОТКАЗ ИСЧЕЗАЛ ЧЕРЕЗ ЧЕТЫРЕ СЕКУНДЫ. Единственным сообщением об отказе была
- *    всплывающая подсказка со сроком показа по умолчанию. Пожилой администратор
- *    не успевает её прочесть, а перечитать нечем. Причина отказа теперь остаётся
- *    в панели до следующей попытки.
- *
- * 4. КНОПКА «ТЕСТОВОЕ ПОДПИСАНИЕ (DEV)» НЕ МОГЛА СРАБОТАТЬ НИКОГДА. Она
- *    показывалась ровно тогда, когда плагин НЕ найден, и вызывала тот же
- *    обработчик, который в этом случае сразу бросал «Подписание невозможно:
- *    отсутствует плагин или сертификат». То есть кнопка обещала действие,
- *    которого не бывает. Убрана, а не «починена»: подпись, полученная в обход
- *    КриптоПро, — это заведомо недействительная крипто-подпись в архивной
- *    колонке документа, и хуже мёртвой кнопки только документ, который выглядит
- *    заверенным.
- *
- * ЗАЯВЛЕННЫЙ ДОЛГ, НЕ ЗАКРЫТЫЙ ЗДЕСЬ (правки на сервере вне этой задачи).
- *  • POST /api/documents/:id/sign-ukep объявлен в
- *    apps/api/src/routes/documents/signUkep.ts, но registerDocumentRoutes
- *    (apps/api/src/routes/documents.ts:1031-1038) его НЕ вызывает: там семь
- *    регистраторов, и signUkep среди них нет, а server.ts:371 подключает только
- *    этот один регистратор.
- *
- *    ИЗМЕРЕНО, А НЕ ВЫЧИТАНО ГЛАЗАМИ. Проб apps/api/src/tests/routes/
- *    _reconSignUkepRegistrationProbe.ts, запущенный в процессе через app.inject:
- *    маршрут отвечает 404 с телом Fastify
- *    `{"message":"Route POST:/api/documents/<идентификатор>/sign-ukep not
- *    found",…}`; живой сосед /issue из того же регистратора отвечает 401, а сам
- *    signUkep, подключённый напрямую, — тоже 401. То есть мёртвая именно
- *    проводка, а не модуль. Через dev-сервер на 4100 ответ другой (400 и русское
- *    «Запрос не выполнен. Проверьте данные и повторите действие.»): там общий
- *    предохранитель запроса перехватывает раньше маршрутизации. Оба ответа
- *    означают одно — подписать нельзя, и до этой правки первый из них уходил
- *    администратору дословно, вместе с адресом маршрута.
- *
- *    Комментарий в src/tests/documentsViewDecomposition.test.ts:165-167
- *    утверждает обратное («Путь на сервере рабочий») — это утверждение неверно.
- *  • Сам компонент не смонтирован ни одним экраном (заявлено там же и в
- *    src/tests/panelsAreMounted.test.ts), поэтому подписать документ УКЭП
- *    сейчас нельзя ничем. Подключение — новая возможность на экране, а не
- *    правка этого файла.
- */
 
 interface DocumentUkepSignButtonProps {
 	documentId: string;
@@ -89,7 +23,7 @@ type CertificatesState = "loading" | "failed" | "ready";
 
 /** Что делать, если хранилище не читается или в нём ничего нет. */
 const CERTIFICATE_STORE_ADVICE =
-	"Вставьте носитель с подписью (Рутокен или флешку), проверьте, что КриптоПро CSP запущен, и нажмите «Проверить снова».";
+	"Вставьте носитель с подписью (Рутокен или JaCarta), проверьте, что КриптоПро CSP запущен, и нажмите «Проверить снова».";
 
 /** Общий хвост отказа подписания: документ остался без подписи, и это важно сказать. */
 const SIGN_FAILURE_TAIL =
@@ -124,16 +58,10 @@ export function DocumentUkepSignButton({
 			setSelectedThumbprint(list[0]?.thumbprint ?? "");
 			setCertificatesState("ready");
 		} catch (error) {
-			/*
-			 * Список обнуляется намеренно. Раньше при отказе чтения в нём оставались
-			 * сертификаты предыдущей удачной попытки, и человек выбирал из списка,
-			 * которого в хранилище уже могло не быть.
-			 */
 			setCertificates([]);
 			setSelectedThumbprint("");
-			setCertificatesFailureDetail(
-				operatorReadableErrorDetailFromUnknown(error) ?? "",
-			);
+			const parsed = parseCryptoProError(error);
+			setCertificatesFailureDetail(parsed.userMessage);
 			setCertificatesState("failed");
 			showToast("Хранилище сертификатов УКЭП не прочитано", "error", 6000);
 		}
@@ -152,12 +80,6 @@ export function DocumentUkepSignButton({
 
 	/**
 	 * Печатная копия выданного документа в виде base64.
-	 *
-	 * Причину отказа отдаёт сам сервер и по-русски: «Документ не найден», «PDF
-	 * недоступен: требуется отметка о подписании при выдаче документа», «Архив
-	 * выданного документа не прошёл проверку целостности». Раньше все они
-	 * заменялись одной строкой «Не удалось загрузить PDF файл документа с
-	 * сервера», то есть человек не узнавал, что документ надо сначала выдать.
 	 */
 	const loadIssuedPdfBase64 = async (): Promise<PdfLoadResult> => {
 		let response: Response;
@@ -211,13 +133,38 @@ export function DocumentUkepSignButton({
 		showToast(reason, "error", 9000);
 	}
 
+	const selectedCert = certificates.find(
+		(c) => c.thumbprint === selectedThumbprint,
+	);
+	const isSelectedCertExpired = selectedCert
+		? new Date(selectedCert.validTo).getTime() < Date.now()
+		: false;
+	const isSelectedCertNonGost = selectedCert
+		? selectedCert.isGost === false
+		: false;
+
 	const handleSign = async () => {
-		if (!selectedThumbprint) {
+		if (!selectedThumbprint || !selectedCert) {
 			failSigning(
 				"Подписывать нечем: сертификат не выбран. Выберите сертификат в списке выше и повторите.",
 			);
 			return;
 		}
+
+		if (isSelectedCertExpired) {
+			failSigning(
+				`Срок действия сертификата истек (${new Date(selectedCert.validTo).toLocaleDateString("ru-RU")}). Подписание юридически ничтожно по 63-ФЗ.`,
+			);
+			return;
+		}
+
+		if (isSelectedCertNonGost) {
+			failSigning(
+				"Выбранный сертификат не соответствует ГОСТ Р 34.10-2012. Подписание медицинских документов допускается только по стандарту ГОСТ Р 34.10-2012 (63-ФЗ).",
+			);
+			return;
+		}
+
 		setIsSigning(true);
 		setSignFailure("");
 		try {
@@ -237,7 +184,14 @@ export function DocumentUkepSignButton({
 				response = await fetch(`/api/documents/${documentId}/sign-ukep`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ pkcs7Signature: signature }),
+					body: JSON.stringify({
+						pkcs7Signature: signature,
+						certificateSerialNumber: selectedCert.serialNumber,
+						certificateSubject: selectedCert.subjectName,
+						validFrom: selectedCert.validFrom,
+						validTo: selectedCert.validTo,
+						signatureType: "ukep",
+					}),
 				});
 			} catch {
 				failSigning(
@@ -255,28 +209,17 @@ export function DocumentUkepSignButton({
 				return;
 			}
 
-			showToast("Документ подписан УКЭП (КриптоПро)", "success");
+			showToast("Документ успешно подписан УКЭП (КриптоПро)", "success");
 			onSuccess?.();
 		} catch (error) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(error as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			/*
-			 * Сюда приходят отказы самого КриптоПро. Их текст пишет плагин, и он
-			 * бывает нерусским, поэтому проходит тот же разбор, что и ответы сервера:
-			 * непригодное для человека заменяется общей причиной без выдумывания
-			 * конкретной — «носитель вынули» и «сервер недоступен» здесь неотличимы.
-			 */
-			const detail = operatorReadableErrorDetailFromUnknown(error);
-			failSigning(
-				detail
-					? `Подпись УКЭП не сохранена: ${detail} ${SIGN_FAILURE_TAIL}`
-					: `Подпись УКЭП не сохранена: подписание не завершилось. Проверьте, что носитель с подписью вставлен и сервер клиники доступен. ${SIGN_FAILURE_TAIL}`,
-			);
+			const parsed = parseCryptoProError(error);
+			if (parsed.isCancellation) {
+				showToast(parsed.userMessage, "warning", 6000);
+				setSignFailure(parsed.userMessage);
+			} else {
+				showToast(parsed.userMessage, "error", 8000);
+				failSigning(`${parsed.userMessage}. ${SIGN_FAILURE_TAIL}`);
+			}
 		} finally {
 			setIsSigning(false);
 		}
@@ -284,7 +227,7 @@ export function DocumentUkepSignButton({
 
 	if (hasPlugin === null) {
 		return (
-			<div className="flex items-center justify-center p-2 text-sm text-slate-500">
+			<div className="flex items-center justify-center p-3 text-sm text-[var(--muted,#64748b)] bg-[var(--paper-subtle,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] rounded-lg border border-[var(--glass-border,#e2e8f0)]">
 				<Loader2 className="dente-icon-spin mr-2" size={16} />
 				<span>Проверка плагина КриптоПро...</span>
 			</div>
@@ -293,31 +236,32 @@ export function DocumentUkepSignButton({
 
 	if (!hasPlugin) {
 		return (
-			<div className="p-3 border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900/30 rounded-lg text-sm">
+			<div className="p-3.5 border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900/30 rounded-lg text-sm">
 				<div className="flex items-start text-red-800 dark:text-red-300 mb-2">
 					<AlertCircle className="mr-2 shrink-0 mt-0.5" size={16} />
-					<span>Плагин КриптоПро ЭЦП Browser Plug-in не обнаружен.</span>
+					<span className="font-semibold">
+						Плагин КриптоПро ЭЦП Browser Plug-in не обнаружен.
+					</span>
 				</div>
-				<p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+				<p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
 					Подписать документ усиленной квалифицированной подписью без него
-					нельзя. Нужны КриптоПро CSP и расширение для браузера. Установите их
-					по инструкции, затем нажмите «Проверить снова» — перезагружать
-					страницу не требуется.
+					нельзя. Нужны установленный КриптоПро CSP и расширение для браузера.
+					Установите их по инструкции, затем нажмите «Проверить снова».
 				</p>
-				<div className="flex flex-wrap items-center gap-3">
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
 					<button
 						type="button"
 						onClick={() => void detectPlugin()}
-						className="dente-button dente-button--secondary dente-button--small justify-center"
+						className="dente-button dente-button--secondary min-h-[44px] justify-center text-xs"
 					>
-						<RefreshCw className="mr-2" size={16} />
+						<RefreshCw className="mr-2" size={14} />
 						<span>Проверить снова</span>
 					</button>
 					<a
 						href="https://cryptopro.ru/products/cades/plugin"
 						target="_blank"
 						rel="noopener noreferrer"
-						className="inline-block text-xs font-semibold text-[var(--ok-fg,#059669)] hover:opacity-80"
+						className="inline-flex items-center justify-center min-h-[44px] px-3 text-xs font-semibold text-[var(--teal,#0d9488)] hover:underline"
 					>
 						Инструкция по установке плагина →
 					</a>
@@ -327,36 +271,41 @@ export function DocumentUkepSignButton({
 	}
 
 	return (
-		<div className="p-3 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-900/50">
+		<div className="p-3.5 border border-[var(--glass-border,#e2e8f0)] dark:border-slate-800 rounded-lg bg-[var(--paper-subtle,#f8fafc)] dark:bg-slate-900/50">
 			<label
 				htmlFor="ukep-cert-select"
-				className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1"
+				className="block text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-300 mb-1.5"
 			>
-				Выберите сертификат УКЭП:
+				Сертификат электронной подписи врача (63-ФЗ):
 			</label>
+
 			{certificatesState === "loading" ? (
-				<div className="flex items-center text-xs text-slate-400 p-2">
+				<div className="flex items-center text-xs text-[var(--muted,#64748b)] p-3">
 					<Loader2 className="dente-icon-spin mr-2" size={14} />
-					Читаем хранилище сертификатов...
+					Чтение личного хранилища сертификатов КриптоПро...
 				</div>
 			) : certificatesState === "failed" ? (
 				<div
-					className="text-xs p-2 border border-red-200 dark:border-red-900/30 rounded mb-3 text-red-800 dark:text-red-300"
+					className="text-xs p-3 border border-red-200 dark:border-red-900/30 rounded mb-3 text-red-800 dark:text-red-300 bg-red-50/50 dark:bg-red-950/20"
 					role="status"
 					aria-live="polite"
 				>
-					<strong className="block mb-1">
+					<strong className="block mb-1 font-semibold">
 						Хранилище сертификатов не прочитано — это не значит, что
 						сертификатов нет.
 					</strong>
 					{certificatesFailureDetail ? (
-						<p className="mb-1">{certificatesFailureDetail}</p>
+						<p className="mb-1.5 leading-relaxed">
+							{certificatesFailureDetail}
+						</p>
 					) : null}
-					<p className="mb-2">{CERTIFICATE_STORE_ADVICE}</p>
+					<p className="mb-2.5 text-slate-600 dark:text-slate-400">
+						{CERTIFICATE_STORE_ADVICE}
+					</p>
 					<button
 						type="button"
 						onClick={() => void loadCertificates()}
-						className="dente-button dente-button--secondary dente-button--small justify-center"
+						className="dente-button dente-button--secondary min-h-[44px] justify-center text-xs w-full sm:w-auto"
 					>
 						<RefreshCw className="mr-2" size={14} />
 						<span>Проверить снова</span>
@@ -364,14 +313,14 @@ export function DocumentUkepSignButton({
 				</div>
 			) : certificates.length === 0 ? (
 				<div
-					className="text-xs p-2 border border-dashed border-slate-300 dark:border-slate-700 rounded mb-3 text-slate-600 dark:text-slate-300"
+					className="text-xs p-3 border border-dashed border-slate-300 dark:border-slate-700 rounded mb-3 text-slate-600 dark:text-slate-300 bg-white/50 dark:bg-slate-950/50"
 					role="status"
 					aria-live="polite"
 				>
-					<strong className="block mb-1">
+					<strong className="block mb-1 font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">
 						Хранилище прочитано, личных сертификатов в нём нет.
 					</strong>
-					<p className="mb-2">
+					<p className="mb-2.5 leading-relaxed">
 						Сертификат подписи выдаёт удостоверяющий центр, и он должен быть
 						установлен в личное хранилище этого компьютера.{" "}
 						{CERTIFICATE_STORE_ADVICE}
@@ -379,40 +328,88 @@ export function DocumentUkepSignButton({
 					<button
 						type="button"
 						onClick={() => void loadCertificates()}
-						className="dente-button dente-button--secondary dente-button--small justify-center"
+						className="dente-button dente-button--secondary min-h-[44px] justify-center text-xs w-full sm:w-auto"
 					>
 						<RefreshCw className="mr-2" size={14} />
 						<span>Проверить снова</span>
 					</button>
 				</div>
 			) : (
-				<select
-					id="ukep-cert-select"
-					value={selectedThumbprint}
-					onChange={(e) => setSelectedThumbprint(e.target.value)}
-					disabled={isSigning}
-					className="w-full text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded px-2 py-1.5 mb-3 focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
-				>
-					{certificates.map((cert) => {
-						const expiry = new Date(cert.validTo).toLocaleDateString("ru-RU");
-						const cleanSubject =
-							cert.subjectName
-								.split(",")
-								.find((part) => part.startsWith("CN="))
-								?.replace("CN=", "") || cert.subjectName;
+				<>
+					<select
+						id="ukep-cert-select"
+						value={selectedThumbprint}
+						onChange={(e) => setSelectedThumbprint(e.target.value)}
+						disabled={isSigning}
+						className="w-full text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded px-2.5 py-2 mb-2 focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)] dark:text-slate-100"
+					>
+						{certificates.map((cert) => {
+							const expiry = new Date(cert.validTo).toLocaleDateString(
+								"ru-RU",
+							);
+							const cleanSubject =
+								cert.subjectName
+									.split(",")
+									.find((part) => part.startsWith("CN="))
+									?.replace("CN=", "") || cert.subjectName;
 
-						return (
-							<option key={cert.thumbprint} value={cert.thumbprint}>
-								{cleanSubject} (до {expiry})
-							</option>
-						);
-					})}
-				</select>
+							const algBadge = cert.isGost
+								? "ГОСТ Р 34.10-2012"
+								: "НЕ ГОСТ";
+
+							return (
+								<option key={cert.thumbprint} value={cert.thumbprint}>
+									{cleanSubject} — {algBadge} (до {expiry})
+								</option>
+							);
+						})}
+					</select>
+
+					{isSelectedCertExpired ? (
+						<div className="p-2.5 mb-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded text-xs text-red-800 dark:text-red-300 flex items-start gap-2">
+							<AlertCircle size={14} className="shrink-0 mt-0.5" />
+							<div>
+								<strong>Срок действия сертификата истек:</strong>{" "}
+								{new Date(selectedCert!.validTo).toLocaleDateString(
+									"ru-RU",
+								)}
+								. Подписание юридически ничтожно по ст. 14 63-ФЗ.
+							</div>
+						</div>
+					) : isSelectedCertNonGost ? (
+						<div className="p-2.5 mb-2.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+							<ShieldAlert size={14} className="shrink-0 mt-0.5" />
+							<div>
+								<strong>
+									Несовместимый алгоритм (
+									{selectedCert?.algorithmName ||
+										selectedCert?.algorithmOid ||
+										"RSA"}
+									):
+								</strong>{" "}
+								Для заверения медицинских документов 63-ФЗ требует
+								квалифицированные сертификаты по ГОСТ Р 34.10-2012.
+							</div>
+						</div>
+					) : (
+						<div className="mb-2.5 text-[11px] text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+							<CheckCircle2 size={12} className="shrink-0" />
+							<span>
+								Сертификат ГОСТ Р 34.10-2012 действителен до{" "}
+								{selectedCert
+									? new Date(selectedCert.validTo).toLocaleDateString(
+											"ru-RU",
+										)
+									: ""}
+							</span>
+						</div>
+					)}
+				</>
 			)}
 
 			{signFailure ? (
 				<p
-					className="text-xs p-2 border border-red-200 dark:border-red-900/30 rounded mb-3 text-red-800 dark:text-red-300"
+					className="text-xs p-2.5 border border-red-200 dark:border-red-900/30 rounded mb-3 text-red-800 dark:text-red-300 bg-red-50/50 dark:bg-red-950/20 leading-relaxed"
 					role="status"
 					aria-live="polite"
 				>
@@ -423,18 +420,27 @@ export function DocumentUkepSignButton({
 			<button
 				type="button"
 				onClick={handleSign}
-				disabled={isSigning || !selectedThumbprint}
-				className="dente-button dente-button--primary dente-button--small w-full justify-center"
+				disabled={
+					isSigning ||
+					!selectedThumbprint ||
+					isSelectedCertExpired ||
+					isSelectedCertNonGost
+				}
+				className="dente-button dente-button--primary min-h-[44px] w-full justify-center text-xs font-semibold"
 			>
 				{isSigning ? (
-					<Loader2 className="dente-icon-spin mr-2" size={16} />
+					<>
+						<Loader2 className="dente-icon-spin mr-2" size={16} />
+						<span>Идет подписание... Введите PIN-код на токене</span>
+					</>
 				) : (
-					<FileSignature className="mr-2" size={16} />
+					<>
+						<FileSignature className="mr-2" size={16} />
+						<span>Подписать УКЭП (КриптоПро)</span>
+					</>
 				)}
-				<span>
-					{isSigning ? "Подписание..." : "Подписать УКЭП (КриптоПро)"}
-				</span>
 			</button>
 		</div>
 	);
 }
+
