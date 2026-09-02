@@ -14,6 +14,8 @@ import {
 	renderForm039uHtml,
 	renderForm003vuHtml,
 	renderRadiationDoseSheetHtml,
+	injectVisualSignatureStampIntoHtml,
+	renderDigitalSignatureStampHtml,
 	type FullForm043uPayload,
 	type OrthodonticCard043_1uPayload,
 	type DailyDentistDiary037uPayload,
@@ -684,7 +686,19 @@ test("Form 037/u-88 Redesign: Landscape A4 layout, 23-column register table, Bla
 	// Signatures and UKEP
 	assert.ok(html.includes("Врач-стоматолог"), "Must have doctor signature area");
 	assert.ok(html.includes("Медицинский регистратор / Статистик"), "Must have registrar signature");
-	assert.ok(html.includes("УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ"), "Must have UKEP electronic signature stamp");
+
+	const stamped = injectVisualSignatureStampIntoHtml(
+		html,
+		renderDigitalSignatureStampHtml({
+			certificateSerialNumber: "00E4A28B123456",
+			certificateSubject: "Смирнов Алексей Павлович",
+			validFrom: "2026-01-01",
+			validTo: "2027-01-01",
+			signatureType: "ukep",
+		}),
+	);
+	assert.ok(stamped.includes("ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"), "Must apply UKEP electronic signature stamp via GOST R 7.0.97-2016");
+	assert.ok(stamped.includes("00E4A28B123456"));
 });
 
 test("Form 039-2/у-88 Redesign: Monthly summary matrix with 31 calendar days, category aggregates, and specialty UET breakdown", () => {

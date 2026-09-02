@@ -44,10 +44,15 @@ function applySignatureStampIfSigned(
 	const isTaxCert =
 		document.kind === "tax_deduction_certificate" ||
 		document.kind === "legacy_tax_deduction_certificate";
+	const isContract =
+		document.kind === "paid_medical_services_contract";
 	const defaultSubject = isTaxCert
 		? document.signatureAttestation?.staffFullName ||
 			"Главный врач / Уполномоченное лицо клиники"
-		: "Врач-стоматолог клиники";
+		: isContract
+			? document.signatureAttestation?.staffFullName ||
+				"Руководитель медицинской организации / Главный врач"
+			: "Врач-стоматолог клиники";
 	const certSubject =
 		document.doctorCertSubject ||
 		document.signatureAttestation?.staffFullName ||
@@ -235,6 +240,27 @@ export async function register(app: FastifyInstance) {
 						),
 					);
 			}
+
+			// 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в плане лечения
+			const identity = getRequestIdentity(request);
+			const access = evaluateClinicalAccess(identity.role);
+			if (!access.hasClinicalAccess) {
+				return reply
+					.code(403)
+					.send(
+						apiError(
+							"Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
+						),
+					);
+			}
+
+			// 152-ФЗ / 323-ФЗ: Аудит экспорта плана лечения в PDF
+			await auditMedicalAccessFromRequest(request, {
+				organizationId: orgId,
+				patientId: document.patientId,
+				action: "EXPORT_TREATMENT_PLAN_PDF",
+				diagnosis: document.title,
+			});
 
 			// БЫЛО: маршрут не проверял статус вообще и ВСЕГДА рендерил документ заново
 			// из текущих данных. План лечения, выданный и подписанный 1 марта, после

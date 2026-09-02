@@ -10,7 +10,10 @@ import {
 	updateAppointment as updateAppointmentInMemory,
 } from "../sampleData.js";
 import { db } from "./client.js";
-import { isPatientBookingBlocked } from "./patientArchiveReasonsAndBlacklistsQuery.js";
+import {
+	checkPatientBookingBlockDetails,
+	isPatientBookingBlocked,
+} from "./patientArchiveReasonsAndBlacklistsQuery.js";
 import * as schema from "./schema.js";
 
 function useInMemory() {
@@ -299,11 +302,45 @@ export async function createAppointmentInDb(
 	if (useInMemory()) {
 		return createAppointmentInMemory(input);
 	}
-	if (
-		input.patientId &&
-		(await isPatientBookingBlocked(organizationId, input.patientId))
-	) {
-		throw new Error("Пациент внесен в черный список. Запись заблокирована.");
+	if (input.patientId) {
+		const [patient] = await db
+			.select({ id: schema.patients.id, status: schema.patients.status })
+			.from(schema.patients)
+			.where(
+				and(
+					eq(schema.patients.id, input.patientId),
+					eq(schema.patients.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (patient?.status === "archived") {
+			const details = await checkPatientBookingBlockDetails(
+				organizationId,
+				input.patientId,
+			);
+			const reasonText = details.reason ? ` Причина: ${details.reason}.` : "";
+			const legalText = details.legalBasis
+				? ` Правовое основание: ${details.legalBasis}.`
+				: "";
+			throw new Error(
+				`Пациент находится в архиве. Запись заблокирована.${reasonText}${legalText}`,
+			);
+		}
+		const blockDetails = await checkPatientBookingBlockDetails(
+			organizationId,
+			input.patientId,
+		);
+		if (blockDetails.isBlocked) {
+			const reasonText = blockDetails.reason
+				? ` Причина: ${blockDetails.reason}.`
+				: "";
+			const legalText = blockDetails.legalBasis
+				? ` Правовое основание: ${blockDetails.legalBasis}.`
+				: "";
+			throw new Error(
+				`Пациент внесен в черный список / архив. Запись заблокирована.${reasonText}${legalText}`,
+			);
+		}
 	}
 
 	const startsAtMs = Date.parse(input.startsAt);
@@ -443,6 +480,25 @@ export async function updateAppointmentInDb(
 				? input.assistantUserId
 				: existing.assistantUserId;
 		const newPatientId = input.patientId ?? existing.patientId;
+
+		if (newPatientId && newStatus !== "cancelled" && newStatus !== "no_show") {
+			const [patient] = await tx
+				.select({ id: schema.patients.id, status: schema.patients.status })
+				.from(schema.patients)
+				.where(
+					and(
+						eq(schema.patients.id, newPatientId),
+						eq(schema.patients.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (patient?.status === "archived") {
+				throw new Error("Пациент находится в архиве. Запись заблокирована.");
+			}
+			if (await isPatientBookingBlocked(organizationId, newPatientId)) {
+				throw new Error("Пациент внесен в черный список. Запись заблокирована.");
+			}
+		}
 
 		if (newStatus !== "cancelled" && newStatus !== "no_show") {
 			// Шаг 2: Блокировка всех затрагиваемых ресурсов (старых И новых) в каноническом порядке

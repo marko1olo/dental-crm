@@ -213,7 +213,7 @@ const DIARY_SIGNING_ROLE_MESSAGE =
 	"Дневник приёма подписывает только врач или администратор клиники: у вашей смены такого права нет, и повторный вход его не добавит. Позовите врача, который вёл приём, — подписать может он.";
 
 
-export default async function registerDiaryRoutes(app: FastifyInstance) {
+export async function registerDiaryRoutes(app: FastifyInstance) {
 	app.get("/api/diaries/visit/:visitId", async (req, reply) => {
 		if (!(await requireClinicalReadAccess(req, reply, "read diary"))) return;
 		const parsedVisitParams = diaryVisitParamsSchema.safeParse(req.params);
@@ -1894,4 +1894,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 	app.get("/api/diary/:id/chief-reviews", handleChiefReviewsGet);
 	app.get("/api/diaries/:id/chief-reviews", handleChiefReviewsGet);
 }
+
+export default registerDiaryRoutes;
 

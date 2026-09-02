@@ -182,26 +182,26 @@ export function injectVisualSignatureStampIntoHtml(
 		});
 	}
 
-	// 3. Поиск стандартного блока signatures
-	const signaturesRegex = /(<div class="signatures">[\s\S]*?)(<\/div>)/i;
-	if (signaturesRegex.test(html)) {
-		return html.replace(signaturesRegex, (_match, content, closing) => {
-			return `${content}\n<div style="margin-top: 12px; text-align: right;">${stampHtml}</div>\n${closing}`;
+	// 3. Поиск блока подписи Исполнителя в таблице реквизитов договора (formsContractAndConsents / ПП РФ № 736)
+	const contractExecutorRegex = /(<td[^>]*>[\s\S]*?<strong>\s*ИСПОЛНИТЕЛЬ:?\s*<\/strong>[\s\S]*?)(_{5,}[^\n<]*(?:<span class="stamp-seal">М\.П\.<\/span>)?|___________________[^\n<]*)/i;
+	if (contractExecutorRegex.test(html)) {
+		return html.replace(contractExecutorRegex, (_match, before) => {
+			return `${before}\n<div style="margin-top: 8px;">${stampHtml}</div>`;
 		});
 	}
 
-	// 3. Поиск секции ИДС sign-block врача
-	const signBlockRegex = /(<div class="sign-block">[\s\S]*?Врач[\s\S]*?)(<\/div>)/i;
-	if (signBlockRegex.test(html)) {
-		return html.replace(signBlockRegex, (_match, before, closing) => {
+	// 4. Поиск целевого блока врача/руководителя (.sig-box) в клинических формах (Форма 043/у, ИДС 1051н, 043-1/у, 037/у, 003-В/у)
+	const doctorSigBoxRegex = /(<div class="sig-box"[^>]*>(?:(?!<div class="sig-box")[\s\S])*?(?:Лечащий врач|Врач-стоматолог|Врач-ортодонт|Врач-рентгенолог|Главный врач|Заведующий|Руководитель|Врач, проводивший|Врач)[\s\S]*?)(<\/div>)/i;
+	if (doctorSigBoxRegex.test(html)) {
+		return html.replace(doctorSigBoxRegex, (_match, before, closing) => {
 			const cleaned = before
-				.replace(/<div class="sign-line"><\/div>/gi, "")
-				.replace(/<div style="font-size:7\.5pt;[^>]*>\(подпись[^<]*<\/div>/gi, "");
-			return `${cleaned}\n${stampHtml}\n${closing}`;
+				.replace(/<div class="sig-line"><\/div>/gi, "")
+				.replace(/<span class="stamp-seal">М\.П\.<\/span>/gi, "");
+			return `${cleaned}\n<div style="margin-top: 8px;">${stampHtml}</div>\n${closing}`;
 		});
 	}
 
-	// 4. Поиск блока signature-row / sig-box в клинических формах Минздрава (Форма 043/у)
+	// 5. Поиск блока signature-row / sig-box в клинических формах Минздрава
 	const signatureRowRegex = /(<div class="signature-row"[\s\S]*?<div class="sig-box">[\s\S]*?)(<\/div>\s*<\/div>)/i;
 	if (signatureRowRegex.test(html)) {
 		return html.replace(signatureRowRegex, (_match, before, closing) => {
@@ -212,11 +212,30 @@ export function injectVisualSignatureStampIntoHtml(
 		});
 	}
 
-	// 5. Поиск окончания тела документа перед </body>
+	// 6. Поиск секции ИДС sign-block врача
+	const signBlockRegex = /(<div class="sign-block">[\s\S]*?Врач[\s\S]*?)(<\/div>)/i;
+	if (signBlockRegex.test(html)) {
+		return html.replace(signBlockRegex, (_match, before, closing) => {
+			const cleaned = before
+				.replace(/<div class="sig-line"><\/div>/gi, "")
+				.replace(/<div style="font-size:7\.5pt;[^>]*>\(подпись[^<]*<\/div>/gi, "");
+			return `${cleaned}\n${stampHtml}\n${closing}`;
+		});
+	}
+
+	// 7. Поиск стандартного блока signatures
+	const signaturesRegex = /(<div class="signatures">[\s\S]*?)(<\/div>)/i;
+	if (signaturesRegex.test(html)) {
+		return html.replace(signaturesRegex, (_match, content, closing) => {
+			return `${content}\n<div style="margin-top: 12px; text-align: right;">${stampHtml}</div>\n${closing}`;
+		});
+	}
+
+	// 8. Поиск окончания тела документа перед </body>
 	if (html.includes("</body>")) {
 		return html.replace("</body>", `<div style="margin: 20px 0; text-align: right;">${stampHtml}</div>\n</body>`);
 	}
 
-	// 6. Fallback: просто дописать в конец
+	// 9. Fallback: просто дописать в конец
 	return `${html}\n${stampHtml}`;
 }

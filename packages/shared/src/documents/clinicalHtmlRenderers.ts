@@ -709,12 +709,6 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
       <div class="sig-caption">Пациент (Заказчик): ${escapeHtml(patientName)}</div>
     </div>
   </div>
-
-  <div class="ukep-stamp">
-    <div class="ukep-header">✔ ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (63-ФЗ)</div>
-    <div>Сертификат: 00EB4A71C09F9882E41123456789ABCDEF | Владелец: ${escapeHtml(doctorName)}</div>
-    <div>Срок действия: 01.01.2026 — 01.01.2027 | Статус РЭМД ЕГИСЗ: Зарегистрировано успешно</div>
-  </div>
 </div>
 </body>
 </html>`;
@@ -859,12 +853,6 @@ export function renderForm043_1uHtml(payload: OrthodonticCard043_1uPayload | any
       <div class="sig-line"></div>
       <div class="sig-caption">Пациент (Заказчик): ${escapeHtml(patientName)}</div>
     </div>
-  </div>
-
-  <div class="ukep-stamp">
-    <div class="ukep-header">✔ ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (63-ФЗ)</div>
-    <div>Сертификат: 00B3C9100AF8231E7589ABCDEF01234567 | Владелец: ${escapeHtml(doctorName)}</div>
-    <div>Срок действия: 01.01.2026 — 01.01.2027 | Статус РЭМД ЕГИСЗ: Зарегистрировано успешно</div>
   </div>
 </div>
 </body>
@@ -1196,12 +1184,6 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
       <div class="sig-caption">Медицинский регистратор / Статистик: _________________</div>
     </div>
   </div>
-
-  <div class="ukep-stamp">
-    <div class="ukep-header">✔ ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (63-ФЗ)</div>
-    <div>Владелец сертификата: ${escapeHtml(doctorName)} | Должность: ${escapeHtml(doctorSpecialty)} | Дата подписи: ${escapeHtml(workDate)}</div>
-    <div>Статус РЭМД ЕГИСЗ: Электронный первичный медицинский документ зарегистрирован успешно</div>
-  </div>
 </div>
 </body>
 </html>`;
@@ -1516,12 +1498,6 @@ export function renderForm039uHtml(payload: SummaryDentistStatement039uPayload |
       <div class="sig-caption">Главный врач: _________________ <span class="stamp-seal">М.П.</span></div>
     </div>
   </div>
-
-  <div class="ukep-stamp">
-    <div class="ukep-header">✔ ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (63-ФЗ)</div>
-    <div>Владелец сертификата: ${escapeHtml(doctorName)} | Регистрационный номер РЭМД: СВОД-039-${escapeHtml(period.replace(/\s+/g, ""))}</div>
-    <div>Статус РЭМД ЕГИСЗ: Зарегистрировано успешно</div>
-  </div>
 </div>
 </body>
 </html>`;
@@ -1715,12 +1691,6 @@ export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | an
       <div class="sig-line"></div>
       <div class="sig-caption">Главный врач / Заведующий: <strong>${escapeHtml(headDoc)}</strong> <span class="stamp-seal">М.П.</span></div>
     </div>
-  </div>
-
-  <div class="ukep-stamp">
-    <div class="ukep-header">✔ ВЫПИСКА ПОДПИСАНА УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (63-ФЗ)</div>
-    <div>Владелец: ${escapeHtml(headDoc)} | Организация: ${escapeHtml(clinicName)} | Регистрационный номер: ${escapeHtml(regNumber)}</div>
-    <div>Статус РЭМД ЕГИСЗ: Электронная медицинская выписка верифицирована успешно</div>
   </div>
 </div>
 </body>
@@ -1990,12 +1960,6 @@ export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetPayload 
       <div class="sig-line"></div>
       <div class="sig-caption">Врач-рентгенолог / Лечащий врач: _________________</div>
     </div>
-  </div>
-
-  <div class="ukep-stamp">
-    <div class="ukep-header">✔ ЛИСТ УЧЕТА ДОЗОВЫХ НАГРУЗОК ПОДПИСАН ЭЛЕКТРОННОЙ ЦИФРОВОЙ ПОДПИСЬЮ (63-ФЗ)</div>
-    <div>Ответственное лицо: ${escapeHtml(safetyOfficer)} | Рентгеновский архив PACS / DICOM синхронизирован</div>
-    <div>Статус РЭМД ЕГИСЗ: Паспорт радиационной безопасности пациента зарегистрирован</div>
   </div>
 </div>
 </body>

@@ -2,7 +2,7 @@ import { and, eq, or } from "drizzle-orm";
 import { db } from "./client.js";
 import { patientArchiveReasonsAndBlacklists, patients } from "./schema.js";
 
-const inMemoryBlacklist = new Set<string>();
+export const inMemoryBlacklist = new Set<string>();
 
 export async function getPatientArchiveReasonsAndBlacklistsFromDb(
 	orgId: string,
@@ -53,12 +53,15 @@ export async function isPatientBookingBlocked(
 	try {
 		let fullName = "";
 		const [patientRow] = await db
-			.select({ fullName: patients.fullName })
+			.select({ fullName: patients.fullName, status: patients.status })
 			.from(patients)
 			.where(
 				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
 			)
 			.limit(1);
+		if (patientRow?.status === "archived") {
+			return true;
+		}
 		if (patientRow?.fullName) {
 			fullName = patientRow.fullName.trim();
 		}
@@ -92,6 +95,87 @@ export async function isPatientBookingBlocked(
 		 */
 		throw new Error(
 			"Не удалось проверить, не внесён ли пациент в чёрный список: база не ответила. " +
+				"Запись не создана — повторите через минуту, а если не поможет, позовите администратора.",
+		);
+	}
+}
+
+/**
+ * Проверка блокировки записи с получением детальной причины и правового основания (323-ФЗ).
+ */
+export async function checkPatientBookingBlockDetails(
+	orgId: string,
+	patientId: string,
+): Promise<{ isBlocked: boolean; reason?: string; legalBasis?: string }> {
+	if (inMemoryBlacklist.has(`${orgId}:${patientId}`)) {
+		return {
+			isBlocked: true,
+			reason: "Внесен в архив / черный список клиники",
+			legalBasis: "Федеральный закон от 21.11.2011 № 323-ФЗ",
+		};
+	}
+	try {
+		let fullName = "";
+		const [patientRow] = await db
+			.select({ fullName: patients.fullName, status: patients.status })
+			.from(patients)
+			.where(
+				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+			)
+			.limit(1);
+
+		if (patientRow?.fullName) {
+			fullName = patientRow.fullName.trim();
+		}
+
+		const conditions = [
+			eq(patientArchiveReasonsAndBlacklists.organizationId, orgId),
+			eq(patientArchiveReasonsAndBlacklists.isBookingBlocked, true),
+		];
+
+		const matchRules = [
+			eq(patientArchiveReasonsAndBlacklists.patientId, patientId),
+		];
+		if (fullName) {
+			matchRules.push(
+				eq(patientArchiveReasonsAndBlacklists.patientName, fullName),
+			);
+		}
+
+		const [blockedRow] = await db
+			.select()
+			.from(patientArchiveReasonsAndBlacklists)
+			.where(and(...conditions, or(...matchRules)))
+			.limit(1);
+
+		if (blockedRow) {
+			inMemoryBlacklist.add(`${orgId}:${patientId}`);
+			return {
+				isBlocked: true,
+				reason:
+					blockedRow.archiveReason ||
+					blockedRow.blacklistReason ||
+					"Архив",
+				legalBasis:
+					blockedRow.legalBasis ||
+					"Федеральный закон от 21.11.2011 № 323-ФЗ",
+			};
+		}
+
+		if (patientRow?.status === "archived") {
+			inMemoryBlacklist.add(`${orgId}:${patientId}`);
+			return {
+				isBlocked: true,
+				reason: "Карта пациента находится в архиве",
+				legalBasis:
+					"Приказ Минздрава России от 15.12.2014 № 834н (архивный статус формы 043/у)",
+			};
+		}
+
+		return { isBlocked: false };
+	} catch (_err) {
+		throw new Error(
+			"Не удалось проверить, не внесён ли пациент в архив / чёрный список: база не ответила. " +
 				"Запись не создана — повторите через минуту, а если не поможет, позовите администратора.",
 		);
 	}

@@ -353,6 +353,39 @@ export const patientReclamations = pgTable(
 	}),
 );
 
+// patient archive reasons catalog (323-FZ compliant directory)
+export const patientArchiveReasons = pgTable(
+	"patient_archive_reasons",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		description: text("description"),
+		legalBasis: text("legal_basis").notNull(),
+		isBookingBlocked: boolean("is_booking_blocked").notNull().default(true),
+		requiresDocumentation: boolean("requires_documentation").notNull().default(false),
+		isDefault: boolean("is_default").notNull().default(false),
+		isActive: boolean("is_active").notNull().default(true),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"patient_archive_reasons_organizationId_idx",
+		).on(t.organizationId),
+		codeIdx: index(
+			"patient_archive_reasons_code_idx",
+		).on(t.organizationId, t.code),
+	}),
+);
+
 // patient archive reasons and blacklists
 export const patientArchiveReasonsAndBlacklists = pgTable(
 	"patient_archive_reasons_and_blacklists",
@@ -364,6 +397,8 @@ export const patientArchiveReasonsAndBlacklists = pgTable(
 		patientId: uuid("patient_id"),
 		patientName: text("patient_name"),
 		archiveReason: text("archive_reason"),
+		reasonCode: text("reason_code"),
+		legalBasis: text("legal_basis"),
 		isBlacklisted: boolean("is_blacklisted").notNull().default(false),
 		isBookingBlocked: boolean("is_booking_blocked").notNull().default(true),
 		warningBadge: text("warning_badge").notNull().default("Черный список"),
