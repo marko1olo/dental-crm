@@ -26,7 +26,7 @@ import { getRequestIdentity } from "./identity.js";
 
 export interface MedicalAccessAuditInput {
 	organizationId: string;
-	patientId: string;
+	patientId?: string | null | undefined;
 	actorUserId?: string | null | undefined;
 	actorLogin?: string | null | undefined;
 	actorRole?: string | null | undefined;
@@ -122,6 +122,11 @@ export async function recordMedicalRecordAccessAudit(
 
 	try {
 		// 1. Пишем в клинический журнал аудита (clinical_audit_logs) с RLS-контекстом
+		const UUID_SHAPE =
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+		const validPatientUuid =
+			input.patientId && UUID_SHAPE.test(input.patientId) ? input.patientId : null;
+
 		await db.transaction(async (tx) => {
 			await tx.execute(
 				sql`SELECT set_config('app.current_organization_id', ${input.organizationId}, true), set_config('app.current_tenant', ${input.organizationId}, true)`,
@@ -130,7 +135,7 @@ export async function recordMedicalRecordAccessAudit(
 			await tx.insert(clinicalAuditLogs).values({
 				id: auditId,
 				organizationId: input.organizationId,
-				patientId: input.patientId,
+				patientId: validPatientUuid,
 				actorUserId: input.actorUserId ?? null,
 				userId: input.actorUserId ?? null,
 				actorLogin: input.actorLogin ?? null,
@@ -138,8 +143,8 @@ export async function recordMedicalRecordAccessAudit(
 				action: eventAction,
 				resourceType: "patient",
 				entityType: "patient_diagnosis",
-				resourceId: input.patientId,
-				entityId: input.patientId,
+				resourceId: validPatientUuid,
+				entityId: input.patientId ?? "unknown",
 				ipAddress: input.ipAddress ?? null,
 				userAgent: input.userAgent ?? null,
 				meta: {
@@ -168,9 +173,9 @@ export async function recordMedicalRecordAccessAudit(
 				organizationId: input.organizationId,
 				actorUserId: validActorUserId,
 				entityType: "patient_diagnosis",
-				entityId: input.patientId,
+				entityId: input.patientId ?? "unknown",
 				action: eventAction,
-				reason: `Доступ к медицинской тайне (152-ФЗ): диагноз «${diagnosisText}», пациент ${input.patientId}, сотрудник: ${input.actorLogin ?? input.actorUserId ?? "неизвестно"} (${input.actorRole ?? "роль не указана"})`,
+				reason: `Доступ к медицинской тайне (152-ФЗ): диагноз «${diagnosisText}», пациент ${input.patientId ?? "не указан"}, сотрудник: ${input.actorLogin ?? input.actorUserId ?? "неизвестно"} (${input.actorRole ?? "роль не указана"})`,
 			});
 		});
 	} catch (error) {
@@ -190,7 +195,7 @@ export async function auditMedicalAccessFromRequest(
 	request: FastifyRequest,
 	options: {
 		organizationId: string;
-		patientId: string;
+		patientId?: string | null | undefined;
 		diagnosis?: string | null;
 		action?: string;
 		metadata?: Record<string, unknown>;
@@ -231,7 +236,7 @@ export async function auditMedicalAccessFromRequest(
 
 	// Если диагноз не передан явно, ищем активный диагноз пациента в базе
 	let diagnosis = options.diagnosis ?? null;
-	if (!diagnosis) {
+	if (!diagnosis && options.patientId) {
 		diagnosis = await getPatientActiveDiagnosisFromDb(
 			options.organizationId,
 			options.patientId,

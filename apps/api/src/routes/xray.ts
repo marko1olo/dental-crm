@@ -50,6 +50,8 @@ import {
 	getRequestIdentity,
 	requireOrganizationId,
 } from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
 // Schemas
 
@@ -515,11 +517,35 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
 
-		const { patientId } = request.query as { patientId?: string };
-		if (!patientId) {
-			reply.code(400);
-			return { error: "MissingPatientId", message: "Укажите patientId." };
+		// 152-ФЗ / 323-ФЗ: Рентгенологические снимки — врачебная тайна
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.xray.read",
+				role: staffRole,
+				message: `Отказ в доступе к рентгенологическим снимкам (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
 		}
+
+		const querySchema = z.object({
+			patientId: z.string().uuid({ message: "Параметр patientId должен быть валидным UUID." }),
+		});
+		const parsedQuery = querySchema.safeParse(request.query);
+		if (!parsedQuery.success) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Параметр patientId должен быть валидным UUID.",
+				details: parsedQuery.error.issues,
+			};
+		}
+		const patientId = parsedQuery.data.patientId;
 
 		const scans = await db
 			.select()
@@ -532,6 +558,16 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 			)
 			.orderBy(xrayScans.capturedAt);
 
+		// 152-ФЗ: Юридически значимый аудит чтения рентгенологических снимков
+		if (scans.length > 0) {
+			await auditMedicalAccessFromRequest(request, {
+				organizationId,
+				patientId,
+				action: "VIEW_XRAY_SCANS",
+				diagnosis: "Рентгенологические снимки пациента",
+			});
+		}
+
 		return scans.map((s) => scanToResponse(s, false));
 	});
 
@@ -541,6 +577,22 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
+
+		// 152-ФЗ / 323-ФЗ: Рентгенологические снимки — врачебная тайна
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.xray.read",
+				role: staffRole,
+				message: `Отказ в доступе к рентгенологическому снимку (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
 
 		const { id } = request.params as { id: string };
 
@@ -556,6 +608,14 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 			reply.code(404);
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
 		}
+
+		// 152-ФЗ: Юридически значимый аудит просмотра детального снимка
+		await auditMedicalAccessFromRequest(request, {
+			organizationId,
+			patientId: scan.patientId,
+			action: "VIEW_XRAY_SCAN_DETAIL",
+			diagnosis: scan.aiReport ?? "Рентгенологический снимок",
+		});
 
 		return scanToResponse(scan, true); // Include image
 	});
@@ -597,6 +657,22 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
+
+		// 152-ФЗ / 323-ФЗ: Изменение заключений рентгена разрешено только врачу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.xray.write",
+				role: staffRole,
+				message: `Отказ в изменении заключения снимка (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
 
 		const { id } = request.params as { id: string };
 		const parsed = updateXrayScanSchema.safeParse(request.body ?? {});

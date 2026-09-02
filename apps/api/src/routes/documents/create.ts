@@ -20,7 +20,10 @@ import {
 	taxPaymentSelectionErrorForDocument,
 	validateDocumentCreation,
 } from "../../documents/guards.js";
-import { requireOrganizationId } from "../../security/identity.js";
+import {
+	getRequestIdentity,
+	requireOrganizationId,
+} from "../../security/identity.js";
 import {
 	repairMojibakeDeep,
 	repairMojibakeText,
@@ -36,6 +39,23 @@ export async function register(app: FastifyInstance) {
 			!(await requireClinicalMutationAccess(request, reply, "document create"))
 		)
 			return;
+
+		// 152-ФЗ / 323-ФЗ: Создание медицинских документов запрещено маркетологам
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		if (staffRole === "marketer" || staffRole === "marketing") {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.document.write",
+				role: staffRole,
+				message:
+					"Маркетолог не имеет права создавать медицинские документы (152-ФЗ / 323-ФЗ)",
+			});
+		}
+
 		const parsedInput = createDocumentSchema.safeParse(request.body);
 		if (!parsedInput.success) {
 			return reply.code(400).send({

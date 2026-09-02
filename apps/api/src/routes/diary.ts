@@ -15,6 +15,7 @@ import {
 	resolveOrganizationId,
 } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { db } from "../db/client.js";
 import {
@@ -230,13 +231,32 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				message: DIARY_CLINIC_UNKNOWN_READ_MESSAGE,
 			});
 
+		// 152-ФЗ / 323-ФЗ: Дневники 043/у содержат врачебную тайну — доступ только клиническому персоналу
+		const identity = getRequestIdentity(req);
+		const staffRole = identity.role ?? req.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			await auditMedicalAccessFromRequest(req, {
+				organizationId: orgId,
+				patientId: "unknown",
+				action: "ACCESS_DENIED_DIARY",
+				diagnosis: "Попытка несанкционированного доступа к дневнику 043/у (152-ФЗ)",
+			});
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.diary.read",
+				role: staffRole,
+				message: `Отказ в доступе к дневнику 043/у (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
 		/*
 		 * БЫЛО: нет строки visit_diaries → { diary: null } и для чужого UUID,
 		 * и для реального приёма без дневника. Клиент рисовал «пустой SOAP»
 		 * как новый приём. СТАЛО: visit ∉ org → 404; пустой дневник — null.
 		 */
 		const [visitRow] = await db
-			.select({ id: visits.id })
+			.select({ id: visits.id, patientId: visits.patientId })
 			.from(visits)
 			.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
 			.limit(1);
@@ -261,6 +281,16 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!diary) {
 			return reply.send({ diary: null });
 		}
+
+		// 152-ФЗ: Юридически значимый аудит чтения карты/дневника пациента врачом
+		await auditMedicalAccessFromRequest(req, {
+			organizationId: orgId,
+			patientId: visitRow.patientId ?? diary.patientId,
+			action: "VIEW_DIARY_043U",
+			diagnosis: diary.diagnosisIcd10
+				? `${diary.diagnosisIcd10} (${diary.diagnosisTooth ? `зуб ${diary.diagnosisTooth}` : "без зуба"})`
+				: "Дневник 043/у",
+		});
 		/*
 		 * DEFECT #36: ФИО врача для печати 043/у.
 		 * БЫЛО: GET отдавал только UUID doctorId/lockedByUserId; клиент печати
@@ -335,9 +365,26 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				message: DIARY_CLINIC_UNKNOWN_REVISIONS_MESSAGE,
 			});
 
+		// 152-ФЗ / 323-ФЗ: Ревизии дневника 043/у содержат врачебную тайну
+		const identity = getRequestIdentity(req);
+		const staffRole = identity.role ?? req.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.diary.read",
+				role: staffRole,
+				message: `Отказ в доступе к ревизиям дневника 043/у (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
 		// Verify diary belongs to org
 		const [diary] = await db
-			.select({ id: visitDiaries.id })
+			.select({
+				id: visitDiaries.id,
+				patientId: visitDiaries.patientId,
+				diagnosisIcd10: visitDiaries.diagnosisIcd10,
+			})
 			.from(visitDiaries)
 			.where(
 				and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
@@ -348,6 +395,14 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				error: "NotFound",
 				message: DIARY_NOT_FOUND_REVISIONS_MESSAGE,
 			});
+
+		// 152-ФЗ: Аудит просмотра ревизий и истории изменений дневника 043/у
+		await auditMedicalAccessFromRequest(req, {
+			organizationId: orgId,
+			patientId: diary.patientId ?? "unknown",
+			action: "VIEW_DIARY_REVISIONS",
+			diagnosis: diary.diagnosisIcd10 ?? "Ревизии дневника 043/у",
+		});
 
 		/*
 		 * Tenant isolation: organizationId на каждом запросе.

@@ -12,7 +12,12 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { anesthesiaLogs, patients, users, visits } from "../db/schema.js";
-import { requireOrganizationId } from "../security/identity.js";
+import {
+	getRequestIdentity,
+	requireOrganizationId,
+} from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
 const calculateSafetyBodySchema = z.object({
 	drug: anestheticDrugSchema,
@@ -88,6 +93,22 @@ export async function registerAnesthesiaRoutes(app: FastifyInstance) {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
+			// 152-ФЗ / 323-ФЗ: Журнал анестезии содержит врачебную тайну
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.anesthesia.read",
+					role: staffRole,
+					message: `Отказ в доступе к журналу анестезии (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+
 			const { patientId } = request.params as { patientId: string };
 
 			return withTenantCtx(orgId, async () => {
@@ -102,6 +123,15 @@ export async function registerAnesthesiaRoutes(app: FastifyInstance) {
 					)
 					.orderBy(desc(anesthesiaLogs.createdAt))
 					.limit(50);
+
+				if (rows.length > 0) {
+					await auditMedicalAccessFromRequest(request, {
+						organizationId: orgId,
+						patientId,
+						action: "VIEW_ANESTHESIA_LOGS",
+						diagnosis: "Журнал анестезиологического пособия",
+					});
+				}
 
 				return reply.send({
 					patientId,
@@ -145,6 +175,22 @@ export async function registerAnesthesiaRoutes(app: FastifyInstance) {
 		async (request, reply) => {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
+
+			// 152-ФЗ / 323-ФЗ: Запись анестезии разрешена только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.anesthesia.write",
+					role: staffRole,
+					message: `Отказ в создании протокола анестезии (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
 
 			const { patientId } = request.params as { patientId: string };
 

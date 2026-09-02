@@ -17,6 +17,9 @@ import {
 	toothStateHistory,
 	toothStates,
 } from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 export async function registerClinicalImplantRoutes(app: FastifyInstance) {
@@ -30,6 +33,22 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 			reply,
 		);
 		if (!orgId) return;
+
+		// 152-ФЗ / 323-ФЗ: Регистрация имплантатов разрешена только врачам-хирургам/клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.implants.write",
+				role: staffRole,
+				message: `Отказ в регистрации протокола имплантации (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
 
 		const parsed = createImplantInstallationSchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -190,6 +209,22 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 			);
 			if (!orgId) return;
 
+			// 152-ФЗ / 323-ФЗ: Замер стабильности имплантата разрешен только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.implants.write",
+					role: staffRole,
+					message: `Отказ в записи замера ISQ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+
 			const { installationId } = request.params as {
 				installationId: string;
 			};
@@ -282,6 +317,22 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 			const orgId = await requireResolvedOrganizationId(request, reply);
 			if (!orgId) return;
 
+			// 152-ФЗ / 323-ФЗ: Имплантологический паспорт содержит врачебную тайну
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.implants.read",
+					role: staffRole,
+					message: `Отказ в доступе к имплантологическому паспорту (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+
 			const { patientId } = request.params as { patientId: string };
 
 			const installations = await db
@@ -294,6 +345,15 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 					),
 				)
 				.orderBy(desc(patientImplantInstallations.installedAt));
+
+			if (installations.length > 0) {
+				await auditMedicalAccessFromRequest(request, {
+					organizationId: orgId,
+					patientId,
+					action: "VIEW_IMPLANT_PASSPORT",
+					diagnosis: "Имплантологический паспорт",
+				});
+			}
 
 			return reply.send({
 				success: true,
