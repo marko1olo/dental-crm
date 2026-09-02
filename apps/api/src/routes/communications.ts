@@ -4,12 +4,51 @@ import {
 } from "@dental/shared";
 import { and, eq, ilike, asc, desc, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	requireClinicalMutationAccess, requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { communicationEvents, communicationTasks, patients } from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { ChatLockService } from "../services/communications/ChatLockService.js";
+import { MessageTemplateEngine } from "../services/communications/MessageTemplateEngine.js";
+
+const chatIdParamSchema = z.object({
+	chatId: z.string().uuid("Идентификатор чата должен быть корректным UUID"),
+});
+
+const lockChatBodySchema = z.object({
+	agentName: z.string().min(1).max(200).optional(),
+	durationMinutes: z.number().int().min(1).max(60).optional(),
+});
+
+const unlockChatBodySchema = z.object({
+	agentName: z.string().min(1).max(200).optional(),
+	force: z.boolean().optional(),
+});
+
+const createTemplateRouteSchema = z.object({
+	title: z.string().min(1, "Название шаблона обязательно"),
+	channel: z.enum(["telegram", "whatsapp", "sms", "vk", "email", "max"]).default("telegram"),
+	intent: z.string().default("general"),
+	templateText: z.string().min(1, "Текст шаблона обязателен"),
+	variables: z.array(z.string()).optional(),
+	isActive: z.boolean().default(true),
+});
+
+const renderTemplateRouteSchema = z.object({
+	templateId: z.string().uuid().optional(),
+	templateText: z.string().optional(),
+	channel: z.enum(["telegram", "whatsapp", "sms", "vk", "email", "max"]).default("telegram"),
+	patientId: z.string().uuid().optional(),
+	appointmentId: z.string().uuid().optional(),
+	visitId: z.string().uuid().optional(),
+	variables: z.record(z.any()).optional(),
+	allowPreviewFallback: z.boolean().default(true),
+	violationHandling: z.enum(["block", "strip"]).default("block"),
+});
 
 const communicationTaskValidationMessage =
 	"Задача связи не закрыта: выберите задачу, сотрудника и корректный исход действия.";
@@ -341,5 +380,386 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 		}).returning();
 
 		return reply.send({ success: true, event: inserted[0] });
+	});
+
+	// --- Collaborative Chat Concurrency Locking (PostgreSQL 18 collaborative_chat_processing_states) ---
+
+	/**
+	 * POST /api/communications/chats/:chatId/lock
+	 * Эксклюзивный захват чата оператором на 5 минут с защитой от состояния гонки (ACID pg_advisory_xact_lock + FOR UPDATE).
+	 */
+	app.post("/api/communications/chats/:chatId/lock", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"communications lock chat",
+			))
+		)
+			return;
+
+		const organizationId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"communications lock chat",
+		);
+		if (!organizationId) return;
+
+		const paramResult = chatIdParamSchema.safeParse(request.params);
+		if (!paramResult.success) {
+			return reply.code(400).send({
+				error: "InvalidChatIdError",
+				message: "Идентификатор чата должен быть корректным UUID.",
+			});
+		}
+
+		const bodyResult = lockChatBodySchema.safeParse(request.body ?? {});
+		if (!bodyResult.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры блокировки чата.",
+			});
+		}
+
+		const identity = getRequestIdentity(request);
+		const agentName =
+			bodyResult.data?.agentName?.trim() ||
+			identity.fullName?.trim() ||
+			"Оператор";
+
+		const result = await ChatLockService.acquireLock({
+			organizationId,
+			chatId: paramResult.data.chatId,
+			agentName,
+			durationMinutes: bodyResult.data?.durationMinutes ?? 5,
+		});
+
+		if (!result.success) {
+			return reply.code(409).send({
+				error: "ChatAlreadyLockedError",
+				message: result.message,
+				lockedByAgent: result.lockedByAgent,
+				expiresAtIso: result.expiresAtIso,
+			});
+		}
+
+		return reply.code(200).send({
+			success: true,
+			chatId: result.lock.chatId,
+			lockedByAgent: result.lock.lockedByAgent,
+			lockAcquiredAt: result.lock.lockAcquiredAt,
+			lockExpiresAt: result.lock.lockExpiresAt,
+			expiresAtIso: result.lock.expiresAtIso,
+		});
+	});
+
+	/**
+	 * POST /api/communications/chats/:chatId/heartbeat
+	 * Продление блокировки чата активным оператором.
+	 */
+	app.post(
+		"/api/communications/chats/:chatId/heartbeat",
+		async (request, reply) => {
+			if (
+				!(await requireClinicalMutationAccess(
+					request,
+					reply,
+					"communications heartbeat chat",
+				))
+			)
+				return;
+
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"communications heartbeat chat",
+			);
+			if (!organizationId) return;
+
+			const paramResult = chatIdParamSchema.safeParse(request.params);
+			if (!paramResult.success) {
+				return reply.code(400).send({
+					error: "InvalidChatIdError",
+					message: "Идентификатор чата должен быть корректным UUID.",
+				});
+			}
+
+			const bodyResult = lockChatBodySchema.safeParse(request.body ?? {});
+			if (!bodyResult.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры продления блокировки чата.",
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const agentName =
+				bodyResult.data?.agentName?.trim() ||
+				identity.fullName?.trim() ||
+				"Оператор";
+
+			const result = await ChatLockService.heartbeatLock({
+				organizationId,
+				chatId: paramResult.data.chatId,
+				agentName,
+				durationMinutes: bodyResult.data?.durationMinutes ?? 5,
+			});
+
+			if (!result.success) {
+				return reply.code(409).send({
+					error:
+						result.reason === "lock_expired"
+							? "ChatLockExpiredError"
+							: "ChatLockMismatchError",
+					message: result.message,
+				});
+			}
+
+			return reply.code(200).send({
+				success: true,
+				chatId: result.chatId,
+				lockedByAgent: result.lockedByAgent,
+				lockExpiresAt: result.lockExpiresAt,
+				expiresAtIso: result.expiresAtIso,
+			});
+		},
+	);
+
+	/**
+	 * POST /api/communications/chats/:chatId/unlock
+	 * Явное освобождение блокировки оператором.
+	 */
+	app.post(
+		"/api/communications/chats/:chatId/unlock",
+		async (request, reply) => {
+			if (
+				!(await requireClinicalMutationAccess(
+					request,
+					reply,
+					"communications unlock chat",
+				))
+			)
+				return;
+
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"communications unlock chat",
+			);
+			if (!organizationId) return;
+
+			const paramResult = chatIdParamSchema.safeParse(request.params);
+			if (!paramResult.success) {
+				return reply.code(400).send({
+					error: "InvalidChatIdError",
+					message: "Идентификатор чата должен быть корректным UUID.",
+				});
+			}
+
+			const bodyResult = unlockChatBodySchema.safeParse(request.body ?? {});
+			if (!bodyResult.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры освобождения блокировки чата.",
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const agentName =
+				bodyResult.data?.agentName?.trim() ||
+				identity.fullName?.trim() ||
+				null;
+
+			const result = await ChatLockService.releaseLock({
+				organizationId,
+				chatId: paramResult.data.chatId,
+				agentName,
+				force: bodyResult.data?.force ?? false,
+			});
+
+			if (!result.success) {
+				return reply.code(409).send({
+					error: "ChatLockMismatchError",
+					message: result.message,
+					lockedByAgent: result.lockedByAgent,
+				});
+			}
+
+			return reply.code(200).send({
+				success: true,
+				chatId: result.chatId,
+				released: result.released,
+			});
+		},
+	);
+
+	/**
+	 * GET /api/communications/chats/:chatId/lock-status
+	 * Проверка статуса блокировки чата.
+	 */
+	app.get(
+		"/api/communications/chats/:chatId/lock-status",
+		async (request, reply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"communications get chat lock status",
+				))
+			)
+				return;
+
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"communications get chat lock status",
+			);
+			if (!organizationId) return;
+
+			const paramResult = chatIdParamSchema.safeParse(request.params);
+			if (!paramResult.success) {
+				return reply.code(400).send({
+					error: "InvalidChatIdError",
+					message: "Идентификатор чата должен быть корректным UUID.",
+				});
+			}
+
+			const status = await ChatLockService.getLockStatus({
+				organizationId,
+				chatId: paramResult.data.chatId,
+			});
+
+			return reply.code(200).send(status);
+		},
+	);
+
+	// ────────────────────────────────────────────────────────────
+	// 152-ФЗ / 323-ФЗ: ШАБЛОНЫ СООБЩЕНИЙ И БЕЗОПАСНЫЙ РЕНДЕРИНГ
+	// ────────────────────────────────────────────────────────────
+
+	/**
+	 * GET /api/communications/templates
+	 * Получение каталога шаблонов сообщений клиники
+	 */
+	app.get("/api/communications/templates", async (request, reply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "list communication templates")))
+			return;
+
+		const organizationId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"list communication templates",
+		);
+		if (!organizationId) return;
+
+		const query = request.query as { channel?: string; intent?: string; isActive?: string };
+		const isActive =
+			query.isActive === "true" ? true : query.isActive === "false" ? false : undefined;
+
+		const templates = await MessageTemplateEngine.listTemplates(organizationId, {
+			channel: query.channel ?? undefined,
+			intent: query.intent ?? undefined,
+			isActive,
+		});
+
+		return reply.send({
+			success: true,
+			templates,
+		});
+	});
+
+	/**
+	 * POST /api/communications/templates
+	 * Создание нового шаблона сообщения с валидацией 152-ФЗ / 323-ФЗ ст. 13
+	 */
+	app.post("/api/communications/templates", async (request, reply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "create communication template")))
+			return;
+
+		const organizationId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"create communication template",
+		);
+		if (!organizationId) return;
+
+		const parsed = createTemplateRouteSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры шаблона сообщения.",
+				details: parsed.error.format(),
+			});
+		}
+
+		try {
+			const template = await MessageTemplateEngine.createTemplate(organizationId, {
+				title: parsed.data.title,
+				channel: parsed.data.channel,
+				intent: parsed.data.intent,
+				templateText: parsed.data.templateText,
+				variables: parsed.data.variables ?? undefined,
+				isActive: parsed.data.isActive,
+			});
+			return reply.code(201).send({
+				success: true,
+				template,
+			});
+		} catch (err: any) {
+			return reply.code(422).send({
+				error: "MedicalSecrecyInTemplateError",
+				message: err.message || "Ошибка создания шаблона сообщения",
+			});
+		}
+	});
+
+	/**
+	 * POST /api/communications/templates/render
+	 * Безопасный рендеринг шаблона с подстановкой макросов и защитой от утечки врачебной тайны
+	 */
+	app.post("/api/communications/templates/render", async (request, reply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "render communication template")))
+			return;
+
+		const organizationId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"render communication template",
+		);
+		if (!organizationId) return;
+
+		const parsed = renderTemplateRouteSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры для рендеринга шаблона.",
+				details: parsed.error.format(),
+			});
+		}
+
+		const result = await MessageTemplateEngine.render(organizationId, {
+			templateId: parsed.data.templateId ?? undefined,
+			templateText: parsed.data.templateText ?? undefined,
+			channel: parsed.data.channel,
+			patientId: parsed.data.patientId ?? undefined,
+			appointmentId: parsed.data.appointmentId ?? undefined,
+			visitId: parsed.data.visitId ?? undefined,
+			variables: parsed.data.variables ?? undefined,
+			allowPreviewFallback: parsed.data.allowPreviewFallback,
+			violationHandling: parsed.data.violationHandling,
+		});
+
+		if (result.hasMedicalSecrecyViolation && parsed.data.violationHandling === "block") {
+			return reply.code(422).send({
+				error: "MedicalSecrecyViolation",
+				message: result.error,
+				result,
+			});
+		}
+
+		return reply.send({
+			success: true,
+			result,
+		});
 	});
 }

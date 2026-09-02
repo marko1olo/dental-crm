@@ -45,6 +45,7 @@ import {
 	renderForm039uHtml,
 	renderForm003vuHtml,
 	renderRadiationDoseSheetHtml,
+	renderGraphicalDentalFormulaHtml,
 	injectVisualSignatureStampIntoHtml,
 	renderDigitalSignatureStampHtml,
 } from "@dental/shared";
@@ -3065,6 +3066,10 @@ function treatmentPlan(document: GeneratedDocument) {
       ${row("Дата подготовки плана", payload.plannedAt)}
     </table>
     <h2>Клиническая детализация по зубам и сегментам</h2>
+    ${renderGraphicalDentalFormulaHtml({
+			clinicalToothRows: payload.clinicalToothRows,
+			title: "Графическая зубная формула (FDI 11–48 / 51–85)",
+		})}
     ${clinicalToothRowsTable(payload.clinicalToothRows)}
     <h2>Цели лечения</h2>
     ${bulletList(payload.treatmentGoals)}
@@ -5415,9 +5420,15 @@ function dentalMedicalCard043u(
 					: ""
 			}</p>`
 		: "";
-	const toothSection = Array.isArray(payload.clinicalToothRows) && payload.clinicalToothRows.length
-		? `<h2>Клиническая детализация по зубам</h2>${clinicalToothRowsTable(payload.clinicalToothRows)}`
-		: "";
+	const toothFormula = renderGraphicalDentalFormulaHtml({
+		clinicalToothRows: payload.clinicalToothRows,
+		dentalFormula: (payload as any).dentalFormula,
+		title: "Графическая зубная формула (FDI 11–48 / 51–85)",
+	});
+	const toothSection =
+		Array.isArray(payload.clinicalToothRows) && payload.clinicalToothRows.length
+			? `<h2>Клиническая детализация по зубам</h2>${toothFormula}${clinicalToothRowsTable(payload.clinicalToothRows)}`
+			: toothFormula;
 	return `<section><h2>${escapeHtml(title)}</h2><p class="small">Учетная форма N 043/у</p>${doctor}${body}${toothSection}</section>`;
 }
 

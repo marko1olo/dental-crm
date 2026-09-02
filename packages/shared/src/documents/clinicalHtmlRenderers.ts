@@ -29,6 +29,7 @@ import type {
 } from "./forms107_1u.js";
 import type { RadiologyReferralPayload } from "./formsRadiologyReferral.js";
 import { generateQrCodeSvg } from "../fiscal/qrGenerator.js";
+import { renderGraphicalDentalFormulaHtml } from "./dentalFormulaRenderer.js";
 
 /** Общие CSS стили для печати медицинских документов на листах А4 по ГОСТ Р 7.0.97-2016 */
 export const CLINICAL_DOCUMENT_PRINT_STYLES = `
@@ -680,8 +681,12 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
     </tr>
   </table>
 
-  <div class="section-title">3. Зубная формула (FDI 11–48) и индексы интенсивности</div>
-  ${renderFdiToothFormulaTable(payload.dentalFormula)}
+  <div class="section-title">3. Графическая зубная формула (FDI 11–48 / 51–85) и индексы интенсивности</div>
+  ${renderGraphicalDentalFormulaHtml({
+		dentalFormula: payload.dentalFormula,
+		clinicalToothRows: payload.clinicalToothRows,
+		title: "Анатомическая зубная формула (FDI World Dental Federation)",
+	})}
 
   <table class="data-table">
     <tr>

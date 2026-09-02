@@ -190,11 +190,22 @@ export function injectVisualSignatureStampIntoHtml(
 		});
 	}
 
-	// 4. Поиск окончания тела документа перед </body>
+	// 4. Поиск блока signature-row / sig-box в клинических формах Минздрава (Форма 043/у)
+	const signatureRowRegex = /(<div class="signature-row"[\s\S]*?<div class="sig-box">[\s\S]*?)(<\/div>\s*<\/div>)/i;
+	if (signatureRowRegex.test(html)) {
+		return html.replace(signatureRowRegex, (_match, before, closing) => {
+			const cleaned = before
+				.replace(/<div class="sig-line"><\/div>/gi, "")
+				.replace(/<span class="stamp-seal">М\.П\.<\/span>/gi, "");
+			return `${cleaned}\n<div style="margin-top: 8px;">${stampHtml}</div>\n${closing}`;
+		});
+	}
+
+	// 5. Поиск окончания тела документа перед </body>
 	if (html.includes("</body>")) {
 		return html.replace("</body>", `<div style="margin: 20px 0; text-align: right;">${stampHtml}</div>\n</body>`);
 	}
 
-	// 5. Fallback: просто дописать в конец
+	// 6. Fallback: просто дописать в конец
 	return `${html}\n${stampHtml}`;
 }
