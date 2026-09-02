@@ -38,6 +38,7 @@ import {
 	treatmentPlans,
 	treatmentItems,
 	users,
+	generatedDocuments,
 } from "../../db/schema.js";
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerInvoiceRoutes } from "../../routes/invoices.js";
@@ -351,13 +352,10 @@ describe("Prosecutor 3: Decree 659 & Treatment Plans Statutory Audit Suite", { c
 			assert.equal(dbPayment.method, "insurance");
 			assert.equal(dbPayment.status, "paid");
 
-			// Фиксируем признак брака
-			assert.ok(
-				true,
-				"БРАК ЗАФИКСИРОВАН: Система беспрепятственно проводит оплату по ОМС для анонимной карты пациента (UUID_ANON), нарушая Постановление №659 и 326-ФЗ",
-			);
+			assert.fail("БРАК ЗАФИКСИРОВАН: Система беспрепятственно проводит оплату по ОМС для анонимной карты пациента (UUID_ANON), нарушая Постановление №659 и 326-ФЗ");
 		} else {
 			console.log("[AUDIT NOTE] Система отклонила платёж со статусом:", response.statusCode);
+			assert.equal(response.statusCode, 422, "Оплата по ОМС для анонимного пациента обязана возвращать 422");
 		}
 	});
 
@@ -402,11 +400,10 @@ describe("Prosecutor 3: Decree 659 & Treatment Plans Statutory Audit Suite", { c
 			const invoiceResult = JSON.parse(response.body);
 			console.log("[DEFECT DETECTED] Счет по ОМС выписан на анонимного пациента! Номер счета:", invoiceResult.invoiceNumber);
 			console.log("[DEFECT CLASSIFICATION] БРАК: Отсутствует валидация идентификации пациента при формировании финансовых документов.");
-
-			assert.ok(invoiceResult.invoiceNumber, "Счет успешно сгенерирован для анонима");
-			assert.equal(invoiceResult.patientId, UUID_ANON);
+			assert.fail("БРАК ЗАФИКСИРОВАН: Счет по ОМС выписан на анонимного пациента!");
 		} else {
 			console.log("[AUDIT NOTE] Система отклонила выставление счета со статусом:", response.statusCode);
+			assert.equal(response.statusCode, 422, "Выставление счета по ОМС для анонима обязано возвращать 422");
 		}
 	});
 
@@ -456,43 +453,13 @@ describe("Prosecutor 3: Decree 659 & Treatment Plans Statutory Audit Suite", { c
 		console.log(`HTTP Status: ${response.statusCode}`);
 		console.log(`Response Body: ${response.body}`);
 
-		// АНАЛИЗ БРАКА ПО ПОСТАНОВЛЕНИЮ №659 И ЗОЗПП:
-		// План лечения уже имеет status = "Approved".
-		// Если patientSignature еще не заполнен строкой, маршрут odontogram.ts:769
-		// НЕ ПРОВЕРЯЕТ status === "Approved" и ПОЗВОЛЯЕТ перезаписать план,
-		// увеличив сумму с 1 500 ₽ до 46 500 ₽ БЕЗ Дополнительного соглашения!
 		if (response.statusCode === 200 || response.statusCode === 201) {
 			console.log("[DEFECT DETECTED] Утвержденный план лечения успешно модифицирован без Дополнительного соглашения!");
 			console.log("[DEFECT CLASSIFICATION] БРАК: Нарушение п. 24-27 Постановления № 659 и ст. 16 ЗоЗПП (навязывание услуг).");
-
-			// Проверяем обновленную сумму плана в БД
-			const [updatedPlan] = await withFixtureTenant(ORG_ID, async (tx) =>
-				tx
-					.select()
-					.from(treatmentPlans)
-					.where(and(eq(treatmentPlans.id, APPROVED_PLAN_ID), eq(treatmentPlans.organizationId, ORG_ID)))
-					.limit(1),
-			);
-			console.log(`Новая сумма плана в БД: ${updatedPlan?.totalPrice} ₽ (было ${PRICE_BASE} ₽)`);
-			assert.equal(Number(updatedPlan?.totalPrice), PRICE_BASE + PRICE_IMPOSED);
-
-			// Проверяем, что в treatment_items также добавилась навязанная позиция на 45 000 ₽
-			const ledgerItems = await withFixtureTenant(ORG_ID, async (tx) =>
-				tx
-					.select()
-					.from(treatmentItems)
-					.where(and(eq(treatmentItems.patientId, PATIENT_IDENTIFIED), eq(treatmentItems.organizationId, ORG_ID))),
-			);
-			const imposedItem = ledgerItems.find((it) => it.serviceId === SERVICE_IMPOSED_ID);
-			assert.ok(imposedItem, "Навязанная услуга попала в книгу лечения treatment_items без согласия!");
-			console.log(`Позиция в книге лечения treatment_items ID: ${imposedItem.id}, сумма: ${imposedItem.priceRub} ₽`);
-
-			assert.ok(
-				true,
-				"БРАК ЗАФИКСИРОВАН: Утвержденный план лечения позволяет дописывать платные услуги без оформления Дополнительного соглашения",
-			);
+			assert.fail("БРАК ЗАФИКСИРОВАН: Утвержденный план лечения позволяет дописывать платные услуги без оформления Дополнительного соглашения");
 		} else {
 			console.log("[AUDIT NOTE] Маршрут заблокировал модификацию плана со статусом:", response.statusCode);
+			assert.equal(response.statusCode, 409, "Модификация утвержденного плана обязана возвращать 409");
 		}
 	});
 
@@ -522,33 +489,56 @@ describe("Prosecutor 3: Decree 659 & Treatment Plans Statutory Audit Suite", { c
 		console.log(`HTTP Status: ${response.statusCode}`);
 		console.log(`Response Body: ${response.body}`);
 
-		// АНАЛИЗ БРАКА ПО ПОСТАНОВЛЕНИЮ №659:
-		// Пробитие оплаты платной услуги сверх утвержденного плана лечения БЕЗ наличия
-		// сгенерированного и подписанного Дополнительного соглашения является прямым
-		// нарушением Постановления №659 и ст. 14.8 КоАП РФ.
-		// ФАКТИЧЕСКОЕ ПОВЕДЕНИЕ СИСТЕМЫ:
 		if (response.statusCode === 201 || response.statusCode === 200) {
-			const paymentResult = JSON.parse(response.body);
-			console.log("[DEFECT DETECTED] Оплата 45 000 ₽ успешно пробита без Дополнительного соглашения! Payment ID:", paymentResult.id);
+			console.log("[DEFECT DETECTED] Оплата 45 000 ₽ успешно пробита без Дополнительного соглашения! Payment ID:", JSON.parse(response.body).id);
 			console.log("[DEFECT CLASSIFICATION] БРАК: Касса списывает средства и формирует чек на навязанную услугу без юридического согласия пациента.");
-
-			const [dbPayment] = await withFixtureTenant(ORG_ID, async (tx) =>
-				tx
-					.select()
-					.from(payments)
-					.where(and(eq(payments.id, paymentResult.id), eq(payments.organizationId, ORG_ID)))
-					.limit(1),
-			);
-			assert.ok(dbPayment, "Платеж зафиксирован в базе");
-			assert.equal(Number(dbPayment.amountRub), PRICE_IMPOSED);
-			assert.equal(dbPayment.status, "paid");
-
-			assert.ok(
-				true,
-				"БРАК ЗАФИКСИРОВАН: Система допускает прием денег и фискализацию по услуге, не обеспеченной подписанным Дополнительным соглашением",
-			);
+			assert.fail("БРАК ЗАФИКСИРОВАН: Система допускает прием денег и фискализацию по услуге, не обеспеченной подписанным Дополнительным соглашением");
 		} else {
 			console.log("[AUDIT NOTE] Система заблокировала списание средств со статусом:", response.statusCode);
+			assert.equal(response.statusCode, 422, "Оплата навязанной услуги без допсоглашения обязана возвращать 422");
 		}
+	});
+
+	it("AUDIT 2.3: Оплата дополнительной услуги после оформления Дополнительного соглашения (kind: treatment_plan_acceptance)", async (t) => {
+		if (!databaseReady) return t.skip("База данных недоступна");
+
+		// Оформляем Дополнительное соглашение (акцепт изменений плана)
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.insert(generatedDocuments).values({
+				organizationId: ORG_ID,
+				patientId: PATIENT_IDENTIFIED,
+				kind: "treatment_plan_acceptance",
+				status: "issued",
+				title: "Дополнительное соглашение № ДС-2026-001 к Договору платных мед. услуг",
+				totalAmountRub: PRICE_IMPOSED,
+				issuedAt: new Date(),
+			});
+		});
+
+		// Теперь оплата по услуге SERVICE_IMPOSED_ID должна успешно пройти (201 Created)!
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/billing/payments",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": adminToken,
+			},
+			payload: {
+				patientId: PATIENT_IDENTIFIED,
+				amountRub: PRICE_IMPOSED,
+				method: "card",
+				serviceId: SERVICE_IMPOSED_ID,
+				clientMutationId: "audit-pay-imposed-card-legit-3",
+				note: "Оплата услуги по оформленному Дополнительному соглашению ДС-2026-001",
+			},
+		});
+
+		console.log("\n[PROSECUTOR 3 AUDIT 2.3 LOG] Оплата после оформления Допсоглашения:");
+		console.log(`HTTP Status: ${response.statusCode}`);
+		console.log(`Response Body: ${response.body}`);
+		assert.equal(response.statusCode, 201, "Оплата обязана пройти успешно после оформления Допсоглашения");
+		const payment = JSON.parse(response.body);
+		assert.equal(Number(payment.amountRub), PRICE_IMPOSED);
+		assert.equal(payment.status, "paid");
 	});
 });
