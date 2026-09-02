@@ -347,12 +347,12 @@ describe("Prosecutor 3: Wave 4 Alternative Plans & Cross-Invoicing Statutory Aud
 				items: [
 					{
 						itemId: "declined-item-1",
-						code804n: "A16.07.002.001",
-						serviceId: SERVICE_COMPOSITE_ID,
-						nameRu: "Композитная эстетическая реставрация зуба",
+						code804n: (declinedItems[0]?.itemSnapshot as Record<string, unknown>)?.code804n as string || "A16.07.004",
+						serviceId: serviceIdToAttack,
+						nameRu: declinedItems[0]?.customTitle || "Услуга из отклоненного альтернативного плана",
 						quantity: 1,
-						planUnitPriceRub: 7000,
-						effectiveUnitPriceRub: 7000,
+						planUnitPriceRub: 15000,
+						effectiveUnitPriceRub: 15000,
 						discountRub: 0,
 						toothNumber: 11,
 					},
