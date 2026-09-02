@@ -49,10 +49,13 @@ import {
 type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
 		keyof PatientAdministrativeProfile,
-		"preferredAppointmentWeekdays"
+		"preferredAppointmentWeekdays" | "isAnonymous" | "anonymousCode" | "decree659Compliance"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
+	isAnonymous?: boolean | null;
+	anonymousCode?: string | null;
+	decree659Compliance?: Record<string, unknown> | null;
 };
 
 type WeekdayOption = {

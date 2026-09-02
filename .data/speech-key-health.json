@@ -1,18 +1,38 @@
 {
   "version": 1,
-  "savedAt": "2026-08-09T15:33:23.370Z",
+  "savedAt": "2026-09-01T20:04:11.549Z",
   "health": {
+    "cloudflare_whisper:89d9d83a5665": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 14,
+      "lastUsedAt": 1788212110700,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "cloudflare_whisper:c0784c5c40de": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1788201430905,
+      "lastStatusCode": null,
+      "lastError": null
+    },
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
-      "successes": 3,
-      "lastUsedAt": 1786207303294,
+      "consecutiveFailures": 0,
+      "successes": 4,
+      "lastUsedAt": 1788248345234,
       "lastStatusCode": null,
       "lastError": null
     },
     "google_speech:3e0ef4ad3f5a": {
       "cooldownUntil": 1786285111246,
       "failures": 29,
+      "consecutiveFailures": 29,
       "successes": 1,
       "lastUsedAt": 1786284511246,
       "lastStatusCode": 401,
@@ -21,30 +41,106 @@
     "google_speech:401c79dc50d5": {
       "cooldownUntil": 1786285111037,
       "failures": 82,
+      "consecutiveFailures": 82,
       "successes": 0,
       "lastUsedAt": 1786284511037,
       "lastStatusCode": 401,
       "lastError": "401 Unauthorized"
     },
+    "google_speech:45dd3fb17bd3": {
+      "cooldownUntil": 0,
+      "failures": 23,
+      "consecutiveFailures": 23,
+      "successes": 5,
+      "lastUsedAt": 1788255088142,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live WS closed abnormally (code: 1008, reason: Policy violation or key invalid)"
+    },
+    "google_speech:542f1132ccf8": {
+      "cooldownUntil": 0,
+      "failures": 2,
+      "consecutiveFailures": 2,
+      "successes": 0,
+      "lastUsedAt": 1788208440375,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
     "google_speech:5cdeb7e487c0": {
       "cooldownUntil": 1786289633370,
       "failures": 21,
+      "consecutiveFailures": 21,
       "successes": 4,
       "lastUsedAt": 1786289603370,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },
-    "google_speech:5e36d93cca7c": {
-      "cooldownUntil": 1785321463901,
-      "failures": 72,
+    "google_speech:62d44fb06c9a": {
+      "cooldownUntil": 0,
+      "failures": 23,
+      "consecutiveFailures": 23,
+      "successes": 0,
+      "lastUsedAt": 1788255088173,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
+    "google_speech:6c77bd48f901": {
+      "cooldownUntil": 0,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1788208193266,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
+    "google_speech:73350f6bd10e": {
+      "cooldownUntil": 1788209665948,
+      "failures": 2,
+      "consecutiveFailures": 2,
+      "successes": 0,
+      "lastUsedAt": 1788209545948,
+      "lastStatusCode": 429,
+      "lastError": "RESOURCE_EXHAUSTED: Rate limit exceeded"
+    },
+    "google_speech:7d3efd99fdf0": {
+      "cooldownUntil": 1788209634908,
+      "failures": 1,
+      "consecutiveFailures": 1,
       "successes": 3,
-      "lastUsedAt": 1785320863901,
-      "lastStatusCode": 401,
-      "lastError": "401 Unauthorized"
+      "lastUsedAt": 1788209574908,
+      "lastStatusCode": 429,
+      "lastError": "RESOURCE_EXHAUSTED: Rate limit exceeded"
+    },
+    "google_speech:95d78fd253c9": {
+      "cooldownUntil": 0,
+      "failures": 24,
+      "consecutiveFailures": 24,
+      "successes": 0,
+      "lastUsedAt": 1788255088202,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
+    "google_speech:9ece145b295e": {
+      "cooldownUntil": 0,
+      "failures": 3,
+      "consecutiveFailures": 3,
+      "successes": 0,
+      "lastUsedAt": 1788208440346,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
+    "google_speech:a95912f4c7b2": {
+      "cooldownUntil": 0,
+      "failures": 25,
+      "consecutiveFailures": 25,
+      "successes": 0,
+      "lastUsedAt": 1788255088232,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
     },
     "google_speech:c5b553420348": {
       "cooldownUntil": 1786289633368,
       "failures": 101,
+      "consecutiveFailures": 101,
       "successes": 2,
       "lastUsedAt": 1786289603368,
       "lastStatusCode": null,
@@ -53,6 +149,7 @@
     "google_speech:c637bdf62cb7": {
       "cooldownUntil": 1786289524831,
       "failures": 91,
+      "consecutiveFailures": 91,
       "successes": 0,
       "lastUsedAt": 1786289494831,
       "lastStatusCode": null,
@@ -61,26 +158,173 @@
     "google_speech:c78fec9a5b53": {
       "cooldownUntil": 1786289633359,
       "failures": 136,
+      "consecutiveFailures": 136,
       "successes": 0,
       "lastUsedAt": 1786289603359,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },
+    "google_speech:ce349ef84ee9": {
+      "cooldownUntil": 0,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 6,
+      "lastUsedAt": 1788208440441,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live WS closed abnormally (code: 1006, reason: Dropped)"
+    },
+    "google_speech:ee19a8772084": {
+      "cooldownUntil": 0,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 28,
+      "lastUsedAt": 1788255088266,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live WS closed abnormally (code: 1006, reason: Dropped)"
+    },
+    "google_speech:ff1bd86d98d3": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 50,
+      "lastUsedAt": 1788255088293,
+      "lastStatusCode": null,
+      "lastError": null
+    },
     "groq_whisper:4bda99f4f65e": {
       "cooldownUntil": 1786208316118,
       "failures": 1,
+      "consecutiveFailures": 1,
       "successes": 0,
       "lastUsedAt": 1786207716118,
       "lastStatusCode": 401,
       "lastError": "Invalid API Key"
     },
+    "groq_whisper:55039dbaffd6": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1788201430869,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq_whisper:5510319c53a6": {
+      "cooldownUntil": 1788212114765,
+      "failures": 6,
+      "consecutiveFailures": 6,
+      "successes": 0,
+      "lastUsedAt": 1788211634765,
+      "lastStatusCode": 503,
+      "lastError": "503 "
+    },
+    "groq_whisper:7ac4d90fc01b": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 19,
+      "lastUsedAt": 1788212240440,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq_whisper:92b51601cd1d": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 22,
+      "lastUsedAt": 1788241591410,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq_whisper:a408a6ddaa5d": {
+      "cooldownUntil": 1788242071424,
+      "failures": 8,
+      "consecutiveFailures": 8,
+      "successes": 0,
+      "lastUsedAt": 1788241591424,
+      "lastStatusCode": 500,
+      "lastError": "Internal server error"
+    },
+    "groq_whisper:e1fc3fd8f14e": {
+      "cooldownUntil": 1788212114751,
+      "failures": 6,
+      "consecutiveFailures": 6,
+      "successes": 0,
+      "lastUsedAt": 1788211634751,
+      "lastStatusCode": 503,
+      "lastError": "503 "
+    },
+    "groq_whisper:ed4dcf88da9b": {
+      "cooldownUntil": 1788201460886,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1788201430886,
+      "lastStatusCode": 500,
+      "lastError": "Internal server error"
+    },
     "groq_whisper:ff6cbf984228": {
       "cooldownUntil": 1786208315873,
       "failures": 1,
+      "consecutiveFailures": 1,
       "successes": 0,
       "lastUsedAt": 1786207715873,
       "lastStatusCode": 401,
       "lastError": "Invalid API Key"
+    },
+    "groq:83177d60e957": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1788293051549,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq:caf98f576295": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1788293050497,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "openai_transcribe:8234d0fc8e1f": {
+      "cooldownUntil": 1788212869902,
+      "failures": 6,
+      "consecutiveFailures": 6,
+      "successes": 0,
+      "lastUsedAt": 1788211909902,
+      "lastStatusCode": 429,
+      "lastError": "429 "
+    },
+    "openai_transcribe:893d880f8a5f": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 21,
+      "lastUsedAt": 1788241591426,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "openai_transcribe:97aba22fd3c8": {
+      "cooldownUntil": 1788201490904,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 2,
+      "lastUsedAt": 1788201430904,
+      "lastStatusCode": 429,
+      "lastError": "429 "
+    },
+    "openai_transcribe:b056b0089de8": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 17,
+      "lastUsedAt": 1788212240441,
+      "lastStatusCode": null,
+      "lastError": null
     }
   }
 }

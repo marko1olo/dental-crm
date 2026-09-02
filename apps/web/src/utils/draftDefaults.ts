@@ -54,6 +54,9 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		curatorCommissionPercent: "",
 		curatorNotes: "",
 		curatorNextContactDate: "",
+		isAnonymous: false,
+		anonymousCode: null,
+		decree659Compliance: null,
 	};
 }
 

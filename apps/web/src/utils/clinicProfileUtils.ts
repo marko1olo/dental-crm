@@ -247,6 +247,9 @@ export function patientAdministrativeProfileDraftFromPatient(
 				: safeProfileString(profile?.curatorCommissionPercent),
 		curatorNextContactDate: safeProfileString(profile?.curatorNextContactDate),
 		curatorNotes: safeProfileString(profile?.curatorNotes),
+		isAnonymous: profile?.isAnonymous === true,
+		anonymousCode: typeof profile?.anonymousCode === "string" ? profile.anonymousCode : null,
+		decree659Compliance: (profile?.decree659Compliance as Record<string, unknown> | null | undefined) ?? null,
 	};
 }
 
@@ -484,10 +487,13 @@ export function normalizeOptionalWorkingDaysDraft(
 export type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
 		keyof PatientAdministrativeProfile,
-		"preferredAppointmentWeekdays"
+		"preferredAppointmentWeekdays" | "isAnonymous" | "anonymousCode" | "decree659Compliance"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
+	isAnonymous?: boolean | null;
+	anonymousCode?: string | null;
+	decree659Compliance?: Record<string, unknown> | null;
 };
 
 export function nullablePatientDraftValue(value: string): string | null {

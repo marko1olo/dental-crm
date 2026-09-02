@@ -27,6 +27,7 @@ import type {
 	TreatmentPlanStage,
 	TreatmentPlanStageKind,
 } from "../../components/treatment-plans/types";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export type CopilotCommandType =
 	| "budget_optimize"
@@ -1168,10 +1169,10 @@ export async function requestTreatmentPlanAiValidationAndComment(
 	};
 
 	try {
-		const headers: Record<string, string> = {
+		const headers: Record<string, string> = denteAdminSecretRequestHeaders({
 			"Content-Type": "application/json",
 			...(options.authHeaders || {}),
-		};
+		});
 
 		const response = await fetch("/api/ai/treatment-plan-validate-and-comment", {
 			method: "POST",

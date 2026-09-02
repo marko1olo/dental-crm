@@ -1,89 +1,174 @@
 # Original User Request
 
-## 2026-08-29T18:25:30Z
+## Initial Request — 2026-08-31T19:26:34Z
 
-<USER_REQUEST>
-Полная ликвидация бутафории и промышленный рефакторинг модуля 3D КЛКТ Имплантации (CBCT Implant Studio) в Dental CRM до клинического стандарта Planmeca Romexis 6 / Vatech Ez3D-i / BlueSkyPlan.
-
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-## 1. БЕСПОЩАДНЫЙ ДЕФЕКТ-ЛИСТ ТЕКУЩЕГО СОСТОЯНИЯ (ПРЕЗУМПЦИЯ БРАКА)
-
-- [ ] **Критический дефект 1 (Проекции в позвоночник и резцы):** На срезах Coronal и Sagittal имплантат рисуется безусловно в фиксированных координатах среза независимо от физической координаты Y и X. Имплантат зуба #48 проецируется внутрь шейных позвонков на сагиттальном срезе и поверх фронтальных резцов на корональном.
-- [ ] **Критический дефект 2 (Смещение КТ-среза и имплантата на кросс-секции):** Растровый срез КТ рендерится в координаты (0, 0) размером 96x128 px, а геометрический имплантат и нерв рисуются от centerX = canvas.width / 2 (150px), из-за чего имплантат висит в черной пустоте мимо челюсти.
-- [ ] **Критический дефект 3 (Фальсификация HU плотности кости по Мишу):** Функция sampleCrossSectionHUProfile игнорирует реальный 3D-объем volume и выдает захардкоженные константы 1200 / 750 / 900 HU.
-- [ ] **Критический дефект 4 (Замусоренный сайдбар с ползунками вместо CAD-окна):** Боковой сайдбар на 360px перегружен неудобными HTML range-слайдерами наклона и микро-превьюшкой вместо крупного, высокоточного рабочего окна кросс-секции с миллиметровой сеткой и интерактивным позиционированием.
-
-## Requirements
-
-### R1. Честная 3D-геометрия и фильтрация дистанции на срезах (Distance Gating)
-- Имплантат на корональном (Y) и сагиттальном (X) срезах отображается исключительно в том случае, если текущий срез пересекает физическое тело имплантата (|Δ| <= 2.5 мм), либо с затуханием прозрачности пропорционально удалению.
-- При выборе зуба (#46, #47, #36, #16 и т.д.) или переходе в режим имплантации 3D-перекрестье (X, Y, Z) автоматически центрируется на верхушке гребня целевого зуба.
-
-### R2. Прецизионный холст Кросс-секции (1:1 сопоставление с вокселями)
-- Центрирование растрового среза челюсти на холсте кросс-секции.
-- Позиционирование имплантата, апекса, оси и угла строго относительно анатомического гребня альвеолярного отростка.
-- Интерактивное позиционирование (drag-and-drop за платформу и апекс) прямо на холсте.
-
-### R3. Честный воксельный расчет плотности кости (Misch D1..D4)
-- Расчет HU по трилинейной интерполяции sampleVoxelTrilinearHU из реального массива volume.data по 3 анатомическим зонам (кортикальная пластинка, губчатая сердцевина, апикальная зона).
-- Автоматический расчет рекомендуемой скорости сверления (RPM), протокола недопрепарирования (Underdrilling) и расчетного первичного торка (Ncm / ISQ).
-
-### R4. Клинический интерфейс и библиотека имплантатов
-- Библиотека реальных типоразмеров (Osstem TS III, Straumann BLX, Nobel Parallel CC, Dentium SuperLine).
-- Точный расчет расстояния в миллиметрах до нижнечелюстного канала (N. alveolaris inferior) и дна гайморовой пазухи с предупреждениями безопасности (буфер >= 2.0 мм).
-
-## Acceptance Criteria
-
-### Automated & Physical Verification
-- [ ] Статические гейты компилятора (npm run typecheck, npm run check:encoding, npm run check:stub-overrides) завершаются с Exit Code 0.
-- [ ] Юнит-тесты радиологии и математики имплантации (node --test) проходят на 100%.
-- [ ] E2E-скрипт Playwright генерирует свежий скриншот 11_virtual_implant_placed.png, где:
-  - Имплантат центрирован на кости целевого зуба.
-  - На коронале и сагиттале отсутствуют фантомные проекции в позвоночник и резцы.
-  - На кросс-секции костный срез и имплантат идеально совмещены по центру.
-  - Плотность HU рассчитывается из реальных вокселей КТ Барабаш.
-
-</USER_REQUEST>
-
-## 2026-08-30T06:40:08Z
-
-<USER_REQUEST>
-Комплексный рефакторинг, устранение всех дефектов инквизиции и доведение модуля 3D КЛКТ / CBCT MPR Implant Studio до промышленного стандарта Planmeca Romexis 6 / Vatech Ez3D-i / BlueSkyPlan с нулевыми моками и 100% математической точностью.
+DENTE Autonomous Clinical Copilot Engine: An industrial multi-agent clinical assistant with real-time ReAct streaming thought-traces for doctors, 7-key Groq + 10-key Gemini pool failover, and automated clinical/SanPiN safety verification.
 
 Working directory: `C:\Clinic_MVP\dental-crm`
 Integrity mode: development
 
 ## Requirements
 
-### R1. Screen-Space Vector Typography & Zero-Blur Ruler Calibration
-- Все текстовые метки (шкалы 10..50 мм, углы `##.#°`, замеры HU, метки зубов FDI 11..48) и калибровочные масштабные бары должны отрисовываться в Screen-Space (1:1 физические пиксели экрана) без растрового билинейного размытия при любом коэффициенте зума (1.0x..5.0x).
-- Исключить любые наезды элементов управления и бейджей в углах вьюпортов при косоугольном вращении срезов (+28.5°..-180°).
+### R1. Real-Time Streaming Agentic Execution UI (Doctor Chat Drawer)
+- Client-side visual timeline showing live ReAct thought traces, tool call badges (`lookup_patient`, `get_tooth_imaging`, `check_inventory`, `check_ddi`, `search_804n`, `verify_sanpin`, `submit_act`), and status pills.
+- Human-in-the-loop action confirmation cards with 1-click approvals for destructive clinical actions and prescription signing.
+- Zero-CLS layout with 44x44px touch targets and full theme compliance (`var(--paper)`, `var(--ink)`, `var(--teal)`).
 
-### R2. Deterministic Voxel DSP Auto-Arch Detection (100% Invariant to W/L)
-- Автоматический поиск окклюзионной плоскости Z и полярная трассировка зубной дуги ОПТГ Catmull-Rom должны оперировать исключительно сырыми HU-данными (`volume.data`) с клиппированием металла (<=3500 HU), сохраняя полную инвариантность к пользовательским настройкам Window/Level/Invert.
-- Поддержка беззубых челюстей (Edentulous) и челюстей с остеопорозом по профилю губчатой кости (>=350 HU).
+### R2. Resilient Omni-LLM Gateway & Multi-Key Pool Failover
+- Automatic round-robin rotation and circuit breaker across 7 Groq keys (`qwen/qwen3.8-27b`, `openai/gpt-oss-120b`) and 10 Google Gemini keys (`gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`).
+- SOCKS5 and HTTPS proxy tunneling via `proxyDispatcher.ts` to guarantee zero geo-blocking on foreign API endpoints.
+- Auto-failover on HTTP 429/500/timeout with zero state loss during multi-turn ReAct chains.
 
-### R3. Clinical 3D Implant Placement & True HU Bone Quality (Misch D1..D4)
-- Синхронизированная 3D проекция виртуального имплантата на всех 4 срезах (Axial, Coronal, Sagittal, Cross-section) с честным Distance Gating (|Δ| <= 2.5 мм) без фантомных проекций в шейные позвонки и резцы.
-- Расчет плотности кости по трилинейной интерполяции `sampleVoxelTrilinearHU` по 3 анатомическим зонам (кортикал, сердцевина, апикальная зона) с рекомендацией скорости сверления (RPM) и торка (Ncm / ISQ).
-
-### R4. Mandibular Nerve (IAN) 3D Catmull-Rom Spline & A4 Clinical EMR/PDF Export
-- Трассировка канала нижнечелюстного нерва с 2.0 мм цилиндрическим коридором безопасности и гауссовым затуханием видимости при удалении от среза.
-- 1-клик экспорт в карту 043/у и печатный A4 PDF отчет планирования имплантации с таблицей плотностей по Мишу и 4 срезами.
+### R3. Clinical Rules, DDI & SanPiN 3.3686-21 Safety Engine
+- Pharmacological cross-check against patient allergies (e.g. Lidocaine, Penicillins) and pregnancy trimesters (blocking high-dose vasoconstrictors).
+- Automatic warehouse stock check with autonomous self-correction (Reflexion) to available alternatives.
+- Kraft package sterilization barcode verification and 043/u outpatient diary protocol generation according to Minzdrav 804n nomenclature.
 
 ## Acceptance Criteria
 
-### Automated & Machine Gates
-- [ ] `npm run check:encoding` проходит на 4327+ файлах с 0 ошибок.
-- [ ] Сквозной `npm run typecheck` во всех пакетах (`@dental/shared`, `@dental/api`, `@dental/web`) завершается со строгим Exit Code 0.
-- [ ] Все 141+ радиологических юнит-тестов (`node --test`) завершаются с результатом 100% PASS.
-- [ ] E2E Playwright скрипт `scripts/capture-cbct-tools-exhaustion.mjs` генерирует 15 уникальных валидных скриншотов на 300 реальных срезах КТ Барабаш (размер файлов 250–560 КБ).
+### Execution & Visual Integrity
+- [ ] Live UI rendering verified via Playwright screenshot captures in 4 states: PC Light, PC Dark, Mobile Light (390px), Mobile Dark.
+- [ ] No layout overflow, no raw JSON strings in UI, touch targets >= 44x44px.
 
-### Adversarial Visual Inspection
-- [ ] Правый верхний угол Аксиального окна свободен от наездов кнопок при косоугольном вращении (+28.5°).
-- [ ] Шрифты линеек и угломеров сохраняют векторную четкость при зуме 2x..5x.
-- [ ] Авто-дуга проходит точно по коронкам зубов пациента.
-- [ ] 0 ошибок "NaN", "undefined" или слепящих белых пятен в Darkroom-режиме (`#000000` / `#09090b`).
+### Multi-Step Agentic Reliability
+- [ ] Multi-turn ReAct test suite passes 100% across all 7 clinical tools without stalling or dropping context.
+- [ ] Key rotation proves zero HTTP 429 errors under continuous load.
 
-</USER_REQUEST>
+### Machine Verification Gates
+- [ ] `npm run check:encoding` passes with 0 errors across all files.
+- [ ] `npm run check:css-tokens` passes with 0 unresolved tokens.
+- [ ] `npm run typecheck -w @dental/api` exits with Code 0.
+- [ ] `npm run typecheck -w @dental/web` exits with Code 0.
+
+
+## Follow-up — 2026-08-31T21:26:08Z
+
+# OPERATION NIGHT WATCH: DENTE ENTERPRISE STABILIZATION & POLISH
+
+Working directory: `C:\Clinic_MVP\dental-crm`
+Integrity mode: development
+
+## Requirements
+
+### R1. Frontend & Apple HIG Clinical Density (Zero-Clutter & Touch Targets)
+- Eliminate all Z-index collisions between floating elements (softphone, toasts, floating badges, modals) and primary workspace grids.
+- Guarantee touch target hitboxes >= 44x44px on mobile/tablet devices while keeping desktop density compact (32–36px toolbars).
+- Flatten UI depth (Anti-Matryoshka law: depth <= 1 level), replacing nested borders with semantic tonal elevation (var(--paper) -> var(--paper-strong)).
+- Ensure true darkroom compliance for CBCT/imaging views with zero blinding white cards and WCAG AAA text contrast (>= 4.5:1).
+- Eliminate all horizontal overflows, awkward word breaks, and layout shifts (CLS = 0) across 390px mobile viewports.
+
+### R2. Exact Financial Math, 54-FZ & Clinical DDI Safety
+- Verify 100% integer kopeck calculations across billing, installment tiers, tax deductions (13% NDFL FNS 1151156), and Order 804n nomenclatures with zero floating-point arithmetic.
+- Strict DDI interaction verification: NSAID + anticoagulant gastrointestinal hemorrhage blocks, penicillin allergy cross-checks, asthma sulfite blocks, and pregnancy trimester contraindications.
+- Enforce fail-closed multi-tenant RLS isolation in Drizzle PostgreSQL 18 schemas.
+
+### R3. Voice, Web Audio DSP & Multi-Session Resilience
+- Ensure AudioContext auto-suspension after 5 seconds of silence to prevent client memory leaks and battery drain.
+- Guarantee zero data loss during network dropouts via IndexedDB VoiceOfflineQueue and PostgreSQL 18 context-compacting session store.
+- Robust WebSocket reconnect logic for Gemini 3.5 Bidi Live STT and Whisper cascade with automatic key rotation across verified pool keys.
+
+### R4. Machine Verification Gates & Adversarial Visual Audit
+- npm run check:encoding passes with 0 errors across all 4500+ files.
+- npm run check:css-tokens passes with 0 unresolved tokens across all 155+ CSS files.
+- npm run typecheck passes with Exit Code 0 across @dental/shared, @dental/api, @dental/web.
+- Full test suite passes 100% across speech, clinical tools, agent services, audio DSP, and Copilot UI components.
+
+## Acceptance Criteria
+
+### Visual & Touch Ergonomics
+- [ ] No button or interactive control with hitbox < 44x44px on mobile viewports.
+- [ ] No card-in-card nesting > 1 level; clean tonal separation.
+- [ ] Dark Mode displays zero raw #ffffff cards in clinical/radiology modules.
+- [ ] Mobile 390px views render with zero horizontal scroll and zero text clipping.
+
+### Math & Safety Guardrails
+- [ ] 0 occurrences of floating-point math on monetary values.
+- [ ] 100% of contraindicated medication combinations blocked by DDI engine.
+- [ ] 100% of tenant queries scoped by organization_id with fail-closed RLS.
+
+### Compilers & Unit Tests
+- [ ] check:encoding -> 0 errors.
+- [ ] check:css-tokens -> 0 unresolvable tokens.
+- [ ] typecheck across shared, api, web -> Exit Code 0.
+- [ ] 432+ unit tests pass with Exit Code 0.
+
+## Follow-up — 2026-09-01T06:47:13Z
+
+[ОБЯЗАТЕЛЬНЫЙ ПРИКАЗ: АБСОЛЮТНАЯ КОНСТИТУЦИЯ THE HAMMER]
+Директива: C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md и docs/audits/NIGHT_WATCH_DEFECT_REGISTRY.md.
+Режим: T.A.R.S. 100% Honesty. Zero Feature Creep.
+
+Remediate all 8 Touch Target defects ([TT-1]..[TT-8]), 5 UI Clutter defects ([CL-1]..[CL-5]), Z-index scale unification ([ZX-1], [ZX-2]), and PostgreSQL 18 RLS Migration 0187 ([RLS-1]).
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Touch Targets & Fitts Law Remediation ([TT-1] .. [TT-8])
+Fix all mobile touch hitboxes to be strictly >= 44x44px in DoctorMobileShiftModal.tsx, PatientPortal.tsx, PatientJourneyTimeline.tsx, RadiationDoseSheetModal.tsx, ToothContextDrawer.css, touch-targets.css, CbctLeftToolDock.tsx, CbctMprViewer.tsx, PublicOnlineBookingWidget.tsx, AppointmentCard.tsx.
+
+### R2. UI Clutter Reduction & Hick's Law ([CL-1] .. [CL-5])
+Squeeze OdontogramToolbar 22-button toolbar to 1 primary action + 3 stamps + [⋮] menu. Squeeze InventoryView and LabOrdersPanel rows to 1 primary action + [⋮] dropdown. Replace emoji in TreatmentPlanStageCard with Lucide icon. Fix Header shift buttons.
+
+### R3. PostgreSQL 18 RLS Tenant Isolation Migration 0187 ([RLS-1])
+Apply ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY, and CREATE POLICY tenant_isolation to 37 secondary tables.
+
+## Acceptance Criteria
+
+### Compilers & Static Gates
+- [ ] npm run check:encoding exits with code 0
+- [ ] npm run check:css-tokens exits with code 0
+- [ ] npm run typecheck -w @dental/shared exits with code 0
+- [ ] npm run typecheck -w @dental/api exits with code 0
+- [ ] npm run typecheck -w @dental/web exits with code 0
+
+### Unit & Integration Verification
+- [ ] All targeted unit test suites pass with Exit Code 0
+- [ ] Clean semantic commit with zero AI tool attribution
+
+## Follow-up — 2026-09-01T08:55:59Z
+
+Autonomous end-to-end Adversarial Red Team Inquisition and continuous code remediation across all core modules of DENTE Dental CRM (Odontogram, Schedule 4D, CBCT PACS 3D, EMR 043/u, SanPiN, Finance & 54-FZ, Telephony, and AI STT Cascades).
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Adversarial Red Team Defect Inquisition (Presumption of Defect)
+- Continuously inspect the codebase and UI modules with ruthless skepticism ("Презумпция брака").
+- Hunt for:
+  1. Concurrency race conditions and missing row-level locks (FOR UPDATE).
+  2. Data loss or corruption risks in offline CRDT and synchronization gateways.
+  3. UI clutter, button landfills (>1 toolbar row), nested card matryoshkas, and touch targets < 44x44px.
+  4. Timezone drift, clock skew exploits, and sub-kopeck fractional money rounding errors.
+  5. Missing A11y focus traps, Escape handlers, and unhandled Promise rejections.
+
+### R2. Autonomous Fixer Crew Remediation (Zero-Mocks Production Code)
+- Remediate every identified defect directly in source code using native surgical patches without mock interfaces or TODOs.
+- Adhere strictly to the Universal 3-Tier Interaction Doctrine (Hot Path -> Warm Context -> Cold Backoffice).
+- Enforce strict kopeck integer arithmetic and server-side catalog price verification.
+- Implement accessible, touch-friendly UI components with proper CSS design tokens.
+
+### R3. Autonomous Verification & Static Gate Defense
+- Enforce machine-verifiable gates before every commit:
+  - npm run check:encoding (0 mojibake across 4521+ files).
+  - npm run check:css-tokens (0 unresolved CSS variables).
+  - npm run typecheck (0 errors across @dental/shared, @dental/api, @dental/web, and their test suites).
+- Execute comprehensive test suites (pen-tests, chaos engineering, race conditions, and CRDT conflict resolution).
+- Record atomic Semantic Git commits per file with zero AI tool attribution trailers.
+
+## Acceptance Criteria
+
+### Static & Compiler Gates
+- [ ] npm run check:encoding exits with code 0 (4521+ files verified).
+- [ ] npm run check:css-tokens exits with code 0 (155+ CSS files verified).
+- [ ] npm run typecheck exits with code 0 across the entire monorepo.
+
+### Dynamic Verification & Test Proofs
+- [ ] All security pen-test suites (securityPenTest.test.ts, priceSpoofingAndNegativeBalancePenTest.test.ts) pass with 100% success.
+- [ ] All concurrency and CRDT suites (concurrencyRaceCondition.test.ts, offlineConflictResolution.test.ts, scheduleConcurrencyRace.test.ts) pass with 100% success.
+- [ ] All WebKit/Safari A11y and Chaos test suites (safariAndKeyboardA11y.test.ts, chaosEngineering.test.ts, memoryAndRenderProfile.test.ts) pass with 100% success.
+- [ ] Verbatim subagent reports with exact file:line references in ПРОВЕРЕНО and НЕ ПРОВЕРЕНО sections.
+

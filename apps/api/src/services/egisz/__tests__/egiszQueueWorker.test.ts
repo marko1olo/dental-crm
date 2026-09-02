@@ -117,6 +117,9 @@ describe("EGISZ REMD Background Queue & CDA R3 Determinism", () => {
 			buildEgiszRemdSubmissionPackage({
 				documentId: "doc-1",
 				documentVersion: 1,
+				docTypeNsiCode: "108",
+				clinicOid: "1.2.643.5.1.13.13.12.2.77.9999",
+				patientSnils: "11223344595",
 				rawXml: "<ClinicalDocument/>",
 				doctorSignature: {
 					signatureBase64: "", // Missing base64 signature
@@ -124,11 +127,6 @@ describe("EGISZ REMD Background Queue & CDA R3 Determinism", () => {
 					certificateSubject: "Тест",
 					signedAt: new Date().toISOString(),
 					algorithmOid: "1.2.643.7.1.1.1.1",
-				},
-				metadata: {
-					patientSnils: "11223344595",
-					clinicOid: "1.2.643.5.1.13.13.12.2.77.9999",
-					docTypeNsiCode: "108",
 				},
 			});
 		}, /ZodError|Signature/i);

@@ -291,7 +291,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 
 			const res = await fetch("/api/invoices/generate-from-plan", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
 			});
 

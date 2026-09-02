@@ -1,3 +1,6 @@
-perf: add drizzle indexes for foreign keys in 10 tables
+feat(telecom-dms): persist DMS guarantee letters, intercept missed calls and integrate MAX triage
 
-Drizzle ORM does not add indexes to `references()` by default, causing full table scans during joins and deletes. Added explicit `.index()` blocks to `pgTable` definitions for 10 tables to resolve this performance trap.
+- Liquidate in-memory guarantee letter Map in favor of PostgreSQL dmsGuaranteeLetters table with RLS tenant isolation and ACID row locking for limit deductions
+- Implement MissedCallService with 60s callback SLA communication tasks and proactive Copilot SSE / WebSocket broadcast
+- Connect MAX messenger inbound webhooks to WhatsAppTriageAnalyzer and 1-click HitL approval queue
+- Add comprehensive integration test suites for DMS guarantee persistence and missed call interception
