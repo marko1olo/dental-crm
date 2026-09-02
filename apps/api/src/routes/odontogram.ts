@@ -36,6 +36,11 @@ import {
 	getAlternativePlanGroupsForPatient,
 	selectAndApprovePlanVariant,
 } from "../db/alternativeTreatmentPlansQuery.js";
+import {
+	getActivePriceFreezeToken,
+	issuePriceFreezeToken,
+	setPlanDiscountMode,
+} from "../db/priceFreezeTokensQuery.js";
 
 
 
@@ -157,6 +162,22 @@ const treatmentPlanUpsertSchema = z.object({
 		.optional()
 		.default("proposed"),
 	declinedReason: z.string().trim().max(1000).optional().nullable(),
+	priceFreezePolicy: z
+		.enum([
+			"standard_30_days",
+			"surgery_implant_90_days",
+			"ortho_vip_180_days",
+			"strict_fixed_contract",
+			"market_floating",
+		])
+		.optional()
+		.default("standard_30_days"),
+	discountMode: z
+		.enum(["none", "plan_fixed", "on_selection"])
+		.optional()
+		.default("plan_fixed"),
+	planDiscountPercent: z.number().min(0).max(100).optional().default(0),
+	planDiscountRub: z.number().nonnegative().optional().default(0),
 });
 
 type TreatmentPlanRow = typeof treatmentPlans.$inferSelect;
@@ -224,6 +245,14 @@ function serializeTreatmentPlan(
 		alternativeTier: plan.alternativeTier ?? null,
 		alternativeStatus: plan.alternativeStatus ?? "proposed",
 		declinedReason: plan.declinedReason ?? null,
+		activePriceFreezeTokenId: plan.activePriceFreezeTokenId ?? null,
+		priceFreezePolicy: plan.priceFreezePolicy ?? "standard_30_days",
+		priceFrozenUntil: plan.priceFrozenUntil
+			? plan.priceFrozenUntil.toISOString()
+			: null,
+		discountMode: plan.discountMode ?? "plan_fixed",
+		planDiscountPercent: Number(plan.planDiscountPercent ?? 0),
+		planDiscountRub: Number(plan.planDiscountRub ?? 0),
 		approvedAt: plan.approvedAt ? plan.approvedAt.toISOString() : null,
 		createdAt: plan.createdAt.toISOString(),
 		updatedAt: (plan.updatedAt ?? plan.createdAt).toISOString(),
@@ -963,6 +992,18 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 								...(input.declinedReason !== undefined
 									? { declinedReason: input.declinedReason }
 									: {}),
+								...(input.priceFreezePolicy !== undefined
+									? { priceFreezePolicy: input.priceFreezePolicy }
+									: {}),
+								...(input.discountMode !== undefined
+									? { discountMode: input.discountMode }
+									: {}),
+								...(input.planDiscountPercent !== undefined
+									? { planDiscountPercent: input.planDiscountPercent }
+									: {}),
+								...(input.planDiscountRub !== undefined
+									? { planDiscountRub: input.planDiscountRub }
+									: {}),
 								updatedAt: now,
 								isSynced: false,
 								version: sql`${treatmentPlans.version} + 1`,
@@ -1001,6 +1042,10 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 								alternativeTier: input.alternativeTier ?? null,
 								alternativeStatus: input.alternativeStatus ?? "proposed",
 								declinedReason: input.declinedReason ?? null,
+								priceFreezePolicy: input.priceFreezePolicy ?? "standard_30_days",
+								discountMode: input.discountMode ?? "plan_fixed",
+								planDiscountPercent: input.planDiscountPercent ?? 0,
+								planDiscountRub: input.planDiscountRub ?? 0,
 								isSynced: false,
 								version: 1,
 								updatedAt: now,
@@ -1440,6 +1485,245 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			);
 
 			return reply.send({ success: true, groups });
+		},
+	);
+
+	/**
+	 * Выпуск или обновление токена закрепления цен плана лечения (Price Freeze Token / GAP_REPORT строка 164)
+	 */
+	app.post(
+		"/api/patients/:patientId/treatment-plans/:planId/price-freeze",
+		async (request, reply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"issue price freeze token",
+			);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.treatment_plan.manage",
+					role: staffRole,
+					message: `Отказ в закреплении цен плана (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				});
+			}
+
+			const { patientId, planId } = request.params as {
+				patientId: string;
+				planId: string;
+			};
+			if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
+				return reply.code(400).send({ error: "InvalidRequestParameters" });
+			}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const body =
+				(request.body as {
+					// biome-ignore lint/suspicious/noExplicitAny: policyKind enum
+					policyKind?: any;
+					customValidityDays?: number;
+					notes?: string;
+				}) || {};
+
+			try {
+				const result = await db.transaction(async (tx) => {
+					return issuePriceFreezeToken(tx, {
+						organizationId,
+						patientId,
+						planId,
+						...(body.policyKind ? { policyKind: body.policyKind } : {}),
+						...(body.customValidityDays !== undefined
+							? { customValidityDays: body.customValidityDays }
+							: {}),
+						...(identity.userId ? { actorUserId: identity.userId } : {}),
+						...(body.notes ? { notes: body.notes } : {}),
+					});
+				});
+
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "PRICE_FREEZE_TOKEN_ISSUED",
+					organizationId,
+					payload: {
+						patientId,
+						planId,
+						token: result.token,
+						policyKind: result.policyKind,
+						validUntil: result.validUntil,
+					},
+				});
+
+				return reply.code(201).send({ success: true, ...result });
+			} catch (err: any) {
+				if (err.statusCode) {
+					return reply.code(err.statusCode).send({
+						error: "PriceFreezeError",
+						message: err.message,
+					});
+				}
+				throw err;
+			}
+		},
+	);
+
+	/**
+	 * Получение текущего статуса закрепления цен плана (Price Freeze Token)
+	 */
+	app.get(
+		"/api/patients/:patientId/treatment-plans/:planId/price-freeze",
+		async (request, reply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"get price freeze status",
+			);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.treatment_plan.read",
+					role: staffRole,
+					message: `Отказ в чтении статуса закрепления цен (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				});
+			}
+
+			const { patientId, planId } = request.params as {
+				patientId: string;
+				planId: string;
+			};
+			if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
+				return reply.code(400).send({ error: "InvalidRequestParameters" });
+			}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const tokenStatus = await getActivePriceFreezeToken(
+				db,
+				organizationId,
+				planId,
+			);
+
+			return reply.send({
+				success: true,
+				hasActiveFreeze: !!tokenStatus && tokenStatus.isPriceLocked,
+				token: tokenStatus,
+			});
+		},
+	);
+
+	/**
+	 * Изменение режима скидок плана лечения (GAP_REPORT строка 165: none | plan_fixed | on_selection)
+	 */
+	app.post(
+		"/api/patients/:patientId/treatment-plans/:planId/discount-mode",
+		async (request, reply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"set plan discount mode",
+			);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.treatment_plan.manage",
+					role: staffRole,
+					message: `Отказ в настройке скидок плана (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				});
+			}
+
+			const { patientId, planId } = request.params as {
+				patientId: string;
+				planId: string;
+			};
+			if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
+				return reply.code(400).send({ error: "InvalidRequestParameters" });
+			}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const body = request.body as {
+				discountMode: "none" | "plan_fixed" | "on_selection";
+				planDiscountPercent?: number;
+				planDiscountRub?: number;
+			};
+
+			if (
+				!body ||
+				!["none", "plan_fixed", "on_selection"].includes(body.discountMode)
+			) {
+				return reply.code(400).send({
+					error: "InvalidDiscountMode",
+					message:
+						"Недопустимый режим скидок. Разрешены: 'none' (скидки не действуют), 'plan_fixed' (задать на план), 'on_selection' (при выборе в наряд).",
+				});
+			}
+
+			try {
+				const result = await db.transaction(async (tx) => {
+					return setPlanDiscountMode(tx, {
+						organizationId,
+						patientId,
+						planId,
+						discountMode: body.discountMode,
+						...(body.planDiscountPercent !== undefined
+							? { planDiscountPercent: body.planDiscountPercent }
+							: {}),
+						...(body.planDiscountRub !== undefined
+							? { planDiscountRub: body.planDiscountRub }
+							: {}),
+						...(identity.userId ? { actorUserId: identity.userId } : {}),
+					});
+				});
+
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "TREATMENT_PLAN_DISCOUNT_MODE_CHANGED",
+					organizationId,
+					payload: {
+						patientId,
+						planId,
+						discountMode: result.discountMode,
+						planDiscountPercent: result.planDiscountPercent,
+						totalDiscountRub: result.totalDiscountRub,
+						totalPriceRub: result.totalPriceRub,
+					},
+				});
+
+				return reply.send(result);
+			} catch (err: any) {
+				if (err.statusCode) {
+					return reply.code(err.statusCode).send({
+						error: "DiscountModeError",
+						message: err.message,
+					});
+				}
+				throw err;
+			}
 		},
 	);
 }

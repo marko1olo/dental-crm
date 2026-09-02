@@ -767,6 +767,22 @@ export const treatmentPlans = pgTable(
 		alternativeTier: text("alternative_tier"),
 		alternativeStatus: text("alternative_status").notNull().default("proposed"),
 		declinedReason: text("declined_reason"),
+		// Закрепление цен и токены заморозки (Price Freeze Tokens / GAP_REPORT строка 164)
+		activePriceFreezeTokenId: uuid("active_price_freeze_token_id"),
+		priceFreezePolicy: text("price_freeze_policy").default("standard_30_days"),
+		priceFrozenUntil: timestamp("price_frozen_until", { withTimezone: true }),
+		// Режимы скидок плана лечения (GAP_REPORT строка 165: none | plan_fixed | on_selection)
+		discountMode: text("discount_mode").notNull().default("plan_fixed"),
+		planDiscountPercent: numeric("plan_discount_percent", {
+			precision: 5,
+			scale: 2,
+			mode: "number",
+		}).default(0),
+		planDiscountRub: numeric("plan_discount_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		}).default(0),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -782,6 +798,52 @@ export const treatmentPlans = pgTable(
 		planGroupIdIdx: index("treatment_plans_plan_group_id_idx").on(
 			t.planGroupId,
 		),
+		priceFreezeTokenIdx: index("treatment_plans_price_freeze_token_idx").on(
+			t.activePriceFreezeTokenId,
+		),
+	}),
+);
+
+// Токены закрепления цен плана лечения (Price Freeze Tokens / GAP_REPORT строка 164)
+export const treatmentPlanPriceFreezeTokens = pgTable(
+	"treatment_plan_price_freeze_tokens",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		planId: uuid("plan_id")
+			.notNull()
+			.references(() => treatmentPlans.id),
+		token: text("token").notNull(),
+		policyKind: text("policy_kind").notNull().default("standard_30_days"),
+		lockedAt: timestamp("locked_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
+		isExpired: boolean("is_expired").notNull().default(false),
+		inflationThresholdPercent: integer("inflation_threshold_percent")
+			.notNull()
+			.default(10),
+		frozenPricesJson: jsonb("frozen_prices_json").notNull(),
+		status: text("status").notNull().default("active"), // "active" | "exhausted" | "expired" | "revoked"
+		issuedByUserId: uuid("issued_by_user_id").references(() => users.id),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("price_freeze_tokens_org_idx").on(t.organizationId),
+		patientIdIdx: index("price_freeze_tokens_patient_idx").on(t.patientId),
+		planIdIdx: index("price_freeze_tokens_plan_idx").on(t.planId),
+		tokenIdx: index("price_freeze_tokens_token_idx").on(t.token),
 	}),
 );
 

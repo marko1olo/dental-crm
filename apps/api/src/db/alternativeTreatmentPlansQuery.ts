@@ -13,7 +13,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import {
 	patients,
@@ -28,6 +28,7 @@ import {
 	rublesFromKopecks,
 } from "../money/patientDebt.js";
 import { sumKopecks } from "@dental/shared";
+import { issuePriceFreezeToken } from "./priceFreezeTokensQuery.js";
 
 export interface AlternativePlanItemInput {
 	toothNumber?: number | null;
@@ -226,6 +227,17 @@ export async function createAlternativePlanGroup(
 				};
 			});
 			await tx.insert(treatmentItems).values(ledgerValues);
+		}
+
+		if (isApproved) {
+			await issuePriceFreezeToken(tx, {
+				organizationId: input.organizationId,
+				patientId: input.patientId,
+				planId: createdPlan.id,
+				policyKind: "standard_30_days",
+				actorUserId: input.actorUserId ?? null,
+				notes: `Автоматическое закрепление цен при создании утвержденного плана «${variant.name}» (ПП РФ №659)`,
+			});
 		}
 
 		createdPlans.push({
@@ -431,6 +443,16 @@ export async function selectAndApprovePlanVariant(
 		await tx.insert(treatmentItems).values(ledgerValues);
 	}
 
+	// 5. Автоматически выпускаем токен закрепления цен на дату утверждения плана (Price Freeze Token / GAP_REPORT строка 164)
+	const freezeToken = await issuePriceFreezeToken(tx, {
+		organizationId: input.organizationId,
+		patientId: input.patientId,
+		planId: targetPlan.id,
+		policyKind: "standard_30_days",
+		actorUserId: input.actorUserId ?? null,
+		notes: `Закрепление цен на дату утверждения плана «${targetPlan.name}» (ПП РФ №659)`,
+	});
+
 	return {
 		success: true,
 		approvedPlanId: targetPlan.id,
@@ -438,6 +460,7 @@ export async function selectAndApprovePlanVariant(
 		approvedPlanName: targetPlan.name,
 		totalPriceRub: Number(targetPlan.totalPriceRub || targetPlan.totalPrice || 0),
 		declinedPlanIds,
+		priceFreezeToken: freezeToken,
 	};
 }
 

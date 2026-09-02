@@ -414,6 +414,20 @@
       "when": 1787400013000,
       "tag": "0191_alternative_treatment_plans",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1787400014000,
+      "tag": "0192_price_freeze_tokens_and_discount_modes",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1787400015000,
+      "tag": "0193_patient_archive_reasons_catalog",
+      "breakpoints": true
     }
   ]
 }

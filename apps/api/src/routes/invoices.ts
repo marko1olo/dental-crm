@@ -39,6 +39,7 @@ import {
 import { patients } from "../db/schema/patients.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { verifyCredential } from "../utils/cryptoHelper.js";
+import { getActivePriceFreezeToken } from "../db/priceFreezeTokensQuery.js";
 
 const validatePlanBodySchema = z.object({
 	planId: z.string().min(1),
@@ -357,7 +358,30 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			}
 		}
 
-		// Валидация плана
+		// 2.1 Проверяем наличие активного токена закрепления цен (Price Freeze Token / GAP_REPORT строка 164)
+		// и режим скидок плана лечения (GAP_REPORT строка 165: none | plan_fixed | on_selection)
+		const targetPlanId = data.planId || approvedPlanIds[0];
+		let targetPlan: (typeof treatmentPlans.$inferSelect) | null = null;
+		let freezeToken: Awaited<ReturnType<typeof getActivePriceFreezeToken>> = null;
+
+		if (targetPlanId) {
+			const [found] = await db
+				.select()
+				.from(treatmentPlans)
+				.where(
+					and(
+						eq(treatmentPlans.id, targetPlanId),
+						eq(treatmentPlans.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			targetPlan = found ?? null;
+			if (targetPlan) {
+				freezeToken = await getActivePriceFreezeToken(db, orgId, targetPlan.id);
+			}
+		}
+
+		// Валидация плана с учетом закрепления цен (Price Freeze Token) и режимов скидок
 		const planItemsForVal: PlanItemForValidation[] = data.items.map(
 			(it, idx) => {
 				const matchingCatalog = catalogRows.find(
@@ -365,15 +389,54 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 						(it.serviceId && c.id === it.serviceId) ||
 						(it.code804n && c.code === it.code804n),
 				);
-				const effectivePriceRub =
-					it.effectiveUnitPriceRub ??
-					it.planUnitPriceRub ??
-					it.unitPriceRub ??
-					Number(matchingCatalog?.basePriceRub ?? 0);
-				const planPriceRub =
-					it.planUnitPriceRub ??
-					it.unitPriceRub ??
-					effectivePriceRub;
+
+				const itemServiceId = it.serviceId || it.analogueServiceId;
+				const frozenItem = freezeToken?.frozenPrices?.find((fp) => {
+					if (itemServiceId && fp.serviceId === itemServiceId) return true;
+					if (it.nameRu && fp.title === it.nameRu) return true;
+					if (it.code804n && fp.code804n === it.code804n) return true;
+					return false;
+				});
+
+				// Если действует активный токен фиксации цен (Price Freeze Token):
+				// гарантируется цена на момент утверждения плана лечения
+				let planPriceRub: number;
+				let effectivePriceRub: number;
+
+				if (freezeToken?.isPriceLocked && frozenItem) {
+					planPriceRub = frozenItem.lockedUnitPriceRub;
+					effectivePriceRub = frozenItem.lockedUnitPriceRub;
+				} else {
+					effectivePriceRub =
+						it.effectiveUnitPriceRub ??
+						it.planUnitPriceRub ??
+						it.unitPriceRub ??
+						Number(matchingCatalog?.basePriceRub ?? 0);
+					planPriceRub =
+						it.planUnitPriceRub ??
+						it.unitPriceRub ??
+						effectivePriceRub;
+				}
+
+				// Расчет скидки согласно режиму скидок плана (none | plan_fixed | on_selection)
+				let discountRub = it.discountRub ?? 0;
+				const discountMode = targetPlan?.discountMode ?? "plan_fixed";
+				if (discountMode === "none") {
+					// Скидки не действуют (IDENT parity)
+					discountRub = 0;
+				} else if (discountMode === "plan_fixed") {
+					discountRub = it.discountRub ?? frozenItem?.lockedDiscountRub ?? 0;
+				} else if (discountMode === "on_selection") {
+					// Скидка при выборе в наряд
+					const patientDiscountPercent = Number(
+						targetPlan?.planDiscountPercent ?? 0,
+					);
+					if (patientDiscountPercent > 0) {
+						discountRub = Number(
+							((effectivePriceRub * patientDiscountPercent) / 100).toFixed(2),
+						);
+					}
+				}
 
 				return {
 					itemId: it.itemId || it.serviceId || `item-${idx + 1}`,
@@ -385,7 +448,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 						it.categoryRu || matchingCatalog?.category || "Терапия",
 					quantity: it.quantity,
 					planUnitPriceKopecks: Math.round(planPriceRub * 100),
-					planDiscountKopecks: Math.round(it.discountRub * 100),
+					planDiscountKopecks: Math.round(discountRub * 100),
 					...(it.analogueServiceId || it.serviceId
 						? { serviceId: it.analogueServiceId || it.serviceId }
 						: {}),
@@ -393,14 +456,24 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			},
 		);
 
+		const isPriceLockedFinal =
+			(freezeToken ? freezeToken.isPriceLocked : false) ||
+			data.isSignedWithPatient === true ||
+			!!data.approvedAtIso ||
+			targetPlan?.status === "Approved";
+
 		const validationReport = validatePlanToInvoice({
-			planId: data.planId || "PLAN-CUSTOM",
+			planId: data.planId || targetPlan?.id || "PLAN-CUSTOM",
 			planNumber: data.planNumber,
 			patientId: data.patientId,
 			patientName: patient.fullName,
-			planCreatedAtIso: data.planCreatedAtIso || new Date().toISOString(),
-			approvedAtIso: data.approvedAtIso,
-			isSignedWithPatient: data.isSignedWithPatient,
+			planCreatedAtIso:
+				data.planCreatedAtIso ||
+				targetPlan?.createdAt?.toISOString() ||
+				new Date().toISOString(),
+			approvedAtIso:
+				data.approvedAtIso || targetPlan?.approvedAt?.toISOString(),
+			isSignedWithPatient: isPriceLockedFinal,
 			items: planItemsForVal,
 			catalog: catalogLookup,
 			adminOverrideAuthorized: isAdminOverrideVerified,
