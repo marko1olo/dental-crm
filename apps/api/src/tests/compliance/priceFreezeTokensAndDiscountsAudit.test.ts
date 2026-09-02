@@ -27,6 +27,7 @@ import {
 	organizations,
 	patients,
 	serviceCatalogItems,
+	treatmentItems,
 	treatmentPlanItemsNew,
 	treatmentPlanPriceFreezeTokens,
 	treatmentPlans,
@@ -97,7 +98,6 @@ describe("Prosecutor 3: Price Freeze Tokens & Discount Modes Statutory Audit", {
 			await db.insert(organizations).values({
 				id: ORG_ID,
 				name: "Клиника ДЕНТЕ (Аудит фиксации цен)",
-				isActive: true,
 			});
 
 			await db.insert(users).values([
@@ -132,8 +132,8 @@ describe("Prosecutor 3: Price Freeze Tokens & Discount Modes Statutory Audit", {
 					code: "A16.07.002.001",
 					title: "Световая пломба Filtek",
 					category: "therapy",
-					basePriceRub: "8000.00",
-					priceRub: "8000.00",
+					basePriceRub: 8000,
+					priceRub: 8000,
 					active: true,
 				},
 				{
@@ -142,8 +142,8 @@ describe("Prosecutor 3: Price Freeze Tokens & Discount Modes Statutory Audit", {
 					code: "A16.07.004.001",
 					title: "Коронка диоксид циркония",
 					category: "prosthetics",
-					basePriceRub: "25000.00",
-					priceRub: "25000.00",
+					basePriceRub: 25000,
+					priceRub: 25000,
 					active: true,
 				},
 			]);
@@ -260,8 +260,8 @@ describe("Prosecutor 3: Price Freeze Tokens & Discount Modes Statutory Audit", {
 			await db
 				.update(serviceCatalogItems)
 				.set({
-					basePriceRub: "12000.00",
-					priceRub: "12000.00",
+					basePriceRub: 12000,
+					priceRub: 12000,
 				})
 				.where(eq(serviceCatalogItems.id, SERVICE_FILLING_ID));
 		});
@@ -451,5 +451,98 @@ describe("Prosecutor 3: Price Freeze Tokens & Discount Modes Statutory Audit", {
 		assert.equal(invoiceBody.totalNetRub, 25000);
 
 		console.log(`[AUDIT 1.4 PROOF] Режимы скидок проверены: plan_fixed (2 500 ₽ скидки), none (принудительное обнуление 0 ₽)!`);
+	});
+
+	it("AUDIT 1.5: Режим скидок 'on_selection' при мульти-количестве (quantity > 1): расчет от lineGross, а не единицы", async (t) => {
+		if (!databaseReady) {
+			t.skip("PostgreSQL недоступен");
+			return;
+		}
+
+		// 1. Создаем утвержденный план лечения с режимом 'on_selection' и скидкой 15%
+		const planId = fixtureUuid(NAMESPACE, 50);
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(treatmentPlans).values({
+				id: planId,
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				name: "План с динамической скидкой 15% при выборе в наряд",
+				status: "Approved",
+				approvedAt: new Date(),
+				totalPrice: "50000.00",
+				totalPriceRub: "50000.00",
+				discountMode: "on_selection",
+				planDiscountPercent: 15,
+				version: 1,
+			});
+
+			await db.insert(treatmentPlanItemsNew).values([
+				{
+					id: fixtureUuid(NAMESPACE, 51),
+					organizationId: ORG_ID,
+					planId,
+					priceId: `${SERVICE_FILLING_ID}::Световая пломба Filtek`,
+					toothNumber: 11,
+					quantity: 3, // 3 пломбы!
+					price: "8000.00",
+					discount: "0",
+					phase: 1,
+				},
+			]);
+		});
+
+		// 2. Генерируем наряд на 3 пломбы Filtek (единичная цена: 8 000 ₽, lineGross = 24 000 ₽)
+		// Скидка 15% от 24 000 ₽ должна составить 3 600 ₽ (а НЕ 1 200 ₽ от одной штуки!)
+		const invoiceRes = await app.inject({
+			method: "POST",
+			url: "/api/invoices/generate-from-plan",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": doctorToken,
+			},
+			payload: {
+				planId,
+				patientId: PATIENT_ID,
+				documentType: "work_order",
+				items: [
+					{
+						serviceId: SERVICE_FILLING_ID,
+						nameRu: "Световая пломба Filtek",
+						code804n: "A16.07.002.001",
+						quantity: 3,
+						unitPriceRub: 8000,
+					},
+				],
+			},
+		});
+
+		assert.equal(invoiceRes.statusCode, 201, `Ожидался HTTP 201, получено: ${invoiceRes.statusCode}`);
+		const invoiceBody = invoiceRes.json();
+
+		// Проверяем:
+		// lineGross = 8 000 * 3 = 24 000 ₽
+		// discount = 24 000 * 0.15 = 3 600 ₽ (НЕ 1 200 ₽!)
+		// net = 24 000 - 3 600 = 20 400 ₽
+		assert.equal(invoiceBody.totalGrossRub, 24000);
+		assert.equal(invoiceBody.totalDiscountRub, 3600, "Скидка должна рассчитываться от lineGross (3 шт. * 8 000 ₽ * 15% = 3 600 ₽), а не от 1 шт.!");
+		assert.equal(invoiceBody.totalNetRub, 20400);
+
+		// Проверяем запись в treatment_items
+		const createdItemId = invoiceBody.createdTreatmentItemIds[0];
+		const [dbItem] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(treatmentItems)
+				.where(eq(treatmentItems.id, createdItemId))
+				.limit(1),
+		);
+
+		assert.ok(dbItem);
+		assert.equal(dbItem.quantity, "3");
+		assert.equal(Number(dbItem.unitPriceRub), 8000);
+		assert.equal(Number(dbItem.discountRub), 3600);
+		assert.equal(Number(dbItem.priceRub), 20400);
+
+		console.log(`[AUDIT 1.5 PROOF] Мульти-количество quantity=3 проверено: Gross = 24 000 ₽, Discount 15% = 3 600 ₽ (от стоимости строки), Net = 20 400 ₽!`);
 	});
 });

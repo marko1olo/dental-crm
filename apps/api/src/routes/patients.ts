@@ -749,6 +749,27 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				message: patientCreateValidationMessage,
 			});
 		}
+
+		const rawPayloadCreate = (request.body && typeof request.body === "object" ? request.body : {}) as {
+			administrativeProfile?: { isAnonymous?: boolean; insurancePolicyNumber?: string | null; snils?: string | null };
+			isAnonymous?: boolean;
+		};
+		const isAnonCreate =
+			Boolean(rawPayloadCreate.isAnonymous) ||
+			Boolean(rawPayloadCreate.administrativeProfile?.isAnonymous) ||
+			Boolean(input.fullName?.startsWith("UUID_ANON")) ||
+			Boolean(input.fullName?.toLowerCase().includes("аноним"));
+		const policyCreate =
+			typeof rawPayloadCreate.administrativeProfile?.insurancePolicyNumber === "string"
+				? rawPayloadCreate.administrativeProfile.insurancePolicyNumber.trim()
+				: "";
+		if (isAnonCreate && policyCreate.length > 0) {
+			return reply.code(422).send({
+				error: "Decree659OmsForbiddenError",
+				message:
+					"Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Федерального закона № 326-ФЗ: привязка полиса ОМС к анонимной карте (UUID_ANON / isAnonymous) категорически запрещена. Для использования полиса ОМС требуется деанонимизация пациента с предъявлением паспорта РФ и СНИЛС.",
+			});
+		}
 		const rawBody =
 			request.body && typeof request.body === "object"
 				? (request.body as Record<string, unknown>)
@@ -757,7 +778,7 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 			...input,
 			snils:
 				(rawBody.snils as string | undefined) ??
-				(input.administrativeProfile?.snils as string | undefined) ??
+				(rawPayloadCreate.administrativeProfile?.snils as string | undefined) ??
 				null,
 		};
 		try {
@@ -809,6 +830,26 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 			return reply.code(400).send({
 				error: "PatientValidationError",
 				message: patientUpdateValidationMessage,
+			});
+		}
+
+		const rawPayload = (request.body && typeof request.body === "object" ? request.body : {}) as {
+			administrativeProfile?: { isAnonymous?: boolean; insurancePolicyNumber?: string | null };
+		};
+		const isAnonUpdate =
+			Boolean(input.isAnonymous) ||
+			Boolean(rawPayload.administrativeProfile?.isAnonymous) ||
+			Boolean(input.fullName?.startsWith("UUID_ANON")) ||
+			Boolean(input.fullName?.toLowerCase().includes("аноним"));
+		const policyUpdate =
+			typeof rawPayload.administrativeProfile?.insurancePolicyNumber === "string"
+				? rawPayload.administrativeProfile.insurancePolicyNumber.trim()
+				: "";
+		if (isAnonUpdate && policyUpdate.length > 0) {
+			return reply.code(422).send({
+				error: "Decree659OmsForbiddenError",
+				message:
+					"Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Федерального закона № 326-ФЗ: привязка полиса ОМС к анонимной карте (UUID_ANON / isAnonymous) категорически запрещена. Для использования полиса ОМС требуется деанонимизация пациента с предъявлением паспорта РФ и СНИЛС.",
 			});
 		}
 
@@ -918,6 +959,22 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 					return reply.code(400).send({
 						error: "PatientValidationError",
 						message: patientRepresentativeValidationMessage,
+					});
+				}
+
+				const isAnonProfile =
+					mergedProfile.isAnonymous === true ||
+					Boolean(existingPatient.fullName?.startsWith("UUID_ANON")) ||
+					Boolean(existingPatient.fullName?.toLowerCase().includes("аноним"));
+				const policyProfile =
+					typeof mergedProfile.insurancePolicyNumber === "string"
+						? (mergedProfile.insurancePolicyNumber as string).trim()
+						: "";
+				if (isAnonProfile && policyProfile.length > 0) {
+					return reply.code(422).send({
+						error: "Decree659OmsForbiddenError",
+						message:
+							"Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Федерального закона № 326-ФЗ: привязка полиса ОМС к анонимной карте (UUID_ANON / isAnonymous) категорически запрещена. Для использования полиса ОМС требуется деанонимизация пациента с предъявлением паспорта РФ и СНИЛС.",
 					});
 				}
 

@@ -561,4 +561,71 @@ describe("Prosecutor 3: Wave 6 Anonymous Patient Legal Shield & Tax Exemption Au
 		assert.equal(errJson.error, "UpsellConsentShieldViolationError");
 		console.log("[UPSELL INVOICE SHIELD SUCCESS] Сервер заблокировал выписку счета на несогласованную услугу!");
 	});
+
+	// =========================================================================
+	// АУДИТ 6.7: БЛОКИРОВКА ПРИВЯЗКИ ОМС К АНОНИМНОЙ КАРТЕ ПАЦИЕНТА
+	// =========================================================================
+
+	it("AUDIT 6.7: Попытка привязать полис ОМС к анонимной карте пациента (через PUT administrative-profile и POST patients)", async (t) => {
+		if (!databaseReady) return t.skip("База данных недоступна");
+
+		// 1. Попытка через PUT /api/patients/:id/administrative-profile добавить полис ОМС к анонимной карте
+		const putProfileRes = await app.inject({
+			method: "PUT",
+			url: `/api/patients/${UUID_ANON_PATIENT_ID}/administrative-profile`,
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": adminToken,
+			},
+			payload: {
+				insurancePolicyNumber: "1234567890123456",
+			},
+		});
+
+		console.log("\n[AUDIT 6.7 LOG] Попытка привязки полиса ОМС к анониму через PUT administrative-profile:");
+		console.log(`HTTP Status: ${putProfileRes.statusCode}`);
+		console.log(`Response Body: ${putProfileRes.body}`);
+
+		assert.equal(
+			putProfileRes.statusCode,
+			422,
+			"Привязка полиса ОМС к анонимной карте обязана блокироваться со статусом 422",
+		);
+		const errPut = JSON.parse(putProfileRes.body);
+		assert.equal(errPut.error, "Decree659OmsForbiddenError");
+
+		// 2. Попытка через POST /api/patients создать анонимного пациента сразу с полисом ОМС
+		const postPatientRes = await app.inject({
+			method: "POST",
+			url: "/api/patients",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": adminToken,
+			},
+			payload: {
+				fullName: "UUID_ANON-9902 Новый Аноним",
+				birthDate: "1995-03-20",
+				phone: "+79991112233",
+				isAnonymous: true,
+				administrativeProfile: {
+					isAnonymous: true,
+					insurancePolicyNumber: "1234567890123456",
+				},
+			},
+		});
+
+		console.log("\n[AUDIT 6.7 LOG] Попытка создания анонимного пациента с полисом ОМС через POST patients:");
+		console.log(`HTTP Status: ${postPatientRes.statusCode}`);
+		console.log(`Response Body: ${postPatientRes.body}`);
+
+		assert.equal(
+			postPatientRes.statusCode,
+			422,
+			"Создание анонимной карты с полисом ОМС обязано блокироваться со статусом 422",
+		);
+		const errPost = JSON.parse(postPatientRes.body);
+		assert.equal(errPost.error, "Decree659OmsForbiddenError");
+
+		console.log("[ANONYMOUS OMS POLICY BARRIER PROOF] Запрет привязки полиса ОМС к анонимной карте полностью подтвержден!");
+	});
 });
