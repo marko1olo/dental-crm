@@ -14,6 +14,8 @@ import {
 	requireClinicalReadAccess,
 	resolveOrganizationId,
 } from "../accessGuard.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { db } from "../db/client.js";
 import {
 	clinicalAuditLogs,
@@ -410,6 +412,20 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 	app.post("/api/diaries", async (req, reply) => {
 		if (!(await requireClinicalMutationAccess(req, reply, "write diary")))
 			return;
+
+		// 152-ФЗ / 323-ФЗ: Запись дневника 043/у разрешена исключительно медицинскому персоналу
+		const identity = getRequestIdentity(req);
+		const staffRole = identity.role ?? req.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.diary.write",
+				role: staffRole,
+				message: `Отказ в записи дневника 043/у (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+			});
+		}
+
 		const parsedUpsert = diaryUpsertSchema.safeParse(req.body);
 		if (!parsedUpsert.success) {
 			return reply.code(400).send({

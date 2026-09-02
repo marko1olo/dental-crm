@@ -58,6 +58,9 @@ export const FORBIDDEN_CLINICAL_FIELD_NAMES: ReadonlySet<string> = new Set([
 	"emr_record",
 	"emrrecord",
 	"emr",
+	"emk",
+	"emkrecords",
+	"emk_records",
 
 	// Зубная формула и одонтограмма
 	"odontogram",
@@ -66,12 +69,29 @@ export const FORBIDDEN_CLINICAL_FIELD_NAMES: ReadonlySet<string> = new Set([
 	"toothstates",
 	"teethstates",
 	"teethstate",
+	"toothformula",
+	"tooth_formula",
 
-	// Клинические заметки и дневники
+	// Клинические заметки, дневники и данные
 	"clinicalnotes",
 	"clinical_notes",
 	"clinicalnote",
 	"clinical_note",
+	"clinicaldata",
+	"clinical_data",
+
+	// Клинический анамнез, жалобы, объективный статус, статус локалис и план лечения (323-ФЗ ст. 13)
+	"anamnesis",
+	"complaint",
+	"complaints",
+	"objectivestatus",
+	"objective_status",
+	"treatmentplan",
+	"treatment_plan",
+	"treatmentdescription",
+	"treatment_description",
+	"statuslocalis",
+	"status_localis",
 ]);
 
 /**
@@ -217,43 +237,31 @@ export function shouldStripMedicalData(request: FastifyRequest): boolean {
 			canSignMedicalRecords?: boolean;
 			clinicalRole?: string | null;
 		};
-		headers: Record<string, string | string[] | undefined>;
 	};
 
-	// Роль сотрудника (из identity токена, request.user или заголовков)
-	const rawRole =
-		identity.role ??
-		reqAny.user?.role ??
-		(typeof reqAny.headers["x-user-role"] === "string"
-			? reqAny.headers["x-user-role"]
-			: null) ??
-		(typeof reqAny.headers["x-staff-role"] === "string"
-			? reqAny.headers["x-staff-role"]
-			: null) ??
-		null;
+	// Роль сотрудника определяется ИСКЛЮЧИТЕЛЬНО из проверенного токена identity.role или request.user.
+	// Чтение недоверенных заголовков x-user-role / x-staff-role / x-forwarded-role категорически ЗАПРЕЩЕНО!
+	const rawRole = identity.role ?? reqAny.user?.role ?? null;
 
-	// Если запросу не предоставлен токен сотрудника (например, чисто клининговый токен или внутренний тест),
-	// проверяем, нет ли явной роли маркетолога/админа
+	// Fail-closed защита врачебной тайны (152-ФЗ / 323-ФЗ ст. 13):
+	// Если токен сотрудника отсутствует вовсе (например, голая сессия клиники без врача),
+	// доступ к диагнозам категорически ЗАПРЕЩЕН -> усекаем полезную нагрузку (fail-closed = true)!
 	if (!rawRole) {
-		return false;
+		return true;
 	}
 
-	const headerClinicalRole =
-		typeof reqAny.headers["x-clinical-role"] === "string"
-			? reqAny.headers["x-clinical-role"]
-			: null;
-
+	// Полномочия и клиническая роль берутся ТОЛЬКО из проверенного токена или БД.
+	// Чтение недоверенных заголовков x-clinical-role и x-can-sign-medical-records УДАЛЕНО ПОЛНОСТЬЮ!
 	const clinicalRoleClaim =
 		(identity as unknown as { clinicalRole?: string | null }).clinicalRole ??
 		reqAny.user?.clinicalRole ??
-		headerClinicalRole ??
 		null;
 
 	const canSignMedicalRecords =
 		(identity as unknown as { canSignMedicalRecords?: boolean })
 			.canSignMedicalRecords ??
 		reqAny.user?.canSignMedicalRecords ??
-		reqAny.headers["x-can-sign-medical-records"] === "true";
+		false;
 
 	const evalResult = evaluateClinicalAccess(rawRole, {
 		clinicalRole: clinicalRoleClaim,
@@ -262,6 +270,30 @@ export function shouldStripMedicalData(request: FastifyRequest): boolean {
 
 	// Если нет клинического доступа — требуется аппаратное усечение
 	return !evalResult.hasClinicalAccess;
+}
+
+/**
+ * Паттерны клинических диагнозов и врачебных терминов (152-ФЗ / 323-ФЗ ст. 13),
+ * подлежащие аппаратной санитизации в строковых значениях для неклинических ролей.
+ */
+export const CLINICAL_DIAGNOSTIC_PATTERNS: readonly RegExp[] = [
+	/K0[0-9]\.\d+/gi,
+	/K0[0-9]/gi,
+	/пульпит\S*/gi,
+	/кариес\S*/gi,
+	/экстирпаци\S*/gi,
+	/препарировани\S*/gi,
+	/периодонтит\S*/gi,
+	/пародонтит\S*/gi,
+	/гингивит\S*/gi,
+];
+
+export function sanitizeClinicalString(str: string): string {
+	let result = str;
+	for (const pattern of CLINICAL_DIAGNOSTIC_PATTERNS) {
+		result = result.replace(pattern, "[Сведения защищены 152-ФЗ]");
+	}
+	return result;
 }
 
 /**
@@ -274,6 +306,10 @@ export function stripDiagnosisPayload<T>(payload: T): T {
 
 	if (Array.isArray(payload)) {
 		return payload.map((item) => stripDiagnosisPayload(item)) as unknown as T;
+	}
+
+	if (typeof payload === "string") {
+		return sanitizeClinicalString(payload) as unknown as T;
 	}
 
 	if (typeof payload === "object") {
@@ -307,7 +343,7 @@ export function stripDiagnosisPayload<T>(payload: T): T {
  * Проверяет, содержит ли сериализованная JSON-строка хотя бы один запрещенный ключ.
  */
 export function hasForbiddenClinicalKeyInJson(jsonStr: string): boolean {
-	return /"(?:diagnosis|diagnoses|diagnosisicd10|diagnosistooth|mkb10|mkb_10|emr_records|emrrecords|odontogram|clinicalnotes|clinical_notes|tooth_states|toothstates)"\s*:/i.test(
+	return /"(?:diagnosis|diagnoses|diagnosisicd10|diagnosistooth|mkb10|mkb_10|emr_records|emrrecords|emk|odontogram|clinicalnotes|clinical_notes|clinicaldata|clinical_data|tooth_states|toothstates|toothformula|tooth_formula|anamnesis|complaint|complaints|objectivestatus|objective_status|treatmentplan|treatment_plan|treatmentdescription|treatment_description|statuslocalis|status_localis)"\s*:/i.test(
 		jsonStr,
 	);
 }

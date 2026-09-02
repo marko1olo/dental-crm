@@ -287,49 +287,53 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				canSignMedicalRecords?: boolean;
 				clinicalRole?: string | null;
 			};
-			headers: Record<string, string | string[] | undefined>;
 		};
-		const staffRole =
-			identity.role ??
-			reqAny.user?.role ??
-			(typeof reqAny.headers["x-user-role"] === "string"
-				? reqAny.headers["x-user-role"]
-				: null) ??
-			(typeof reqAny.headers["x-staff-role"] === "string"
-				? reqAny.headers["x-staff-role"]
-				: null) ??
-			null;
+		// Роль определяется ИСКЛЮЧИТЕЛЬНО из подписанного токена или проверенного контекста request.user.
+		// Чтение недоверенных заголовков x-user-role / x-staff-role / x-forwarded-role категорически ЗАПРЕЩЕНО!
+		const staffRole = identity.role ?? reqAny.user?.role ?? null;
 
-		if (staffRole) {
-			const evalAccess = evaluateClinicalAccess(staffRole, {
-				clinicalRole:
-					(identity as unknown as { clinicalRole?: string | null })
-						.clinicalRole ??
-					reqAny.user?.clinicalRole ??
-					(typeof reqAny.headers["x-clinical-role"] === "string"
-						? reqAny.headers["x-clinical-role"]
-						: null),
-				canSignMedicalRecords:
-					(identity as unknown as { canSignMedicalRecords?: boolean })
-						.canSignMedicalRecords ??
-					reqAny.user?.canSignMedicalRecords ??
-					reqAny.headers["x-can-sign-medical-records"] === "true",
+		// Fail-closed: если токен сотрудника отсутствует (голый токен клиники), немедленно 403 Forbidden!
+		if (!staffRole) {
+			await auditMedicalAccessFromRequest(request, {
+				organizationId,
+				patientId,
+				action: "ACCESS_DENIED_ODONTOGRAM",
+				diagnosis: "Попытка анонимного доступа к зубной формуле без токена медработника (152-ФЗ)",
 			});
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.read",
+				role: null,
+				message: "Отказ в доступе к зубной формуле и диагнозам (152-ФЗ / 323-ФЗ ст. 13): требуется авторизованный токен медработника",
+			});
+		}
 
-			if (!evalAccess.hasClinicalAccess) {
-				await auditMedicalAccessFromRequest(request, {
-					organizationId,
-					patientId,
-					action: "ACCESS_DENIED_ODONTOGRAM",
-					diagnosis: "Попытка несанкционированного доступа к зубной формуле (152-ФЗ)",
-				});
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.read",
-					role: staffRole,
-					message: `Отказ в доступе к зубной формуле и диагнозам (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
-				});
-			}
+		const evalAccess = evaluateClinicalAccess(staffRole, {
+			clinicalRole:
+				(identity as unknown as { clinicalRole?: string | null })
+					.clinicalRole ??
+				reqAny.user?.clinicalRole ??
+				null,
+			canSignMedicalRecords:
+				(identity as unknown as { canSignMedicalRecords?: boolean })
+					.canSignMedicalRecords ??
+				reqAny.user?.canSignMedicalRecords ??
+				false,
+		});
+
+		if (!evalAccess.hasClinicalAccess) {
+			await auditMedicalAccessFromRequest(request, {
+				organizationId,
+				patientId,
+				action: "ACCESS_DENIED_ODONTOGRAM",
+				diagnosis: "Попытка несанкционированного доступа к зубной формуле (152-ФЗ)",
+			});
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.read",
+				role: staffRole,
+				message: `Отказ в доступе к зубной формуле и диагнозам (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
 		}
 
 		const rawStates = await db
@@ -751,6 +755,23 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				"treatment plans read",
 			);
 			if (!organizationId) return;
+
+			// 152-ФЗ / 323-ФЗ: Планы лечения содержат медицинскую тайну — доступ только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.treatment_plan.read",
+					role: staffRole,
+					message: `Отказ в доступе к планам лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				});
+			}
+
 			const { patientId } = request.params as { patientId: string };
 			if (!UUID_SHAPE.test(patientId)) {
 				return reply.code(400).send({ error: "InvalidPatientId" });
@@ -773,6 +794,24 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				"treatment plan upsert",
 			);
 			if (!organizationId) return;
+
+			// 152-ФЗ / 323-ФЗ: План лечения является клиническим документом — создание доступно только медработникам
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user
+					?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.treatment_plan.write",
+					role: staffRole,
+					message: `Отказ в создании плана лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				});
+			}
+
 			const { patientId } = request.params as { patientId: string };
 			if (!UUID_SHAPE.test(patientId)) {
 				return reply.code(400).send({ error: "InvalidPatientId" });

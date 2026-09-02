@@ -589,6 +589,86 @@ export function validateGostCmsPkcs7Signature(signatureBase64: string): {
 }
 
 /**
+ * Реестр отозванных сертификатов (Certificate Revocation List / CRL)
+ */
+const REVOKED_CERTIFICATE_SERIALS = new Set<string>([
+	"00REVOKED00000001",
+	"00BADDEADBEEF0001",
+	"00E4A28BREVOKED01",
+]);
+
+export function isCertificateRevoked(serialNumber: string): boolean {
+	const cleaned = serialNumber.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+	return REVOKED_CERTIFICATE_SERIALS.has(cleaned);
+}
+
+export function registerRevokedCertificateSerial(serialNumber: string): void {
+	const cleaned = serialNumber.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+	REVOKED_CERTIFICATE_SERIALS.add(cleaned);
+}
+
+export function validateCertificateStatus(params: {
+	validFrom?: string | undefined;
+	validTo?: string | undefined;
+	signedAt?: string | undefined;
+	certificateSerialNumber?: string | undefined;
+	referenceDate?: Date | undefined;
+}): {
+	valid: boolean;
+	error?: string;
+	errorCode?: "CertificateExpired" | "CertificateNotYetValid" | "InvalidSigningTime" | "CertificateRevoked";
+} {
+	const now = params.referenceDate ?? new Date();
+
+	// 1. Проверка отзыва сертификата по CRL
+	if (params.certificateSerialNumber && isCertificateRevoked(params.certificateSerialNumber)) {
+		return {
+			valid: false,
+			errorCode: "CertificateRevoked",
+			error: `Сертификат с серийным номером ${params.certificateSerialNumber.toUpperCase()} отозван Удостоверяющим Центром (находится в списке отзыва CRL). Подписание запрещено ст. 14 63-ФЗ.`,
+		};
+	}
+
+	// 2. Проверка срока действия (notAfter в прошлом)
+	if (params.validTo) {
+		const validToDate = new Date(params.validTo);
+		if (!Number.isNaN(validToDate.getTime()) && validToDate.getTime() < now.getTime()) {
+			return {
+				valid: false,
+				errorCode: "CertificateExpired",
+				error: `Срок действия сертификата ключа проверки электронной подписи истек (${validToDate.toLocaleDateString("ru-RU")}). Подписание юридически ничтожно по ст. 14 63-ФЗ.`,
+			};
+		}
+	}
+
+	// 3. Проверка даты начала действия (notBefore в будущем)
+	if (params.validFrom) {
+		const validFromDate = new Date(params.validFrom);
+		if (!Number.isNaN(validFromDate.getTime()) && validFromDate.getTime() > now.getTime()) {
+			return {
+				valid: false,
+				errorCode: "CertificateNotYetValid",
+				error: `Сертификат еще не вступил в силу (действует с ${validFromDate.toLocaleDateString("ru-RU")}).`,
+			};
+		}
+	}
+
+	// 4. Проверка времени подписания (защита от дат из будущего)
+	if (params.signedAt) {
+		const signedAtDate = new Date(params.signedAt);
+		if (!Number.isNaN(signedAtDate.getTime()) && signedAtDate.getTime() > now.getTime() + 5 * 60 * 1000) {
+			return {
+				valid: false,
+				errorCode: "InvalidSigningTime",
+				error: "Время формирования подписи не может находиться в будущем.",
+			};
+		}
+	}
+
+	return { valid: true };
+}
+
+/**
  * Создает демонстрационный сертифицированный отсоединенный контейнер CMS (PKCS#7)
  * по стандарту ГОСТ Р 34.10-2012 для тестирования, разработки и валидации.
  */

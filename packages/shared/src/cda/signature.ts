@@ -9,6 +9,82 @@ import { EGISZ_OIDS } from "./oids.js";
 import { canonicalizeCdaXml, computeCdaSha256Hex } from "./c14n.js";
 import { egiszRemdPackageSchema } from "./schemas.js";
 import type { DetachedSignature, EgiszRemdPackage } from "./types.js";
+import {
+	buildGenuineGostCmsPkcs7Der,
+	validateGostCmsPkcs7Signature,
+} from "../crypto/index.js";
+
+/**
+ * Validates detached CMS PKCS#7 / CAdES-BES signature structure against GOST R 34.10-2012.
+ */
+export function validateCdaDetachedSignature(sig: DetachedSignature): {
+	valid: boolean;
+	error?: string | undefined;
+	details?: {
+		hasGostOid: boolean;
+		format: string;
+	} | undefined;
+} {
+	if (!sig || typeof sig !== "object") {
+		return {
+			valid: false,
+			error: "Объект отсоединенной подписи отсутствует или не является объектом.",
+		};
+	}
+
+	if (!sig.signatureBase64 || typeof sig.signatureBase64 !== "string") {
+		return {
+			valid: false,
+			error: "Отсутствует бинарное тело подписи (signatureBase64).",
+		};
+	}
+
+	const cmsResult = validateGostCmsPkcs7Signature(sig.signatureBase64);
+	if (!cmsResult.valid) {
+		return {
+			valid: false,
+			error: `Контейнер подписи CMS (PKCS#7) не валиден: ${cmsResult.error}`,
+		};
+	}
+
+	// Валидация алгоритма подписи ГОСТ
+	const isGostAlg =
+		sig.algorithmOid === EGISZ_OIDS.GOST_3410_2012_256 ||
+		sig.algorithmOid === EGISZ_OIDS.GOST_3410_2012_512;
+	if (sig.algorithmOid && !isGostAlg) {
+		return {
+			valid: false,
+			error: `Алгоритм подписи ${sig.algorithmOid} не соответствует ГОСТ Р 34.10-2012.`,
+		};
+	}
+
+	// Проверка временного диапазона действия сертификата
+	if (sig.validFrom && sig.validTo) {
+		const from = new Date(sig.validFrom).getTime();
+		const to = new Date(sig.validTo).getTime();
+		const signTime = sig.signedAt ? new Date(sig.signedAt).getTime() : Date.now();
+		if (signTime < from || signTime > to) {
+			return {
+				valid: false,
+				error: `Сертификат ${sig.certificateSerialNumber} не действовал на момент подписания документа.`,
+			};
+		}
+	}
+
+	if (cmsResult.details) {
+		return {
+			valid: true,
+			details: {
+				hasGostOid: cmsResult.details.hasGostOid,
+				format: cmsResult.details.format,
+			},
+		};
+	}
+
+	return {
+		valid: true,
+	};
+}
 
 /**
  * Builds a deterministic, validated EGISZ REMD submission package.
@@ -24,6 +100,23 @@ export function buildEgiszRemdPackage(params: {
 	clinicOid: string;
 	clinicOgrn?: string | undefined;
 }): EgiszRemdPackage {
+	// Валидация криптографических контейнеров CMS (PKCS#7)
+	const doctorValidation = validateCdaDetachedSignature(params.doctorSignature);
+	if (!doctorValidation.valid) {
+		throw new Error(
+			`Невалидная отсоединенная подпись врача: ${doctorValidation.error}`,
+		);
+	}
+
+	if (params.moSignature) {
+		const moValidation = validateCdaDetachedSignature(params.moSignature);
+		if (!moValidation.valid) {
+			throw new Error(
+				`Невалидная отсоединенная подпись медицинской организации: ${moValidation.error}`,
+			);
+		}
+	}
+
 	const canonicalXml = canonicalizeCdaXml(params.rawXml);
 
 	const pkg: EgiszRemdPackage = {
@@ -76,14 +169,11 @@ export function createDemonstrationGostSignature(params: {
 	isMoSignature?: boolean | undefined;
 }): DetachedSignature {
 	const now = new Date();
-	const serialHex = Array.from({ length: 16 }, () =>
+	const serialHex = `00E4A28B${Array.from({ length: 8 }, () =>
 		Math.floor(Math.random() * 16).toString(16),
 	)
 		.join("")
-		.toUpperCase();
-
-	const mockPayload = `UKEP_GOST_3410_2012_SIGNED_${params.doctorSnils}_${now.toISOString()}_${Math.random()}`;
-	const signatureBase64 = Buffer.from(mockPayload, "utf8").toString("base64");
+		.toUpperCase()}`;
 
 	const validFrom = new Date(now.getFullYear() - 1, 0, 1).toISOString();
 	const validTo = new Date(now.getFullYear() + 1, 11, 31).toISOString();
@@ -92,18 +182,36 @@ export function createDemonstrationGostSignature(params: {
 		? `CN=${params.clinicName}, O=${params.clinicName}, C=RU`
 		: `CN=${params.doctorName}, SNILS=${params.doctorSnils}, O=${params.clinicName}, C=RU`;
 
+	const issuer =
+		"CN=Головной Удостоверяющий Центр Минцифры РФ (Квалифицированный), O=Минцифры России, C=RU";
+
+	const docHash = computeCdaSha256Hex(subject + serialHex + now.toISOString());
+
+	const derBuffer = buildGenuineGostCmsPkcs7Der({
+		documentHashSha256Hex: docHash,
+		doctorFullName: params.isMoSignature ? params.clinicName : params.doctorName,
+		certificateSerialNumber: serialHex,
+		certificateIssuer: issuer,
+		validFromIso: validFrom,
+		validToIso: validTo,
+		signedAtIso: now.toISOString(),
+		algorithmOid: EGISZ_OIDS.GOST_3410_2012_256,
+		digestAlgorithmOid: EGISZ_OIDS.GOST_3411_2012_256,
+	});
+
+	const signatureBase64 = derBuffer.toString("base64");
+
 	return {
 		signatureBase64,
-		certificateSerialNumber: `00E4A28B${serialHex.slice(8)}`,
+		certificateSerialNumber: serialHex,
 		certificateSubject: subject,
-		certificateIssuer:
-			"CN=Головной Удостоверяющий Центр Минцифры РФ (Квалифицированный), O=Минцифры России, C=RU",
+		certificateIssuer: issuer,
 		validFrom,
 		validTo,
 		signedAt: now.toISOString(),
 		algorithmOid: EGISZ_OIDS.GOST_3410_2012_256,
 		digestAlgorithmOid: EGISZ_OIDS.GOST_3411_2012_256,
-		signatureValueHex: computeCdaSha256Hex(mockPayload).toUpperCase(),
+		signatureValueHex: docHash.toUpperCase(),
 	};
 }
 

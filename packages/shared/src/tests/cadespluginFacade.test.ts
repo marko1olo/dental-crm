@@ -11,6 +11,7 @@ import {
 	GOST_CRYPTO_OIDS,
 	injectVisualSignatureStampIntoHtml,
 	renderDigitalSignatureStampHtml,
+	validateCertificateStatus,
 	validateDoctorSignatureStatutoryMode,
 	validateGostCmsPkcs7Signature,
 } from "../crypto/index.js";
@@ -168,5 +169,59 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		assert.ok(injected.includes("gost-digital-stamp"));
 		assert.ok(injected.includes("00E4A28B104429A9"));
 		assert.ok(!injected.includes("stamp-seal-circle")); // Бумажная печать М.П. замещена официальным синим штампом
+	});
+
+	it("validates certificate status: rejects expired certificates, future signing dates, and revoked CRL serials", () => {
+		const now = new Date("2026-09-02T12:00:00Z");
+
+		// 1. Просроченный сертификат
+		const expRes = validateCertificateStatus({
+			validFrom: "2024-01-01T00:00:00Z",
+			validTo: "2025-01-01T00:00:00Z",
+			referenceDate: now,
+		});
+		assert.strictEqual(expRes.valid, false);
+		assert.strictEqual(expRes.errorCode, "CertificateExpired");
+		assert.ok(expRes.error?.includes("истек"));
+
+		// 2. Сертификат еще не вступил в силу
+		const notYetRes = validateCertificateStatus({
+			validFrom: "2027-01-01T00:00:00Z",
+			validTo: "2028-01-01T00:00:00Z",
+			referenceDate: now,
+		});
+		assert.strictEqual(notYetRes.valid, false);
+		assert.strictEqual(notYetRes.errorCode, "CertificateNotYetValid");
+
+		// 3. Дата подписания в будущем
+		const futureRes = validateCertificateStatus({
+			validFrom: "2026-01-01T00:00:00Z",
+			validTo: "2027-01-01T00:00:00Z",
+			signedAt: "2026-09-02T12:15:00Z", // +15 минут
+			referenceDate: now,
+		});
+		assert.strictEqual(futureRes.valid, false);
+		assert.strictEqual(futureRes.errorCode, "InvalidSigningTime");
+
+		// 4. Отозванный сертификат по списку отзыва (CRL)
+		const crlRes = validateCertificateStatus({
+			certificateSerialNumber: "00REVOKED00000001",
+			validFrom: "2026-01-01T00:00:00Z",
+			validTo: "2027-01-01T00:00:00Z",
+			referenceDate: now,
+		});
+		assert.strictEqual(crlRes.valid, false);
+		assert.strictEqual(crlRes.errorCode, "CertificateRevoked");
+		assert.ok(crlRes.error?.includes("CRL"));
+
+		// 5. Валидный сертификат
+		const validRes = validateCertificateStatus({
+			certificateSerialNumber: "00E4A28B104429A9",
+			validFrom: "2026-01-01T00:00:00Z",
+			validTo: "2027-01-01T00:00:00Z",
+			signedAt: "2026-09-02T12:00:00Z",
+			referenceDate: now,
+		});
+		assert.strictEqual(validRes.valid, true);
 	});
 });

@@ -25,6 +25,8 @@ import {
 	getMedicalAccessAuditTrailFromDb,
 	recordMedicalRecordAccessAudit,
 } from "../../security/medicalAuditTrail.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import { fixtureUuid } from "../support/fixtureOrganizations.js";
 
 const ORG_ID = fixtureUuid("auditTest", 1);
@@ -186,12 +188,22 @@ describe("152-ФЗ RBAC Warden & Payload Stripping Audit", () => {
 
 		await testApp.ready();
 
-		// Запрос с ролью маркетолога
+		const secret = authTokenSecret();
+		const marketerToken = signToken(
+			{ organizationId: "test-org-1", role: "marketer", userId: "u-m-1" },
+			secret,
+		);
+		const doctorToken = signToken(
+			{ organizationId: "test-org-1", role: "doctor", userId: "u-d-1" },
+			secret,
+		);
+
+		// Запрос с ролью маркетолога (через подписанный токен)
 		const resMarketer = await testApp.inject({
 			method: "GET",
 			url: "/api/test-patient-data",
 			headers: {
-				"x-user-role": "marketer",
+				"x-dente-staff-token": marketerToken,
 			},
 		});
 
@@ -205,12 +217,12 @@ describe("152-ФЗ RBAC Warden & Payload Stripping Audit", () => {
 		assert.strictEqual(marketerBody.name, "Тестовый Пациент");
 		assert.strictEqual(marketerBody.billingAmount, 5000);
 
-		// Запрос с ролью врача
+		// Запрос с ролью врача (через подписанный токен)
 		const resDoctor = await testApp.inject({
 			method: "GET",
 			url: "/api/test-patient-data",
 			headers: {
-				"x-user-role": "doctor",
+				"x-dente-staff-token": doctorToken,
 			},
 		});
 

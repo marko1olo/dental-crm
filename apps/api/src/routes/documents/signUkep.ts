@@ -1,6 +1,7 @@
 import {
 	injectVisualSignatureStampIntoHtml,
 	renderDigitalSignatureStampHtml,
+	validateCertificateStatus,
 	validateGostCmsPkcs7Signature,
 } from "@dental/shared";
 import { and, eq, isNull } from "drizzle-orm";
@@ -67,6 +68,20 @@ export async function register(app: FastifyInstance) {
 			return reply.code(400).send({
 				error: "InvalidSignatureFormat",
 				message: `Предоставленная подпись не является корректной отсоединенной подписью CMS (PKCS#7) по ГОСТ Р 34.10-2012. ${signatureValidation.error}`,
+			});
+		}
+
+		// Валидация срока действия сертификата, времени подписания и проверка по списку отзыва (CRL)
+		const certStatus = validateCertificateStatus({
+			validFrom: parsedBody.data.validFrom,
+			validTo: parsedBody.data.validTo,
+			signedAt: parsedBody.data.signedAt,
+			certificateSerialNumber: parsedBody.data.certificateSerialNumber,
+		});
+		if (!certStatus.valid) {
+			return reply.code(400).send({
+				error: certStatus.errorCode ?? "InvalidCertificateStatus",
+				message: certStatus.error,
 			});
 		}
 

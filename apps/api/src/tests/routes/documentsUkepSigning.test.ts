@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
 	buildGenuineGostCmsPkcs7Der,
 	createDemonstrationGostCmsSignature,
+	validateCertificateStatus,
 	validateGostCmsPkcs7Signature,
 	type GeneratedDocument,
 } from "@dental/shared";
@@ -118,5 +119,40 @@ describe("Document UKEP / UNEP & GOST Digital Signature Rigor", () => {
 
 		const fakeRes2 = validateGostCmsPkcs7Signature("MIIB-test-signature-blob");
 		assert.strictEqual(fakeRes2.valid, false);
+	});
+
+	it("strictly rejects expired and CRL-revoked certificates under 63-FZ", () => {
+		const now = new Date("2026-09-02T12:00:00Z");
+
+		// Просроченный сертификат отклоняется
+		const expired = validateCertificateStatus({
+			validFrom: "2023-01-01T00:00:00Z",
+			validTo: "2024-01-01T00:00:00Z",
+			referenceDate: now,
+		});
+		assert.strictEqual(expired.valid, false);
+		assert.strictEqual(expired.errorCode, "CertificateExpired");
+		assert.ok(expired.error?.includes("истек"));
+
+		// Отозванный сертификат по списку отзыва CRL отклоняется
+		const revoked = validateCertificateStatus({
+			certificateSerialNumber: "00REVOKED00000001",
+			validFrom: "2026-01-01T00:00:00Z",
+			validTo: "2027-01-01T00:00:00Z",
+			referenceDate: now,
+		});
+		assert.strictEqual(revoked.valid, false);
+		assert.strictEqual(revoked.errorCode, "CertificateRevoked");
+		assert.ok(revoked.error?.includes("CRL"));
+
+		// Будущая дата подписания отклоняется
+		const future = validateCertificateStatus({
+			validFrom: "2026-01-01T00:00:00Z",
+			validTo: "2027-01-01T00:00:00Z",
+			signedAt: "2026-09-02T13:00:00Z",
+			referenceDate: now,
+		});
+		assert.strictEqual(future.valid, false);
+		assert.strictEqual(future.errorCode, "InvalidSigningTime");
 	});
 });

@@ -38,6 +38,7 @@ import {
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
+	canonicalizeHomoglyphs,
 	evaluatePatientMatch,
 	type PatientCandidateData,
 	type PatientMatchEvaluation,
@@ -161,13 +162,15 @@ function sendPatientNotFound(reply: FastifyReply) {
 function normalizePatientNameForDuplicate(
 	value: string | null | undefined,
 ): string {
-	return (value ?? "")
+	const canonical = canonicalizeHomoglyphs(value ?? "");
+	return canonical
 		.trim()
 		.replace(/\s+/g, " ")
 		.toLocaleLowerCase("ru-RU")
 		.replaceAll("ё", "е")
-		.replace(/[^\p{L}\s-]/gu, "")
-		.split(" ")
+		.replace(/-/g, " ")
+		.replace(/[^\p{L}\s]/gu, "")
+		.split(/\s+/)
 		.filter(Boolean)
 		.sort()
 		.join(" ");
@@ -1631,6 +1634,40 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 	app.post("/api/patients/:patientId/archive", async (request, reply) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
+
+		// 152-ФЗ / 323-ФЗ: Архивация и внесение пациентов в черный список требуют авторизованного сотрудника-администратора
+		const identity = getRequestIdentity(request);
+		if (!identity.userId) {
+			return reply.code(401).send({
+				error: "StaffAuthRequired",
+				message:
+					"Требуется авторизация сотрудника клиники (staff token) для архивации пациента.",
+			});
+		}
+
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const allowedArchiveRoles = new Set([
+			"admin",
+			"administrator",
+			"owner",
+			"chief_doctor",
+			"chiefdoctor",
+			"head_doctor",
+		]);
+
+		if (!staffRole || !allowedArchiveRoles.has(staffRole)) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "patients.archive",
+				role: staffRole,
+				message:
+					"Архивация и внесение пациентов в черный список разрешены только администраторам или руководству клиники.",
+			});
+		}
+
 		const { patientId } = request.params as { patientId?: string };
 		if (!patientId) return sendPatientRouteValidationError(reply);
 
@@ -1644,7 +1681,7 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 		}
 		const { archiveReason, isBlacklisted, blacklistReason } = parsedBody.data;
 
-		const userId = null; // Removed requireUserId
+		const userId = identity.userId;
 
 		try {
 			const { getPatientByIdFromDb } = await import("../db/patientsQuery.js");

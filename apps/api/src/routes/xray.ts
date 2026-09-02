@@ -38,6 +38,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { xrayScans } from "../db/schema.js";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
@@ -45,8 +46,10 @@ import {
 import { analyzeVisiographImage } from "../ai/visiograph.js";
 import { db, transactionStorage } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
-import { xrayScans } from "../db/schema.js";
-import { requireOrganizationId } from "../security/identity.js";
+import {
+	getRequestIdentity,
+	requireOrganizationId,
+} from "../security/identity.js";
 
 // Schemas
 
@@ -662,6 +665,29 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
+
+		// 152-ФЗ / 323-ФЗ: Безвозвратное удаление рентген-снимков разрешено ТОЛЬКО главному врачу или владельцу клиники
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const allowedDeleteRoles = new Set([
+			"chief_doctor",
+			"chiefdoctor",
+			"head_doctor",
+			"owner",
+		]);
+		if (!staffRole || !allowedDeleteRoles.has(staffRole)) {
+			reply.code(403);
+			return {
+				error: "PermissionDenied",
+				permission: "xray.delete",
+				role: staffRole,
+				message:
+					"Безвозвратное удаление рентгенологических снимков разрешено исключительно главному врачу (chief_doctor) или владельцу клиники (owner).",
+			};
+		}
 
 		const { id } = request.params as { id: string };
 
