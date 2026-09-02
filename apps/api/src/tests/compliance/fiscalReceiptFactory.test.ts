@@ -58,6 +58,7 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 			prepaidKopecks: 0,
 			creditKopecks: 0,
 			isCorrection: false,
+			addendumConfirmed: false,
 			items: [
 				{
 					name: "Аванс за ортодонтическое лечение (элайнеры)",
@@ -70,6 +71,9 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 					measure: "piece",
 					taxDeductionCode: "code_1_standard",
 					medicalServiceCode804n: null,
+					isUpsell: false,
+					requiresAddendum: false,
+					addendumConfirmed: false,
 				},
 			],
 			taxDeductionSummaryCode: "code_1_standard",
@@ -101,6 +105,7 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 			prepaidKopecks: 1000000, // 10,000 руб. зачет аванса
 			creditKopecks: 0,
 			isCorrection: false,
+			addendumConfirmed: false,
 			items: [
 				{
 					name: "Установка дентального имплантата Straumann",
@@ -113,6 +118,9 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 					measure: "piece",
 					taxDeductionCode: "code_2_expensive_treatment",
 					medicalServiceCode804n: "A16.07.054",
+					isUpsell: false,
+					requiresAddendum: false,
+					addendumConfirmed: false,
 				},
 			],
 			taxDeductionSummaryCode: "code_2_expensive_treatment",
@@ -144,6 +152,7 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 			prepaidKopecks: 400000, // 2000 + 3000 + 1000 + 4000 = 10000 руб
 			creditKopecks: 0,
 			isCorrection: false,
+			addendumConfirmed: false,
 			items: [
 				{
 					name: "Комплексное терапевтическое лечение",
@@ -156,6 +165,9 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 					measure: "piece",
 					taxDeductionCode: "code_1_standard",
 					medicalServiceCode804n: "A16.07.002",
+					isUpsell: false,
+					requiresAddendum: false,
+					addendumConfirmed: false,
 				},
 			],
 			taxDeductionSummaryCode: "code_1_standard",

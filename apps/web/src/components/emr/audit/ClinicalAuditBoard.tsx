@@ -326,7 +326,7 @@ export const ClinicalAuditBoard: React.FC<ClinicalAuditBoardProps> = ({
 				<div className="cmo-board-kpi-card">
 					<span className="cmo-board-kpi-label">На доработке у врача</span>
 					<div className="cmo-board-kpi-val-row">
-						<span className="cmo-board-kpi-val" style={{ color: "#dc2626" }}>
+						<span className="cmo-board-kpi-val" style={{ color: "var(--bad-fg)" }}>
 							{stats.revisionCount}
 						</span>
 						<span className="cmo-board-kpi-sub">с замечаниями</span>
@@ -335,7 +335,7 @@ export const ClinicalAuditBoard: React.FC<ClinicalAuditBoardProps> = ({
 				<div className="cmo-board-kpi-card">
 					<span className="cmo-board-kpi-label">Утверждено главврачом</span>
 					<div className="cmo-board-kpi-val-row">
-						<span className="cmo-board-kpi-val" style={{ color: "#16a34a" }}>
+						<span className="cmo-board-kpi-val" style={{ color: "var(--ok-fg)" }}>
 							{stats.approvedCount}
 						</span>
 						<span className="cmo-board-kpi-sub">подписано ЭЦП</span>
@@ -798,7 +798,7 @@ export const ClinicalAuditBoard: React.FC<ClinicalAuditBoardProps> = ({
 					<div className="cmo-revision-modal-card">
 						<div className="cmo-revision-modal-header">
 							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-								<AlertTriangle size={20} color="#dc2626" />
+								<AlertTriangle size={20} color="var(--bad-fg)" />
 								<h3 id="revision-modal-title" style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800 }}>
 									Возврат карты № {revisionModalRecord.medicalCardId} на доработку
 								</h3>
@@ -861,7 +861,7 @@ export const ClinicalAuditBoard: React.FC<ClinicalAuditBoardProps> = ({
 									}}
 								/>
 								{revisionError && (
-									<div style={{ color: "#dc2626", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.25rem" }}>
+									<div style={{ color: "var(--bad-fg)", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.25rem" }}>
 										{revisionError}
 									</div>
 								)}

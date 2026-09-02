@@ -1,0 +1,111 @@
+/* ==========================================================================
+   familyDentalCareHub.css — Стили для семейного хаба профилактики и гигиены (CAMBRA)
+   ========================================================================== */
+
+.family-care-hub-container {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	width: 100%;
+	box-sizing: border-box;
+	font-family: inherit;
+	color: var(--ink);
+}
+
+.family-care-hero-card {
+	border-radius: 14px;
+	padding: 16px;
+	background: linear-gradient(135deg, var(--teal-soft) 0%, var(--paper-strong) 100%);
+	border: 1px solid var(--teal-surface);
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.07);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.family-member-care-card {
+	border-radius: 12px;
+	padding: 14px;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.family-member-care-card:hover {
+	border-color: var(--teal);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12);
+}
+
+.cambra-risk-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.cambra-risk-low {
+	background-color: var(--teal-soft);
+	color: var(--color-teal-700, #0f766e);
+	border: 1px solid var(--teal);
+}
+
+.cambra-risk-moderate {
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
+	border: 1px solid var(--warn-fg);
+}
+
+.cambra-risk-high {
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
+	border: 1px solid var(--bad-fg);
+}
+
+.cambra-risk-extreme {
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
+	border: 1px solid var(--bad-fg);
+}
+
+.parallel-booking-banner {
+	border-radius: 12px;
+	padding: 14px;
+	background: linear-gradient(135deg, var(--ok-bg) 0%, var(--paper-strong) 100%);
+	border: 1px solid var(--ok-fg);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* Fitts law minimum 44px touch targets */
+.family-care-touch-btn {
+	min-height: 44px;
+	min-width: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	border-radius: 8px;
+	font-weight: 700;
+	font-size: 13px;
+	cursor: pointer;
+	transition: background-color 0.15s ease, opacity 0.15s ease;
+	border: none;
+	text-decoration: none;
+	box-sizing: border-box;
+}
+
+.family-care-touch-btn:hover {
+	opacity: 0.92;
+}
+
+.family-care-touch-btn:active {
+	transform: scale(0.98);
+}

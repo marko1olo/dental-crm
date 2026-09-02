@@ -201,41 +201,56 @@ export function nullableClinicDraftValue(value: string): string | null {
 	return trimmed ? trimmed : null;
 }
 
+function safeProfileString(value: unknown): string {
+	return typeof value === "string" ? value : "";
+}
+
 export function patientAdministrativeProfileDraftFromPatient(
 	patient: Patient | null,
 ): PatientAdministrativeProfileDraft {
-	const profile = patient?.administrativeProfile;
+	const profile = patient?.administrativeProfile as Record<string, unknown> | null | undefined;
+	const loyaltyTier = profile?.loyaltyTier;
 	return {
-		identityDocument: profile?.identityDocument ?? "",
-		taxpayerInn: profile?.taxpayerInn ?? "",
-		registrationAddress: profile?.registrationAddress ?? "",
-		residentialAddress: profile?.residentialAddress ?? "",
-		insurancePolicyNumber: profile?.insurancePolicyNumber ?? "",
-		snils: profile?.snils ?? "",
-		legalRepresentativeFullName: profile?.legalRepresentativeFullName ?? "",
-		legalRepresentativeRelationship:
-			profile?.legalRepresentativeRelationship ?? "",
-		legalRepresentativeIdentityDocument:
-			profile?.legalRepresentativeIdentityDocument ?? "",
-		legalRepresentativePhone: profile?.legalRepresentativePhone ?? "",
-		preferredDocumentRecipient: profile?.preferredDocumentRecipient ?? "",
+		identityDocument: safeProfileString(profile?.identityDocument),
+		taxpayerInn: safeProfileString(profile?.taxpayerInn),
+		registrationAddress: safeProfileString(profile?.registrationAddress),
+		residentialAddress: safeProfileString(profile?.residentialAddress),
+		insurancePolicyNumber: safeProfileString(profile?.insurancePolicyNumber),
+		snils: safeProfileString(profile?.snils),
+		legalRepresentativeFullName: safeProfileString(profile?.legalRepresentativeFullName),
+		legalRepresentativeRelationship: safeProfileString(profile?.legalRepresentativeRelationship),
+		legalRepresentativeIdentityDocument: safeProfileString(profile?.legalRepresentativeIdentityDocument),
+		legalRepresentativePhone: safeProfileString(profile?.legalRepresentativePhone),
+		preferredDocumentRecipient: safeProfileString(profile?.preferredDocumentRecipient),
 		preferredAppointmentWeekdays: normalizeOptionalWorkingDaysDraft(
-			profile?.preferredAppointmentWeekdays ?? [],
+			Array.isArray(profile?.preferredAppointmentWeekdays) ? profile.preferredAppointmentWeekdays : [],
 		),
-		preferredAppointmentStart: profile?.preferredAppointmentStart ?? "",
-		preferredAppointmentEnd: profile?.preferredAppointmentEnd ?? "",
-		preferredAppointmentNote: profile?.preferredAppointmentNote ?? "",
-		dataProcessingBasisNote: profile?.dataProcessingBasisNote ?? "",
-		orthodonticProgress: profile?.orthodonticProgress ?? "",
+		preferredAppointmentStart: safeProfileString(profile?.preferredAppointmentStart),
+		preferredAppointmentEnd: safeProfileString(profile?.preferredAppointmentEnd),
+		preferredAppointmentNote: safeProfileString(profile?.preferredAppointmentNote),
+		dataProcessingBasisNote: safeProfileString(profile?.dataProcessingBasisNote),
+		orthodonticProgress: safeProfileString(profile?.orthodonticProgress),
 		loyaltyTier:
-			profile?.loyaltyTier === "silver" ||
-			profile?.loyaltyTier === "gold" ||
-			profile?.loyaltyTier === "platinum" ||
-			profile?.loyaltyTier === "standard"
-				? profile.loyaltyTier
+			loyaltyTier === "silver" ||
+			loyaltyTier === "gold" ||
+			loyaltyTier === "platinum" ||
+			loyaltyTier === "standard"
+				? loyaltyTier
 				: "standard",
+		curatorId: safeProfileString(profile?.curatorId),
+		curatorFullName: safeProfileString(profile?.curatorFullName),
+		curatorAssignedAt: safeProfileString(profile?.curatorAssignedAt),
+		curatorFunnelStage: safeProfileString(profile?.curatorFunnelStage),
+		curatorCommissionPercent:
+			typeof profile?.curatorCommissionPercent === "number"
+				? String(profile.curatorCommissionPercent)
+				: safeProfileString(profile?.curatorCommissionPercent),
+		curatorNextContactDate: safeProfileString(profile?.curatorNextContactDate),
+		curatorNotes: safeProfileString(profile?.curatorNotes),
 	};
 }
+
+
 
 export function buildPatientAdministrativeProfilePayload(
 	draft: PatientAdministrativeProfileDraft,

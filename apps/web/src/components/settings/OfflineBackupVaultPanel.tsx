@@ -357,7 +357,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							height: "42px",
 							borderRadius: "10px",
 							background: isOnline ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.16)",
-							color: isOnline ? "#059669" : "#d97706",
+							color: isOnline ? "var(--ok-fg)" : "var(--warn-fg)",
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "center",
@@ -385,7 +385,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									padding: "2px 8px",
 									borderRadius: "12px",
 									background: isOnline ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.2)",
-									color: isOnline ? "#047857" : "#b45309",
+									color: isOnline ? "var(--ok-fg)" : "var(--warn-fg)",
 									textTransform: "uppercase",
 									letterSpacing: "0.5px",
 								}}
@@ -426,8 +426,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							minHeight: "44px",
 							padding: "0 16px",
 							borderRadius: "8px",
-							background: "#0284c7",
-							color: "#ffffff",
+							background: "var(--teal)",
+							color: "var(--on-teal, #ffffff)",
 							border: "1px solid transparent",
 							fontWeight: "600",
 							fontSize: "13px",
@@ -437,7 +437,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							justifyContent: "center",
 							gap: "6px",
 							boxSizing: "border-box",
-							boxShadow: "0 1px 3px rgba(2,132,199,0.25)",
+							boxShadow: "0 1px 3px rgba(13,148,136,0.25)",
 							transition: "all 0.15s ease",
 						}}
 						className="touch-manipulation"
@@ -527,7 +527,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								height: "44px",
 								borderRadius: "10px",
 								background: "rgba(16, 185, 129, 0.12)",
-								color: "#059669",
+								color: "var(--ok-fg)",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
@@ -628,8 +628,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								minHeight: "44px",
 								padding: "0 18px",
 								borderRadius: "8px",
-								background: "#059669",
-								color: "#ffffff",
+								background: "var(--ok-fg)",
+								color: "var(--on-teal, #ffffff)",
 								border: "none",
 								fontWeight: "600",
 								fontSize: "13px",
@@ -651,26 +651,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							type="button"
 							onClick={() => handleExport(false)}
 							disabled={isExporting}
-							style={{
-								minHeight: "44px",
-								padding: "0 16px",
-								borderRadius: "8px",
-								background: "var(--paper, #f1f5f9)",
-								color: "var(--ink, #334155)",
-								border: "1px solid var(--glass-border, #cbd5e1)",
-								fontWeight: "500",
-								fontSize: "13px",
-								cursor: isExporting ? "not-allowed" : "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "6px",
-								boxSizing: "border-box",
-							}}
-							className="touch-manipulation"
+							className="secondary-button min-h-[44px] px-4 text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
 						>
 							<Download size={15} />
-							<span>Скачать через браузер</span>
+							<span>Скачать в Загрузки</span>
 						</button>
 					</div>
 
@@ -681,7 +665,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								padding: "12px",
 								borderRadius: "8px",
 								background: "rgba(239, 68, 68, 0.1)",
-								color: "#dc2626",
+								color: "var(--bad-fg)",
 								fontSize: "13px",
 								display: "flex",
 								alignItems: "center",
@@ -708,7 +692,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									display: "flex",
 									alignItems: "center",
 									gap: "8px",
-									color: "#059669",
+									color: "var(--ok-fg)",
 									fontWeight: "600",
 									fontSize: "14px",
 									marginBottom: "8px",
@@ -763,8 +747,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								width: "44px",
 								height: "44px",
 								borderRadius: "10px",
-								background: "rgba(59, 130, 246, 0.12)",
-								color: "#2563eb",
+								background: "rgba(13, 148, 136, 0.12)",
+								color: "var(--teal)",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
@@ -831,7 +815,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								padding: "12px",
 								borderRadius: "8px",
 								background: "rgba(239, 68, 68, 0.1)",
-								color: "#dc2626",
+								color: "var(--bad-fg)",
 								fontSize: "13px",
 								display: "flex",
 								alignItems: "center",
@@ -876,11 +860,11 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							>
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 									{dryRunResult.integrityGrade === "EXCELLENT" ? (
-										<ShieldCheck size={20} color="#059669" />
+										<ShieldCheck size={20} color="var(--ok-fg)" />
 									) : dryRunResult.integrityGrade === "WARNING" ? (
-										<AlertTriangle size={20} color="#d97706" />
+										<AlertTriangle size={20} color="var(--warn-fg)" />
 									) : (
-										<ShieldAlert size={20} color="#dc2626" />
+										<ShieldAlert size={20} color="var(--bad-fg)" />
 									)}
 									<span style={{ fontWeight: "600", fontSize: "14px", color: "var(--ink, #1e293b)" }}>
 										Результат Dry-Run симуляции:
@@ -893,11 +877,11 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 											borderRadius: "10px",
 											background:
 												dryRunResult.integrityGrade === "EXCELLENT"
-													? "#059669"
+													? "var(--ok-fg)"
 													: dryRunResult.integrityGrade === "WARNING"
-														? "#d97706"
-														: "#dc2626",
-											color: "#ffffff",
+														? "var(--warn-fg)"
+														: "var(--bad-fg)",
+											color: "var(--on-teal, #ffffff)",
 										}}
 									>
 										{dryRunResult.integrityGrade}
@@ -927,7 +911,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							</div>
 
 							{dryRunResult.warnings.length > 0 && (
-								<div style={{ fontSize: "12px", color: "#b45309", marginBottom: "8px" }}>
+								<div style={{ fontSize: "12px", color: "var(--warn-fg)", marginBottom: "8px" }}>
 									{dryRunResult.warnings.map((w, idx) => (
 										<div key={idx}>⚠️ {w}</div>
 									))}
@@ -935,7 +919,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							)}
 
 							{dryRunResult.errors.length > 0 && (
-								<div style={{ fontSize: "12px", color: "#dc2626" }}>
+								<div style={{ fontSize: "12px", color: "var(--bad-fg)" }}>
 									{dryRunResult.errors.map((err, idx) => (
 										<div key={idx}>❌ {err}</div>
 									))}
@@ -1009,8 +993,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										minHeight: "44px",
 										padding: "0 20px",
 										borderRadius: "8px",
-										background: dryRunResult?.dryRunSuccess ? "#2563eb" : "var(--muted, #94a3b8)",
-										color: "#ffffff",
+										background: dryRunResult?.dryRunSuccess ? "var(--teal)" : "var(--muted, #94a3b8)",
+										color: "var(--on-teal, #ffffff)",
 										border: "none",
 										fontWeight: "600",
 										fontSize: "14px",
@@ -1018,7 +1002,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										display: "flex",
 										alignItems: "center",
 										gap: "8px",
-										boxShadow: dryRunResult?.dryRunSuccess ? "0 2px 4px rgba(37,99,235,0.2)" : "none",
+										boxShadow: dryRunResult?.dryRunSuccess ? "0 2px 4px rgba(13,148,136,0.2)" : "none",
 									}}
 								>
 									<UploadCloud size={18} />
@@ -1035,7 +1019,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								padding: "12px",
 								borderRadius: "8px",
 								background: "rgba(239, 68, 68, 0.1)",
-								color: "#dc2626",
+								color: "var(--bad-fg)",
 								fontSize: "13px",
 								display: "flex",
 								alignItems: "center",
@@ -1062,7 +1046,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									display: "flex",
 									alignItems: "center",
 									gap: "8px",
-									color: "#059669",
+									color: "var(--ok-fg)",
 									fontWeight: "600",
 									fontSize: "14px",
 									marginBottom: "8px",
@@ -1118,8 +1102,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									width: "44px",
 									height: "44px",
 									borderRadius: "10px",
-									background: "rgba(2, 132, 199, 0.12)",
-									color: "#0284c7",
+									background: "rgba(13, 148, 136, 0.12)",
+									color: "var(--teal)",
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
@@ -1159,8 +1143,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									minHeight: "44px",
 									padding: "0 18px",
 									borderRadius: "8px",
-									background: "#0284c7",
-									color: "#ffffff",
+									background: "var(--teal)",
+									color: "var(--on-teal, #ffffff)",
 									border: "none",
 									fontWeight: "600",
 									fontSize: "14px",
@@ -1183,7 +1167,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 								padding: "12px",
 								borderRadius: "8px",
 								background: "rgba(239, 68, 68, 0.1)",
-								color: "#dc2626",
+								color: "var(--bad-fg)",
 								fontSize: "13px",
 								display: "flex",
 								alignItems: "center",
@@ -1206,7 +1190,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									padding: "14px 18px",
 									borderRadius: "8px",
 									background: snapshotVerified ? "rgba(16, 185, 129, 0.08)" : "rgba(245, 158, 11, 0.08)",
-									color: snapshotVerified ? "#047857" : "#b45309",
+									color: snapshotVerified ? "var(--ok-fg)" : "var(--warn-fg)",
 									marginBottom: "16px",
 									fontSize: "13px",
 								}}
@@ -1284,8 +1268,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									width: "44px",
 									height: "44px",
 									borderRadius: "10px",
-									background: "rgba(139, 92, 246, 0.12)",
-									color: "#7c3aed",
+									background: "rgba(13, 148, 136, 0.12)",
+									color: "var(--teal)",
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
@@ -1337,8 +1321,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									minHeight: "44px",
 									padding: "0 20px",
 									borderRadius: "8px",
-									background: schedulerStatus.isRunning ? "#dc2626" : "#7c3aed",
-									color: "#ffffff",
+									background: schedulerStatus.isRunning ? "var(--bad-fg)" : "var(--teal)",
+									color: "var(--on-teal, #ffffff)",
 									border: "none",
 									fontWeight: "600",
 									fontSize: "14px",
@@ -1366,9 +1350,9 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							style={{
 								padding: "12px 16px",
 								borderRadius: "8px",
-								background: "rgba(139, 92, 246, 0.08)",
+								background: "rgba(13, 148, 136, 0.08)",
 								fontSize: "13px",
-								color: "#6d28d9",
+								color: "var(--teal)",
 								display: "flex",
 								alignItems: "center",
 								gap: "8px",
@@ -1416,8 +1400,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 													minHeight: "36px",
 													padding: "0 12px",
 													borderRadius: "6px",
-													background: "#2563eb",
-													color: "#ffffff",
+													background: "var(--teal)",
+													color: "var(--on-teal, #ffffff)",
 													border: "none",
 													fontSize: "12px",
 													fontWeight: "500",
@@ -1436,7 +1420,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 													padding: "0",
 													borderRadius: "6px",
 													background: "rgba(239, 68, 68, 0.1)",
-													color: "#dc2626",
+													color: "var(--bad-fg)",
 													border: "none",
 													fontSize: "12px",
 													cursor: "pointer",
@@ -1482,8 +1466,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									width: "44px",
 									height: "44px",
 									borderRadius: "10px",
-									background: "rgba(14, 165, 233, 0.12)",
-									color: "#0284c7",
+									background: "rgba(13, 148, 136, 0.12)",
+									color: "var(--teal)",
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
@@ -1547,8 +1531,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 										minHeight: "44px",
 										padding: "0 16px",
 										borderRadius: "8px",
-										background: "#d97706",
-										color: "#ffffff",
+										background: "var(--warn-fg)",
+										color: "var(--on-teal, #ffffff)",
 										border: "none",
 										fontWeight: "600",
 										fontSize: "14px",
@@ -1576,7 +1560,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									padding: "12px 16px",
 									borderRadius: "8px",
 									background: integrityReport.healthy ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
-									color: integrityReport.healthy ? "#059669" : "#dc2626",
+									color: integrityReport.healthy ? "var(--ok-fg)" : "var(--bad-fg)",
 									fontWeight: "600",
 									fontSize: "14px",
 								}}

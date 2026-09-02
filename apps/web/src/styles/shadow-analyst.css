@@ -143,7 +143,7 @@ body:has(.cbct-viewport-container-axial) .sa-toast {
 	cursor: pointer;
 	margin-top: 0.5rem;
 	font-size: 0.8rem;
-	color: var(--text-secondary, #64748b);
+	color: var(--muted, #94a3b8);
 	user-select: none;
 }
 
@@ -223,7 +223,7 @@ body:has(.cbct-viewport-container-axial) .sa-toast {
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.6px;
-	color: var(--text-secondary, #64748b);
+	color: var(--muted, #94a3b8);
 	flex: 1;
 }
 
@@ -261,7 +261,7 @@ body:has(.cbct-viewport-container-axial) .sa-toast {
 	border-radius: 6px;
 	padding: 4px 6px;
 	cursor: pointer;
-	color: var(--text-secondary, #64748b);
+	color: var(--muted, #94a3b8);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -582,7 +582,7 @@ body:has(.cbct-viewport-container-axial) .sa-toast {
 	margin-left: 8px;
 	margin-top: 0;
 	align-self: center;
-	color: var(--text-secondary, #64748b);
+	color: var(--muted, #94a3b8);
 }
 
 /* ---- Report column spacing ---- */

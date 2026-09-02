@@ -1207,21 +1207,16 @@ function baseDocument(
       font-size: 9pt;
       flex-shrink: 0;
     }
-    .ukep-digital-box {
-      border: 1pt solid #0284c7;
-      border-radius: 3pt;
-      padding: 3pt 5pt;
-      font-size: 6.5pt;
-      color: #0369a1;
-      background: #f0f9ff;
-      line-height: 1.2;
-      flex: 1;
-    }
-    .ukep-digital-title {
-      font-weight: 700;
-      text-transform: uppercase;
-      margin-bottom: 1pt;
-      letter-spacing: 0.02em;
+    .gost-digital-stamp {
+      box-sizing: border-box;
+      border: 2px solid #003399;
+      border-radius: 4px;
+      padding: 8px 12px;
+      background-color: #f4f8ff;
+      color: #003399;
+      font-size: 8pt;
+      line-height: 1.3;
+      page-break-inside: avoid;
     }
     .small { color: #64748b; font-size: 8pt; }
     @media print {
@@ -1232,7 +1227,7 @@ function baseDocument(
       .header-grid { border-bottom-color: #000 !important; }
       .document-status-banner { color: #000; border-color: #000; }
       .stamp-seal-circle { border-color: #000 !important; color: #000 !important; }
-      .ukep-digital-box { border-color: #000 !important; color: #000 !important; background: #fff !important; }
+      .gost-digital-stamp { border-color: #003399 !important; color: #003399 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
 </head>

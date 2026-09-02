@@ -717,6 +717,18 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			const payment = await createPaymentInDb(orgId, paymentInput);
 			return reply.code(201).send(paymentSchema.parse(payment));
 		} catch (error) {
+			if (
+				error &&
+				typeof error === "object" &&
+				("statusCode" in error || "code" in error) &&
+				((error as any).code === "Decree659OmsForbiddenError" ||
+					(error as any).code === "UpsellConsentShieldViolationError")
+			) {
+				return reply.code((error as any).statusCode || 422).send({
+					error: (error as any).code,
+					message: (error as any).message,
+				});
+			}
 			if (error instanceof BillingOverpaymentError) {
 				return reply.code(400).send({
 					error: "BillingOverpaymentError",

@@ -14,9 +14,12 @@ export type ContextType =
 interface SmartMicrophoneButtonProps {
 	context: ContextType;
 	onResult: (text: string) => void;
+	onInterim?: (interim: string) => void;
 	style?: React.CSSProperties;
 	className?: string;
 	sterileMode?: boolean;
+	showInterimBadge?: boolean;
+	title?: string;
 }
 
 /* Свойства размещения принадлежат внешней обёртке, а не самой кнопке.
@@ -59,14 +62,20 @@ function splitPlacementStyle(style?: React.CSSProperties) {
 export function SmartMicrophoneButton({
 	context,
 	onResult,
+	onInterim,
 	style,
 	className,
+	showInterimBadge = false,
+	title = "Диктовка (Gemini Live VAD)",
 }: SmartMicrophoneButtonProps) {
 	const [showHints, setShowHints] = useState(false);
 
-	const { isRecording, isProcessing, toggleRecording } = useShortDictation(
+	const { isRecording, isProcessing, isSpeaking, interimText, toggleRecording } = useShortDictation(
 		context,
-		onResult,
+		{
+			onResult,
+			...(onInterim ? { onInterim } : {}),
+		},
 	);
 
 	/* БЫЛО: весь style уходил на кнопку. Экраны «Пациенты» и «Расписание»
@@ -89,8 +98,8 @@ export function SmartMicrophoneButton({
 		>
 			<button
 				type="button"
-				title="Диктовка"
-				aria-label="Диктовка"
+				title={title}
+				aria-label={title}
 				aria-pressed={isRecording}
 				onClick={toggleRecording}
 				className={className}
@@ -149,6 +158,24 @@ export function SmartMicrophoneButton({
 					/>
 				)}
 			</button>
+
+			{/* Live Interim Floating Badge */}
+			{isRecording && interimText && showInterimBadge && (
+				<div
+					style={{
+						position: "absolute",
+						bottom: "100%",
+						right: "0",
+						marginBottom: "6px",
+						zIndex: 110,
+						whiteSpace: "nowrap",
+						pointerEvents: "none",
+					}}
+					className="px-2.5 py-1 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-semibold italic animate-pulse shadow-md"
+				>
+					«{interimText}»
+				</div>
+			)}
 
 			{/* Dictation Hints Popover */}
 			{showHints && !isRecording && !isProcessing && (

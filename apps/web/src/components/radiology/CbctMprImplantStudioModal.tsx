@@ -268,6 +268,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// ─── 3D CBCT VOXEL VOLUME STATE ───────────────────────────────────────────
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(null);
+	const volumeRef = useRef<CbctVoxelVolume | null>(null);
+	volumeRef.current = volume;
 	const [activePreset, setActivePreset] = useState<string>("bone_dense");
 	const [windowWidth, setWindowWidth] = useState<number>(4400);
 	const [windowLevel, setWindowLevel] = useState<number>(1300);
@@ -523,6 +525,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			if (rafObliqueIdRef.current !== null) {
 				cancelAnimationFrame(rafObliqueIdRef.current);
 				rafObliqueIdRef.current = null;
+			}
+			if (typeof window !== "undefined") {
+				delete (window as unknown as { __INJECT_CBCT_VOLUME__?: unknown }).__INJECT_CBCT_VOLUME__;
+				delete (window as unknown as { __SET_CBCT_OBLIQUE_ANGLES__?: unknown }).__SET_CBCT_OBLIQUE_ANGLES__;
+			}
+			if (volumeRef.current) {
+				disposeCbctVolume(volumeRef.current);
+				volumeRef.current = null;
 			}
 		};
 	}, []);
@@ -5671,7 +5681,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 										<span>Сброс трассы</span>
 									</button>
 								</div>
-								<div className="text-[10px] text-zinc-500 leading-tight flex items-center gap-1">
+								<div className="text-[10px] text-zinc-400 leading-tight flex items-center gap-1">
 									<Info className="w-3 h-3 text-zinc-400 shrink-0" />
 									<span>ЛКМ для добавления узлов • Перетаскивание для смещения • Delete для удаления</span>
 								</div>

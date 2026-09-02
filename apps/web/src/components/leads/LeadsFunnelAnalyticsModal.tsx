@@ -220,7 +220,7 @@ export function LeadsFunnelAnalyticsModal({
 										padding: "2px 8px",
 										borderRadius: 12,
 										background: "var(--brand-500, #0f766e)",
-										color: "#ffffff",
+										color: "var(--on-teal, #ffffff)",
 										textTransform: "uppercase",
 										letterSpacing: "0.05em",
 									}}
@@ -931,7 +931,7 @@ export function LeadsFunnelAnalyticsModal({
 													display: "flex",
 													alignItems: "center",
 													paddingLeft: 8,
-													color: "#ffffff",
+													color: "var(--on-teal, #ffffff)",
 													fontSize: 11,
 													fontWeight: 600,
 												}}

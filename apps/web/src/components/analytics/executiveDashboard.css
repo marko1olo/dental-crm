@@ -248,7 +248,7 @@
 
 .executive-pill-danger {
 	background: rgba(239, 68, 68, 0.12);
-	color: var(--err-fg, #ef4444);
+	color: var(--danger);
 }
 
 .executive-pill-neutral {
@@ -410,7 +410,7 @@
 }
 
 .funnel-step-dropoff {
-	color: var(--err-fg, #ef4444);
+	color: var(--danger);
 	font-weight: 600;
 }
 
@@ -424,7 +424,7 @@
 	gap: 0.25rem;
 	padding: 0.15rem 0.5rem;
 	background: rgba(99, 102, 241, 0.12);
-	color: var(--accent, #6366f1);
+	color: var(--primary);
 	border-radius: 4px;
 	font-size: 0.6875rem;
 	font-weight: 700;

@@ -262,9 +262,12 @@ export async function registerSpeechLiveRoutes(
 				try {
 					const json = JSON.parse(text);
 
-					if (json.type === "audio" && json.data) {
+					if (
+						(json.type === "audio" || json.type === "audio_chunk") &&
+						(json.data || json.audioBase64)
+					) {
 						// Base64 PCM audio chunk
-						bridge.sendAudio(json.data);
+						bridge.sendAudio(json.data || json.audioBase64);
 						return;
 					}
 

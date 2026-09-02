@@ -9,6 +9,8 @@ import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { attachments, patients, visitDiaries, visits } from "../db/schema.js";
+import { decodeServerHeicImage } from "../services/imaging/serverHeicDecoder.js";
+import { isHeicFileNameOrMime } from "@dental/shared";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
@@ -404,4 +406,68 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			});
 		}
 	});
+
+	/*
+	 * Серверное декодирование Apple HEIC / HEIF в WebP с калибровкой Display P3 -> sRGB.
+	 */
+	app.post("/api/imaging/decode-heic", async (request, reply) => {
+		try {
+			const orgId = await requireResolvedOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const data = await (
+				request as unknown as {
+					file: () => Promise<MultipartFilePayload | undefined>;
+				}
+			).file();
+
+			if (!data) {
+				return reply.code(400).send({
+					error: "MissingFilePayload",
+					message: "Файл HEIC не получен для декодирования.",
+				});
+			}
+
+			const chunks: Buffer[] = [];
+			for await (const chunk of data.file) {
+				chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+			}
+			const inputBuffer = Buffer.concat(chunks);
+
+			const result = await decodeServerHeicImage(inputBuffer, {
+				targetFormat: "webp",
+				quality: 92,
+				maxDimension: 2048,
+				generateThumbnail: true,
+				thumbnailSize: 200,
+			});
+
+			const dataUrl = `data:image/webp;base64,${result.buffer.toString("base64")}`;
+			const thumbnailDataUrl = result.thumbnailBuffer
+				? `data:image/webp;base64,${result.thumbnailBuffer.toString("base64")}`
+				: dataUrl;
+
+			return reply.code(200).send({
+				success: true,
+				width: result.width,
+				height: result.height,
+				format: result.format,
+				colorSpace: result.colorSpace,
+				exif: result.exif,
+				dataUrl,
+				thumbnailWebpDataUrl: thumbnailDataUrl,
+				sizeBytes: result.sizeBytes,
+				originalSizeBytes: result.originalSizeBytes,
+				durationMs: result.durationMs,
+			});
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+		} catch (error: any) {
+			request.log.error(error);
+			return reply.status(500).send({
+				error: "HeicDecodingFailed",
+				message: "Не удалось декодировать HEIC-снимок на сервере.",
+			});
+		}
+	});
 }
+

@@ -512,3 +512,5 @@ export class OmniLlmGateway {
 
 export const omniLlmGateway = new OmniLlmGateway();
 export const defaultOmniLlmProvider = omniLlmGateway.asLlmProvider();
+export const defaultOmniGateway = omniLlmGateway;
+export { OmniLlmGateway as OmniGateway };

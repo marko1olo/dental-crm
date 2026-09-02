@@ -175,7 +175,11 @@ export async function createPaymentInDb(
 	return await db.transaction(async (tx) => {
 		// Pessimistic lock on the target patient to prevent concurrent balance race conditions
 		const [lockedPatient] = await tx
-			.select({ id: schema.patients.id })
+			.select({
+				id: schema.patients.id,
+				fullName: schema.patients.fullName,
+				administrativeProfile: schema.patients.administrativeProfile,
+			})
 			.from(schema.patients)
 			.where(
 				and(
@@ -190,6 +194,40 @@ export async function createPaymentInDb(
 			throw new Error(
 				`Пациент с идентификатором ${input.patientId} не найден или заблокирован другой операцией.`,
 			);
+		}
+
+		// 1. БЛОКИРУЮЩИЙ ГЕЙТ №1 (ПОСТАНОВЛЕНИЕ №659 И СТ. 16 ФЗ-326):
+		// Запрет приема оплаты по ОМС для анонимных карт или при отсутствии 16-значного полиса ОМС, паспорта и СНИЛС
+		const adminProfile = (lockedPatient.administrativeProfile || {}) as Record<string, unknown>;
+		const isAnonPatient =
+			Boolean(lockedPatient.fullName?.startsWith("UUID_ANON")) ||
+			Boolean(lockedPatient.fullName?.toLowerCase().includes("аноним")) ||
+			adminProfile["isAnonymous"] === true;
+
+		const policyRaw =
+			typeof adminProfile["insurancePolicyNumber"] === "string"
+				? adminProfile["insurancePolicyNumber"].trim().replace(/\D/g, "")
+				: "";
+		const hasValidOmsIdentity = Boolean(
+			adminProfile["identityDocument"] &&
+			adminProfile["snils"] &&
+			policyRaw.length === 16,
+		);
+
+		const isInsuranceMethod = input.method === "insurance";
+		const isOmsNote = typeof input.note === "string" && input.note.toLowerCase().includes("омс");
+
+		if (isInsuranceMethod || isOmsNote) {
+			if (isAnonPatient || !hasValidOmsIdentity) {
+				const error = new Error(
+					"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Федерального закона № 326-ФЗ: оплата по программе ОМС для анонимных карт (UUID_ANON) или при отсутствии полного пакета документов (паспорт РФ, СНИЛС и 16-значный полис ОМС) категорически запрещена. Допустимы только прямые коммерческие расчеты (касса 54-ФЗ / безнал).",
+				);
+				// biome-ignore lint/suspicious/noExplicitAny: error mapping
+				(error as any).statusCode = 422;
+				// biome-ignore lint/suspicious/noExplicitAny: error mapping
+				(error as any).code = "Decree659OmsForbiddenError";
+				throw error;
+			}
 		}
 
 		// 1b. Price Spoofing Defense: Verify amount against service_catalog_items if serviceId/catalogItemId is provided
@@ -208,6 +246,68 @@ export async function createPaymentInDb(
 
 			if (!serviceItem) {
 				throw new Error(`Услуга с ID «${targetServiceId}» не найдена в каталоге клиники.`);
+			}
+
+			// БЛОКИРУЮЩИЙ ГЕЙТ №3 (ПОСТАНОВЛЕНИЕ №659 И СТ. 16 ЗОЗПП):
+			// Защита от навязывания услуг (Upsell Consent Shield):
+			// Если у пациента есть утвержденный план лечения (status: 'Approved'), а оплачиваемая услуга
+			// не входит в утвержденный перечень позиций плана, оплата БЛОКИРУЕТСЯ до подписания/выпуска
+			// Дополнительного соглашения (generatedDocuments kind: "treatment_plan_acceptance").
+			const approvedPlans = await tx
+				.select({ id: schema.treatmentPlans.id })
+				.from(schema.treatmentPlans)
+				.where(
+					and(
+						eq(schema.treatmentPlans.organizationId, organizationId),
+						eq(schema.treatmentPlans.patientId, input.patientId),
+						eq(schema.treatmentPlans.status, "Approved"),
+					),
+				);
+
+			if (approvedPlans.length > 0) {
+				const approvedPlanIds = approvedPlans.map((p) => p.id);
+
+				// Проверяем наличие услуги в утвержденных позициях плана (treatmentPlanItemsNew или treatmentItems)
+				const planItems = await tx
+					.select({ priceId: schema.treatmentPlanItemsNew.priceId })
+					.from(schema.treatmentPlanItemsNew)
+					.where(
+						and(
+							eq(schema.treatmentPlanItemsNew.organizationId, organizationId),
+							inArray(schema.treatmentPlanItemsNew.planId, approvedPlanIds),
+						),
+					);
+
+				const isServiceInPlan = planItems.some(
+					(it) => it.priceId && (it.priceId === targetServiceId || it.priceId.startsWith(`${targetServiceId}::`)),
+				);
+
+				if (!isServiceInPlan) {
+					// Проверяем наличие оформленного Дополнительного соглашения в generatedDocuments
+					const [addendumDoc] = await tx
+						.select({ id: schema.generatedDocuments.id })
+						.from(schema.generatedDocuments)
+						.where(
+							and(
+								eq(schema.generatedDocuments.organizationId, organizationId),
+								eq(schema.generatedDocuments.patientId, input.patientId),
+								eq(schema.generatedDocuments.kind, "treatment_plan_acceptance"),
+								ne(schema.generatedDocuments.status, "voided"),
+							),
+						)
+						.limit(1);
+
+					if (!addendumDoc) {
+						const error = new Error(
+							`Блокировка кассы по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${serviceItem.title}» не входит в утвержденный план лечения пациента. Оплата и фискализация заблокированы до формирования и подписания Дополнительного соглашения с пациентом.`,
+						);
+						// biome-ignore lint/suspicious/noExplicitAny: error mapping
+						(error as any).statusCode = 422;
+						// biome-ignore lint/suspicious/noExplicitAny: error mapping
+						(error as any).code = "UpsellConsentShieldViolationError";
+						throw error;
+					}
+				}
 			}
 
 			const catalogPriceKopecks = toKopecks(serviceItem.priceRub, "цена услуги в каталоге");

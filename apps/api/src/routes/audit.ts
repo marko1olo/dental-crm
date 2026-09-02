@@ -6,6 +6,7 @@ import { auditFromRequest } from "../clinicalAuditService.js";
 import { db } from "../db/client.js";
 import { auditEvents } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { getMedicalAccessAuditTrailFromDb } from "../security/medicalAuditTrail.js";
 
 const auditQuerySchema = z.object({
 	entityType: z.string().optional(),
@@ -102,6 +103,35 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 				action: "VIEW_AUDIT_LOG",
 				entityType: "audit_log",
 				entityId: auditScopeDescriptor(query),
+			});
+
+			return reply.status(200).send({ logs });
+		},
+	);
+
+	// GET /api/audit/medical-access — 152-ФЗ аудит доступа к медицинским картам и диагнозам
+	app.get(
+		"/api/audit/medical-access",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"read medical access audit logs",
+			);
+			if (!orgId) return;
+
+			const query = z
+				.object({
+					patientId: z.string().uuid().optional(),
+					actorUserId: z.string().uuid().optional(),
+					limit: z.coerce.number().int().min(1).max(200).default(50),
+				})
+				.parse(request.query);
+
+			const logs = await getMedicalAccessAuditTrailFromDb(orgId, {
+				...(query.patientId ? { patientId: query.patientId } : {}),
+				...(query.actorUserId ? { actorUserId: query.actorUserId } : {}),
+				limit: query.limit,
 			});
 
 			return reply.status(200).send({ logs });

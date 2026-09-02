@@ -1,6 +1,5 @@
 import { CheckCircle2, HelpCircle, Mic, X } from "lucide-react";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, memo } from "react";
 import { DictationHints } from "../DictationHints";
 import { useVoiceAssistant } from "../hooks/useVoiceAssistant";
 import { CanvasWaveform } from "./audio";
@@ -29,7 +28,7 @@ interface VoiceAssistantUIProps {
 
 const HELP_TABS: readonly WorkspaceActionHelpTab[] = ["nav", "search", "visit"];
 
-export function VoiceAssistantUI({
+export const VoiceAssistantUI = memo(function VoiceAssistantUI({
 	onNavigate,
 	onSearchQuery,
 	onDateChange,
@@ -342,4 +341,5 @@ export function VoiceAssistantUI({
 			</WorkspaceActionsSlot>
 		</>
 	);
-}
+});
+

@@ -33,6 +33,8 @@ import {
 	type SoapAggregatedNote,
 	parseClinicalVoiceSpeech,
 } from "./voiceClinicalCommands";
+import { UnifiedAudioClient } from "../../services/voice/UnifiedAudioClient";
+import { CanvasWaveform } from "../audio/CanvasWaveform";
 import "./voiceAssistant.css";
 
 export interface VoiceDictationAssistantModalProps {
@@ -69,6 +71,8 @@ export function VoiceDictationAssistantModal({
 	const [isListening, setIsListening] = useState(false);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [transcript, setTranscript] = useState("");
+	const [interimText, setInterimText] = useState("");
+	const [finalText, setFinalText] = useState("");
 	const [manualInput, setManualInput] = useState("");
 	const [audioVolume, setAudioVolume] = useState(0);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -78,42 +82,17 @@ export function VoiceDictationAssistantModal({
 		new Set(),
 	);
 
-	const streamRef = useRef<MediaStream | null>(null);
-	const audioContextRef = useRef<AudioContext | null>(null);
-	const analyserRef = useRef<AnalyserNode | null>(null);
-	const animationFrameRef = useRef<number | null>(null);
-	// biome-ignore lint/suspicious/noExplicitAny: Browser SpeechRecognition API
-	const recognitionRef = useRef<any>(null);
+	const clientRef = useRef<UnifiedAudioClient | null>(null);
 
 	// Очистка при закрытии модалки
 	const cleanupAudio = useCallback(() => {
-		if (animationFrameRef.current) {
-			cancelAnimationFrame(animationFrameRef.current);
-			animationFrameRef.current = null;
-		}
-		if (recognitionRef.current) {
-			try {
-				recognitionRef.current.stop();
-			} catch {
-				// Игнорируем ошибку остановки
-			}
-			recognitionRef.current = null;
-		}
-		if (streamRef.current) {
-			for (const track of streamRef.current.getTracks()) {
-				track.stop();
-			}
-			streamRef.current = null;
-		}
-		if (audioContextRef.current) {
-			try {
-				void audioContextRef.current.close();
-			} catch {
-				// Игнорируем ошибку закрытия контекста
-			}
-			audioContextRef.current = null;
+		if (clientRef.current) {
+			clientRef.current.dispose();
+			clientRef.current = null;
 		}
 		setIsListening(false);
+		setIsProcessing(false);
+		setInterimText("");
 		setAudioVolume(0);
 	}, []);
 
@@ -123,96 +102,63 @@ export function VoiceDictationAssistantModal({
 		}
 	}, [isOpen, cleanupAudio]);
 
-	// Запуск анализатора громкости Web Audio
-	const updateVolumeMeter = useCallback(() => {
-		if (!analyserRef.current) return;
-		const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-		analyserRef.current.getByteFrequencyData(dataArray);
-
-		let sum = 0;
-		for (let i = 0; i < dataArray.length; i++) {
-			sum += dataArray[i] ?? 0;
-		}
-		const avg = sum / (dataArray.length || 1);
-		setAudioVolume(avg);
-
-		animationFrameRef.current = requestAnimationFrame(updateVolumeMeter);
-	}, []);
-
 	// Старт прослушивания микрофона
 	const handleStartListening = async () => {
 		setErrorMessage(null);
 		setIsProcessing(true);
+		setInterimText("");
 
 		try {
-			// 1. Получаем доступ к медиапотоку для спектрального анализа
-			const stream = await navigator.mediaDevices.getUserMedia({
-				audio: true,
-				video: false,
+			cleanupAudio();
+
+			const client = new UnifiedAudioClient({
+				preferredMode: "gemini_live",
+				specialty: "therapy",
+				autoFallback: true,
 			});
-			streamRef.current = stream;
+			clientRef.current = client;
 
-			// biome-ignore lint/suspicious/noExplicitAny: window.AudioContext fallback
-			const AudioCtxClass =
-				window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-			if (AudioCtxClass) {
-				const ctx = new AudioCtxClass();
-				audioContextRef.current = ctx;
-				const source = ctx.createMediaStreamSource(stream);
-				const analyser = ctx.createAnalyser();
-				analyser.fftSize = 64;
-				source.connect(analyser);
-				analyserRef.current = analyser;
-				updateVolumeMeter();
-			}
+			client.subscribe({
+				onStateChange: (state) => {
+					const listening = state === "listening" || state === "connecting";
+					setIsListening(listening);
+					if (state === "idle" || state === "error") {
+						setIsProcessing(false);
+					}
+				},
+				onInterimText: (interim) => {
+					setInterimText(interim);
+				},
+				onFinalText: (_final, accumulated) => {
+					const text = (accumulated || _final).trim();
+					setFinalText(text);
+					setTranscript(text);
+					setInterimText("");
+					const parsed = parseClinicalVoiceSpeech(text);
+					setParseResult(parsed);
+				},
+				onTwoLayerTranscript: (data) => {
+					setInterimText(data.interim);
+					setFinalText(data.finalized);
+					const full = (data.fullWithInterim || data.finalized).trim();
+					setTranscript(full);
+					const parsed = parseClinicalVoiceSpeech(full);
+					setParseResult(parsed);
+				},
+				onRmsUpdate: (rms) => {
+					setAudioVolume(Math.min(100, Math.round(rms * 250)));
+				},
+				onError: (err) => {
+					const msg = typeof err === "string" ? err : err.message;
+					setErrorMessage(msg);
+					cleanupAudio();
+				},
+			});
 
-			// 2. Инициализация распознавания речи (Web Speech API)
-			// biome-ignore lint/suspicious/noExplicitAny: webkitSpeechRecognition
-			const SpeechRec =
-				(window as unknown as { SpeechRecognition: any; webkitSpeechRecognition: any }).SpeechRecognition ||
-				(window as unknown as { SpeechRecognition: any; webkitSpeechRecognition: any }).webkitSpeechRecognition;
-
-			if (!SpeechRec) {
-				setErrorMessage(
-					"Распознавание речи не поддерживается браузером. Используйте ручной ввод ниже.",
-				);
-				setIsProcessing(false);
-				return;
-			}
-
-			const recognition = new SpeechRec();
-			recognitionRef.current = recognition;
-			recognition.lang = "ru-RU";
-			recognition.continuous = true;
-			recognition.interimResults = true;
-
-			// biome-ignore lint/suspicious/noExplicitAny: event type
-			recognition.onresult = (event: any) => {
-				let fullTranscript = "";
-				for (let i = 0; i < event.results.length; i++) {
-					fullTranscript += event.results[i][0].transcript + " ";
-				}
-				const trimmed = fullTranscript.trim();
-				setTranscript(trimmed);
-				const parsed = parseClinicalVoiceSpeech(trimmed);
-				setParseResult(parsed);
-			};
-
-			// biome-ignore lint/suspicious/noExplicitAny: error event
-			recognition.onerror = (event: any) => {
-				const errorTxt = voiceDictationErrorText(event.error);
-				setErrorMessage(errorTxt);
-				cleanupAudio();
-			};
-
-			recognition.onend = () => {
-				setIsListening(false);
-			};
-
-			recognition.start();
+			await client.start();
 			setIsListening(true);
 			setIsProcessing(false);
-		} catch (err) {
+		} catch (err: unknown) {
 			const errorTxt = voiceDictationErrorText(err);
 			setErrorMessage(errorTxt);
 			cleanupAudio();
@@ -384,6 +330,17 @@ export function VoiceDictationAssistantModal({
 							</div>
 						</div>
 
+						{/* Реалтайм-осциллограмма Canvas Waveform */}
+						<div style={{ width: "100%", marginTop: "10px" }}>
+							<CanvasWaveform
+								isRecording={isListening}
+								isSpeaking={isListening && audioVolume > 20}
+								height={44}
+								mode="wave"
+								showStatusBadge={false}
+							/>
+						</div>
+
 						{/* VU-Meter полоски */}
 						<div className="dnt-voice-meter-bars" aria-hidden="true">
 							{meterBars.map((height, idx) => (
@@ -405,11 +362,13 @@ export function VoiceDictationAssistantModal({
 					<div className="dnt-voice-transcript-card">
 						<div className="dnt-voice-transcript-head">
 							<span>Транскрипт речи</span>
-							{transcript && (
+							{(transcript || interimText) && (
 								<button
 									type="button"
 									onClick={() => {
 										setTranscript("");
+										setFinalText("");
+										setInterimText("");
 										setParseResult(null);
 										setAppliedCommandIds(new Set());
 									}}
@@ -423,7 +382,18 @@ export function VoiceDictationAssistantModal({
 							)}
 						</div>
 						<div className="dnt-voice-transcript-text" aria-live="polite">
-							{transcript || (
+							{finalText || interimText || transcript ? (
+								<div className="flex flex-wrap items-center gap-1.5 leading-relaxed">
+									{(finalText || transcript) && (
+										<span>{finalText || transcript}</span>
+									)}
+									{interimText && (
+										<span className="text-blue-600 dark:text-blue-400 font-bold italic animate-pulse">
+											{finalText || transcript ? ` ${interimText}` : interimText}
+										</span>
+									)}
+								</div>
+							) : (
 								<span className="dnt-voice-transcript-placeholder">
 									Текст диктовки появится здесь при произнесении...
 								</span>

@@ -8,6 +8,7 @@ import { generateCdaBody } from "./body.js";
 import { generateCdaHeader } from "./header.js";
 import { generateCdaPatient } from "./patient.js";
 import { type EgiszCdaParams, egiszCdaParamsSchema } from "./schema.js";
+import { canonicalizeCdaXml } from "./signature.js";
 import { buildCdaContext } from "./util.js";
 
 export type {
@@ -88,13 +89,14 @@ export { generateCdaAuthorAndCustodian } from "./author.js";
 export { generateCdaBody } from "./body.js";
 
 export type CdaResult =
-	| { success: true; xml: string }
+	| { success: true; xml: string; canonicalXml: string }
 	| { success: false; error: import("zod").ZodError };
 
 /**
  * Generate HL7 CDA R2 XML for SEMD 108 dental examination protocol.
  * Accepts unknown input and validates via Zod before generation.
  * Uses safeParse to avoid fatal errors during recovery (graceful degradation).
+ * Output XML is canonicalized deterministically (BOM stripped, CRLF -> LF, trimmed).
  */
 export function generateDentalCdaXml(params: unknown): CdaResult {
 	const parsedResult = egiszCdaParamsSchema.safeParse(params);
@@ -102,10 +104,11 @@ export function generateDentalCdaXml(params: unknown): CdaResult {
 		return { success: false, error: parsedResult.error };
 	}
 	const ctx = buildCdaContext(parsedResult.data);
-	const xml =
+	const rawXml =
 		generateCdaHeader(ctx) +
 		generateCdaPatient(ctx) +
 		generateCdaAuthorAndCustodian(ctx) +
 		generateCdaBody(ctx);
-	return { success: true, xml };
+	const canonicalXml = canonicalizeCdaXml(rawXml);
+	return { success: true, xml: canonicalXml, canonicalXml };
 }

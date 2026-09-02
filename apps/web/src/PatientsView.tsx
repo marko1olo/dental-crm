@@ -11,7 +11,9 @@ import {
 	Plus,
 	Search,
 	ShieldCheck,
+	Upload,
 	UserCheck,
+	Users,
 	X,
 } from "lucide-react";
 import type {
@@ -467,20 +469,64 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					{(displayPatients ?? []).length === 0 ? (
 						<EmptyState
 							className="patient-empty-state"
-							icon={<Search size={28} />}
-							title="Пациент не найден"
-							description="Проверьте ФИО или телефон. Чтобы добавить нового пациента, нажмите кнопку ниже."
+							icon={!query.trim() ? <Users size={32} /> : <Search size={28} />}
+							title={!query.trim() ? "В картотеке пока нет пациентов" : "Пациент не найден"}
+							description={
+								!query.trim()
+									? "Создайте электронную медицинскую карту (043/у) первого пациента или выполните пакетный импорт существующей базы из Excel, 1С или IDENT."
+									: `По запросу «${query.trim()}» ничего не найдено. Проверьте правильность написания ФИО или номера телефона.`
+							}
 							action={
-								<button
-									type="button"
-									className="primary-button"
-									onClick={() => setIsCreateModalOpen(true)}
-									style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", gap: "6px" }}
-									data-testid="empty-state-create-patient-btn"
-								>
-									<Plus size={16} aria-hidden="true" />
-									<span>Создать нового</span>
-								</button>
+								!query.trim() ? (
+									<div
+										className="patient-empty-actions flex flex-col sm:flex-row flex-wrap gap-2 justify-center mt-2 w-full"
+									>
+										<button
+											type="button"
+											className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 font-bold shadow-sm"
+											onClick={() => setIsCreateModalOpen(true)}
+											data-testid="empty-state-create-patient-btn"
+										>
+											<Plus size={16} aria-hidden="true" />
+											<span>+ Создать карту</span>
+										</button>
+										<button
+											type="button"
+											className="secondary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 font-semibold"
+											onClick={() => {
+												window.location.hash = "#settings";
+												showToast(
+													"Переход в настройки клиники: раздел «Импорт баз данных из Excel / 1C / IDENT»",
+													"info",
+													4000,
+												);
+											}}
+											data-testid="empty-state-import-patients-btn"
+										>
+											<Upload size={16} aria-hidden="true" />
+											<span>Импорт базы из Excel / 1С / IDENT</span>
+										</button>
+									</div>
+								) : (
+									<div className="patient-empty-actions flex flex-wrap gap-2 justify-center mt-2">
+										<button
+											type="button"
+											className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 font-bold"
+											onClick={() => setIsCreateModalOpen(true)}
+											data-testid="empty-state-create-patient-btn"
+										>
+											<Plus size={16} aria-hidden="true" />
+											<span>+ Создать карту</span>
+										</button>
+										<button
+											type="button"
+											className="text-button min-h-[44px] px-3.5"
+											onClick={() => setQuery("")}
+										>
+											Сбросить поиск
+										</button>
+									</div>
+								)
 							}
 							glass={false}
 							style={{ padding: "24px 16px" }}

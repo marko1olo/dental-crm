@@ -56,7 +56,13 @@ export function generateCdaBody(ctx: CdaContext): string {
 	// ==========================================
 	// 2. SECTION 2: Dental Status / Odontogram (LOINC 29545-1)
 	// ==========================================
-	const dentalItems = params.dentalStatus || params.odontogram || [];
+	const rawDentalItems = params.dentalStatus || params.odontogram || [];
+	const dentalItems = [...rawDentalItems].sort((a, b) => {
+		const numA = Number.parseInt(String(a.tooth), 10) || 0;
+		const numB = Number.parseInt(String(b.tooth), 10) || 0;
+		if (numA !== numB) return numA - numB;
+		return String(a.condition || "").localeCompare(String(b.condition || ""));
+	});
 	const objectiveText = params.objectiveStatus?.trim() ? params.objectiveStatus.trim() : "";
 
 	let dentalStatusSection = "";
@@ -199,9 +205,13 @@ export function generateCdaBody(ctx: CdaContext): string {
 			: "";
 
 	// ==========================================
-	// 4. SECTION 4: Services Rendered under Order 804n (LOINC 47519-4)
-	// ==========================================
-	const servicesList = params.services || params.servicesRendered || [];
+	const rawServicesList = params.services || params.servicesRendered || [];
+	const servicesList = [...rawServicesList].sort((a, b) => {
+		const toothA = a.tooth ? Number.parseInt(String(a.tooth), 10) || 0 : 0;
+		const toothB = b.tooth ? Number.parseInt(String(b.tooth), 10) || 0 : 0;
+		if (toothA !== toothB) return toothA - toothB;
+		return String(a.code || "").localeCompare(String(b.code || ""));
+	});
 	const treatmentDesc = params.treatmentDescription?.trim() ? params.treatmentDescription.trim() : "";
 
 	let servicesSection = "";

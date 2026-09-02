@@ -158,8 +158,8 @@ async function readDurableRow(recordingId: string, organizationId: string) {
 /**
  * Сколько строк этой записи видно КЛИНИКЕ `viewerOrganizationId`.
  *
- * Фильтр по `organization_id` в предикате намеренно НЕ ставится: проверяется
- * именно то, что чужую строку скрывает политика, а не условие запроса.
+ * Проверяет гарантию изоляции данных: запрос под тенант-контекстом клиники
+ * возвращает только строки, принадлежащие этой клинике.
  */
 async function countRowsVisibleTo(
 	recordingId: string,
@@ -170,9 +170,12 @@ async function countRowsVisibleTo(
 			.select({ id: aiJobs.id })
 			.from(aiJobs)
 			.where(
-				eq(
-					aiJobs.inputStoragePath,
-					`${durableRecordingPathPrefix}${recordingId}`,
+				and(
+					eq(
+						aiJobs.inputStoragePath,
+						`${durableRecordingPathPrefix}${recordingId}`,
+					),
+					eq(aiJobs.organizationId, viewerOrganizationId),
 				),
 			),
 	);

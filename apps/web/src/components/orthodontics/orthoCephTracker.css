@@ -1,0 +1,427 @@
+/**
+ * orthoCephTracker.css — Vanilla CSS для интерактивного ТРГ трекера,
+ * укладки анатомических ориентиров и цефалометрического анализа (Штайнер, Твид, Wits).
+ */
+
+/* Modal Root & Backdrop */
+.ortho-ceph-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(0, 0, 0, 0.75);
+	backdrop-filter: blur(4px);
+	padding: 8px;
+	animation: orthoCephFadeIn 0.2s ease-out;
+}
+
+@keyframes orthoCephFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.ortho-ceph-modal-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 1440px;
+	height: 96vh;
+	max-height: 980px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+}
+
+/* Header */
+.ortho-ceph-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	background: var(--paper-soft, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.ortho-ceph-title-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.ortho-ceph-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal, #0d9488);
+	border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
+.ortho-ceph-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* 48px touch buttons */
+.ortho-ceph-btn-primary {
+	min-height: 48px;
+	min-width: 48px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 8px 18px;
+	border-radius: 12px;
+	font-size: 14px;
+	font-weight: 700;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border: none;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+}
+
+.ortho-ceph-btn-primary:hover {
+	opacity: 0.92;
+	transform: translateY(-1px);
+}
+
+.ortho-ceph-btn-primary:active {
+	transform: translateY(0);
+}
+
+.ortho-ceph-btn-secondary {
+	min-height: 48px;
+	min-width: 48px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 8px 16px;
+	border-radius: 12px;
+	font-size: 14px;
+	font-weight: 600;
+	background: var(--paper-soft, #f1f5f9);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #cbd5e1);
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+}
+
+.ortho-ceph-btn-secondary:hover {
+	background: var(--line, #e2e8f0);
+}
+
+.ortho-ceph-btn-icon {
+	min-height: 48px;
+	min-width: 48px;
+	width: 48px;
+	height: 48px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
+	background: var(--paper-soft, #f1f5f9);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #cbd5e1);
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+}
+
+.ortho-ceph-btn-icon:hover {
+	background: var(--line, #e2e8f0);
+}
+
+/* Layout Body */
+.ortho-ceph-body {
+	display: grid;
+	grid-template-columns: 1fr 420px;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+	.ortho-ceph-body {
+		grid-template-columns: 1fr;
+		grid-template-rows: 1fr auto;
+		overflow-y: auto;
+	}
+}
+
+/* Canvas Viewport Area */
+.ortho-ceph-canvas-section {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	background: #090d16;
+	overflow: hidden;
+	min-height: 380px;
+}
+
+.ortho-ceph-canvas-toolbar {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	background: rgba(15, 23, 42, 0.85);
+	backdrop-filter: blur(8px);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 12px;
+	flex-wrap: wrap;
+}
+
+.ortho-ceph-tool-btn {
+	min-height: 44px;
+	min-width: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 700;
+	background: transparent;
+	color: #e2e8f0;
+	border: 1px solid transparent;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.ortho-ceph-tool-btn:hover {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.ortho-ceph-tool-btn.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ortho-ceph-canvas-wrapper {
+	position: relative;
+	flex: 1;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	user-select: none;
+	touch-action: none;
+}
+
+.ortho-ceph-canvas-svg {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: auto;
+	cursor: crosshair;
+}
+
+/* Sidebar & Tabs */
+.ortho-ceph-sidebar {
+	display: flex;
+	flex-direction: column;
+	background: var(--paper, #ffffff);
+	border-left: 1px solid var(--line, #e2e8f0);
+	min-height: 0;
+	overflow: hidden;
+}
+
+.ortho-ceph-tabs-nav {
+	display: flex;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+}
+
+.ortho-ceph-tab-btn {
+	flex: 1;
+	min-height: 48px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 10px;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	background: transparent;
+	border: none;
+	border-bottom: 2px solid transparent;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.ortho-ceph-tab-btn.active {
+	color: var(--teal, #0d9488);
+	border-bottom-color: var(--teal, #0d9488);
+	background: var(--paper, #ffffff);
+}
+
+.ortho-ceph-tab-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+/* Landmark Step Selector Pill List */
+.ortho-ceph-landmark-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+}
+
+.ortho-ceph-landmark-pill {
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+}
+
+.ortho-ceph-landmark-pill:hover {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.05);
+}
+
+.ortho-ceph-landmark-pill.active {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.12);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
+}
+
+.ortho-ceph-landmark-pill.placed {
+	border-left: 4px solid var(--teal, #0d9488);
+}
+
+/* Cephalometric Analysis Cards */
+.ortho-ceph-metric-card {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.ortho-ceph-metric-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.ortho-ceph-metric-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.ortho-ceph-metric-name {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.ortho-ceph-metric-norm {
+	font-size: 11px;
+	color: var(--muted, #64748b);
+}
+
+.ortho-ceph-metric-val {
+	font-size: 14px;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+}
+
+.ortho-ceph-val-norm {
+	color: #10b981; /* Green */
+}
+
+.ortho-ceph-val-warn {
+	color: #f59e0b; /* Amber */
+}
+
+.ortho-ceph-val-crit {
+	color: #ef4444; /* Red */
+}
+
+/* Voice Dictation Active Bar */
+.ortho-ceph-voice-bar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 14px;
+	border-radius: 12px;
+	background: rgba(13, 148, 136, 0.1);
+	border: 1px solid rgba(13, 148, 136, 0.3);
+	color: var(--teal, #0d9488);
+	font-size: 13px;
+	font-weight: 600;
+	animation: orthoCephPulse 2s infinite ease-in-out;
+}
+
+@keyframes orthoCephPulse {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.3);
+	}
+	50% {
+		box-shadow: 0 0 0 6px rgba(13, 148, 136, 0);
+	}
+}
+
+/* Protocol Text Area */
+.ortho-ceph-protocol-preview {
+	width: 100%;
+	min-height: 220px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	padding: 12px;
+	border-radius: 10px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #cbd5e1);
+	color: var(--ink, #0f172a);
+	resize: vertical;
+}

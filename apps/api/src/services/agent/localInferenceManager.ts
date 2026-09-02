@@ -236,8 +236,9 @@ export class LocalInferenceManager {
 		const target = (modelName || this.defaultModel).toLowerCase();
 
 		// 1. Exact match
-		if (LOCAL_MODEL_PROFILES[target]) {
-			return LOCAL_MODEL_PROFILES[target];
+		const exactProfile = LOCAL_MODEL_PROFILES[target];
+		if (exactProfile) {
+			return exactProfile;
 		}
 
 		// 2. Semantic family match
@@ -247,7 +248,7 @@ export class LocalInferenceManager {
 		if (target.includes("qwen") && LOCAL_MODEL_PROFILES[OPEN_MODEL_QWEN_7B]) {
 			return LOCAL_MODEL_PROFILES[OPEN_MODEL_QWEN_7B];
 		}
-		if (target.includes("mistral") || target.includes("nemo")) {
+		if ((target.includes("mistral") || target.includes("nemo")) && LOCAL_MODEL_PROFILES[OPEN_MODEL_MISTRAL_NEMO]) {
 			return LOCAL_MODEL_PROFILES[OPEN_MODEL_MISTRAL_NEMO];
 		}
 

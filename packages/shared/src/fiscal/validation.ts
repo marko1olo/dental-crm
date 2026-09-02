@@ -49,6 +49,11 @@ export const fiscalReceiptItemSchema = z
 		toothFdiNumber: z.number().int().min(11).max(85).optional().nullable(),
 		/** Честный ЗНАК / МДЛП DataMatrix marking barcode (Тег 1162 / Тег 1163 / Тег 2000) */
 		markingCode: z.string().trim().max(200).optional().nullable(),
+		/** Decree 659: Upsell Consent Shield attributes (Rules of 2026) */
+		isUpsell: z.boolean().optional().default(false),
+		requiresAddendum: z.boolean().optional().default(false),
+		addendumId: z.string().uuid().optional().nullable(),
+		addendumConfirmed: z.boolean().optional().default(false),
 	})
 	.superRefine((item, ctx) => {
 		// Verify exact integer kopecks arithmetic: priceKopecks * quantity == amountKopecks (or with discount)
@@ -114,6 +119,10 @@ export const createFiscalReceiptPayloadSchema = z
 		creditKopecks: z.number().int().min(0).default(0),
 		totalKopecks: z.number().int().positive("Общая сумма чека должна быть больше нуля"),
 		taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
+		/** Decree 659: Upsell Consent Shield attributes (Rules of 2026) */
+		treatmentPlanId: z.string().uuid().optional().nullable(),
+		addendumNumber: z.string().trim().max(64).optional().nullable(),
+		addendumConfirmed: z.boolean().optional().default(false),
 		/** Optional 54-FZ correction attributes */
 		isCorrection: z.boolean().optional().default(false),
 		correctionType: ffd12CorrectionTypeSchema.optional().nullable(),

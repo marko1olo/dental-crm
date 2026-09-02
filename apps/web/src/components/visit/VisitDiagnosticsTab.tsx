@@ -10,6 +10,7 @@ import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysi
 import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
 import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
+import { ImplantSurgicalPassportModal } from "../implant/ImplantSurgicalPassportModal";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import {
@@ -58,6 +59,7 @@ export function VisitDiagnosticsTab(props?: {
 	const [isRadiologyModalOpen, setIsRadiologyModalOpen] = useState<boolean>(false);
 	const [isPhotoProtocolModalOpen, setIsPhotoProtocolModalOpen] = useState<boolean>(false);
 	const [isCbctModalOpen, setIsCbctModalOpen] = useState<boolean>(false);
+	const [isImplantPassportModalOpen, setIsImplantPassportModalOpen] = useState<boolean>(false);
 
 	const [photoAttachments, setPhotoAttachments] = useState<ClinicalPhotoAttachment[]>([]);
 	const initialToothNumber = Number(ctx?.dashboard?.activeVisit?.diagnosisTooth) || 16;
@@ -168,6 +170,41 @@ export function VisitDiagnosticsTab(props?: {
 				>
 					<Activity size={15} />
 					<span>Открыть анализ ТРГ</span>
+				</button>
+			</div>
+
+			{/* Dental Implant Surgical Passport & ISQ Tracker Card */}
+			<div
+				data-testid="visit-implant-passport-card"
+				className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-sm"
+			>
+				<div className="flex items-center gap-3">
+					<div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+						<Layers size={20} />
+					</div>
+					<div>
+						<div className="flex items-center gap-2">
+							<strong className="text-sm font-bold text-[var(--ink)]">
+								Хирургический паспорт имплантации & Остеоинтеграция ISQ
+							</strong>
+							<span className="text-xs font-bold text-sky-800 dark:text-sky-300 bg-sky-100 dark:bg-sky-950 px-2 py-0.5 rounded border border-sky-500/30">
+								Хирургия 043/у
+							</span>
+						</div>
+						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
+							Протокол Misch D1–D4, торк фиксации, графт Bio-Oss, RFA ISQ динамика и 1-клик перенос операции в форму 043/у
+						</p>
+					</div>
+				</div>
+
+				<button
+					type="button"
+					onClick={() => setIsImplantPassportModalOpen(true)}
+					data-testid="open-implant-passport-modal-btn"
+					className="px-4 py-2.5 min-h-[44px] rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-md active:scale-95 transition-all cursor-pointer border border-sky-500/30 touch-manipulation"
+				>
+					<Layers size={15} />
+					<span>Хирургический паспорт</span>
 				</button>
 			</div>
 
@@ -548,6 +585,36 @@ export function VisitDiagnosticsTab(props?: {
 									detail: {
 										soap: {
 											treatmentDescription: diaryText,
+										},
+										mode: "smart_append",
+									},
+								}),
+							);
+						} catch {
+							// ignore
+						}
+					}}
+				/>
+			)}
+
+			{/* Dental Implant Surgical Passport & ISQ Tracker Modal */}
+			{isImplantPassportModalOpen && (
+				<ImplantSurgicalPassportModal
+					isOpen={isImplantPassportModalOpen}
+					onClose={() => setIsImplantPassportModalOpen(false)}
+					patientName={visitPatientName || selectedPatientName || "Пациент"}
+					patientId={visitPatientId || selectedPatientId || "PAT-01"}
+					doctorName={dashboard?.activeDoctor?.fullName || "Хирург-имплантолог"}
+					doctorId={dashboard?.activeDoctor?.id || "DOC-01"}
+					initialTooth={initialToothNumber}
+					onInsertIntoDiary={(protocolText) => {
+						if (!protocolText) return;
+						try {
+							window.dispatchEvent(
+								new CustomEvent("dente-apply-soap-protocol", {
+									detail: {
+										soap: {
+											treatmentDescription: protocolText,
 										},
 										mode: "smart_append",
 									},

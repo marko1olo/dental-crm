@@ -295,7 +295,7 @@ export function CabinetReadinessTab() {
 						type="button"
 						onClick={handleQuickFillAllReady}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.95rem", background: "linear-gradient(135deg, #059669 0%, #047857 100%)", color: "#fff", fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 8px rgba(5, 150, 105, 0.3)" }}
+						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.95rem", background: "var(--teal)", color: "var(--on-teal, #fff)", fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)" }}
 						title="1 Клик: Отметить все пункты текущего профиля как готовые"
 						data-testid="cabinet-readiness-autofill-btn"
 					>
@@ -339,22 +339,22 @@ export function CabinetReadinessTab() {
 					flexWrap: "wrap",
 				}}
 			>
-				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: "var(--brand-primary, #2563eb)" }}>
-					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: "var(--brand-primary, #2563eb)", color: "#fff", fontSize: "0.75rem" }}>1</span>
+				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: "var(--teal)" }}>
+					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: "var(--teal)", color: "var(--on-teal, #fff)", fontSize: "0.75rem" }}>1</span>
 					<span>Шаг 1: Выберите кабинет</span>
 				</div>
 				<ArrowRight size={14} color="var(--muted, #64748b)" />
-				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: "var(--brand-primary, #2563eb)" }}>
-					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: "var(--brand-primary, #2563eb)", color: "#fff", fontSize: "0.75rem" }}>2</span>
+				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: "var(--teal)" }}>
+					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: "var(--teal)", color: "var(--on-teal, #fff)", fontSize: "0.75rem" }}>2</span>
 					<span>Шаг 2: Проверьте чек-лист</span>
 				</div>
 				<ArrowRight size={14} color="var(--muted, #64748b)" />
-				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: evaluation.isFullyReady ? "#059669" : "#d97706" }}>
-					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: evaluation.isFullyReady ? "#059669" : "#d97706", color: "#fff", fontSize: "0.75rem" }}>3</span>
+				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: evaluation.isFullyReady ? "var(--ok-fg)" : "var(--warn-fg)" }}>
+					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: evaluation.isFullyReady ? "var(--ok-fg)" : "var(--warn-fg)", color: "var(--on-teal, #fff)", fontSize: "0.75rem" }}>3</span>
 					<span>Шаг 3: Нажмите «Готово»</span>
 				</div>
 				<div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", color: "var(--muted, #64748b)" }}>
-					<Save size={14} color="#059669" />
+					<Save size={14} color="var(--ok-fg)" />
 					<span>Все данные сохранены</span>
 				</div>
 			</div>
@@ -418,8 +418,8 @@ export function CabinetReadinessTab() {
 							</div>
 						</div>
 
-						<div style={{ marginTop: "0.5rem", borderTop: "1px solid #e2e8f0", paddingTop: "0.75rem" }}>
-							<h4 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.5rem", color: "#0f766e", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+						<div style={{ marginTop: "0.5rem", borderTop: "1px solid var(--line, #e2e8f0)", paddingTop: "0.75rem" }}>
+							<h4 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.5rem", color: "var(--teal)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
 								<Sparkles size={16} /> Дезинфекция поверхностей установки:
 							</h4>
 
@@ -458,7 +458,7 @@ export function CabinetReadinessTab() {
 								</div>
 							</div>
 							{exposureMinutes < currentPreset.minExposureMinutes && (
-								<div style={{ color: "#dc2626", fontSize: "0.75rem", marginTop: "0.3rem", fontWeight: 600 }}>
+								<div style={{ color: "var(--bad-fg)", fontSize: "0.75rem", marginTop: "0.3rem", fontWeight: 600 }}>
 									Внимание: требуется экспозиция не менее {currentPreset.minExposureMinutes} мин!
 								</div>
 							)}
@@ -544,7 +544,7 @@ export function CabinetReadinessTab() {
 												setForcepsReady(val);
 											}}
 										/>
-										<span style={{ fontWeight: 600, color: "#2563eb" }}>Коффердам (платок, клампы 2A/W8A, щипцы)</span>
+										<span style={{ fontWeight: 600, color: "var(--teal)" }}>Коффердам (платок, клампы 2A/W8A, щипцы)</span>
 									</label>
 								</div>
 							)}
@@ -569,17 +569,17 @@ export function CabinetReadinessTab() {
 								marginBottom: "1rem",
 							}}
 						>
-							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem", fontWeight: 800, color: evaluation.isFullyReady ? "#059669" : "#dc2626" }}>
+							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem", fontWeight: 800, color: evaluation.isFullyReady ? "var(--ok-fg)" : "var(--bad-fg)" }}>
 								{evaluation.isFullyReady ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
 								<span>{evaluation.statusMessageRu}</span>
 							</div>
 
 							{evaluation.missingItems.length > 0 && (
 								<div style={{ marginTop: "0.5rem" }}>
-									<p style={{ margin: "0 0 0.3rem 0", fontSize: "0.82rem", fontWeight: 700, color: "#dc2626" }}>
+									<p style={{ margin: "0 0 0.3rem 0", fontSize: "0.82rem", fontWeight: 700, color: "var(--bad-fg)" }}>
 										Не выполнены обязательные пункты:
 									</p>
-									<ul style={{ margin: "0 0 0.5rem 1.25rem", padding: 0, fontSize: "0.8rem", color: "#dc2626" }}>
+									<ul style={{ margin: "0 0 0.5rem 1.25rem", padding: 0, fontSize: "0.8rem", color: "var(--bad-fg)" }}>
 										{evaluation.missingItems.map((item, idx) => (
 											<li key={idx} style={{ marginBottom: "0.2rem" }}>{item}</li>
 										))}
@@ -593,15 +593,15 @@ export function CabinetReadinessTab() {
 											minHeight: "44px",
 											padding: "0.5rem 1rem",
 											fontSize: "0.88rem",
-											background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
-											color: "#fff",
+											background: "var(--teal)",
+											color: "var(--on-teal, #fff)",
 											fontWeight: 800,
 											cursor: "pointer",
 											display: "flex",
 											alignItems: "center",
 											justifyContent: "center",
 											gap: "0.4rem",
-											boxShadow: "0 2px 8px rgba(5, 150, 105, 0.3)",
+											boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
 										}}
 										title="1 Клик: Отметить все недостающие пункты чек-листа как готовые"
 									>
@@ -647,10 +647,10 @@ export function CabinetReadinessTab() {
 							fontWeight: 800,
 							letterSpacing: "0.02em",
 							marginTop: "1.25rem",
-							background: evaluation.isFullyReady ? "linear-gradient(135deg, #059669 0%, #047857 100%)" : "#94a3b8",
-							color: "#fff",
+							background: evaluation.isFullyReady ? "var(--teal)" : "var(--muted)",
+							color: "var(--on-teal, #fff)",
 							cursor: "pointer",
-							boxShadow: evaluation.isFullyReady ? "0 4px 12px rgba(5, 150, 105, 0.4)" : "none",
+							boxShadow: evaluation.isFullyReady ? "0 4px 12px rgba(13, 148, 136, 0.4)" : "none",
 						}}
 						data-testid="submit-cabinet-readiness-btn"
 					>
@@ -698,7 +698,7 @@ export function CabinetReadinessTab() {
 												fontSize: "0.75rem",
 												fontWeight: 700,
 												background: rec.isFullyReady ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-												color: rec.isFullyReady ? "#047857" : "#b91c1c",
+												color: rec.isFullyReady ? "var(--ok-fg)" : "var(--bad-fg)",
 											}}
 										>
 											{rec.summaryBadgeRu}
@@ -708,7 +708,7 @@ export function CabinetReadinessTab() {
 									<td>{rec.handpiecesSterility.class5IndicatorsVerified ? "5 кл. ОК" : "—"}</td>
 									<td>{rec.sterileTray.isCompleted ? "Укомплектован" : "—"}</td>
 									<td>{rec.operatorStaffFullName}</td>
-									<td style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "#64748b" }}>{rec.digitalStampHash}</td>
+									<td style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "var(--muted)" }}>{rec.digitalStampHash}</td>
 								</tr>
 							))}
 						</tbody>

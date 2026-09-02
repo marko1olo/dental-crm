@@ -345,9 +345,9 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 														: "var(--paper-soft)",
 											color:
 												match.priorityLevel === "high"
-													? "#e11d48"
+													? "var(--bad-fg, #e11d48)"
 													: match.priorityLevel === "medium"
-														? "#2563eb"
+														? "var(--info-fg, #2563eb)"
 														: "var(--muted)",
 											border:
 												match.priorityLevel === "high"

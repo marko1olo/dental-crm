@@ -95,7 +95,7 @@
 }
 ._ccm-btn {
 	width: 100%;
-	min-height: 36px;
+	min-height: 44px;
 	padding: 0.45rem 0.75rem;
 	border-radius: 10px;
 	border: 1px solid var(--line, #e2e8f0);
@@ -175,7 +175,7 @@
 }
 ._ccm-close-btn {
 	width: 100%;
-	min-height: 34px;
+	min-height: 44px;
 	border-radius: 10px;
 	padding: 0.4rem 0.75rem;
 	font-size: 0.8125rem;

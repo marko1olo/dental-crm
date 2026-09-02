@@ -9,7 +9,9 @@
  * - Exact 13% NDFL tax deduction calculation per FNS Form KND 1151156 & Order EA-7-11/824@
  *   (Social limit 150,000 ₽ / max 19,500 ₽ deduction for Code 01; unlimited deduction for Code 02 expensive treatment per Decree 458).
  * - Multi-stage clinical structure (Stage 1 Therapy -> Stage 2 Surgery -> Stage 3 Orthopedics).
- * - 0% installment plans for 3, 6, 12, 24 months with kopeck-exact arithmetic.
+ * - 0% installment plans for 3, 6, 12, 24 months with Decimal.js kopeck-exact arithmetic.
+ * - Strict Agentic Boundary: AI does NOT compute money and does NOT invent prices.
+ *   If basePriceRub is omitted, the tool automatically resolves prices from the clinic database (services table).
  */
 
 import {
@@ -19,15 +21,122 @@ import {
 	type PlanTierKey,
 	resolveTaxDeductionCategoryShared,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { Decimal } from "decimal.js";
+import { and, eq, ilike } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../../db/client.js";
-import { patients, treatmentPlans } from "../../../db/schema.js";
+import { patients, services, treatmentPlans } from "../../../db/schema.js";
 import {
 	VALID_FDI_PERMANENT_TEETH,
 	VALID_FDI_PRIMARY_TEETH,
 } from "../../clinical/Icd10ClinicalValidator.js";
 import type { ToolDefinition } from "./tool.js";
+
+Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
+
+// ─── STANDARD NOMENCLATURE 804N CATALOG FALLBACK PRICES ─────────────────────
+
+export interface StandardCatalogService {
+	readonly code: string;
+	readonly title: string;
+	readonly category: string;
+	readonly priceRub: number;
+}
+
+export const CANONICAL_804N_PRICE_CATALOG: Readonly<Record<string, StandardCatalogService>> = {
+	"A16.07.002": {
+		code: "A16.07.002",
+		title: "Восстановление зуба пломбой (лечение кариеса)",
+		category: "Терапия",
+		priceRub: 10000,
+	},
+	"A16.07.004": {
+		code: "A16.07.004",
+		title: "Восстановление зуба коронкой постоянной",
+		category: "Ортопедия",
+		priceRub: 40000,
+	},
+	"A16.07.054": {
+		code: "A16.07.054",
+		title: "Внутрикостная дентальная имплантация",
+		category: "Имплантация",
+		priceRub: 50000,
+	},
+	"A16.07.001": {
+		code: "A16.07.001",
+		title: "Удаление постоянного зуба",
+		category: "Хирургия",
+		priceRub: 5000,
+	},
+	"A16.07.008": {
+		code: "A16.07.008",
+		title: "Пломбирование корневого канала зуба (эндодонтия)",
+		category: "Терапия",
+		priceRub: 15000,
+	},
+	"A16.07.051": {
+		code: "A16.07.051",
+		title: "Профессиональная гигиена полости рта и зубов",
+		category: "Гигиена",
+		priceRub: 7000,
+	},
+	"A16.07.041": {
+		code: "A16.07.041",
+		title: "Костная пластика челюстно-лицевой области (синус-лифтинг)",
+		category: "Хирургия",
+		priceRub: 45000,
+	},
+	"A16.07.050": {
+		code: "A16.07.050",
+		title: "Профессиональное отбеливание зубов",
+		category: "Гигиена",
+		priceRub: 25000,
+	},
+	"A16.07.048": {
+		code: "A16.07.048",
+		title: "Ортодонтическая коррекция с применением брекет-системы",
+		category: "Ортодонтия",
+		priceRub: 120000,
+	},
+	"B01.065.001": {
+		code: "B01.065.001",
+		title: "Прием (осмотр, консультация) врача-стоматолога первичный",
+		category: "Консультация",
+		priceRub: 2500,
+	},
+	"A06.07.007": {
+		code: "A06.07.007",
+		title: "Прицельная внутриротовая рентгенография / КЛКТ",
+		category: "Диагностика",
+		priceRub: 3000,
+	},
+};
+
+export function resolveStandardCatalogPrice(
+	code?: string | null,
+	serviceName?: string | null,
+): StandardCatalogService | null {
+	if (code && CANONICAL_804N_PRICE_CATALOG[code]) {
+		return CANONICAL_804N_PRICE_CATALOG[code] ?? null;
+	}
+
+	if (serviceName) {
+		const nameLower = serviceName.toLowerCase();
+		if (nameLower.includes("имплант")) return CANONICAL_804N_PRICE_CATALOG["A16.07.054"] ?? null;
+		if (nameLower.includes("коронк") || nameLower.includes("протез")) return CANONICAL_804N_PRICE_CATALOG["A16.07.004"] ?? null;
+		if (nameLower.includes("кариес") || nameLower.includes("пломб") || nameLower.includes("реставрац")) return CANONICAL_804N_PRICE_CATALOG["A16.07.002"] ?? null;
+		if (nameLower.includes("канал") || nameLower.includes("пульпит") || nameLower.includes("периодонтит")) return CANONICAL_804N_PRICE_CATALOG["A16.07.008"] ?? null;
+		if (nameLower.includes("удален") || nameLower.includes("экстракц")) return CANONICAL_804N_PRICE_CATALOG["A16.07.001"] ?? null;
+		if (nameLower.includes("гигиен") || nameLower.includes("чистк") || nameLower.includes("air flow")) return CANONICAL_804N_PRICE_CATALOG["A16.07.051"] ?? null;
+		if (nameLower.includes("синус") || nameLower.includes("костн")) return CANONICAL_804N_PRICE_CATALOG["A16.07.041"] ?? null;
+		if (nameLower.includes("отбеливан")) return CANONICAL_804N_PRICE_CATALOG["A16.07.050"] ?? null;
+		if (nameLower.includes("брекет") || nameLower.includes("элайнер") || nameLower.includes("прикус")) return CANONICAL_804N_PRICE_CATALOG["A16.07.048"] ?? null;
+		if (nameLower.includes("снимок") || nameLower.includes("рентген") || nameLower.includes("кт") || nameLower.includes("клкт")) return CANONICAL_804N_PRICE_CATALOG["A06.07.007"] ?? null;
+		if (nameLower.includes("консульт") || nameLower.includes("осмотр")) return CANONICAL_804N_PRICE_CATALOG["B01.065.001"] ?? null;
+	}
+
+	return null;
+}
 
 // ─── PARAMETER SCHEMA ───────────────────────────────────────────────────────
 
@@ -43,12 +152,12 @@ const estimateItemSchema = z.object({
 	nomenclatureCode: z
 		.string()
 		.optional()
-		.default("A16.07.002")
 		.describe("Код услуги по Номенклатуре Минздрава РФ 804н (например, A16.07.002, A16.07.054)"),
 	basePriceRub: z
 		.number()
 		.min(0, "Базовая цена не может быть отрицательной")
-		.describe("Базовая цена процедуры в рублях"),
+		.optional()
+		.describe("Базовая цена процедуры в рублях (если не передана, автоматически подтягивается из прейскуранта)"),
 	category: z
 		.string()
 		.optional()
@@ -177,7 +286,9 @@ export interface CalculatedEstimateItem {
 	readonly quantity: number;
 	readonly unitPriceRub: number;
 	readonly grossRub: number;
+	readonly grossKopecks: number;
 	readonly discountRub: number;
+	readonly discountKopecks: number;
 	readonly netRub: number;
 	readonly netKopecks: number;
 	readonly tierMaterial: string;
@@ -191,7 +302,9 @@ export interface CalculatedStageSummary {
 	readonly stageTitleRu: string;
 	readonly itemsCount: number;
 	readonly grossRub: number;
+	readonly grossKopecks: number;
 	readonly discountRub: number;
+	readonly discountKopecks: number;
 	readonly netRub: number;
 	readonly netKopecks: number;
 	readonly estimatedVisits: number;
@@ -295,7 +408,7 @@ export interface RawEstimateItemInput {
 	readonly quantity?: number | null | undefined;
 }
 
-function calculateTier(
+export function calculateTier(
 	tierKey: PlanTierKey,
 	rawItems: readonly RawEstimateItemInput[],
 	discountPercent: number,
@@ -321,12 +434,19 @@ function calculateTier(
 		const isHighCost = resolveTaxDeductionCategoryShared(nomCode, sName) === "2";
 		const taxCategoryCode: "01" | "02" = isHighCost ? "02" : "01";
 
-		// Unit price in integer kopecks
-		const adjustedUnitPriceRub = Math.round(raw.basePriceRub * spec.priceMultiplier * 100) / 100;
-		const unitPriceKopecks = Math.round(adjustedUnitPriceRub * 100);
+		// Unit price in integer kopecks via Decimal.js
+		const basePriceDec = new Decimal(raw.basePriceRub);
+		const multiplierDec = new Decimal(spec.priceMultiplier);
+		const adjustedUnitPriceDec = basePriceDec.times(multiplierDec).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+		const unitPriceRub = adjustedUnitPriceDec.toNumber();
+		const unitPriceKopecks = adjustedUnitPriceDec.times(100).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber();
 
 		const itemGrossKopecks = unitPriceKopecks * qty;
-		const itemDiscountKopecks = Math.round(itemGrossKopecks * (discountPercent / 100));
+		const discountPercentDec = new Decimal(discountPercent).dividedBy(100);
+		const itemDiscountKopecks = new Decimal(itemGrossKopecks)
+			.times(discountPercentDec)
+			.toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
+			.toNumber();
 		const itemNetKopecks = itemGrossKopecks - itemDiscountKopecks;
 
 		totalGrossKopecks += itemGrossKopecks;
@@ -356,10 +476,12 @@ function calculateTier(
 			stageKind,
 			stageTitleRu: stageTitleMap[stageKind] || "Терапевтический этап",
 			quantity: qty,
-			unitPriceRub: adjustedUnitPriceRub,
-			grossRub: itemGrossKopecks / 100,
-			discountRub: itemDiscountKopecks / 100,
-			netRub: itemNetKopecks / 100,
+			unitPriceRub,
+			grossRub: new Decimal(itemGrossKopecks).dividedBy(100).toNumber(),
+			grossKopecks: itemGrossKopecks,
+			discountRub: new Decimal(itemDiscountKopecks).dividedBy(100).toNumber(),
+			discountKopecks: itemDiscountKopecks,
+			netRub: new Decimal(itemNetKopecks).dividedBy(100).toNumber(),
 			netKopecks: itemNetKopecks,
 			tierMaterial,
 			isHighCostCode02: isHighCost,
@@ -368,7 +490,7 @@ function calculateTier(
 	}
 
 	// Labor vs materials split
-	const laborKopecks = Math.round(totalNetKopecks * spec.laborRatio);
+	const laborKopecks = new Decimal(totalNetKopecks).times(spec.laborRatio).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber();
 	const materialsKopecks = totalNetKopecks - laborKopecks;
 
 	// Stages breakdown
@@ -380,9 +502,18 @@ function calculateTier(
 
 	const stages: CalculatedStageSummary[] = stageKinds.map((kind, idx) => {
 		const stageItems = items.filter((it) => it.stageKind === kind);
-		const stageGrossKop = stageItems.reduce((acc, it) => acc + it.grossRub * 100, 0);
-		const stageDiscountKop = stageItems.reduce((acc, it) => acc + it.discountRub * 100, 0);
-		const stageNetKop = stageGrossKop - stageDiscountKop;
+		const stageGrossKop = stageItems.reduce(
+			(acc, it) => new Decimal(acc).plus(it.grossKopecks).toNumber(),
+			0,
+		);
+		const stageDiscountKop = stageItems.reduce(
+			(acc, it) => new Decimal(acc).plus(it.discountKopecks).toNumber(),
+			0,
+		);
+		const stageNetKop = stageItems.reduce(
+			(acc, it) => new Decimal(acc).plus(it.netKopecks).toNumber(),
+			0,
+		);
 		const visits = stageItems.length === 0 ? 0 : Math.max(1, Math.ceil(stageItems.length / 2));
 
 		const titles: Record<PlanStageKind, string> = {
@@ -396,30 +527,32 @@ function calculateTier(
 			stageNumber: idx + 1,
 			stageTitleRu: titles[kind],
 			itemsCount: stageItems.length,
-			grossRub: Math.round(stageGrossKop) / 100,
-			discountRub: Math.round(stageDiscountKop) / 100,
-			netRub: Math.round(stageNetKop) / 100,
-			netKopecks: Math.round(stageNetKop),
+			grossRub: new Decimal(stageGrossKop).dividedBy(100).toNumber(),
+			grossKopecks: stageGrossKop,
+			discountRub: new Decimal(stageDiscountKop).dividedBy(100).toNumber(),
+			discountKopecks: stageDiscountKop,
+			netRub: new Decimal(stageNetKop).dividedBy(100).toNumber(),
+			netKopecks: stageNetKop,
 			estimatedVisits: visits,
 			items: stageItems,
 		};
 	});
 
 	// Tax deduction 13% NDFL (Code 01 social limit 150,000 ₽ / Code 02 unlimited)
-	const code01StandardBaseRub = code01NetKopecks / 100;
+	const code01StandardBaseRub = new Decimal(code01NetKopecks).dividedBy(100).toNumber();
 	const code01AnnualLimitRub = ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024;
 	const code01CappedKopecks = Math.min(code01NetKopecks, code01AnnualLimitRub * 100);
-	const code01CappedEligibleBaseRub = code01CappedKopecks / 100;
-	const code01RefundKopecks = Math.round(code01CappedKopecks * 0.13);
-	const code01RefundRub = code01RefundKopecks / 100;
+	const code01CappedEligibleBaseRub = new Decimal(code01CappedKopecks).dividedBy(100).toNumber();
+	const code01RefundKopecks = new Decimal(code01CappedKopecks).times(0.13).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber();
+	const code01RefundRub = new Decimal(code01RefundKopecks).dividedBy(100).toNumber();
 
-	const code02ExpensiveBaseRub = code02NetKopecks / 100;
-	const code02RefundKopecks = Math.round(code02NetKopecks * 0.13);
-	const code02RefundRub = code02RefundKopecks / 100;
+	const code02ExpensiveBaseRub = new Decimal(code02NetKopecks).dividedBy(100).toNumber();
+	const code02RefundKopecks = new Decimal(code02NetKopecks).times(0.13).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber();
+	const code02RefundRub = new Decimal(code02RefundKopecks).dividedBy(100).toNumber();
 
 	const totalTaxRefundKopecks = code01RefundKopecks + code02RefundKopecks;
-	const totalTaxRefundRub = totalTaxRefundKopecks / 100;
-	const netCostAfterTaxRefundRub = Math.max(0, (totalNetKopecks - totalTaxRefundKopecks) / 100);
+	const totalTaxRefundRub = new Decimal(totalTaxRefundKopecks).dividedBy(100).toNumber();
+	const netCostAfterTaxRefundRub = Math.max(0, new Decimal(totalNetKopecks - totalTaxRefundKopecks).dividedBy(100).toNumber());
 
 	const taxSummaryText =
 		`Налоговый вычет 13% НДФЛ по форме ФНС КНД 1151156: Код 01 (лимит 150 000 ₽ / вычет до 19 500 ₽) — ${code01RefundRub.toLocaleString("ru-RU")} ₽; Код 02 (дорогостоящее лечение, без лимита) — ${code02RefundRub.toLocaleString("ru-RU")} ₽. Итого возврат пациенту: ${totalTaxRefundRub.toLocaleString("ru-RU")} ₽. Реальная стоимость лечения: ${netCostAfterTaxRefundRub.toLocaleString("ru-RU")} ₽.`;
@@ -438,33 +571,24 @@ function calculateTier(
 		summaryTextRu: taxSummaryText,
 	};
 
-	// 0% installments
-	const totalNetRub = totalNetKopecks / 100;
+	// 0% installments via Decimal.js
+	const totalNetRub = new Decimal(totalNetKopecks).dividedBy(100).toNumber();
+	const calcInstallment = (months: 3 | 6 | 12 | 24): CalculatedInstallmentOption => ({
+		months,
+		monthlyPaymentRub: new Decimal(totalNetKopecks)
+			.dividedBy(100)
+			.dividedBy(months)
+			.toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+			.toNumber(),
+		totalPaymentRub: totalNetRub,
+		isZeroPercent: true,
+	});
+
 	const installments = {
-		months3: {
-			months: 3 as const,
-			monthlyPaymentRub: Math.round((totalNetRub / 3) * 100) / 100,
-			totalPaymentRub: totalNetRub,
-			isZeroPercent: true as const,
-		},
-		months6: {
-			months: 6 as const,
-			monthlyPaymentRub: Math.round((totalNetRub / 6) * 100) / 100,
-			totalPaymentRub: totalNetRub,
-			isZeroPercent: true as const,
-		},
-		months12: {
-			months: 12 as const,
-			monthlyPaymentRub: Math.round((totalNetRub / 12) * 100) / 100,
-			totalPaymentRub: totalNetRub,
-			isZeroPercent: true as const,
-		},
-		months24: {
-			months: 24 as const,
-			monthlyPaymentRub: Math.round((totalNetRub / 24) * 100) / 100,
-			totalPaymentRub: totalNetRub,
-			isZeroPercent: true as const,
-		},
+		months3: calcInstallment(3),
+		months6: calcInstallment(6),
+		months12: calcInstallment(12),
+		months24: calcInstallment(24),
 	};
 
 	return {
@@ -476,13 +600,13 @@ function calculateTier(
 		materialsDescriptionRu: spec.materialsDescriptionRu,
 		keyAdvantagesRu: spec.keyAdvantagesRu,
 		itemsCount: items.length,
-		grossTotalRub: totalGrossKopecks / 100,
+		grossTotalRub: new Decimal(totalGrossKopecks).dividedBy(100).toNumber(),
 		discountPercent,
-		discountRub: totalDiscountKopecks / 100,
+		discountRub: new Decimal(totalDiscountKopecks).dividedBy(100).toNumber(),
 		totalRub: totalNetRub,
 		totalKopecks: totalNetKopecks,
-		laborRub: laborKopecks / 100,
-		materialsRub: materialsKopecks / 100,
+		laborRub: new Decimal(laborKopecks).dividedBy(100).toNumber(),
+		materialsRub: new Decimal(materialsKopecks).dividedBy(100).toNumber(),
 		stages,
 		taxDeduction,
 		installments,
@@ -497,7 +621,7 @@ export const calculateTreatmentEstimateTool: ToolDefinition<
 > = {
 	name: "calculate_treatment_estimate",
 	description:
-		"Расчет 3-уровневой сметы плана лечения (Эконом, Оптимум, Премиум) с разбивкой по материалам, гарантиям и расчетом налогового вычета 13% НДФЛ по форме ФНС КНД 1151156 (Код 01 лимит 150 000 ₽ / Код 02 без ограничений).",
+		"Расчет 3-уровневой сметы плана лечения (Эконом, Оптимум, Премиум) с разбивкой по материалам, гарантиям и расчетом налогового вычета 13% НДФЛ по форме ФНС КНД 1151156 (Код 01 лимит 150 000 ₽ / Код 02 без ограничений). Базовые цены автоматически подтягиваются из базы данных при их отсутствии.",
 	parameters: calculateTreatmentEstimateSchema,
 	permissions: ["clinical.read"],
 	category: "read",
@@ -506,53 +630,155 @@ export const calculateTreatmentEstimateTool: ToolDefinition<
 
 		// 1. Patient verification if patientId is supplied
 		let patientFullName: string | null = null;
-		if (args.patientId) {
-			const [patient] = await targetDb
-				.select({
-					id: patients.id,
-					fullName: patients.fullName,
-				})
-				.from(patients)
-				.where(
-					and(
-						eq(patients.organizationId, ctx.organizationId),
-						eq(patients.id, args.patientId),
-					),
-				)
-				.limit(1);
+		if (args.patientId && targetDb) {
+			try {
+				const [patient] = await targetDb
+					.select({
+						id: patients.id,
+						fullName: patients.fullName,
+					})
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, ctx.organizationId),
+							eq(patients.id, args.patientId),
+						),
+					)
+					.limit(1);
 
-			if (patient) {
-				patientFullName = patient.fullName;
+				if (patient) {
+					patientFullName = patient.fullName;
+				}
+			} catch {
+				// Continue if DB patient lookup fails in mock mode
 			}
+		}
+
+		// 2. Resolve prices for all items (Iron law: AI does NOT invent prices)
+		const resolvedItems: RawEstimateItemInput[] = [];
+
+		for (const raw of args.items) {
+			let resolvedBasePrice = raw.basePriceRub;
+			let resolvedCategory = raw.category;
+			let resolvedNomCode = raw.nomenclatureCode;
+			const resolvedServiceName = raw.serviceName;
+
+			if (resolvedBasePrice === undefined || resolvedBasePrice === null) {
+				// Attempt 1: Query clinic database services table
+				if (targetDb) {
+					try {
+						if (resolvedNomCode) {
+							const [matchByCode] = await targetDb
+								.select({
+									basePriceRub: services.basePriceRub,
+									category: services.category,
+									title: services.title,
+									code: services.code,
+								})
+								.from(services)
+								.where(
+									and(
+										eq(services.organizationId, ctx.organizationId),
+										eq(services.code, resolvedNomCode),
+										eq(services.active, true),
+									),
+								)
+								.limit(1);
+
+							if (matchByCode) {
+								resolvedBasePrice = Number(matchByCode.basePriceRub);
+								resolvedCategory = resolvedCategory ?? matchByCode.category;
+							}
+						}
+
+						if (resolvedBasePrice === undefined || resolvedBasePrice === null) {
+							const [matchByTitle] = await targetDb
+								.select({
+									basePriceRub: services.basePriceRub,
+									category: services.category,
+									title: services.title,
+									code: services.code,
+								})
+								.from(services)
+								.where(
+									and(
+										eq(services.organizationId, ctx.organizationId),
+										ilike(services.title, `%${resolvedServiceName}%`),
+										eq(services.active, true),
+									),
+								)
+								.limit(1);
+
+							if (matchByTitle) {
+								resolvedBasePrice = Number(matchByTitle.basePriceRub);
+								resolvedCategory = resolvedCategory ?? matchByTitle.category;
+								resolvedNomCode = resolvedNomCode ?? matchByTitle.code ?? undefined;
+							}
+						}
+					} catch {
+						// Fallback to catalog if DB query errors
+					}
+				}
+
+				// Attempt 2: Fallback to canonical Ministry of Health 804n catalog
+				if (resolvedBasePrice === undefined || resolvedBasePrice === null) {
+					const catalogFallback = resolveStandardCatalogPrice(resolvedNomCode, resolvedServiceName);
+					if (catalogFallback) {
+						resolvedBasePrice = catalogFallback.priceRub;
+						resolvedCategory = resolvedCategory ?? catalogFallback.category;
+						resolvedNomCode = resolvedNomCode ?? catalogFallback.code;
+					}
+				}
+
+				// Attempt 3: Fail closed if price cannot be determined
+				if (resolvedBasePrice === undefined || resolvedBasePrice === null) {
+					throw new Error(
+						`Не удалось определить базовую стоимость для услуги "${raw.serviceName}" (код ${raw.nomenclatureCode ?? "не указан"}). ИИ не выдумывает цены — укажите basePriceRub или добавьте позицию в прейскурант клиники.`,
+					);
+				}
+			}
+
+			resolvedItems.push({
+				toothCode: raw.toothCode,
+				serviceName: resolvedServiceName,
+				nomenclatureCode: resolvedNomCode ?? "A16.07.002",
+				basePriceRub: resolvedBasePrice,
+				category: resolvedCategory ?? "Терапия",
+				quantity: raw.quantity ?? 1,
+			});
 		}
 
 		const discount = args.discountPercent || 0;
 
-		// 2. Compute 3 parallel tiers
-		const economyTier = calculateTier("economy", args.items, discount);
-		const optimumTier = calculateTier("optimum", args.items, discount);
-		const premiumTier = calculateTier("premium", args.items, discount);
+		// 3. Compute 3 parallel tiers with exact Decimal.js math
+		const economyTier = calculateTier("economy", resolvedItems, discount);
+		const optimumTier = calculateTier("optimum", resolvedItems, discount);
+		const premiumTier = calculateTier("premium", resolvedItems, discount);
 
-		// 3. Optional draft treatment plan persistence
+		// 4. Optional draft treatment plan persistence
 		let savedPlanId: string | undefined;
-		if (args.createDraftPlan && args.patientId) {
-			const planTitle = `План лечения (Оптимум: ${optimumTier.totalRub.toLocaleString("ru-RU")} ₽, Эконом: ${economyTier.totalRub.toLocaleString("ru-RU")} ₽, Премиум: ${premiumTier.totalRub.toLocaleString("ru-RU")} ₽)`;
-			const [createdPlan] = await targetDb
-				.insert(treatmentPlans)
-				.values({
-					organizationId: ctx.organizationId,
-					patientId: args.patientId,
-					doctorId: ctx.userId ?? null,
-					name: `Комплексный план лечения (${new Date().toLocaleDateString("ru-RU")})`,
-					title: planTitle,
-					status: "Draft",
-					totalPriceRub: optimumTier.totalRub,
-					totalPrice: String(optimumTier.totalRub),
-				})
-				.returning({ id: treatmentPlans.id });
+		if (args.createDraftPlan && args.patientId && targetDb) {
+			try {
+				const planTitle = `План лечения (Оптимум: ${optimumTier.totalRub.toLocaleString("ru-RU")} ₽, Эконом: ${economyTier.totalRub.toLocaleString("ru-RU")} ₽, Премиум: ${premiumTier.totalRub.toLocaleString("ru-RU")} ₽)`;
+				const [createdPlan] = await targetDb
+					.insert(treatmentPlans)
+					.values({
+						organizationId: ctx.organizationId,
+						patientId: args.patientId,
+						doctorId: ctx.userId ?? null,
+						name: `Комплексный план лечения (${new Date().toLocaleDateString("ru-RU")})`,
+						title: planTitle,
+						status: "Draft",
+						totalPriceRub: optimumTier.totalRub,
+						totalPrice: String(optimumTier.totalRub),
+					})
+					.returning({ id: treatmentPlans.id });
 
-			if (createdPlan) {
-				savedPlanId = createdPlan.id;
+				if (createdPlan) {
+					savedPlanId = createdPlan.id;
+				}
+			} catch {
+				// Continue if insert fails in mock mode
 			}
 		}
 
@@ -562,7 +788,7 @@ export const calculateTreatmentEstimateTool: ToolDefinition<
 		const result: CalculateTreatmentEstimateResult = {
 			patientId: args.patientId ?? null,
 			patientFullName,
-			itemsCount: args.items.length,
+			itemsCount: resolvedItems.length,
 			discountPercent: discount,
 			recommendedTier: "optimum",
 			tiers: {

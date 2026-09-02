@@ -42,12 +42,12 @@
 	justify-content: space-between;
 	width: 100%;
 	max-width: 480px;
-	background: var(--paper, #1e293b);
-	border: 1px solid var(--border, #334155);
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 16px;
 	padding: 8px 14px;
-	color: var(--ink, #f8fafc);
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+	color: var(--ink);
+	box-shadow: var(--shadow-2);
 }
 
 .pwa-mode-toggle-btn {
@@ -57,9 +57,9 @@
 	min-height: 36px;
 	padding: 6px 12px;
 	border-radius: 10px;
-	border: 1px solid var(--border, #334155);
-	background: var(--paper-soft, #0f172a);
-	color: var(--ink, #f8fafc);
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
 	font-size: 12px;
 	font-weight: 700;
 	cursor: pointer;
@@ -67,15 +67,15 @@
 }
 
 .pwa-mode-toggle-btn:hover {
-	background: var(--brand-500, #0d9488);
-	color: #ffffff;
-	border-color: var(--brand-500, #0d9488);
+	background: var(--teal);
+	color: var(--paper-strong);
+	border-color: var(--teal);
 }
 
 .pwa-mode-toggle-btn.active {
-	background: var(--brand-500, #0d9488);
-	color: #ffffff;
-	border-color: var(--brand-500, #0d9488);
+	background: var(--teal);
+	color: var(--paper-strong);
+	border-color: var(--teal);
 }
 
 /* ==========================================================================
@@ -88,11 +88,11 @@
 	max-width: 412px;
 	height: 844px;
 	max-height: 86vh;
-	background: var(--paper-soft, #0f172a);
-	border: 10px solid #1e293b;
+	background: var(--paper-soft);
+	border: 10px solid var(--line-strong);
 	border-radius: 44px;
 	box-shadow:
-		0 0 0 2px #334155,
+		0 0 0 2px var(--line),
 		0 20px 48px rgba(0, 0, 0, 0.5),
 		0 4px 12px rgba(0, 0, 0, 0.3);
 	overflow: hidden;
@@ -149,6 +149,24 @@
 	justify-content: space-between;
 	font-size: 12px;
 	font-weight: 800;
+	color: var(--ink);
+	z-index: 40;
+	background: var(--paper);
+	flex-shrink: 0;
+	user-select: none;
+}%;
+	background: #0f172a;
+}
+
+/* Статус-бар смартфона */
+.pwa-status-bar {
+	height: 44px;
+	padding: 10px 20px 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 800;
 	color: var(--ink, #0f172a);
 	z-index: 40;
 	background: var(--paper, #ffffff);
@@ -164,8 +182,8 @@
 	flex: 1;
 	display: flex;
 	flex-direction: column;
-	background: var(--paper-soft, #f8fafc);
-	color: var(--ink, #0f172a);
+	background: var(--paper-soft);
+	color: var(--ink);
 	overflow: hidden;
 	position: relative;
 }
@@ -175,8 +193,8 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: 12px 16px;
-	background: var(--paper, #ffffff);
-	border-bottom: 1px solid var(--border, #e2e8f0);
+	background: var(--paper);
+	border-bottom: 1px solid var(--line);
 	flex-shrink: 0;
 	z-index: 20;
 }
@@ -198,8 +216,8 @@
 .pwa-bottom-tabbar {
 	display: grid;
 	grid-template-columns: repeat(5, 1fr);
-	background: var(--paper, #ffffff);
-	border-top: 1px solid var(--border, #e2e8f0);
+	background: var(--paper);
+	border-top: 1px solid var(--line);
 	padding: 6px 4px 18px;
 	flex-shrink: 0;
 	z-index: 30;
@@ -215,7 +233,7 @@
 	min-height: 48px;
 	background: transparent;
 	border: none;
-	color: var(--muted, #64748b);
+	color: var(--muted);
 	font-size: 10px;
 	font-weight: 700;
 	cursor: pointer;
@@ -226,7 +244,7 @@
 
 .pwa-tab-button:hover,
 .pwa-tab-button.active {
-	color: var(--brand-500, #0d9488);
+	color: var(--teal);
 }
 
 .pwa-tab-badge {
@@ -237,8 +255,8 @@
 	height: 16px;
 	padding: 0 4px;
 	border-radius: 8px;
-	background: var(--danger, #ef4444);
-	color: #ffffff;
+	background: var(--bad-fg);
+	color: var(--paper-strong);
 	font-size: 9px;
 	font-weight: 800;
 	display: flex;
@@ -250,7 +268,7 @@
 .pwa-home-indicator-bar {
 	width: 130px;
 	height: 4px;
-	background: var(--muted, #94a3b8);
+	background: var(--muted);
 	border-radius: 2px;
 	margin: 0 auto;
 	opacity: 0.6;
@@ -261,11 +279,11 @@
    ========================================================================== */
 
 .pwa-card {
-	background: var(--paper, #ffffff);
-	border: 1px solid var(--border, #e2e8f0);
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 16px;
 	padding: 14px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	box-shadow: var(--shadow-1);
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
@@ -280,8 +298,8 @@
 }
 
 .pwa-hero-next-visit {
-	background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
-	color: #ffffff;
+	background: linear-gradient(135deg, var(--teal-dark) 0%, var(--teal) 100%);
+	color: var(--paper-strong);
 	border: none;
 	box-shadow: 0 6px 20px rgba(13, 148, 136, 0.25);
 }
@@ -298,10 +316,10 @@
 	gap: 10px;
 	padding: 12px;
 	min-height: 52px;
-	background: var(--paper, #ffffff);
-	border: 1px solid var(--border, #e2e8f0);
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 14px;
-	color: var(--ink, #0f172a);
+	color: var(--ink);
 	font-size: 12px;
 	font-weight: 700;
 	cursor: pointer;
@@ -311,9 +329,9 @@
 }
 
 .pwa-quick-action-btn:hover {
-	border-color: var(--brand-500, #0d9488);
+	border-color: var(--teal);
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+	box-shadow: var(--shadow-1);
 }
 
 /* ==========================================================================
@@ -350,13 +368,13 @@
 	width: 38px;
 	height: 38px;
 	border-radius: 50%;
-	background: #ffffff;
-	color: #0f172a;
+	background: var(--paper);
+	color: var(--ink);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-	border: 2px solid #0d9488;
+	border: 2px solid var(--teal);
 }
 
 .pwa-slider-pill {
@@ -373,12 +391,12 @@
 
 .pwa-slider-pill.before {
 	left: 10px;
-	color: #38bdf8;
+	color: var(--info-fg);
 }
 
 .pwa-slider-pill.after {
 	right: 10px;
-	color: #4ade80;
+	color: var(--ok-fg);
 }
 
 /* ==========================================================================
@@ -398,8 +416,8 @@
 }
 
 .pwa-sheet-card {
-	background: var(--paper, #ffffff);
-	border-top: 1px solid var(--border, #e2e8f0);
+	background: var(--paper);
+	border-top: 1px solid var(--line);
 	border-radius: 24px 24px 0 0;
 	width: 100%;
 	max-height: 85%;
@@ -412,8 +430,8 @@
 }
 
 .pwa-qr-box {
-	background: #ffffff;
-	border: 2px solid #e2e8f0;
+	background: var(--paper);
+	border: 2px solid var(--line);
 	border-radius: 18px;
 	padding: 14px;
 	display: flex;
@@ -421,7 +439,7 @@
 	align-items: center;
 	gap: 8px;
 	margin: 0 auto;
-	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+	box-shadow: var(--shadow-1);
 }
 
 .pwa-bank-grid {
@@ -437,9 +455,9 @@
 	padding: 10px 12px;
 	min-height: 44px;
 	border-radius: 12px;
-	border: 1px solid var(--border, #e2e8f0);
-	background: var(--paper-soft, #f8fafc);
-	color: var(--ink, #0f172a);
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
 	font-size: 11px;
 	font-weight: 700;
 	text-decoration: none;
@@ -448,8 +466,8 @@
 }
 
 .pwa-bank-btn:hover {
-	border-color: var(--brand-500, #0d9488);
-	background: var(--paper, #ffffff);
+	border-color: var(--teal);
+	background: var(--paper);
 }
 
 /* ==========================================================================
@@ -465,15 +483,15 @@
 	font-weight: 800;
 	font-family: monospace;
 	border-radius: 12px;
-	border: 2px solid var(--border, #cbd5e1);
-	background: var(--paper-soft, #f8fafc);
-	color: var(--ink, #0f172a);
+	border: 2px solid var(--line-strong);
+	background: var(--paper-soft);
+	color: var(--ink);
 	outline: none;
 }
 
 .pwa-otp-input:focus {
-	border-color: var(--brand-500, #0d9488);
-	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-glow);
 }
 
 .pwa-action-btn-primary {
@@ -486,8 +504,8 @@
 	padding: 10px 16px;
 	border-radius: 12px;
 	border: none;
-	background: var(--brand-500, #0d9488);
-	color: #ffffff;
+	background: var(--teal);
+	color: var(--paper-strong);
 	font-size: 13px;
 	font-weight: 800;
 	cursor: pointer;
@@ -496,7 +514,7 @@
 }
 
 .pwa-action-btn-primary:hover:not(:disabled) {
-	background: #0f766e;
+	background: var(--teal-dark);
 }
 
 .pwa-action-btn-primary:disabled {
@@ -513,9 +531,9 @@
 	min-height: 44px;
 	padding: 8px 14px;
 	border-radius: 12px;
-	border: 1px solid var(--border, #cbd5e1);
-	background: var(--paper, #ffffff);
-	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong);
+	background: var(--paper);
+	color: var(--ink);
 	font-size: 12px;
 	font-weight: 700;
 	cursor: pointer;
@@ -524,5 +542,5 @@
 }
 
 .pwa-action-btn-secondary:hover {
-	background: var(--paper-soft, #f8fafc);
+	background: var(--paper-soft);
 }

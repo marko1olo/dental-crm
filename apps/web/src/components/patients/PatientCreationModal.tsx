@@ -463,14 +463,14 @@ export function PatientCreationModal({
 							data-testid="patient-create-advertising-source-select"
 						>
 							<option value="">— Выберите источник обращения —</option>
-							<optgroup label="🌐 Онлайн-самозапись (Автоматические каналы)">
+							<optgroup label="Онлайн-самозапись (Автоматические каналы)">
 								{DENTAL_ADVERTISING_SOURCES.filter((s) => s.isOnlineSelfBooking).map((s) => (
 									<option key={s.key} value={s.key}>
 										{s.label}
 									</option>
 								))}
 							</optgroup>
-							<optgroup label="📞 Администратор, Сарафан и Офлайн">
+							<optgroup label="Администратор, Сарафан и Офлайн">
 								{DENTAL_ADVERTISING_SOURCES.filter((s) => !s.isOnlineSelfBooking).map((s) => (
 									<option key={s.key} value={s.key}>
 										{s.label}

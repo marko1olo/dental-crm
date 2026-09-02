@@ -202,7 +202,7 @@ export const OrthodonticCard043_1uForm: React.FC<OrthodonticCard043_1uFormProps>
 									/>
 								</div>
 							</div>
-							<div style={{ fontSize: "13px", color: "#475569" }}>
+							<div style={{ fontSize: "13px", color: "var(--muted)" }}>
 								Скелетный класс: <strong>{anbAngle > 4 ? "II Скелетный класс (прогнатия в/ч или микрогнатия н/ч)" : anbAngle < 0 ? "III Скелетный класс (прогения н/ч или ретрогнатия в/ч)" : "I Скелетный класс (ортогнатическое соотношение челюстей)"}</strong>
 							</div>
 						</div>

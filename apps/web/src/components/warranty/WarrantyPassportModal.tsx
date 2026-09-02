@@ -953,7 +953,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 													height: "22px",
 													borderRadius: "50%",
 													background: "var(--teal)",
-													color: "#fff",
+													color: "var(--on-teal, #ffffff)",
 													display: "flex",
 													alignItems: "center",
 													justifyContent: "center",

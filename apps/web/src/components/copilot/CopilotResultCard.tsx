@@ -30,6 +30,7 @@ import {
   type Prescription107Data,
   type EstimateTierData,
   type EstimateTierOption,
+  type EstimateStageBreakdown,
 } from './CopilotGenerativeCards';
 import type { Protocol043Data, DdiSafetyAlertData, ReactStepItem } from './copilotTypes';
 import { formatMoney } from './useCopilotFormat';
@@ -265,22 +266,125 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
     tool.includes('estimate') ||
     tool.includes('tier') ||
     tool.includes('treatment_plan') ||
-    Array.isArray(obj.tiers) ||
+    tool.includes('suggest_treatment_plan') ||
+    tool.includes('calculate_treatment_estimate') ||
+    obj.tiers !== undefined ||
     Array.isArray(obj.pricing_tiers) ||
     obj.estimate !== undefined
   ) {
-    const rawTiers = Array.isArray(obj.tiers)
-      ? (obj.tiers as unknown as EstimateTierOption[])
-      : Array.isArray(obj.pricing_tiers)
-      ? (obj.pricing_tiers as unknown as EstimateTierOption[])
-      : Array.isArray(result) && result.length > 0 && ('tierKey' in (result[0] as Obj) || 'tierName' in (result[0] as Obj))
-      ? (result as unknown as EstimateTierOption[])
-      : undefined;
+    let rawTiers: EstimateTierOption[] | undefined;
+    if (Array.isArray(obj.tiers)) {
+      rawTiers = obj.tiers as unknown as EstimateTierOption[];
+    } else if (obj.tiers && typeof obj.tiers === 'object') {
+      rawTiers = Object.values(obj.tiers).map((rawT: unknown) => {
+        const t = (rawT && typeof rawT === 'object' ? rawT : {}) as Record<string, unknown>;
+        const total = typeof t.totalRub === 'number'
+          ? t.totalRub
+          : typeof t.totalCostRub === 'number'
+          ? t.totalCostRub
+          : typeof t.totalCostKopecks === 'number'
+          ? Math.round(t.totalCostKopecks / 100)
+          : 0;
+        const taxDed = typeof t.taxDeductionRub === 'number'
+          ? t.taxDeductionRub
+          : typeof t.taxDeduction13Rub === 'number'
+          ? t.taxDeduction13Rub
+          : Math.round(total * 0.13);
+        const netCost = typeof t.netCostAfterDeductionRub === 'number'
+          ? t.netCostAfterDeductionRub
+          : Math.max(0, total - taxDed);
+        const installmentsObj = t.monthlyInstallments as Record<string, number> | undefined;
+        const installmentObj = t.installment as { monthlyPaymentKopecks?: number; months?: number } | undefined;
+        const monthlyInst = typeof t.monthlyInstallmentRub === 'number'
+          ? t.monthlyInstallmentRub
+          : typeof installmentsObj?.months12Rub === 'number'
+          ? installmentsObj.months12Rub
+          : typeof installmentObj?.monthlyPaymentKopecks === 'number'
+          ? Math.round(installmentObj.monthlyPaymentKopecks / 100)
+          : Math.round(total / 12);
+
+        const rawStages = Array.isArray(t.stages) ? (t.stages as Record<string, unknown>[]) : undefined;
+        const stagesList: EstimateStageBreakdown[] | undefined = rawStages
+          ? rawStages.map((st) => ({
+              stageName: String(st.stageName || st.stageNameRu || st.titleRu || 'Этап лечения'),
+              proceduresCount: typeof st.proceduresCount === 'number'
+                ? st.proceduresCount
+                : typeof st.itemCount === 'number'
+                ? st.itemCount
+                : Array.isArray(st.items)
+                ? st.items.length
+                : 1,
+              totalRub: typeof st.totalRub === 'number'
+                ? st.totalRub
+                : typeof st.stageCostRub === 'number'
+                ? st.stageCostRub
+                : typeof st.stageCostKopecks === 'number'
+                ? Math.round(st.stageCostKopecks / 100)
+                : 0,
+            }))
+          : undefined;
+
+        const rawKey = String(t.tierKey || 'optimum').toLowerCase();
+        const tierKey: 'economy' | 'optimum' | 'premium' =
+          rawKey === 'economy' || rawKey === 'optimum' || rawKey === 'premium' ? rawKey : 'optimum';
+
+        return {
+          tierKey,
+          tierName: String(
+            t.tierName ||
+              t.tierNameRu ||
+              (tierKey === 'economy'
+                ? 'Тариф «Эконом»'
+                : tierKey === 'premium'
+                ? 'Тариф «Премиум»'
+                : 'Тариф «Оптимум»')
+          ),
+          badge: String(
+            t.badge ||
+              t.badgeRu ||
+              (tierKey === 'optimum'
+                ? '★ Рекомендуемый (Выбор врачей)'
+                : tierKey === 'premium'
+                ? 'VIP'
+                : 'Базовый')
+          ),
+          totalRub: total,
+          taxDeductionRub: taxDed,
+          netCostAfterDeductionRub: netCost,
+          monthlyInstallmentRub: monthlyInst,
+          installmentMonths: typeof t.installmentMonths === 'number'
+            ? t.installmentMonths
+            : typeof installmentObj?.months === 'number'
+            ? installmentObj.months
+            : 12,
+          warrantyDescription: String(
+            t.warrantyDescription ||
+              t.warrantyRu ||
+              (tierKey === 'premium'
+                ? 'Пожизненная гарантия'
+                : tierKey === 'optimum'
+                ? '2 года расширенной гарантии'
+                : '1 год официальной гарантии')
+          ),
+          materialsDescription: String(t.materialsDescription || t.materialsDescriptionRu || ''),
+          keyAdvantages: Array.isArray(t.keyAdvantages)
+            ? (t.keyAdvantages as string[])
+            : Array.isArray(t.keyAdvantagesRu)
+            ? (t.keyAdvantagesRu as string[])
+            : [],
+          stages: stagesList,
+        };
+      });
+    } else if (Array.isArray(obj.pricing_tiers)) {
+      rawTiers = obj.pricing_tiers as unknown as EstimateTierOption[];
+    } else if (Array.isArray(result) && result.length > 0 && ('tierKey' in (result[0] as Obj) || 'tierName' in (result[0] as Obj))) {
+      rawTiers = result as unknown as EstimateTierOption[];
+    }
 
     if (rawTiers || obj.items) {
       const estimateData: EstimateTierData = {
         patientId: typeof obj.patientId === 'string' ? obj.patientId : undefined,
-        patientName: typeof obj.patientName === 'string' ? obj.patientName : undefined,
+        patientName: typeof obj.patientName === 'string' ? obj.patientName : typeof obj.patientFullName === 'string' ? obj.patientFullName : undefined,
         discountPercent: typeof obj.discountPercent === 'number' ? obj.discountPercent : undefined,
         teeth: Array.isArray(obj.teeth) ? (obj.teeth as (string | number)[]) : undefined,
         tiers: rawTiers || [],
@@ -294,29 +398,91 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
     tool.includes('prescription') ||
     tool.includes('107') ||
     tool.includes('recipe') ||
+    tool.includes('create_prescription_107') ||
     obj.prescription !== undefined ||
-    (Array.isArray(obj.drugs) && obj.drugs.length > 0 && ('latinName' in (obj.drugs[0] as Obj) || 'signa' in (obj.drugs[0] as Obj)))
+    obj.form107 !== undefined ||
+    (Array.isArray(obj.drugs) && obj.drugs.length > 0 && ('latinName' in (obj.drugs[0] as Obj) || 'signa' in (obj.drugs[0] as Obj))) ||
+    (Array.isArray(obj.items) && obj.items.length > 0 && ('latinName' in (obj.items[0] as Obj) || 'signaRussian' in (obj.items[0] as Obj)))
   ) {
-    const rxObj = (obj.prescription && typeof obj.prescription === 'object' ? obj.prescription : obj) as unknown as Prescription107Data;
-    if (rxObj && rxObj.patientName && Array.isArray(rxObj.drugs)) {
-      return <Prescription107Card prescription={rxObj} />;
+    const rawRx = (obj.prescription || obj.form107 || obj) as Record<string, unknown>;
+    const rawDrugs = Array.isArray(rawRx.drugs)
+      ? rawRx.drugs
+      : Array.isArray(rawRx.items)
+      ? rawRx.items
+      : [];
+
+    const drugsList: Prescription107Data['drugs'] = rawDrugs.map((d: unknown, i: number) => {
+      const dObj = (d && typeof d === 'object' ? d : {}) as Record<string, unknown>;
+      return {
+        id: String(dObj.id || `drug_${i + 1}`),
+        mnn: String(dObj.mnn || dObj.nameRu || dObj.tradeName || 'Препарат'),
+        tradeName: typeof dObj.tradeName === 'string' ? dObj.tradeName : undefined,
+        latinName: String(dObj.latinName || dObj.nameLatin || dObj.dispenseLatin || dObj.mnn || 'Medicamentum'),
+        dosageForm: String(dObj.dosageForm || dObj.form || 'таблетки'),
+        dosage: String(dObj.dosage || '500 мг'),
+        quantity: String(dObj.quantity || dObj.packageCount || '10 шт'),
+        signa: String(dObj.signa || dObj.signaRussian || 'По 1 таб. 2 раза в день во время еды'),
+        icd10: typeof dObj.icd10 === 'string' ? dObj.icd10 : undefined,
+      };
+    });
+
+    const rxData: Prescription107Data = {
+      id: typeof rawRx.id === 'string' ? rawRx.id : undefined,
+      series: String(rawRx.series || rawRx.prescriptionSeriesNumber || '77-АА'),
+      number: String(rawRx.number || '004821'),
+      issueDate: String(rawRx.issueDate || rawRx.prescriptionDate || new Date().toLocaleDateString('ru-RU')),
+      validityDays: (rawRx.validityDays as number | string) || 60,
+      patientName: String(rawRx.patientName || rawRx.patientFullName || 'Пациент клиники'),
+      patientBirthDate: typeof rawRx.patientBirthDate === 'string' ? rawRx.patientBirthDate : undefined,
+      patientAgeYears: typeof rawRx.patientAgeYears === 'number' ? rawRx.patientAgeYears : undefined,
+      patientAddress: typeof rawRx.patientAddress === 'string' ? rawRx.patientAddress : undefined,
+      doctorName: String(rawRx.doctorName || rawRx.doctorFullName || 'Лечащий врач'),
+      doctorSpecialty: typeof rawRx.doctorSpecialty === 'string' ? rawRx.doctorSpecialty : 'Врач-стоматолог',
+      clinicName: typeof rawRx.clinicName === 'string' ? rawRx.clinicName : typeof rawRx.clinicLegalName === 'string' ? rawRx.clinicLegalName : undefined,
+      clinicOgrn: typeof rawRx.clinicOgrn === 'string' ? rawRx.clinicOgrn : undefined,
+      clinicAddress: typeof rawRx.clinicAddress === 'string' ? rawRx.clinicAddress : undefined,
+      diagnosisIcd10: typeof rawRx.diagnosisIcd10 === 'string' ? rawRx.diagnosisIcd10 : undefined,
+      diagnosisName: typeof rawRx.diagnosisName === 'string' ? rawRx.diagnosisName : undefined,
+      drugs: drugsList,
+      isChronicallyIll: Boolean(rawRx.isChronicallyIll || rawRx.isChronicSpecialCare),
+      isSignedUkep: Boolean(rawRx.isSignedUkep),
+      ukepCertificate: typeof rawRx.ukepCertificate === 'string' ? rawRx.ukepCertificate : undefined,
+      ukepSignedAt: typeof rawRx.ukepSignedAt === 'string' ? rawRx.ukepSignedAt : undefined,
+    };
+
+    if (rxData.patientName && rxData.drugs.length > 0) {
+      return <Prescription107Card prescription={rxData} />;
     }
   }
 
   // 4.3. Generative UI: Schedule Slot Picker Card (interactive grid)
   if (
-    (tool.includes('picker') || tool.includes('schedule_picker') || (Array.isArray(obj.slots) && obj.slots.length > 0 && typeof (obj.slots[0] as Obj).time === 'string')) &&
-    (typeof obj.doctorName === 'string' || Array.isArray(obj.slots))
+    (tool.includes('picker') ||
+      tool.includes('schedule_picker') ||
+      tool.includes('schedule') ||
+      tool.includes('free_slots') ||
+      tool.includes('get_doctor_schedule') ||
+      (Array.isArray(obj.slots) && obj.slots.length > 0 && typeof (obj.slots[0] as Obj).time === 'string')) &&
+    (typeof obj.doctorName === 'string' || typeof obj.doctor_name === 'string' || Array.isArray(obj.slots) || Array.isArray(obj.appointments))
   ) {
+    const rawSlotsList = Array.isArray(obj.slots)
+      ? (obj.slots as unknown as ScheduleSlotOption[])
+      : Array.isArray(obj.free_windows)
+      ? (obj.free_windows as unknown as ScheduleSlotOption[])
+      : Array.isArray(obj.freeWindows)
+      ? (obj.freeWindows as unknown as ScheduleSlotOption[])
+      : [];
+
     const pickerData: ScheduleSlotPickerData = {
-      doctorId: typeof obj.doctorId === 'string' ? obj.doctorId : undefined,
-      doctorName: typeof obj.doctorName === 'string' ? obj.doctorName : undefined,
-      doctorSpecialty: typeof obj.doctorSpecialty === 'string' ? obj.doctorSpecialty : undefined,
+      doctorId: typeof obj.doctorId === 'string' ? obj.doctorId : typeof obj.doctor_id === 'string' ? obj.doctor_id : undefined,
+      doctorName: typeof obj.doctorName === 'string' ? obj.doctorName : typeof obj.doctor_name === 'string' ? obj.doctor_name : undefined,
+      doctorSpecialty: typeof obj.doctorSpecialty === 'string' ? obj.doctorSpecialty : typeof obj.doctor_specialty === 'string' ? obj.doctor_specialty : undefined,
       cabinet: typeof obj.cabinet === 'string' ? obj.cabinet : undefined,
-      date: typeof obj.date === 'string' ? obj.date : undefined,
+      date: typeof obj.date === 'string' ? obj.date : typeof obj.dateFrom === 'string' ? obj.dateFrom.slice(0, 10) : undefined,
       availableDates: Array.isArray(obj.availableDates) ? (obj.availableDates as string[]) : undefined,
-      slots: Array.isArray(obj.slots) ? (obj.slots as unknown as ScheduleSlotOption[]) : [],
+      slots: rawSlotsList,
     };
+
     if (pickerData.slots.length > 0) {
       return (
         <ScheduleSlotPickerCard

@@ -31,16 +31,14 @@
    запасами, то есть тёмная тема не меняется ни на пиксель.
    ============================================================ */
 .sign-dialog-overlay {
-	/* Значения — прежние запасы этого файла, слово в слово. Единственное
-	   изменение поведения: --text-primary больше не подменяется палитрой
-	   светлой темы. */
-	--bg-primary: #1e2128;
-	--bg-secondary: #181a20;
-	--bg-tertiary: #111216;
-	--border-color: #2d3139;
-	--text-primary: #f3f4f6;
-	--text-muted: #9ca3af;
-	--accent-primary: #10b981;
+	/* Значения — привязаны к дизайн-токенам системы */
+	--bg-primary: var(--paper);
+	--bg-secondary: var(--paper-strong);
+	--bg-tertiary: var(--paper-soft);
+	--border-color: var(--line);
+	--text-primary: var(--ink);
+	--text-muted: var(--muted);
+	--accent-primary: var(--ok-fg);
 
 	position: fixed;
 	top: 0;
@@ -57,12 +55,12 @@
 }
 
 .sign-dialog-content {
-	background: var(--bg-primary, #1e2128);
-	border: 1px solid var(--border-color, #2d3139);
+	background: var(--bg-primary);
+	border: 1px solid var(--border-color);
 	border-radius: 12px;
 	width: 100%;
 	max-width: 460px;
-	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+	box-shadow: var(--shadow-3);
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -74,7 +72,7 @@
 	justify-content: space-between;
 	align-items: center;
 	padding: 20px 24px;
-	border-bottom: 1px solid var(--border-color, #2d3139);
+	border-bottom: 1px solid var(--border-color);
 }
 
 .sign-dialog-title-row {
@@ -84,20 +82,20 @@
 }
 
 .sign-dialog-icon {
-	color: var(--accent-primary, #10b981);
+	color: var(--accent-primary);
 }
 
 .sign-dialog-header h2 {
 	margin: 0;
 	font-size: 1.1rem;
 	font-weight: 600;
-	color: var(--text-primary, #f3f4f6);
+	color: var(--text-primary);
 }
 
 .sign-dialog-close {
 	background: transparent;
 	border: none;
-	color: var(--text-muted, #9ca3af);
+	color: var(--text-muted);
 	font-size: 1.5rem;
 	line-height: 1;
 	cursor: pointer;
@@ -105,14 +103,14 @@
 }
 
 .sign-dialog-close:hover {
-	color: var(--text-primary, #f3f4f6);
+	color: var(--text-primary);
 }
 
 .sign-dialog-tabs {
 	display: flex;
 	padding: 0 24px;
-	border-bottom: 1px solid var(--border-color, #2d3139);
-	background: var(--bg-secondary, #181a20);
+	border-bottom: 1px solid var(--border-color);
+	background: var(--bg-secondary);
 }
 
 .sign-tab {
@@ -124,7 +122,7 @@
 	padding: 16px 0;
 	background: transparent;
 	border: none;
-	color: var(--text-muted, #9ca3af);
+	color: var(--text-muted);
 	font-size: 0.9rem;
 	font-weight: 500;
 	cursor: pointer;
@@ -133,11 +131,11 @@
 }
 
 .sign-tab:hover {
-	color: var(--text-primary, #f3f4f6);
+	color: var(--text-primary);
 }
 
 .sign-tab.active {
-	color: var(--accent-primary, #10b981);
+	color: var(--accent-primary);
 }
 
 .sign-tab.active::after {
@@ -147,7 +145,7 @@
 	left: 0;
 	right: 0;
 	height: 2px;
-	background: var(--accent-primary, #10b981);
+	background: var(--accent-primary);
 	border-radius: 2px 2px 0 0;
 }
 
@@ -164,16 +162,16 @@
 
 .sign-form label {
 	font-size: 0.85rem;
-	color: var(--text-muted, #9ca3af);
+	color: var(--text-muted);
 	font-weight: 500;
 }
 
 .sign-cert-select,
 .sign-pin-group input {
 	width: 100%;
-	background: var(--bg-tertiary, #111216);
-	border: 1px solid var(--border-color, #2d3139);
-	color: var(--text-primary, #f3f4f6);
+	background: var(--bg-tertiary);
+	border: 1px solid var(--border-color);
+	color: var(--text-primary);
 	padding: 12px;
 	border-radius: 8px;
 	font-size: 0.95rem;
@@ -183,7 +181,7 @@
 
 .sign-cert-select:focus,
 .sign-pin-group input:focus {
-	border-color: var(--accent-primary, #10b981);
+	border-color: var(--accent-primary);
 }
 
 .sign-pin-group {
@@ -198,8 +196,8 @@
 	gap: 8px;
 	margin-top: 12px;
 	padding: 12px;
-	background: rgba(16, 185, 129, 0.1);
-	color: var(--accent-primary, #10b981);
+	background: var(--ok-bg);
+	color: var(--accent-primary);
 	border-radius: 8px;
 	font-size: 0.85rem;
 }
@@ -211,14 +209,14 @@
 	align-items: center;
 	justify-content: center;
 	height: 100%;
-	color: var(--text-muted, #9ca3af);
+	color: var(--text-muted);
 	text-align: center;
 	gap: 12px;
 }
 
 .sign-empty-state p {
 	margin: 0;
-	color: var(--text-primary, #f3f4f6);
+	color: var(--text-primary);
 	font-weight: 500;
 }
 
@@ -235,16 +233,16 @@
 	justify-content: flex-end;
 	gap: 12px;
 	padding: 20px 24px;
-	background: var(--bg-secondary, #181a20);
-	border-top: 1px solid var(--border-color, #2d3139);
+	background: var(--bg-secondary);
+	border-top: 1px solid var(--border-color);
 }
 
 .sign-action-btn {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	background: var(--accent-primary, #10b981);
-	color: #fff;
+	background: var(--accent-primary);
+	color: var(--paper-strong);
 	border: none;
 	padding: 10px 20px;
 	border-radius: 8px;

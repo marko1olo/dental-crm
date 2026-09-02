@@ -103,6 +103,8 @@ export function ProcedureMaterialDeductionModal({
 	// Модальное окно 1-кликового формирования заказа поставщику
 	const [showPoModal, setShowPoModal] = useState(false);
 	const [copiedPo, setCopiedPo] = useState(false);
+	const inFlightRef = React.useRef(false);
+	const lastClickTimeRef = React.useRef(0);
 
 	// Синхронизация при открытии
 	useEffect(() => {
@@ -711,7 +713,7 @@ export function ProcedureMaterialDeductionModal({
 									padding: "6px 12px",
 									borderRadius: 8,
 									background: "rgba(217, 119, 6, 0.12)",
-									color: "#b45309",
+									color: "var(--warn-fg, #b45309)",
 									fontWeight: 700,
 									fontSize: 13,
 								}}
@@ -747,8 +749,20 @@ export function ProcedureMaterialDeductionModal({
 							type="button"
 							className={`inventory-confirm-deduct-btn ${summary.hasDeficit ? "has-deficit-warning" : ""}`}
 							onClick={() => {
-								if (onConfirmDeduction) {
-									onConfirmDeduction(lines, summary);
+								const now = Date.now();
+								if (inFlightRef.current || isDeducting || now - lastClickTimeRef.current < 600) {
+									return;
+								}
+								inFlightRef.current = true;
+								lastClickTimeRef.current = now;
+								try {
+									if (onConfirmDeduction) {
+										onConfirmDeduction(lines, summary);
+									}
+								} finally {
+									setTimeout(() => {
+										inFlightRef.current = false;
+									}, 600);
 								}
 							}}
 							disabled={isDeducting || lines.length === 0}

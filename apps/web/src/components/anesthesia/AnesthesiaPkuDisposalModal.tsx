@@ -215,13 +215,13 @@ export function AnesthesiaPkuDisposalModal({
 				{/* Modal Header */}
 				<div className="anesthesia-modal-header hub-header">
 					<div className="anesthesia-header-title">
-						<div className="hub-logo-box" style={{ background: 'rgba(2, 132, 199, 0.12)', borderColor: '#0284c7' }}>
-							<Trash2 size={22} color="#0284c7" />
+						<div className="hub-logo-box" style={{ background: 'var(--teal-surface, rgba(13, 148, 136, 0.12))', borderColor: 'var(--teal)' }}>
+							<Trash2 size={22} color="var(--teal)" />
 						</div>
 						<div>
 							<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
 								<span className="hub-title-text">Журнал учета анестетиков и ПКУ (СанПиН 3.3686-21)</span>
-								<span className="anesthesia-header-badge" style={{ background: '#0284c7', color: '#fff' }}>Раздел X: Отходы Класса Б</span>
+								<span className="anesthesia-header-badge" style={{ background: 'var(--teal)', color: 'var(--on-teal, #fff)' }}>Раздел X: Отходы Класса Б</span>
 							</div>
 							<div className="hub-subtitle-text">
 								Предметно-количественный учет (ПКУ), списание карпул, контроль серии/партии и дезинфекция
@@ -303,11 +303,11 @@ export function AnesthesiaPkuDisposalModal({
 						</div>
 					</div>
 
-					{/* Carpule Batch Tracking Grid */}
-					<div className="hub-card" style={{ padding: '0.875rem 1rem', marginBottom: '1.25rem' }}>
-						<div className="card-section-title" style={{ color: '#0284c7', marginBottom: '0.75rem' }}>
+					{/* Carpule Batch Tracking */}
+					<div className="anesthesia-card" style={{ marginBottom: '1rem' }}>
+						<div className="card-section-title" style={{ color: 'var(--teal)', marginBottom: '0.75rem' }}>
 							<Syringe size={16} />
-							<span>Маркировка партии и учет израсходованных карпул (ст. 69 ФЗ № 323)</span>
+							<span>1. Идентификация препарата и серии (ПКУ)</span>
 						</div>
 
 						<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -371,7 +371,7 @@ export function AnesthesiaPkuDisposalModal({
 
 					{/* SanPiN Disinfection & Responsible Personnel */}
 					<div className="hub-card" style={{ padding: '0.875rem 1rem', marginBottom: '1.25rem' }}>
-						<div className="card-section-title" style={{ color: '#0284c7', marginBottom: '0.75rem' }}>
+						<div className="card-section-title" style={{ color: 'var(--teal)', marginBottom: '0.75rem' }}>
 							<ShieldCheck size={16} />
 							<span>Режим дезинфекции и списание отходов Класса Б (СанПиН 3.3686-21)</span>
 						</div>
@@ -525,8 +525,8 @@ export function AnesthesiaPkuDisposalModal({
 					) : (
 						<div
 							style={{
-								background: '#ffffff',
-								border: '1px solid #cbd5e1',
+								background: 'var(--paper-strong)',
+								border: '1px solid var(--line)',
 								borderRadius: '8px',
 								padding: '1rem',
 								overflowX: 'auto'
@@ -538,7 +538,7 @@ export function AnesthesiaPkuDisposalModal({
 
 				{/* Modal Footer */}
 				<div className="anesthesia-modal-footer hub-footer" style={{ display: 'flex', justifyContent: 'space-between' }}>
-					<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--muted, #64748b)' }}>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--muted)' }}>
 						<ShieldCheck size={16} color="var(--ok-fg)" />
 						<span>Номер записи: <strong>{pkuRecord.recordNumber}</strong></span>
 					</div>
@@ -556,7 +556,7 @@ export function AnesthesiaPkuDisposalModal({
 							type="button"
 							onClick={handleSaveAndClose}
 							className="anesthesia-btn anesthesia-btn-primary"
-							style={{ minHeight: '36px', background: '#0284c7', borderColor: '#0284c7' }}
+							style={{ minHeight: '36px', background: 'var(--teal)', borderColor: 'var(--teal)', color: 'var(--on-teal, #fff)' }}
 						>
 							<CheckCircle2 size={16} />
 							Внести в журнал ПКУ и прикрепить к 043/у

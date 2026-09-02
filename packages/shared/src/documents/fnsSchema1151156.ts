@@ -155,6 +155,8 @@ export const fnsIdentityDocumentSchema = z.object({
 	docTypeCode: z.string().default("21"),
 	seriesAndNumber: z.string().min(1, "Серия и номер документа обязательны"),
 	issueDate: z.string().optional().nullable(),
+	issuedBy: z.string().optional().nullable(),
+	subdivisionCode: z.string().optional().nullable(),
 });
 
 export const fnsClinicSchema = z.object({
@@ -168,6 +170,7 @@ export const fnsClinicSchema = z.object({
 		.object({
 			number: z.string(),
 			date: z.string(),
+			issuer: z.string().optional().nullable(),
 		})
 		.optional()
 		.nullable(),
@@ -225,6 +228,7 @@ export const fnsTaxPayloadSchema = z.object({
 	taxInspectionCode: z.string().length(4).default("7701"),
 	certificateKind: z.enum(["1", "2", "3"]).default("1"), // 1 = Первичная, 2 = Корректирующая, 3 = Аннулирующая
 	correctionNumber: z.number().int().nonnegative().default(0),
+	filePrefix: z.enum(["NO_MEDOPL", "UT_SVOPLMEDUSL"]).optional().nullable(),
 	softwareVersion: z.string().optional().nullable(),
 	clinic: fnsClinicSchema,
 	payer: fnsPersonSchema,
@@ -248,6 +252,8 @@ export interface FnsIdentityDocument {
 	docTypeCode?: string | null | undefined;
 	seriesAndNumber: string;
 	issueDate?: string | null | undefined;
+	issuedBy?: string | null | undefined;
+	subdivisionCode?: string | null | undefined;
 }
 
 export interface FnsClinicInfo {
@@ -260,6 +266,7 @@ export interface FnsClinicInfo {
 	license?: {
 		number: string;
 		date: string;
+		issuer?: string | null | undefined;
 	} | null | undefined;
 	directorName?: string | null | undefined;
 	directorSnils?: string | null | undefined;
@@ -317,6 +324,7 @@ export interface FnsTaxPayload {
 	taxInspectionCode?: string | null | undefined;
 	certificateKind?: "1" | "2" | "3" | null | undefined;
 	correctionNumber?: number | null | undefined;
+	filePrefix?: "NO_MEDOPL" | "UT_SVOPLMEDUSL" | string | null | undefined;
 	softwareVersion?: string | null | undefined;
 	clinic: FnsClinicInfo;
 	payer: FnsPersonInfo;

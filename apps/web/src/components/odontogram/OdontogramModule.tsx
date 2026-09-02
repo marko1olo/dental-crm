@@ -12,6 +12,7 @@ import {
 	Mic,
 	Printer,
 	QrCode,
+	ShieldAlert,
 	Sparkles,
 	Stethoscope,
 } from "lucide-react";
@@ -815,8 +816,9 @@ export const OdontogramModule = ({
 							</div>
 							<div className="min-w-0 space-y-1">
 								<div className="flex items-center gap-2 flex-wrap">
-									<span className="text-xs sm:text-sm font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
-										⚠️ АЛЛЕРГИИ И СОМАТИЧЕСКИЕ РИСКИ БЕЗОПАСНОСТИ:
+									<span className="text-xs sm:text-sm font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+										<ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
+										<span>АЛЛЕРГИИ И СОМАТИЧЕСКИЕ РИСКИ БЕЗОПАСНОСТИ:</span>
 									</span>
 									{rawRiskLevel === "high" && (
 										<span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black tracking-wide">
@@ -826,8 +828,9 @@ export const OdontogramModule = ({
 								</div>
 								<div className="text-xs sm:text-sm font-bold text-rose-900 dark:text-rose-100 flex items-center gap-2 flex-wrap break-words">
 									{allergyText && (
-										<span className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1 shadow-xs">
-											🚫 {allergyText}
+										<span className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1.5 shadow-xs">
+											<AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+											<span>{allergyText}</span>
 										</span>
 									)}
 									{rawSomaticAlerts && rawSomaticAlerts.map((alert, idx) => (

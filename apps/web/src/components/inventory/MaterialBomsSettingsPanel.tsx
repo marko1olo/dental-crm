@@ -417,7 +417,7 @@ export function MaterialBomsSettingsPanel({
 					<span className="material-boms-stat-label">Дефицит на складе</span>
 					<span
 						className="material-boms-stat-value"
-						style={{ color: stats.totalDeficitServices > 0 ? "#dc2626" : "#059669" }}
+						style={{ color: stats.totalDeficitServices > 0 ? "var(--bad-fg, #dc2626)" : "var(--ok-fg, #059669)" }}
 					>
 						{stats.totalDeficitServices === 0 ? "В норме" : `${stats.totalDeficitServices} услуг`}
 					</span>
@@ -809,7 +809,7 @@ export function MaterialBomsSettingsPanel({
 							<button
 								type="button"
 								className="material-boms-btn material-boms-btn-primary"
-								style={{ background: "#dc2626" }}
+								style={{ background: "var(--bad-fg, #dc2626)" }}
 								onClick={() => handleDeleteRule(confirmDeleteId)}
 							>
 								Удалить

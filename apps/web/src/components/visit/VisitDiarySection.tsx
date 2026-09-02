@@ -147,6 +147,13 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		dismissPendingSoapSuggestion,
 	} = useVisitDiaryLogic(visitId, patientId);
 
+	const [fieldInterimMap, setFieldInterimMap] = useState<{
+		anamnesis?: string;
+		statusLocalis?: string;
+		treatmentDescription?: string;
+		complications?: string;
+	}>({});
+
 	const [printPhotos, setPrintPhotos] = useState<readonly DiaryPrintPhoto[]>([]);
 	const [showSummaryModal, setShowSummaryModal] = useState(false);
 	const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -1040,11 +1047,16 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									context="visit"
 									sterileMode={false}
 									className="p-1"
+									title="Диктовать жалобы (Gemini Live VAD)"
+									onInterim={(interim) => {
+										setFieldInterimMap((p) => ({ ...p, anamnesis: interim }));
+									}}
 									onResult={(text) => {
 										setDiary((p) => ({
 											...p,
 											anamnesis: p.anamnesis ? `${p.anamnesis} ${text}` : text,
 										}));
+										setFieldInterimMap((p) => ({ ...p, anamnesis: "" }));
 										scheduleDebouncedSave();
 									}}
 								/>
@@ -1064,6 +1076,16 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						onFocus={handleAutoResize}
 						placeholder="Со слов пациента: жалобы на боли, чувствительность..."
 					/>
+					{fieldInterimMap.anamnesis && (
+						<div
+							className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none"
+							data-testid="interim-text-anamnesis"
+						>
+							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
+							<span className="font-bold shrink-0">AI Диктовка (S):</span>
+							<span className="truncate">«{fieldInterimMap.anamnesis}»</span>
+						</div>
+					)}
 				</div>
 
 				{/* O — Objective */}
@@ -1078,6 +1100,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									context="visit"
 									sterileMode={false}
 									className="p-1"
+									title="Диктовать объективный статус (Gemini Live VAD)"
+									onInterim={(interim) => {
+										setFieldInterimMap((p) => ({ ...p, statusLocalis: interim }));
+									}}
 									onResult={(text) => {
 										setDiary((p) => ({
 											...p,
@@ -1085,6 +1111,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 												? `${p.statusLocalis} ${text}`
 												: text,
 										}));
+										setFieldInterimMap((p) => ({ ...p, statusLocalis: "" }));
 										scheduleDebouncedSave();
 									}}
 								/>
@@ -1104,6 +1131,16 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						onFocus={handleAutoResize}
 						placeholder="Внешний осмотр, перкуссия, пальпация, ЭОД, рентген..."
 					/>
+					{fieldInterimMap.statusLocalis && (
+						<div
+							className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none"
+							data-testid="interim-text-status-localis"
+						>
+							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
+							<span className="font-bold shrink-0">AI Диктовка (O):</span>
+							<span className="truncate">«{fieldInterimMap.statusLocalis}»</span>
+						</div>
+					)}
 				</div>
 
 				{/* A — Assessment */}
@@ -1242,6 +1279,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									context="visit"
 									sterileMode={false}
 									className="p-1"
+									title="Диктовать лечение и протокол (Gemini Live VAD)"
+									onInterim={(interim) => {
+										setFieldInterimMap((p) => ({ ...p, treatmentDescription: interim }));
+									}}
 									onResult={(text) => {
 										setDiary((p) => ({
 											...p,
@@ -1249,6 +1290,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 												? `${p.treatmentDescription} ${text}`
 												: text,
 										}));
+										setFieldInterimMap((p) => ({ ...p, treatmentDescription: "" }));
 										scheduleDebouncedSave();
 									}}
 								/>
@@ -1268,6 +1310,16 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						onFocus={handleAutoResize}
 						placeholder="Анестезия, проведённые манипуляции, рекомендации..."
 					/>
+					{fieldInterimMap.treatmentDescription && (
+						<div
+							className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none"
+							data-testid="interim-text-treatment"
+						>
+							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
+							<span className="font-bold shrink-0">AI Диктовка (P):</span>
+							<span className="truncate">«{fieldInterimMap.treatmentDescription}»</span>
+						</div>
+					)}
 					{!fieldsDisabled && (
 						<div
 							className="mt-2 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-1.5"
@@ -1312,6 +1364,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									context="visit"
 									sterileMode={false}
 									className="p-1"
+									title="Диктовать осложнения и анамнез (Gemini Live VAD)"
+									onInterim={(interim) => {
+										setFieldInterimMap((p) => ({ ...p, complications: interim }));
+									}}
 									onResult={(text) => {
 										setDiary((p) => ({
 											...p,
@@ -1319,6 +1375,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 												? `${p.complications} ${text}`
 												: text,
 										}));
+										setFieldInterimMap((p) => ({ ...p, complications: "" }));
 										scheduleDebouncedSave();
 									}}
 								/>
@@ -1352,6 +1409,16 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							placeholder="Сопутствующие заболевания (если есть)..."
 						/>
 					</div>
+					{fieldInterimMap.complications && (
+						<div
+							className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none mt-1"
+							data-testid="interim-text-complications"
+						>
+							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
+							<span className="font-bold shrink-0">AI Диктовка (Осложнения):</span>
+							<span className="truncate">«{fieldInterimMap.complications}»</span>
+						</div>
+					)}
 				</div>
 
 				<VisitDiaryPhotoUpload

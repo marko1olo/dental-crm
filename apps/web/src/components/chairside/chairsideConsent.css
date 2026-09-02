@@ -166,7 +166,7 @@
 
 .chairside-tab-btn.active {
 	background: var(--teal);
-	color: var(--on-teal, #ffffff);
+	color: var(--paper-strong);
 	border-color: var(--teal-dark);
 	box-shadow: var(--shadow-1);
 }
@@ -242,9 +242,9 @@
 
 /* Document Paper Sheet */
 .chairside-paper-sheet {
-	background: #ffffff !important;
-	color: #0f172a !important;
-	border: 1px solid #cbd5e1 !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	border: 1px solid var(--line) !important;
 	border-radius: var(--radius-lg, 12px);
 	padding: 2rem 2.5rem;
 	display: flex;
@@ -254,12 +254,12 @@
 	max-width: 86ch;
 	width: 100%;
 	margin: 0 auto;
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+	box-shadow: var(--shadow-1);
 	box-sizing: border-box;
 }
 
 .chairside-paper-sheet * {
-	color: #0f172a !important;
+	color: var(--ink) !important;
 }
 
 .chairside-sheet-title {
@@ -268,14 +268,14 @@
 	text-align: center;
 	text-transform: uppercase;
 	margin: 0 0 0.5rem 0;
-	color: #0f172a !important;
+	color: var(--ink) !important;
 }
 
 .chairside-sheet-basis {
 	font-size: 0.85rem;
 	font-weight: 600;
 	text-align: center;
-	color: #475569 !important;
+	color: var(--muted) !important;
 	margin-top: 0;
 }
 
@@ -288,14 +288,14 @@
 .chairside-section-h {
 	font-size: 1.05rem;
 	font-weight: 700;
-	color: #0f172a !important;
-	border-bottom: 1px solid #cbd5e1;
+	color: var(--ink) !important;
+	border-bottom: 1px solid var(--line);
 	padding-bottom: 0.35rem;
 }
 
 .chairside-section-p {
 	font-size: 0.95rem;
-	color: #1e293b !important;
+	color: var(--ink-2, var(--muted)) !important;
 	margin: 0;
 	text-align: justify;
 }
@@ -311,7 +311,7 @@
 
 .chairside-bullets li {
 	line-height: 1.5;
-	color: #1e293b !important;
+	color: var(--ink-2, var(--muted)) !important;
 }
 
 /* Treatment Estimate Table */
@@ -319,7 +319,7 @@
 	width: 100%;
 	overflow-x: auto;
 	border-radius: var(--radius-md, 8px);
-	border: 1px solid #cbd5e1;
+	border: 1px solid var(--line);
 }
 
 .chairside-estimate-table {
@@ -329,17 +329,17 @@
 }
 
 .chairside-estimate-table th {
-	background: #f1f5f9;
-	color: #1e293b !important;
+	background: var(--paper-soft);
+	color: var(--ink) !important;
 	font-weight: 700;
 	padding: 0.75rem 1rem;
-	border-bottom: 2px solid #cbd5e1;
+	border-bottom: 2px solid var(--line);
 	text-align: left;
 }
 
 .chairside-estimate-table td {
 	padding: 0.75rem 1rem;
-	border-bottom: 1px solid #e2e8f0;
+	border-bottom: 1px solid var(--line);
 	vertical-align: middle;
 }
 
@@ -348,16 +348,16 @@
 	align-items: center;
 	justify-content: center;
 	padding: 0.2rem 0.6rem;
-	background: #e0f2fe;
-	color: #0369a1 !important;
+	background: var(--info-bg);
+	color: var(--info-fg) !important;
 	font-weight: 800;
 	border-radius: 6px;
 	font-size: 0.9rem;
 }
 
 .chairside-total-panel {
-	background: #f0fdfa;
-	border: 2px solid #0d9488;
+	background: var(--teal-soft);
+	border: 2px solid var(--teal);
 	border-radius: var(--radius-lg, 12px);
 	padding: 1.25rem 1.5rem;
 	display: flex;
@@ -376,12 +376,12 @@
 .chairside-total-sum {
 	font-size: 1.6rem;
 	font-weight: 800;
-	color: #0d9488 !important;
+	color: var(--teal-dark) !important;
 }
 
 .chairside-total-words {
 	font-size: 0.9rem;
-	color: #475569 !important;
+	color: var(--muted) !important;
 	font-style: italic;
 }
 
@@ -632,7 +632,7 @@
 
 .chairside-btn.primary {
 	background: var(--teal);
-	color: var(--on-teal, #ffffff);
+	color: var(--paper-strong);
 	border: 1px solid var(--teal-dark);
 	box-shadow: var(--shadow-1);
 }
@@ -793,7 +793,7 @@
 	.chairside-overlay {
 		position: absolute !important;
 		inset: 0 !important;
-		background: #ffffff !important;
+		background: var(--paper-strong) !important;
 		padding: 0 !important;
 		display: block !important;
 	}

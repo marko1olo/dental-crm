@@ -165,6 +165,11 @@ export function validateRussianSnils(snils: string): { isValid: boolean; normali
 		return { isValid: false, errorMessageRu: "СНИЛС должен содержать 11 цифр (XXX-XXX-XXX YY)" };
 	}
 
+	// Запрет на фиктивный СНИЛС из всех нулей
+	if (/^0+$/.test(clean) || clean.slice(0, 9) === "000000000") {
+		return { isValid: false, errorMessageRu: "СНИЛС не может состоять только из нулей" };
+	}
+
 	// СНИЛС до 001-001-998 не проверяется по контрольной сумме
 	const num = Number.parseInt(clean.slice(0, 9), 10);
 	if (num <= 1001998) {

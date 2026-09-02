@@ -129,7 +129,7 @@ export function BoneQualityPanel({
 						<div
 							style={{
 								background: mischColor,
-								color: "#fff",
+								color: "var(--on-teal, #fff)",
 								fontWeight: 800,
 								fontSize: "16px",
 								padding: "4px 12px",
@@ -222,10 +222,9 @@ export function BoneQualityPanel({
 							{protocol.steps.map((step) => (
 								<div
 									key={step.step}
-									className="flex gap-2 items-start p-2 rounded-md border"
+									className="flex gap-2 items-start p-2 rounded-lg"
 									style={{
-										background: "var(--glass-panel)",
-										borderColor: "var(--line)",
+										background: "var(--paper-soft)",
 									}}
 								>
 									<div
@@ -313,8 +312,8 @@ function ZoneCard({ label, hu }: { label: string; hu: number }) {
 					: "#f97316";
 	return (
 		<div
-			className="p-2 rounded-md border text-center"
-			style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+			className="p-2 rounded-lg text-center"
+			style={{ background: "var(--paper-soft)" }}
 		>
 			<div className="text-[10px] truncate" style={{ color: "var(--muted)" }}>
 				{label}

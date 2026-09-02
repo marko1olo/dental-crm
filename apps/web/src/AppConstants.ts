@@ -684,6 +684,7 @@ export const documentIssueSignatureModeLabels: Record<
 > = {
 	paper_signed: "Бумажный экземпляр подписан",
 	simple_electronic_signature: "Простая электронная подпись",
+	enhanced_non_qualified_electronic_signature: "УНЭП",
 	qualified_electronic_signature: "УКЭП",
 };
 
@@ -1479,10 +1480,13 @@ export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
 export type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
 		keyof PatientAdministrativeProfile,
-		"preferredAppointmentWeekdays"
+		"preferredAppointmentWeekdays" | "isAnonymous" | "anonymousCode" | "decree659Compliance"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
+	isAnonymous?: boolean | null;
+	anonymousCode?: string | null;
+	decree659Compliance?: Record<string, unknown> | null;
 };
 
 export type PatientAdministrativeProfileSaveState =

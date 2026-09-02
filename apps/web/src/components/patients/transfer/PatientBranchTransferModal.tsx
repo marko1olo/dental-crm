@@ -403,7 +403,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 										<button
 											type="button"
 											onClick={() => handleSelectAll(true)}
-											style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", fontWeight: 600 }}
+											style={{ background: "none", border: "none", color: "var(--info-fg, #2563eb)", cursor: "pointer", fontWeight: 600 }}
 										>
 											Выбрать всё
 										</button>
@@ -602,7 +602,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 										type="checkbox"
 										checked={is152FzConsentGiven}
 										onChange={(e) => setIs152FzConsentGiven(e.target.checked)}
-										style={{ width: "18px", height: "18px", accentColor: "#16a34a" }}
+										style={{ width: "18px", height: "18px", accentColor: "var(--ok-fg, #16a34a)" }}
 									/>
 									<span>Пациент дал согласие на обработку и передачу медицинской документации ф. 043/у в филиал сети</span>
 								</label>
@@ -647,7 +647,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 								<Check size={36} />
 							</div>
 							<div>
-								<h3 style={{ fontSize: "1.3rem", fontWeight: 800, margin: "0 0 4px 0", color: "#166534" }}>
+								<h3 style={{ fontSize: "1.3rem", fontWeight: 800, margin: "0 0 4px 0", color: "var(--ok-fg, #166534)" }}>
 									Трансфер успешно выполнен и зафиксирован!
 								</h3>
 								<p style={{ color: "var(--muted, #64748b)", fontSize: "0.9rem", margin: 0 }}>

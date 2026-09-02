@@ -388,7 +388,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 						className="curator-select-input"
 						aria-label="Выбор куратора"
 					>
-						<option value="all">👥 Все кураторы клиники</option>
+						<option value="all">Все кураторы клиники</option>
 						{staffCurators.map((cur) => (
 							<option key={cur.id} value={cur.id}>
 								{cur.fullName || cur.name} ({cur.role})
@@ -589,10 +589,10 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 							className="curator-select-input"
 							style={{ minHeight: "36px", padding: "4px 10px", fontSize: "12px" }}
 						>
-							<option value="priority">🔥 По приоритету</option>
-							<option value="sum_desc">💰 По сумме сметы</option>
-							<option value="days_in_stage_desc">⏳ По дням на этапе</option>
-							<option value="assigned_at_desc">📅 По дате назначения</option>
+							<option value="priority">По приоритету</option>
+							<option value="sum_desc">По сумме сметы</option>
+							<option value="days_in_stage_desc">По дням на этапе</option>
+							<option value="assigned_at_desc">По дате назначения</option>
 						</select>
 					</div>
 				</div>

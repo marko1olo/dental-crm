@@ -134,8 +134,8 @@
 
 /* Workspace Profile */
 .access-workspace-active {
-	background: linear-gradient(135deg, var(--teal) 0%, #0f766e 100%);
-	color: white;
+	background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+	color: var(--paper-strong);
 	border-radius: 12px;
 	padding: 24px;
 	display: flex;

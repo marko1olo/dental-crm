@@ -679,3 +679,21 @@
 	font-size: 0.875rem;
 	font-weight: 500;
 }
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+	.selfcheckin-modal-backdrop {
+		padding: 0.25rem;
+	}
+	.selfcheckin-modal-window {
+		max-height: 98vh;
+		height: 98vh;
+		border-radius: 10px;
+	}
+	.selfcheckin-header {
+		padding: 0.875rem 1rem;
+	}
+	.selfcheckin-content {
+		padding: 1rem;
+	}
+}

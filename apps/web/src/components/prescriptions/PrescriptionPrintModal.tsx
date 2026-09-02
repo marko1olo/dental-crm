@@ -1182,7 +1182,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						{/* Printable Physical Sheet Mockup */}
 						<div
 							className="p-5 sm:p-6 rounded-xl border border-slate-300 shadow-xl font-serif leading-relaxed flex flex-col gap-3 selection:bg-teal-100"
-							style={{ backgroundColor: "#ffffff", color: "#0f172a" }}
+							style={{ backgroundColor: "var(--paper-strong, #ffffff)", color: "var(--ink, #0f172a)" }}
 						>
 							{/* Form Official Header */}
 							<div className="border-b-2 border-slate-900 pb-2 text-[10px] flex justify-between gap-2" style={{ color: "#0f172a" }}>

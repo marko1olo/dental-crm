@@ -151,11 +151,11 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 				quantity: it.quantity,
 				planUnitPriceKopecks: it.planUnitPriceKopecks,
 				planDiscountKopecks: it.planDiscountKopecks || 0,
-				toothNumber: it.toothNumber ?? null,
+				toothNumber: it.toothNumber !== undefined ? it.toothNumber : null,
 				surfaces: it.surfaces || [],
-				serviceId: it.serviceId,
-				stageId: it.stageId,
-				stageTitleRu: it.stageTitleRu,
+				...(it.serviceId !== undefined ? { serviceId: it.serviceId } : {}),
+				...(it.stageId !== undefined ? { stageId: it.stageId } : {}),
+				...(it.stageTitleRu !== undefined ? { stageTitleRu: it.stageTitleRu } : {}),
 			})),
 			catalog: catalogLookup,
 			itemResolutionOverrides: parsed.data.itemResolutionOverrides as Record<string, PriceLockResolutionPolicy> | undefined,
@@ -201,6 +201,41 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			});
 		}
 
+		// 1.1 БЛОКИРУЮЩИЙ ГЕЙТ №1 (ПОСТАНОВЛЕНИЕ №659 И СТ. 16 ФЗ-326):
+		// Запрет выписки счетов по программе ОМС для анонимных карт или при отсутствии полного пакета документов (паспорт, СНИЛС, полис ОМС)
+		const isOmsInvoice =
+			data.items.some(
+				(it) =>
+					(it.categoryRu && it.categoryRu.toLowerCase().includes("омс")) ||
+					(it.nameRu && it.nameRu.toLowerCase().includes("омс")) ||
+					(it.code804n && it.code804n.toLowerCase().includes("омс")),
+			) ||
+			Boolean(data.notes && data.notes.toLowerCase().includes("омс"));
+
+		const adminProfile = (patient.administrativeProfile || {}) as Record<string, unknown>;
+		const isAnonPatient =
+			Boolean(patient.fullName?.startsWith("UUID_ANON")) ||
+			Boolean(patient.fullName?.toLowerCase().includes("аноним")) ||
+			adminProfile["isAnonymous"] === true;
+
+		const policyRaw =
+			typeof adminProfile["insurancePolicyNumber"] === "string"
+				? adminProfile["insurancePolicyNumber"].trim().replace(/\D/g, "")
+				: "";
+		const hasValidOmsIdentity = Boolean(
+			adminProfile["identityDocument"] &&
+			adminProfile["snils"] &&
+			policyRaw.length === 16,
+		);
+
+		if (isOmsInvoice && (isAnonPatient || !hasValidOmsIdentity)) {
+			return reply.code(422).send({
+				error: "Decree659OmsForbiddenError",
+				message:
+					"Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Федерального закона № 326-ФЗ: формирование счетов и нарядов по программе ОМС для анонимных карт (UUID_ANON) или при отсутствии полного пакета документов (паспорт РФ, СНИЛС и 16-значный полис ОМС) категорически запрещено.",
+			});
+		}
+
 		// 2. Получаем актуальный прайс-лист для валидации
 		const catalogRows = await getServiceCatalogForOrganization(orgId);
 		const catalogLookup: CatalogServiceLookup[] = catalogRows.map((c) => ({
@@ -223,7 +258,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			const staffList = await db
 				.select({ id: users.id, fullName: users.fullName, pinCodeHash: users.pinCodeHash, role: users.role })
 				.from(users)
-				.where(eq(users.organizationId, orgId));
+				.where(and(eq(users.organizationId, orgId), eq(users.isActive, true)));
 
 			for (const staff of staffList) {
 				if (staff.pinCodeHash) {
@@ -247,7 +282,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 		// Валидация плана
 		const planItemsForVal: PlanItemForValidation[] = data.items.map((it) => ({
 			itemId: it.itemId,
-			toothNumber: it.toothNumber ?? null,
+			toothNumber: it.toothNumber !== undefined ? it.toothNumber : null,
 			surfaces: it.surfaces || [],
 			code804n: it.code804n,
 			nameRu: it.nameRu,
@@ -255,7 +290,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			quantity: it.quantity,
 			planUnitPriceKopecks: Math.round(it.planUnitPriceRub * 100),
 			planDiscountKopecks: Math.round(it.discountRub * 100),
-			serviceId: it.analogueServiceId || it.serviceId || undefined,
+			...(it.analogueServiceId || it.serviceId ? { serviceId: it.analogueServiceId || it.serviceId } : {}),
 		}));
 
 		const validationReport = validatePlanToInvoice({

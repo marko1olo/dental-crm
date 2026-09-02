@@ -484,11 +484,11 @@ export function KraftPackageModal({
 								width: "42px",
 								height: "42px",
 								borderRadius: "10px",
-								background: "rgba(13, 148, 136, 0.12)",
+								background: "var(--teal-surface, rgba(13, 148, 136, 0.12))",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
-								color: "#0d9488",
+								color: "var(--teal)",
 								flexShrink: 0,
 							}}
 						>
@@ -569,7 +569,7 @@ export function KraftPackageModal({
 										<label style={{ fontSize: "0.82rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--muted, #475569)" }}>
 											1. Выберите упаковку (Azov / DGM):
 										</label>
-										<span style={{ fontSize: "0.78rem", color: "#059669", fontWeight: 700 }}>
+										<span style={{ fontSize: "0.78rem", color: "var(--ok-fg)", fontWeight: 700 }}>
 											Норма: {selectedMaterial.statutoryShelfLifeDays} суток
 										</span>
 									</div>
@@ -584,8 +584,8 @@ export function KraftPackageModal({
 													style={{
 														padding: "0.65rem 0.85rem",
 														borderRadius: "8px",
-														border: isSelected ? "2px solid #0d9488" : "1px solid var(--line, #e2e8f0)",
-														background: isSelected ? "rgba(13, 148, 136, 0.08)" : "var(--paper-soft, #f8fafc)",
+														border: isSelected ? "2px solid var(--teal)" : "1px solid var(--line, #e2e8f0)",
+														background: isSelected ? "var(--teal-surface, rgba(13, 148, 136, 0.08))" : "var(--paper-soft, #f8fafc)",
 														cursor: "pointer",
 														display: "flex",
 														justifyContent: "space-between",
@@ -610,7 +610,7 @@ export function KraftPackageModal({
 															fontSize: "0.75rem",
 															fontWeight: 800,
 															background: preset.shelfLifeDays >= 50 ? "rgba(5, 150, 105, 0.12)" : "rgba(217, 119, 6, 0.12)",
-															color: preset.shelfLifeDays >= 50 ? "#059669" : "#d97706",
+															color: preset.shelfLifeDays >= 50 ? "var(--ok-fg)" : "var(--warn-fg)",
 															whiteSpace: "nowrap",
 															flexShrink: 0,
 															marginLeft: "0.5rem",
@@ -792,8 +792,8 @@ export function KraftPackageModal({
 											minHeight: "50px",
 											fontSize: "0.95rem",
 											fontWeight: 800,
-											background: "#0d9488",
-											color: "#ffffff",
+											background: "var(--teal)",
+											color: "var(--on-teal, #ffffff)",
 											borderRadius: "8px",
 											display: "flex",
 											alignItems: "center",
@@ -899,7 +899,7 @@ export function KraftPackageModal({
 													type="button"
 													onClick={stopCamera}
 													className="sanpin-btn sanpin-btn-secondary"
-													style={{ minHeight: "36px", padding: "0.35rem 0.65rem", fontSize: "0.75rem", color: "#dc2626" }}
+													style={{ minHeight: "36px", padding: "0.35rem 0.65rem", fontSize: "0.75rem", color: "var(--bad-fg)" }}
 												>
 													<CameraOff size={14} />
 													<span>Остановить</span>
@@ -911,7 +911,7 @@ export function KraftPackageModal({
 													type="button"
 													onClick={() => startCamera()}
 													className="sanpin-btn sanpin-btn-primary"
-													style={{ minHeight: "36px", padding: "0.35rem 0.85rem", fontSize: "0.8rem", fontWeight: 700, background: "var(--teal-600, #0d9488)", color: "#fff" }}
+													style={{ minHeight: "36px", padding: "0.35rem 0.85rem", fontSize: "0.8rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)" }}
 													data-testid="start-camera-scan-btn"
 												>
 													<Camera size={15} />
@@ -940,7 +940,7 @@ export function KraftPackageModal({
 										position: "relative",
 										width: "100%",
 										height: isCameraActive ? "240px" : "80px",
-										background: "#0f172a",
+										background: "var(--ink, #0f172a)",
 										borderRadius: "8px",
 										overflow: "hidden",
 										display: "flex",
@@ -977,19 +977,19 @@ export function KraftPackageModal({
 												style={{
 													width: "160px",
 													height: "160px",
-													border: "2px solid #14b8a6",
+													border: "2px solid var(--teal)",
 													borderRadius: "12px",
 													boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 15px rgba(20, 184, 166, 0.6)",
 													position: "relative",
 												}}
 											>
-												<div style={{ position: "absolute", top: "-20px", left: 0, right: 0, textAlign: "center", color: "#34d399", fontSize: "0.75rem", fontWeight: 700, textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+												<div style={{ position: "absolute", top: "-20px", left: 0, right: 0, textAlign: "center", color: "var(--ok-fg, #34d399)", fontSize: "0.75rem", fontWeight: 700, textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
 													Наведите на DataMatrix
 												</div>
 											</div>
 										</div>
 									) : (
-										<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#94a3b8", fontSize: "0.825rem" }}>
+										<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--muted)", fontSize: "0.825rem" }}>
 											<Scan size={18} />
 											<span>Камера выключена. Нажмите «Запустить камеру 60 FPS» или введите код вручную.</span>
 										</div>
@@ -1083,7 +1083,7 @@ export function KraftPackageModal({
 									style={{
 										padding: "1.25rem",
 										borderRadius: "8px",
-										border: parsedScanned.isExpired ? "1px solid #dc2626" : "1px solid #059669",
+										border: parsedScanned.isExpired ? "1px solid var(--bad-fg)" : "1px solid var(--ok-fg)",
 										background: parsedScanned.isExpired ? "rgba(220, 38, 38, 0.06)" : "rgba(5, 150, 105, 0.06)",
 										display: "flex",
 										flexDirection: "column",
@@ -1143,8 +1143,8 @@ export function KraftPackageModal({
 											minHeight: "48px",
 											fontSize: "0.95rem",
 											fontWeight: 800,
-											background: "#059669",
-											color: "#ffffff",
+											background: "var(--ok-fg)",
+											color: "var(--on-teal, #ffffff)",
 											display: "flex",
 											alignItems: "center",
 											justifyContent: "center",
@@ -1226,10 +1226,10 @@ export function KraftPackageModal({
 															fontFamily: "monospace",
 															fontWeight: 700,
 															fontSize: "0.8rem",
-															background: "rgba(13, 148, 136, 0.1)",
+															background: "var(--teal-surface, rgba(13, 148, 136, 0.1))",
 															padding: "0.15rem 0.4rem",
 															borderRadius: "4px",
-															color: "#0d9488",
+															color: "var(--teal)",
 														}}
 													>
 														{pkg.barcode128}
@@ -1246,7 +1246,7 @@ export function KraftPackageModal({
 												</td>
 												<td>
 													<div style={{ fontSize: "0.8rem" }}>{pkg.packDate}</div>
-													<div style={{ fontSize: "0.72rem", color: "#059669", fontWeight: 600 }}>
+													<div style={{ fontSize: "0.72rem", color: "var(--ok-fg)", fontWeight: 600 }}>
 														до {pkg.expDate}
 													</div>
 												</td>

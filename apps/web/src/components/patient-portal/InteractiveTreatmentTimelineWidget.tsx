@@ -398,7 +398,7 @@ export const InteractiveTreatmentTimelineWidget: React.FC<InteractiveTreatmentTi
 											<h4 className="text-xs font-bold text-white">{stage.titleRu}</h4>
 											{stage.teethFdi.length > 0 && (
 												<span className="px-1.5 py-0.5 rounded bg-neutral-800 text-[10px] text-neutral-300 font-mono border border-neutral-700">
-													Зубы: {stage.teethFdi.join(", ")}
+													{`Зубы: ${stage.teethFdi.join(", ")}`}
 												</span>
 											)}
 										</div>

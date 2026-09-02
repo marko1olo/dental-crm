@@ -446,7 +446,7 @@ export function OrthodonticPerspectiveView() {
 											<path
 												d="M 20 90 Q 25 20, 70 20 Q 115 20, 120 90"
 												fill="none"
-												stroke="#f43f5e"
+												stroke="var(--bad-fg, #f43f5e)"
 												strokeWidth="5"
 												strokeDasharray="6 4"
 											/>
@@ -461,7 +461,7 @@ export function OrthodonticPerspectiveView() {
 												{ cx: 110, cy: 60 },
 												{ cx: 116, cy: 82 },
 											].map((pt, i) => (
-												<circle key={i} cx={pt.cx} cy={pt.cy} r="4" fill="#fb7185" />
+												<circle key={i} cx={pt.cx} cy={pt.cy} r="4" fill="var(--bad-fg, #fb7185)" />
 											))}
 										</svg>
 									</div>
@@ -478,7 +478,7 @@ export function OrthodonticPerspectiveView() {
 											<path
 												d="M 20 90 Q 30 15, 70 15 Q 110 15, 120 90"
 												fill="none"
-												stroke="#10b981"
+												stroke="var(--ok-fg, #10b981)"
 												strokeWidth="5"
 											/>
 											{/* Harmonious teeth points */}
@@ -492,7 +492,7 @@ export function OrthodonticPerspectiveView() {
 												{ cx: 110, cy: 60 },
 												{ cx: 118, cy: 85 },
 											].map((pt, i) => (
-												<circle key={i} cx={pt.cx} cy={pt.cy} r="4" fill="#34d399" />
+												<circle key={i} cx={pt.cx} cy={pt.cy} r="4" fill="var(--ok-fg, #34d399)" />
 											))}
 										</svg>
 									</div>

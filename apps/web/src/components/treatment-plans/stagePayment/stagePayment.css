@@ -16,11 +16,11 @@
 }
 
 .stage-payment-modal-container {
-	background-color: var(--paper, #ffffff);
-	color: var(--ink, #0f172a);
-	border: 1px solid var(--border, #cbd5e1);
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
 	border-radius: 1.25rem;
-	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	box-shadow: var(--shadow-3);
 	width: 100%;
 	max-width: 68rem;
 	max-height: 92vh;
@@ -47,8 +47,8 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: 1.25rem 1.5rem;
-	border-bottom: 1px solid var(--border, #cbd5e1);
-	background-color: var(--paper-strong, var(--paper, #ffffff));
+	border-bottom: 1px solid var(--line);
+	background-color: var(--paper-strong);
 }
 
 /* Navigation Tabs */
@@ -56,8 +56,8 @@
 	display: flex;
 	gap: 0.5rem;
 	padding: 0.75rem 1.5rem;
-	border-bottom: 1px solid var(--border, #cbd5e1);
-	background-color: var(--paper-muted, rgba(148, 163, 184, 0.08));
+	border-bottom: 1px solid var(--line);
+	background-color: var(--paper-soft);
 	overflow-x: auto;
 	scrollbar-width: thin;
 }
@@ -72,7 +72,7 @@
 	font-weight: 600;
 	border: 1px solid transparent;
 	background: transparent;
-	color: var(--muted, #64748b);
+	color: var(--muted);
 	cursor: pointer;
 	min-height: 44px;
 	transition: all 0.15s ease-in-out;
@@ -80,14 +80,14 @@
 }
 
 .stage-payment-tab-btn:hover {
-	color: var(--ink, #0f172a);
-	background-color: rgba(148, 163, 184, 0.15);
+	color: var(--ink);
+	background-color: var(--paper-soft);
 }
 
 .stage-payment-tab-btn.active {
-	background-color: var(--paper, #ffffff);
-	color: var(--teal, #0d9488);
-	border-color: var(--border, #cbd5e1);
+	background-color: var(--paper);
+	color: var(--teal);
+	border-color: var(--line);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -103,8 +103,8 @@
 
 /* Progress bar banner */
 .stage-progress-card {
-	background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%);
-	border: 1px solid rgba(13, 148, 136, 0.25);
+	background: var(--teal-surface);
+	border: 1px solid var(--teal);
 	border-radius: 1rem;
 	padding: 1.25rem;
 	display: flex;
@@ -114,22 +114,22 @@
 
 .stage-progress-track {
 	height: 0.625rem;
-	background-color: rgba(148, 163, 184, 0.25);
+	background-color: var(--line);
 	border-radius: 9999px;
 	overflow: hidden;
 	display: flex;
 }
 
 .stage-progress-fill {
-	background: linear-gradient(90deg, #0d9488 0%, #10b981 100%);
+	background: var(--teal);
 	height: 100%;
 	transition: width 0.4s ease-out;
 }
 
 /* Stage Cards */
 .stage-item-card {
-	background-color: var(--paper-strong, var(--paper, #ffffff));
-	border: 1px solid var(--border, #cbd5e1);
+	background-color: var(--paper-strong);
+	border: 1px solid var(--line);
 	border-radius: 1rem;
 	padding: 1.25rem;
 	display: flex;
@@ -140,24 +140,24 @@
 }
 
 .stage-item-card:hover {
-	border-color: var(--teal, #0d9488);
+	border-color: var(--teal);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .stage-item-card.is-completed {
-	border-left: 4px solid var(--emerald, #10b981);
+	border-left: 4px solid var(--ok-fg);
 }
 
 .stage-item-card.is-in-progress {
-	border-left: 4px solid var(--teal, #0d9488);
+	border-left: 4px solid var(--teal);
 }
 
 .stage-item-card.is-advance-paid {
-	border-left: 4px solid var(--amber, #f59e0b);
+	border-left: 4px solid var(--warn-fg);
 }
 
 .stage-item-card.is-refunded {
-	border-left: 4px solid var(--rose, #f43f5e);
+	border-left: 4px solid var(--bad-fg);
 	opacity: 0.85;
 }
 
@@ -178,39 +178,41 @@
 }
 
 .stage-action-btn.primary {
-	background-color: var(--teal, #0d9488);
-	color: #ffffff;
+	background-color: var(--teal);
+	color: var(--paper-strong);
 }
 
 .stage-action-btn.primary:hover {
+	background-color: var(--teal-dark);
 	opacity: 0.9;
 	transform: translateY(-1px);
 }
 
 .stage-action-btn.secondary {
 	background-color: transparent;
-	border-color: var(--border, #cbd5e1);
-	color: var(--ink, #0f172a);
+	border-color: var(--line);
+	color: var(--ink);
 }
 
 .stage-action-btn.secondary:hover {
-	background-color: rgba(148, 163, 184, 0.12);
+	background-color: var(--paper-soft);
 }
 
 .stage-action-btn.danger {
-	background-color: rgba(244, 63, 94, 0.1);
-	color: var(--rose, #f43f5e);
-	border-color: rgba(244, 63, 94, 0.3);
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
+	border-color: var(--bad-fg);
 }
 
 .stage-action-btn.danger:hover {
-	background-color: rgba(244, 63, 94, 0.2);
+	background-color: var(--bad-bg);
+	opacity: 0.9;
 }
 
 /* Fiscal Receipt Paper Simulation */
 .fiscal-slip-container {
-	background-color: var(--paper-strong, #ffffff);
-	border: 1px dashed var(--border, #94a3b8);
+	background-color: var(--paper-strong);
+	border: 1px dashed var(--line);
 	border-radius: 0.75rem;
 	padding: 1.5rem;
 	font-family: "Courier New", Courier, monospace;
@@ -218,22 +220,22 @@
 	line-height: 1.4;
 	max-width: 24rem;
 	margin: 0 auto;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-	color: var(--ink, #0f172a);
+	box-shadow: var(--shadow-1);
+	color: var(--ink);
 }
 
 .fiscal-slip-divider {
-	border-top: 1px dashed var(--border, #94a3b8);
+	border-top: 1px dashed var(--line);
 	margin: 0.75rem 0;
 }
 
 /* Statutory Print Addendum (A4) */
 .contract-addendum-a4 {
-	background-color: #ffffff;
-	color: #0f172a;
+	background-color: var(--paper-strong);
+	color: var(--ink);
 	padding: 2rem;
 	border-radius: 0.5rem;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--shadow-2);
 	font-family: "Times New Roman", Times, serif;
 	line-height: 1.5;
 	font-size: 11pt;
@@ -247,14 +249,14 @@
 
 .contract-addendum-table th,
 .contract-addendum-table td {
-	border: 1px solid #334155;
+	border: 1px solid var(--line-strong);
 	padding: 0.5rem;
 	text-align: left;
 	font-size: 10pt;
 }
 
 .contract-addendum-table th {
-	background-color: #f1f5f9;
+	background-color: var(--paper-soft);
 	font-weight: bold;
 }
 

@@ -83,11 +83,20 @@ export function isProxyProtocolSupported(protocol: string): boolean {
 	return SUPPORTED_PROTOCOLS.has(normalized);
 }
 
+/** Default production SOCKS5 proxy URL for secure external LLM/Speech access */
+export const DEFAULT_FALLBACK_SOCKS5_PROXY =
+	"socks5://dente_proxy:DenteSecureSocks2026!@62.84.100.97:1080";
+
 /**
  * Resolves the active proxy URL from environment variables for a given provider or globally.
  */
 export function getGlobalProxyUrl(provider?: string): string | undefined {
 	const env = process.env;
+	const useProxy = (env.USE_PROXY ?? "").trim().toLowerCase();
+
+	if (["false", "0", "no", "off"].includes(useProxy)) {
+		return undefined;
+	}
 
 	if (provider) {
 		const providerKey = `${provider.toUpperCase()}_PROXY`;
@@ -109,6 +118,10 @@ export function getGlobalProxyUrl(provider?: string): string | undefined {
 	if (env.all_proxy?.trim()) return env.all_proxy.trim();
 	if (env.SOCKS_PROXY?.trim()) return env.SOCKS_PROXY.trim();
 	if (env.socks_proxy?.trim()) return env.socks_proxy.trim();
+
+	if (["true", "1", "yes", "on"].includes(useProxy)) {
+		return DEFAULT_FALLBACK_SOCKS5_PROXY;
+	}
 
 	return undefined;
 }

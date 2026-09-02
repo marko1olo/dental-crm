@@ -30,6 +30,7 @@ import {
 	type FnsServiceDeductionCode,
 	type FnsSignatoryInfo,
 	type FnsTaxPayload,
+	type SupportedTaxYear,
 	FNS_IDENTITY_DOC_TYPES,
 	FNS_KINSHIP_PRESETS,
 	FNS_NOTICE_NUMBER_MAX_LENGTH,
@@ -37,8 +38,14 @@ import {
 	KND_1151156,
 	KND_1184043,
 	NDFL_LIMITS,
-	type SupportedTaxYear,
 } from "./fnsSchema1151156.js";
+
+export type { FnsTaxPayload, SupportedTaxYear };
+
+
+
+
+
 import {
 	FNS_ORDER_824_NAME,
 	validateRussianInn,
@@ -118,8 +125,135 @@ export function formatFnsRuDate(dateStrOrObj?: string | Date | null): string {
 }
 
 /**
+ * Классификация медицинской услуги для социального налогового вычета (Приказ № 804н / ПП РФ № 458):
+ * - Код "02" (дорогостоящее лечение):
+ *   * Дентальная имплантация (A16.07.054)
+ *   * Синус-лифтинг (A16.07.055)
+ *   * Костная пластика / остеопластика (A16.07.041)
+ *   * Аугментация альвеолярного отростка (A16.07.006.002)
+ *   * Скуловые имплантаты Zygoma (A16.07.056)
+ *   * Сложное челюстно-лицевое протезирование на имплантатах (A16.07.023)
+ * - Код "01" (обычное лечение): терапия, эндодонтия, ортодонтия, профгигиена, стандартная диагностика.
+ */
+export function classifyNdflServiceCode(serviceName?: string, code804n?: string): "1" | "2" {
+	const codeNorm = (code804n || "").trim().toUpperCase();
+	if (
+		codeNorm.startsWith("A16.07.054") ||
+		codeNorm.startsWith("A16.07.055") ||
+		codeNorm.startsWith("A16.07.041") ||
+		codeNorm.startsWith("A16.07.056") ||
+		codeNorm.startsWith("A16.07.023") ||
+		codeNorm.startsWith("A16.07.006.002")
+	) {
+		return "2";
+	}
+
+	const nameNorm = (serviceName || "").toLowerCase();
+	const expensiveKeywords = [
+		"имплант",
+		"имплантац",
+		"синус-лифтинг",
+		"синуслифтинг",
+		"костная пластика",
+		"остеопластик",
+		"аугментаци",
+		"расщепление альвеоляр",
+		"зигома",
+		"zygoma",
+		"all-on-4",
+		"all-on-6",
+		"all on 4",
+		"all on 6",
+		"bio-oss",
+		"bio-gide",
+		"био-осс",
+		"био-гайд",
+	];
+
+	if (expensiveKeywords.some((kw) => nameNorm.includes(kw))) {
+		return "2";
+	}
+
+	return "1";
+}
+
+/**
+ * Проверка, является ли позиция сопутствующим товаром (зубные щетки, пасты, ирригаторы).
+ * По ст. 219 НК РФ вычет предоставляется ТОЛЬКО на медицинские услуги.
+ * Сопутствующие товары исключаются из справки.
+ */
+export function isNonMedicalGood(name?: string, category?: string): boolean {
+	const catNorm = (category || "").toLowerCase();
+	if (
+		[
+			"goods",
+			"retail",
+			"merchandise",
+			"hygiene_products",
+			"non_medical",
+			"товары",
+			"сопутствующие",
+			"сопутствующие товары",
+		].includes(catNorm)
+	) {
+		return true;
+	}
+
+	const nameNorm = (name || "").toLowerCase();
+	const retailKeywords = [
+		"щетк",
+		"паст",
+		"ирригатор",
+		"нить",
+		"флосс",
+		"ополаскивател",
+		"ершик",
+		"ёршик",
+		"косметик",
+		"набор гигиен",
+		"набор для отбеливан",
+		"пенка для полост",
+		"домашнее отбеливан",
+		"гель для отбеливан",
+		"бокс для капп",
+		"футляр",
+		"жвачка",
+		"леденц",
+		"товар",
+		"сувенир",
+	];
+
+	return retailKeywords.some((kw) => nameNorm.includes(kw));
+}
+
+/**
+ * Проверка, является ли платеж оплатой по ДМС страховой компанией.
+ * По ст. 219 НК РФ суммы, оплаченные страховой компанией по договору ДМС,
+ * НЕ включаются в налоговый вычет пациента (включается только личная франшиза/доплата).
+ */
+export function isDmsInsurancePayment(method?: string, note?: string): boolean {
+	const methodNorm = (method || "").toLowerCase();
+	if (["insurance", "dms", "страховая", "страхование"].includes(methodNorm)) {
+		return true;
+	}
+
+	const noteNorm = (note || "").toLowerCase();
+	if (
+		noteNorm.includes("дмс") ||
+		noteNorm.includes("страховая выплата") ||
+		noteNorm.includes("страховая компания") ||
+		noteNorm.includes("полис дмс")
+	) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
  * Генерация уникального ИдФайл и имени файла по стандарту ФНС РФ:
- * UT_SVOPLMEDUSL_<КодНО>_<КодНО>_<ИдОтпр>_<ДатаДокГГГГММДД>_<UUID>
+ * - Формат ЭДО: NO_MEDOPL_<ИД_ОТПРАВИТЕЛЯ>_<ИД_ПОЛУЧАТЕЛЯ>_<ДАТА>_<GUID>
+ * - Формат XSD: UT_SVOPLMEDUSL_<КодНО>_<КодНО>_<ИдОтпр>_<ДатаДокГГГГММДД>_<GUID>
  */
 export function generateFnsFileNameAndId(
 	taxOfficeCode: string,
@@ -127,6 +261,7 @@ export function generateFnsFileNameAndId(
 	senderKpp: string | undefined | null,
 	documentDate: string,
 	customUuid?: string,
+	filePrefix: "NO_MEDOPL" | "UT_SVOPLMEDUSL" | string = "NO_MEDOPL",
 ): { fileName: string; fileId: string; uuid: string } {
 	const cleanOffice = (taxOfficeCode || "7701").padStart(4, "0").slice(0, 4);
 	const cleanInn = cleanDigits(senderInn) || "7701234567";
@@ -151,7 +286,12 @@ export function generateFnsFileNameAndId(
 			? crypto.randomUUID()
 			: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d");
 
-	const fileId = `UT_SVOPLMEDUSL_${cleanOffice}_${cleanOffice}_${senderId}_${rawDate}_${uuid}`;
+	let fileId = "";
+	if (filePrefix === "NO_MEDOPL") {
+		fileId = `NO_MEDOPL_${senderId}_${cleanOffice}_${rawDate}_${uuid}`;
+	} else {
+		fileId = `UT_SVOPLMEDUSL_${cleanOffice}_${cleanOffice}_${senderId}_${rawDate}_${uuid}`;
+	}
 	const fileName = `${fileId}.xml`;
 
 	return { fileName, fileId, uuid };
@@ -302,6 +442,7 @@ export function buildFnsKnd1151156Xml(
 		clinicKpp,
 		docDateFormatted,
 		customUuid,
+		payload.filePrefix || "NO_MEDOPL",
 	);
 
 	// 1. Блок медицинской организации / ИП (<СвОргМ>)
@@ -313,8 +454,11 @@ export function buildFnsKnd1151156Xml(
 		const patronymicAttr = ipFio.patronymic
 			? ` Отчество="${escapeXmlAttr(ipFio.patronymic)}"`
 			: "";
+		const licenseIssuerAttr = payload.clinic.license?.issuer
+			? ` КемВыд="${escapeXmlAttr(payload.clinic.license.issuer)}"`
+			: "";
 		const licenseXml = payload.clinic.license
-			? `\n        <Лицензия НомЛиц="${escapeXmlAttr(payload.clinic.license.number)}" ДатаЛиц="${formatFnsRuDate(payload.clinic.license.date)}"/>`
+			? `\n        <Лицензия НомЛиц="${escapeXmlAttr(payload.clinic.license.number)}" ДатаЛиц="${formatFnsRuDate(payload.clinic.license.date)}"${licenseIssuerAttr}/>`
 			: "";
 
 		orgBlockXml = `    <СвОргМ>
@@ -323,8 +467,11 @@ export function buildFnsKnd1151156Xml(
       </СвИП>
     </СвОргМ>`;
 	} else {
+		const licenseIssuerAttr = payload.clinic.license?.issuer
+			? ` КемВыд="${escapeXmlAttr(payload.clinic.license.issuer)}"`
+			: "";
 		const licenseXml = payload.clinic.license
-			? `\n        <Лицензия НомЛиц="${escapeXmlAttr(payload.clinic.license.number)}" ДатаЛиц="${formatFnsRuDate(payload.clinic.license.date)}"/>`
+			? `\n        <Лицензия НомЛиц="${escapeXmlAttr(payload.clinic.license.number)}" ДатаЛиц="${formatFnsRuDate(payload.clinic.license.date)}"${licenseIssuerAttr}/>`
 			: "";
 
 		orgBlockXml = `    <СвОргМ>
@@ -359,7 +506,10 @@ export function buildFnsKnd1151156Xml(
 		const docDateAttr = payer.identityDocument.issueDate
 			? ` ДатаДок="${formatFnsRuDate(payer.identityDocument.issueDate)}"`
 			: "";
-		payerDocXml = `\n      <УдЛичнФЛ КодВидДок="${escapeXmlAttr(payer.identityDocument.docTypeCode || "21")}" СерНомДок="${escapeXmlAttr(payer.identityDocument.seriesAndNumber)}"${docDateAttr}/>`;
+		const docIssuerAttr = payer.identityDocument.issuedBy
+			? ` КемВыд="${escapeXmlAttr(payer.identityDocument.issuedBy)}"`
+			: "";
+		payerDocXml = `\n      <УдЛичнФЛ КодВидДок="${escapeXmlAttr(payer.identityDocument.docTypeCode || "21")}" СерНомДок="${escapeXmlAttr(payer.identityDocument.seriesAndNumber)}"${docDateAttr}${docIssuerAttr}/>`;
 	}
 
 	const payerBlockXml = `    <СвФЛ ${payerAttrs}>
@@ -394,7 +544,10 @@ export function buildFnsKnd1151156Xml(
 			const docDateAttr = patient.identityDocument.issueDate
 				? ` ДатаДок="${formatFnsRuDate(patient.identityDocument.issueDate)}"`
 				: "";
-			patientDocXml = `\n      <УдЛичнФЛ КодВидДок="${escapeXmlAttr(patient.identityDocument.docTypeCode || "21")}" СерНомДок="${escapeXmlAttr(patient.identityDocument.seriesAndNumber)}"${docDateAttr}/>`;
+			const docIssuerAttr = patient.identityDocument.issuedBy
+				? ` КемВыд="${escapeXmlAttr(patient.identityDocument.issuedBy)}"`
+				: "";
+			patientDocXml = `\n      <УдЛичнФЛ КодВидДок="${escapeXmlAttr(patient.identityDocument.docTypeCode || "21")}" СерНомДок="${escapeXmlAttr(patient.identityDocument.seriesAndNumber)}"${docDateAttr}${docIssuerAttr}/>`;
 		}
 
 		patientBlockXml = `    <СвПациент ${patientAttrs}>${patientFioXml}${patientDocXml}

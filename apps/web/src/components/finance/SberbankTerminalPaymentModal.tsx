@@ -253,12 +253,16 @@ export function SberbankTerminalPaymentModal({
 	};
 
 
-	const handleChooseAlternative = (method: "sbp" | "cash" | "deposit") => {
+	const handleChooseAlternative = async (method: "sbp" | "cash" | "deposit") => {
+		if ((status === "polling" || status === "initiating") && orderId) {
+			await handleCancelOrReconcile(orderId);
+		}
 		if (onSelectAlternativeMethod) {
 			onSelectAlternativeMethod(method);
 		}
 		onClose();
 	};
+
 
 	useEffect(() => {
 		if (!isOpen) return;

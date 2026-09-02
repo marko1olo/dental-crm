@@ -78,7 +78,7 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 			{/* 200x200 Visual Display Workspace */}
 			<div className="dente-rvg-display-row">
 				{/* 200x200 Fixed Dimension Viewport (No CLS shift) */}
-				<div className="dente-rvg-viewport-frame" style={{ backgroundColor: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+				<div className="dente-rvg-viewport-frame" style={{ backgroundColor: "var(--ink, #0f172a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
 					{hasImage ? (
 						<>
 							<img
@@ -104,18 +104,18 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 								justifyContent: "center",
 								gap: "6px",
 								padding: "12px",
-								color: "#94a3b8",
+								color: "var(--muted)",
 								textAlign: "center",
 								cursor: "pointer",
 							}}
 							onClick={() => onOpenFullRadiology?.(toothNumber)}
 							title="Нажмите, чтобы открыть радиологию"
 						>
-							<Scan size={28} color="#0d9488" />
-							<span style={{ fontSize: "11px", fontWeight: 600, color: "#e2e8f0" }}>
+							<Scan size={28} color="var(--teal)" />
+							<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--paper-soft, #e2e8f0)" }}>
 								RVG #{toothNumber}
 							</span>
-							<span style={{ fontSize: "10px", color: "#64748b" }}>
+							<span style={{ fontSize: "10px", color: "var(--muted)" }}>
 								Снимок не загружен
 							</span>
 						</div>

@@ -64,6 +64,7 @@ describe("LanKktDriverService — Statutory Framing, Error Codes & Network Diagn
 			totalKopecks: 500000,
 			taxDeductionSummaryCode: "code_1_standard",
 			isCorrection: false,
+			addendumConfirmed: false,
 			items: [
 				{
 					name: "Профессиональная гигиена полости рта",
@@ -76,6 +77,9 @@ describe("LanKktDriverService — Statutory Framing, Error Codes & Network Diagn
 					measure: "piece",
 					taxDeductionCode: "code_1_standard",
 					medicalServiceCode804n: "A16.07.051",
+					isUpsell: false,
+					requiresAddendum: false,
+					addendumConfirmed: false,
 				},
 			],
 		});

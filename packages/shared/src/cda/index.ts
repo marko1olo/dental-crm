@@ -10,14 +10,23 @@ export * from "./oids.js";
 export * from "./types.js";
 export * from "./schemas.js";
 export {
+	ALLOWED_CDA_SIGNATURE_PROFILES,
+	FORBIDDEN_CDA_SIGNATURE_PROFILES,
+	EnvelopedSignatureSecurityError,
+	assertDetachedCadesBesOnly,
+	assertNoEnvelopedXmlSignature,
 	canonicalizeCdaXml,
 	computeCdaDocumentFingerprint,
 	computeCdaSha256Hex,
+	detectEnvelopedXmlSignature,
 	escapeCdaXml,
 	escapeXml,
 	formatHl7DateTime,
 	formatRuDate,
 	sanitizeXmlText,
+	validateCdaSignatureProfile,
+	type AllowedCdaSignatureProfile,
+	type CanonicalizeCdaXmlOptions,
 } from "./c14n.js";
 export * from "./header.js";
 export * from "./generator101.js";

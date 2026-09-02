@@ -786,6 +786,7 @@ describe("OmniLlmGateway Circuit Breaker & Failover Suite", () => {
 			analysisSchema,
 			[{ role: "user", content: "Диагностируй зуб 36" }],
 			{
+				fallbackChain: ["openai"],
 				clinicAiSettings: {
 					providers: {
 						openai: { apiKey: "sk_openai_test" },

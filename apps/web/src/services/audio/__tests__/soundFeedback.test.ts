@@ -411,4 +411,10 @@ describe("SoundFeedbackService: Web Audio DSP Synthesis & Oscillators", () => {
 		assert.strictEqual(mockCtx.isResumed, true);
 		assert.strictEqual(mockCtx.state, "running");
 	});
+
+	it("disposes AudioContext cleanly and clears idle timers", () => {
+		service.dispose();
+		assert.strictEqual(mockCtx.isClosed, true);
+		assert.strictEqual(mockCtx.state, "closed");
+	});
 });

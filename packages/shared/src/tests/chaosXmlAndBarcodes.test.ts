@@ -605,7 +605,7 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 
 		it("Test 4.2: SNILS edge cases — all-zeros, early SNILS (<= 001-001-998), formatting and checksums", () => {
 			// All zeros must fail length or checksum
-			assert.equal(validateRussianSnils("00000000000").isValid, true); // <= 1001998 allowed per PFR rules
+			assert.equal(validateRussianSnils("00000000000").isValid, false);
 
 			// Invalid lengths
 			assert.equal(validateRussianSnils("123456789").isValid, false);

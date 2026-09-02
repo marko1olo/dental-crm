@@ -28,6 +28,8 @@ import {
 	rublesFromKopecks,
 } from "../money/patientDebt.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 
@@ -277,6 +279,59 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			return reply.code(404).send({ error: "PatientNotFound" });
 		}
 
+		// 152-ФЗ / 323-ФЗ ст. 13: Доступ к зубной формуле и диагнозам разрешен ТОЛЬКО клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const reqAny = request as unknown as {
+			user?: {
+				role?: string | null;
+				canSignMedicalRecords?: boolean;
+				clinicalRole?: string | null;
+			};
+			headers: Record<string, string | string[] | undefined>;
+		};
+		const staffRole =
+			identity.role ??
+			reqAny.user?.role ??
+			(typeof reqAny.headers["x-user-role"] === "string"
+				? reqAny.headers["x-user-role"]
+				: null) ??
+			(typeof reqAny.headers["x-staff-role"] === "string"
+				? reqAny.headers["x-staff-role"]
+				: null) ??
+			null;
+
+		if (staffRole) {
+			const evalAccess = evaluateClinicalAccess(staffRole, {
+				clinicalRole:
+					(identity as unknown as { clinicalRole?: string | null })
+						.clinicalRole ??
+					reqAny.user?.clinicalRole ??
+					(typeof reqAny.headers["x-clinical-role"] === "string"
+						? reqAny.headers["x-clinical-role"]
+						: null),
+				canSignMedicalRecords:
+					(identity as unknown as { canSignMedicalRecords?: boolean })
+						.canSignMedicalRecords ??
+					reqAny.user?.canSignMedicalRecords ??
+					reqAny.headers["x-can-sign-medical-records"] === "true",
+			});
+
+			if (!evalAccess.hasClinicalAccess) {
+				await auditMedicalAccessFromRequest(request, {
+					organizationId,
+					patientId,
+					action: "ACCESS_DENIED_ODONTOGRAM",
+					diagnosis: "Попытка несанкционированного доступа к зубной формуле (152-ФЗ)",
+				});
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.read",
+					role: staffRole,
+					message: `Отказ в доступе к зубной формуле и диагнозам (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+		}
+
 		const rawStates = await db
 			.select({
 				toothNumber: toothStates.toothNumber,
@@ -291,6 +346,14 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 					eq(toothStates.patientId, patientId),
 				),
 			);
+
+		// Фиксация правомерного доступа врача к зубной формуле в журнале аудита (152-ФЗ)
+		await auditMedicalAccessFromRequest(request, {
+			organizationId,
+			patientId,
+			action: "VIEW_ODONTOGRAM",
+			diagnosis: "Зубная формула и одонтограмма (32 зуба)",
+		});
 
 		const states = rawStates.map((row) => ({
 			toothNumber: row.toothNumber,
@@ -349,7 +412,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			const incomingUpdatedAt = new Date(boundedIncomingTime);
 			const incomingVersion = parsed.data.version ?? 1;
 
-			const inserted = await db.transaction(async (tx) => {
+			const inserted = await withTenantCtx(organizationId, async (tx) => {
 				const previousStates = await tx
 					.select({
 						toothNumber: toothStates.toothNumber,
@@ -752,6 +815,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							.select({
 								id: treatmentPlans.id,
 								patientSignature: treatmentPlans.patientSignature,
+								status: treatmentPlans.status,
 							})
 							.from(treatmentPlans)
 							.where(
@@ -766,9 +830,12 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 
 						if (!existing) return null;
 
-						if (existing.patientSignature) {
+						// БЛОКИРУЮЩИЙ ГЕЙТ №2 (ПОСТАНОВЛЕНИЕ №659 И СТ. 16 ЗОЗПП):
+						// Запрещено изменять утвержденный (status === "Approved") или подписанный план лечения
+						// без отдельного Дополнительного соглашения.
+						if (existing.status === "Approved" || existing.patientSignature) {
 							const err = new Error(
-								"Запрещено изменять подписанный план лечения. Создайте новый.",
+								"Запрещено изменять утвержденный или подписанный план лечения. Согласно Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 ЗоЗПП любые изменения и дополнения платных услуг требуют оформления отдельного Дополнительного соглашения или создания нового плана лечения.",
 							);
 							// biome-ignore lint/suspicious/noExplicitAny: error mapping
 							(err as any).statusCode = 409;

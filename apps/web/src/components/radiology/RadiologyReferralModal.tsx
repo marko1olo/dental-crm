@@ -610,69 +610,69 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						</div>
 
 						{/* Document Sheet Container */}
-						<div className="p-6 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white text-slate-900 shadow-lg font-sans leading-relaxed flex flex-col gap-4">
+						<div className="p-6 rounded-2xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-lg font-sans leading-relaxed flex flex-col gap-4">
 							{/* Header */}
-							<div className="border-b-2 border-slate-800 pb-3 flex justify-between items-start">
+							<div className="border-b-2 border-[var(--line-strong,var(--line))] pb-3 flex justify-between items-start">
 								<div>
-									<div className="font-extrabold text-sm uppercase text-slate-900">
+									<div className="font-extrabold text-sm uppercase text-[var(--ink)]">
 										{clinic}
 									</div>
-									<div className="text-[11px] text-slate-600">
+									<div className="text-[11px] text-[var(--muted)]">
 										Направляющая медицинская организация (Лицензия №ЛО-77-01)
 									</div>
 								</div>
 								<div className="text-right">
-									<div className="font-black text-sm text-[var(--teal-dark,teal)] uppercase tracking-tight">
+									<div className="font-black text-sm text-[var(--teal)] uppercase tracking-tight">
 										НАПРАВЛЕНИЕ
 									</div>
-									<div className="text-[11px] text-slate-600 font-semibold">
+									<div className="text-[11px] text-[var(--muted)] font-semibold">
 										на рентгенологическое исследование
 									</div>
 								</div>
 							</div>
 
 							{/* Patient Info */}
-							<div className="border-b border-slate-200 pb-3 grid grid-cols-2 gap-2 text-xs">
+							<div className="border-b border-[var(--line)] pb-3 grid grid-cols-2 gap-2 text-xs">
 								<div>
-									<span className="text-slate-500">Пациент: </span>
-									<strong className="text-slate-900">{patientFullName}</strong>
+									<span className="text-[var(--muted)]">Пациент: </span>
+									<strong className="text-[var(--ink)]">{patientFullName}</strong>
 								</div>
 								<div>
-									<span className="text-slate-500">Дата рождения: </span>
-									<strong>{patientBirth}</strong>
+									<span className="text-[var(--muted)]">Дата рождения: </span>
+									<strong className="text-[var(--ink)]">{patientBirth}</strong>
 								</div>
 								<div>
-									<span className="text-slate-500">Мед. карта: </span>
-									<strong>{patientCard}</strong>
+									<span className="text-[var(--muted)]">Мед. карта: </span>
+									<strong className="text-[var(--ink)]">{patientCard}</strong>
 								</div>
 								<div>
-									<span className="text-slate-500">Врач: </span>
-									<strong>{docName}</strong>
+									<span className="text-[var(--muted)]">Врач: </span>
+									<strong className="text-[var(--ink)]">{docName}</strong>
 								</div>
 							</div>
 
 							{/* Clinical Study Box */}
-							<div className="p-4 rounded-xl border-2 border-[var(--teal)] bg-[var(--teal-surface)] flex flex-col gap-2 text-xs">
+							<div className="p-4 rounded-xl border border-[var(--teal)] bg-[var(--teal-surface)] flex flex-col gap-2 text-xs">
 								<div className="flex justify-between items-center">
 									<span className="font-black text-[var(--ink)] text-sm">
 										Вид исследования: {dentalRadiologyStudyLabels[studyType]}
 									</span>
-									<span className="px-2 py-0.5 rounded bg-[var(--teal)] text-white font-bold text-[10px]">
+									<span className="px-2 py-0.5 rounded bg-[var(--teal)] text-[var(--on-teal,white)] font-bold text-[10px]">
 										{estimatedDose.microsvText}
 									</span>
 								</div>
-								<div className="text-slate-800">
-									<span className="text-slate-600">Клиническая цель: </span>
-									<strong>{radiologyReferralGoalLabels[studyGoal]}</strong>
+								<div>
+									<span className="text-[var(--muted)]">Клиническая цель: </span>
+									<strong className="text-[var(--ink)]">{radiologyReferralGoalLabels[studyGoal]}</strong>
 								</div>
 								<div>
-									<span className="text-slate-600">Локализация / Зубы (FDI): </span>
+									<span className="text-[var(--muted)]">Локализация / Зубы (FDI): </span>
 									<strong className="text-[var(--teal)] text-sm font-black">
 										{customTeethInput || selectedTeeth.join(", ") || "Все зубные ряды"}
 									</strong>
 								</div>
 								<div>
-									<span className="text-slate-600">Диагноз (МКБ-10): </span>
+									<span className="text-[var(--muted)]">Диагноз (МКБ-10): </span>
 									<strong className="font-mono text-[var(--teal)]">
 										{diagnosisIcd10 || "K04.0"}
 									</strong>
@@ -680,7 +680,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							</div>
 
 							{/* Radiation Safety Notice */}
-							<div className="p-3 rounded-lg bg-slate-100 border border-slate-200 text-[11px] text-slate-700 leading-snug">
+							<div className="p-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[11px] text-[var(--ink)] leading-snug">
 								<strong>Примечание по радиационной безопасности (СанПиН 2.6.1.1192-03):</strong>{" "}
 								Исследование обосновано клинической необходимостью. Принцип нормирования и
 								оптимизации (ALARA) соблюден. Результат и расчетная эффективная доза подлежат
@@ -688,14 +688,14 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							</div>
 
 							{/* Signatures */}
-							<div className="border-t border-slate-300 pt-3 flex justify-between items-end text-xs text-slate-600">
+							<div className="border-t border-[var(--line)] pt-3 flex justify-between items-end text-xs text-[var(--muted)]">
 								<div>
 									<div>Подпись направляющего врача: ___________________</div>
-									<div className="text-[10px] text-slate-400 mt-1">
+									<div className="text-[10px] text-[var(--muted)] mt-1">
 										Дата выдачи: {new Date().toLocaleDateString("ru-RU")}
 									</div>
 								</div>
-								<div className="w-16 h-16 rounded-full border border-dashed border-slate-400 flex items-center justify-center font-bold text-[10px] text-slate-400">
+								<div className="w-16 h-16 rounded-full border border-dashed border-[var(--line-strong,var(--line))] flex items-center justify-center font-bold text-[10px] text-[var(--muted)]">
 									М.П.
 								</div>
 							</div>

@@ -78,8 +78,8 @@
 	justify-content: center;
 	font-weight: 700;
 	font-size: 20px;
-	color: #ffffff;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	color: var(--paper-strong);
+	box-shadow: var(--shadow-1);
 	flex-shrink: 0;
 }
 
@@ -108,9 +108,9 @@
 	border-radius: 6px;
 	font-size: 11px;
 	font-weight: 600;
-	background: rgba(13, 148, 136, 0.12);
+	background: var(--teal-surface);
 	color: var(--teal);
-	border: 1px solid rgba(13, 148, 136, 0.2);
+	border: 1px solid var(--teal-soft);
 }
 
 .staff-profile-badge-status {
@@ -124,15 +124,15 @@
 }
 
 .staff-profile-badge-status.active {
-	background: rgba(16, 185, 129, 0.12);
-	color: #10b981;
-	border: 1px solid rgba(16, 185, 129, 0.25);
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-fg);
 }
 
 .staff-profile-badge-status.inactive {
-	background: rgba(239, 68, 68, 0.12);
-	color: #ef4444;
-	border: 1px solid rgba(239, 68, 68, 0.25);
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border: 1px solid var(--bad-fg);
 }
 
 .staff-profile-modal-body {
@@ -257,33 +257,33 @@
 }
 
 .staff-compliance-status-box.valid {
-	background: rgba(16, 185, 129, 0.08);
-	border: 1px solid rgba(16, 185, 129, 0.25);
-	color: #059669;
+	background: var(--ok-bg);
+	border: 1px solid var(--ok-fg);
+	color: var(--ok-fg);
 }
 
 .staff-compliance-status-box.expiring {
-	background: rgba(245, 158, 11, 0.08);
-	border: 1px solid rgba(245, 158, 11, 0.25);
-	color: #d97706;
+	background: var(--warn-bg);
+	border: 1px solid var(--warn-fg);
+	color: var(--warn-fg);
 }
 
 .staff-compliance-status-box.expired {
-	background: rgba(239, 68, 68, 0.08);
-	border: 1px solid rgba(239, 68, 68, 0.25);
-	color: #dc2626;
+	background: var(--bad-bg);
+	border: 1px solid var(--bad-fg);
+	color: var(--bad-fg);
 }
 
 .staff-compliance-status-box.neutral {
-	background: rgba(100, 116, 139, 0.08);
-	border: 1px solid rgba(100, 116, 139, 0.2);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
 	color: var(--muted);
 }
 
 /* Заметки руководства (HR Security Guard) */
 .staff-management-notes-box {
-	background: rgba(245, 158, 11, 0.04);
-	border: 1px dashed rgba(245, 158, 11, 0.35);
+	background: var(--warn-bg);
+	border: 1px dashed var(--warn-fg);
 	border-radius: 10px;
 	padding: 12px;
 	display: flex;
@@ -297,7 +297,7 @@
 	gap: 6px;
 	font-size: 11px;
 	font-weight: 700;
-	color: #d97706;
+	color: var(--warn-fg);
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
 }
@@ -333,7 +333,7 @@
 .staff-entropy-bar-track {
 	width: 100%;
 	height: 6px;
-	background: rgba(100, 116, 139, 0.15);
+	background: var(--line);
 	border-radius: 999px;
 	overflow: hidden;
 	position: relative;
@@ -369,7 +369,7 @@
 }
 
 .staff-entropy-rule-item.met {
-	color: #10b981;
+	color: var(--ok-fg);
 }
 
 /* Сессии и безопасность */
@@ -388,12 +388,12 @@
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background: #10b981;
-	box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+	background: var(--ok-fg);
+	box-shadow: 0 0 0 2px var(--ok-bg);
 }
 
 .staff-session-indicator.offline {
-	background: #94a3b8;
+	background: var(--muted);
 	box-shadow: none;
 }
 
@@ -441,12 +441,12 @@
 }
 
 .staff-btn-primary {
-	background: var(--teal, #0d9488);
-	color: #ffffff;
+	background: var(--teal);
+	color: var(--paper-strong);
 }
 
 .staff-btn-primary:hover:not(:disabled) {
-	background: #0f766e;
+	background: var(--teal-dark);
 }
 
 .staff-btn-secondary {
@@ -456,15 +456,15 @@
 }
 
 .staff-btn-secondary:hover:not(:disabled) {
-	background: rgba(0, 0, 0, 0.04);
+	background: var(--paper-soft);
 }
 
 .staff-btn-danger {
-	background: rgba(239, 68, 68, 0.1);
-	border: 1px solid rgba(239, 68, 68, 0.25);
-	color: #ef4444;
+	background: var(--bad-bg);
+	border: 1px solid var(--bad-fg);
+	color: var(--bad-fg);
 }
 
 .staff-btn-danger:hover:not(:disabled) {
-	background: rgba(239, 68, 68, 0.18);
+	opacity: 0.9;
 }

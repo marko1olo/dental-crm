@@ -1472,3 +1472,678 @@
   font-size: 13px;
   color: var(--green, #15803d);
 }
+
+/* ==========================================================================
+   8. Sentiment Badges
+   ========================================================================== */
+.copilot-sentiment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+
+.copilot-sentiment-badge.sentiment-emergency {
+  background-color: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.copilot-sentiment-badge.sentiment-anxious {
+  background-color: rgba(217, 119, 6, 0.12);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.copilot-sentiment-badge.sentiment-negative {
+  background-color: rgba(225, 29, 72, 0.1);
+  color: #e11d48;
+  border-color: rgba(225, 29, 72, 0.25);
+}
+
+.copilot-sentiment-badge.sentiment-positive {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.copilot-sentiment-badge.sentiment-neutral {
+  background-color: var(--paper-soft, #f1f5f9);
+  color: var(--muted, #64748b);
+  border-color: var(--line, rgba(15, 118, 110, 0.15));
+}
+
+/* ==========================================================================
+   9. ProactiveAlertCardView
+   ========================================================================== */
+.copilot-proactive-card {
+  border-left-width: 4px;
+}
+
+.copilot-proactive-card.critical {
+  border-left-color: #dc2626;
+  background-color: var(--paper-strong, #fff);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.1);
+}
+
+.copilot-proactive-card.urgent {
+  border-left-color: #d97706;
+  background-color: var(--paper-strong, #fff);
+}
+
+.copilot-proactive-card.normal {
+  border-left-color: var(--teal, #0d9488);
+}
+
+.copilot-proactive-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.copilot-proactive-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.copilot-proactive-card.critical .copilot-proactive-badge {
+  background-color: rgba(220, 38, 38, 0.15);
+  color: #dc2626;
+}
+
+.copilot-proactive-card.urgent .copilot-proactive-badge {
+  background-color: rgba(217, 119, 6, 0.15);
+  color: #d97706;
+}
+
+.copilot-proactive-card.normal .copilot-proactive-badge {
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+}
+
+.copilot-proactive-title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.copilot-proactive-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.copilot-proactive-subtitle {
+  font-size: 12px;
+  color: var(--muted, #64748b);
+  margin-top: 2px;
+}
+
+.copilot-proactive-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted, #94a3b8);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+}
+
+.copilot-proactive-dismiss-btn:hover {
+  color: var(--ink, #0f172a);
+}
+
+.copilot-urgency-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.copilot-urgency-pill.critical {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.copilot-urgency-pill.urgent {
+  background-color: #d97706;
+  color: #ffffff;
+}
+
+.copilot-urgency-pill.normal {
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+}
+
+.copilot-proactive-body {
+  margin-bottom: 10px;
+}
+
+.copilot-proactive-desc {
+  font-size: 13px;
+  color: var(--ink, #1e293b);
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.copilot-proactive-patient-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted, #64748b);
+  background-color: var(--paper-soft, #f8fafc);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.1));
+}
+
+.copilot-proactive-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.copilot-proactive-action-btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.copilot-proactive-action-btn.danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+}
+
+.copilot-proactive-action-btn.danger:hover {
+  background-color: #b91c1c;
+}
+
+.copilot-proactive-action-btn.primary {
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+}
+
+.copilot-proactive-action-btn.primary:hover {
+  background-color: var(--teal-dark, #0f766e);
+}
+
+.copilot-proactive-action-btn.secondary {
+  background-color: var(--paper-soft, #f1f5f9);
+  color: var(--ink, #0f172a);
+  border-color: var(--line, rgba(15, 118, 110, 0.15));
+}
+
+.copilot-proactive-action-btn.secondary:hover {
+  background-color: var(--line, rgba(15, 118, 110, 0.1));
+}
+
+/* ==========================================================================
+   10. WhatsApp Approval HitL Card
+   ========================================================================== */
+.copilot-hitl-card {
+  border-left: 3px solid #25d366;
+}
+
+.copilot-hitl-card.approved {
+  opacity: 0.85;
+  border-left-color: var(--green, #15803d);
+}
+
+.copilot-hitl-card.rejected {
+  opacity: 0.6;
+  border-left-color: var(--muted, #94a3b8);
+}
+
+.copilot-hitl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.copilot-hitl-channel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #128c7e;
+  background-color: rgba(37, 211, 102, 0.12);
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.copilot-hitl-confidence {
+  font-size: 11px;
+  color: var(--muted, #64748b);
+}
+
+.copilot-hitl-patient-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.copilot-hitl-patient-name {
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copilot-hitl-patient-phone {
+  color: var(--muted, #64748b);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copilot-hitl-snippet-box {
+  background-color: var(--paper-soft, #f8fafc);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.copilot-hitl-snippet-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted, #64748b);
+  margin-bottom: 2px;
+}
+
+.copilot-hitl-snippet-text {
+  font-size: 12px;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  font-style: italic;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.copilot-hitl-draft-box {
+  background-color: rgba(13, 148, 136, 0.05);
+  border: 1px solid var(--teal-surface, rgba(13, 148, 136, 0.2));
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.copilot-hitl-draft-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--teal-dark, #0f766e);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copilot-hitl-edit-toggle {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--teal, #0d9488);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+}
+
+.copilot-hitl-draft-text {
+  font-size: 12px;
+  color: var(--ink, #0f172a);
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.copilot-hitl-textarea {
+  width: 100%;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.25));
+  border-radius: 4px;
+  padding: 6px;
+  font-size: 12px;
+  background-color: var(--paper, #fff);
+  color: var(--ink, #0f172a);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.copilot-hitl-actions {
+  display: flex;
+  align-items: center;
+}
+
+.copilot-hitl-btn-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.copilot-hitl-approve-btn {
+  min-height: 44px;
+  height: auto;
+  padding: 10px 16px;
+  background-color: #128c7e;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(18, 140, 126, 0.25);
+  touch-action: manipulation;
+}
+
+.copilot-hitl-approve-btn:hover {
+  background-color: #075e54;
+}
+
+.copilot-hitl-reject-btn {
+  min-height: 44px;
+  height: auto;
+  padding: 10px 14px;
+  background-color: var(--paper-soft, #f1f5f9);
+  color: var(--muted, #64748b);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  border-radius: 8px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.copilot-hitl-reject-btn:hover {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.copilot-hitl-discuss-btn {
+  min-height: 44px;
+  min-width: 44px;
+  height: 44px;
+  width: 44px;
+  background-color: var(--paper-soft, #f1f5f9);
+  color: var(--teal, #0d9488);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.copilot-hitl-success-banner,
+.copilot-hitl-rejected-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  width: 100%;
+}
+
+.copilot-hitl-success-banner {
+  background-color: rgba(21, 128, 61, 0.1);
+  color: var(--green, #15803d);
+}
+
+.copilot-hitl-rejected-banner {
+  background-color: var(--paper-soft, #f1f5f9);
+  color: var(--muted, #64748b);
+}
+
+/* ==========================================================================
+   11. ZTL, Gap Filler, Retention, EMR Cards
+   ========================================================================== */
+.copilot-ztl-header,
+.copilot-gap-header,
+.copilot-retention-header,
+.copilot-emr-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.copilot-ztl-icon,
+.copilot-gap-icon,
+.copilot-retention-icon,
+.copilot-emr-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.copilot-ztl-title,
+.copilot-gap-title,
+.copilot-retention-title,
+.copilot-emr-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  margin: 0;
+}
+
+.copilot-ztl-meta,
+.copilot-gap-subtitle,
+.copilot-retention-meta,
+.copilot-emr-meta {
+  font-size: 12px;
+  color: var(--muted, #64748b);
+  margin-top: 2px;
+}
+
+.copilot-ztl-status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.copilot-ztl-status-pill.ready {
+  background-color: rgba(21, 128, 61, 0.12);
+  color: var(--green, #15803d);
+}
+
+.copilot-ztl-status-pill.delayed {
+  background-color: rgba(217, 119, 6, 0.12);
+  color: #d97706;
+}
+
+.copilot-ztl-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(217, 119, 6, 0.08);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #b45309;
+  margin-bottom: 8px;
+}
+
+.copilot-ztl-book-btn,
+.copilot-retention-launch-btn,
+.copilot-emr-apply-btn {
+  height: 34px;
+  padding: 0 14px;
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border: none;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+}
+
+.copilot-ztl-book-btn:hover,
+.copilot-retention-launch-btn:hover,
+.copilot-emr-apply-btn:hover {
+  background-color: var(--teal-dark, #0f766e);
+}
+
+.copilot-gap-candidates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.copilot-gap-candidates-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+}
+
+.copilot-gap-candidate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  background-color: var(--paper-soft, #f8fafc);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.1));
+  border-radius: 6px;
+}
+
+.copilot-gap-cand-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.copilot-gap-cand-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-gap-cand-reason {
+  font-size: 11px;
+  color: var(--muted, #64748b);
+}
+
+.copilot-gap-cand-score {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--teal-dark, #0f766e);
+  background-color: var(--teal-soft, #ccfbf1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.copilot-gap-invite-btn {
+  height: 28px;
+  padding: 0 8px;
+  background-color: var(--teal, #0d9488);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.copilot-gap-invite-btn:hover {
+  background-color: var(--teal-dark, #0f766e);
+}
+
+.copilot-retention-campaign-desc {
+  font-size: 12px;
+  color: var(--ink, #0f172a);
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.copilot-emr-diary-preview {
+  background-color: var(--paper-soft, #f8fafc);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+
+.copilot-emr-diary-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted, #64748b);
+  margin-bottom: 2px;
+}
+
+.copilot-emr-diary-text {
+  font-size: 12px;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  line-height: 1.4;
+}
+

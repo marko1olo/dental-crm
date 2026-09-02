@@ -412,10 +412,10 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								"--doc-primary-dark": palette.primaryDark,
 								"--doc-soft-bg": palette.softBg,
 								"--doc-accent-border": palette.accentBorder,
-								"--doc-border": "#cbd5e1",
-								"--doc-ink": "#0f172a",
-								"--doc-muted": "#475569",
-								"--doc-paper": "#ffffff",
+								"--doc-border": "var(--line, #cbd5e1)",
+								"--doc-ink": "var(--ink, #0f172a)",
+								"--doc-muted": "var(--muted, #475569)",
+								"--doc-paper": "var(--paper, #ffffff)",
 							} as React.CSSProperties
 						}
 					>

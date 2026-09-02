@@ -15,6 +15,7 @@ import {
 	extractQuadrantIntent,
 	extractEndoCanalMeasurements,
 	extractPerioVoiceMeasurements,
+	extractCephLandmarksVoiceIntent,
 	parseDentalVoiceSpeech,
 	VALID_FDI_PERMANENT_TEETH,
 	VALID_FDI_PRIMARY_TEETH,
@@ -393,6 +394,40 @@ describe("Voice AI Dental STT Grammar Parser (dentalGrammarParser.ts)", () => {
 			assert.strictEqual(intent.perioMeasurements[0]?.toothNumber, 16);
 			assert.strictEqual(intent.perioMeasurements[0]?.mesioBuccal?.probingDepthMm, 3);
 			assert.strictEqual(intent.perioMeasurements[0]?.bleedingOnProbing, true);
+		});
+	});
+
+	describe("11. Cephalometric Landmark Voice Dictation (OrthodonticCephTrackerModal)", () => {
+		it("extracts Sella (S) and Nasion (N) landmarks: 'ориентир точка сэлла и точка назион'", () => {
+			const items = extractCephLandmarksVoiceIntent("ориентир точка сэлла и точка назион");
+			assert.strictEqual(items.length, 2);
+			assert.strictEqual(items[0]?.landmarkKey, "S");
+			assert.strictEqual(items[1]?.landmarkKey, "N");
+		});
+
+		it("extracts Point A (Subspinale) and Point B (Supramentale): 'трг точка а и точка б'", () => {
+			const items = extractCephLandmarksVoiceIntent("трг точка а и точка б");
+			assert.strictEqual(items.length, 2);
+			assert.strictEqual(items[0]?.landmarkKey, "A");
+			assert.strictEqual(items[1]?.landmarkKey, "B");
+		});
+
+		it("extracts Pogonion, Gnathion, Menton and Gonion: 'цефалометрия погонион гнатион ментон гонион'", () => {
+			const items = extractCephLandmarksVoiceIntent("цефалометрия погонион гнатион ментон гонион");
+			assert.strictEqual(items.length, 4);
+			assert.strictEqual(items[0]?.landmarkKey, "Pog");
+			assert.strictEqual(items[1]?.landmarkKey, "Gn");
+			assert.strictEqual(items[2]?.landmarkKey, "Me");
+			assert.strictEqual(items[3]?.landmarkKey, "Go");
+		});
+
+		it("creates structured 'ceph_landmark' DentalVoiceIntent for spoken cephalometric command", () => {
+			const intent = parseDentalVoiceSpeech("трг точка назион и точка а");
+			assert.strictEqual(intent.type, "ceph_landmark");
+			assert.ok(intent.cephLandmarks);
+			assert.strictEqual(intent.cephLandmarks.length, 2);
+			assert.strictEqual(intent.cephLandmarks[0]?.landmarkKey, "N");
+			assert.strictEqual(intent.cephLandmarks[1]?.landmarkKey, "A");
 		});
 	});
 });

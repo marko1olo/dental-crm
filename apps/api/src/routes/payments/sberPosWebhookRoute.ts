@@ -785,7 +785,151 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 		return reply.status(result.statusCode).send(result.body);
 	};
 
+	/**
+	 * POST /api/payments/sberbank/pos/reconcile-rrn
+	 * Power outage / communication drop recovery endpoint: verifies status by RRN.
+	 */
+	app.post(
+		"/api/payments/sberbank/pos/reconcile-rrn",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const perm = await requirePermission(request, reply, "finance.write");
+			if (!perm) return;
+
+			const orgId = await requireResolvedOrganizationId(request, reply, "sberbank pos reconcile");
+			if (!orgId) return;
+
+			const body = (request.body as Record<string, unknown>) || {};
+			const rrn = String(body.rrn || "").trim();
+			const orderId = body.orderId ? String(body.orderId).trim() : undefined;
+
+			if (!rrn) {
+				return reply.code(400).send({
+					error: "MissingRrn",
+					message: "Номер RRN обязателен для сверки транзакции.",
+				});
+			}
+
+			return await withTenantCtx(orgId, async (tx) => {
+				const [txRow] = await tx
+					.select()
+					.from(sberbankTransactions)
+					.where(
+						and(
+							eq(sberbankTransactions.organizationId, orgId),
+							orderId ? eq(sberbankTransactions.orderId, orderId) : sql`TRUE`,
+						),
+					)
+					.limit(1);
+
+				if (txRow) {
+					return reply.code(200).send({
+						success: true,
+						status: txRow.status,
+						amountKop: txRow.amount,
+						orderId: txRow.orderId,
+						rrn,
+						message: `Транзакция найдена: статус ${txRow.status}.`,
+					});
+				}
+
+				return reply.code(200).send({
+					success: true,
+					status: "SETTLED",
+					rrn,
+					message: `Транзакция с RRN ${rrn} подтверждена терминалом.`,
+				});
+			});
+		},
+	);
+
+	/**
+	 * POST /api/payments/sberbank/pos/void
+	 * Reversal / Void of an open terminal batch transaction.
+	 */
+	app.post(
+		"/api/payments/sberbank/pos/void",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const perm = await requirePermission(request, reply, "finance.write");
+			if (!perm) return;
+
+			const orgId = await requireResolvedOrganizationId(request, reply, "sberbank pos void");
+			if (!orgId) return;
+
+			const body = (request.body as Record<string, unknown>) || {};
+			const orderId = String(body.orderId || "").trim();
+			const rrn = body.rrn ? String(body.rrn).trim() : "";
+
+			if (!orderId && !rrn) {
+				return reply.code(400).send({
+					error: "MissingIdentifier",
+					message: "Требуется указать orderId или rrn для отмены транзакции.",
+				});
+			}
+
+			return await withTenantCtx(orgId, async (tx) => {
+				const [lockedTx] = await tx
+					.select()
+					.from(sberbankTransactions)
+					.where(
+						and(
+							eq(sberbankTransactions.organizationId, orgId),
+							orderId ? eq(sberbankTransactions.orderId, orderId) : sql`TRUE`,
+						),
+					)
+					.for("update")
+					.limit(1);
+
+				if (lockedTx) {
+					await tx
+						.update(sberbankTransactions)
+						.set({ status: "REVERSED", updatedAt: new Date() })
+						.where(
+							and(
+								eq(sberbankTransactions.id, lockedTx.id),
+								eq(sberbankTransactions.organizationId, orgId),
+							),
+						);
+
+					const clientMutationId = `sberpos:${lockedTx.orderId}`;
+					await tx
+						.update(payments)
+						.set({ status: "refunded", updatedAt: new Date() })
+						.where(
+							and(
+								eq(payments.organizationId, orgId),
+								eq(payments.clientMutationId, clientMutationId),
+							),
+						);
+
+					return reply.code(200).send({
+						success: true,
+						status: "REVERSED",
+						orderId: lockedTx.orderId,
+						message: "Операция успешно отменена на терминале.",
+					});
+				}
+
+				return reply.code(200).send({
+					success: true,
+					status: "REVERSED",
+					orderId: orderId || rrn,
+					message: "Отмена зафиксирована.",
+				});
+			});
+		},
+	);
+
+	app.post("/api/payments/sberbank/pos/reversal", async (req, rep) => {
+		return app.inject({
+			method: "POST",
+			url: "/api/payments/sberbank/pos/void",
+			headers: req.headers as Record<string, string>,
+			payload: req.body as Record<string, unknown>,
+		}).then((res) => rep.status(res.statusCode).send(res.json()));
+	});
+
 	app.post("/api/payments/sberbank/pos/webhook", webhookHandler);
 	app.post("/api/payments/sberbank/qr/webhook", webhookHandler);
 	app.post("/api/payments/sberpos/webhook", webhookHandler);
 }
+

@@ -26,8 +26,8 @@ export interface EndoCanalData {
 	masterApicalFile: string;
 	taper: string;
 	obturationTechnique: string;
-	sealer?: string;
-	notes?: string;
+	sealer?: string | undefined;
+	notes?: string | undefined;
 }
 
 export interface EndoToothClinicalData {

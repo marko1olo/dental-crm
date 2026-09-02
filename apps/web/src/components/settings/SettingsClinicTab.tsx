@@ -686,7 +686,7 @@ export function SettingsClinicTab({
 												: "var(--surface-100, var(--paper-soft))",
 										color:
 											clinicProfileDraft.mode === option.value
-												? "#fff"
+												? "var(--on-teal, #ffffff)"
 												: "var(--ink)",
 										padding: "8px 16px",
 										borderRadius: "20px",

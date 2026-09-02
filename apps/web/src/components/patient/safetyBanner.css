@@ -25,38 +25,38 @@
 
 /* Critical Red-Flag Banner (ЭКС, Анафилаксия, Бисфосфонаты, Антикоагулянты) */
 .patient-safety-banner--critical {
-	background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(185, 28, 28, 0.08) 100%);
-	border: 2px solid #ef4444;
+	background: var(--bad-bg);
+	border: 2px solid var(--bad-fg);
 	box-shadow: 0 4px 20px -2px rgba(239, 68, 68, 0.25);
 }
 
 [data-theme="dark"] .patient-safety-banner--critical,
 [data-theme="night"] .patient-safety-banner--critical,
 [data-theme="cyber_xray"] .patient-safety-banner--critical {
-	background: linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(153, 27, 27, 0.28) 100%);
-	border-color: #f87171;
+	background: var(--bad-bg);
+	border-color: var(--bad-fg);
 	box-shadow: 0 4px 24px -2px rgba(239, 68, 68, 0.4);
 }
 
 /* High Risk Banner (Гипертония, Диабет, Астма, 3-й триместр) */
 .patient-safety-banner--high {
-	background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.08) 100%);
-	border: 2px solid #f59e0b;
+	background: var(--warn-bg);
+	border: 2px solid var(--warn-fg);
 	box-shadow: 0 4px 16px -2px rgba(245, 158, 11, 0.2);
 }
 
 [data-theme="dark"] .patient-safety-banner--high,
 [data-theme="night"] .patient-safety-banner--high,
 [data-theme="cyber_xray"] .patient-safety-banner--high {
-	background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(180, 83, 9, 0.25) 100%);
-	border-color: #fbbf24;
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
 	box-shadow: 0 4px 20px -2px rgba(245, 158, 11, 0.35);
 }
 
 /* Moderate / Info Banner (2-й триместр, мелкие аллергии) */
 .patient-safety-banner--moderate {
-	background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.05) 100%);
-	border: 1.5px solid #3b82f6;
+	background: var(--info-bg);
+	border: 1.5px solid var(--info-fg);
 }
 
 /* Safe / Clear Banner (Анамнез чист — схлопывается в 0px для здоровых пациентов) */
@@ -95,24 +95,24 @@
 }
 
 .patient-safety-banner--critical .patient-safety-banner__beacon {
-	background: #ef4444;
-	color: #ffffff;
+	background: var(--bad-fg);
+	color: var(--paper-strong);
 	animation: safety-pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .patient-safety-banner--high .patient-safety-banner__beacon {
-	background: #f59e0b;
-	color: #ffffff;
+	background: var(--warn-fg);
+	color: var(--paper-strong);
 }
 
 .patient-safety-banner--moderate .patient-safety-banner__beacon {
-	background: #3b82f6;
-	color: #ffffff;
+	background: var(--info-fg);
+	color: var(--paper-strong);
 }
 
 .patient-safety-banner--safe .patient-safety-banner__beacon {
-	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
-	color: var(--teal, #0d9488);
+	background: var(--teal-surface);
+	color: var(--teal);
 }
 
 @keyframes safety-pulse-red {
@@ -135,7 +135,7 @@
 	font-size: 13px;
 	font-weight: 800;
 	letter-spacing: 0.01em;
-	color: var(--ink, #1e293b);
+	color: var(--ink);
 	margin: 0;
 	display: flex;
 	align-items: center;
@@ -144,24 +144,24 @@
 }
 
 .patient-safety-banner--critical .patient-safety-banner__title {
-	color: #b91c1c;
+	color: var(--bad-fg);
 }
 [data-theme="dark"] .patient-safety-banner--critical .patient-safety-banner__title,
 [data-theme="night"] .patient-safety-banner--critical .patient-safety-banner__title {
-	color: #fca5a5;
+	color: var(--bad-fg);
 }
 
 .patient-safety-banner--high .patient-safety-banner__title {
-	color: #b45309;
+	color: var(--warn-fg);
 }
 [data-theme="dark"] .patient-safety-banner--high .patient-safety-banner__title,
 [data-theme="night"] .patient-safety-banner--high .patient-safety-banner__title {
-	color: #fde68a;
+	color: var(--warn-fg);
 }
 
 .patient-safety-banner__subtitle {
 	font-size: 11.5px;
-	color: var(--muted, #64748b);
+	color: var(--muted);
 	margin: 2px 0 0 0;
 	line-height: 1.4;
 }
@@ -201,40 +201,40 @@
 }
 
 .safety-btn--primary-red {
-	background: #ef4444;
-	color: #ffffff;
-	border-color: #dc2626;
+	background: var(--bad-fg);
+	color: var(--paper-strong);
+	border-color: var(--bad-fg);
 	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 .safety-btn--primary-red:hover {
-	background: #dc2626;
+	background: var(--bad-fg);
 }
 
 .safety-btn--outline {
-	background: var(--paper, #ffffff);
-	color: var(--ink, #1e293b);
-	border-color: var(--line, #e2e8f0);
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line);
 }
 [data-theme="dark"] .safety-btn--outline,
 [data-theme="night"] .safety-btn--outline,
 [data-theme="cyber_xray"] .safety-btn--outline {
-	background: var(--paper-soft, #1e293b);
-	color: #f1f5f9;
-	border-color: #475569;
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line-strong);
 }
 .safety-btn--outline:hover {
-	background: var(--paper-strong, #f8fafc);
-	border-color: var(--teal, #0d9488);
+	background: var(--paper-strong);
+	border-color: var(--teal);
 }
 
 .safety-btn--ghost {
 	background: transparent;
-	color: var(--muted, #64748b);
+	color: var(--muted);
 	border-color: transparent;
 }
 .safety-btn--ghost:hover {
-	background: var(--paper-soft, rgba(0,0,0,0.04));
-	color: var(--ink, #1e293b);
+	background: var(--paper-soft);
+	color: var(--ink);
 }
 
 /* =========================================================================
@@ -242,30 +242,30 @@
    ========================================================================= */
 
 .patient-safety-banner__drawer {
-	border-top: 1px solid rgba(239, 68, 68, 0.25);
+	border-top: 1px solid var(--bad-fg);
 	padding: 14px;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	background: var(--paper-soft, rgba(248, 250, 252, 0.8));
+	background: var(--paper-soft);
 }
 
 [data-theme="dark"] .patient-safety-banner__drawer,
 [data-theme="night"] .patient-safety-banner__drawer,
 [data-theme="cyber_xray"] .patient-safety-banner__drawer {
-	background: rgba(15, 23, 42, 0.85);
-	border-top-color: rgba(239, 68, 68, 0.35);
+	background: var(--paper-soft);
+	border-top-color: var(--bad-fg);
 }
 
 .patient-safety-banner--high .patient-safety-banner__drawer {
-	border-top-color: rgba(245, 158, 11, 0.25);
+	border-top-color: var(--warn-fg);
 }
 
 .safety-flag-card {
-	background: var(--paper, #ffffff);
+	background: var(--paper);
 	border-radius: 12px;
 	padding: 12px 14px;
-	border: 1px solid var(--line, #e2e8f0);
+	border: 1px solid var(--line);
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -274,16 +274,16 @@
 [data-theme="dark"] .safety-flag-card,
 [data-theme="night"] .safety-flag-card,
 [data-theme="cyber_xray"] .safety-flag-card {
-	background: var(--paper, #1e293b);
-	border-color: #334155;
+	background: var(--paper);
+	border-color: var(--line-strong);
 }
 
 .safety-flag-card--critical {
-	border-left: 4px solid #ef4444;
+	border-left: 4px solid var(--bad-fg);
 }
 
 .safety-flag-card--high {
-	border-left: 4px solid #f59e0b;
+	border-left: 4px solid var(--warn-fg);
 }
 
 .safety-flag-card__header {
@@ -297,7 +297,7 @@
 .safety-flag-card__title {
 	font-size: 13px;
 	font-weight: 800;
-	color: var(--ink, #1e293b);
+	color: var(--ink);
 	margin: 0;
 	display: flex;
 	align-items: center;
@@ -314,31 +314,31 @@
 }
 
 .safety-flag-card__badge--critical {
-	background: #fee2e2;
-	color: #991b1b;
+	background: var(--bad-bg);
+	color: var(--bad-fg);
 }
 [data-theme="dark"] .safety-flag-card__badge--critical {
-	background: #7f1d1d;
-	color: #fecaca;
+	background: var(--bad-bg);
+	color: var(--bad-fg);
 }
 
 .safety-flag-card__badge--high {
-	background: #fef3c7;
-	color: #92400e;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
 }
 [data-theme="dark"] .safety-flag-card__badge--high {
-	background: #78350f;
-	color: #fde68a;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
 }
 
 .safety-flag-card__body {
 	font-size: 12px;
-	color: var(--ink, #334155);
+	color: var(--ink-2);
 	line-height: 1.45;
 }
 
 [data-theme="dark"] .safety-flag-card__body {
-	color: #cbd5e1;
+	color: var(--ink-2);
 }
 
 .safety-flag-card__section {
@@ -355,17 +355,17 @@
 }
 
 .safety-flag-card__section-title--forbidden {
-	color: #dc2626;
+	color: var(--bad-fg);
 }
 [data-theme="dark"] .safety-flag-card__section-title--forbidden {
-	color: #f87171;
+	color: var(--bad-fg);
 }
 
 .safety-flag-card__section-title--precautions {
-	color: #0284c7;
+	color: var(--info-fg);
 }
 [data-theme="dark"] .safety-flag-card__section-title--precautions {
-	color: #38bdf8;
+	color: var(--info-fg);
 }
 
 .safety-flag-card__anesthesia-badge {
@@ -374,9 +374,9 @@
 	border-radius: 8px;
 	font-size: 11.5px;
 	font-weight: 600;
-	background: var(--ok-bg, rgba(16, 185, 129, 0.12));
-	color: var(--ok-fg, #047857);
-	border: 1px solid var(--ok-border, rgba(16, 185, 129, 0.3));
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--success-border, rgba(16, 185, 129, 0.3));
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -385,16 +385,16 @@
 [data-theme="dark"] .safety-flag-card__anesthesia-badge,
 [data-theme="night"] .safety-flag-card__anesthesia-badge,
 [data-theme="cyber_xray"] .safety-flag-card__anesthesia-badge {
-	background: rgba(6, 78, 59, 0.4);
-	border-color: rgba(52, 211, 153, 0.35);
-	color: #6ee7b7;
+	background: var(--ok-bg);
+	border-color: var(--ok-fg);
+	color: var(--ok-fg);
 }
 
 .safety-beacon-ping {
 	width: 8px;
 	height: 8px;
 	border-radius: 9999px;
-	background-color: #ef4444;
+	background-color: var(--bad-fg);
 	display: inline-block;
 	animation: safety-beacon-pulse 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
@@ -435,9 +435,9 @@
 	width: 100%;
 	max-width: 860px;
 	max-height: 90vh;
-	background: var(--paper, #ffffff);
+	background: var(--paper);
 	border-radius: 20px;
-	border: 1px solid var(--line, #e2e8f0);
+	border: 1px solid var(--line);
 	display: flex;
 	flex-direction: column;
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
@@ -448,9 +448,9 @@
 [data-theme="dark"] .anamnesis-modal,
 [data-theme="night"] .anamnesis-modal,
 [data-theme="cyber_xray"] .anamnesis-modal {
-	background: #0f172a;
-	border-color: #334155;
-	color: #f1f5f9;
+	background: var(--paper);
+	border-color: var(--line-strong);
+	color: var(--ink);
 }
 
 .anamnesis-modal__header {
@@ -458,14 +458,14 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: 16px 20px;
-	border-bottom: 1px solid var(--line, #e2e8f0);
-	background: var(--paper-soft, #f8fafc);
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-soft);
 }
 
 [data-theme="dark"] .anamnesis-modal__header,
 [data-theme="night"] .anamnesis-modal__header {
-	background: #1e293b;
-	border-bottom-color: #334155;
+	background: var(--paper-soft);
+	border-bottom-color: var(--line-strong);
 }
 
 .anamnesis-modal__body {
@@ -488,7 +488,7 @@
 	font-weight: 800;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
-	color: var(--muted, #64748b);
+	color: var(--muted);
 	margin: 0;
 	display: flex;
 	align-items: center;
@@ -509,8 +509,8 @@
 	min-height: 48px;
 	padding: 8px 14px;
 	border-radius: 12px;
-	border: 1.5px solid var(--line, #e2e8f0);
-	background: var(--paper-soft, #f8fafc);
+	border: 1.5px solid var(--line);
+	background: var(--paper-soft);
 	cursor: pointer;
 	user-select: none;
 	transition: all 0.15s ease-out;
@@ -520,37 +520,37 @@
 
 [data-theme="dark"] .anamnesis-toggle-item,
 [data-theme="night"] .anamnesis-toggle-item {
-	background: #1e293b;
-	border-color: #334155;
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
 }
 
 .anamnesis-toggle-item:hover {
-	border-color: var(--teal, #0d9488);
-	background: var(--paper-strong, #ffffff);
+	border-color: var(--teal);
+	background: var(--paper-strong);
 }
 
 .anamnesis-toggle-item--active-critical {
-	background: #fef2f2;
-	border-color: #ef4444;
-	color: #991b1b;
+	background: var(--bad-bg);
+	border-color: var(--bad-fg);
+	color: var(--bad-fg);
 	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
 }
 [data-theme="dark"] .anamnesis-toggle-item--active-critical {
-	background: rgba(127, 29, 29, 0.4);
-	border-color: #f87171;
-	color: #fecaca;
+	background: var(--bad-bg);
+	border-color: var(--bad-fg);
+	color: var(--bad-fg);
 }
 
 .anamnesis-toggle-item--active-high {
-	background: #fffbeb;
-	border-color: #f59e0b;
-	color: #92400e;
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
 	box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
 }
 [data-theme="dark"] .anamnesis-toggle-item--active-high {
-	background: rgba(120, 53, 15, 0.4);
-	border-color: #fbbf24;
-	color: #fde68a;
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
 }
 
 .anamnesis-toggle-item__label {
@@ -567,26 +567,26 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border: 1px solid var(--line, #cbd5e1);
-	background: var(--paper, #ffffff);
+	border: 1px solid var(--line);
+	background: var(--paper);
 	flex-shrink: 0;
 }
 
 [data-theme="dark"] .anamnesis-toggle-item__icon {
-	background: #0f172a;
-	border-color: #475569;
+	background: var(--paper);
+	border-color: var(--line-strong);
 }
 
 .anamnesis-toggle-item--active-critical .anamnesis-toggle-item__icon {
-	background: #ef4444;
-	color: #ffffff;
-	border-color: #dc2626;
+	background: var(--bad-fg);
+	color: var(--paper-strong);
+	border-color: var(--bad-fg);
 }
 
 .anamnesis-toggle-item--active-high .anamnesis-toggle-item__icon {
-	background: #f59e0b;
-	color: #ffffff;
-	border-color: #d97706;
+	background: var(--warn-fg);
+	color: var(--paper-strong);
+	border-color: var(--warn-fg);
 }
 
 .anamnesis-modal__footer {
@@ -594,14 +594,14 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: 14px 20px;
-	border-top: 1px solid var(--line, #e2e8f0);
-	background: var(--paper-soft, #f8fafc);
+	border-top: 1px solid var(--line);
+	background: var(--paper-soft);
 	gap: 12px;
 	flex-wrap: wrap;
 }
 
 [data-theme="dark"] .anamnesis-modal__footer,
 [data-theme="night"] .anamnesis-modal__footer {
-	background: #1e293b;
-	border-top-color: #334155;
+	background: var(--paper-soft);
+	border-top-color: var(--line-strong);
 }

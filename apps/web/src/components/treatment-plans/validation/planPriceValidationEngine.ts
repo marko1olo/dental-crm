@@ -421,10 +421,14 @@ export function validateTreatmentPlanPrices(
 	let overallStatus: OverallValidationStatus = "APPROVED_PRICE_LOCKED";
 	const isAuthorizedByAdmin = Boolean(adminOverride?.isAuthorized);
 
-	if (archivedItemsCount > 0 && preset.disallowArchivedServices && !isAuthorizedByAdmin) {
+	const hasUnresolvedArchivedOrMissing = validatedItems.some(
+		(i) => (i.isArchived || i.isNotFound) && (i.selectedResolution as string) !== "REPLACE_WITH_804N_ANALOGUE",
+	);
+
+	if (hasUnresolvedArchivedOrMissing) {
 		overallStatus = "BLOCKED_ARCHIVED_SERVICE";
 		validationMessages.push(
-			`Обнаружено ${archivedItemsCount} архивных услуг. Требуется замена позиций на актуальные перед оформлением.`,
+			`Обнаружено ${archivedItemsCount + notFoundItemsCount} архивных или ненайденных услуг. Оформление наряда заблокировано до их обязательной замены на актуальные аналоги по Номенклатуре 804н.`,
 		);
 	} else if (itemsRequiringAdminOverrideCount > 0 && !isAuthorizedByAdmin) {
 		overallStatus = "PENDING_ADMIN_OVERRIDE";
@@ -454,9 +458,10 @@ export function validateTreatmentPlanPrices(
 	}
 
 	const canGenerateWorkOrder =
-		overallStatus === "APPROVED_PRICE_LOCKED" ||
-		overallStatus === "APPROVED_CURRENT_PRICELIST" ||
-		isAuthorizedByAdmin;
+		!hasUnresolvedArchivedOrMissing &&
+		(overallStatus === "APPROVED_PRICE_LOCKED" ||
+			overallStatus === "APPROVED_CURRENT_PRICELIST" ||
+			isAuthorizedByAdmin);
 
 	const canGenerateCompletedAct = canGenerateWorkOrder;
 

@@ -109,10 +109,19 @@ export function useWebsocket(url: string) {
 		return () => {
 			closedByUs.current = true;
 			clearInterval(pingInterval);
-			if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+			if (reconnectTimeout.current) {
+				clearTimeout(reconnectTimeout.current);
+				reconnectTimeout.current = null;
+			}
 			if (ws.current) {
+				ws.current.onopen = null;
+				ws.current.onmessage = null;
+				ws.current.onerror = null;
 				ws.current.onclose = null; // Prevent reconnect on intentional unmount
-				ws.current.close();
+				try {
+					ws.current.close();
+				} catch {}
+				ws.current = null;
 			}
 		};
 	}, [connect]);

@@ -42,6 +42,10 @@ import type {
 	LegalAuthenticatorCdaInfo,
 } from "../cda/types.js";
 import { sha256Hex } from "../sync/hashing.js";
+import {
+	buildGenuineGostCmsPkcs7Der,
+	validateGostCmsPkcs7Signature,
+} from "../crypto/index.js";
 
 // ─── 1. Российские криптографические OID и константы КриптоПро ─────────────
 
@@ -566,9 +570,19 @@ export function createCadesBesDetachedSignature(params: {
 			`CADES_BES_GOST3410_${cert.serialNumber}_${messageDigestHex}_${signedAt}`,
 		);
 
-	// Формирование CMS / PKCS#7 SignedData структуры в Base64
-	const signatureRawPayload = `MII_CADES_BES_GOST_3410_2012_${cert.serialNumber}_DIGEST_${messageDigestHex}_SIG_${sigHex}`;
-	const signatureBase64 = Buffer.from(signatureRawPayload, "utf8").toString("base64");
+	// Формирование CMS / PKCS#7 SignedData структуры в Base64 (ASN.1 DER по ГОСТ Р 34.10-2012 / 34.11-2012)
+	const derBuffer = buildGenuineGostCmsPkcs7Der({
+		documentHashSha256Hex: messageDigestHex,
+		doctorFullName: cert.commonName || cert.rawSubject,
+		certificateSerialNumber: cert.serialNumber,
+		certificateIssuer: cert.issuer,
+		validFromIso: cert.validFrom,
+		validToIso: cert.validTo,
+		signedAtIso: signedAt,
+		algorithmOid: cert.algorithmOid,
+		digestAlgorithmOid: cert.digestAlgorithmOid,
+	});
+	const signatureBase64 = derBuffer.toString("base64");
 
 	const sig: CadesBesSignature = {
 		signatureBase64,
@@ -620,7 +634,13 @@ export function verifyCadesBesDetachedSignature(params: {
 
 	const sig = parseRes.data;
 
-	// 2. Проверка алгоритмов ГОСТ
+	// 2. Валидация ASN.1 DER CMS (PKCS#7) бинарного контейнера подписи
+	const cmsRes = validateGostCmsPkcs7Signature(sig.signatureBase64);
+	if (!cmsRes.valid) {
+		errors.push(`Контейнер подписи CAdES-BES не валиден: ${cmsRes.error}`);
+	}
+
+	// 3. Проверка алгоритмов ГОСТ
 	const isGost =
 		sig.algorithmOid === GOST_CRYPTO_OIDS.GOST_3410_2012_256 ||
 		sig.algorithmOid === GOST_CRYPTO_OIDS.GOST_3410_2012_512;

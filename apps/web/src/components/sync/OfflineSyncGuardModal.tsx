@@ -40,6 +40,7 @@ import {
 	type SyncPushBatchResponse,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface OfflineSyncGuardModalProps {
 	readonly isOpen: boolean;
@@ -103,7 +104,7 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 			const gatewayFn = customGatewayPushFn || (async (batch: SyncPushBatchRequest): Promise<SyncPushBatchResponse> => {
 				const response = await fetch("/api/sync/gateway", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify(batch),
 				});
 
@@ -237,7 +238,7 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 			aria-label="Модальное окно статуса автономной синхронизации"
 			data-testid="offline-sync-guard-modal"
 		>
-			<div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-[var(--paper,#ffffff)] dark:bg-[#181a20] text-[var(--ink,#0f172a)] dark:text-slate-100 rounded-xl shadow-2xl border border-[var(--glass-border,rgba(255,255,255,0.1))] overflow-hidden">
+			<div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] dark:text-slate-100 rounded-xl shadow-2xl border border-[var(--glass-border,rgba(255,255,255,0.1))] overflow-hidden">
 				{/* ── Modal Header ── */}
 				<div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
 					<div className="flex items-center gap-3">

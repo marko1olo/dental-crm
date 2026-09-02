@@ -17,24 +17,24 @@
 }
 
 .patient-recall-container {
-	--pr-bg: var(--paper, #ffffff);
-	--pr-surface: var(--paper-strong, #f8fafc);
-	--pr-surface-hover: var(--paper-soft, #f1f5f9);
-	--pr-border: var(--line, #e2e8f0);
-	--pr-border-focus: var(--teal, var(--brand-500, #0d9488));
-	--pr-ink: var(--ink, #0f172a);
-	--pr-muted: var(--muted, #64748b);
-	--pr-teal: var(--teal, var(--brand-500, #0d9488));
-	--pr-teal-fill: var(--teal-fill, #0d9488);
-	--pr-on-teal: var(--on-teal, #ffffff);
-	--pr-success: var(--ok-fg, #16a34a);
-	--pr-success-bg: var(--ok-bg, rgba(22, 163, 74, 0.12));
-	--pr-warning: var(--warn-fg, #d97706);
-	--pr-warning-bg: var(--warn-bg, rgba(217, 119, 6, 0.12));
-	--pr-danger: var(--bad-fg, #dc2626);
-	--pr-danger-bg: var(--bad-bg, rgba(220, 38, 38, 0.12));
-	--pr-info: #0284c7;
-	--pr-info-bg: rgba(2, 132, 199, 0.12);
+	--pr-bg: var(--paper);
+	--pr-surface: var(--paper-strong);
+	--pr-surface-hover: var(--paper-soft);
+	--pr-border: var(--line);
+	--pr-border-focus: var(--teal);
+	--pr-ink: var(--ink);
+	--pr-muted: var(--muted);
+	--pr-teal: var(--teal);
+	--pr-teal-fill: var(--teal);
+	--pr-on-teal: var(--paper-strong);
+	--pr-success: var(--ok-fg);
+	--pr-success-bg: var(--ok-bg);
+	--pr-warning: var(--warn-fg);
+	--pr-warning-bg: var(--warn-bg);
+	--pr-danger: var(--bad-fg);
+	--pr-danger-bg: var(--bad-bg);
+	--pr-info: var(--info-fg);
+	--pr-info-bg: var(--info-bg);
 	--pr-radius: 12px;
 	--pr-radius-sm: 6px;
 
@@ -532,35 +532,35 @@
 }
 
 .pr-btn--whatsapp {
-	color: #15803d;
-	background: rgba(34, 197, 94, 0.1);
-	border-color: rgba(34, 197, 94, 0.3);
+	color: var(--ok-fg);
+	background: var(--ok-bg);
+	border-color: var(--ok-fg);
 }
 
 .pr-btn--whatsapp:hover:not(:disabled) {
-	background: rgba(34, 197, 94, 0.2);
-	color: #166534;
+	background: var(--ok-bg);
+	color: var(--ok-fg);
 }
 
 .pr-btn--telegram {
-	color: #0284c7;
-	background: rgba(2, 132, 199, 0.1);
-	border-color: rgba(2, 132, 199, 0.3);
+	color: var(--info-fg);
+	background: var(--info-bg);
+	border-color: var(--info-fg);
 }
 
 .pr-btn--telegram:hover:not(:disabled) {
-	background: rgba(2, 132, 199, 0.2);
-	color: #0369a1;
+	background: var(--info-bg);
+	color: var(--info-fg);
 }
 
 .pr-btn--call {
 	color: var(--pr-teal);
-	background: rgba(13, 148, 136, 0.1);
-	border-color: rgba(13, 148, 136, 0.3);
+	background: var(--teal-surface);
+	border-color: var(--pr-teal);
 }
 
 .pr-btn--call:hover:not(:disabled) {
-	background: rgba(13, 148, 136, 0.2);
+	background: var(--teal-surface);
 }
 
 .pr-btn--book {
@@ -832,23 +832,15 @@
 }
 
 .pr-message-bubble--whatsapp {
-	background: #dcf8c6;
-	color: #054740;
-}
-
-[data-theme="dark"] .pr-message-bubble--whatsapp {
-	background: #054740;
-	color: #e9fbe5;
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-fg);
 }
 
 .pr-message-bubble--telegram {
-	background: #e1f5fe;
-	color: #01579b;
-}
-
-[data-theme="dark"] .pr-message-bubble--telegram {
-	background: #01579b;
-	color: #e1f5fe;
+	background: var(--info-bg);
+	color: var(--info-fg);
+	border: 1px solid var(--info-fg);
 }
 
 .pr-message-bubble--sms {

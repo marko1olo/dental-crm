@@ -1,22 +1,22 @@
 /* Interactive Treatment Plan Timeline & Statutory 323-FZ Informed Consent Styling */
 
 .treatment-timeline-container {
-	background: var(--paper-strong, #18181b);
-	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.1));
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
 	border-radius: 1.25rem;
 	padding: 1.25rem;
 	color: var(--ink);
 	display: flex;
 	flex-direction: column;
 	gap: 1.25rem;
-	box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.35);
-	font-family: Inter, system-ui, -apple-system, sans-serif;
+	box-shadow: var(--shadow-2);
+	font-family: inherit;
 	max-width: 100%;
 }
 
 .treatment-timeline-hero {
-	background: linear-gradient(135deg, rgba(13, 148, 136, 0.2) 0%, rgba(20, 184, 166, 0.05) 100%);
-	border: 1px solid rgba(45, 212, 191, 0.3);
+	background: var(--teal-soft);
+	border: 1px solid var(--teal-surface);
 	border-radius: 1rem;
 	padding: 1rem 1.25rem;
 	display: flex;
@@ -27,7 +27,7 @@
 .treatment-timeline-progress-track {
 	width: 100%;
 	height: 0.5rem; /* 8px */
-	background: rgba(255, 255, 255, 0.1);
+	background: var(--line);
 	border-radius: 9999px;
 	overflow: hidden;
 	position: relative;
@@ -35,14 +35,14 @@
 
 .treatment-timeline-progress-bar {
 	height: 100%;
-	background: linear-gradient(90deg, #0d9488 0%, #2dd4bf 100%);
+	background: var(--teal);
 	border-radius: 9999px;
 	transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .treatment-stage-card {
-	background: var(--paper, #27272a);
-	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.08));
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 1rem;
 	padding: 1.125rem;
 	display: flex;
@@ -53,18 +53,18 @@
 }
 
 .treatment-stage-card.completed {
-	border-color: rgba(16, 185, 129, 0.3);
-	background: rgba(16, 185, 129, 0.04);
+	border-color: var(--ok-fg);
+	background: var(--ok-bg);
 }
 
 .treatment-stage-card.in_progress {
-	border-color: rgba(45, 212, 191, 0.5);
-	background: rgba(20, 184, 166, 0.08);
-	box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.3);
+	border-color: var(--teal);
+	background: var(--teal-soft);
+	box-shadow: 0 0 0 1px var(--teal);
 }
 
 .treatment-stage-card.planned {
-	border-color: rgba(255, 255, 255, 0.06);
+	border-color: var(--line);
 	opacity: 0.85;
 }
 
@@ -81,21 +81,21 @@
 }
 
 .treatment-stage-badge.completed {
-	background: rgba(16, 185, 129, 0.15);
-	color: #34d399;
-	border: 1px solid rgba(16, 185, 129, 0.3);
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-fg);
 }
 
 .treatment-stage-badge.in_progress {
-	background: rgba(45, 212, 191, 0.15);
-	color: #2dd4bf;
-	border: 1px solid rgba(45, 212, 191, 0.4);
+	background: var(--teal-soft);
+	color: var(--teal);
+	border: 1px solid var(--teal);
 }
 
 .treatment-stage-badge.planned {
-	background: rgba(255, 255, 255, 0.08);
-	color: var(--muted, #a1a1aa);
-	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: var(--paper-soft);
+	color: var(--muted);
+	border: 1px solid var(--line);
 }
 
 .treatment-proc-row {
@@ -103,7 +103,7 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: 0.5rem 0;
-	border-bottom: 1px solid var(--border-soft, rgba(255, 255, 255, 0.06));
+	border-bottom: 1px solid var(--line);
 	font-size: 0.8125rem;
 }
 
@@ -129,33 +129,34 @@
 }
 
 .treatment-action-btn.primary {
-	background: #0d9488;
-	color: #ffffff;
+	background: var(--teal);
+	color: var(--paper-strong);
 	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
 }
 
 .treatment-action-btn.primary:hover {
-	background: #0f766e;
+	background: var(--teal-dark);
 }
 
 .treatment-action-btn.secondary {
-	background: rgba(255, 255, 255, 0.08);
-	color: var(--ink, #e4e4e7);
-	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.1));
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
 }
 
 .treatment-action-btn.secondary:hover {
-	background: rgba(255, 255, 255, 0.12);
+	background: var(--line);
 }
 
 .treatment-action-btn.consent {
-	background: rgba(59, 130, 246, 0.15);
-	color: #60a5fa;
-	border: 1px solid rgba(59, 130, 246, 0.3);
+	background: var(--info-bg);
+	color: var(--info-fg);
+	border: 1px solid var(--info-fg);
 }
 
 .treatment-action-btn.consent:hover {
-	background: rgba(59, 130, 246, 0.25);
+	background: var(--info-bg);
+	opacity: 0.9;
 }
 
 .treatment-ids-modal-overlay {
@@ -171,15 +172,15 @@
 }
 
 .treatment-ids-modal-content {
-	background: var(--paper-strong, #18181b);
-	border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.15));
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
 	border-radius: 1.25rem;
 	width: 100%;
 	max-width: 540px;
 	max-height: 90vh;
 	display: flex;
 	flex-direction: column;
-	box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.5);
-	color: var(--ink, #e4e4e7);
+	box-shadow: var(--shadow-3);
+	color: var(--ink);
 	overflow: hidden;
 }

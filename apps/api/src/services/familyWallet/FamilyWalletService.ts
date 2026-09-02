@@ -15,6 +15,7 @@ import {
 	parseKopecks,
 	rubToKopecks,
 } from "@dental/shared";
+import { Decimal } from "decimal.js";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
@@ -229,7 +230,9 @@ export class FamilyWalletService {
 
 			// 4. Calculate exact kopecks new balance
 			const prevBalanceKop = parseKopecks(family.balance);
-			const newBalanceKop = prevBalanceKop + creditKopecks;
+			const newBalanceKop = new Decimal(prevBalanceKop)
+				.plus(creditKopecks)
+				.toNumber();
 			const newBalanceStr = kopecksToNumericString(newBalanceKop);
 
 			// 5. Update family group balance
@@ -385,12 +388,17 @@ export class FamilyWalletService {
 				if (params.discountRub !== undefined && params.discountRub !== null) {
 					discountKopecks = parseKopecks(params.discountRub);
 				} else if (params.discountPercent !== undefined && params.discountPercent !== null) {
-					discountKopecks = Math.trunc(
-						(catalogPriceKopecks * Math.round(params.discountPercent * 100)) / 10000,
-					);
+					discountKopecks = new Decimal(catalogPriceKopecks)
+						.times(new Decimal(params.discountPercent))
+						.div(100)
+						.toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
+						.toNumber();
 				}
 
-				const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
+				const verifiedAmountKopecks = Math.max(
+					0,
+					new Decimal(catalogPriceKopecks).minus(discountKopecks).toNumber(),
+				);
 				if (debitKopecks !== verifiedAmountKopecks) {
 					throw new FamilyWalletError(
 						`Попытка подмены стоимости услуги «${serviceItem.title}»: в каталоге клиники ${kopecksToRub(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${kopecksToRub(verifiedAmountKopecks)} ₽), получено ${kopecksToRub(debitKopecks)} ₽`,
@@ -463,7 +471,9 @@ export class FamilyWalletService {
 			}
 
 			// 5. Calculate new balance
-			const newBalanceKop = currentBalanceKop - debitKopecks;
+			const newBalanceKop = new Decimal(currentBalanceKop)
+				.minus(debitKopecks)
+				.toNumber();
 			const newBalanceStr = kopecksToNumericString(newBalanceKop);
 
 			// 6. Update family group balance
@@ -651,17 +661,19 @@ export class FamilyWalletService {
 			const memberPayments = familyPayments.filter((p) => p.patientId === member.id);
 			if (memberPayments.length === 0) continue;
 
-			let code1Kopecks = 0;
-			let code2Kopecks = 0;
+			let code1Kopecks = new Decimal(0);
+			let code2Kopecks = new Decimal(0);
 			for (const p of memberPayments) {
 				const kopecks = parseKopecks(p.amountRub);
 				if (p.taxDeductionCode === "2") {
-					code2Kopecks += kopecks;
+					code2Kopecks = code2Kopecks.plus(kopecks);
 				} else {
-					code1Kopecks += kopecks;
+					code1Kopecks = code1Kopecks.plus(kopecks);
 				}
 			}
-			const totalKopecks = code1Kopecks + code2Kopecks;
+			const totalKopecks = code1Kopecks.plus(code2Kopecks).toNumber();
+			const code1KopecksNum = code1Kopecks.toNumber();
+			const code2KopecksNum = code2Kopecks.toNumber();
 			if (totalKopecks <= 0) continue;
 
 			// Kinship code: 1 = Self, 2 = Spouse, 3 = Parent, 4 = Child
@@ -727,15 +739,15 @@ export class FamilyWalletService {
 				payer: payerPerson,
 				patient: patientInfo,
 				expenses: {
-					code1AmountKopecks: code1Kopecks,
-					code2AmountKopecks: code2Kopecks,
+					code1AmountKopecks: code1KopecksNum,
+					code2AmountKopecks: code2KopecksNum,
 				},
 				signatory,
 			};
 
 			const { xmlContent, fileName } = buildFnsKnd1151156Xml(fnsPayload);
-			const code01AmountRub = kopecksToRub(code1Kopecks);
-			const code02AmountRub = kopecksToRub(code2Kopecks);
+			const code01AmountRub = kopecksToRub(code1KopecksNum);
+			const code02AmountRub = kopecksToRub(code2KopecksNum);
 			const grandTotalRub = kopecksToRub(totalKopecks);
 
 			certificates.push({
@@ -751,7 +763,10 @@ export class FamilyWalletService {
 				code01AmountRub,
 				code02AmountRub,
 				grandTotalRub,
-				estimated13PercentRefundRub: Math.round(grandTotalRub * 0.13),
+				estimated13PercentRefundRub: new Decimal(grandTotalRub)
+					.times("0.13")
+					.toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
+					.toNumber(),
 				xmlPayload: xmlContent,
 				xmlFileName: fileName,
 			});

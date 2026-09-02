@@ -431,8 +431,8 @@ export function SterilizerFleetManager({
 								padding: "0.2rem 0.55rem",
 								fontSize: "0.775rem",
 								fontWeight: statusFilter === "all" ? 700 : 500,
-								background: statusFilter === "all" ? "var(--teal-600, #0d9488)" : "transparent",
-								color: statusFilter === "all" ? "#ffffff" : "var(--ink, #0f172a)",
+								background: statusFilter === "all" ? "var(--teal)" : "transparent",
+								color: statusFilter === "all" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
 								border: "1px solid var(--line, #e2e8f0)",
 								borderRadius: "6px",
 								cursor: "pointer",
@@ -450,8 +450,8 @@ export function SterilizerFleetManager({
 								padding: "0.2rem 0.55rem",
 								fontSize: "0.775rem",
 								fontWeight: statusFilter === "active" ? 700 : 500,
-								background: statusFilter === "active" ? "#059669" : "transparent",
-								color: statusFilter === "active" ? "#ffffff" : "var(--ink, #0f172a)",
+								background: statusFilter === "active" ? "var(--ok-fg)" : "transparent",
+								color: statusFilter === "active" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
 								border: "1px solid var(--line, #e2e8f0)",
 								borderRadius: "6px",
 								cursor: "pointer",
@@ -469,8 +469,8 @@ export function SterilizerFleetManager({
 								padding: "0.2rem 0.55rem",
 								fontSize: "0.775rem",
 								fontWeight: statusFilter === "in_maintenance" ? 700 : 500,
-								background: statusFilter === "in_maintenance" ? "#d97706" : "transparent",
-								color: statusFilter === "in_maintenance" ? "#ffffff" : "var(--ink, #0f172a)",
+								background: statusFilter === "in_maintenance" ? "var(--warn-fg)" : "transparent",
+								color: statusFilter === "in_maintenance" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
 								border: "1px solid var(--line, #e2e8f0)",
 								borderRadius: "6px",
 								cursor: "pointer",
@@ -489,8 +489,8 @@ export function SterilizerFleetManager({
 									padding: "0.2rem 0.55rem",
 									fontSize: "0.775rem",
 									fontWeight: statusFilter === "decommissioned" ? 700 : 500,
-									background: statusFilter === "decommissioned" ? "#dc2626" : "transparent",
-									color: statusFilter === "decommissioned" ? "#ffffff" : "var(--ink, #0f172a)",
+									background: statusFilter === "decommissioned" ? "var(--bad-fg)" : "transparent",
+									color: statusFilter === "decommissioned" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
 									border: "1px solid var(--line, #e2e8f0)",
 									borderRadius: "6px",
 									cursor: "pointer",
@@ -516,8 +516,8 @@ export function SterilizerFleetManager({
 							padding: "0.3rem 0.85rem",
 							fontSize: "0.8rem",
 							fontWeight: 700,
-							background: "var(--teal-600, #0d9488)",
-							color: "#ffffff",
+							background: "var(--teal)",
+							color: "var(--on-teal, #ffffff)",
 							border: "none",
 							borderRadius: "6px",
 							cursor: "pointer",
@@ -636,7 +636,7 @@ export function SterilizerFleetManager({
 									}}
 									title={`Добавить ${preset.brandModel} (${preset.chamberVolumeLiters} л)`}
 								>
-									<Sparkles size={13} color="#0d9488" />
+									<Sparkles size={13} color="var(--teal)" />
 									<span>{preset.brandModel}</span>
 									<span style={{ fontSize: "0.7rem", opacity: 0.75 }}>({preset.chamberVolumeLiters} л)</span>
 								</button>
@@ -657,8 +657,8 @@ export function SterilizerFleetManager({
 								padding: "0.5rem 1.5rem",
 								fontSize: "0.875rem",
 								fontWeight: 700,
-								background: "var(--teal-600, #0d9488)",
-								color: "#ffffff",
+								background: "var(--teal)",
+								color: "var(--on-teal, #ffffff)",
 								border: "none",
 								borderRadius: "8px",
 								cursor: "pointer",
@@ -723,7 +723,7 @@ export function SterilizerFleetManager({
 													fontSize: "0.7rem",
 													padding: "0.1rem 0.4rem",
 													background: item.deviceType === "dry_heat" ? "rgba(234, 88, 12, 0.1)" : "rgba(13, 148, 136, 0.1)",
-													color: item.deviceType === "dry_heat" ? "#ea580c" : "var(--teal-700, #0f766e)",
+													color: item.deviceType === "dry_heat" ? "var(--warn-fg)" : "var(--teal)",
 													fontWeight: 700,
 												}}
 											>
@@ -835,7 +835,7 @@ export function SterilizerFleetManager({
 											<span
 												style={{
 													fontWeight: 700,
-													color: isVerificationExpired ? "#dc2626" : isVerificationDueSoon ? "#d97706" : "#059669",
+													color: isVerificationExpired ? "var(--bad-fg)" : isVerificationDueSoon ? "var(--warn-fg)" : "var(--ok-fg)",
 													display: "inline-flex",
 													alignItems: "center",
 													gap: "0.2rem",

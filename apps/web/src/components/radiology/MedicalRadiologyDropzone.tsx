@@ -10,6 +10,9 @@ import {
 import type React from "react";
 import { useCallback, useRef, useState } from "react";
 
+import { isHeicFileNameOrMime } from "@dental/shared";
+import { decodeHeicImage } from "../../services/imaging/heicDecoder";
+
 export interface MedicalRadiologyDropzoneProps {
 	onImageLoaded: (
 		fileDataUrl: string,
@@ -34,6 +37,8 @@ export const SUPPORTED_RADIOLOGY_EXTENSIONS = [
 	".jpg",
 	".jpeg",
 	".webp",
+	".heic",
+	".heif",
 ];
 
 export const MedicalRadiologyDropzone: React.FC<
@@ -42,7 +47,7 @@ export const MedicalRadiologyDropzone: React.FC<
 	onImageLoaded,
 	onLoadSample,
 	title = "Загрузка цифровой рентгенограммы / DICOM",
-	subtitle = "Перетащите файл радиовизиографии (DICOM .dcm, TIFF, PNG, JPG) или выберите с диска",
+	subtitle = "Перетащите файл радиовизиографии (DICOM .dcm, TIFF, PNG, JPG, HEIC) или выберите с диска",
 	className = "",
 	disabled = false,
 }) => {
@@ -52,22 +57,44 @@ export const MedicalRadiologyDropzone: React.FC<
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const processFile = useCallback(
-		(file: File) => {
+		async (file: File) => {
 			setErrorMessage(null);
 			setIsLoading(true);
 
 			const lowerName = file.name.toLowerCase();
 			const isDicom = lowerName.endsWith(".dcm") || lowerName.endsWith(".dicom");
+			const isHeic = isHeicFileNameOrMime(file.name) || isHeicFileNameOrMime(file.type);
 			const isSupported =
 				SUPPORTED_RADIOLOGY_EXTENSIONS.some((ext) => lowerName.endsWith(ext)) ||
-				file.type.startsWith("image/");
+				file.type.startsWith("image/") ||
+				isHeic;
 
 			if (!isSupported && !isDicom) {
 				setErrorMessage(
-					`Неподдерживаемый формат файла: ${file.name}. Допустимы форматы: DICOM (.dcm), TIFF, PNG, JPG.`,
+					`Неподдерживаемый формат файла: ${file.name}. Допустимы форматы: DICOM (.dcm), TIFF, PNG, JPG, HEIC.`,
 				);
 				setIsLoading(false);
 				return;
+			}
+
+			if (isHeic) {
+				try {
+					const decoded = await decodeHeicImage(file, {
+						targetFormat: "webp",
+						quality: 0.94,
+						maxDimension: 2048,
+						preserveColorProfile: true,
+					});
+					onImageLoaded(decoded.dataUrl, {
+						name: file.name,
+						size: file.size,
+						type: "image/webp",
+					});
+					setIsLoading(false);
+					return;
+				} catch (_heicErr) {
+					// fallback to FileReader below
+				}
 			}
 
 			const reader = new FileReader();
@@ -186,7 +213,7 @@ export const MedicalRadiologyDropzone: React.FC<
 			<h3 className="text-base sm:text-lg md:text-xl font-bold tracking-tight mb-2 text-white">
 				{title}
 			</h3>
-			<p className="text-xs sm:text-sm max-w-md leading-relaxed mb-6 font-medium text-slate-600 dark:text-slate-400">
+			<p className="text-xs sm:text-sm max-w-md leading-relaxed mb-6 font-medium text-slate-300">
 				{subtitle}
 			</p>
 
@@ -244,15 +271,15 @@ export const MedicalRadiologyDropzone: React.FC<
 					type="button"
 					onClick={handleLoadSamplePatientRadiograph}
 					disabled={disabled || isLoading}
-					className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all disabled:opacity-50 cursor-pointer bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+					className="w-full sm:w-auto flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all disabled:opacity-50 cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700"
 					data-testid="load-sample-radiograph-btn"
 				>
-					<HardDrive className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+					<HardDrive className="w-4 h-4 text-teal-400" />
 					<span>Загрузить тестовый снимок пациента</span>
 				</button>
 			</div>
 
-			<span className="text-[11px] mt-4 font-mono text-slate-500 dark:text-slate-400">
+			<span className="text-[11px] mt-4 font-mono text-slate-400">
 				Стандарт СанПиН 2.6.1.1192-03 · Автоматическая калибровка пикселей
 			</span>
 		</div>

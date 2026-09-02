@@ -337,11 +337,11 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 				</div>
 
 				{/* Tabs Navigation */}
-				<div className="px-4 sm:px-6 pt-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex gap-2">
+				<div className="px-4 sm:px-6 pt-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-none">
 					<button
 						type="button"
 						onClick={() => setActiveTab("form")}
-						className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+						className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap ${
 							activeTab === "form"
 								? "border-teal-600 text-teal-700 dark:text-teal-300 bg-[var(--paper,#ffffff)] rounded-t-xl"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -353,7 +353,7 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveTab("calc")}
-						className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+						className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap ${
 							activeTab === "calc"
 								? "border-teal-600 text-teal-700 dark:text-teal-300 bg-[var(--paper,#ffffff)] rounded-t-xl"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -365,7 +365,7 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveTab("checks")}
-						className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+						className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap ${
 							activeTab === "checks"
 								? "border-teal-600 text-teal-700 dark:text-teal-300 bg-[var(--paper,#ffffff)] rounded-t-xl"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -377,7 +377,7 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveTab("xml")}
-						className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+						className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap ${
 							activeTab === "xml"
 								? "border-teal-600 text-teal-700 dark:text-teal-300 bg-[var(--paper,#ffffff)] rounded-t-xl"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -595,10 +595,10 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 									<div className="text-xs font-bold text-teal-800 dark:text-teal-200">
 										Код 01 (Обычное лечение)
 									</div>
-									<div className="text-xl font-bold font-mono text-teal-700 dark:text-teal-300">
+									<div className="text-xl font-bold font-mono text-teal-700 dark:text-teal-300 whitespace-nowrap">
 										{exactSplit.code01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)]">
+									<div className="text-[11px] text-[var(--muted,#64748b)] whitespace-nowrap">
 										Лимит: {exactSplit.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽
 									</div>
 								</div>
@@ -607,10 +607,10 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 									<div className="text-xs font-bold text-rose-800 dark:text-rose-200">
 										Код 02 (Дорогостоящее)
 									</div>
-									<div className="text-xl font-bold font-mono text-rose-700 dark:text-rose-300">
+									<div className="text-xl font-bold font-mono text-rose-700 dark:text-rose-300 whitespace-nowrap">
 										{exactSplit.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)]">
+									<div className="text-[11px] text-[var(--muted,#64748b)] whitespace-nowrap">
 										Без лимита (ПП РФ № 458)
 									</div>
 								</div>
@@ -619,10 +619,10 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 									<div className="text-xs font-bold text-emerald-800 dark:text-emerald-200">
 										Возврат 13% НДФЛ
 									</div>
-									<div className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-300">
+									<div className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
 										{exactSplit.refund13Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)]">
+									<div className="text-[11px] text-[var(--muted,#64748b)] whitespace-nowrap">
 										ИТОГО расходов: {exactSplit.totalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
 								</div>
@@ -675,41 +675,41 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 									</thead>
 									<tbody className="divide-y divide-[var(--line,#e2e8f0)] font-medium">
 										<tr>
-											<td className="p-3 font-bold text-teal-700 dark:text-teal-300">Код 01</td>
+											<td className="p-3 font-bold text-teal-700 dark:text-teal-300 whitespace-nowrap">Код 01</td>
 											<td className="p-3">Терапевтическое, ортодонтическое, эндодонтическое лечение, гигиена</td>
-											<td className="p-3 text-right font-mono font-bold">{exactSplit.code01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
-											<td className="p-3 text-right font-mono">{exactSplit.code01EligibleRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
-											<td className="p-3 text-right font-mono font-bold text-emerald-600">
+											<td className="p-3 text-right font-mono font-bold whitespace-nowrap">{exactSplit.code01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
+											<td className="p-3 text-right font-mono whitespace-nowrap">{exactSplit.code01EligibleRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
+											<td className="p-3 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
 												{(Number((exactSplit.code01EligibleKopecks * 13n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
-											<td className="p-3 text-right font-mono text-slate-500 dark:text-slate-400">
+											<td className="p-3 text-right font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
 												{(Number((exactSplit.code01EligibleKopecks * 15n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
 										</tr>
 										<tr>
-											<td className="p-3 font-bold text-rose-700 dark:text-rose-300">Код 02</td>
+											<td className="p-3 font-bold text-rose-700 dark:text-rose-300 whitespace-nowrap">Код 02</td>
 											<td className="p-3">Дорогостоящие услуги (дентальная имплантация, костная пластика, синус-лифтинг)</td>
-											<td className="p-3 text-right font-mono font-bold">{exactSplit.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
-											<td className="p-3 text-right font-mono">{exactSplit.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
-											<td className="p-3 text-right font-mono font-bold text-emerald-600">
+											<td className="p-3 text-right font-mono font-bold whitespace-nowrap">{exactSplit.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
+											<td className="p-3 text-right font-mono whitespace-nowrap">{exactSplit.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
+											<td className="p-3 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
 												{(Number((exactSplit.code02Kopecks * 13n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
-											<td className="p-3 text-right font-mono text-slate-500 dark:text-slate-400">
+											<td className="p-3 text-right font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
 												{(Number((exactSplit.code02Kopecks * 15n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
 										</tr>
 										<tr className="bg-[var(--paper-soft,#f8fafc)] font-bold">
-											<td colSpan={2} className="p-3 text-right">ИТОГО ЗА {selectedYear} ГОД:</td>
-											<td className="p-3 text-right font-mono text-base text-teal-800 dark:text-teal-200">
+											<td colSpan={2} className="p-3 text-right whitespace-nowrap">ИТОГО ЗА {selectedYear} ГОД:</td>
+											<td className="p-3 text-right font-mono text-base text-teal-800 dark:text-teal-200 whitespace-nowrap">
 												{exactSplit.totalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
-											<td className="p-3 text-right font-mono">
+											<td className="p-3 text-right font-mono whitespace-nowrap">
 												{(exactSplit.code01EligibleRub + exactSplit.code02Rub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
-											<td className="p-3 text-right font-mono text-base text-emerald-700 dark:text-emerald-300">
+											<td className="p-3 text-right font-mono text-base text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
 												{exactSplit.refund13Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
-											<td className="p-3 text-right font-mono text-slate-600">
+											<td className="p-3 text-right font-mono text-slate-600 whitespace-nowrap">
 												{exactSplit.refund15Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											</td>
 										</tr>
@@ -759,7 +759,7 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 															Код 0{cat}
 														</span>
 													</td>
-													<td className="p-3 text-right font-mono font-bold">
+													<td className="p-3 text-right font-mono font-bold whitespace-nowrap">
 														{pay.amountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 													</td>
 												</tr>
@@ -845,3 +845,6 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 		</div>
 	);
 };
+
+export default FnsTaxDeductionModal;
+

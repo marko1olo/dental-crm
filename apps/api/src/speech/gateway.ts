@@ -36,6 +36,12 @@ import {
 import { getSpeechPolishPolicy } from "./polish.js";
 import { speechProviders } from "./providers.js";
 import { recordSpeechTranscriptionChunk } from "./storage.js";
+import {
+	GeminiLiveSession,
+	type GeminiLiveSessionConfig,
+	transcribeWithGeminiLiveStt,
+} from "./geminiLiveStt.js";
+
 
 /**
  * Known hallucination strings that Whisper-class models produce on silence or non-speech audio.
@@ -161,6 +167,7 @@ const wiredServerProviders: SpeechProviderKind[] = [
 	"assemblyai_async",
 	"cloudflare_whisper",
 	"google_speech",
+	"gemini_transcribe_live",
 ];
 const localSpeechProviders: SpeechProviderKind[] = [
 	"local_whisper",
@@ -193,6 +200,7 @@ const providerLabels: Record<SpeechGatewayProvider, string> = {
 	cloudflare_whisper: "Cloudflare Workers AI Whisper",
 	azure_speech: "Azure AI Speech",
 	google_speech: "Google Cloud Speech-to-Text",
+	gemini_transcribe_live: "Gemini 3.5 Transcribe Live",
 	huggingface_asr: "Hugging Face распознавание",
 	mobile_native_speech: "Мобильная диктовка",
 	local_whisper: "Локальный Whisper.cpp",
@@ -208,6 +216,10 @@ const providerAliases: Record<string, SpeechGatewayProvider> = {
 	cloudflare: "cloudflare_whisper",
 	azure: "azure_speech",
 	google: "google_speech",
+	gemini: "gemini_transcribe_live",
+	gemini_live: "gemini_transcribe_live",
+	gemini_transcribe: "gemini_transcribe_live",
+	google_live: "gemini_transcribe_live",
 	huggingface: "huggingface_asr",
 	hf: "huggingface_asr",
 	mobile: "mobile_native_speech",
@@ -2619,6 +2631,17 @@ async function transcribeWithProvider(input: {
 					language: input.language,
 					prompt,
 				});
+			} else if (input.providerId === "gemini_transcribe_live") {
+				result = await transcribeWithGeminiLiveStt({
+					audio: input.audio,
+					mimeType: input.mimeType,
+					specialty: input.specialty ?? null,
+					language: input.language,
+					config: {
+						apiKey: keyCandidate.value,
+						providerId: "gemini_transcribe_live",
+					},
+				});
 			} else {
 				throw new Error(
 					`${providerLabels[input.providerId]} есть в каталоге, но прямое серверное распознавание пока не включено. Выберите подключенный источник или браузерную диктовку.`,
@@ -2807,3 +2830,49 @@ export async function transcribeSpeechChunk(
 
 	return { chunk, gateway };
 }
+
+export {
+	transcribeGeminiBatch,
+	type GeminiBatchTranscribeInput,
+	type GeminiBatchTranscribeResult,
+	type GeminiSpeakerSegment,
+	type GeminiWordTimestamp,
+} from "./geminiBatchTranscribe.js";
+
+export {
+	GeminiLiveTranslateSession,
+	createGeminiLiveTranslateSession,
+	type GeminiLiveTranslateOptions,
+	type GeminiLiveTranslateSessionState,
+} from "./geminiLiveTranslate.js";
+
+export {
+	transcribeWhisperCascade,
+	isHallucinatedWhisperTranscript,
+	WHISPER_HALLUCINATION_BLACKLIST,
+	type WhisperCascadeInput,
+	type WhisperCascadeResult,
+	type WhisperCascadeAttempt,
+	type WhisperProviderId,
+} from "./whisperCascade.js";
+
+export function createGeminiLiveSttSession(
+	config?: GeminiLiveSessionConfig,
+): GeminiLiveSession {
+	return new GeminiLiveSession(config);
+}
+
+export {
+	GeminiLiveSession,
+	type GeminiLiveSessionConfig,
+	type GeminiLiveTranscriptEvent,
+	type GeminiLiveSetupFrame,
+	type GeminiLiveMediaChunkFrame,
+	type GeminiLiveParsedServerMessage,
+	buildGeminiLiveSetupFrame,
+	buildGeminiLiveMediaChunkFrame,
+	parseGeminiLiveServerMessage,
+	transcribeWithGeminiLiveStt,
+} from "./geminiLiveStt.js";
+
+

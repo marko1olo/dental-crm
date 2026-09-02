@@ -106,3 +106,40 @@ export const copilotPendingActions = pgTable(
 		expiresAtIdx: index("copilot_pending_actions_expires_at_idx").on(t.expiresAt),
 	}),
 );
+
+/**
+ * copilot_hitl_cards — Persistent Human-in-the-Loop approval cards for incoming messages (WhatsApp, Telegram).
+ * Retains drafted clinician replies, triage urgencies, and 1-click execution state in PostgreSQL.
+ */
+export const copilotHitlCards = pgTable(
+	"copilot_hitl_cards",
+	{
+		id: text("id").primaryKey(), // approvalId
+		organizationId: text("organization_id").notNull(),
+		patientId: text("patient_id").notNull(),
+		patientName: text("patient_name").notNull(),
+		phone: text("phone").notNull(),
+		intent: text("intent").notNull(),
+		urgency: text("urgency").notNull().default("NORMAL"), // 'CRITICAL' | 'URGENT' | 'NORMAL'
+		incomingSnippet: text("incoming_snippet").notNull(),
+		draftReply: text("draft_reply").notNull(),
+		channel: text("channel").notNull().default("whatsapp"),
+		confidenceScore: text("confidence_score"),
+		actionPrompt: text("action_prompt"),
+		status: text("status").notNull().default("pending"), // 'pending' | 'approved' | 'rejected' | 'sent'
+		rejectionReason: text("rejection_reason"),
+		category: text("category"),
+		metadata: jsonb("metadata"),
+		isWithin24HourWindow: text("is_within_24h_window"),
+		templateRequired: text("template_required"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+	},
+	(t) => ({
+		organizationIdIdx: index("copilot_hitl_cards_org_idx").on(t.organizationId),
+		statusIdx: index("copilot_hitl_cards_status_idx").on(t.status),
+		createdIdx: index("copilot_hitl_cards_created_idx").on(t.createdAt),
+	}),
+);

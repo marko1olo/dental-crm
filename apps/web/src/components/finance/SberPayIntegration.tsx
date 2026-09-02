@@ -305,13 +305,13 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 					value={rrnInput}
 					onChange={(e) => setRrnInput(e.target.value)}
 					placeholder="RRN (12 знаков для проверки)"
-					className="h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono flex-1"
+					className="min-h-[44px] h-11 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono flex-1"
 				/>
 				<button
 					type="button"
 					onClick={handleReconcileRrn}
 					disabled={isReconciling}
-					className="h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] flex items-center gap-1 cursor-pointer"
+					className="min-h-[44px] h-11 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] flex items-center gap-1 cursor-pointer"
 				>
 					<Search size={14} />
 					<span>Проверить RRN</span>
@@ -329,7 +329,7 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 						<button
 							type="button"
 							onClick={() => handleStartPayment("sberpay_qr")}
-							className="min-h-[40px] px-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+							className="min-h-[44px] px-3 py-2 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
 						>
 							<QrCode size={14} />
 							<span>Оплата по QR коду</span>
@@ -339,7 +339,7 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 								<button
 									type="button"
 									onClick={() => onSelectAlternativeMethod("cash")}
-									className="min-h-[40px] px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+									className="min-h-[44px] px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
 								>
 									<CreditCard size={14} />
 									<span>Наличные в кассу</span>
@@ -347,7 +347,7 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 								<button
 									type="button"
 									onClick={() => onSelectAlternativeMethod("deposit")}
-									className="min-h-[40px] px-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+									className="min-h-[44px] px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
 								>
 									<RotateCcw size={14} />
 									<span>Депозит / Семья</span>
@@ -366,10 +366,10 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 							<button
 								type="button"
 								onClick={() => setActiveSlipTab("customer")}
-								className={`px-2.5 py-1 rounded-lg font-bold text-xs ${
+								className={`min-h-[44px] px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center ${
 									activeSlipTab === "customer"
 										? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-										: "text-[var(--muted,#64748b)]"
+										: "text-[var(--muted,#64748b)] hover:bg-[var(--surface-hover,#f1f5f9)]"
 								}`}
 							>
 								Чек клиента
@@ -377,10 +377,10 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 							<button
 								type="button"
 								onClick={() => setActiveSlipTab("merchant")}
-								className={`px-2.5 py-1 rounded-lg font-bold text-xs ${
+								className={`min-h-[44px] px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center ${
 									activeSlipTab === "merchant"
 										? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-										: "text-[var(--muted,#64748b)]"
+										: "text-[var(--muted,#64748b)] hover:bg-[var(--surface-hover,#f1f5f9)]"
 								}`}
 							>
 								Чек клиники

@@ -248,7 +248,7 @@ function DisinfectantsRegisterTab() {
 						type="button"
 						onClick={() => showToast("Рабочий раствор зарегистрирован в журнале!", "success")}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal-600, #0d9488)", color: "#fff", border: "none" }}
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
 					>
 						<Plus size={16} /> Приготовить раствор
 					</button>
@@ -289,7 +289,7 @@ function DisinfectantsRegisterTab() {
 								<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.preparationDate}</td>
 								<td style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.expiryDate}</td>
 								<td>
-									<span style={{ fontSize: "0.8rem", color: "#059669", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
+									<span style={{ fontSize: "0.8rem", color: "var(--ok-fg)", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
 										<Check size={13} /> {r.testStripResultRu}
 									</span>
 								</td>
@@ -392,7 +392,7 @@ function BacLabRegisterTab() {
 						type="button"
 						onClick={() => showToast("Протокол смывов аккредитованной лаборатории зарегистрирован!", "success")}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal-600, #0d9488)", color: "#fff", border: "none" }}
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
 					>
 						<Plus size={16} /> Внести протокол смывов
 					</button>
@@ -420,7 +420,7 @@ function BacLabRegisterTab() {
 								<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{r.targetObjectRu}</td>
 								<td style={{ fontSize: "0.825rem" }}>{r.pathogensTestedRu}</td>
 								<td>
-									<span style={{ fontSize: "0.825rem", color: "#059669", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
+									<span style={{ fontSize: "0.825rem", color: "var(--ok-fg)", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
 										<Check size={13} /> {r.resultRu}
 									</span>
 								</td>
@@ -518,7 +518,7 @@ function NeedleDisposalRegisterTab() {
 						type="button"
 						onClick={() => showToast("Партия утилизированных игл внесена в журнал!", "success")}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal-600, #0d9488)", color: "#fff", border: "none" }}
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
 					>
 						<Plus size={16} /> Внести партию игл
 					</button>
@@ -545,7 +545,7 @@ function NeedleDisposalRegisterTab() {
 								<td style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--ink)" }}>{r.wasteTypeRu}</td>
 								<td style={{ fontSize: "0.825rem" }}>{r.treatmentMethodRu}</td>
 								<td>
-									<span className="sanpin-tag" style={{ fontSize: "0.825rem", fontWeight: 700, background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a" }}>
+									<span className="sanpin-tag" style={{ fontSize: "0.825rem", fontWeight: 700, background: "var(--warn-bg)", color: "var(--warn-fg)", border: "1px solid var(--warn-fg)" }}>
 										{r.netWeightKg} кг (Класс Б)
 									</span>
 								</td>
@@ -1066,15 +1066,15 @@ export function SanpinRegisters() {
 							title="Нажмите, чтобы развернуть подробные KPI карточки смены"
 							data-testid="sanpin-kpi-consolidated-chip"
 						>
-							<span style={{ color: "var(--teal-600, #0d9488)", fontWeight: 700 }}>
+							<span style={{ color: "var(--teal)", fontWeight: 700 }}>
 								Смена: ПСО {summary.pso?.approvedToday ?? 0}
 							</span>
 							<span style={{ color: "var(--muted, #94a3b8)" }}>·</span>
-							<span style={{ color: "var(--teal-600, #0d9488)", fontWeight: 700 }}>
+							<span style={{ color: "var(--teal)", fontWeight: 700 }}>
 								АК {summary.sterilization?.passedToday ?? 0}
 							</span>
 							<span style={{ color: "var(--muted, #94a3b8)" }}>·</span>
-							<span style={{ color: (summary.temperature?.deviationsToday ?? 0) > 0 ? "#dc2626" : "#059669", fontWeight: 700 }}>
+							<span style={{ color: (summary.temperature?.deviationsToday ?? 0) > 0 ? "var(--bad-fg)" : "var(--ok-fg)", fontWeight: 700 }}>
 								T° {summary.temperature?.deviationsToday ? `${summary.temperature.deviationsToday} откл.` : "Норма"}
 							</span>
 						</button>
@@ -1093,9 +1093,9 @@ export function SanpinRegisters() {
 							padding: "0.5rem 1.1rem",
 							fontSize: "0.85rem",
 							fontWeight: 700,
-							background: "var(--teal-600, #0d9488)",
-							borderColor: "var(--teal-600, #0d9488)",
-							color: "#ffffff",
+							background: "var(--teal)",
+							borderColor: "var(--teal)",
+							color: "var(--on-teal, #ffffff)",
 							boxShadow: "0 2px 6px rgba(13, 148, 136, 0.3)",
 							cursor: "pointer",
 							display: "inline-flex",
@@ -1201,7 +1201,7 @@ export function SanpinRegisters() {
 									}}
 									data-testid="sanpin-new-cycle-dropdown-btn"
 								>
-									<Plus size={15} color="#0d9488" />
+									<Plus size={15} color="var(--teal)" />
 									<span>+ Зафиксировать новый цикл (257/у)</span>
 								</button>
 
@@ -1229,7 +1229,7 @@ export function SanpinRegisters() {
 										cursor: "pointer",
 									}}
 								>
-									<RotateCcw size={15} color="#2563eb" />
+									<RotateCcw size={15} color="var(--teal)" />
 									<span>Обновить сводку смены</span>
 								</button>
 
@@ -1260,7 +1260,7 @@ export function SanpinRegisters() {
 										cursor: "pointer",
 									}}
 								>
-									<Sparkles size={15} color="#0d9488" />
+									<Sparkles size={15} color="var(--teal)" />
 									<span>{autoFilling ? "Оформление..." : "Закрыть смену СанПиН (1 клик)"}</span>
 								</button>
 
@@ -1289,7 +1289,7 @@ export function SanpinRegisters() {
 									}}
 									data-testid="open-retroactive-batch-header-btn"
 								>
-									<Gauge size={15} color="#2563eb" />
+									<Gauge size={15} color="var(--teal)" />
 									<span>Пакетное закрытие (за период)</span>
 								</button>
 
@@ -1320,7 +1320,7 @@ export function SanpinRegisters() {
 									}}
 									data-testid="print-consolidated-binder-btn"
 								>
-									<FileBadge size={15} color="#4338ca" />
+									<FileBadge size={15} color="var(--teal)" />
 									<span>Сводный сшив СанПиН (А4)</span>
 								</button>
 
@@ -1349,7 +1349,7 @@ export function SanpinRegisters() {
 									}}
 									data-testid="export-consolidated-csv-btn"
 								>
-									<Download size={15} color="#059669" />
+									<Download size={15} color="var(--ok-fg)" />
 									<span>Сводный CSV архив</span>
 								</button>
 
@@ -1377,7 +1377,7 @@ export function SanpinRegisters() {
 										cursor: "pointer",
 									}}
 								>
-									<Award size={15} color="#2563eb" />
+									<Award size={15} color="var(--teal)" />
 									<span>ЭЦП медсестры ЦСО</span>
 								</button>
 
@@ -1406,7 +1406,7 @@ export function SanpinRegisters() {
 									}}
 									data-testid="open-kraft-studio-header-btn"
 								>
-									<QrCode size={15} color="#7c3aed" />
+									<QrCode size={15} color="var(--teal)" />
 									<span>Маркировка крафт-пакетов</span>
 								</button>
 
@@ -1435,7 +1435,7 @@ export function SanpinRegisters() {
 									}}
 									data-testid="open-journal-257-header-btn"
 								>
-									<FileSpreadsheet size={15} color="#0891b2" />
+									<FileSpreadsheet size={15} color="var(--teal)" />
 									<span>Журнал 257/у</span>
 								</button>
 

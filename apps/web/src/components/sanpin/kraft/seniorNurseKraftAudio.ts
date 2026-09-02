@@ -6,6 +6,30 @@
  */
 
 let sharedAudioContext: AudioContext | null = null;
+let idleSuspendTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleKraftAudioIdleSuspend(ctx: AudioContext): void {
+	if (idleSuspendTimer) {
+		clearTimeout(idleSuspendTimer);
+	}
+	idleSuspendTimer = setTimeout(() => {
+		if (ctx && ctx.state === "running") {
+			ctx.suspend().catch(() => {});
+		}
+		idleSuspendTimer = null;
+	}, 5000);
+}
+
+export function disposeSeniorNurseKraftAudio(): void {
+	if (idleSuspendTimer) {
+		clearTimeout(idleSuspendTimer);
+		idleSuspendTimer = null;
+	}
+	if (sharedAudioContext && sharedAudioContext.state !== "closed") {
+		sharedAudioContext.close().catch(() => {});
+		sharedAudioContext = null;
+	}
+}
 
 function getAudioContext(): AudioContext | null {
 	if (typeof window === "undefined") return null;
@@ -14,6 +38,10 @@ function getAudioContext(): AudioContext | null {
 		if (!AudioCtx) return null;
 		if (!sharedAudioContext || sharedAudioContext.state === "closed") {
 			sharedAudioContext = new AudioCtx();
+		}
+		if (idleSuspendTimer) {
+			clearTimeout(idleSuspendTimer);
+			idleSuspendTimer = null;
 		}
 		if (sharedAudioContext.state === "suspended") {
 			void sharedAudioContext.resume();
@@ -58,6 +86,7 @@ export function playSterileSuccessTone(): void {
 			osc.start(time);
 			osc.stop(time + dur);
 		});
+		scheduleKraftAudioIdleSuspend(ctx);
 	} catch (err) {
 		console.warn("[Dente Audio] Sterile tone fallback", err);
 	}
@@ -96,6 +125,7 @@ export function playExpiredErrorTone(): void {
 			osc.start(time);
 			osc.stop(time + dur);
 		});
+		scheduleKraftAudioIdleSuspend(ctx);
 	} catch (err) {
 		console.warn("[Dente Audio] Expired tone fallback", err);
 	}

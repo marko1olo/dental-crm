@@ -23,7 +23,7 @@ import {
 	type SberPosTransactionRequest,
 	type SberSettlementTotals,
 } from "@dental/shared";
-import { SberbankTerminalService } from "../services/hardware/sberbankTerminal.js";
+import { SberbankTerminalService, TerminalConnectionError } from "../services/hardware/sberbankTerminal.js";
 import { hardwarePrinter } from "../services/hardware/HardwarePrinter.js";
 
 const TEST_CONFIG: SberPosTerminalConfig = {
@@ -236,4 +236,27 @@ describe("Sberbank Terminal Service State Machine & Recovery", () => {
 			/Некорректный номер RRN/,
 		);
 	});
+
+	it("should throw TerminalConnectionError when hardware terminal is unreachable", async () => {
+		const service = new SberbankTerminalService({
+			...TEST_CONFIG,
+			hostIp: "127.0.0.1",
+			hostPort: 59999, // Unreachable port
+			timeoutMs: 500,
+		});
+
+		await assert.rejects(
+			() =>
+				service.executeSale({
+					amountKopecks: 50000,
+					patientId: "pat-unreachable",
+				}),
+			(err: unknown) => {
+				assert.ok(err instanceof TerminalConnectionError);
+				assert.equal(err.code, "TERMINAL_UNREACHABLE");
+				return true;
+			},
+		);
+	});
 });
+

@@ -608,25 +608,25 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 					<div className="perio-active-tooth-editor">
 						<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-3">
 							<div className="flex items-center gap-3">
-								<span className="text-xl font-black font-mono px-3 py-1 rounded-xl bg-[var(--teal,#0d9488)] text-white">
+								<span className="text-xl font-black font-mono px-3.5 py-1.5 rounded-xl bg-[var(--teal,#0d9488)] text-white shadow-xs">
 									Зуб #{activeTooth.toothNumber}
 								</span>
 								<button
 									type="button"
 									onClick={handleToggleMissing}
-									className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+									className={`min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 										activeTooth.isMissing
 											? "bg-rose-500/15 text-rose-700 border-rose-400"
-											: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)]"
+											: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 									}`}
 								>
 									{activeTooth.isMissing ? "Отсутствует (Адентия)" : "Пометить отсутствующим"}
 								</button>
 							</div>
 
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-3 flex-wrap">
 								{/* Mobility selector */}
-								<div className="flex items-center gap-1 text-xs">
+								<div className="flex items-center gap-1.5 text-xs">
 									<span className="text-[var(--muted,#64748b)] font-bold">Подвижность:</span>
 									{[0, 1, 2, 3].map((g) => (
 										<button
@@ -638,10 +638,10 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 												);
 												SoundFeedbackService.getInstance().playActionSuccess();
 											}}
-											className={`w-8 h-8 rounded-lg font-bold text-xs border transition-all cursor-pointer ${
+											className={`min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl font-black text-xs sm:text-sm border transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 												activeTooth.mobility === g
 													? "bg-amber-500 text-white border-amber-600 shadow-sm"
-													: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)]"
+													: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 											}`}
 										>
 											{g === 0 ? "0" : g === 1 ? "I" : g === 2 ? "II" : "III"}
@@ -651,7 +651,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 
 								{/* Furcation selector if multi-rooted */}
 								{isFurcationEligibleTooth(activeTooth.toothNumber) && (
-									<div className="flex items-center gap-1 text-xs ml-3">
+									<div className="flex items-center gap-1.5 text-xs ml-2">
 										<span className="text-[var(--muted,#64748b)] font-bold">Фуркация:</span>
 										{[0, 1, 2, 3].map((f) => (
 											<button
@@ -663,10 +663,10 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 													);
 													SoundFeedbackService.getInstance().playActionSuccess();
 												}}
-												className={`w-8 h-8 rounded-lg font-bold text-xs border transition-all cursor-pointer ${
+												className={`min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl font-black text-xs sm:text-sm border transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 													activeTooth.furcation === f
 														? "bg-purple-600 text-white border-purple-700 shadow-sm"
-														: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)]"
+														: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 												}`}
 											>
 												{f === 0 ? "0" : f === 1 ? "I" : f === 2 ? "II" : "III"}

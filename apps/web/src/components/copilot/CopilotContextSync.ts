@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
+import { useVisitStore } from "../../store/visitStore";
+
+export interface Clinical043Snapshot {
+	complaints?: string | undefined;
+	anamnesis?: string | undefined;
+	objectiveStatus?: string | undefined;
+	diagnosis?: string | undefined;
+	treatmentPlan?: string | undefined;
+	recommendations?: string | undefined;
+}
 
 export interface CopilotUiContext {
 	/** Canonical view key (e.g. 'Odontogram', 'Schedule', 'Patients', 'Finance', 'Inventory') */
@@ -11,10 +21,18 @@ export interface CopilotUiContext {
 	patientId: string | null;
 	/** Active Patient Full Name if available */
 	patientName: string | null;
+	/** Patient allergies if known */
+	allergies?: string[] | undefined;
 	/** Currently selected tooth FDI number (e.g. 36, 16, 21) */
 	activeTooth: number | string | null;
 	/** Active Doctor Full Name (e.g. "Dr. Иванов") */
 	activeDoctor: string | null;
+	/** Active tooth statuses/pathologies map (e.g. { "36": "treatment", "16": "planned" }) */
+	toothFormula?: Record<string, string> | undefined;
+	/** Active diagnoses by tooth code (e.g. { "36": "K02.1 Кариес дентина (глубокий)" }) */
+	diagnosesByTooth?: Record<string, string> | undefined;
+	/** Active 043/u clinical diary form fields */
+	clinical043Context?: Clinical043Snapshot | undefined;
 	/** Optional additional context metadata */
 	additionalContext?: Record<string, unknown> | undefined;
 }
@@ -59,7 +77,7 @@ export function getCanonicalViewName(viewKey: string | null | undefined): {
 
 /**
  * Formats a standardized UI Context header for Copilot turn messages:
- * e.g. [UI Context: View='Odontogram', PatientId='uuid', ActiveTooth=36, ActiveDoctor='Dr. Иванов']
+ * e.g. [UI Context: View='Odontogram', PatientId='uuid', ActiveTooth=36, ActiveDoctor='Dr. Иванов', ToothFormula='...', Diagnoses='...', Form043='...', Allergies='...']
  */
 export function formatCopilotUiContextHeader(
 	ctx?: Partial<CopilotUiContext>,
@@ -88,7 +106,34 @@ export function formatCopilotUiContextHeader(
 		? `'${String(ctx.activeDoctor).replace(/'/g, "\\'")}'`
 		: "null";
 
-	return `[UI Context: View='${viewVal}', PatientId=${patientIdVal}, ActiveTooth=${toothVal}, ActiveDoctor=${doctorVal}]`;
+	const parts: string[] = [
+		`View='${viewVal}'`,
+		`PatientId=${patientIdVal}`,
+		`ActiveTooth=${toothVal}`,
+		`ActiveDoctor=${doctorVal}`,
+	];
+
+	if (ctx?.toothFormula && Object.keys(ctx.toothFormula).length > 0) {
+		const serialized = JSON.stringify(ctx.toothFormula).replace(/'/g, "\\'");
+		parts.push(`ToothFormula='${serialized}'`);
+	}
+
+	if (ctx?.diagnosesByTooth && Object.keys(ctx.diagnosesByTooth).length > 0) {
+		const serialized = JSON.stringify(ctx.diagnosesByTooth).replace(/'/g, "\\'");
+		parts.push(`Diagnoses='${serialized}'`);
+	}
+
+	if (ctx?.clinical043Context && Object.keys(ctx.clinical043Context).length > 0) {
+		const serialized = JSON.stringify(ctx.clinical043Context).replace(/'/g, "\\'");
+		parts.push(`Form043='${serialized}'`);
+	}
+
+	if (ctx?.allergies && ctx.allergies.length > 0) {
+		const serialized = JSON.stringify(ctx.allergies).replace(/'/g, "\\'");
+		parts.push(`Allergies='${serialized}'`);
+	}
+
+	return `[UI Context: ${parts.join(", ")}]`;
 }
 
 export interface ParsedCopilotMessage {
@@ -108,7 +153,7 @@ export function parseCopilotUiContextHeader(
 	}
 
 	const headerMatch = fullText.match(
-		/^\[UI Context:\s*View='([^']*)',\s*PatientId=(null|'[^']*'),\s*ActiveTooth=(null|[0-9]+|'[^']*'),\s*ActiveDoctor=(null|'[^']*')\](?:\r?\n)?/i,
+		/^\[UI Context:\s*([\s\S]*?)\](?:\r?\n)?/i,
 	);
 
 	if (!headerMatch) {
@@ -116,10 +161,21 @@ export function parseCopilotUiContextHeader(
 	}
 
 	const rawHeader = headerMatch[0];
-	const rawView = headerMatch[1] ?? "";
-	const rawPatientId = headerMatch[2] ?? "null";
-	const rawActiveTooth = headerMatch[3] ?? "null";
-	const rawActiveDoctor = headerMatch[4] ?? "null";
+	const headerBody = headerMatch[1] ?? "";
+
+	const viewMatch = headerBody.match(/View='([^']*)'/i);
+	const patientIdMatch = headerBody.match(/PatientId=(null|'[^']*')/i);
+	const activeToothMatch = headerBody.match(/ActiveTooth=(null|[0-9]+|'[^']*')/i);
+	const activeDoctorMatch = headerBody.match(/ActiveDoctor=(null|'[^']*')/i);
+	const toothFormulaMatch = headerBody.match(/ToothFormula='([^']*)'/i);
+	const diagnosesMatch = headerBody.match(/Diagnoses='([^']*)'/i);
+	const form043Match = headerBody.match(/Form043='([^']*)'/i);
+	const allergiesMatch = headerBody.match(/Allergies='([^']*)'/i);
+
+	const rawView = viewMatch?.[1] ?? "";
+	const rawPatientId = patientIdMatch?.[1] ?? "null";
+	const rawActiveTooth = activeToothMatch?.[1] ?? "null";
+	const rawActiveDoctor = activeDoctorMatch?.[1] ?? "null";
 
 	const canonical = getCanonicalViewName(rawView);
 
@@ -142,6 +198,34 @@ export function parseCopilotUiContextHeader(
 			? null
 			: rawActiveDoctor.replace(/^'|'$/g, "").replace(/\\'/g, "'");
 
+	let toothFormula: Record<string, string> | undefined = undefined;
+	if (toothFormulaMatch?.[1]) {
+		try {
+			toothFormula = JSON.parse(toothFormulaMatch[1].replace(/\\'/g, "'"));
+		} catch {}
+	}
+
+	let diagnosesByTooth: Record<string, string> | undefined = undefined;
+	if (diagnosesMatch?.[1]) {
+		try {
+			diagnosesByTooth = JSON.parse(diagnosesMatch[1].replace(/\\'/g, "'"));
+		} catch {}
+	}
+
+	let clinical043Context: Clinical043Snapshot | undefined = undefined;
+	if (form043Match?.[1]) {
+		try {
+			clinical043Context = JSON.parse(form043Match[1].replace(/\\'/g, "'"));
+		} catch {}
+	}
+
+	let allergies: string[] | undefined = undefined;
+	if (allergiesMatch?.[1]) {
+		try {
+			allergies = JSON.parse(allergiesMatch[1].replace(/\\'/g, "'"));
+		} catch {}
+	}
+
 	const cleanText = fullText.slice(rawHeader.length).trimStart();
 
 	return {
@@ -150,8 +234,12 @@ export function parseCopilotUiContextHeader(
 			viewLabel: canonical.labelRu,
 			patientId,
 			patientName: null,
+			allergies,
 			activeTooth,
 			activeDoctor,
+			toothFormula,
+			diagnosesByTooth,
+			clinical043Context,
 		},
 		cleanText,
 		rawHeader,
@@ -185,6 +273,7 @@ export function enrichMessageWithUiContext(
 export function getCurrentCopilotUiContext(): CopilotUiContext {
 	const appStore = useAppStore.getState();
 	const patientStore = usePatientStore.getState();
+	const visitStore = useVisitStore.getState();
 
 	const rawView = String(appStore.currentView ?? "shift");
 	const canonical = getCanonicalViewName(rawView);
@@ -196,12 +285,19 @@ export function getCurrentCopilotUiContext(): CopilotUiContext {
 		null;
 
 	let patientName: string | null = null;
+	let allergies: string[] | undefined = undefined;
+
 	if (patientId && appStore.dashboard?.patients) {
-		const found = appStore.dashboard.patients.find(
-			(p: { id: string; fullName?: string }) => p.id === patientId,
-		);
+		const found = (appStore.dashboard.patients as Array<{
+			id: string;
+			fullName?: string;
+			allergies?: string[];
+		}>).find((p) => p.id === patientId);
 		if (found?.fullName) {
 			patientName = found.fullName;
+		}
+		if (Array.isArray(found?.allergies) && found.allergies.length > 0) {
+			allergies = found.allergies;
 		}
 	}
 
@@ -219,13 +315,59 @@ export function getCurrentCopilotUiContext(): CopilotUiContext {
 		}
 	}
 
+	// Active tooth formula from visitStore (filter out 'idle')
+	const toothFormula: Record<string, string> = {};
+	if (visitStore.visitToothStateByCode) {
+		for (const [code, state] of Object.entries(visitStore.visitToothStateByCode)) {
+			if (state && state !== "idle") {
+				toothFormula[code] = state;
+			}
+		}
+	}
+
+	// Active diagnoses by tooth
+	const diagnosesByTooth: Record<string, string> = {};
+	if (visitStore.visitAiDiagnosesByCode) {
+		for (const [code, diag] of Object.entries(visitStore.visitAiDiagnosesByCode)) {
+			if (diag && diag.trim()) {
+				diagnosesByTooth[code] = diag.trim();
+			}
+		}
+	}
+
+	// Active 043/u clinical diary form fields
+	const vForm = visitStore.visitNoteForm;
+	let clinical043Context: Clinical043Snapshot | undefined = undefined;
+	if (vForm) {
+		const hasContent =
+			Boolean(vForm.complaint?.trim()) ||
+			Boolean(vForm.anamnesis?.trim()) ||
+			Boolean(vForm.objectiveStatus?.trim()) ||
+			Boolean(vForm.diagnosis?.trim()) ||
+			Boolean(vForm.treatmentPlan?.trim());
+
+		if (hasContent) {
+			clinical043Context = {
+				complaints: vForm.complaint?.trim() || undefined,
+				anamnesis: vForm.anamnesis?.trim() || undefined,
+				objectiveStatus: vForm.objectiveStatus?.trim() || undefined,
+				diagnosis: vForm.diagnosis?.trim() || undefined,
+				treatmentPlan: vForm.treatmentPlan?.trim() || undefined,
+			};
+		}
+	}
+
 	return {
 		view: canonical.canonicalKey,
 		viewLabel: canonical.labelRu,
 		patientId,
 		patientName,
+		allergies,
 		activeTooth,
 		activeDoctor,
+		toothFormula: Object.keys(toothFormula).length > 0 ? toothFormula : undefined,
+		diagnosesByTooth: Object.keys(diagnosesByTooth).length > 0 ? diagnosesByTooth : undefined,
+		clinical043Context,
 	};
 }
 
@@ -255,6 +397,9 @@ export function useCopilotContextSync() {
 	const storeAppActivePatientId = useAppStore((s) => s.activePatientId);
 	const storeSelectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const storeDashboard = useAppStore((s) => s.dashboard);
+	const storeToothStates = useVisitStore((s) => s.visitToothStateByCode);
+	const storeAiDiagnoses = useVisitStore((s) => s.visitAiDiagnosesByCode);
+	const storeVisitNoteForm = useVisitStore((s) => s.visitNoteForm);
 
 	const setActiveTooth = useAppStore((s) => s.setActiveTooth);
 	const setActiveDoctorName = useAppStore((s) => s.setActiveDoctorName);
@@ -268,6 +413,10 @@ export function useCopilotContextSync() {
 	const appActivePatientId = storeAppActivePatientId ?? useAppStore.getState().activePatientId ?? null;
 	const selectedPatientId = storeSelectedPatientId ?? usePatientStore.getState().selectedPatientId ?? null;
 	const dashboard = storeDashboard ?? useAppStore.getState().dashboard ?? null;
+
+	const toothStates = storeToothStates ?? useVisitStore.getState().visitToothStateByCode ?? {};
+	const aiDiagnoses = storeAiDiagnoses ?? useVisitStore.getState().visitAiDiagnosesByCode ?? {};
+	const visitNoteForm = storeVisitNoteForm ?? useVisitStore.getState().visitNoteForm ?? null;
 
 	const canonical = useMemo(
 		() => getCanonicalViewName(currentView),
@@ -283,13 +432,27 @@ export function useCopilotContextSync() {
 		[selectedPatientId, appActivePatientId, dashboard?.activeVisit?.patientId],
 	);
 
-	const patientName = useMemo(() => {
+	const patientRecord = useMemo(() => {
 		if (!effectivePatientId || !dashboard?.patients) return null;
-		const found = dashboard.patients.find(
-			(p: { id: string; fullName?: string }) => p.id === effectivePatientId,
+		return (
+			(dashboard.patients as Array<{
+				id: string;
+				fullName?: string;
+				allergies?: string[];
+			}>).find((p) => p.id === effectivePatientId) ?? null
 		);
-		return found?.fullName ?? null;
 	}, [effectivePatientId, dashboard?.patients]);
+
+	const patientName = patientRecord?.fullName ?? null;
+	const allergies = useMemo(() => {
+		if (
+			Array.isArray(patientRecord?.allergies) &&
+			patientRecord.allergies.length > 0
+		) {
+			return patientRecord.allergies;
+		}
+		return undefined;
+	}, [patientRecord?.allergies]);
 
 	const effectiveDoctor = useMemo(() => {
 		if (activeDoctorName) return activeDoctorName;
@@ -303,22 +466,74 @@ export function useCopilotContextSync() {
 		return null;
 	}, [activeDoctorName, dashboard?.clinicSettings?.staff]);
 
+	const toothFormula = useMemo(() => {
+		const res: Record<string, string> = {};
+		if (toothStates) {
+			for (const [code, state] of Object.entries(toothStates)) {
+				if (state && state !== "idle") {
+					res[code] = state;
+				}
+			}
+		}
+		return Object.keys(res).length > 0 ? res : undefined;
+	}, [toothStates]);
+
+	const diagnosesByTooth = useMemo(() => {
+		const res: Record<string, string> = {};
+		if (aiDiagnoses) {
+			for (const [code, diag] of Object.entries(aiDiagnoses)) {
+				if (diag && diag.trim()) {
+					res[code] = diag.trim();
+				}
+			}
+		}
+		return Object.keys(res).length > 0 ? res : undefined;
+	}, [aiDiagnoses]);
+
+	const clinical043Context = useMemo((): Clinical043Snapshot | undefined => {
+		if (!visitNoteForm) return undefined;
+		const hasContent =
+			Boolean(visitNoteForm.complaint?.trim()) ||
+			Boolean(visitNoteForm.anamnesis?.trim()) ||
+			Boolean(visitNoteForm.objectiveStatus?.trim()) ||
+			Boolean(visitNoteForm.diagnosis?.trim()) ||
+			Boolean(visitNoteForm.treatmentPlan?.trim());
+
+		if (!hasContent) return undefined;
+
+		return {
+			complaints: visitNoteForm.complaint?.trim() || undefined,
+			anamnesis: visitNoteForm.anamnesis?.trim() || undefined,
+			objectiveStatus: visitNoteForm.objectiveStatus?.trim() || undefined,
+			diagnosis: visitNoteForm.diagnosis?.trim() || undefined,
+			treatmentPlan: visitNoteForm.treatmentPlan?.trim() || undefined,
+		};
+	}, [visitNoteForm]);
+
 	const context: CopilotUiContext = useMemo(
 		() => ({
 			view: canonical.canonicalKey,
 			viewLabel: canonical.labelRu,
 			patientId: effectivePatientId,
 			patientName,
+			allergies,
 			activeTooth,
 			activeDoctor: effectiveDoctor,
+			toothFormula,
+			diagnosesByTooth,
+			clinical043Context,
 		}),
 		[
 			canonical.canonicalKey,
 			canonical.labelRu,
 			effectivePatientId,
 			patientName,
+			allergies,
 			activeTooth,
 			effectiveDoctor,
+			toothFormula,
+			diagnosesByTooth,
+			clinical043Context,
 		],
 	);
 

@@ -12,10 +12,16 @@ import { describe, it } from "node:test";
 import {
 	EGISZ_OIDS,
 	IDENTITY_DOCUMENT_TYPES,
+	ALLOWED_CDA_SIGNATURE_PROFILES,
+	FORBIDDEN_CDA_SIGNATURE_PROFILES,
+	EnvelopedSignatureSecurityError,
+	assertDetachedCadesBesOnly,
+	assertNoEnvelopedXmlSignature,
 	buildEgiszRemdPackage,
 	canonicalizeCdaXml,
 	computeCdaSha256Hex,
 	createDemonstrationGostSignature,
+	detectEnvelopedXmlSignature,
 	generateCdaXml,
 	generateSemd101Xml,
 	generateSemd104Xml,
@@ -23,6 +29,7 @@ import {
 	isValidSnils,
 	normalizeSnils,
 	validateCdaParams,
+	validateCdaSignatureProfile,
 	validateDetachedSignature,
 	validateFdiToothNumber,
 	validateFrmoOid,
@@ -432,6 +439,66 @@ describe("EGISZ REMD CDA R2 & UKEP Suite", () => {
 			assert.equal(pkg.doctorSignature.algorithmOid, EGISZ_OIDS.GOST_3410_2012_256);
 			assert.ok(pkg.moSignature);
 			assert.equal(pkg.moSignature?.certificateSubject.includes(SAMPLE_CLINIC.name), true);
+		});
+
+		it("запрещает enveloped XML-DSig без полноценного W3C C14N каноникализатора", () => {
+			// 1. Валидация профилей подписи
+			const validBes = validateCdaSignatureProfile("CADES_BES");
+			assert.equal(validBes.valid, true);
+			assert.equal(validBes.profile, "CADES_BES");
+
+			const validCms = validateCdaSignatureProfile("DETACHED_CMS");
+			assert.equal(validCms.valid, true);
+
+			// Enveloped XML-DSig запрещен
+			const badXmlDsig = validateCdaSignatureProfile("XMLDSIG_ENVELOPED");
+			assert.equal(badXmlDsig.valid, false);
+			assert.ok(badXmlDsig.error?.includes("Запрещено использование enveloped XML-DSig"));
+
+			const badXades = validateCdaSignatureProfile("XADES_ENVELOPED");
+			assert.equal(badXades.valid, false);
+
+			// 2. assertDetachedCadesBesOnly
+			assert.doesNotThrow(() => assertDetachedCadesBesOnly("CADES_BES"));
+			assert.doesNotThrow(() => assertDetachedCadesBesOnly("DETACHED_CMS"));
+			assert.throws(
+				() => assertDetachedCadesBesOnly("XMLDSIG_ENVELOPED"),
+				EnvelopedSignatureSecurityError,
+			);
+			assert.throws(
+				() => assertDetachedCadesBesOnly("ENVELOPED"),
+				(err: any) => err instanceof EnvelopedSignatureSecurityError && err.code === "FORBIDDEN_ENVELOPED_SIGNATURE",
+			);
+
+			// 3. Обнаружение <ds:Signature> в теле XML документа
+			const xmlWithEnvelopedSig = `<?xml version="1.0"?>
+<ClinicalDocument xmlns="urn:hl7-org:v3">
+  <id extension="DOC-123"/>
+  <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+    <ds:SignedInfo>
+      <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+    </ds:SignedInfo>
+  </ds:Signature>
+</ClinicalDocument>`;
+
+			const detected = detectEnvelopedXmlSignature(xmlWithEnvelopedSig);
+			assert.equal(detected.hasEnvelopedSignature, true);
+			assert.ok(detected.reason?.includes("Enveloped XML-DSig"));
+
+			assert.throws(
+				() => assertNoEnvelopedXmlSignature(xmlWithEnvelopedSig),
+				EnvelopedSignatureSecurityError,
+			);
+
+			// 4. canonicalizeCdaXml отклоняет enveloped XML по умолчанию
+			assert.throws(
+				() => canonicalizeCdaXml(xmlWithEnvelopedSig),
+				EnvelopedSignatureSecurityError,
+			);
+
+			// 5. Чистый XML проходит канонизацию без ошибок
+			const cleanXml = `<?xml version="1.0"?><ClinicalDocument xmlns="urn:hl7-org:v3"><id extension="CLEAN"/></ClinicalDocument>`;
+			assert.doesNotThrow(() => canonicalizeCdaXml(cleanXml));
 		});
 	});
 });

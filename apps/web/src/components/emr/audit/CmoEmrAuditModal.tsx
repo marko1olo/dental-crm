@@ -710,7 +710,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 											<div style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--muted)", fontWeight: 700 }}>
 												Индекс качества КЭР
 											</div>
-											<div style={{ fontSize: "24px", fontWeight: 800, color: selectedRecord.automatedQualityScore >= 90 ? "#16a34a" : selectedRecord.automatedQualityScore >= 70 ? "#ca8a04" : "#dc2626" }}>
+											<div style={{ fontSize: "24px", fontWeight: 800, color: selectedRecord.automatedQualityScore >= 90 ? "var(--ok-fg)" : selectedRecord.automatedQualityScore >= 70 ? "var(--warn-fg)" : "var(--bad-fg)" }}>
 												{selectedRecord.automatedQualityScore} / 100
 											</div>
 										</div>
@@ -738,9 +738,9 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 															<div className="cmo-audit-check-header">
 																<span>{check.title}</span>
 																{check.passed ? (
-																	<CheckCircle2 size={16} color="#16a34a" />
+																	<CheckCircle2 size={16} color="var(--ok-fg)" />
 																) : (
-																	<XCircle size={16} color="#dc2626" />
+																	<XCircle size={16} color="var(--bad-fg)" />
 																)}
 															</div>
 															<div className="cmo-audit-check-detail">{check.details}</div>
@@ -759,7 +759,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 													<span>Клинический дневник приема (SOAP протокол)</span>
 												</div>
 												{selectedRecord.cardData.visitDiaries[0]?.isSignedWithUkep && (
-													<span style={{ fontSize: "11px", color: "#16a34a", fontWeight: 700 }}>
+													<span style={{ fontSize: "11px", color: "var(--ok-fg)", fontWeight: 700 }}>
 														✓ ПОДПИСАНО УКЭП
 													</span>
 												)}
@@ -801,9 +801,9 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 																<div key={doc.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", padding: "6px 10px", background: "var(--paper)", borderRadius: "6px" }}>
 																	<span>{doc.title}</span>
 																	{doc.isSigned && doc.signedByPatient ? (
-																		<span style={{ color: "#16a34a", fontWeight: 700 }}>✓ Подписано пациентом</span>
+																		<span style={{ color: "var(--ok-fg)", fontWeight: 700 }}>✓ Подписано пациентом</span>
 																	) : (
-																		<span style={{ color: "#dc2626", fontWeight: 700 }}>✗ Нет подписи</span>
+																		<span style={{ color: "var(--bad-fg)", fontWeight: 700 }}>✗ Нет подписи</span>
 																	)}
 																</div>
 															))}
@@ -857,7 +857,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 																	className={`cmo-preset-chip ${selectedPresetId === preset.id ? "active" : ""}`}
 																	onClick={() => handleSelectPreset(preset)}
 																>
-																	<AlertTriangle size={12} color={preset.severity === "critical" ? "#dc2626" : "#ca8a04"} />
+																	<AlertTriangle size={12} color={preset.severity === "critical" ? "var(--bad-fg)" : "var(--warn-fg)"} />
 																	{preset.title}
 																</button>
 															))}
@@ -915,7 +915,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 															style={{
 																padding: "12px",
 																borderRadius: "8px",
-																border: `1px solid ${rem.isResolved ? "var(--glass-border)" : rem.severity === "critical" ? "#fca5a5" : "#fde047"}`,
+																border: `1px solid ${rem.isResolved ? "var(--glass-border)" : rem.severity === "critical" ? "rgba(239, 68, 68, 0.4)" : "rgba(245, 158, 11, 0.4)"}`,
 																background: rem.isResolved ? "var(--paper)" : rem.severity === "critical" ? "rgba(220, 38, 38, 0.05)" : "rgba(202, 138, 4, 0.05)",
 																display: "flex",
 																flexDirection: "column",
@@ -924,18 +924,18 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 														>
 															<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 																<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-																	<AlertTriangle size={14} color={rem.severity === "critical" ? "#dc2626" : "#ca8a04"} />
+																	<AlertTriangle size={14} color={rem.severity === "critical" ? "var(--bad-fg)" : "var(--warn-fg)"} />
 																	<span style={{ fontWeight: 700, fontSize: "13px" }}>{rem.title}</span>
-																	<span style={{ fontSize: "11px", textTransform: "uppercase", fontWeight: 800, color: rem.severity === "critical" ? "#dc2626" : "#ca8a04" }}>
+																	<span style={{ fontSize: "11px", textTransform: "uppercase", fontWeight: 800, color: rem.severity === "critical" ? "var(--bad-fg)" : "var(--warn-fg)" }}>
 																		[{rem.severity}]
 																	</span>
 																</div>
 																{rem.isResolved ? (
-																	<span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+																	<span style={{ fontSize: "12px", color: "var(--ok-fg)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
 																		<Check size={14} /> Устранено
 																	</span>
 																) : (
-																	<span style={{ fontSize: "12px", color: "#dc2626", fontWeight: 700 }}>
+																	<span style={{ fontSize: "12px", color: "var(--bad-fg)", fontWeight: 700 }}>
 																		Требует исправления
 																	</span>
 																)}
@@ -1082,7 +1082,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 													<div style={{ fontSize: "11px", color: "var(--muted)" }}>{doc.doctorSpecialty}</div>
 												</td>
 												<td>{doc.totalRecordsAudited}</td>
-												<td><strong style={{ color: "#16a34a" }}>{doc.firstTimeApprovalRate}%</strong> ({doc.approvedFirstAttempt})</td>
+												<td><strong style={{ color: "var(--ok-fg)" }}>{doc.firstTimeApprovalRate}%</strong> ({doc.approvedFirstAttempt})</td>
 												<td>{doc.approvedWithRemarks}</td>
 												<td>{doc.rejectedCount}</td>
 												<td>
@@ -1092,13 +1092,19 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 												</td>
 												<td>
 													{doc.complianceRating === "excellent" ? (
-														<span style={{ color: "#16a34a", fontWeight: 700 }}>★ Отличный (Высокая надежность)</span>
+														<span style={{ color: "var(--ok-fg)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+															<CheckCircle2 size={14} aria-hidden="true" />
+															<span>Отличный (Высокая надежность)</span>
+														</span>
 													) : doc.complianceRating === "good" ? (
-														<span style={{ color: "#0d9488", fontWeight: 700 }}>Хороший</span>
+														<span style={{ color: "var(--teal)", fontWeight: 700 }}>Хороший</span>
 													) : doc.complianceRating === "satisfactory" ? (
-														<span style={{ color: "#ca8a04", fontWeight: 700 }}>Удовлетворительный</span>
+														<span style={{ color: "var(--warn-fg)", fontWeight: 700 }}>Удовлетворительный</span>
 													) : (
-														<span style={{ color: "#dc2626", fontWeight: 700 }}>⚠ Риск санкций страховой</span>
+														<span style={{ color: "var(--bad-fg)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+															<AlertTriangle size={14} aria-hidden="true" />
+															<span>Риск санкций страховой</span>
+														</span>
 													)}
 												</td>
 											</tr>
@@ -1124,7 +1130,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 									<div key={preset.id} className="cmo-audit-section">
 										<div className="cmo-audit-section-title">
 											<span>{preset.title}</span>
-											<span style={{ fontSize: "11px", fontWeight: 800, color: preset.severity === "critical" ? "#dc2626" : "#ca8a04" }}>
+											<span style={{ fontSize: "11px", fontWeight: 800, color: preset.severity === "critical" ? "var(--bad-fg)" : "var(--warn-fg)" }}>
 												{preset.code} (-{preset.penaltyScore} б.)
 											</span>
 										</div>

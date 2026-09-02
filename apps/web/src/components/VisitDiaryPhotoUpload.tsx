@@ -9,6 +9,7 @@ import { actionFailureToast, requestFailureCause } from "../lib/panelStateText";
 import { readDenteClinicToken } from "../lib/safeLocalStorage";
 import { logger } from "../utils/logger";
 import { showToast } from "./GlobalToast";
+import { decodeHeicImage } from "../services/imaging/heicDecoder";
 
 interface Attachment {
 	id: string;
@@ -284,60 +285,69 @@ export function VisitDiaryPhotoUpload({
 		setIsUploading(true);
 		let localObjectUrl: string | null = null;
 		try {
-			const img = new Image();
-			localObjectUrl = URL.createObjectURL(file);
-
+			let compressedBlob: Blob | null = null;
 			try {
-				await new Promise<void>((resolve, reject) => {
-					img.onload = () => resolve();
-					img.onerror = () => reject(new Error("FILE_NOT_IMAGE"));
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					img.src = localObjectUrl!;
+				const decoded = await decodeHeicImage(file, {
+					targetFormat: "webp",
+					quality: 0.85,
+					maxDimension: 1200,
+					preserveColorProfile: true,
+					applyExifRotation: true,
 				});
-			} catch {
-				showToast(
-					"Файл не открылся как изображение. Выберите снимок JPG, PNG или WEBP.",
-					"error",
-					12000,
+				const res = await fetch(decoded.dataUrl);
+				compressedBlob = await res.blob();
+			} catch (_heicErr) {
+				const img = new Image();
+				localObjectUrl = URL.createObjectURL(file);
+
+				try {
+					await new Promise<void>((resolve, reject) => {
+						img.onload = () => resolve();
+						img.onerror = () => reject(new Error("FILE_NOT_IMAGE"));
+						// biome-ignore lint/style/noNonNullAssertion: automated suppression
+						img.src = localObjectUrl!;
+					});
+				} catch {
+					showToast(
+						"Файл не открылся как изображение. Выберите снимок JPG, PNG, HEIC или WEBP.",
+						"error",
+						12000,
+					);
+					return;
+				}
+
+				const canvas = document.createElement("canvas");
+				let width = img.width;
+				let height = img.height;
+
+				const MAX_SIZE = 1200;
+				if (width > height && width > MAX_SIZE) {
+					height *= MAX_SIZE / width;
+					width = MAX_SIZE;
+				} else if (height > MAX_SIZE) {
+					width *= MAX_SIZE / height;
+					height = MAX_SIZE;
+				}
+
+				canvas.width = width;
+				canvas.height = height;
+				const ctx = canvas.getContext("2d");
+				if (!ctx) {
+					showToast(
+						"Не удалось подготовить снимок на этом рабочем месте (нет canvas). Попробуйте другой браузер или ПК.",
+						"error",
+						12000,
+					);
+					return;
+				}
+				ctx.drawImage(img, 0, 0, width, height);
+
+				compressedBlob = await new Promise<Blob | null>((resolve) =>
+					canvas.toBlob(resolve, "image/webp", 0.8),
 				);
-				return;
 			}
-
-			const canvas = document.createElement("canvas");
-			let width = img.width;
-			let height = img.height;
-
-			const MAX_SIZE = 1200;
-			if (width > height && width > MAX_SIZE) {
-				height *= MAX_SIZE / width;
-				width = MAX_SIZE;
-			} else if (height > MAX_SIZE) {
-				width *= MAX_SIZE / height;
-				height = MAX_SIZE;
-			}
-
-			canvas.width = width;
-			canvas.height = height;
-			const ctx = canvas.getContext("2d");
-			if (!ctx) {
-				showToast(
-					"Не удалось подготовить снимок на этом рабочем месте (нет canvas). Попробуйте другой браузер или ПК.",
-					"error",
-					12000,
-				);
-				return;
-			}
-			ctx.drawImage(img, 0, 0, width, height);
-
-			const compressedBlob = await new Promise<Blob | null>((resolve) =>
-				canvas.toBlob(resolve, "image/webp", 0.8),
-			);
 
 			if (!compressedBlob) {
-				/*
-				 * БЫЛО: throw new Error("Compression failed") → toast
-				 * «Ошибка загрузки: Compression failed» латиницей у кресла.
-				 */
 				showToast(
 					"Не удалось сжать снимок перед отправкой. Выберите другой файл или уменьшите размер.",
 					"error",
@@ -457,7 +467,7 @@ export function VisitDiaryPhotoUpload({
 						<input
 							id="visit-diary-photo-upload"
 							type="file"
-							accept="image/*"
+							accept="image/*,.heic,.heif,image/heic,image/heif"
 							className="hidden"
 							onChange={handlePhotoUpload}
 							disabled={isUploading || isLocked}

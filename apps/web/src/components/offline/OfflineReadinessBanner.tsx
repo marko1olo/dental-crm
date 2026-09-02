@@ -195,12 +195,12 @@ export const OfflineReadinessBanner: React.FC<OfflineReadinessBannerProps> = ({
 			<div className="offline-readiness-banner__details">
 				<div className="offline-readiness-banner__badges">
 					<span className="offline-readiness-banner__badge">
-						<CheckCircle2 size={12} color="#059669" aria-hidden="true" />
+						<CheckCircle2 size={12} color="var(--ok-fg, #059669)" aria-hidden="true" />
 						<span>Service Worker Shell: CacheFirst</span>
 					</span>
 
 					<span className="offline-readiness-banner__badge">
-						<HardDrive size={12} color="#0284c7" aria-hidden="true" />
+						<HardDrive size={12} color="var(--teal, #0284c7)" aria-hidden="true" />
 						<span>
 							{lastReport
 								? `Память: свободно ${lastReport.storageEstimate.freeFormatted} (${lastReport.storageEstimate.percentUsed}% занято)`
@@ -210,14 +210,14 @@ export const OfflineReadinessBanner: React.FC<OfflineReadinessBannerProps> = ({
 
 					{lastReport && (
 						<span className="offline-readiness-banner__badge">
-							<Sparkles size={12} color="#7c3aed" aria-hidden="true" />
+							<Sparkles size={12} color="var(--info-fg, #7c3aed)" aria-hidden="true" />
 							<span>{`Записей в кэше: ${lastReport.storesStats.clinicalCacheCount + lastReport.storesStats.mutationsCount + lastReport.storesStats.draftsCount}`}</span>
 						</span>
 					)}
 				</div>
 
 				{statusNotice && (
-					<div className="offline-readiness-banner__status-notice" style={{ color: "#0284c7", fontWeight: 600 }}>
+					<div className="offline-readiness-banner__status-notice" style={{ color: "var(--teal, #0284c7)", fontWeight: 600 }}>
 						{statusNotice}
 					</div>
 				)}

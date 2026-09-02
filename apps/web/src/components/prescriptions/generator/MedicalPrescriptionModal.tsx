@@ -172,7 +172,7 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 					{/* Right Column: Live Form 107-1/u Sheet Preview (Strictly White Paper in all themes) */}
 					<div
 						className="w-full md:w-80 p-4 rounded-xl border border-slate-300 shadow-lg flex flex-col gap-3 font-serif text-xs text-slate-950"
-						style={{ backgroundColor: "#ffffff", color: "#0f172a" }}
+						style={{ backgroundColor: "var(--paper-strong, #ffffff)", color: "var(--ink, #0f172a)" }}
 					>
 						<div className="border border-dashed border-slate-400 p-2 rounded text-[10px] text-center text-slate-700">
 							{prescriptionDoc.header.clinicName}<br />

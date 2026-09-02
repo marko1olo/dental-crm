@@ -830,6 +830,30 @@ export function checkImplantSliceIntersection(
 // ─── WEB AUDIO API SAFETY SOUND ALARM ENGINE ────────────────────────────────
 
 let sharedAudioContext: AudioContext | null = null;
+let audioIdleSuspendTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleNerveAudioIdleSuspend(ctx: AudioContext): void {
+	if (audioIdleSuspendTimer) {
+		clearTimeout(audioIdleSuspendTimer);
+	}
+	audioIdleSuspendTimer = setTimeout(() => {
+		if (ctx && ctx.state === "running") {
+			ctx.suspend().catch(() => {});
+		}
+		audioIdleSuspendTimer = null;
+	}, 5000);
+}
+
+export function disposeNerveSafetyAudioAlarm(): void {
+	if (audioIdleSuspendTimer) {
+		clearTimeout(audioIdleSuspendTimer);
+		audioIdleSuspendTimer = null;
+	}
+	if (sharedAudioContext && sharedAudioContext.state !== "closed") {
+		sharedAudioContext.close().catch(() => {});
+		sharedAudioContext = null;
+	}
+}
 
 /**
  * Triggers clinical Web Audio safety alarm according to proximity status.
@@ -846,10 +870,14 @@ export function playNerveSafetyAudioAlarm(
 			(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
 		if (!AudioContextClass) return;
 
-		if (!sharedAudioContext) {
+		if (!sharedAudioContext || sharedAudioContext.state === "closed") {
 			sharedAudioContext = new AudioContextClass();
 		}
 		const ctx = sharedAudioContext;
+		if (audioIdleSuspendTimer) {
+			clearTimeout(audioIdleSuspendTimer);
+			audioIdleSuspendTimer = null;
+		}
 		if (ctx.state === "suspended") {
 			ctx.resume().catch(() => {});
 		}
@@ -883,6 +911,7 @@ export function playNerveSafetyAudioAlarm(
 			osc.start(now);
 			osc.stop(now + 0.13);
 		}
+		scheduleNerveAudioIdleSuspend(ctx);
 	} catch {
 		// AudioContext ignored in unsupported environments
 	}

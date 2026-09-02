@@ -37,6 +37,9 @@ export const CallPlayer: React.FC<{
 		audio.addEventListener("ended", handleEnded);
 
 		return () => {
+			try {
+				audio.pause();
+			} catch {}
 			audio.removeEventListener("timeupdate", updateProgress);
 			audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
 			audio.removeEventListener("ended", handleEnded);

@@ -61,7 +61,7 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 							style={{ backgroundColor: activeMeta.planeColor }}
 						/>
 						<span className="font-bold uppercase tracking-wider">{activeMeta.planeNameEn}</span>
-						<span className="text-zinc-500 text-[9px]">(Tab ↹)</span>
+						<span className="text-zinc-400 text-[9px]">(Tab ↹)</span>
 					</div>
 				</div>
 
@@ -277,7 +277,7 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 							</div>
 						</div>
 
-						<div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px] text-zinc-500">
+						<div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px] text-zinc-400">
 							<span>Нажмите Esc или ? для закрытия окна</span>
 							<button
 								type="button"

@@ -255,7 +255,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 						}}
 					>
 						<div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-							<ShieldAlert size={20} style={{ color: "#d97706", flexShrink: 0 }} />
+							<ShieldAlert size={20} style={{ color: "var(--warn-fg, #d97706)", flexShrink: 0 }} />
 							<div>
 								<div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>
 									СанПиН 3.3686-21: Контроль неснижаемого остатка медикаментов

@@ -10,7 +10,7 @@
 .pediatric-age-slider::-webkit-slider-runnable-track {
 	height: 12px;
 	border-radius: 9999px;
-	background: var(--odontogram-border-subtle, var(--line, #e2e8f0));
+	background: var(--line);
 }
 
 .pediatric-age-slider::-webkit-slider-thumb {
@@ -19,8 +19,8 @@
 	width: 32px;
 	height: 32px;
 	border-radius: 50%;
-	background: var(--teal, #0d9488);
-	border: 3px solid var(--paper-strong, var(--paper, #ffffff));
+	background: var(--teal);
+	border: 3px solid var(--paper-strong);
 	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(13, 148, 136, 0.4);
 	cursor: pointer;
 	margin-top: -10px;
@@ -42,15 +42,15 @@
 .pediatric-age-slider::-moz-range-track {
 	height: 12px;
 	border-radius: 9999px;
-	background: var(--odontogram-border-subtle, var(--line, #e2e8f0));
+	background: var(--line);
 }
 
 .pediatric-age-slider::-moz-range-thumb {
 	width: 32px;
 	height: 32px;
 	border-radius: 50%;
-	background: var(--teal, #0d9488);
-	border: 3px solid var(--paper-strong, var(--paper, #ffffff));
+	background: var(--teal);
+	border: 3px solid var(--paper-strong);
 	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(13, 148, 136, 0.4);
 	cursor: pointer;
 	transition: transform 0.15s ease, box-shadow 0.15s ease;

@@ -5,3 +5,4 @@
 
 export * from "./implantCatalog";
 export * from "./implantTorqueCatalog";
+export * from "./ImplantSurgicalPassportModal";

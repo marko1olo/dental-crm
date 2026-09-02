@@ -213,7 +213,7 @@
 }
 
 .doctor-pwa-tab-btn {
-	min-height: 36px;
+	min-height: 44px;
 	padding: 6px 12px;
 	font-size: 12px;
 	font-weight: 700;
@@ -296,7 +296,7 @@
 
 .doctor-pwa-badge.waiting {
 	background: rgba(234, 179, 8, 0.15);
-	color: var(--gold, #eab308);
+	color: var(--warning);
 	border: 1px solid rgba(234, 179, 8, 0.3);
 }
 

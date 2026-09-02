@@ -34,8 +34,8 @@ import {
 	UserCheck,
 	Users,
 	XCircle,
-} from "lucide-react";
 import { formatKopecksRu, parseKopecks, type Kopecks } from "@dental/shared";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export type OnlineBookingPeriod = "7d" | "30d" | "90d" | "all";
 
@@ -176,7 +176,9 @@ export function OnlineBookingConversionPanel() {
 		async function loadLiveAttribution() {
 			try {
 				setLoading(true);
-				const res = await fetch("/api/marketing/attribution");
+				const res = await fetch("/api/marketing/attribution", {
+					headers: denteAdminSecretRequestHeaders(),
+				});
 				if (!res.ok) return;
 				const data = await res.json();
 				if (isMounted && data.selfBookingChannels && Array.isArray(data.selfBookingChannels)) {

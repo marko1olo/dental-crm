@@ -147,3 +147,14 @@
 	font-weight: 600;
 	color: var(--muted);
 }
+
+@media (max-width: 640px) {
+	.cmd-palette-esc {
+		min-height: 44px;
+		min-width: 44px;
+	}
+	.cmd-palette-item {
+		min-height: 48px;
+	}
+}
+

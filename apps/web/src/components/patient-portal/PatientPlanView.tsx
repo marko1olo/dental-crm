@@ -28,6 +28,7 @@ import {
 	DollarSign,
 	Download,
 	ExternalLink,
+	FileText,
 	Heart,
 	HelpCircle,
 	Info,
@@ -76,6 +77,7 @@ export interface PatientPlanViewProps {
 	readonly onBookAppointment?: (() => void) | undefined;
 	readonly onRescheduleAppointment?: (() => void) | undefined;
 	readonly onDownloadTaxCertificate?: (() => void) | undefined;
+	readonly onViewPriceDetails?: (() => void) | undefined;
 	readonly emergencyPhone?: string | undefined;
 	readonly emergencyWhatsappNumber?: string | undefined;
 }
@@ -86,7 +88,7 @@ export const CLINIC_GUARANTEE_ITEMS = [
 		titleRu: "Светоотверждаемые пломбы и эстетические реставрации",
 		materialsRu: "Estelite Asteria (Япония), Harmonize (США), Filtek Ultimate",
 		warrantyPeriodRu: "1–2 года (12–24 мес.)",
-		badgeColor: "#10b981",
+		badgeColor: "var(--ok-fg, #10b981)",
 		termsRu: "Полная бесплатная коррекция или замена пломбы при нарушении краевого прилегания или сколе.",
 	},
 	{
@@ -94,7 +96,7 @@ export const CLINIC_GUARANTEE_ITEMS = [
 		titleRu: "Коронки, виниры и вкладки из диоксида циркония и керамики E.max",
 		materialsRu: "IPS e.max CAD (Ivoclar), Katana Zirconia HTML (Kuraray)",
 		warrantyPeriodRu: "2–5 лет (24–60 мес.)",
-		badgeColor: "#0d9488",
+		badgeColor: "var(--teal, #0d9488)",
 		termsRu: "Гарантия на целостность ортопедической конструкции, анатомическое прилегание и цветовую стойкость.",
 	},
 	{
@@ -102,7 +104,7 @@ export const CLINIC_GUARANTEE_ITEMS = [
 		titleRu: "Дентальная имплантация под ключ",
 		materialsRu: "Dentium SuperLine (Южная Корея), Straumann BLX (Швейцария)",
 		warrantyPeriodRu: "Пожизненная гарантия на титан + 3 года на работу",
-		badgeColor: "#6366f1",
+		badgeColor: "var(--info-fg, #6366f1)",
 		termsRu: "Пожизненная замена имплантата производителем при неприживлении. Бесплатная повторная установка хирургом.",
 	},
 	{
@@ -110,7 +112,7 @@ export const CLINIC_GUARANTEE_ITEMS = [
 		titleRu: "Лечение и перелечивание корневых каналов под микроскопом",
 		materialsRu: "Герметизация биокерамическим силером BioRoot RCS + гуттаперча",
 		warrantyPeriodRu: "1 год диспансерного наблюдения",
-		badgeColor: "#f59e0b",
+		badgeColor: "var(--warn-fg, #f59e0b)",
 		termsRu: "Динамический рентген-контроль через 6 и 12 месяцев. В случае сохранения периапикального очага — бесплатное консилиумное ведение.",
 	},
 ] as const;
@@ -146,25 +148,25 @@ export const PATIENT_COMFORT_STANDARDS = [
 		id: "no_needle_pain",
 		titleRu: "Анестезия без боли от иглы",
 		descriptionRu: "Перед уколом десна обрабатывается охлаждающим гелем со вкусом вишни или мяты. Момент укола совершенно не чувствуется.",
-		iconColor: "#10b981",
+		iconColor: "var(--ok-fg, #10b981)",
 	},
 	{
 		id: "total_control",
 		titleRu: "Полный контроль пациента (Стоп-сигнал)",
 		descriptionRu: "Если вы хотите передохнуть, прополоскать рот или задать вопрос — просто поднимите левую руку. Врач сразу же остановит работу.",
-		iconColor: "#0d9488",
+		iconColor: "var(--teal, #0d9488)",
 	},
 	{
 		id: "cofferdam_safety",
 		titleRu: "Изоляция коффердамом",
 		descriptionRu: "Латексная завеса изолирует зуб: растворы не попадают на язык и в горло, вам не нужно держать рот напряженным, можно спокойно сглатывать слюну.",
-		iconColor: "#6366f1",
+		iconColor: "var(--info-fg, #6366f1)",
 	},
 	{
 		id: "microscope_precision",
 		titleRu: "Лечение под микроскопом",
 		descriptionRu: "30-кратное увеличение позволяет врачу удалять только пораженные ткани, сохраняя максимум живой структуры вашего зуба.",
-		iconColor: "#f59e0b",
+		iconColor: "var(--warn-fg, #f59e0b)",
 	},
 ] as const;
 
@@ -180,6 +182,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	onBookAppointment,
 	onRescheduleAppointment,
 	onDownloadTaxCertificate,
+	onViewPriceDetails,
 	emergencyPhone = "+7 (800) 555-35-35",
 	emergencyWhatsappNumber = "79991234567",
 }) => {
@@ -246,7 +249,6 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 		return `https://wa.me/${cleanNumber}?text=${text}`;
 	}, [emergencyWhatsappNumber, patientName, cardNumber]);
 
-	// 1-Click Tax Certificate Download Handler
 	const handleTaxDownload = () => {
 		if (onDownloadTaxCertificate) {
 			onDownloadTaxCertificate();
@@ -255,7 +257,6 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 		if (fullCabinetData) {
 			downloadPatientTaxCertificate1151156(fullCabinetData, 2026);
 		} else {
-			// Fallback minimal cabinet payload
 			const fallbackData: PatientPersonalCabinetData = {
 				patientId: "pat-fallback",
 				fullName: patientName,
@@ -312,7 +313,6 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				boxSizing: "border-box",
 			}}
 		>
-			{/* 1. EMERGENCY SOS & WHATSAPP BANNER (FOR POST-TREATMENT PAIN) */}
 			<div
 				className="pc-card emergency-hotline-card"
 				data-testid="emergency-hotline-banner"
@@ -334,7 +334,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 								height: "36px",
 								borderRadius: "50%",
 								backgroundColor: "var(--pc-danger, #ef4444)",
-								color: "#ffffff",
+								color: "var(--on-teal, #ffffff)",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
@@ -344,7 +344,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							<ShieldAlert size={20} />
 						</div>
 						<div>
-							<strong style={{ fontSize: "15px", color: "var(--pc-text-main, #f8fafc)" }}>
+							<strong style={{ fontSize: "15px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 								Возникла боль или дискомфорт после приема?
 							</strong>
 							<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
@@ -356,7 +356,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					<span
 						style={{
 							backgroundColor: "var(--pc-danger, #ef4444)",
-							color: "#ffffff",
+							color: "var(--on-teal, #ffffff)",
 							fontSize: "11px",
 							fontWeight: 800,
 							padding: "3px 8px",
@@ -371,7 +371,6 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					</span>
 				</div>
 
-				{/* Quick Contact Buttons */}
 				<div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
 					<a
 						href={whatsappUrl}
@@ -383,8 +382,8 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							minWidth: "160px",
 							minHeight: "44px",
 							borderRadius: "8px",
-							backgroundColor: "#25d366",
-							color: "#ffffff",
+							backgroundColor: "var(--ok-fg, #25d366)",
+							color: "var(--on-teal, #ffffff)",
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
@@ -410,7 +409,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							minHeight: "44px",
 							borderRadius: "8px",
 							backgroundColor: "var(--pc-surface, #1e293b)",
-							color: "var(--pc-text-main, #f8fafc)",
+							color: "var(--pc-text-main, var(--ink, #0f172a))",
 							border: "1px solid var(--pc-border, #334155)",
 							display: "inline-flex",
 							alignItems: "center",
@@ -429,7 +428,6 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				</div>
 			</div>
 
-			{/* 2. PROGRESS BAR & FINANCIAL SUMMARY (EXACT REQUIRED SPEC) */}
 			<div
 				className="pc-card plan-progress-hero-card"
 				data-testid="treatment-plan-progress-hero"
@@ -443,51 +441,56 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					gap: "14px",
 				}}
 			>
-				{/* Top progress header label */}
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
 					<div>
 						<span style={{ fontSize: "12px", fontWeight: 700, color: "var(--pc-primary, #0d9488)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
 							Текущий прогресс реабилитации
 						</span>
-						<h3 style={{ margin: "2px 0 0 0", fontSize: "16px", fontWeight: 800, color: "var(--pc-text-main, #f8fafc)" }}>
-							{plan?.titleRu || "Комплексный план стоматологического лечения"}
+						<h3 style={{ margin: "2px 0 0 0", fontSize: "16px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+							{plan?.titleRu || "Комплексный план лечения"}
 						</h3>
 					</div>
 
-					<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-						<span
+					{onViewPriceDetails && (
+						<button
+							type="button"
+							onClick={onViewPriceDetails}
 							style={{
-								backgroundColor: "var(--pc-primary-light, rgba(13, 148, 136, 0.15))",
-								color: "var(--pc-primary, #0d9488)",
+								background: "transparent",
 								border: "1px solid var(--pc-primary, #0d9488)",
-								padding: "4px 10px",
-								borderRadius: "12px",
-								fontWeight: 800,
-								fontSize: "13px",
+								color: "var(--pc-primary, #0d9488)",
+								fontSize: "12px",
+								fontWeight: 700,
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "4px",
+								padding: "4px 8px",
+								borderRadius: "6px",
 							}}
 						>
-							{progressPercent}% плана выполнено
-						</span>
-					</div>
+							<FileText size={13} />
+							<span>Детализация сметы</span>
+						</button>
+					)}
 				</div>
 
-				{/* Primary Metric Banner: "Выполнено X из Y этапов • Оплачено: Z ₽ • Остаток: N ₽" */}
 				<div
 					style={{
-						backgroundColor: "var(--pc-bg, #0f172a)",
-						border: "1px solid var(--pc-border, #334155)",
-						borderRadius: "10px",
-						padding: "12px 14px",
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "space-between",
 						flexWrap: "wrap",
 						gap: "10px",
+						padding: "12px",
+						backgroundColor: "var(--pc-bg, #0f172a)",
+						border: "1px solid var(--pc-border, #334155)",
+						borderRadius: "10px",
 					}}
 				>
 					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 						<CheckCircle2 size={20} style={{ color: "var(--pc-success, #10b981)" }} />
-						<strong style={{ fontSize: "14px", color: "var(--pc-text-main, #f8fafc)" }}>
+						<strong style={{ fontSize: "14px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 							Выполнено {completedStagesCount} из {stagesCount} этапов
 						</strong>
 					</div>
@@ -536,7 +539,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					}}
 				>
 					<ShieldCheck size={20} style={{ color: "var(--pc-success, #10b981)", flexShrink: 0, marginTop: "1px" }} />
-					<div style={{ fontSize: "12px", color: "var(--pc-text-main, #f8fafc)", lineHeight: "1.4" }}>
+					<div style={{ fontSize: "12px", color: "var(--pc-text-main, var(--ink, #0f172a))", lineHeight: "1.4" }}>
 						<strong style={{ color: "var(--pc-success, #10b981)" }}>Честная прозрачная цена «Под ключ»:</strong>{" "}
 						Стоимость зафиксирована в плане лечения. В каждый этап уже включены: премиальная анестезия (Septanest), контрольные прицельные снимки визиографа (RVG), изоляция коффердамом и гарантийный сертификат. <strong>Никаких доплат на кассе клиники.</strong>
 					</div>
@@ -595,7 +598,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							padding: "8px 16px",
 							borderRadius: "8px",
 							backgroundColor: "var(--pc-primary, #0d9488)",
-							color: "#ffffff",
+							color: "var(--on-teal, #ffffff)",
 							border: "none",
 							fontSize: "13px",
 							fontWeight: 700,
@@ -648,7 +651,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
 							Следующий визит по плану лечения:
 						</div>
-						<strong style={{ fontSize: "14px", color: "var(--pc-text-main, #f8fafc)" }}>
+						<strong style={{ fontSize: "14px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 							Пятница, 28 августа в 14:30 &bull; Врач: Смирнов А. В.
 						</strong>
 					</div>
@@ -711,7 +714,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				>
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
 						<div>
-							<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--pc-text-main, #f8fafc)" }}>
+							<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 								3 Варианта плана реабилитации (Выбор материалов)
 							</h4>
 							<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
@@ -735,7 +738,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 										borderRadius: "10px",
 										border: `2px solid ${isSelected ? "var(--pc-primary, #0d9488)" : "var(--pc-border, #334155)"}`,
 										backgroundColor: isSelected ? "var(--pc-primary-light, rgba(13, 148, 136, 0.15))" : "var(--pc-bg, #0f172a)",
-										color: "var(--pc-text-main, #f8fafc)",
+										color: "var(--pc-text-main, var(--ink, #0f172a))",
 										textAlign: "left",
 										cursor: "pointer",
 										display: "flex",
@@ -779,7 +782,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 								<strong style={{ color: "var(--pc-primary, #0d9488)", display: "block", marginBottom: "4px" }}>
 									Преимущества уровня {curTier.tierNameRu}:
 								</strong>
-								<ul style={{ margin: 0, paddingLeft: "18px", color: "var(--pc-text-main, #f8fafc)", display: "flex", flexDirection: "column", gap: "2px" }}>
+								<ul style={{ margin: 0, paddingLeft: "18px", color: "var(--pc-text-main, var(--ink, #0f172a))", display: "flex", flexDirection: "column", gap: "2px" }}>
 									{curTier.benefits.map((b, bIdx) => (
 										<li key={bIdx}>{b}</li>
 									))}
@@ -806,7 +809,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 			>
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
 					<div>
-						<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--pc-text-main, #f8fafc)" }}>
+						<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 							Интерактивная зубная формула и индекс санации
 						</h4>
 						<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
@@ -835,7 +838,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 					<Heart size={20} style={{ color: "var(--pc-primary, #0d9488)" }} />
 					<div>
-						<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "var(--pc-text-main, #f8fafc)" }}>
+						<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 							Бережная стоматология: лечение без боли и страха
 						</h4>
 						<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
@@ -872,7 +875,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 			{/* 5. STAGES LIST WITH TRANSPARENT CARDS */}
 			<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-					<h4 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "var(--pc-text-main, #f8fafc)" }}>
+					<h4 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 						Этапы лечения и онлайн-оплата ({activeStages.length})
 					</h4>
 					<span style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
@@ -906,7 +909,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
 					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 						<Award size={20} style={{ color: "var(--pc-primary, #0d9488)" }} />
-						<h4 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "var(--pc-text-main, #f8fafc)" }}>
+						<h4 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 							Официальные гарантийные обязательства клиники DENTE
 						</h4>
 					</div>
@@ -930,7 +933,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							}}
 						>
 							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-								<strong style={{ fontSize: "13px", color: "var(--pc-text-main, #f8fafc)" }}>
+								<strong style={{ fontSize: "13px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 									{item.titleRu}
 								</strong>
 								<span
@@ -994,7 +997,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					gap: "10px",
 				}}
 			>
-				<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "var(--pc-text-main, #f8fafc)" }}>
+				<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 					Памятка самоконтроля при боли после лечения
 				</h4>
 
@@ -1020,7 +1023,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 										padding: "10px 14px",
 										backgroundColor: "transparent",
 										border: "none",
-										color: "var(--pc-text-main, #f8fafc)",
+										color: "var(--pc-text-main, var(--ink, #0f172a))",
 										textAlign: "left",
 										cursor: "pointer",
 										display: "flex",

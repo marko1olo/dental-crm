@@ -707,6 +707,6 @@ export async function registerSpeechLaboratoryRoutes(app: FastifyInstance): Prom
 	const wsApp = app as unknown as { get?: WebsocketRouteRegistrar };
 	if (typeof wsApp.get === "function") {
 		wsApp.get("/api/v1/speech/lab-session", { websocket: true }, handleLabSessionWs);
-		wsApp.get("/api/speech/live", { websocket: true }, handleLabSessionWs);
+		wsApp.get("/api/speech/lab-session", { websocket: true }, handleLabSessionWs);
 	}
 }

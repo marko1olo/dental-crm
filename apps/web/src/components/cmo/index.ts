@@ -6,3 +6,5 @@
 
 export * from "./clinicalQualityEngine";
 export * from "./CmoQualityAuditModal";
+export * from "./EgiszSigningCabinetModal";
+

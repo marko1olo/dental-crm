@@ -9,15 +9,14 @@ import * as schema from "./schema.js";
 
 export async function getMessageTemplateCatalogs(
 	organizationId: string,
+	filter: { channel?: string; scenario?: string; intent?: string; isActive?: boolean } = {},
 ): Promise<MessageTemplateCatalog[]> {
-	const rows = await db
-		.select()
-		.from(schema.messageTemplateCatalogs)
-		.where(eq(schema.messageTemplateCatalogs.organizationId, organizationId))
-		.orderBy(asc(schema.messageTemplateCatalogs.title));
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	return rows as any;
+	const { getMessageTemplates } = await import(
+		"../services/communications/messageTemplateService.js"
+	);
+	return (await getMessageTemplates(organizationId, filter)) as any;
 }
+
 
 export async function createMessageTemplateCatalog(
 	organizationId: string,

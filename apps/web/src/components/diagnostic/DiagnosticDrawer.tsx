@@ -424,7 +424,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 																title="Копировать Correlation ID"
 															>
 																{copiedCorrelationId === log.correlationId ? (
-																	<Check size={12} color="#16a34a" />
+																	<Check size={12} color="var(--ok-fg)" />
 																) : (
 																	<Copy size={12} />
 																)}
@@ -441,7 +441,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 															onClick={(e) => e.stopPropagation()}
 														>
 															{log.stack && (
-																<div style={{ color: "#f87171", marginBottom: 8 }}>
+																<div style={{ color: "var(--bad-fg)", marginBottom: 8 }}>
 																	{log.stack}
 																</div>
 															)}
@@ -491,7 +491,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 														<div className="dente-diagnostic-card-left">
 															<span
 																className="dente-diagnostic-pill"
-																style={{ background: "var(--brand-primary, var(--teal))", color: "#fff" }}
+																style={{ background: "var(--teal)", color: "var(--on-teal, #fff)" }}
 															>
 																{net.method}
 															</span>
@@ -519,7 +519,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 															title="Копировать Correlation ID"
 														>
 															{copiedCorrelationId === net.correlationId ? (
-																<Check size={12} color="#16a34a" />
+																<Check size={12} color="var(--ok-fg)" />
 															) : (
 																<Copy size={12} />
 															)}
@@ -540,13 +540,13 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 															onClick={(e) => e.stopPropagation()}
 														>
 															{net.error && (
-																<div style={{ color: "#f87171", marginBottom: 6 }}>
+																<div style={{ color: "var(--bad-fg)", marginBottom: 6 }}>
 																	Ошибка: {net.error}
 																</div>
 															)}
 															{net.requestBodyPreview && (
 																<div>
-																	<span style={{ color: "#94a3b8" }}>Request Payload: </span>
+																	<span style={{ color: "var(--muted)" }}>Request Payload: </span>
 																	{net.requestBodyPreview}
 																</div>
 															)}
@@ -575,20 +575,20 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 											>
 												{offlineStore.networkState.isOnline ? (
 													<>
-														<Wifi size={18} color="#16a34a" />
+														<Wifi size={18} color="var(--ok-fg)" />
 														<span
 															className="dente-diagnostic-metric-value"
-															style={{ color: "#16a34a" }}
+															style={{ color: "var(--ok-fg)" }}
 														>
 															Online
 														</span>
 													</>
 												) : (
 													<>
-														<WifiOff size={18} color="#dc2626" />
+														<WifiOff size={18} color="var(--bad-fg)" />
 														<span
 															className="dente-diagnostic-metric-value"
-															style={{ color: "#dc2626" }}
+															style={{ color: "var(--bad-fg)" }}
 														>
 															Offline
 														</span>
@@ -610,7 +610,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 												className="dente-diagnostic-metric-value"
 												style={{
 													color:
-														offlineStore.metrics.failedCount > 0 ? "#dc2626" : "inherit",
+														offlineStore.metrics.failedCount > 0 ? "var(--bad-fg)" : "inherit",
 												}}
 											>
 												{offlineStore.metrics.failedCount}
@@ -755,7 +755,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 												onClick={handleExportReport}
 											>
 												<Download size={18} />
-												<span>📥 Выгрузить диагностический отчет (.json)</span>
+												<span>Выгрузить диагностический отчет (.json)</span>
 											</button>
 										</div>
 									</div>

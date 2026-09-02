@@ -20,7 +20,11 @@ type ClinicalAuditAction =
 	| "CREATE_INSTALLMENT"
 	| "DEPLETE_INVENTORY"
 	| "GENERATE_CONSENT"
-	| "VIEW_AUDIT_LOG";
+	| "VIEW_AUDIT_LOG"
+	| "CMO_EMR_AUDIT_APPROVE"
+	| "CMO_EMR_AUDIT_REJECT"
+	| "CMO_EMR_AUDIT_BATCH_SIGN"
+	| "CMO_EMR_AUDIT_RETURN_REVISION";
 
 export interface ClinicalAuditInput {
 	organizationId: string;

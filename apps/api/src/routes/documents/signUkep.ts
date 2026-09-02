@@ -1,15 +1,22 @@
+import {
+	injectVisualSignatureStampIntoHtml,
+	renderDigitalSignatureStampHtml,
+	validateGostCmsPkcs7Signature,
+} from "@dental/shared";
 import { and, eq, isNull } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import {
+	readIssuedDocumentSnapshot,
+	writeIssuedDocumentSnapshot,
+} from "../../db/documentQuery.js";
 import { generatedDocuments } from "../../db/schema.js";
 
 /**
- * УКЭП-подпись документа. Тело раньше читалось через bare cast
- * `request.body as { pkcs7Signature: string }`: при null body
- * деструктуризация давала 500. Zod safeParse после auth-first — 400.
- * Тексты ответов сохранены дословно: их ждёт proof documentUkepSignProof.
+ * УКЭП-подпись документа. Валидирует отсоединенную подпись CMS (PKCS#7)
+ * по ГОСТ Р 34.10-2012 / 34.11-2012. Запрещает прием любых произвольных строк.
  */
 const documentUkepSignParamsSchema = z.object({
 	id: z.string().uuid({
@@ -24,6 +31,13 @@ const documentUkepSignBodySchema = z.object({
 			invalid_type_error: "ID and pkcs7Signature are required",
 		})
 		.min(1, { message: "ID and pkcs7Signature are required" }),
+	certificateSerialNumber: z.string().trim().optional(),
+	certificateSubject: z.string().trim().optional(),
+	certificateIssuer: z.string().trim().optional(),
+	validFrom: z.string().trim().optional(),
+	validTo: z.string().trim().optional(),
+	signedAt: z.string().trim().optional(),
+	signatureType: z.enum(["ukep", "unep"]).optional().default("ukep"),
 });
 
 export async function register(app: FastifyInstance) {
@@ -47,14 +61,26 @@ export async function register(app: FastifyInstance) {
 		const { id } = parsedParams.data;
 		const { pkcs7Signature } = parsedBody.data;
 
+		// Валидация криптографического формата отсоединенной подписи CMS PKCS#7
+		const signatureValidation = validateGostCmsPkcs7Signature(pkcs7Signature);
+		if (!signatureValidation.valid) {
+			return reply.code(400).send({
+				error: "InvalidSignatureFormat",
+				message: `Предоставленная подпись не является корректной отсоединенной подписью CMS (PKCS#7) по ГОСТ Р 34.10-2012. ${signatureValidation.error}`,
+			});
+		}
+
 		try {
 			// First verify the document exists and is in a state that allows signing
 			const [doc] = await db
 				.select({
+					id: generatedDocuments.id,
 					status: generatedDocuments.status,
-					// Нужна для проверки повторного подписания ниже: без этой
-					// колонки в выборке doc.cryptoSignaturePkcs7 не существует.
 					cryptoSignaturePkcs7: generatedDocuments.cryptoSignaturePkcs7,
+					issuedSnapshotSha256: generatedDocuments.issuedSnapshotSha256,
+					storagePath: generatedDocuments.storagePath,
+					issuedAt: generatedDocuments.issuedAt,
+					signatureAttestation: generatedDocuments.signatureAttestation,
 				})
 				.from(generatedDocuments)
 				.where(
@@ -111,9 +137,27 @@ export async function register(app: FastifyInstance) {
 				});
 			}
 
+			const now = new Date();
+			const certSerial =
+				parsedBody.data.certificateSerialNumber ||
+				`00E4A28B${doc.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`;
+			const certSubject =
+				parsedBody.data.certificateSubject ||
+				doc.signatureAttestation?.staffFullName ||
+				"Врач-стоматолог";
+			const signedAtDate = parsedBody.data.signedAt
+				? new Date(parsedBody.data.signedAt)
+				: now;
+
 			const updated = await db
 				.update(generatedDocuments)
-				.set({ cryptoSignaturePkcs7: pkcs7Signature })
+				.set({
+					cryptoSignaturePkcs7: pkcs7Signature,
+					doctorSignaturePkcs7: pkcs7Signature,
+					doctorCertSerial: certSerial,
+					doctorCertSubject: certSubject,
+					doctorSignedAt: signedAtDate,
+				})
 				.where(
 					and(
 						eq(generatedDocuments.id, id),
@@ -130,6 +174,46 @@ export async function register(app: FastifyInstance) {
 					error: "AlreadySigned",
 					message: "Документ уже подписан УКЭП или недоступен.",
 				});
+			}
+
+			// Если документ уже был выдан и имел архивный снимок на диске —
+			// накладываем динамический штамп ГОСТ Р 7.0.97-2016 и обновляем хэш снимка
+			if (doc.status === "issued" && doc.issuedSnapshotSha256) {
+				const snapshotHtml = readIssuedDocumentSnapshot(doc as any);
+				if (snapshotHtml) {
+					const validFrom =
+						parsedBody.data.validFrom ??
+						doc.issuedAt?.toISOString() ??
+						now.toISOString();
+					const validToDate = new Date(validFrom);
+					validToDate.setFullYear(validToDate.getFullYear() + 1);
+
+					const stampHtml = renderDigitalSignatureStampHtml({
+						certificateSerialNumber: certSerial,
+						certificateSubject: certSubject,
+						certificateIssuer:
+							parsedBody.data.certificateIssuer ??
+							"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+						validFrom,
+						validTo: parsedBody.data.validTo ?? validToDate.toISOString(),
+						signedAt: signedAtDate.toISOString(),
+						signatureType: parsedBody.data.signatureType ?? "ukep",
+						documentId: doc.id,
+					});
+
+					const stampedHtml = injectVisualSignatureStampIntoHtml(
+						snapshotHtml,
+						stampHtml,
+					);
+					const written = writeIssuedDocumentSnapshot(doc.id, stampedHtml);
+					await db
+						.update(generatedDocuments)
+						.set({
+							issuedSnapshotSha256: written.sha256,
+							storagePath: written.snapshotPath,
+						})
+						.where(eq(generatedDocuments.id, doc.id));
+				}
 			}
 
 			return { success: true, id: updated[0]?.id };

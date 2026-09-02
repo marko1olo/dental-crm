@@ -30,7 +30,9 @@ export type SoundEffectType =
 	| "mic_stop"
 	| "speech_captured"
 	| "action_success"
-	| "warning_alert";
+	| "warning_alert"
+	| "emergency_alarm"
+	| "metronome_click";
 
 export interface SoundFeedbackConfig {
 	enabled: boolean;
@@ -475,6 +477,90 @@ export class SoundFeedbackService {
 				return this.playActionSuccess();
 			case "warning_alert":
 				return this.playWarningAlert();
+			case "emergency_alarm":
+				return this.playEmergencyAlarm();
+			case "metronome_click":
+				return this.playMetronomeClick();
+		}
+	}
+
+	/**
+	 * 6. playEmergencyAlarm(): срочный 2-тональный сигнал тревоги (960Hz / 770Hz)
+	 * Неотложное состояние: анафилаксия, LAST-токсичность, клиническая смерть.
+	 */
+	public async playEmergencyAlarm(): Promise<void> {
+		if (!this.enabled || this.volume <= 0) return;
+		this.triggerHaptic([100, 50, 100, 50, 200]);
+
+		const ctx = await this.ensureContextActive();
+		if (!ctx) return;
+
+		try {
+			const now = ctx.currentTime;
+			const duration = 0.35; // 350ms
+
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+
+			osc.type = "sawtooth";
+			osc.frequency.setValueAtTime(960, now);
+			osc.frequency.setValueAtTime(960, now + 0.15);
+			osc.frequency.setValueAtTime(770, now + 0.16);
+			osc.frequency.setValueAtTime(770, now + duration);
+
+			const peakGain = this.volume * 0.5;
+			gain.gain.setValueAtTime(0.0001, now);
+			gain.gain.linearRampToValueAtTime(peakGain, now + 0.02);
+			gain.gain.setValueAtTime(peakGain, now + duration - 0.02);
+			gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+
+			osc.start(now);
+			osc.stop(now + duration + 0.01);
+		} catch (err) {
+			console.warn("[SoundFeedbackService] playEmergencyAlarm error:", err);
+		} finally {
+			this.scheduleIdleSuspend();
+		}
+	}
+
+	/**
+	 * 7. playMetronomeClick(): четкий метроном 100-120 bpm для СЛР (непрямой массаж сердца)
+	 */
+	public async playMetronomeClick(accent = false): Promise<void> {
+		if (!this.enabled || this.volume <= 0) return;
+		this.triggerHaptic(accent ? 35 : 15);
+
+		const ctx = await this.ensureContextActive();
+		if (!ctx) return;
+
+		try {
+			const now = ctx.currentTime;
+			const duration = 0.03; // 30ms
+
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(accent ? 1600 : 1000, now);
+			osc.frequency.exponentialRampToValueAtTime(300, now + duration);
+
+			const peakGain = this.volume * (accent ? 0.45 : 0.25);
+			gain.gain.setValueAtTime(0.0001, now);
+			gain.gain.linearRampToValueAtTime(peakGain, now + 0.002);
+			gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+
+			osc.start(now);
+			osc.stop(now + duration + 0.005);
+		} catch (err) {
+			console.warn("[SoundFeedbackService] playMetronomeClick error:", err);
+		} finally {
+			this.scheduleIdleSuspend();
 		}
 	}
 

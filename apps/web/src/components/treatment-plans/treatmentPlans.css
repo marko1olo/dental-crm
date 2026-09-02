@@ -19,19 +19,19 @@
 }
 
 .treatment-presenter-modal {
-	--tp-bg: var(--paper, #ffffff);
-	--tp-surface: var(--paper-strong, #f8fafc);
-	--tp-surface-soft: var(--paper-soft, #f1f5f9);
-	--tp-border: var(--line, #e2e8f0);
-	--tp-text-main: var(--ink, #0f172a);
-	--tp-text-muted: var(--muted, #64748b);
-	--tp-primary: var(--teal, #0d9488);
-	--tp-primary-hover: var(--teal-dark, #0f766e);
-	--tp-primary-light: var(--teal-surface, rgba(13, 148, 136, 0.1));
-	--tp-accent: #f59e0b;
-	--tp-accent-light: rgba(245, 158, 11, 0.12);
-	--tp-success: #10b981;
-	--tp-success-light: rgba(16, 185, 129, 0.12);
+	--tp-bg: var(--paper);
+	--tp-surface: var(--paper-strong);
+	--tp-surface-soft: var(--paper-soft);
+	--tp-border: var(--line);
+	--tp-text-main: var(--ink);
+	--tp-text-muted: var(--muted);
+	--tp-primary: var(--teal);
+	--tp-primary-hover: var(--teal-dark);
+	--tp-primary-light: var(--teal-surface);
+	--tp-accent: var(--warn-fg);
+	--tp-accent-light: var(--warn-bg);
+	--tp-success: var(--ok-fg);
+	--tp-success-light: var(--ok-bg);
 	--tp-radius-xl: 24px;
 	--tp-radius-lg: 16px;
 	--tp-radius-md: 10px;
@@ -51,55 +51,6 @@
 	overflow: hidden;
 	box-sizing: border-box;
 	font-family: inherit;
-}
-
-/* Dark Theme Overrides */
-[data-theme="dark"] .treatment-presenter-modal,
-.dark .treatment-presenter-modal {
-	--tp-bg: #0f172a;
-	--tp-surface: #1e293b;
-	--tp-surface-soft: #334155;
-	--tp-border: #334155;
-	--tp-text-main: #f8fafc;
-	--tp-text-muted: #94a3b8;
-	--tp-primary: #2dd4bf;
-	--tp-primary-hover: #14b8a6;
-	--tp-primary-light: rgba(45, 212, 191, 0.15);
-}
-
-[data-theme="night"] .treatment-presenter-modal,
-[data-theme="oled"] .treatment-presenter-modal {
-	--tp-bg: #000000;
-	--tp-surface: #121215;
-	--tp-surface-soft: #27272a;
-	--tp-border: #27272a;
-	--tp-text-main: #ffffff;
-	--tp-text-muted: #a1a1aa;
-	--tp-primary: #2dd4bf;
-	--tp-primary-hover: #5eead4;
-}
-
-[data-theme="ocean"] .treatment-presenter-modal {
-	--tp-bg: #0b192c;
-	--tp-surface: #1e3e62;
-	--tp-surface-soft: #244877;
-	--tp-border: #28558a;
-	--tp-text-main: #f1f6f9;
-	--tp-text-muted: #9ba4b5;
-	--tp-primary: #00adb5;
-	--tp-primary-hover: #02878d;
-}
-
-[data-theme="calm_teal"] .treatment-presenter-modal,
-[data-theme="calm-teal"] .treatment-presenter-modal {
-	--tp-bg: #ffffff;
-	--tp-surface: #f0fdfa;
-	--tp-surface-soft: #ccfbf1;
-	--tp-border: #99f6e4;
-	--tp-text-main: #134e4a;
-	--tp-text-muted: #0f766e;
-	--tp-primary: #0f766e;
-	--tp-primary-hover: #115e59;
 }
 
 /* Header */
@@ -237,7 +188,7 @@
 }
 
 .treatment-presenter-tab-btn.active {
-	color: #ffffff;
+	color: var(--paper-strong);
 	background: var(--tp-primary);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
@@ -285,16 +236,16 @@
 
 .treatment-mobile-tier-btn.active {
 	background: var(--tp-primary);
-	color: #ffffff;
+	color: var(--paper-strong);
 	border-color: var(--tp-primary);
 	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
 }
 
 .treatment-mobile-tier-btn.active.standard {
-	background: linear-gradient(135deg, #f59e0b, #d97706);
-	border-color: #d97706;
-	color: #ffffff;
-	box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
+	box-shadow: 0 4px 14px rgba(217, 119, 6, 0.2);
 }
 
 /* Content Container */
@@ -421,12 +372,12 @@
 }
 
 .treatment-tier-card.recommended {
-	border-color: #f59e0b;
+	border-color: var(--warn-fg);
 }
 
 .treatment-tier-card.recommended.selected {
-	border-color: #f59e0b;
-	box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25), 0 12px 28px -6px rgba(245, 158, 11, 0.25);
+	border-color: var(--warn-fg);
+	box-shadow: 0 0 0 2px var(--warn-bg), 0 12px 28px -6px rgba(245, 158, 11, 0.25);
 }
 
 /* Doctor Recommendation Ribbon */
@@ -435,8 +386,9 @@
 	top: 0;
 	right: 0;
 	left: 0;
-	background: linear-gradient(135deg, #f59e0b, #d97706);
-	color: #ffffff;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-bottom: 1px solid var(--warn-fg);
 	font-size: 11px;
 	font-weight: 800;
 	text-transform: uppercase;
@@ -447,7 +399,7 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+	box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);
 	z-index: 2;
 }
 
@@ -483,21 +435,21 @@
 }
 
 .treatment-tier-badge.economy {
-	color: #64748b;
-	background: rgba(100, 116, 139, 0.1);
-	border-color: rgba(100, 116, 139, 0.25);
+	color: var(--muted);
+	background: var(--paper-soft);
+	border-color: var(--line);
 }
 
 .treatment-tier-badge.standard {
-	color: #d97706;
-	background: rgba(245, 158, 11, 0.12);
-	border-color: rgba(245, 158, 11, 0.3);
+	color: var(--warn-fg);
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
 }
 
 .treatment-tier-badge.optimum {
-	color: #0d9488;
-	background: rgba(13, 148, 136, 0.12);
-	border-color: rgba(13, 148, 136, 0.3);
+	color: var(--teal);
+	background: var(--teal-surface);
+	border-color: var(--teal);
 }
 
 .treatment-tier-name {
@@ -682,15 +634,16 @@
 
 .treatment-tier-card.selected .treatment-tier-select-btn {
 	background: var(--tp-primary);
-	color: #ffffff;
+	color: var(--paper-strong);
 	border-color: var(--tp-primary);
 	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
 }
 
 .treatment-tier-card.recommended.selected .treatment-tier-select-btn {
-	background: #f59e0b;
-	border-color: #f59e0b;
-	box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
+	box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
 }
 
 /* Detailed Accordion Section for Stages */
@@ -916,8 +869,8 @@
 }
 
 .btn-patient-choice {
-	background: linear-gradient(135deg, var(--tp-primary), var(--tp-primary-hover));
-	color: #ffffff;
+	background: var(--teal);
+	color: var(--paper-strong);
 	border: none;
 	padding: 0 20px;
 	font-size: 14px;
@@ -925,7 +878,7 @@
 }
 
 .btn-patient-choice:hover {
-	opacity: 0.95;
+	background: var(--teal-dark);
 	transform: translateY(-1px);
 	box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45);
 }
@@ -944,8 +897,8 @@
    OFFICIAL CONTRACT APPENDIX #1 PRINT STYLES (PP RF № 736 & Order 804n)
    ========================================================================== */
 .treatment-appendix-print-doc {
-	background: #ffffff;
-	color: #000000;
+	background: var(--paper-strong);
+	color: var(--ink);
 	padding: 24px 32px;
 	font-family: "Times New Roman", Times, serif;
 	font-size: 11pt;
@@ -985,7 +938,7 @@
 	gap: 16px;
 	margin-bottom: 16px;
 	font-size: 9.5pt;
-	border: 1px solid #000000;
+	border: 1px solid var(--line-strong);
 	padding: 8px 12px;
 }
 
@@ -998,13 +951,13 @@
 
 .treatment-print-table th,
 .treatment-print-table td {
-	border: 1px solid #000000;
+	border: 1px solid var(--line-strong);
 	padding: 4px 6px;
 	vertical-align: middle;
 }
 
 .treatment-print-table th {
-	background: #f1f5f9;
+	background: var(--paper-soft);
 	font-weight: bold;
 	text-align: center;
 }
@@ -1019,7 +972,7 @@
 }
 
 .treatment-sig-box {
-	border-top: 1px solid #000000;
+	border-top: 1px solid var(--line-strong);
 	padding-top: 6px;
 	margin-top: 36px;
 	font-size: 9pt;

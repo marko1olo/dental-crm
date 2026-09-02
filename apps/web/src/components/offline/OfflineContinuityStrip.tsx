@@ -364,14 +364,14 @@ export const OfflineContinuityStrip: React.FC<OfflineContinuityStripProps> = ({
 					)}
 
 					{lastSyncNotice && (
-						<span className="offline-continuity-strip__queue-pill" style={{ color: "#059669" }}>
+						<span className="offline-continuity-strip__queue-pill" style={{ color: "var(--ok-fg, #059669)" }}>
 							<CheckCircle2 size={12} aria-hidden="true" />
 							{lastSyncNotice}
 						</span>
 					)}
 
 					{syncError && (
-						<span className="offline-continuity-strip__queue-pill" style={{ color: "#dc2626" }}>
+						<span className="offline-continuity-strip__queue-pill" style={{ color: "var(--bad-fg, #dc2626)" }}>
 							<AlertCircle size={12} aria-hidden="true" />
 							{syncError}
 						</span>

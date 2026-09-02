@@ -104,7 +104,7 @@ export function FoolproofConfirmDialog({
 						</span>
 						{consequences.map((c, idx) => (
 							<div key={idx} className="foolproof-consequence-item">
-								<span style={{ color: "#ef4444", fontWeight: "bold" }}>•</span>
+								<span style={{ color: "var(--bad-fg)", fontWeight: "bold" }}>•</span>
 								<span>{c}</span>
 							</div>
 						))}

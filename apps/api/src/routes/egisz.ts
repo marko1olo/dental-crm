@@ -1,10 +1,10 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { requireOrganizationId } from "../security/identity.js";
+import { getRequestIdentity, requireOrganizationId } from "../security/identity.js";
 import {
 	canonicalizeCdaXml,
 	egiszRemdPackageSchema,
@@ -1251,58 +1251,51 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					});
 				}
 
-				const canonicalXml = canonicalizeCdaXml(pkg.xmlCanonicalPayload);
-				const gatewayClient = new OiisGatewayClient();
-				const gatewayRes = await gatewayClient.sendRemdDocument(pkg);
-				const transactionId = gatewayRes.transactionId;
+				const isSync = (request.query as { sync?: string })?.sync === "true";
+				const dispatcher = new EgiszOutboxDispatcher();
 
-				const [insertedLog] = await db
-					.insert(schema.egiszLogs)
-					.values({
-						organizationId: orgId,
-						patientId: visit.patientId,
-						visitId: visit.id,
-						status: gatewayRes.status === "Registered" ? "Accepted" : gatewayRes.status === "Sent" ? "Sent" : "Error",
-						transactionId,
-						errorDetails: {
-							documentVersion: pkg.documentVersion,
-							docTypeNsiCode: pkg.metadata.docTypeNsiCode,
-							clinicOid: pkg.metadata.clinicOid,
-							doctorCertSerial: pkg.doctorSignature.certificateSerialNumber,
-							doctorCertSubject: pkg.doctorSignature.certificateSubject,
-							moCertSerial: pkg.moSignature?.certificateSerialNumber ?? null,
-							canonicalXmlLength: canonicalXml.length,
-							signedAt: pkg.doctorSignature.signedAt,
-							remdDocumentId: gatewayRes.remdDocumentId,
-							errorMessage: gatewayRes.errorMessage,
-							gatewayRawResponse: gatewayRes.rawResponse,
-						},
-					})
-					.returning();
+				const identity = getRequestIdentity(request);
 
-				// Record audit log
-				await db.insert(schema.clinicalAuditLogs).values({
+				// Enqueue signed package into outbox queue
+				const enqueueRes = await dispatcher.enqueueSignedPackage({
 					organizationId: orgId,
 					patientId: visit.patientId,
-					entityType: "egisz_remd_package",
-					entityId: visit.id,
-					action: "remd_cda_signed_and_sent",
-					meta: {
-						logId: insertedLog?.id,
-						transactionId,
-						docTypeNsiCode: pkg.metadata.docTypeNsiCode,
-						doctorCertSubject: pkg.doctorSignature.certificateSubject,
-						remdDocumentId: gatewayRes.remdDocumentId,
-					},
+					visitId: visit.id,
+					doctorId: identity.userId || visit.patientId,
+					documentId: pkg.documentId,
+					pkg,
+					actorUserId: identity.userId,
 				});
 
+				if (isSync) {
+					// Synchronous dispatch requested (e.g. for immediate test verification)
+					const dispatchResult = await dispatcher.processPendingQueue(orgId, 1);
+					const itemResult = dispatchResult.results.find(
+						(r) => r.outboxId === enqueueRes.outboxId || r.visitId === visit.id,
+					);
+					const isSuccess = itemResult?.status === "Registered" || itemResult?.status === "Sent";
+					return reply.status(200).send({
+						success: isSuccess,
+						queued: false,
+						outboxId: enqueueRes.outboxId,
+						logId: enqueueRes.logId,
+						status: itemResult?.status || "Sent",
+						transactionId: itemResult?.transactionId,
+						canonicalXmlLength: enqueueRes.canonicalXmlLength,
+						...(itemResult?.error ? { error: itemResult.error } : {}),
+					});
+				}
+
+				// Standard non-blocking asynchronous queueing (prevents doctor UI blocking)
 				return reply.status(200).send({
-					success: gatewayRes.success,
-					logId: insertedLog?.id,
-					status: gatewayRes.status,
-					transactionId,
-					remdDocumentId: gatewayRes.remdDocumentId,
-					canonicalXmlLength: canonicalXml.length,
+					success: true,
+					queued: true,
+					outboxId: enqueueRes.outboxId,
+					logId: enqueueRes.logId,
+					status: enqueueRes.status,
+					dedupeKey: enqueueRes.dedupeKey,
+					canonicalXmlLength: enqueueRes.canonicalXmlLength,
+					message: "Пакет СЭМД принят в очередь отправки в РЭМД ЕГИСЗ Минздрава",
 				});
 			} catch (error: unknown) {
 				request.log.error(error);
@@ -1364,6 +1357,94 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			return reply.status(200).send({
 				success: true,
 				updatedCount,
+			});
+		},
+	);
+
+	/**
+	 * GET /api/clinical/egisz/outbox/status — мониторинг состояния очереди отправки СЭМД в РЭМД.
+	 */
+	app.get(
+		"/api/clinical/egisz/outbox/status",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"egisz outbox status",
+				))
+			)
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const dispatcher = new EgiszOutboxDispatcher();
+			const status = await dispatcher.getQueueStatus(orgId);
+
+			return reply.status(200).send({
+				success: true,
+				status,
+			});
+		},
+	);
+
+	/**
+	 * GET /api/clinical/egisz/outbox — список документов в очереди отправки СЭМД с фильтрацией.
+	 */
+	app.get(
+		"/api/clinical/egisz/outbox",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"egisz outbox list",
+				))
+			)
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const query = (request.query || {}) as {
+				status?: string;
+				limit?: string;
+			};
+			const limit = Math.min(100, Math.max(1, Number(query.limit) || 50));
+
+			const conditions = [eq(schema.egiszOutbox.organizationId, orgId)];
+			if (query.status) {
+				conditions.push(eq(schema.egiszOutbox.status, query.status as any));
+			}
+
+			const items = await db
+				.select({
+					id: schema.egiszOutbox.id,
+					visitId: schema.egiszOutbox.visitId,
+					patientId: schema.egiszOutbox.patientId,
+					doctorId: schema.egiszOutbox.doctorId,
+					docTypeNsiCode: schema.egiszOutbox.docTypeNsiCode,
+					status: schema.egiszOutbox.status,
+					attempts: schema.egiszOutbox.attempts,
+					maxAttempts: schema.egiszOutbox.maxAttempts,
+					scheduledAt: schema.egiszOutbox.scheduledAt,
+					nextAttemptAt: schema.egiszOutbox.nextAttemptAt,
+					remdDocumentId: schema.egiszOutbox.remdDocumentId,
+					remdTransactionId: schema.egiszOutbox.remdTransactionId,
+					lastErrorClass: schema.egiszOutbox.lastErrorClass,
+					lastErrorMessage: schema.egiszOutbox.lastErrorMessage,
+					doctorCertSubject: schema.egiszOutbox.doctorCertSubject,
+					doctorSignedAt: schema.egiszOutbox.doctorSignedAt,
+					createdAt: schema.egiszOutbox.createdAt,
+					updatedAt: schema.egiszOutbox.updatedAt,
+				})
+				.from(schema.egiszOutbox)
+				.where(and(...conditions))
+				.orderBy(desc(schema.egiszOutbox.createdAt))
+				.limit(limit);
+
+			return reply.status(200).send({
+				success: true,
+				items,
 			});
 		},
 	);

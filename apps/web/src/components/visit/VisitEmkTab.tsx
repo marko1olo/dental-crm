@@ -22,6 +22,7 @@ import {
 	Receipt,
 	ScanLine,
 	Search,
+	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
 	Tag,
@@ -81,6 +82,7 @@ import {
 } from "../../lib/clinicalProtocols043";
 import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
 import { AnesthesiaProtocolModal } from "../anesthesia/AnesthesiaProtocolModal";
+import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
 import { AnesthesiaAspirationJournalModal } from "./anesthesia/AnesthesiaAspirationJournalModal";
 import {
 	EndoCanalLogModal,
@@ -263,6 +265,7 @@ export function VisitEmkTab() {
 	const [selectedMemoIdForPrint, setSelectedMemoIdForPrint] = React.useState<PostOpMemoId>("surgery_extraction");
 	const [isAnesthesiaProtocolModalOpen, setIsAnesthesiaProtocolModalOpen] = React.useState<boolean>(false);
 	const [isAnesthesiaAspirationModalOpen, setIsAnesthesiaAspirationModalOpen] = React.useState<boolean>(false);
+	const [isEmergencyProtocolModalOpen, setIsEmergencyProtocolModalOpen] = React.useState<boolean>(false);
 	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string>("ultracain_ds_forte");
 	const [selectedCarpulesCount, setSelectedCarpulesCount] = React.useState<number>(1.0);
 	const [patientWeightKg, setPatientWeightKg] = React.useState<number>(
@@ -1737,11 +1740,21 @@ export function VisitEmkTab() {
 													<button
 														type="button"
 														onClick={() => setIsAnesthesiaAspirationModalOpen(true)}
-														className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
+														className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[44px]"
 														data-testid="btn-open-anesthesia-aspiration-modal"
 													>
 														<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 														<span>Журнал аспирационных проб</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => setIsEmergencyProtocolModalOpen(true)}
+														className="text-xs font-bold px-3 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[44px]"
+														data-testid="btn-open-emergency-protocol-modal"
+														title="Экстренный протокол: Анафилаксия и токсичность МА (LAST / Липиды 20%)"
+													>
+														<ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+														<span>SOS / LAST Реанимация</span>
 													</button>
 												</div>
 											</div>
@@ -2692,6 +2705,26 @@ export function VisitEmkTab() {
 					}}
 				/>
 
+				{/* Модальное окно экстренного протокола реанимации (Анафилаксия / LAST / Липидная реанимация 20%) */}
+				<EmergencyAnaphylaxisProtocolModal
+					isOpen={isEmergencyProtocolModalOpen}
+					onClose={() => setIsEmergencyProtocolModalOpen(false)}
+					initialScenario="last_toxicity"
+					patientName={activePatient?.fullName || "Пациент"}
+					patientAge={35}
+					patientWeightKg={patientWeightKg}
+					clinicName="Стоматологическая клиника DENTE"
+					clinicAddress="ул. Клиническая, д. 1"
+					doctorName="Лечащий врач-стоматолог"
+					injectedAnestheticInfo={`${selectedAnesDrugKey} (${selectedCarpulesCount} карп.)`}
+					onInsertToVisitNote={(actText) => {
+						if (!updateVisitNoteField) return;
+						const curr = visitNoteForm.objectiveStatus || "";
+						updateVisitNoteField("objectiveStatus", appendClinicalText(curr, actText, "\n\n"));
+						showToast("Протокол экстренной помощи внесён в карту 043/у", "success", 3500);
+					}}
+				/>
+
 				{/* Модальное окно эндодонтического протокола корневых каналов */}
 				<EndoCanalLogModal
 					isOpen={isEndoModalOpen}
@@ -3069,17 +3102,17 @@ export function VisitEmkTab() {
 							<svg viewBox="0 0 100 100" className="w-48 h-48">
 								<rect width="100" height="100" fill="white" />
 								{/* Corner Markers */}
-								<rect x="5" y="5" width="25" height="25" fill="#0f172a" />
+								<rect x="5" y="5" width="25" height="25" fill="var(--ink, #0f172a)" />
 								<rect x="8" y="8" width="19" height="19" fill="white" />
-								<rect x="11" y="11" width="13" height="13" fill="#0f172a" />
-								<rect x="70" y="5" width="25" height="25" fill="#0f172a" />
+								<rect x="11" y="11" width="13" height="13" fill="var(--ink, #0f172a)" />
+								<rect x="70" y="5" width="25" height="25" fill="var(--ink, #0f172a)" />
 								<rect x="73" y="8" width="19" height="19" fill="white" />
-								<rect x="76" y="11" width="13" height="13" fill="#0f172a" />
-								<rect x="5" y="70" width="25" height="25" fill="#0f172a" />
+								<rect x="76" y="11" width="13" height="13" fill="var(--ink, #0f172a)" />
+								<rect x="5" y="70" width="25" height="25" fill="var(--ink, #0f172a)" />
 								<rect x="8" y="73" width="19" height="19" fill="white" />
-								<rect x="11" y="76" width="13" height="13" fill="#0f172a" />
+								<rect x="11" y="76" width="13" height="13" fill="var(--ink, #0f172a)" />
 								{/* Central SBP icon badge */}
-								<circle cx="50" cy="50" r="14" fill="#059669" />
+								<circle cx="50" cy="50" r="14" fill="var(--ok-fg, #059669)" />
 								<text x="50" y="54" fontSize="9" fontWeight="900" fill="white" textAnchor="middle">СБП</text>
 							</svg>
 						</div>

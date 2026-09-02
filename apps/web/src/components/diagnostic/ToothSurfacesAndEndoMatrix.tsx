@@ -7,12 +7,14 @@ import {
 	Layers,
 	Plus,
 	RotateCcw,
+	ShieldAlert,
 	Sparkles,
 	Syringe,
 	Trash2,
 	Wrench,
 } from "lucide-react";
 import { AnesthesiaDosageCalculatorModal } from "../anesthesia/AnesthesiaDosageCalculatorModal";
+import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import {
 	type EndoCanalData,
@@ -116,6 +118,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		toothData?.state === "Pulpitis" || toothData?.state === "Periodontitis",
 	);
 	const [isAnesthesiaModalOpen, setIsAnesthesiaModalOpen] = useState<boolean>(false);
+	const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState<boolean>(false);
 
 	const isFrontal = (toothNumber % 10) <= 3;
 
@@ -233,6 +236,23 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 						<Syringe size={14} />
 						<span>Анестезия (МРД)</span>
 					</button>
+					<button
+						type="button"
+						onClick={() => setIsEmergencyModalOpen(true)}
+						className="dente-text-action-btn"
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "0.25rem",
+							color: "var(--bad-fg)",
+							fontWeight: 700,
+						}}
+						title="Экстренный протокол: Анафилаксия и токсичность МА (LAST / Липиды 20%)"
+						data-testid="tooth-matrix-emergency-btn"
+					>
+						<ShieldAlert size={14} />
+						<span>SOS / LAST</span>
+					</button>
 					{iropzCalculated > 0 && (
 						<span
 							className={`dente-warm-tag ${iropzCalculated >= 0.6 ? "warning" : "ok"}`}
@@ -256,7 +276,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 							className={`dente-touch-chip ${isSelected ? "active" : ""}`}
 							style={{
 								borderColor: isSelected ? st.color : undefined,
-								color: isSelected ? "#ffffff" : undefined,
+								color: isSelected ? "var(--on-teal, #ffffff)" : undefined,
 								backgroundColor: isSelected ? st.color : undefined,
 							}}
 							data-testid={`state-chip-${st.id}`}
@@ -393,7 +413,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 			<div className="dente-endo-section">
 				<div className="dente-endo-header" onClick={() => setShowEndoTable(!showEndoTable)}>
 					<div className="dente-endo-title">
-						<Wrench size={16} color="#ef4444" />
+						<Wrench size={16} color="var(--bad-fg)" />
 						<span>Эндодонтия & Апекслокация каналов ({canals.length})</span>
 					</div>
 					<button
@@ -563,6 +583,18 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 				onApplied={(res) => {
 					if (onInsertToProtocol) {
 						onInsertToProtocol(res.diaryEntryRu);
+					}
+				}}
+			/>
+
+			{/* Emergency Anaphylaxis & LAST Resuscitation Protocol Modal */}
+			<EmergencyAnaphylaxisProtocolModal
+				isOpen={isEmergencyModalOpen}
+				onClose={() => setIsEmergencyModalOpen(false)}
+				initialScenario="last_toxicity"
+				onInsertToVisitNote={(text) => {
+					if (onInsertToProtocol) {
+						onInsertToProtocol(text);
 					}
 				}}
 			/>

@@ -18,11 +18,16 @@ import { ensureSshTunnel } from "./tunnel.js";
 
 let cachedProxyAgent: Dispatcher | null = null;
 export function getProxyAgent(): Dispatcher | null {
+	const useProxy = (process.env.USE_PROXY ?? "").trim().toLowerCase();
 	const proxyUrl =
 		process.env.GLOBAL_LLM_PROXY_URL ||
 		process.env.PROXY_URL ||
 		process.env.HTTPS_PROXY ||
-		process.env.HTTP_PROXY;
+		process.env.HTTP_PROXY ||
+		process.env.LLM_PROXY ||
+		(["true", "1", "yes", "on"].includes(useProxy)
+			? "socks5://dente_proxy:DenteSecureSocks2026!@62.84.100.97:1080"
+			: undefined);
 	if (!proxyUrl) return null;
 	if (!cachedProxyAgent) {
 		try {
@@ -112,11 +117,16 @@ export function getProxyAgent(): Dispatcher | null {
 
 let cachedWsAgent: https.Agent | http.Agent | null = null;
 export function getWsProxyAgent(): https.Agent | http.Agent | null {
+	const useProxy = (process.env.USE_PROXY ?? "").trim().toLowerCase();
 	const proxyUrl =
 		process.env.GLOBAL_LLM_PROXY_URL ||
 		process.env.PROXY_URL ||
 		process.env.HTTPS_PROXY ||
-		process.env.HTTP_PROXY;
+		process.env.HTTP_PROXY ||
+		process.env.LLM_PROXY ||
+		(["true", "1", "yes", "on"].includes(useProxy)
+			? "socks5://dente_proxy:DenteSecureSocks2026!@62.84.100.97:1080"
+			: undefined);
 	if (!proxyUrl) return null;
 	if (cachedWsAgent) return cachedWsAgent;
 

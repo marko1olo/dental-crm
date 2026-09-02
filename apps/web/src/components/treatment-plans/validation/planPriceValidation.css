@@ -20,26 +20,26 @@
 }
 
 .price-validator-modal {
-	--pv-bg: var(--paper, #ffffff);
-	--pv-surface: var(--paper-strong, #f8fafc);
-	--pv-surface-hover: var(--paper-soft, #f1f5f9);
-	--pv-border: var(--line, #e2e8f0);
-	--pv-border-focus: var(--brand-500, #0d9488);
-	--pv-text-main: var(--ink, #0f172a);
-	--pv-text-muted: var(--muted, #64748b);
-	--pv-brand: var(--brand-500, #0d9488);
-	--pv-brand-hover: var(--brand-600, #0f766e);
-	--pv-brand-light: var(--paper-soft, rgba(13, 148, 136, 0.12));
-	--pv-ok: var(--ok-fg, #16a34a);
-	--pv-ok-bg: var(--ok-bg, rgba(22, 163, 74, 0.12));
-	--pv-warn: var(--warn-fg, #d97706);
-	--pv-warn-bg: var(--warn-bg, rgba(217, 119, 6, 0.12));
-	--pv-danger: var(--danger-fg, #ef4444);
-	--pv-danger-bg: var(--danger-bg, rgba(239, 68, 68, 0.12));
+	--pv-bg: var(--paper);
+	--pv-surface: var(--paper-strong);
+	--pv-surface-hover: var(--paper-soft);
+	--pv-border: var(--line);
+	--pv-border-focus: var(--teal);
+	--pv-text-main: var(--ink);
+	--pv-text-muted: var(--muted);
+	--pv-brand: var(--teal);
+	--pv-brand-hover: var(--teal-dark);
+	--pv-brand-light: var(--teal-surface);
+	--pv-ok: var(--ok-fg);
+	--pv-ok-bg: var(--ok-bg);
+	--pv-warn: var(--warn-fg);
+	--pv-warn-bg: var(--warn-bg);
+	--pv-danger: var(--bad-fg);
+	--pv-danger-bg: var(--bad-bg);
 	--pv-radius-lg: 16px;
 	--pv-radius-md: 10px;
 	--pv-radius-sm: 6px;
-	--pv-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	--pv-shadow: var(--shadow-3);
 
 	background: var(--pv-bg);
 	color: var(--pv-text-main);
@@ -54,52 +54,6 @@
 	overflow: hidden;
 	box-sizing: border-box;
 	font-family: inherit;
-}
-
-/* Multi-Theme Overrides */
-[data-theme="dark"] .price-validator-modal,
-.dark .price-validator-modal {
-	--pv-bg: #0f172a;
-	--pv-surface: #1e293b;
-	--pv-surface-hover: #334155;
-	--pv-border: #334155;
-	--pv-text-main: #f8fafc;
-	--pv-text-muted: #94a3b8;
-	--pv-brand: #2dd4bf;
-	--pv-brand-hover: #14b8a6;
-	--pv-brand-light: rgba(45, 212, 191, 0.15);
-	--pv-ok: #4ade80;
-	--pv-ok-bg: rgba(74, 222, 128, 0.15);
-	--pv-warn: #fbbf24;
-	--pv-warn-bg: rgba(251, 191, 36, 0.15);
-	--pv-danger: #f87171;
-	--pv-danger-bg: rgba(248, 113, 113, 0.15);
-}
-
-[data-theme="night"] .price-validator-modal,
-[data-theme="oled"] .price-validator-modal {
-	--pv-bg: #000000;
-	--pv-surface: #121215;
-	--pv-surface-hover: #27272a;
-	--pv-border: #27272a;
-	--pv-text-main: #ffffff;
-	--pv-text-muted: #a1a1aa;
-	--pv-brand: #2dd4bf;
-	--pv-brand-hover: #5eead4;
-	--pv-brand-light: rgba(45, 212, 191, 0.2);
-}
-
-[data-theme="calm_teal"] .price-validator-modal,
-[data-theme="calm-teal"] .price-validator-modal {
-	--pv-bg: #ffffff;
-	--pv-surface: #f0fdfa;
-	--pv-surface-hover: #ccfbf1;
-	--pv-border: #99f6e4;
-	--pv-text-main: #134e4a;
-	--pv-text-muted: #0f766e;
-	--pv-brand: #0f766e;
-	--pv-brand-hover: #115e59;
-	--pv-brand-light: rgba(15, 118, 110, 0.15);
 }
 
 /* Header */
@@ -298,7 +252,7 @@
 
 .price-validator-btn-brand {
 	background: var(--pv-brand);
-	color: #ffffff;
+	color: var(--paper-strong);
 	border: 1px solid var(--pv-brand);
 	border-radius: var(--pv-radius-sm);
 	padding: 8px 14px;

@@ -16,7 +16,7 @@ import {
 	type VisitFlowResult,
 	type VisitNoteDraft,
 } from "@dental/shared";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
 	acceptedVisitSaveFailureIsRetryable,
 	appendSpeechTextWithoutDuplicateTail,
@@ -50,6 +50,7 @@ import {
 import { showToast } from "../../components/GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { motionSafeScrollIntoView } from "../../motionPreference";
+import { UnifiedAudioClient } from "../../services/voice/UnifiedAudioClient";
 import { useAppStore } from "../../store/appStore";
 import { useVisitStore } from "../../store/visitStore";
 import { logger } from "../../utils/logger";
@@ -194,6 +195,7 @@ export function useVisitLogic({
 	const speechPendingChunkDurationMsRef = useRef<number | null>(null);
 	const speechUploadPromisesRef = useRef<Set<Promise<void>>>(new Set());
 	const appliedSpeechChunkKeysRef = useRef<Set<string>>(new Set());
+	const importDictationClientRef = useRef<UnifiedAudioClient | null>(null);
 
 	const visitCloseChecklist = dashboard?.visitCloseChecklist ?? null;
 	const visitWarnings =
@@ -1628,50 +1630,44 @@ export function useVisitLogic({
 
 	const startVisitDictation = useCallback(() => {
 		if (isVisitDictating) {
-			setError("Дождитесь завершения текущей браузерной диктовки.");
-			return;
-		}
-		const speechWindow = window as BrowserWindowWithSpeech;
-		const Recognition =
-			speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-		if (!Recognition) {
-			setError(
-				"Браузерная диктовка недоступна. Текст можно печатать вручную, локальный черновик все равно сохранится.",
-			);
+			setError("Дождитесь завершения текущей диктовки.");
 			return;
 		}
 
-		const recognition = new Recognition();
-		recognition.lang = "ru-RU";
-		recognition.continuous = false;
-		recognition.interimResults = false;
-		recognition.onresult = (event) => {
-			const transcriptText = Array.from(event.results)
-				.map((result) => result[0].transcript)
-				.join(" ");
-			appendVisitDictationText(transcriptText);
-		};
-		recognition.onerror = () => {
-			setError(
-				"Диктовка не распознана. Продолжайте печатать, текущий черновик не потерян.",
-			);
-			setIsVisitDictating(false);
-		};
-		recognition.onend = () => setIsVisitDictating(false);
+		const client = new UnifiedAudioClient({
+			preferredMode: "gemini_live",
+			specialty: "therapy",
+			autoFallback: true,
+		});
+
+		client.subscribe({
+			onFinalText: (text) => {
+				if (text && text.trim()) {
+					appendVisitDictationText(text.trim());
+				}
+			},
+			onStateChange: (state) => {
+				setIsVisitDictating(state === "listening" || state === "connecting");
+			},
+			onError: (err) => {
+				const msg = typeof err === "string" ? err : err.message;
+				setError(`Диктовка: ${msg}`);
+				setIsVisitDictating(false);
+			},
+		});
+
 		setError(null);
 		setIsVisitDictating(true);
-		try {
-			recognition.start();
-		} catch {
+		client.start().catch(() => {
 			showToast(
 				actionFailureToast("Операция завершилась ошибкой", null),
 				"error",
 			);
 			setIsVisitDictating(false);
 			setError(
-				"Браузер не смог запустить микрофон. Текст можно продолжить вручную.",
+				"Не удалось запустить микрофон. Текст можно продолжить вручную.",
 			);
-		}
+		});
 	}, [
 		setIsVisitDictating,
 		setError,
@@ -1943,55 +1939,51 @@ export function useVisitLogic({
 			setError("Дождитесь завершения текущей диктовки импорта.");
 			return;
 		}
-		const speechWindow = window as BrowserWindowWithSpeech;
-		const Recognition =
-			speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-		if (!Recognition) {
-			setImportSourceKind("voice_dictation");
-			setImportText(
-				(current) =>
-					`${current}\n\nДиктовка недоступна в этом браузере. Вставь распознанный текст сюда: Иванов Иван, телефон +7 900 000-00-00, дата рождения 01.01.1980.`,
-			);
-			setError(
-				"Браузерная диктовка импорта недоступна. Вставьте список пациентов вручную или загрузите OCR.",
-			);
-			return;
+
+		if (importDictationClientRef.current) {
+			importDictationClientRef.current.dispose();
+			importDictationClientRef.current = null;
 		}
-		const recognition = new Recognition();
-		recognition.lang = "ru-RU";
-		recognition.continuous = false;
-		recognition.interimResults = false;
-		recognition.onresult = (event) => {
-			const transcriptText = Array.from(event.results)
-				.map((result) => result[0].transcript)
-				.join(" ");
-			setImportSourceKind("voice_dictation");
-			setImportText((current) => `${current.trim()}\n${transcriptText}`.trim());
-			setImportPreview(null);
-			setImportCommit(null);
-		};
-		recognition.onerror = () => {
-			setImportSourceKind("voice_dictation");
-			setIsImportDictating(false);
-			setError(
-				"Диктовка импорта не распознана. Вставьте список вручную или загрузите OCR.",
-			);
-		};
-		recognition.onend = () => setIsImportDictating(false);
+
+		const client = new UnifiedAudioClient({
+			preferredMode: "gemini_live",
+			specialty: "therapy",
+			autoFallback: true,
+		});
+		importDictationClientRef.current = client;
+
+		client.subscribe({
+			onFinalText: (text) => {
+				if (text && text.trim()) {
+					setImportSourceKind("voice_dictation");
+					setImportText((current) => `${current.trim()}\n${text.trim()}`.trim());
+					setImportPreview(null);
+					setImportCommit(null);
+				}
+			},
+			onStateChange: (state) => {
+				setIsImportDictating(state === "listening" || state === "connecting");
+			},
+			onError: (err) => {
+				const msg = typeof err === "string" ? err : err.message;
+				setImportSourceKind("voice_dictation");
+				setIsImportDictating(false);
+				setError(`Диктовка импорта: ${msg}`);
+			},
+		});
+
 		setError(null);
 		setIsImportDictating(true);
-		try {
-			recognition.start();
-		} catch {
+		client.start().catch(() => {
 			showToast(
 				actionFailureToast("Операция завершилась ошибкой", null),
 				"error",
 			);
 			setIsImportDictating(false);
 			setError(
-				"Браузер не смог запустить микрофон для импорта. Вставьте список пациентов вручную или загрузите файл.",
+				"Не удалось запустить микрофон для импорта.",
 			);
-		}
+		});
 	}, [
 		setImportPreview,
 		setImportSourceKind,
@@ -2001,6 +1993,30 @@ export function useVisitLogic({
 		setError,
 		isImportDictating,
 	]);
+
+	useEffect(() => {
+		return () => {
+			stopSpeechMonitor();
+			if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+				try {
+					mediaRecorderRef.current.stop();
+				} catch {}
+				mediaRecorderRef.current = null;
+			}
+			if (mediaStreamRef.current) {
+				mediaStreamRef.current.getTracks().forEach((track) => {
+					try {
+						track.stop();
+					} catch {}
+				});
+				mediaStreamRef.current = null;
+			}
+			if (importDictationClientRef.current) {
+				importDictationClientRef.current.dispose();
+				importDictationClientRef.current = null;
+			}
+		};
+	}, [stopSpeechMonitor]);
 
 	return {
 		...visitStore,

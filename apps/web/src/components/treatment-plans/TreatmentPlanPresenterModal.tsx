@@ -1223,7 +1223,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								<tbody>
 									{selectedTier.stages.map((stage) => (
 										<React.Fragment key={stage.stageNumber}>
-											<tr style={{ background: "#e2e8f0", fontWeight: "bold" }}>
+											<tr style={{ background: "var(--line, #e2e8f0)", fontWeight: "bold" }}>
 												<td colSpan={7}>
 													{stage.title} (Срок: {stage.estimatedWeeks} нед., {stage.estimatedVisits} визитов)
 												</td>
@@ -1239,7 +1239,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 													<td>
 														<div>{it.name}</div>
 														{it.materials && (
-															<div style={{ fontSize: "8pt", color: "#475569" }}>
+															<div style={{ fontSize: "8pt", color: "var(--muted, #475569)" }}>
 																Материал: {it.materials}
 															</div>
 														)}
@@ -1256,7 +1256,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									))}
 								</tbody>
 								<tfoot>
-									<tr style={{ fontWeight: "bold", fontSize: "10pt", background: "#f8fafc" }}>
+									<tr style={{ fontWeight: "bold", fontSize: "10pt", background: "var(--paper-soft, #f8fafc)" }}>
 										<td colSpan={7} style={{ textAlign: "right", paddingRight: "8px" }}>
 											ИТОГО ПО СМЕТЕ:
 										</td>

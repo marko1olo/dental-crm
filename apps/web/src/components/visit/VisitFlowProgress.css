@@ -1,20 +1,15 @@
 /* Visit Flow Progress component styles using DENTE semantic design tokens */
 
 .visit-flow-progress {
-	background-color: var(--paper-soft, #f8fafc);
-	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
 	border-radius: 0.75rem;
 	padding: 1.25rem;
 	margin-bottom: 1.5rem;
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
-	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .visit-flow-progress {
-	background-color: var(--paper-soft, rgba(15, 23, 42, 0.9));
-	border-color: var(--line, #1e293b);
+	box-shadow: var(--shadow-1);
 }
 
 .vfp-header {
@@ -27,19 +22,15 @@
 	margin: 0;
 	font-size: 1rem;
 	line-height: 1.5rem;
-	color: var(--ink, #1e293b);
+	color: var(--ink);
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
 	font-weight: 600;
 }
 
-:is([data-theme="dark"], [data-theme="night"], .dark) .vfp-title {
-	color: var(--ink, #e2e8f0);
-}
-
 .vfp-title svg {
-	color: var(--teal, #0ea5e9);
+	color: var(--teal);
 }
 
 .vfp-badge {
@@ -52,53 +43,53 @@
 }
 
 .status-running {
-	background-color: #e0f2fe;
-	color: #0369a1;
+	background-color: var(--info-bg);
+	color: var(--info-fg);
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .status-running {
-	background-color: #082f49;
-	color: #7dd3fc;
+	background-color: var(--info-bg);
+	color: var(--info-fg);
 }
 
 .status-success {
-	background-color: #d1fae5;
-	color: #047857;
+	background-color: var(--ok-bg);
+	color: var(--ok-fg);
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .status-success {
-	background-color: #022c22;
-	color: #6ee7b7;
+	background-color: var(--ok-bg);
+	color: var(--ok-fg);
 }
 
 .status-partial {
-	background-color: #fef3c7;
-	color: #b45309;
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .status-partial {
-	background-color: #451a03;
-	color: #fcd34d;
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
 }
 
 .status-error {
-	background-color: #ffe4e6;
-	color: #be123c;
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .status-error {
-	background-color: #4c0519;
-	color: #fda4af;
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
 }
 
 .vfp-steps {
 	display: grid;
 	grid-template-columns: repeat(1, minmax(0, 1fr));
 	gap: 0.75rem;
-	background-color: var(--paper, #ffffff);
+	background-color: var(--paper);
 	padding: 1rem;
 	border-radius: 0.5rem;
-	border: 1px solid var(--line, #f1f5f9);
+	border: 1px solid var(--line);
 }
 
 @media (min-width: 640px) {
@@ -114,8 +105,8 @@
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .vfp-steps {
-	background-color: var(--paper, rgba(30, 41, 59, 0.8));
-	border-color: var(--line, rgba(51, 65, 85, 0.6));
+	background-color: var(--paper);
+	border-color: var(--line);
 }
 
 .vfp-step {
@@ -124,11 +115,11 @@
 	gap: 0.5rem;
 	font-size: 0.875rem;
 	line-height: 1.25rem;
-	color: var(--ink-soft, #475569);
+	color: var(--ink-2, var(--muted));
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .vfp-step {
-	color: var(--ink-soft, #cbd5e1);
+	color: var(--ink-2, var(--muted));
 }
 
 .vfp-step-label {
@@ -152,19 +143,19 @@
 }
 
 .vfp-step-notes {
-	background-color: var(--warn-bg, #fffbeb);
-	border: 1px solid var(--warn-line, #fde68a);
+	background-color: var(--warn-bg);
+	border: 1px solid var(--warn-fg);
 	border-radius: 0.5rem;
 	padding: 0.75rem;
 	font-size: 0.875rem;
 	line-height: 1.25rem;
-	color: var(--warn-fg, #78350f);
+	color: var(--warn-fg);
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .vfp-step-notes {
-	background-color: var(--warn-bg, rgba(69, 26, 3, 0.4));
-	border-color: var(--warn-line, rgba(120, 53, 15, 0.6));
-	color: var(--warn-fg, #fde68a);
+	background-color: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
 }
 
 .vfp-step-notes strong {
@@ -190,15 +181,15 @@
 	margin: 0;
 	margin-top: 0.5rem;
 	padding-top: 0.5rem;
-	border-top: 1px solid var(--warn-line, #fde68a);
+	border-top: 1px solid var(--warn-fg);
 	font-size: 0.75rem;
-	color: var(--warn-fg, #92400e);
+	color: var(--warn-fg);
 	line-height: 1.5;
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .vfp-step-notes p {
-	border-top-color: var(--warn-line, rgba(120, 53, 15, 0.6));
-	color: var(--warn-fg, #fcd34d);
+	border-top-color: var(--warn-fg);
+	color: var(--warn-fg);
 }
 
 .vfp-outputs {
@@ -208,25 +199,25 @@
 }
 
 .vfp-output-card {
-	background-color: var(--paper, #ffffff);
+	background-color: var(--paper);
 	padding: 1rem;
 	border-radius: 0.5rem;
-	border: 1px solid var(--line, #e2e8f0);
+	border: 1px solid var(--line);
 	font-size: 0.875rem;
 	line-height: 1.25rem;
-	color: var(--ink, #334155);
+	color: var(--ink);
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .vfp-output-card {
-	background-color: var(--paper, rgba(30, 41, 59, 0.8));
-	border-color: var(--line, rgba(51, 65, 85, 0.8));
-	color: var(--ink, #cbd5e1);
+	background-color: var(--paper);
+	border-color: var(--line);
+	color: var(--ink);
 }
 
 .vfp-output-card strong {
 	display: block;
 	margin-bottom: 0.375rem;
-	color: var(--ink, #0f172a);
+	color: var(--ink);
 	font-size: 0.75rem;
 	line-height: 1rem;
 	text-transform: uppercase;
@@ -235,7 +226,7 @@
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .vfp-output-card strong {
-	color: var(--ink, #ffffff);
+	color: var(--ink);
 }
 
 .vfp-output-card p {
@@ -250,17 +241,17 @@
 }
 
 .vfp-tag {
-	background-color: var(--paper-soft, #f1f5f9);
-	color: var(--ink-soft, #475569);
+	background-color: var(--paper-soft);
+	color: var(--ink-2, var(--muted));
 	padding: 0.25rem 0.75rem;
 	border-radius: 0.375rem;
 	font-size: 0.75rem;
 	line-height: 1rem;
-	border: 1px solid var(--line, #e2e8f0);
+	border: 1px solid var(--line);
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .vfp-tag {
-	background-color: var(--paper-soft, #334155);
-	color: var(--ink-soft, #cbd5e1);
-	border-color: var(--line, #475569);
+	background-color: var(--paper-soft);
+	color: var(--ink-2, var(--muted));
+	border-color: var(--line);
 }

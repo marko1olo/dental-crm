@@ -114,10 +114,10 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 
 				<div className="dente-kpi-card">
 					<div className="dente-kpi-head">
-						<Sparkles size={15} color="#f59e0b" />
+						<Sparkles size={15} color="var(--warn-fg)" />
 						<span>Баллы кешбэка:</span>
 					</div>
-					<div className="dente-kpi-val" style={{ color: "#d97706" }}>
+					<div className="dente-kpi-val" style={{ color: "var(--warn-fg)" }}>
 						{loyaltyPointsBalance} баллов
 					</div>
 					<div className="dente-kpi-sub">Списание до 30% ({money(maxAllowedBonus)})</div>
@@ -178,7 +178,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 				<div className="dente-deduction-row">
 					<div className="dente-deduction-label">
 						<span>Списание бонусов лояльности (1 балл = 1 ₽):</span>
-						<strong style={{ color: "#d97706" }}>{bonusDeductionRub} бонусов</strong>
+						<strong style={{ color: "var(--warn-fg)" }}>{bonusDeductionRub} бонусов</strong>
 					</div>
 					<div className="dente-bonus-chips-row">
 						{BONUS_PRESET_CHIPS.map((chip) => (
@@ -213,7 +213,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 					</div>
 					<div className="dente-split-row">
 						<span>Бонусы кешбэка:</span>
-						<span style={{ color: "#d97706" }}>- {money(bonusDeductionRub)}</span>
+						<span style={{ color: "var(--warn-fg)" }}>- {money(bonusDeductionRub)}</span>
 					</div>
 					<div className="dente-split-row total">
 						<span>Остаток к доплате в кассу (Карта/QR/Нал):</span>

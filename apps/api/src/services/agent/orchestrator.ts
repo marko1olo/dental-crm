@@ -11,6 +11,7 @@
 
 import type { AgentContext } from "./context.js";
 import { Redactor } from "./redaction.js";
+import { ClinicalValidatorAgent } from "./validatorAgent.js";
 import type {
 	BudgetGuard,
 	ContentBlock,
@@ -271,6 +272,8 @@ export async function* runTurn(
 				if (rehydrated) {
 					yield { type: "token", text: rehydrated };
 				}
+			} else if (ev.type === "thought_delta") {
+				yield { type: "thought", text: ev.text };
 			} else if (ev.type === "tool_use") {
 				acc.toolUses.push(ev);
 			} else if (ev.type === "usage") {
@@ -342,6 +345,49 @@ export async function* runTurn(
 						} as ToolResultBlock,
 					],
 				});
+				continue;
+			}
+
+			// Deterministic Adversarial Safety Firewall (Allergies, Epinephrine/Hypertension, Odontogram)
+			const clinicalValidation = ClinicalValidatorAgent.validateToolCall(
+				tu.name,
+				realArgs,
+				{
+					patientId: (realArgs.patientId as string) || (ctx.metadata?.patientId as string),
+					organizationId: ctx.organizationId,
+					knownAllergies: (ctx.metadata?.knownAllergies as string[]) || [],
+					somaticConditions: (ctx.metadata?.somaticConditions as string[]) || [],
+					activeDentalFormula: ctx.metadata?.activeDentalFormula as any,
+				},
+			);
+
+			if (!clinicalValidation.isValid) {
+				const errorPayload = {
+					error: `[КЛИНИЧЕСКИЙ ФАЕРВОЛ БЕЗОПАСНОСТИ] Действие заблокировано: ${clinicalValidation.summaryRu}`,
+					issues: clinicalValidation.issues,
+					blockedActions: clinicalValidation.blockedActions,
+					safeAlternatives: clinicalValidation.safeAlternatives,
+				};
+
+				history.push({
+					role: "tool",
+					content: [
+						{
+							type: "tool_result",
+							toolCallId: tu.id,
+							content: errorPayload,
+							isError: true,
+						} as ToolResultBlock,
+					],
+				});
+
+				yield {
+					type: "tool_call_finished",
+					callId: tu.id,
+					name: tu.name,
+					ok: false,
+					result: errorPayload,
+				};
 				continue;
 			}
 

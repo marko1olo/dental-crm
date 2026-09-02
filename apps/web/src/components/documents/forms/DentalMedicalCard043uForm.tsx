@@ -411,8 +411,8 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 												key={t}
 												onClick={() => setSelectedTooth(t)}
 												style={{
-													border: isSelected ? "2px solid #0284c7" : "1px solid #cbd5e1",
-													background: isSelected ? "#e0f2fe" : "#ffffff",
+													border: isSelected ? "2px solid var(--teal)" : "1px solid var(--line)",
+													background: isSelected ? "var(--teal-surface, rgba(13, 148, 136, 0.1))" : "var(--paper)",
 													borderRadius: "6px",
 													padding: "6px 8px",
 													textAlign: "center",
@@ -426,7 +426,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 												}}
 											>
 												<div style={{ fontSize: "13px", fontWeight: "bold" }}>{t}</div>
-												<div style={{ fontSize: "12px", fontWeight: 600, color: code !== "healthy" ? "#b91c1c" : "#059669" }}>
+												<div style={{ fontSize: "12px", fontWeight: 600, color: code !== "healthy" ? "var(--bad-fg)" : "var(--ok-fg)" }}>
 													{toothStatusCodeShortMap[code] || "Norm"}
 												</div>
 											</div>
@@ -445,8 +445,8 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 												key={t}
 												onClick={() => setSelectedTooth(t)}
 												style={{
-													border: isSelected ? "2px solid #0284c7" : "1px solid #cbd5e1",
-													background: isSelected ? "#e0f2fe" : "#ffffff",
+													border: isSelected ? "2px solid var(--teal)" : "1px solid var(--line)",
+													background: isSelected ? "var(--teal-surface, rgba(13, 148, 136, 0.1))" : "var(--paper)",
 													borderRadius: "6px",
 													padding: "6px 8px",
 													textAlign: "center",
@@ -460,7 +460,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 												}}
 											>
 												<div style={{ fontSize: "13px", fontWeight: "bold" }}>{t}</div>
-												<div style={{ fontSize: "12px", fontWeight: 600, color: code !== "healthy" ? "#b91c1c" : "#059669" }}>
+												<div style={{ fontSize: "12px", fontWeight: 600, color: code !== "healthy" ? "var(--bad-fg)" : "var(--ok-fg)" }}>
 													{toothStatusCodeShortMap[code] || "Norm"}
 												</div>
 											</div>
@@ -470,7 +470,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 							</div>
 
 							{selectedTooth && (
-								<div className="tooth-surface-editor" style={{ marginTop: "16px", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px" }}>
+								<div className="tooth-surface-editor" style={{ marginTop: "16px", padding: "12px", border: "1px solid var(--line)", borderRadius: "8px" }}>
 									<h5>Зуб {selectedTooth}: Настройка статуса и поверхностей</h5>
 									<div style={{ display: "flex", gap: "8px", margin: "10px 0", flexWrap: "wrap" }}>
 										<button

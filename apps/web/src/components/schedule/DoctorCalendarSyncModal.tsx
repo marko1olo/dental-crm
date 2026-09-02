@@ -186,10 +186,10 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-8 h-8 rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] border border-transparent hover:border-[var(--line,#e2e8f0)] transition-all cursor-pointer"
+						className="w-11 h-11 rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] border border-transparent hover:border-[var(--line,#e2e8f0)] transition-all cursor-pointer"
 						aria-label="Закрыть окно"
 					>
-						<X className="w-4 h-4" />
+						<X className="w-5 h-5" />
 					</button>
 				</div>
 
@@ -205,7 +205,7 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 								id="calendar-doctor-select"
 								value={selectedDoctorId}
 								onChange={(e) => setSelectedDoctorId(e.target.value)}
-								className="w-full h-10 px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-sm font-medium focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-hidden"
+								className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-sm font-medium focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-hidden"
 							>
 								{staffDoctors.map((doc) => (
 									<option key={doc.id} value={doc.id}>
@@ -260,13 +260,13 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 										type="text"
 										readOnly
 										value={webcalUrl || fullFeedUrl}
-										className="flex-1 h-10 px-3 font-mono text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] select-all focus:outline-hidden"
+										className="flex-1 min-h-[44px] px-3 font-mono text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] select-all focus:outline-hidden"
 										data-testid="calendar-feed-url-input"
 									/>
 									<button
 										type="button"
 										onClick={() => handleCopy(webcalUrl || fullFeedUrl, "feed")}
-										className="h-10 px-4 rounded-xl font-medium text-xs bg-[var(--teal-dark,var(--brand-primary))] text-white hover:opacity-90 flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+										className="min-h-[44px] px-4 rounded-xl font-medium text-xs bg-[var(--teal-dark,var(--brand-primary))] text-white hover:opacity-90 flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
 										data-testid="copy-calendar-link-btn"
 									>
 										{copiedKey === "feed" ? (
@@ -360,7 +360,7 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 										<button
 											type="button"
 											onClick={() => setShowRotationWarning(true)}
-											className="h-8 px-3 rounded-lg text-xs font-medium border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+											className="min-h-[44px] px-3.5 rounded-xl text-xs font-medium border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
 											data-testid="rotate-calendar-token-btn"
 										>
 											<Key className="w-3.5 h-3.5" />
@@ -375,12 +375,12 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 												<span className="font-bold">Внимание:</span> все ранее подключенные устройства и календари потеряют доступ к расписанию до тех пор, пока вы не вставите в них новую ссылку.
 											</div>
 										</div>
-										<div className="flex justify-end gap-2">
+										<div className="flex justify-end gap-2 flex-wrap">
 											<button
 												type="button"
 												onClick={() => setShowRotationWarning(false)}
 												disabled={isRotating}
-												className="h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer"
+												className="min-h-[44px] px-4 rounded-xl text-xs font-medium border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer"
 											>
 												Отмена
 											</button>
@@ -388,7 +388,7 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 												type="button"
 												onClick={handleRotateToken}
 												disabled={isRotating}
-												className="h-8 px-3 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1.5 transition-all cursor-pointer"
+												className="min-h-[44px] px-4 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1.5 transition-all cursor-pointer"
 											>
 												{isRotating ? (
 													<RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -410,7 +410,7 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-9 px-5 rounded-xl text-xs font-semibold bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] transition-all cursor-pointer shadow-2xs"
+						className="min-h-[44px] px-5 rounded-xl text-xs font-semibold bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] transition-all cursor-pointer shadow-2xs"
 					>
 						Закрыть
 					</button>

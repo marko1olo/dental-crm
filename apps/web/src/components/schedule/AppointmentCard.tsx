@@ -33,6 +33,7 @@ import { specialtyLabels } from "../../workspaceUiLabels";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
+import { PatientSentimentBadge } from "../patient/PatientSentimentBadge";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -702,6 +703,18 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								)}
 							</div>
 
+							{/* 1.1 Компактный бейдж скоринга пациента (LTV, Compliance, Sentiment) */}
+							{appointmentPatient && (
+								<div className="flex items-center justify-between gap-2">
+									<PatientSentimentBadge
+										patient={appointmentPatient}
+										variant="compact"
+										showLtv={true}
+										showCompliance={true}
+									/>
+								</div>
+							)}
+
 							{/* 2. Номер телефона с кнопкой WhatsApp и копированием SMS */}
 							<div className="flex items-center justify-between gap-2">
 								<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--ink)]">
@@ -817,10 +830,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 							{/* 6. Быстрая смена статуса в Hover HUD */}
 							<div className="pt-2 border-t border-[var(--line)]">
-								<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+								<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
 									Быстрый статус (Apple HIG)
 								</div>
-								<div className="grid grid-cols-3 gap-1">
+								<div className="grid grid-cols-3 gap-1.5">
 									<button
 										type="button"
 										onClick={(e) => {
@@ -828,13 +841,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											void handleQuickStatusChange("confirmed");
 											handleCardMouseLeave();
 										}}
-										className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+										className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
 											displayStatus === "confirmed"
 												? "bg-emerald-600 text-white border-emerald-600"
 												: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-500/30 hover:bg-emerald-500/20"
 										}`}
 									>
-										<PhoneCall size={11} />
+										<PhoneCall size={13} />
 										<span>Подтвержден</span>
 									</button>
 									<button
@@ -844,13 +857,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											void handleQuickStatusChange("arrived");
 											handleCardMouseLeave();
 										}}
-										className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+										className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
 											displayStatus === "arrived"
 												? "bg-amber-500 text-white border-amber-500"
 												: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
 										}`}
 									>
-										<UserCheck size={11} />
+										<UserCheck size={13} />
 										<span>Пришел</span>
 									</button>
 									<button
@@ -860,13 +873,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											void handleQuickStatusChange("in_treatment");
 											handleCardMouseLeave();
 										}}
-										className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+										className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
 											displayStatus === "in_treatment"
 												? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)]"
 												: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
 										}`}
 									>
-										<CalendarCheck size={11} />
+										<CalendarCheck size={13} />
 										<span>В кресле</span>
 									</button>
 								</div>
@@ -1007,7 +1020,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							<div className="relative inline-flex items-center shrink-0" ref={cardMenuRef}>
 								<button
 									type="button"
-									className="secondary-button appointment-context-menu-btn min-h-[44px] min-w-[44px] w-11 h-11 sm:w-7 sm:h-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
+									className="secondary-button appointment-context-menu-btn min-h-[44px] min-w-[44px] w-11 h-11 sm:w-9 sm:h-9 sm:min-h-[36px] sm:min-w-[36px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
 									onClick={(e) => {
 										e.stopPropagation();
 										setIsCardMenuOpen((prev) => !prev);

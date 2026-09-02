@@ -61,7 +61,7 @@ export function GlobalToast() {
 				gap: "8px",
 				padding: "12px 16px",
 				background: "var(--surface-sunken, #0f172a)",
-				color: "#fff",
+				color: "var(--paper, #ffffff)",
 				borderRadius: "8px",
 				boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
 				border: "1px solid rgba(255,255,255,0.1)",
@@ -78,7 +78,7 @@ export function GlobalToast() {
 				style={{
 					background: "transparent",
 					border: "none",
-					color: "#fff",
+					color: "var(--paper, #ffffff)",
 					cursor: "pointer",
 					marginLeft: "auto",
 					display: "flex",

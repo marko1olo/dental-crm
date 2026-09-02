@@ -400,7 +400,7 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 											>
 												<div
 													className="hub-contact-avatar"
-													style={{ backgroundColor: contact.avatarColor || "#0d9488" }}
+													style={{ backgroundColor: contact.avatarColor || "var(--teal, #0d9488)" }}
 												>
 													{contact.fullName.charAt(0)}
 												</div>
@@ -436,7 +436,7 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 									<div className="hub-chat-patient-meta">
 										<div
 											className="hub-chat-avatar-large"
-											style={{ backgroundColor: selectedContact.avatarColor || "#0d9488" }}
+											style={{ backgroundColor: selectedContact.avatarColor || "var(--teal, #0d9488)" }}
 										>
 											{selectedContact.fullName.charAt(0)}
 										</div>

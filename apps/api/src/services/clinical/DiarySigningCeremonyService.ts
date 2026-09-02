@@ -26,6 +26,7 @@ import {
 	visitDiaries,
 	visits,
 } from "../../db/schema.js";
+import { DOCTOR_PEP_FORBIDDEN_MESSAGE } from "@dental/shared";
 import { verifyCredential } from "../../utils/cryptoHelper.js";
 import { Icd10ClinicalValidator } from "./Icd10ClinicalValidator.js";
 
@@ -56,7 +57,12 @@ export type SimplePinResolve =
 	| { ok: true; stored: string | null }
 	| {
 			ok: false;
-			code: "PinRequired" | "PinInvalid" | "PinNotSet" | "UserRequired";
+			code:
+				| "PinRequired"
+				| "PinInvalid"
+				| "PinNotSet"
+				| "UserRequired"
+				| "PepDoctorForbidden";
 			message: string;
 	  };
 
@@ -69,7 +75,8 @@ export type DiarySigningFailureCode =
 	| "Icd10Invalid"
 	| "ToothRequired"
 	| "ToothInvalid"
-	| "PinRejected";
+	| "PinRejected"
+	| "PepDoctorForbidden";
 
 export class DiarySigningError extends Error {
 	constructor(
@@ -220,73 +227,16 @@ export async function resolveSignatureForStorage(params: {
 	if (raw == null || raw.length === 0) {
 		return { ok: true, stored: null };
 	}
-	if (!raw.startsWith(SIMPLE_PIN_PREFIX)) {
-		// УКЭП / PKCS#7 — без разбора; legacy SIMPLE_PIN_EP тоже проходит.
-		return { ok: true, stored: raw };
-	}
-	const pinDigits = raw.slice(SIMPLE_PIN_PREFIX.length);
-	if (!/^\d{4}$/.test(pinDigits)) {
+	if (raw.startsWith(SIMPLE_PIN_PREFIX)) {
 		return {
 			ok: false,
-			code: "PinInvalid",
-			message: DIARY_PIN_INVALID_MESSAGE,
+			code: "PepDoctorForbidden",
+			message: DOCTOR_PEP_FORBIDDEN_MESSAGE,
 		};
 	}
-	if (!params.userId) {
-		return {
-			ok: false,
-			code: "UserRequired",
-			message: DIARY_PIN_USER_REQUIRED_MESSAGE,
-		};
-	}
-	const [user] = await db
-		.select({
-			id: users.id,
-			pinCodeHash: users.pinCodeHash,
-		})
-		.from(users)
-		.where(
-			and(
-				eq(users.id, params.userId),
-				eq(users.organizationId, params.organizationId),
-				eq(users.isActive, true),
-			),
-		)
-		.limit(1);
-	if (!user) {
-		return {
-			ok: false,
-			code: "UserRequired",
-			message: DIARY_PIN_USER_REQUIRED_MESSAGE,
-		};
-	}
-	if (!user.pinCodeHash) {
-		return {
-			ok: false,
-			code: "PinNotSet",
-			message: DIARY_PIN_NOT_SET_MESSAGE,
-		};
-	}
-	const matched = await verifyCredential(pinDigits, user.pinCodeHash);
-	if (!matched) {
-		return {
-			ok: false,
-			code: "PinInvalid",
-			message: DIARY_PIN_INVALID_MESSAGE,
-		};
-	}
-	const hashPart =
-		typeof params.diaryHashForMark === "string" &&
-		params.diaryHashForMark.length >= 12
-			? params.diaryHashForMark.slice(0, 12)
-			: "nohash";
-	const mark = [
-		SIMPLE_PIN_EP_MARK,
-		params.userId,
-		new Date().toISOString(),
-		hashPart,
-	].join("|");
-	return { ok: true, stored: mark };
+
+	// Усиленная электронная подпись (УКЭП / УНЭП / PKCS#7)
+	return { ok: true, stored: raw };
 }
 
 /**

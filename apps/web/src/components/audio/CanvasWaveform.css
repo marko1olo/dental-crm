@@ -1,0 +1,83 @@
+/* ============================================================
+   CanvasWaveform.css — Стили для живой осциллограммы звука DENTE
+   ============================================================ */
+
+.dente-waveform-container {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 48px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	overflow: hidden;
+	transition: border-color var(--transition-smooth, 0.25s ease), box-shadow var(--transition-smooth, 0.25s ease);
+}
+
+.dente-waveform-container.recording {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px var(--teal-surface);
+}
+
+.dente-waveform-container.speaking {
+	border-color: var(--teal-dark);
+	box-shadow: 0 0 12px var(--teal-glow);
+}
+
+.dente-waveform-canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+}
+
+.dente-waveform-overlay-status {
+	position: absolute;
+	top: 6px;
+	right: 10px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted);
+	pointer-events: none;
+	user-select: none;
+}
+
+.dente-waveform-pulse-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--muted);
+	transition: background-color var(--transition-fast, 0.15s ease);
+}
+
+.dente-waveform-pulse-dot.active {
+	background: var(--teal);
+	box-shadow: 0 0 8px var(--teal);
+	animation: dente-pulse-animation 1.2s infinite ease-in-out;
+}
+
+.dente-waveform-pulse-dot.speaking {
+	background: var(--bad-fg);
+	box-shadow: 0 0 8px var(--bad-fg);
+}
+
+@keyframes dente-pulse-animation {
+	0% {
+		transform: scale(0.9);
+		opacity: 0.7;
+	}
+	50% {
+		transform: scale(1.3);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(0.9);
+		opacity: 0.7;
+	}
+}

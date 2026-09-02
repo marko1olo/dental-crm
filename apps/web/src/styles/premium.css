@@ -448,8 +448,7 @@ html.light {
 	);
 }
 
-/* Unified Zone Containers Styling */
-.workspace,
+/* Unified Zone Containers Styling (Single surface elevation for primary workspaces) */
 .patients-panel,
 .schedule-panel,
 .documents-panel,
@@ -464,15 +463,7 @@ html.light {
 .documents-zone,
 .workspace-section,
 .protocol-settings,
-.rule-form,
-.patient-list,
-.patient-row,
-.patients-header,
-.patients-search-box,
-.smart-create-group,
-.quick-create-guidance,
-.card-body,
-.panel-body {
+.rule-form {
 	background: var(--glass-panel);
 	backdrop-filter: var(--glass-blur) saturate(180%);
 	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);
@@ -480,6 +471,23 @@ html.light {
 	box-shadow: var(--glass-shadow);
 	border-radius: 16px;
 	color: var(--text-primary);
+}
+
+/* Anti-Matryoshka reset for nested sub-containers */
+.workspace {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+
+.patient-list,
+.card-body,
+.panel-body {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 }
 
 /* Form Elements Theme Integration */
@@ -720,8 +728,7 @@ html.light .nav-item.active .nav-copy small,
 .patient-summary-card,
 .patient-insight-panel,
 .glass-panel,
-.card,
-article {
+.card {
 	background: var(--glass-panel);
 	backdrop-filter: var(--glass-blur) saturate(180%);
 	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);

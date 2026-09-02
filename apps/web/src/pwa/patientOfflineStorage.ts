@@ -527,5 +527,3 @@ export function useOfflinePatientSync(
 		flushNow: triggerFlush,
 	};
 }
-
-export { flushOfflinePatientBookings as syncOfflineBookingsWithServer };

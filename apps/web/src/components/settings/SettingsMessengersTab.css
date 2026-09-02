@@ -585,11 +585,11 @@
 }
 
 .security-zone .telegram-settings-panel-header {
-	background: rgba(254, 242, 242, 0.5);
+	background: var(--bad-bg);
 }
 
 .security-zone .telegram-settings-panel-header h3 {
-	color: #b91c1c;
+	color: var(--bad-fg);
 }
 
 /* Dark & Night mode tweaks */
@@ -617,8 +617,8 @@
 	border-bottom-color: var(--border-default);
 }
 :is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .security-zone .telegram-settings-panel-header {
-	background: rgba(127, 29, 29, 0.2);
+	background: var(--bad-bg);
 }
 :is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .security-zone .telegram-settings-panel-header h3 {
-	color: #fca5a5;
+	color: var(--bad-fg);
 }

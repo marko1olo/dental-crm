@@ -206,7 +206,7 @@ export function KraftPackageQuickScanner({
 							</div>
 
 							{parsed.isExpired && (
-								<div style={{ padding: "0.75rem", borderRadius: "8px", background: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "#dc2626", fontSize: "0.85rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+								<div style={{ padding: "0.75rem", borderRadius: "8px", background: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "var(--bad-fg, #dc2626)", fontSize: "0.85rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
 									<AlertTriangle size={18} shrink-0="true" />
 									<span>
 										КРИТИЧЕСКИЙ ЗАПРЕТ: Использование просроченного инструментария категорически запрещено п. 3632 СанПиН 3.3686-21. Отправьте набор на повторную предстерилизационную очистку (ПСО) и автоклавирование!
@@ -233,7 +233,7 @@ export function KraftPackageQuickScanner({
 								</div>
 								<div>
 									<div style={{ color: "var(--muted)", fontSize: "0.75rem" }}>Химический индикатор:</div>
-									<div style={{ fontWeight: 700, color: parsed.indicatorPassed ? "#059669" : "#dc2626" }}>
+									<div style={{ fontWeight: 700, color: parsed.indicatorPassed ? "var(--ok-fg, #059669)" : "var(--bad-fg, #dc2626)" }}>
 										{parsed.indicatorClassRu}
 									</div>
 								</div>

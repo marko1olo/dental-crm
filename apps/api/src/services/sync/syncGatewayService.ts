@@ -550,7 +550,10 @@ export class SyncGatewayService {
 			clientPatch: mutation.payload,
 			clientVector: mutation.mutationVector,
 			clientUpdatedAt: mutation.updatedAt,
-			serverUpdatedAt: serverPatient?.updatedAt?.toISOString() || null,
+			serverUpdatedAt:
+				serverPatient?.updatedAt?.toISOString() ||
+				vectorRow?.updatedAt?.toISOString() ||
+				null,
 			clientId,
 			authorUserId: authorUserId || mutation.authorUserId,
 		});
@@ -698,7 +701,10 @@ export class SyncGatewayService {
 				clientPatch: mutation.payload,
 				clientVector: mutation.mutationVector,
 				clientUpdatedAt: mutation.updatedAt,
-				serverUpdatedAt: serverDiary?.updatedAt?.toISOString() || null,
+				serverUpdatedAt:
+					serverDiary?.updatedAt?.toISOString() ||
+					vectorRow?.updatedAt?.toISOString() ||
+					null,
 				clientId,
 				authorUserId: authorUserId || mutation.authorUserId,
 			});
@@ -722,6 +728,7 @@ export class SyncGatewayService {
 							: null,
 						complications: p.complications ? String(p.complications) : null,
 						content: String(p.content || ""),
+						version: 1,
 					})
 					.returning();
 
@@ -745,6 +752,7 @@ export class SyncGatewayService {
 			const merged = mergeResult.mergedEntity;
 			const updateData: Record<string, unknown> = {
 				updatedAt: new Date(),
+				version: (serverDiary.version ?? 0) + 1,
 			};
 			if ("anamnesis" in merged) updateData.anamnesis = merged.anamnesis;
 			if ("statusLocalis" in merged)
@@ -827,7 +835,10 @@ export class SyncGatewayService {
 			clientPatch: mutation.payload,
 			clientVector: mutation.mutationVector,
 			clientUpdatedAt: mutation.updatedAt,
-			serverUpdatedAt: serverVisit?.updatedAt?.toISOString() || null,
+			serverUpdatedAt:
+				serverVisit?.updatedAt?.toISOString() ||
+				vectorRow?.updatedAt?.toISOString() ||
+				null,
 			clientId,
 			authorUserId: authorUserId || mutation.authorUserId,
 		});
@@ -851,6 +862,7 @@ export class SyncGatewayService {
 					transcript: p.transcript ? String(p.transcript) : null,
 					// biome-ignore lint/suspicious/noExplicitAny: draftAutosave
 					draftAutosave: (p.draftAutosave as any) ?? null,
+					revision: 1,
 				})
 				.returning();
 
@@ -874,6 +886,7 @@ export class SyncGatewayService {
 		const merged = mergeResult.mergedEntity;
 		const updateData: Record<string, unknown> = {
 			updatedAt: new Date(),
+			revision: (serverVisit.revision ?? 0) + 1,
 		};
 		if ("complaint" in merged) updateData.complaint = merged.complaint;
 		if ("anamnesis" in merged) updateData.anamnesis = merged.anamnesis;
@@ -963,18 +976,106 @@ export class SyncGatewayService {
 
 		const serverVector = (vectorRow?.vectorJson as MutationVector) || {};
 
+		const APPOINTMENT_STATUS_RANK: Record<string, number> = {
+			planned: 1,
+			confirmed: 2,
+			arrived: 3,
+			in_treatment: 4,
+			completed: 5,
+			no_show: 2,
+			cancelled: 0,
+		};
+
+		const incomingStatus = mutation.payload.status
+			? String(mutation.payload.status)
+			: undefined;
+		const existingStatus = serverAppointment?.status
+			? String(serverAppointment.status)
+			: undefined;
+
+		let statusConflict: FieldConflictDetail | null = null;
+		const effectivePayload = { ...mutation.payload };
+
+		if (
+			serverAppointment &&
+			incomingStatus &&
+			existingStatus &&
+			incomingStatus !== existingStatus
+		) {
+			const incomingRank = APPOINTMENT_STATUS_RANK[incomingStatus] ?? 1;
+			const existingRank = APPOINTMENT_STATUS_RANK[existingStatus] ?? 1;
+
+			if (incomingStatus === "cancelled" || existingStatus === "cancelled") {
+				const incomingTime = new Date(mutation.updatedAt).getTime() || 0;
+				const existingTime = vectorRow?.updatedAt
+					? new Date(vectorRow.updatedAt).getTime()
+					: 0;
+				if (incomingTime < existingTime) {
+					effectivePayload.status = existingStatus;
+					statusConflict = {
+						field: "status",
+						clientValue: incomingStatus,
+						serverValue: existingStatus,
+						resolvedValue: existingStatus,
+						strategy: "lww",
+						winner: "server",
+						reason: `Existing server cancellation/edit timestamp (${new Date(existingTime).toISOString()}) is newer than client timestamp (${new Date(incomingTime).toISOString()})`,
+					};
+				} else {
+					effectivePayload.status = incomingStatus;
+					statusConflict = {
+						field: "status",
+						clientValue: incomingStatus,
+						serverValue: existingStatus,
+						resolvedValue: incomingStatus,
+						strategy: "lww",
+						winner: "client",
+						reason: "Client cancellation/edit timestamp is newer",
+					};
+				}
+			} else if (existingRank > incomingRank) {
+				effectivePayload.status = existingStatus;
+				statusConflict = {
+					field: "status",
+					clientValue: incomingStatus,
+					serverValue: existingStatus,
+					resolvedValue: existingStatus,
+					strategy: "status_priority",
+					winner: "server",
+					reason: `Server status (${existingStatus} [rank ${existingRank}]) has higher clinical progression than incoming status (${incomingStatus} [rank ${incomingRank}])`,
+				};
+			} else {
+				effectivePayload.status = incomingStatus;
+				statusConflict = {
+					field: "status",
+					clientValue: incomingStatus,
+					serverValue: existingStatus,
+					resolvedValue: incomingStatus,
+					strategy: "status_priority",
+					winner: "client",
+					reason: `Client status (${incomingStatus} [rank ${incomingRank}]) advanced clinical progression over server (${existingStatus} [rank ${existingRank}])`,
+				};
+			}
+		}
+
 		const mergeResult = mergeFieldLevelCrdt({
 			entityKind: "appointment",
 			entityId: mutation.entityId,
-			serverEntity: (serverAppointment as unknown as Record<string, unknown>) || null,
+			serverEntity:
+				(serverAppointment as unknown as Record<string, unknown>) || null,
 			serverVector,
-			clientPatch: mutation.payload,
+			clientPatch: effectivePayload,
 			clientVector: mutation.mutationVector,
 			clientUpdatedAt: mutation.updatedAt,
-			serverUpdatedAt: null,
+			serverUpdatedAt: vectorRow?.updatedAt?.toISOString() || null,
 			clientId,
 			authorUserId: authorUserId || mutation.authorUserId,
 		});
+
+		if (statusConflict) {
+			mergeResult.conflicts.push(statusConflict);
+			mergeResult.hasConflicts = true;
+		}
 
 		if (!serverAppointment) {
 			const p = mergeResult.mergedEntity;
@@ -1073,7 +1174,6 @@ export class SyncGatewayService {
 		if ("comment" in merged)
 			updateData.comment = merged.comment ? String(merged.comment) : null;
 
-
 		const [updated] = await tx
 			.update(appointments)
 			.set(updateData)
@@ -1124,29 +1224,77 @@ export class SyncGatewayService {
 		entity: Record<string, unknown>;
 	}> {
 		const payload = mutation.payload;
-		const patientId = String(
-			payload.patientId || mutation.entityId.split(":")[0] || "",
-		);
-		const toothNumber = Number(
-			payload.toothNumber || mutation.entityId.split(":")[1] || 0,
-		);
-		const state = String(payload.state || "healthy");
-		const surfaces = payload.surfaces ?? null;
-		const notes = payload.notes ? String(payload.notes) : null;
-		const visitId = payload.visitId ? String(payload.visitId) : null;
 		const effectiveAuthorId = authorUserId || mutation.authorUserId || null;
+		const incomingDate = mutation.updatedAt
+			? new Date(mutation.updatedAt)
+			: new Date();
 
-		const [serverTooth] = await tx
-			.select()
-			.from(toothStates)
-			.where(
-				and(
-					eq(toothStates.organizationId, organizationId),
-					eq(toothStates.patientId, patientId),
-					eq(toothStates.toothNumber, toothNumber),
-				),
-			)
-			.limit(1);
+		// Check if payload contains an array of teeth (multi-tooth batch) or a single tooth
+		const teethList: Array<{
+			toothNumber: number;
+			state: string;
+			surfaces: unknown;
+			notes: string | null;
+			visitId?: string | null;
+		}> = [];
+
+		if (Array.isArray(payload.teeth)) {
+			for (const t of payload.teeth as Array<Record<string, unknown>>) {
+				const num = Number(t.toothNumber || t.tooth || 0);
+				if (num > 0) {
+					teethList.push({
+						toothNumber: num,
+						state: String(t.statusCode || t.state || t.condition || "healthy"),
+						surfaces:
+							t.surfaces ??
+							(t.surface
+								? Array.isArray(t.surface)
+									? t.surface
+									: [t.surface]
+								: null),
+						notes: t.notes ? String(t.notes) : null,
+						visitId: t.visitId
+							? String(t.visitId)
+							: payload.visitId
+								? String(payload.visitId)
+								: null,
+					});
+				}
+			}
+		} else {
+			const toothNumber = Number(
+				payload.toothNumber ||
+					payload.tooth ||
+					mutation.entityId.split(":")[1] ||
+					0,
+			);
+			if (toothNumber > 0) {
+				teethList.push({
+					toothNumber,
+					state: String(
+						payload.state ||
+							payload.statusCode ||
+							payload.condition ||
+							"healthy",
+					),
+					surfaces:
+						payload.surfaces ??
+						(payload.surface
+							? Array.isArray(payload.surface)
+								? payload.surface
+								: [payload.surface]
+							: null),
+					notes: payload.notes ? String(payload.notes) : null,
+					visitId: payload.visitId ? String(payload.visitId) : null,
+				});
+			}
+		}
+
+		const patientId = String(
+			payload.patientId ||
+				mutation.entityId.split(":")[0] ||
+				mutation.entityId,
+		);
 
 		const [vectorRow] = await tx
 			.select()
@@ -1161,147 +1309,170 @@ export class SyncGatewayService {
 			.limit(1);
 
 		const serverVector = (vectorRow?.vectorJson as MutationVector) || {};
+		const allConflicts: FieldConflictDetail[] = [];
+		const mergedFields: string[] = [];
+		const updatedTeethStates: Record<string, unknown>[] = [];
 
-		const mergeResult = mergeFieldLevelCrdt({
-			entityKind: "odontogram_state",
-			entityId: mutation.entityId,
-			serverEntity:
-				(serverTooth as unknown as Record<string, unknown>) || null,
-			serverVector,
-			clientPatch: mutation.payload,
-			clientVector: mutation.mutationVector,
-			clientUpdatedAt: mutation.updatedAt,
-			serverUpdatedAt: serverTooth?.updatedAt?.toISOString() || null,
-			clientId,
-			authorUserId: effectiveAuthorId ?? undefined,
-		});
+		for (const toothItem of teethList) {
+			const [serverTooth] = await tx
+				.select()
+				.from(toothStates)
+				.where(
+					and(
+						eq(toothStates.organizationId, organizationId),
+						eq(toothStates.patientId, patientId),
+						eq(toothStates.toothNumber, toothItem.toothNumber),
+					),
+				)
+				.limit(1);
 
-		const incomingDate = mutation.updatedAt
-			? new Date(mutation.updatedAt)
-			: new Date();
-		const serverDate = serverTooth?.updatedAt
-			? new Date(serverTooth.updatedAt)
-			: new Date(0);
+			const serverDate = serverTooth?.updatedAt
+				? new Date(serverTooth.updatedAt)
+				: new Date(0);
 
-		const clientWins =
-			!serverTooth || incomingDate.getTime() >= serverDate.getTime();
+			const clientWins =
+				!serverTooth || incomingDate.getTime() >= serverDate.getTime();
 
-		if (clientWins) {
-			// Record transition into append-only tooth state history audit log
-			await tx.insert(toothStateHistory).values({
-				organizationId,
-				patientId,
-				visitId,
-				toothNumber,
-				previousState: serverTooth?.state ?? null,
-				newState: state,
-				previousSurfaces: serverTooth?.surfaces ?? null,
-				newSurfaces: surfaces,
-				changedByUserId: effectiveAuthorId,
-				reason: notes || "Оффлайн-синхронизация одонтограммы",
-				changedAt: incomingDate,
-			});
-
-			let currentEntity: Record<string, unknown>;
-			if (!serverTooth) {
-				const [inserted] = await tx
-					.insert(toothStates)
-					.values({
-						organizationId,
-						patientId,
-						toothNumber,
-						state,
-						// biome-ignore lint/suspicious/noExplicitAny: surfaces
-						surfaces: (surfaces as any) ?? null,
-						notes,
-						updatedAt: incomingDate,
-						isSynced: true,
-						version: 1,
-					})
-					.returning();
-				currentEntity = (inserted as unknown as Record<
-					string,
-					unknown
-				>) || {
+			if (clientWins) {
+				// Record transition into append-only tooth state history audit log
+				await tx.insert(toothStateHistory).values({
+					organizationId,
 					patientId,
-					toothNumber,
-					state,
-					surfaces,
-					notes,
-				};
+					visitId: toothItem.visitId ?? null,
+					toothNumber: toothItem.toothNumber,
+					previousState: serverTooth?.state ?? null,
+					newState: toothItem.state,
+					previousSurfaces: serverTooth?.surfaces ?? null,
+					// biome-ignore lint/suspicious/noExplicitAny: surfaces
+					newSurfaces: (toothItem.surfaces as any) ?? null,
+					changedByUserId: effectiveAuthorId,
+					reason:
+						toothItem.notes || "Оффлайн-синхронизация одонтограммы (LWW)",
+					changedAt: incomingDate,
+				});
+
+				if (!serverTooth) {
+					const [inserted] = await tx
+						.insert(toothStates)
+						.values({
+							organizationId,
+							patientId,
+							toothNumber: toothItem.toothNumber,
+							state: toothItem.state,
+							// biome-ignore lint/suspicious/noExplicitAny: surfaces
+							surfaces: (toothItem.surfaces as any) ?? null,
+							notes: toothItem.notes,
+							updatedAt: incomingDate,
+							isSynced: true,
+							version: 1,
+						})
+						.returning();
+					updatedTeethStates.push(
+						(inserted as unknown as Record<string, unknown>) || {
+							patientId,
+							toothNumber: toothItem.toothNumber,
+							state: toothItem.state,
+							surfaces: toothItem.surfaces,
+							notes: toothItem.notes,
+						},
+					);
+				} else {
+					const [updated] = await tx
+						.update(toothStates)
+						.set({
+							state: toothItem.state,
+							// biome-ignore lint/suspicious/noExplicitAny: surfaces
+							surfaces: (toothItem.surfaces as any) ?? null,
+							notes:
+								toothItem.notes !== null
+									? toothItem.notes
+									: serverTooth.notes,
+							updatedAt: incomingDate,
+							version: (serverTooth.version ?? 0) + 1,
+							isSynced: true,
+						})
+						.where(eq(toothStates.id, serverTooth.id))
+						.returning();
+					updatedTeethStates.push(
+						(updated as unknown as Record<string, unknown>) || {
+							...serverTooth,
+							state: toothItem.state,
+							surfaces: toothItem.surfaces,
+							notes: toothItem.notes,
+						},
+					);
+				}
+				mergedFields.push(`tooth_${toothItem.toothNumber}`);
 			} else {
-				const [updated] = await tx
-					.update(toothStates)
-					.set({
-						state,
-						// biome-ignore lint/suspicious/noExplicitAny: surfaces
-						surfaces: (surfaces as any) ?? null,
-						notes: notes !== null ? notes : serverTooth.notes,
-						updatedAt: incomingDate,
-						version: (serverTooth.version ?? 0) + 1,
-						isSynced: true,
-					})
-					.where(eq(toothStates.id, serverTooth.id))
-					.returning();
-				currentEntity = (updated as unknown as Record<
-					string,
-					unknown
-				>) || {
-					...serverTooth,
-					state,
-					surfaces,
-					notes,
-				};
-			}
+				// Server state is strictly newer and wins (LWW)
+				// Client transition is STILL recorded in toothStateHistory for full 043/u audit trail!
+				await tx.insert(toothStateHistory).values({
+					organizationId,
+					patientId,
+					visitId: toothItem.visitId ?? null,
+					toothNumber: toothItem.toothNumber,
+					previousState: null,
+					newState: toothItem.state,
+					previousSurfaces: null,
+					// biome-ignore lint/suspicious/noExplicitAny: surfaces
+					newSurfaces: (toothItem.surfaces as any) ?? null,
+					changedByUserId: effectiveAuthorId,
+					reason: "Оффлайн-синхронизация (LWW архив)",
+					changedAt: incomingDate,
+				});
 
-			await this.upsertEntityVector(
-				tx,
-				organizationId,
-				"odontogram_state",
-				mutation.entityId,
-				mergeResult.updatedVector,
-				mutation.mutationId,
-			);
-
-			return {
-				status: serverTooth ? "merged" : "applied",
-				mergedFields: ["state", "surfaces"],
-				conflicts: mergeResult.conflicts,
-				entity: currentEntity,
-			};
-		}
-
-		// Stale client mutation: server state is newer and wins (LWW),
-		// but client transition is STILL saved into toothStateHistory for full 043/u audit trail!
-		await tx.insert(toothStateHistory).values({
-			organizationId,
-			patientId,
-			visitId,
-			toothNumber,
-			previousState: null,
-			newState: state,
-			previousSurfaces: null,
-			newSurfaces: surfaces,
-			changedByUserId: effectiveAuthorId,
-			reason: "Оффлайн-синхронизация (LWW архив)",
-			changedAt: incomingDate,
-		});
-
-		return {
-			status: "conflict_resolved",
-			mergedFields: [],
-			conflicts: [
-				{
-					field: "state",
-					clientValue: state,
+				allConflicts.push({
+					field: `tooth_${toothItem.toothNumber}_state`,
+					clientValue: toothItem.state,
 					serverValue: serverTooth.state,
 					resolvedValue: serverTooth.state,
 					strategy: "lww",
 					winner: "server",
-					reason: `Server state timestamp (${serverDate.toISOString()}) is newer than client timestamp (${incomingDate.toISOString()})`,
-				},
-			],
-			entity: serverTooth as unknown as Record<string, unknown>,
+					reason: `Server tooth state timestamp (${serverDate.toISOString()}) is newer than client timestamp (${incomingDate.toISOString()})`,
+				});
+				updatedTeethStates.push(
+					serverTooth as unknown as Record<string, unknown>,
+				);
+			}
+		}
+
+		// Update vector clock for modified teeth
+		const newVector: MutationVector = { ...serverVector };
+		for (const toothItem of teethList) {
+			newVector[`tooth_${toothItem.toothNumber}`] = {
+				updatedAt: incomingDate.toISOString(),
+				version:
+					(serverVector[`tooth_${toothItem.toothNumber}`]?.version ?? 0) +
+					1,
+				authorId: effectiveAuthorId ?? undefined,
+				clientId,
+			};
+		}
+
+		await this.upsertEntityVector(
+			tx,
+			organizationId,
+			"odontogram_state",
+			mutation.entityId,
+			newVector,
+			mutation.mutationId,
+		);
+
+		const status: SyncMutationStatus =
+			allConflicts.length > 0
+				? "conflict_resolved"
+				: mergedFields.length > 0
+					? "merged"
+					: "applied";
+
+		return {
+			status,
+			mergedFields,
+			conflicts: allConflicts,
+			entity: {
+				patientId,
+				teeth: updatedTeethStates,
+			},
 		};
 	}
 

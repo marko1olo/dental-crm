@@ -94,6 +94,11 @@ function mapDocument(
 		issuedByUserId: record.issuedByUserId,
 		voidedAt: record.voidedAt?.toISOString() ?? null,
 		voidedByUserId: record.voidedByUserId,
+		cryptoSignaturePkcs7: record.cryptoSignaturePkcs7 ?? null,
+		doctorSignaturePkcs7: record.doctorSignaturePkcs7 ?? null,
+		doctorCertSerial: record.doctorCertSerial ?? null,
+		doctorCertSubject: record.doctorCertSubject ?? null,
+		doctorSignedAt: record.doctorSignedAt?.toISOString() ?? null,
 		createdAt: record.createdAt.toISOString(),
 	} as GeneratedDocument;
 }

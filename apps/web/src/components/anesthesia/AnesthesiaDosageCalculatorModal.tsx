@@ -489,9 +489,9 @@ export function AnesthesiaDosageCalculatorModal({
 										border: "1px solid var(--line, #cbd5e1)",
 										background:
 											patientWeightKg === w
-												? "var(--brand, #0284c7)"
-												: "var(--paper, #fff)",
-										color: patientWeightKg === w ? "#fff" : "inherit",
+												? "var(--teal)"
+												: "var(--paper)",
+										color: patientWeightKg === w ? "var(--on-teal, #fff)" : "inherit",
 										cursor: "pointer",
 										display: "inline-flex",
 										alignItems: "center",
@@ -537,11 +537,11 @@ export function AnesthesiaDosageCalculatorModal({
 											padding: "0.75rem",
 											borderRadius: "8px",
 											border: isSelected
-												? "2px solid var(--brand, #0284c7)"
-												: "1px solid var(--line, #e2e8f0)",
+												? "2px solid var(--teal)"
+												: "1px solid var(--line)",
 											background: isSelected
-												? "var(--brand-soft, #f0f9ff)"
-												: "var(--paper, #fff)",
+												? "var(--teal-surface, rgba(13, 148, 136, 0.07))"
+												: "var(--paper)",
 											cursor: "pointer",
 											transition: "all 0.15s ease-out",
 										}}
@@ -559,7 +559,7 @@ export function AnesthesiaDosageCalculatorModal({
 										<div
 											style={{
 												fontSize: "0.75rem",
-												color: "var(--muted, #64748b)",
+												color: "var(--muted)",
 												marginBottom: "0.25rem",
 											}}
 										>
@@ -576,8 +576,8 @@ export function AnesthesiaDosageCalculatorModal({
 											<span
 												style={{
 													color: drug.isAdrenalineFree
-														? "#10b981"
-														: "#0284c7",
+														? "var(--ok-fg)"
+														: "var(--teal)",
 												}}
 											>
 												{drug.isAdrenalineFree
@@ -639,9 +639,9 @@ export function AnesthesiaDosageCalculatorModal({
 											border: "1px solid var(--line, #cbd5e1)",
 											background:
 												carpulesCount === c
-													? "var(--brand, #0284c7)"
-													: "var(--paper, #fff)",
-											color: carpulesCount === c ? "#fff" : "inherit",
+													? "var(--teal)"
+													: "var(--paper)",
+											color: carpulesCount === c ? "var(--on-teal, #fff)" : "inherit",
 											cursor: "pointer",
 											display: "inline-flex",
 											alignItems: "center",
@@ -669,7 +669,7 @@ export function AnesthesiaDosageCalculatorModal({
 								display: "flex",
 								justifyContent: "space-between",
 								fontSize: "0.75rem",
-								color: "var(--muted, #64748b)",
+								color: "var(--muted)",
 							}}
 						>
 							<span>Объем: {calcResult.injectedVolumeMl.toFixed(1)} мл</span>
@@ -713,12 +713,12 @@ export function AnesthesiaDosageCalculatorModal({
 									fontWeight: 700,
 									color:
 										calcResult.safetyZone === "safe"
-											? "#10b981"
+											? "var(--ok-fg)"
 											: calcResult.safetyZone === "caution"
-												? "#3b82f6"
+												? "var(--info-fg)"
 												: calcResult.safetyZone === "warning"
-													? "#f59e0b"
-													: "#ef4444",
+													? "var(--warn-fg)"
+													: "var(--bad-fg)",
 								}}
 							>
 								{calcResult.safetyZone === "safe" &&
@@ -736,7 +736,7 @@ export function AnesthesiaDosageCalculatorModal({
 							className="safety-meter-bar-container"
 							style={{
 								height: "10px",
-								background: "var(--line, #e2e8f0)",
+								background: "var(--line)",
 								borderRadius: "6px",
 								overflow: "hidden",
 								marginBottom: "0.625rem",
@@ -748,12 +748,12 @@ export function AnesthesiaDosageCalculatorModal({
 									width: `${Math.min(100, Math.max(calcResult.percentOfMaxDose, calcResult.percentOfEpiMaxDose))}%`,
 									background:
 										calcResult.safetyZone === "safe"
-											? "#10b981"
+											? "var(--ok-fg)"
 											: calcResult.safetyZone === "caution"
-												? "#3b82f6"
+												? "var(--info-fg)"
 												: calcResult.safetyZone === "warning"
-													? "#f59e0b"
-													: "#ef4444",
+													? "var(--warn-fg)"
+													: "var(--bad-fg)",
 									transition: "all 0.2s ease-out",
 								}}
 							/>
@@ -772,16 +772,16 @@ export function AnesthesiaDosageCalculatorModal({
 								className="anesthesia-metric-box"
 								style={{
 									padding: "0.5rem",
-									background: "var(--paper, #fff)",
+									background: "var(--paper)",
 									borderRadius: "6px",
-									border: "1px solid var(--line, #e2e8f0)",
+									border: "1px solid var(--line)",
 									textAlign: "center",
 								}}
 							>
 								<span
 									style={{
 										fontSize: "0.6875rem",
-										color: "var(--muted, #64748b)",
+										color: "var(--muted)",
 										display: "block",
 									}}
 								>
@@ -795,7 +795,7 @@ export function AnesthesiaDosageCalculatorModal({
 									style={{
 										fontSize: "0.6875rem",
 										color:
-											calcResult.percentOfMaxDose > 100 ? "#ef4444" : "inherit",
+											calcResult.percentOfMaxDose > 100 ? "var(--bad-fg)" : "inherit",
 										display: "block",
 									}}
 								>
@@ -807,16 +807,16 @@ export function AnesthesiaDosageCalculatorModal({
 								className="anesthesia-metric-box"
 								style={{
 									padding: "0.5rem",
-									background: "var(--paper, #fff)",
+									background: "var(--paper)",
 									borderRadius: "6px",
-									border: "1px solid var(--line, #e2e8f0)",
+									border: "1px solid var(--line)",
 									textAlign: "center",
 								}}
 							>
 								<span
 									style={{
 										fontSize: "0.6875rem",
-										color: "var(--muted, #64748b)",
+										color: "var(--muted)",
 										display: "block",
 									}}
 								>
@@ -832,7 +832,7 @@ export function AnesthesiaDosageCalculatorModal({
 										fontSize: "0.6875rem",
 										color:
 											calcResult.percentOfEpiMaxDose > 100
-												? "#ef4444"
+												? "var(--bad-fg)"
 												: "inherit",
 										display: "block",
 									}}
@@ -846,28 +846,28 @@ export function AnesthesiaDosageCalculatorModal({
 								className="anesthesia-metric-box"
 								style={{
 									padding: "0.5rem",
-									background: "var(--paper, #fff)",
+									background: "var(--paper)",
 									borderRadius: "6px",
-									border: "1px solid var(--line, #e2e8f0)",
+									border: "1px solid var(--line)",
 									textAlign: "center",
 								}}
 							>
 								<span
 									style={{
 										fontSize: "0.6875rem",
-										color: "var(--muted, #64748b)",
+										color: "var(--muted)",
 										display: "block",
 									}}
 								>
 									Максимум карпул
 								</span>
-								<strong style={{ fontSize: "0.9375rem", color: "#0284c7" }}>
+								<strong style={{ fontSize: "0.9375rem", color: "var(--teal)" }}>
 									{calcResult.maxSafeCarpulesCount} карп.
 								</strong>
 								<span
 									style={{
 										fontSize: "0.6875rem",
-										color: "var(--muted, #64748b)",
+										color: "var(--muted)",
 										display: "block",
 									}}
 								>
@@ -877,13 +877,13 @@ export function AnesthesiaDosageCalculatorModal({
 						</div>
 					</div>
 
-					{/* HARD VISUAL BLOCKING BANNER ON OVERDOSE (#ef4444) */}
+					{/* HARD VISUAL BLOCKING BANNER ON OVERDOSE */}
 					{isBlocked && (
 						<div
 							style={{
-								background: "#fef2f2",
-								border: "2px solid #ef4444",
-								color: "#991b1b",
+								background: "var(--bad-bg)",
+								border: "2px solid var(--bad-fg)",
+								color: "var(--bad-fg)",
 								padding: "0.875rem",
 								borderRadius: "8px",
 								marginBottom: "1rem",
@@ -902,7 +902,7 @@ export function AnesthesiaDosageCalculatorModal({
 									style={{
 										fontSize: "0.875rem",
 										fontWeight: 800,
-										color: "#b91c1c",
+										color: "var(--bad-fg)",
 										marginBottom: "0.25rem",
 									}}
 								>
@@ -1238,8 +1238,8 @@ export function AnesthesiaDosageCalculatorModal({
 							display: "flex",
 							alignItems: "center",
 							gap: "0.5rem",
-							background: isBlocked ? "#ef4444" : "var(--brand, #0284c7)",
-							color: "#fff",
+							background: isBlocked ? "var(--bad-fg)" : "var(--teal)",
+							color: "var(--on-teal, #fff)",
 							border: "none",
 							cursor: isBlocked ? "not-allowed" : "pointer",
 							opacity: isBlocked ? 0.6 : 1.0,

@@ -512,7 +512,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 										</span>
 										<span>Тег 1081</span>
 									</div>
-									<div className="cash-shift-metric-value" style={{ color: "#0284c7" }}>
+									<div className="cash-shift-metric-value" style={{ color: "var(--info-fg, var(--teal))" }}>
 										{(reconciliation.tenders.cardIncomeRub - reconciliation.tenders.cardReturnRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
 									<div className="cash-shift-metric-sub">
@@ -529,7 +529,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 										</span>
 										<span>QR-код</span>
 									</div>
-									<div className="cash-shift-metric-value" style={{ color: "#7c3aed" }}>
+									<div className="cash-shift-metric-value" style={{ color: "var(--teal)" }}>
 										{(reconciliation.tenders.sbpIncomeRub - reconciliation.tenders.sbpReturnRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
 									<div className="cash-shift-metric-sub">

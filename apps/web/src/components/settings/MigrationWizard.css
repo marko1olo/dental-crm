@@ -216,7 +216,7 @@
  */
 .mw-btn-danger {
 	background: var(--bad-fg);
-	color: #fff;
+	color: var(--paper-strong);
 }
 
 .mw-btn-danger:not(:disabled):hover {
@@ -490,8 +490,8 @@
 
 /** Решение нейросети видно отдельно: оператор должен знать, что это догадка. */
 .mw-badge-llm {
-	background: #ede9fe;
-	color: #6d28d9;
+	background: var(--teal-surface);
+	color: var(--teal);
 }
 
 .mw-badge-manual {
@@ -653,7 +653,7 @@
 	width: 32px;
 	height: 32px;
 	border-radius: 50%;
-	color: #fff;
+	color: var(--paper-strong);
 	font-size: 18px;
 	font-weight: 700;
 	line-height: 1;
@@ -756,7 +756,7 @@
 
 .mw-check.is-bad .mw-check-mark {
 	background: var(--bad-fg);
-	color: #fff;
+	color: var(--paper-strong);
 }
 
 .mw-check-body {

@@ -34,6 +34,7 @@ import { registerClinicalImplantRoutes } from "./routes/clinicalImplants.js";
 import { registerClinicWorkflowsRoutes } from "./routes/clinicWorkflows.js";
 import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
 import { registerCommunicationRoutes } from "./routes/communications.js";
+import { registerMessageTemplateRoutes } from "./routes/messageTemplates.js";
 import { registerCommunicationOutboxRoutes } from "./routes/communicationsOutbox.js";
 import { registerDashboardRoutes } from "./routes/dashboard.js";
 import { registerDayConfirmationRoutes } from "./routes/dayConfirmations.js";
@@ -105,6 +106,10 @@ import {
 	registerTelegramWebhookRoutes,
 	startDenteTelegramOutboxDueWorker,
 } from "./routes/telegram.js";
+import {
+	startEgiszQueueWorker,
+	stopEgiszQueueWorker,
+} from "./services/egisz/EgiszQueueWorker.js";
 import { telephonyRoutes } from "./routes/telephony.js";
 import registerTemplateRoutes from "./routes/templates.js";
 import { copilotRoutes } from "./routes/copilot.js";
@@ -122,6 +127,7 @@ import { registerXrayRoutes } from "./routes/xray.js";
 import { registerYandexCalendarRoutes } from "./routes/yandexCalendar.js";
 import { authTokenSecret } from "./security/authSecret.js";
 import { getRequestIdentity } from "./security/identity.js";
+import { registerMedicalSecrecyPayloadStripping } from "./security/medicalSecrecyWarden.js";
 import {
 	type RateLimitRule,
 	registerRateLimiting,
@@ -130,6 +136,7 @@ import {
 	startBackupDaemon,
 	stopBackupDaemon,
 } from "./services/backupWorker.js";
+import { defaultDaemonScheduler } from "./services/daemons/index.js";
 import { TaskQueueService } from "./services/TaskQueueService.js";
 import {
 	startLanDiscoveryService,
@@ -397,6 +404,9 @@ export async function createDenteApiApp(
 		startCommunicationWorker?: boolean;
 		/** Фоновое выполнение переноса чужой базы. Тесты выключают, чтобы не гонять очередь. */
 		startMigrationWorker?: boolean;
+		startDaemonScheduler?: boolean;
+		/** Фоновая очередь отправки подписанных СЭМД в РЭМД ЕГИСЗ Минздрава. */
+		startEgiszWorker?: boolean;
 	} = {},
 ) {
 	const app = Fastify({
@@ -515,6 +525,11 @@ export async function createDenteApiApp(
 			_req.tenantId = _identity.organizationId;
 		}
 	});
+
+	// 152-ФЗ / 323-ФЗ ст. 13: Глобальное аппаратное усечение полезной нагрузки (Payload Stripping)
+	// Данные врачебной тайны (диагнозы, одонтограмма, ЭМК, клинические заметки) физически вырезаются
+	// из JSON-ответов сервера ДО отправки на клиент для ролей marketer, receptionist, admin (без клинической роли).
+	registerMedicalSecrecyPayloadStripping(app);
 
 	// Глобальная изоляция арендаторов: если у запроса есть tenantId (выставлен в onRequest выше),
 	// автоматически оборачиваем весь обработчик маршрута в withTenantCtx. Это даёт гарантию, что
@@ -635,6 +650,7 @@ export async function createDenteApiApp(
 	await registerClinicalRoutes(app);
 	await registerChatRoutes(app);
 	await registerCommunicationRoutes(app);
+	await registerMessageTemplateRoutes(app);
 	await registerDashboardRoutes(app);
 	await registerDocumentRoutes(app);
 	await registerImagingRoutes(app);
@@ -837,6 +853,26 @@ export async function createDenteApiApp(
 		});
 	}
 
+	if (options.startDaemonScheduler === true) {
+		defaultDaemonScheduler.start({ logger: app.log });
+		app.addHook("onClose", async () => {
+			defaultDaemonScheduler.stop();
+		});
+	}
+
+	// Фоновая асинхронная очередь отправки подписанных СЭМД в РЭМД ЕГИСЗ Минздрава РФ.
+	// Подписание врачом не блокирует приём пациента: пакет сохраняется в egisz_outbox.
+	if (options.startEgiszWorker !== false) {
+		const egiszWorker = startEgiszQueueWorker({
+			logger: app.log,
+		});
+		if (egiszWorker.enabled) {
+			app.addHook("onClose", async () => {
+				stopEgiszQueueWorker();
+			});
+		}
+	}
+
 	/*
 	 * ЗДЕСЬ НЕТ ЗАКРЫТИЯ ПУЛА — И ЭТО НАМЕРЕННО.
 	 *
@@ -901,6 +937,7 @@ export async function startDenteApiServer() {
 				}
 				stopBackupDaemon();
 				stopLanDiscoveryService();
+				defaultDaemonScheduler.stop();
 				await app.close();
 				// Единственное закрытие пула на процесс: владелец — процесс, не
 				// приложение. endPool идемпотентен, повторный вызов дожидается
@@ -930,6 +967,9 @@ export async function startDenteApiServer() {
 
 		// Авто-обнаружение сервера в локальной сети (mDNS / UDP discovery responder)
 		startLanDiscoveryService({ logger: app.log });
+
+		// Фоновый шедулер клинических демонов (08:00 ZTL, 21:00 EMR Savior, Weekly Retention)
+		defaultDaemonScheduler.start({ logger: app.log });
 
 		process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 		process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

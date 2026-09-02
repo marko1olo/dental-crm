@@ -497,7 +497,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							right: '2rem',
 							zIndex: 10001,
 							background: 'var(--ink, #0f172a)',
-							color: '#ffffff',
+							color: 'var(--paper, #ffffff)',
 							padding: '0.625rem 1.25rem',
 							borderRadius: '8px',
 							boxShadow: '0 10px 25px rgba(0,0,0,0.3)',

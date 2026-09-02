@@ -862,3 +862,40 @@ describe('CopilotActionConfirm Specialized 1-Click Medical Buttons', () => {
   });
 });
 
+describe('Copilot Proactive Clinical Tooth Protocol Nudges', () => {
+  it('renders proactive clinical tooth nudge with FDI tooth, ICD-10, anesthesia chips, and 1-click 043/u button', () => {
+    const clinicalNudge = {
+      id: 'nudge_tooth_46',
+      kind: 'clinical_tooth_protocol',
+      created_at: '2026-09-01T12:00:00.000Z',
+      payload: {
+        tooth: 46,
+        title: '🦷 Клинический протокол: Зуб #46 (Пульпит K04.0)',
+        icd10: 'K04.0',
+        anesthesia: 'Артикаин 1:100 000 (1.7 мл)',
+        description: 'Рекомендован протокол эндодонтии (NaOCl 2.5% + EDTA 17% + Metapex).',
+        actionPrompt: 'Заполни форму 043/у по эндодонтии',
+        form043: {
+          tooth: 46,
+          diagnosis: 'K04.0 Пульпит зуба #46',
+          complaint: 'Острая боль в зубе #46',
+          treatmentPlan: 'Экстирпация пульпы, Metapex',
+        },
+      },
+    };
+
+    const html = renderToString(
+      <CopilotNudges
+        nudges={[clinicalNudge]}
+        onDismiss={() => {}}
+      />
+    );
+
+    assert.ok(html.includes('Зуб #46'));
+    assert.ok(html.includes('МКБ-10: K04.0'));
+    assert.ok(html.includes('Артикаин 1:100 000'));
+    assert.ok(html.includes('1 клик в 043/у'));
+    assert.ok(html.includes('Обсудить'));
+  });
+});
+

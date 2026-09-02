@@ -348,10 +348,10 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							</span>
 						</div>
 
-						<div className="p-4 rounded-xl border border-[var(--line)] bg-white text-slate-900 text-xs shadow-inner font-sans leading-relaxed flex flex-col gap-3">
-							<div className="border-b border-slate-300 pb-2 text-xs text-slate-600 flex justify-between">
+						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs shadow-inner font-sans leading-relaxed flex flex-col gap-3">
+							<div className="border-b border-[var(--line)] pb-2 text-xs text-[var(--muted)] flex justify-between">
 								<div>
-									<div className="font-bold text-slate-900 uppercase">
+									<div className="font-bold text-[var(--ink)] uppercase">
 										{clinic}
 									</div>
 									<div>Направляющая медицинская организация</div>
@@ -362,12 +362,12 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								</div>
 							</div>
 
-							<div className="border-b border-slate-200 pb-2 flex flex-col gap-0.5 text-xs">
+							<div className="border-b border-[var(--line)] pb-2 flex flex-col gap-0.5 text-xs text-[var(--ink)]">
 								<div>
-									Пациент: <strong>{patientName}</strong> (д.р. {patientBirth})
+									Пациент: <strong className="text-[var(--ink)]">{patientName}</strong> (д.р. {patientBirth})
 								</div>
 								<div>
-									Врач: <strong>{docName}</strong>
+									Врач: <strong className="text-[var(--ink)]">{docName}</strong>
 								</div>
 								<div>
 									Диагноз (МКБ-10):{" "}
@@ -382,22 +382,22 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									Вид исследования:{" "}
 									{dentalRadiologyStudyLabels[studyType]}
 								</div>
-								<div className="text-slate-700">
+								<div className="text-[var(--muted)]">
 									Цель: {radiologyReferralGoalLabels[studyGoal]}
 								</div>
 								{targetTeeth && (
-									<div className="font-bold text-slate-900">
+									<div className="font-bold text-[var(--ink)]">
 										Зубы (FDI): {targetTeeth}
 									</div>
 								)}
 							</div>
 
-							<div className="border-t border-slate-300 pt-2 text-xs flex justify-between items-end text-slate-500">
+							<div className="border-t border-[var(--line)] pt-2 text-xs flex justify-between items-end text-[var(--muted)]">
 								<div>
 									<div>Принцип ALARA / СанПиН соблюдён</div>
 									<div className="mt-4">Подпись врача: ______________</div>
 								</div>
-								<div className="w-12 h-12 rounded-full border border-dashed border-slate-400 flex items-center justify-center font-bold text-xs">
+								<div className="w-12 h-12 rounded-full border border-dashed border-[var(--line-strong,var(--line))] flex items-center justify-center font-bold text-xs text-[var(--muted)]">
 									М.П.
 								</div>
 							</div>

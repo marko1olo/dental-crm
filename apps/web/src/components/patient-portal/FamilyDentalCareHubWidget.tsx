@@ -227,7 +227,7 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 								height: "36px",
 								borderRadius: "8px",
 								backgroundColor: "var(--teal, #0d9488)",
-								color: "#ffffff",
+								color: "var(--on-teal, #ffffff)",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
@@ -331,7 +331,7 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 						style={{
 							flex: 1,
 							backgroundColor: activeTab === "members" ? "var(--teal, #0d9488)" : "var(--paper-soft, #f1f5f9)",
-							color: activeTab === "members" ? "#ffffff" : "var(--ink, #0f172a)",
+							color: activeTab === "members" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
 						}}
 					>
 						<Shield size={15} />
@@ -345,7 +345,7 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 						style={{
 							flex: 1,
 							backgroundColor: activeTab === "parallel" ? "var(--teal, #0d9488)" : "var(--paper-soft, #f1f5f9)",
-							color: activeTab === "parallel" ? "#ffffff" : "var(--ink, #0f172a)",
+							color: activeTab === "parallel" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
 						}}
 					>
 						<Zap size={15} />
@@ -409,14 +409,14 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 										alignItems: "center",
 										padding: "8px 10px",
 										borderRadius: "8px",
-										backgroundColor: isOverdue ? "#fef2f2" : isDueSoon ? "#fffbeb" : "var(--paper-soft, #f8fafc)",
-										border: isOverdue ? "1px solid #fecaca" : isDueSoon ? "1px solid #fde68a" : "1px solid var(--line, rgba(0,0,0,0.06))",
+										backgroundColor: isOverdue ? "var(--bad-bg)" : isDueSoon ? "var(--warn-bg)" : "var(--paper-soft, #f8fafc)",
+										border: isOverdue ? "1px solid var(--bad-fg)" : isDueSoon ? "1px solid var(--warn-fg)" : "1px solid var(--line, rgba(0,0,0,0.06))",
 										fontSize: "11px",
 									}}
 								>
 									<div>
 										<span style={{ color: "var(--muted, #64748b)" }}>Срок гигиены: </span>
-										<strong style={{ color: isOverdue ? "#b91c1c" : isDueSoon ? "#92400e" : "var(--ink, #0f172a)" }}>
+										<strong style={{ color: isOverdue ? "var(--bad-fg)" : isDueSoon ? "var(--warn-fg)" : "var(--ink, #0f172a)" }}>
 											{member.nextHygieneDueRu}
 										</strong>
 									</div>
@@ -424,7 +424,7 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 									<span
 										style={{
 											fontWeight: 700,
-											color: isOverdue ? "#b91c1c" : isDueSoon ? "#92400e" : "var(--teal-strong, #0f766e)",
+											color: isOverdue ? "var(--bad-fg)" : isDueSoon ? "var(--warn-fg)" : "var(--teal-strong, #0f766e)",
 										}}
 									>
 										{isOverdue ? "Просрочено" : isDueSoon ? `Через ${member.daysUntilNextHygiene} дн.` : "В графике"}
@@ -457,7 +457,7 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 										onClick={() => onBookMemberHygiene(member)}
 										style={{
 											backgroundColor: isOverdue || isDueSoon ? "var(--teal, #0d9488)" : "var(--paper-soft, #f1f5f9)",
-											color: isOverdue || isDueSoon ? "#ffffff" : "var(--ink, #0f172a)",
+											color: isOverdue || isDueSoon ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
 											width: "100%",
 											fontSize: "12px",
 										}}
@@ -511,8 +511,8 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 									style={{
 										fontSize: "11px",
 										fontWeight: 800,
-										color: "#15803d",
-										backgroundColor: "#dcfce7",
+										color: "var(--ok-fg)",
+										backgroundColor: "var(--ok-bg)",
 										padding: "2px 8px",
 										borderRadius: "9999px",
 									}}
@@ -529,7 +529,7 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 									gap: "6px",
 									padding: "8px",
 									borderRadius: "8px",
-									backgroundColor: "#ffffff",
+									backgroundColor: "var(--paper-strong, #ffffff)",
 									border: "1px solid rgba(0,0,0,0.06)",
 									fontSize: "11px",
 								}}
@@ -539,14 +539,14 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 									<span><strong>{pkg.adultMemberName}: </strong>{pkg.adultProcedureRu}</span>
 								</div>
 								<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-									<Heart size={13} style={{ color: "#ec4899)" }} />
+									<Heart size={13} style={{ color: "var(--bad-fg)" }} />
 									<span><strong>{pkg.childMemberName}: </strong>{pkg.childProcedureRu}</span>
 								</div>
 							</div>
 
 							{/* Экономия времени и стоимость */}
 							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "8px" }}>
-								<div style={{ fontSize: "11px", color: "#15803d", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+								<div style={{ fontSize: "11px", color: "var(--ok-fg)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
 									<Clock size={13} />
 									<span>{`Экономия времени: ${pkg.savedMinutes} мин`}</span>
 								</div>
@@ -568,8 +568,8 @@ export const FamilyDentalCareHubWidget: React.FC<FamilyDentalCareHubWidgetProps>
 									className="family-care-touch-btn"
 									onClick={() => onBookParallelVisit(pkg)}
 									style={{
-										backgroundColor: "#16a34a",
-										color: "#ffffff",
+										backgroundColor: "var(--ok-fg)",
+										color: "var(--on-teal, #ffffff)",
 										width: "100%",
 									}}
 								>

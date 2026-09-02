@@ -41,6 +41,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast.js";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	AUTOCLAVE_REGIME_PRESETS,
 	STATUTORY_CLINIC_CABINETS,
@@ -188,14 +189,9 @@ export function RetroactiveSanpinBatchModal({
 
 		try {
 			setIsSaving(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-
-			const headers: Record<string, string> = {
+			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			};
+			});
 
 			await fetch("/api/registers/autofill-shift", {
 				method: "POST",

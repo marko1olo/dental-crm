@@ -1085,6 +1085,24 @@ html.dark .cmo-act-preview-container {
 	background: var(--paper, #0b1329);
 }
 
+@media (max-width: 640px) {
+	.cmo-btn-close {
+		width: 44px;
+		height: 44px;
+		min-width: 44px;
+		min-height: 44px;
+	}
+	.cmo-tab-btn {
+		min-height: 44px;
+	}
+	.cmo-btn-primary,
+	.cmo-btn-success,
+	.cmo-btn-danger,
+	.cmo-btn-secondary {
+		min-height: 44px;
+	}
+}
+
 @media print {
 	body * {
 		visibility: hidden;

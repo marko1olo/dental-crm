@@ -199,6 +199,7 @@ describe("VadEngine: Thresholds, States, and Silence Detection", () => {
 		assert.strictEqual(vad.getIsSpeaking(), true);
 		assert.strictEqual(vad.getState(), "speaking");
 		assert.ok(lastRmsDb >= -45.0, `RMS dB should be >= -45 (got ${lastRmsDb})`);
+		vad.stop();
 	});
 
 	it("detects silence > 1.5 sec and emits 'silence_pause' event with accumulated PCM", async () => {
@@ -247,6 +248,7 @@ describe("VadEngine: Thresholds, States, and Silence Detection", () => {
 		assert.ok(event.accumulatedPcm.length >= 1536, "Must accumulate all speech PCM");
 		assert.strictEqual(vad.getState(), "silence");
 		assert.ok(voiceEndDuration > 0, "Must record speech duration");
+		vad.stop();
 	});
 
 	it("exports valid 16kHz 16-bit Mono WAV Blob with 44-byte RIFF header", async () => {

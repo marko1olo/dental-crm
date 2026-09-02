@@ -43,7 +43,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(135deg, var(--accent, #6366f1), var(--teal, #0d9488));
+	background: linear-gradient(135deg, var(--primary), var(--teal, #0d9488));
 	color: #ffffff;
 	flex-shrink: 0;
 }
@@ -83,7 +83,7 @@
 }
 
 .curator-select-input:focus {
-	border-color: var(--accent, #6366f1);
+	border-color: var(--primary);
 	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
@@ -138,9 +138,23 @@
 	color: #059669;
 }
 
+[data-theme="dark"] .curator-badge-emerald,
+.dark .curator-badge-emerald {
+	background-color: rgba(16, 185, 129, 0.2);
+	color: #34d399;
+	border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
 .curator-badge-blue {
 	background-color: rgba(59, 130, 246, 0.12);
 	color: #2563eb;
+}
+
+[data-theme="dark"] .curator-badge-blue,
+.dark .curator-badge-blue {
+	background-color: rgba(59, 130, 246, 0.2);
+	color: #60a5fa;
+	border: 1px solid rgba(96, 165, 250, 0.3);
 }
 
 .curator-badge-purple {
@@ -148,9 +162,23 @@
 	color: #7c3aed;
 }
 
+[data-theme="dark"] .curator-badge-purple,
+.dark .curator-badge-purple {
+	background-color: rgba(139, 92, 246, 0.2);
+	color: #c084fc;
+	border: 1px solid rgba(192, 132, 252, 0.3);
+}
+
 .curator-badge-amber {
 	background-color: rgba(245, 158, 11, 0.12);
 	color: #d97706;
+}
+
+[data-theme="dark"] .curator-badge-amber,
+.dark .curator-badge-amber {
+	background-color: rgba(245, 158, 11, 0.2);
+	color: #fbbf24;
+	border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
 .curator-kpi-value {
@@ -197,6 +225,23 @@
 	position: relative;
 }
 
+@media (max-width: 640px) {
+	.curator-funnel-stages-row {
+		overflow-x: auto;
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 0.75rem;
+		scroll-snap-type: x mandatory;
+		padding-bottom: 8px;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.curator-funnel-stage-card {
+		flex: 0 0 200px;
+		scroll-snap-align: start;
+	}
+}
+
 .curator-funnel-stage-card {
 	display: flex;
 	flex-direction: column;
@@ -216,7 +261,7 @@
 }
 
 .curator-funnel-stage-card.active {
-	border-color: var(--accent, #6366f1);
+	border-color: var(--primary);
 	background-color: var(--paper-soft, #f1f5f9);
 }
 
@@ -340,9 +385,9 @@
 }
 
 .curator-pill-btn.active {
-	background-color: var(--accent, #6366f1);
+	background-color: var(--primary);
 	color: #ffffff;
-	border-color: var(--accent, #6366f1);
+	border-color: var(--primary);
 }
 
 /* Карточка пациента в очереди */
@@ -455,7 +500,7 @@
 }
 
 .curator-action-primary {
-	background-color: var(--accent, #6366f1);
+	background-color: var(--primary);
 	color: #ffffff;
 }
 
@@ -553,6 +598,6 @@
 }
 
 .curator-form-input:focus {
-	border-color: var(--accent, #6366f1);
+	border-color: var(--primary);
 	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }

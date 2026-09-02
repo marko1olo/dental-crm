@@ -370,9 +370,9 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 										fontWeight: 700,
 										padding: "2px 8px",
 										borderRadius: 4,
-										background: status === "applied" ? "#ecfdf5" : "#eff6ff",
-										color: status === "applied" ? "#047857" : "#1d4ed8",
-										border: `1px solid ${status === "applied" ? "#a7f3d0" : "#bfdbfe"}`,
+										background: status === "applied" ? "var(--ok-bg, #ecfdf5)" : "var(--info-bg, #eff6ff)",
+										color: status === "applied" ? "var(--ok-fg, #047857)" : "var(--info-fg, #1d4ed8)",
+										border: `1px solid ${status === "applied" ? "var(--ok-border, #a7f3d0)" : "var(--info-border, #bfdbfe)"}`,
 									}}
 								>
 									{status === "applied"
@@ -444,12 +444,12 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 						</div>
 						<div className="warehouse-kpi-sub">
 							{totals.surplusItemsCount > 0 && (
-								<span style={{ color: "#059669", fontWeight: 600 }}>
+								<span style={{ color: "var(--ok-fg, #059669)", fontWeight: 600 }}>
 									+{totals.surplusItemsCount} излишков
 								</span>
 							)}
 							{totals.shortageItemsCount > 0 && (
-								<span style={{ color: "#dc2626", fontWeight: 600, marginLeft: 4 }}>
+								<span style={{ color: "var(--bad-fg, #dc2626)", fontWeight: 600, marginLeft: 4 }}>
 									-{totals.shortageItemsCount} недостач
 								</span>
 							)}
@@ -499,7 +499,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 						<div
 							className="warehouse-kpi-value"
 							style={{
-								color: totals.expiredItemsCount > 0 ? "#dc2626" : "#059669",
+								color: totals.expiredItemsCount > 0 ? "var(--bad-fg, #dc2626)" : "var(--ok-fg, #059669)",
 								display: "flex",
 								alignItems: "center",
 								gap: 6,
@@ -819,9 +819,9 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 													fontWeight: 700,
 													color:
 														it.discrepancyType === "surplus"
-															? "#059669"
+															? "var(--ok-fg, #059669)"
 															: it.discrepancyType === "shortage"
-																? "#dc2626"
+																? "var(--bad-fg, #dc2626)"
 																: "var(--muted)",
 												}}
 											>
@@ -840,7 +840,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 				<footer className="warehouse-inventory-footer">
 					<div className="warehouse-inventory-footer-left">
 						{toastMessage && (
-							<div style={{ color: "#2563eb", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+							<div style={{ color: "var(--info-fg, #2563eb)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
 								<Check size={16} />
 								<span>{toastMessage}</span>
 							</div>

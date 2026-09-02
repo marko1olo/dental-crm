@@ -1,25 +1,92 @@
-import { and, eq, gte, lte, sql } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireClinicalReadAccess } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { payments } from "../../db/schema.js";
 import {
-	type Kopecks,
-	PAID_PAYMENT_STATUS,
-	rublesFromKopecks,
-	toKopecks,
-} from "../../money/patientDebt.js";
+	requireClinicalMutationAccess,
+	requireClinicalReadAccess,
+} from "../../accessGuard.js";
 import { requireOrganizationId } from "../../security/identity.js";
+import { NdflTaxService } from "../../services/documents/ndflTaxService.js";
+import { fnsTaxPayloadSchema } from "@dental/shared";
 
 const ndflQuerySchema = z.object({
-	patientId: z.string().uuid(),
-	startDate: z.string().datetime(),
-	endDate: z.string().datetime(),
+	patientId: z.string().uuid().optional(),
+	year: z.coerce.number().int().optional(),
+	startDate: z.string().optional(),
+	endDate: z.string().optional(),
 });
 
 export async function register(app: FastifyInstance) {
+	// 1. GET /api/v1/documents/tax-deduction/preview/:patientId (Feature #5)
+	const handlePreview = async (request: FastifyRequest, reply: FastifyReply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "document read")))
+			return;
+		const organizationId = requireOrganizationId(request, reply);
+		if (!organizationId) return;
+
+		const { patientId } = request.params as { patientId: string };
+		const queryParsed = ndflQuerySchema.safeParse(request.query);
+		const query = queryParsed.success ? queryParsed.data : {};
+
+		const options: {
+			taxYear?: number;
+			startDate?: string;
+			endDate?: string;
+		} = {};
+		if (query.year !== undefined) options.taxYear = query.year;
+		if (query.startDate !== undefined) options.startDate = query.startDate;
+		if (query.endDate !== undefined) options.endDate = query.endDate;
+
+		try {
+			const preview = await NdflTaxService.calculatePreview(
+				organizationId,
+				patientId,
+				options,
+			);
+			return reply.send(preview);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка расчета вычета";
+			return reply.code(400).send({
+				error: "NdflCalculationError",
+				message: msg,
+			});
+		}
+	};
+
+	app.get("/api/v1/documents/tax-deduction/preview/:patientId", handlePreview);
+	app.get("/api/documents/tax-deduction/preview/:patientId", handlePreview);
+
+	// 2. POST /api/v1/documents/tax-deduction/xml (Feature #33)
+	const handleGenerateXml = async (request: FastifyRequest, reply: FastifyReply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "document tax xml")))
+			return;
+		const organizationId = requireOrganizationId(request, reply);
+		if (!organizationId) return;
+
+		const parsed = fnsTaxPayloadSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "NdflXmlPayloadValidationError",
+				message: "Проверьте реквизиты справки НДФЛ",
+				issues: parsed.error.issues,
+			});
+		}
+
+		try {
+			const xmlResult = NdflTaxService.generateXml(parsed.data);
+			return reply.send(xmlResult);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка генерации XML ФНС";
+			return reply.code(500).send({
+				error: "NdflXmlGenerationError",
+				message: msg,
+			});
+		}
+	};
+
+	app.post("/api/v1/documents/tax-deduction/xml", handleGenerateXml);
+	app.post("/api/documents/tax-deduction/xml", handleGenerateXml);
+
+	// 3. Legacy GET /api/documents/ndfl-calculator (backward compatibility)
 	app.get("/api/documents/ndfl-calculator", async (request, reply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "document read")))
 			return;
@@ -27,73 +94,59 @@ export async function register(app: FastifyInstance) {
 		if (!organizationId) return;
 
 		const parsed = ndflQuerySchema.safeParse(request.query);
-		if (!parsed.success) {
+		if (!parsed.success || !parsed.data.patientId) {
 			return reply.code(400).send({
 				error: "NdflQueryValidationError",
-				message:
-					"Проверьте параметры запроса: требуется идентификатор пациента (UUID) и даты периода (ISO).",
+				message: "Проверьте параметры запроса: требуется идентификатор пациента (patientId).",
 			});
 		}
 		const query = parsed.data;
-		const start = new Date(query.startDate);
-		let end = new Date(query.endDate);
-		if (
-			end.getUTCHours() === 0 &&
-			end.getUTCMinutes() === 0 &&
-			end.getUTCSeconds() === 0
-		) {
-			end = new Date(end.getTime() + 86_399_999);
-		}
-
-		const patient = await getPatientByIdFromDb(organizationId, query.patientId);
-
-		if (!patient) {
-			return reply.status(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден в базе данных клиники.",
+		const targetPatientId = query.patientId;
+		if (!targetPatientId) {
+			return reply.code(400).send({
+				error: "NdflQueryValidationError",
+				message: "Проверьте параметры запроса: требуется идентификатор пациента (patientId).",
 			});
 		}
 
-		// balanceRub is negative if there is a debt on other plans/stages.
-		const debtRub = patient.balanceRub < 0 ? Math.abs(patient.balanceRub) : 0;
-		// Согласно ст. 219 НК РФ вычет предоставляется по фактически оплаченным расходам за налоговый период.
+		const options: {
+			taxYear?: number;
+			startDate?: string;
+			endDate?: string;
+		} = {};
+		if (query.year !== undefined) options.taxYear = query.year;
+		if (query.startDate !== undefined) options.startDate = query.startDate;
+		if (query.endDate !== undefined) options.endDate = query.endDate;
 
-		const taxSums = await db
-			.select({
-				taxDeductionCode: payments.taxDeductionCode,
-				totalAmountRub: sql<string>`sum(${payments.amountRub})`,
-			})
-			.from(payments)
-			.where(
-				and(
-					eq(payments.organizationId, organizationId),
-					eq(payments.patientId, query.patientId),
-					eq(payments.status, PAID_PAYMENT_STATUS),
-					gte(payments.paidAt, start),
-					lte(payments.paidAt, end),
-				),
-			)
-			.groupBy(payments.taxDeductionCode);
+		const orgId = organizationId as string;
+		const patientIdStr = targetPatientId as string;
 
-		let code1Kopecks: Kopecks = 0;
-		let code2Kopecks: Kopecks = 0;
+		try {
+			const preview = await NdflTaxService.calculatePreview(
+				orgId,
+				patientIdStr,
+				options,
+			);
 
-		for (const row of taxSums) {
-			if (!row.totalAmountRub) continue;
-			const kopecks = toKopecks(row.totalAmountRub, "сумма платежа");
-			if (row.taxDeductionCode === "2") {
-				code2Kopecks += kopecks;
-			} else {
-				// Стандартное лечение (Код 1) по умолчанию при отсутствии явного кода
-				code1Kopecks += kopecks;
-			}
+
+			return {
+				isBlocked: preview.isBlocked,
+				debtRub: preview.debtRub,
+				blockReason: preview.blockReason,
+				code1TotalRub: preview.code1TotalRub,
+				code2TotalRub: preview.code2TotalRub,
+				totalEligibleRub: preview.totalEligibleRub,
+				estimatedRefund13Rub: preview.estimatedRefund13Rub,
+				estimatedRefund15Rub: preview.estimatedRefund15Rub,
+				excludedNonMedicalGoodsRub: preview.excludedNonMedicalGoodsRub,
+				excludedDmsInsuranceRub: preview.excludedDmsInsuranceRub,
+			};
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка расчета вычета";
+			return reply.status(404).send({
+				error: "PatientNotFound",
+				message: msg,
+			});
 		}
-
-		return {
-			isBlocked: false,
-			debtRub: 0,
-			code1TotalRub: rublesFromKopecks(code1Kopecks),
-			code2TotalRub: rublesFromKopecks(code2Kopecks),
-		};
 	});
 }

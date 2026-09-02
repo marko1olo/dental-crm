@@ -50,4 +50,28 @@ export const speechProviders: SpeechProvider[] = [
 		setupSettingsCount: 1,
 		sourceUrl: "https://console.groq.com/docs/speech-to-text",
 	},
+	{
+		id: "gemini_transcribe_live",
+		title: "Gemini 3.5 Transcribe Live",
+		status: "needs_server_key",
+		mode: "server_streaming",
+		recommendedFor: [
+			"Диктовка у кресла в реальном времени",
+			"Стенографирование приёма с высокой плотностью",
+			"Потоковое распознавание со стоматологическим словарём",
+		],
+		strengths: [
+			"Двунаправленный WebSocket Bidi-стриминг без задержек",
+			"Встроенный стоматологический Speech Biasing словарь",
+			"Smart Transcription с фильтрацией запинок и нормализацией чисел",
+			"Zero-Downtime Key Pool Failover при исчерпании квот",
+		],
+		limits: [
+			"Требуется ключ Google AI / Gemini API",
+			"Потоковая передача аудио PCM 16kHz/24kHz Mono",
+		],
+		costNote: "Тарификация Google Generative AI Live API по объёму аудиопотока.",
+		setupSettingsCount: 2,
+		sourceUrl: "https://ai.google.dev/api/multimodal-live",
+	},
 ];

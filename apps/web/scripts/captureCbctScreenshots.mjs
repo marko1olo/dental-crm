@@ -134,7 +134,13 @@ async function run() {
 	}
 
 	try {
-		const browser = await chromium.launch({ headless: true });
+		const edgePath = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+		const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+		const executablePath = fs.existsSync(edgePath) ? edgePath : (fs.existsSync(chromePath) ? chromePath : undefined);
+		const browser = await chromium.launch({
+			headless: true,
+			...(executablePath ? { executablePath } : { channel: "msedge" }),
+		});
 
 		const viewports = [
 			{ name: "pc_dark_1440", width: 1440, height: 900, theme: "dark", isMobile: false },
@@ -151,7 +157,7 @@ async function run() {
 
 		await page.goto("http://127.0.0.1:5173/?standalone=clinical-modals-studio", {
 			waitUntil: "domcontentloaded",
-			timeout: 15000,
+			timeout: 60000,
 		});
 		await sleep(1000);
 

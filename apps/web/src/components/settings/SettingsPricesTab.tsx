@@ -806,7 +806,7 @@ export function SettingsPricesTab() {
 							>
 								<div
 									className="pricelist-section-icon"
-									style={{ background: "var(--success-color)", color: "#fff" }}
+									style={{ background: "var(--success-color)", color: "var(--on-teal, #ffffff)" }}
 								>
 									<CheckCircle2 size={24} />
 								</div>

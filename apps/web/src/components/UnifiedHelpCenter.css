@@ -112,13 +112,9 @@
 }
 
 .tab.active {
-	color: var(--teal-dark, #0f766e);
+	color: var(--teal);
 	font-weight: 600;
 	border-bottom-color: var(--teal);
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .tab.active {
-	color: var(--teal, #2dd4bf);
 }
 
 .help-content {
@@ -159,7 +155,7 @@
 
 .article-card p {
 	margin: 0;
-	color: var(--ink-2, var(--muted));
+	color: var(--muted);
 	font-size: 0.9rem;
 	line-height: 1.5;
 }
@@ -171,16 +167,12 @@
 }
 
 .tag {
-	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
-	color: var(--teal-dark, #0f766e);
-	border: 1px solid var(--teal-soft, rgba(13, 148, 136, 0.2));
+	background: var(--teal-surface);
+	color: var(--teal);
+	border: 1px solid var(--teal-soft);
 	padding: 2px 8px;
 	border-radius: 4px;
 	font-size: 0.8rem;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .tag {
-	color: var(--teal, #2dd4bf);
 }
 
 .hotkey-table {
@@ -328,7 +320,7 @@
 
 .tour-nav button {
 	background: var(--teal);
-	color: var(--on-teal, #ffffff);
+	color: var(--paper-strong);
 	border: none;
 	padding: 8px 16px;
 	min-height: 44px;

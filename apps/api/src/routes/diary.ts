@@ -728,14 +728,14 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				});
 				if (!resolvedPost.ok) {
 					throw new DiarySigningError(
-						// Pin* не в union DiarySigningFailureCode — используем NotSaved
-						// нельзя: это 500. Добавим PinInvalid в union ниже.
-						resolvedPost.code === "PinInvalid" ||
-							resolvedPost.code === "PinNotSet" ||
-							resolvedPost.code === "PinRequired" ||
-							resolvedPost.code === "UserRequired"
-							? "PinRejected"
-							: "NotFound",
+						resolvedPost.code === "PepDoctorForbidden"
+							? "PepDoctorForbidden"
+							: resolvedPost.code === "PinInvalid" ||
+								resolvedPost.code === "PinNotSet" ||
+								resolvedPost.code === "PinRequired" ||
+								resolvedPost.code === "UserRequired"
+								? "PinRejected"
+								: "NotFound",
 						resolvedPost.message,
 					);
 				}
@@ -778,6 +778,11 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					return reply
 						.code(400)
 						.send({ error: "TransactionFailed", message: err.message });
+				}
+				if (err.code === "PepDoctorForbidden") {
+					return reply
+						.code(422)
+						.send({ error: "PepDoctorForbidden", message: err.message });
 				}
 				if (err.code === "PinRejected") {
 					return reply
@@ -1127,7 +1132,9 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				diaryHashForMark: existing.diaryHash,
 			});
 			if (!resolvedLock.ok) {
-				return reply.code(403).send({
+				const statusCode =
+					resolvedLock.code === "PepDoctorForbidden" ? 422 : 403;
+				return reply.code(statusCode).send({
 					error: resolvedLock.code,
 					message: resolvedLock.message,
 				});
@@ -1200,7 +1207,8 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					err.code === "Icd10Required" ||
 					err.code === "Icd10Invalid" ||
 					err.code === "ToothRequired" ||
-					err.code === "ToothInvalid"
+					err.code === "ToothInvalid" ||
+					err.code === "PepDoctorForbidden"
 				) {
 					return reply
 						.code(422)

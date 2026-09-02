@@ -1171,7 +1171,7 @@ export function PaidMedicalContractModal({
 												</div>
 
 												{smsError && (
-													<div style={{ fontSize: "11px", color: "#dc2626", fontWeight: 600 }}>
+													<div style={{ fontSize: "11px", color: "var(--bad-fg)", fontWeight: 600 }}>
 														{smsError}
 													</div>
 												)}

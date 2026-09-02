@@ -619,12 +619,47 @@ export async function deactivateStaffMemberInDb(
 export async function updateStaffCredentialsInDb(
 	organizationId: string,
 	staffId: string,
-	updates: { email?: string; passwordHash?: string; pinCodeHash?: string },
+	updates: {
+		email?: string;
+		passwordHash?: string;
+		pinCodeHash?: string;
+		passwordEntropyBits?: number;
+	},
 ) {
 	if (useInMemory()) return;
+
+	// biome-ignore lint/suspicious/noExplicitAny: DB update payload
+	const userUpdates: any = { ...updates };
+	delete userUpdates.passwordEntropyBits;
+
+	if (updates.passwordEntropyBits !== undefined) {
+		const [user] = await db
+			.select({ uiPreferences: schema.users.uiPreferences })
+			.from(schema.users)
+			.where(
+				and(
+					eq(schema.users.id, staffId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		if (user) {
+			const existingUi = (user.uiPreferences as Record<string, unknown>) || {};
+			const existingHr = (existingUi.hrProfile as Record<string, unknown>) || {};
+			userUpdates.uiPreferences = {
+				...existingUi,
+				hrProfile: {
+					...existingHr,
+					passwordEntropyBits: updates.passwordEntropyBits,
+				},
+			};
+		}
+	}
+
 	await db
 		.update(schema.users)
-		.set(updates)
+		.set(userUpdates)
 		.where(
 			and(
 				eq(schema.users.id, staffId),

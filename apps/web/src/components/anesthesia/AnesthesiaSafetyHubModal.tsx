@@ -525,7 +525,7 @@ export function AnesthesiaSafetyHubModal({
 									</ul>
 									{vitalsEvaluation.recommendedActionRu && (
 										<div style={{ fontWeight: 700, marginTop: '0.25rem' }}>
-											💡 Рекомендация: {vitalsEvaluation.recommendedActionRu}
+											Рекомендация: {vitalsEvaluation.recommendedActionRu}
 										</div>
 									)}
 								</div>
@@ -868,12 +868,12 @@ export function AnesthesiaSafetyHubModal({
 
 												{isSulfiteDanger && (
 													<div className="drug-tile-warning">
-														⛔ Сульфиты (Астма / Аллергия)
+														Сульфиты (Астма / Аллергия)
 													</div>
 												)}
 												{isRestrictedForCardio && !isSulfiteDanger && (
 													<div className="drug-tile-warning">
-														⚠️ Лимит адреналина ≤ 0.04 мг
+														Лимит адреналина ≤ 0.04 мг
 													</div>
 												)}
 											</button>
@@ -1254,13 +1254,13 @@ export function AnesthesiaSafetyHubModal({
 
 													{step.drugDetail && (
 														<div className="step-drug-box">
-															💉 <strong>Дозировка:</strong> {step.drugDetail.standardAdultDoseRu} ({step.drugDetail.administrationRouteRu})
+															<strong>Дозировка:</strong> {step.drugDetail.standardAdultDoseRu} ({step.drugDetail.administrationRouteRu})
 														</div>
 													)}
 
 													{step.criticalWarningRu && (
 														<div className="step-warning-box">
-															⚠️ <strong>Внимание:</strong> {step.criticalWarningRu}
+															<strong>Внимание:</strong> {step.criticalWarningRu}
 														</div>
 													)}
 												</div>
@@ -1371,9 +1371,9 @@ export function AnesthesiaSafetyHubModal({
 					{activeTab === 'pku_disposal' && (
 						<div className="hub-tab-content">
 							<div className="hub-card" style={{ padding: '0.875rem 1rem', marginBottom: '1rem' }}>
-								<div className="card-section-title" style={{ color: '#0284c7', marginBottom: '0.75rem' }}>
-									<Trash2 size={16} />
-									<span>Параметры утилизации медицинских отходов Класса Б (СанПиН 3.3686-21)</span>
+								<div className="card-section-title" style={{ color: 'var(--teal)', marginBottom: '0.75rem' }}>
+									<FileText size={16} />
+									<span>Протокол списания карпул (СанПиН 3.3686-21)</span>
 								</div>
 
 								<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -1501,8 +1501,8 @@ export function AnesthesiaSafetyHubModal({
 							) : (
 								<div
 									style={{
-										background: '#ffffff',
-										border: '1px solid #cbd5e1',
+										background: 'var(--paper-strong)',
+										border: '1px solid var(--line)',
 										borderRadius: '8px',
 										padding: '1rem',
 										overflowX: 'auto'
@@ -1531,7 +1531,7 @@ export function AnesthesiaSafetyHubModal({
 										onClose();
 									}}
 									className="anesthesia-btn anesthesia-btn-primary"
-									style={{ minHeight: '36px', background: '#0284c7', borderColor: '#0284c7' }}
+									style={{ minHeight: '36px', background: 'var(--teal)', borderColor: 'var(--teal)', color: 'var(--on-teal, #fff)' }}
 								>
 									<CheckCircle2 size={16} />
 									Зафиксировать списание в ПКУ и карте 043/у

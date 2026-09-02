@@ -304,7 +304,7 @@ export const PatientPortalTimelineModal: React.FC<PatientPortalTimelineModalProp
 							<div
 								style={{
 									background: selectedToothInfo.statusInfo.colorHex,
-									color: "#ffffff",
+									color: "var(--on-teal, #ffffff)",
 									padding: "6px 12px",
 									borderRadius: "20px",
 									fontSize: "0.75rem",
@@ -520,7 +520,7 @@ export const PatientPortalTimelineModal: React.FC<PatientPortalTimelineModalProp
 								className="pt-close-btn"
 								style={{
 									background: "var(--pt-primary)",
-									color: "#ffffff",
+									color: "var(--on-teal, #ffffff)",
 									padding: "8px 14px",
 									fontSize: "0.8125rem",
 									fontWeight: 700,

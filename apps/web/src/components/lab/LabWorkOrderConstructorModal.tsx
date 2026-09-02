@@ -342,15 +342,15 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 	const handleSendToChat = useCallback(() => {
 		const teethStr = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "Не указаны";
 		const textSummary =
-			`📋 *ЗАКАЗ-НАРЯД ${assembledOrder.orderNumberRu}*\n` +
-			`👤 Пациент: ${patientName}\n` +
-			`👨‍⚕️ Врач: ${doctorName}\n` +
-			`🦷 Зубы (FDI): ${teethStr}\n` +
-			`💎 Конструкция: ${activeConstruction.title}\n` +
-			`🎨 Цвет: ${selectedShade} (Культя: ${selectedStumpShade || "—"})\n` +
-			`🔩 Абатмент/Имплант: ${selectedAbutmentType} (${selectedImplantSystem})\n` +
-			`📁 3D STL сканы: ${scans.length} файла(ов)\n` +
-			`📝 Примечание: ${specialInstructions}`;
+			`ЗАКАЗ-НАРЯД ${assembledOrder.orderNumberRu}\n` +
+			`Пациент: ${patientName}\n` +
+			`Врач: ${doctorName}\n` +
+			`Зубы (FDI): ${teethStr}\n` +
+			`Конструкция: ${activeConstruction.title}\n` +
+			`Цвет: ${selectedShade} (Культя: ${selectedStumpShade || "—"})\n` +
+			`Абатмент/Имплант: ${selectedAbutmentType} (${selectedImplantSystem})\n` +
+			`3D STL сканы: ${scans.length} файла(ов)\n` +
+			`Примечание: ${specialInstructions}`;
 
 		if (onSendToChat) {
 			onSendToChat(assembledOrder, textSummary);

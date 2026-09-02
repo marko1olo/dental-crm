@@ -239,8 +239,9 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 				onClick={() => handleToothClick(tooth)}
 				data-testid={`tooth-btn-${tooth.fdiCode}`}
 				style={{
-					minWidth: "36px",
-					width: "36px",
+					minWidth: "44px",
+					minHeight: "44px",
+					width: "44px",
 					height: "48px",
 					borderRadius: "6px",
 					border: `2px solid ${isSelected ? "var(--pc-primary, #0d9488)" : color.border}`,
@@ -297,7 +298,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 							<ShieldCheck size={20} style={{ color: "var(--pc-primary, #0d9488)", flexShrink: 0 }} />
 							<div>
-								<strong style={{ fontSize: "15px", color: "var(--pc-text-main, #f8fafc)" }}>
+								<strong style={{ fontSize: "15px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 									Интерактивный индекс здоровья зубов
 								</strong>
 								<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
@@ -342,7 +343,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 							gap: "8px",
 						}}
 					>
-						<span style={{ color: "var(--pc-text-main, #f8fafc)" }}>
+						<span style={{ color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 							{healthIndex.formattedIndexRu}
 							{healthIndex.inTreatmentCount > 0 ? ` • В процессе ${healthIndex.inTreatmentCount}` : ""}
 						</span>
@@ -394,7 +395,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 						borderRadius: "8px",
 						border: statusFilter === "all" ? "1.5px solid var(--pc-primary, #0d9488)" : "1px solid var(--pc-border, #334155)",
 						backgroundColor: statusFilter === "all" ? "var(--pc-primary-light, rgba(13, 148, 136, 0.15))" : "transparent",
-						color: "var(--pc-text-main, #f8fafc)",
+						color: "var(--pc-text-main, var(--ink, #0f172a))",
 						fontSize: "12px",
 						fontWeight: statusFilter === "all" ? 700 : 500,
 						cursor: "pointer",
@@ -523,26 +524,26 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 				}}
 			>
 				{/* Upper Arch */}
-				<div style={{ minWidth: "640px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+				<div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
 					<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "center", marginBottom: "6px" }}>
 						ВЕРХНЯЯ ЧЕЛЮСТЬ (ПРАВО ↔ ЛЕВО)
 					</div>
-					<div style={{ display: "flex", justifyContent: "center", gap: "4px" }}>
-						<div style={{ display: "flex", gap: "3px" }}>{upperRight.map(renderToothButton)}</div>
+					<div style={{ display: "flex", justifyContent: "center", gap: "4px", flexWrap: "wrap", maxWidth: "100%" }}>
+						<div style={{ display: "flex", gap: "3px", flexWrap: "nowrap" }}>{upperRight.map(renderToothButton)}</div>
 						<div style={{ width: "8px" }} />
-						<div style={{ display: "flex", gap: "3px" }}>{upperLeft.map(renderToothButton)}</div>
+						<div style={{ display: "flex", gap: "3px", flexWrap: "nowrap" }}>{upperLeft.map(renderToothButton)}</div>
 					</div>
 				</div>
 
 				{/* Divider */}
-				<div style={{ height: "1px", backgroundColor: "var(--pc-border, #334155)", margin: "4px 0", minWidth: "640px" }} />
+				<div style={{ height: "1px", backgroundColor: "var(--pc-border, #334155)", margin: "4px 0", width: "100%" }} />
 
 				{/* Lower Arch */}
-				<div style={{ minWidth: "640px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-					<div style={{ display: "flex", justifyContent: "center", gap: "4px" }}>
-						<div style={{ display: "flex", gap: "3px" }}>{lowerRight.map(renderToothButton)}</div>
+				<div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+					<div style={{ display: "flex", justifyContent: "center", gap: "4px", flexWrap: "wrap", maxWidth: "100%" }}>
+						<div style={{ display: "flex", gap: "3px", flexWrap: "nowrap" }}>{lowerRight.map(renderToothButton)}</div>
 						<div style={{ width: "8px" }} />
-						<div style={{ display: "flex", gap: "3px" }}>{lowerLeft.map(renderToothButton)}</div>
+						<div style={{ display: "flex", gap: "3px", flexWrap: "nowrap" }}>{lowerLeft.map(renderToothButton)}</div>
 					</div>
 					<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "center", marginTop: "6px" }}>
 						НИЖНЯЯ ЧЕЛЮСТЬ (ПРАВО ↔ ЛЕВО)
@@ -569,7 +570,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 							<strong style={{ fontSize: "14px", color: "var(--pc-primary, #0d9488)" }}>
 								{selectedTooth.humanNameRu} (№{selectedTooth.fdiCode})
 							</strong>
-							<div style={{ fontSize: "13px", marginTop: "2px", color: "var(--pc-text-main, #f8fafc)" }}>
+							<div style={{ fontSize: "13px", marginTop: "2px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 								<strong>Текущее состояние:</strong> {selectedTooth.clinicalStateRu}
 							</div>
 						</div>

@@ -1,10 +1,15 @@
 import {
 	AlertTriangle,
+	Bone,
 	Bot,
 	CheckCircle2,
 	ChevronDown,
+	Compass,
+	FileText,
 	History,
 	Loader2,
+	MapPin,
+	Pin,
 	Printer,
 	ScanLine,
 	Sparkles,
@@ -12,6 +17,7 @@ import {
 	UploadCloud,
 	Volume2,
 	VolumeX,
+	Wrench,
 	X,
 	ZoomIn,
 } from "lucide-react";
@@ -118,24 +124,36 @@ function renderMarkdown(text: string): string {
 
 // ─── Заголовки отчёта (кликабельные секции) ───────────────────────────────────
 
-const REPORT_SECTIONS = [
-	{ key: "топограф", label: "Топография", icon: "📍" },
-	{ key: "существующ", label: "Лечение", icon: "🔧" },
-	{ key: "патолог", label: "Патологии", icon: "⚠️" },
-	{ key: "анатомическ", label: "Анатомия", icon: "🦴" },
-	{ key: "заключени", label: "Заключение", icon: "📋" },
+const REPORT_SECTIONS: readonly {
+	key: string;
+	label: string;
+	icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
+}[] = [
+	{ key: "топограф", label: "Топография", icon: MapPin },
+	{ key: "существующ", label: "Лечение", icon: Wrench },
+	{ key: "патолог", label: "Патологии", icon: AlertTriangle },
+	{ key: "анатомическ", label: "Анатомия", icon: Bone },
+	{ key: "заключени", label: "Заключение", icon: FileText },
 ];
 
 function parseReportSections(
 	report: string,
-): Array<{ title: string; content: string; icon: string }> {
+): Array<{
+	title: string;
+	content: string;
+	icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
+}> {
 	if (!report) return [];
-	const sections: Array<{ title: string; content: string; icon: string }> = [];
+	const sections: Array<{
+		title: string;
+		content: string;
+		icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
+	}> = [];
 	const lines = report.split("\n");
 	let currentSection: {
 		title: string;
 		content: string[];
-		icon: string;
+		icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
 	} | null = null;
 
 	for (const line of lines) {
@@ -152,7 +170,7 @@ function parseReportSections(
 			const found = REPORT_SECTIONS.find((s) => headingText.includes(s.key));
 			currentSection = {
 				title: isBoldHeading[1] || "",
-				icon: found?.icon || "📌",
+				icon: found?.icon || Pin,
 				content: [line.replace(/^\*\*(.+?):\*\*/, "").trim()],
 			};
 		} else if (currentSection) {
@@ -169,7 +187,7 @@ function parseReportSections(
 
 	// Fallback if markdown has no **...: headers — just show raw
 	if (!sections.length) {
-		sections.push({ title: "Отчёт", icon: "📋", content: report });
+		sections.push({ title: "Отчёт", icon: FileText, content: report });
 	}
 
 	return sections;
@@ -1824,7 +1842,7 @@ export function VisiographAnalyzer() {
 													transition: "background 0.15s",
 												}}
 											>
-												<span style={{ fontSize: "1rem" }}>{section.icon}</span>
+												<section.icon size={16} style={{ color: "var(--teal)", flexShrink: 0 }} aria-hidden="true" />
 												<span
 													style={{
 														fontWeight: 600,

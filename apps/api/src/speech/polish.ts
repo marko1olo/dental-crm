@@ -114,13 +114,13 @@ function modelForProvider(provider: SpeechPolishProvider): string | null {
 		return (
 			process.env.DENTAL_SPEECH_POLISH_GEMINI_MODEL?.trim() ||
 			process.env.DENTAL_SPEECH_POLISH_MODEL?.trim() ||
-			"gemini-2.5-flash"
+			"gemini-3.5-flash-lite"
 		);
 	}
 	if (provider === "groq") {
 		return (
 			process.env.DENTAL_SPEECH_POLISH_GROQ_MODEL?.trim() ||
-			"llama-3.3-70b-versatile"
+			"qwen/qwen3.8-27b"
 		);
 	}
 	if (provider === "openai") {

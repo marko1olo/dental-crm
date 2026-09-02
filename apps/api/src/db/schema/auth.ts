@@ -103,6 +103,7 @@ export const users = pgTable(
 		role: text("role").notNull(),
 		phone: text("phone"),
 		email: text("email"),
+		snils: text("snils"),
 		passwordHash: text("password_hash"),
 		pinCodeHash: text("pin_code_hash"),
 		isActive: boolean("is_active").notNull().default(true),

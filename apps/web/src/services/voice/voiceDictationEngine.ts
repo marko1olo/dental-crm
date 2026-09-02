@@ -1,10 +1,15 @@
 /**
  * voiceDictationEngine.ts — Движок непрерывного распознавания речи для врача за креслом.
- * Поддерживает SpeechRecognition Web Speech API, AnalyserNode (VU-Meter),
- * глобальные хоткеи (Space, Ctrl+Space) и стриминг парсинга в DentalVoiceIntent.
+ * Поддерживает UnifiedAudioClient (Gemini Live / Server Whisper / Web Speech fallback),
+ * шумоподавление бормашины AudioStreamManager (4000Hz notch), VU-Meter и
+ * стриминг парсинга в DentalVoiceIntent для Одонтограммы FDI и 043/у.
  */
 
 import { parseDentalVoiceSpeech, type DentalVoiceIntent } from "./dentalGrammarParser";
+import {
+	UnifiedAudioClient,
+	type UnifiedAudioMode,
+} from "./UnifiedAudioClient";
 import { showToast } from "../../components/GlobalToast";
 
 export interface VoiceEngineListener {
@@ -19,12 +24,8 @@ export class VoiceDictationEngine {
 	private isListening = false;
 	private interimTranscript = "";
 	private finalTranscript = "";
-	private mediaStream: MediaStream | null = null;
-	private audioContext: AudioContext | null = null;
-	private analyser: AnalyserNode | null = null;
-	private animFrameId: number | null = null;
-	// biome-ignore lint/suspicious/noExplicitAny: Browser SpeechRecognition API
-	private recognition: any = null;
+	private client: UnifiedAudioClient | null = null;
+	private unsubscribeClient: (() => void) | null = null;
 	private listeners: Set<VoiceEngineListener> = new Set();
 	private parseDebounceTimer: NodeJS.Timeout | null = null;
 
@@ -41,97 +42,68 @@ export class VoiceDictationEngine {
 		return { interim: this.interimTranscript, final: this.finalTranscript };
 	}
 
-	public async start(): Promise<boolean> {
-		if (this.isListening) return true;
-
-		// 1. Инициализация Web Speech API
-		// biome-ignore lint/suspicious/noExplicitAny: SpeechRecognition window check
-		const SpeechRec =
-			(window as any).SpeechRecognition ||
-			(window as any).webkitSpeechRecognition;
-
-		if (!SpeechRec) {
-			const err = "Распознавание речи не поддерживается в этом браузере. Используйте Chrome, Edge или Яндекс.Браузер.";
-			this.emitError(err);
-			showToast(err, "error");
-			return false;
-		}
+	public async start(preferredMode: UnifiedAudioMode = "gemini_live"): Promise<boolean> {
+		if (this.isListening && this.client) return true;
 
 		try {
-			// 2. Инициализация AudioContext для живого VU-Meter
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-			this.mediaStream = stream;
+			this.stop();
 
-			// biome-ignore lint/suspicious/noExplicitAny: AudioContext fallback
-			const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-			if (AudioCtx) {
-				const ctx = new AudioCtx();
-				this.audioContext = ctx;
-				const source = ctx.createMediaStreamSource(stream);
-				const analyser = ctx.createAnalyser();
-				analyser.fftSize = 64;
-				source.connect(analyser);
-				this.analyser = analyser;
-				this.startVolumeLoop();
-			}
+			const client = new UnifiedAudioClient({
+				preferredMode,
+				specialty: "therapy",
+				autoFallback: true,
+			});
+			this.client = client;
 
-			const rec = new SpeechRec();
-			this.recognition = rec;
-			rec.lang = "ru-RU";
-			rec.continuous = true;
-			rec.interimResults = true;
-
-			// biome-ignore lint/suspicious/noExplicitAny: SpeechRecognition event
-			rec.onresult = (event: any) => {
-				let interim = "";
-				let final = "";
-
-				for (let i = 0; i < event.results.length; i++) {
-					const item = event.results[i];
-					if (item.isFinal) {
-						final += item[0].transcript + " ";
-					} else {
-						interim += item[0].transcript;
+			this.unsubscribeClient = client.subscribe({
+				onStateChange: (state) => {
+					const listening = state === "listening" || state === "connecting";
+					this.isListening = listening;
+					this.emitListening(listening);
+				},
+				onInterimText: (interim) => {
+					this.interimTranscript = interim;
+					const fullText = (this.finalTranscript + " " + interim).trim();
+					for (const l of this.listeners) {
+						l.onTranscriptChange?.(this.interimTranscript, this.finalTranscript);
 					}
-				}
-
-				this.interimTranscript = interim.trim();
-				this.finalTranscript = final.trim();
-
-				const fullText = (this.finalTranscript + " " + this.interimTranscript).trim();
-
-				for (const l of this.listeners) {
-					l.onTranscriptChange?.(this.interimTranscript, this.finalTranscript);
-				}
-
-				this.debounceParse(fullText);
-			};
-
-			// biome-ignore lint/suspicious/noExplicitAny: error event
-			rec.onerror = (e: any) => {
-				if (e.error !== "no-speech") {
-					this.emitError(`Ошибка микрофона: ${e.error}`);
-				}
-			};
-
-			rec.onend = () => {
-				if (this.isListening) {
-					// Автоматический рестарт при обрыве тишины
-					try {
-						rec.start();
-					} catch {
-						this.stop();
+					this.debounceParse(fullText);
+				},
+				onFinalText: (final, accumulated) => {
+					this.finalTranscript = accumulated || final;
+					for (const l of this.listeners) {
+						l.onTranscriptChange?.(this.interimTranscript, this.finalTranscript);
 					}
-				}
-			};
+					this.debounceParse(this.finalTranscript);
+				},
+				onTwoLayerTranscript: (data) => {
+					this.finalTranscript = data.finalized;
+					this.interimTranscript = data.interim;
+					for (const l of this.listeners) {
+						l.onTranscriptChange?.(this.interimTranscript, this.finalTranscript);
+					}
+					this.debounceParse(data.fullWithInterim || data.finalized);
+				},
+				onRmsUpdate: (rms) => {
+					this.emitVolume(Math.min(100, Math.round(rms * 250)));
+				},
+				onError: (err) => {
+					const msg = typeof err === "string" ? err : err.message;
+					this.emitError(msg);
+				},
+			});
 
-			rec.start();
+			await client.start();
 			this.isListening = true;
 			this.emitListening(true);
 			return true;
-		} catch (err: any) {
-			const msg = err.message || "Не удалось получить доступ к микрофону";
+		} catch (err: unknown) {
+			const msg =
+				err instanceof Error
+					? err.message
+					: "Не удалось получить доступ к микрофону";
 			this.emitError(msg);
+			showToast(msg, "error");
 			this.stop();
 			return false;
 		}
@@ -143,31 +115,13 @@ export class VoiceDictationEngine {
 			clearTimeout(this.parseDebounceTimer);
 			this.parseDebounceTimer = null;
 		}
-		if (this.animFrameId) {
-			cancelAnimationFrame(this.animFrameId);
-			this.animFrameId = null;
+		if (this.unsubscribeClient) {
+			this.unsubscribeClient();
+			this.unsubscribeClient = null;
 		}
-		if (this.recognition) {
-			try {
-				this.recognition.stop();
-			} catch {
-				// ignore
-			}
-			this.recognition = null;
-		}
-		if (this.mediaStream) {
-			for (const track of this.mediaStream.getTracks()) {
-				track.stop();
-			}
-			this.mediaStream = null;
-		}
-		if (this.audioContext) {
-			try {
-				void this.audioContext.close();
-			} catch {
-				// ignore
-			}
-			this.audioContext = null;
+		if (this.client) {
+			this.client.dispose();
+			this.client = null;
 		}
 		this.emitListening(false);
 		this.emitVolume(0);
@@ -184,6 +138,9 @@ export class VoiceDictationEngine {
 	public clear(): void {
 		this.interimTranscript = "";
 		this.finalTranscript = "";
+		if (this.client) {
+			this.client.clearTranscript();
+		}
 		for (const l of this.listeners) {
 			l.onTranscriptChange?.("", "");
 		}
@@ -194,31 +151,12 @@ export class VoiceDictationEngine {
 			clearTimeout(this.parseDebounceTimer);
 		}
 		this.parseDebounceTimer = setTimeout(() => {
-			if (!text) return;
-			const intent = parseDentalVoiceSpeech(text);
+			if (!text.trim()) return;
+			const intent = parseDentalVoiceSpeech(text.trim());
 			for (const l of this.listeners) {
 				l.onIntentParsed?.(intent);
 			}
-		}, 200);
-	}
-
-	private startVolumeLoop(): void {
-		const loop = () => {
-			if (!this.isListening || !this.analyser) {
-				this.emitVolume(0);
-				return;
-			}
-			const data = new Uint8Array(this.analyser.frequencyBinCount);
-			this.analyser.getByteFrequencyData(data);
-			let sum = 0;
-			for (let i = 0; i < data.length; i++) {
-				sum += data[i] || 0;
-			}
-			const avg = sum / (data.length || 1);
-			this.emitVolume(avg);
-			this.animFrameId = requestAnimationFrame(loop);
-		};
-		this.animFrameId = requestAnimationFrame(loop);
+		}, 180);
 	}
 
 	private emitListening(isL: boolean): void {

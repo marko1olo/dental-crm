@@ -48,15 +48,25 @@ export interface Usage {
 	readonly outputTokens: number;
 }
 
+export interface ThoughtDelta {
+	readonly type: "thought_delta";
+	readonly text: string;
+}
+
 export interface Done {
 	readonly type: "done";
 	readonly stopReason: string;
 }
 
-export type LLMStreamEvent = TextDelta | ToolUse | Usage | Done;
+export type LLMStreamEvent = TextDelta | ThoughtDelta | ToolUse | Usage | Done;
 
 export interface TokenEvent {
 	readonly type: "token";
+	readonly text: string;
+}
+
+export interface ThoughtEvent {
+	readonly type: "thought";
 	readonly text: string;
 }
 
@@ -99,6 +109,7 @@ export interface BudgetExceededEvent {
 
 export type TurnEvent =
 	| TokenEvent
+	| ThoughtEvent
 	| ToolCallStartedEvent
 	| ToolCallFinishedEvent
 	| ConfirmationRequiredEvent

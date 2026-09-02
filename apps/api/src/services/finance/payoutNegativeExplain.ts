@@ -102,8 +102,8 @@ export const SUPERSEDED_METHOD_SENTENCE =
 	"Начислено процентом от кассы, затем удержана доля себестоимости материалов и лаборатории (ЗТЛ).";
 
 /** Копейки: округление половины вверх, как в бухгалтерии. */
-function roundMoney(value: Decimal): number {
-	return value.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
+function roundMoney(value: Decimal | number | string): number {
+	return new Decimal(value).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
 }
 
 /**
@@ -117,7 +117,15 @@ function roundMoney(value: Decimal): number {
  */
 function moneyRub(valueRub: number): string {
 	const safe = Number.isFinite(valueRub) ? valueRub : 0;
-	const fractionDigits = Math.round(safe * 100) % 100 === 0 ? 0 : 2;
+	const safeDec = new Decimal(safe);
+	const fractionDigits = safeDec
+		.abs()
+		.times(100)
+		.toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
+		.mod(100)
+		.isZero()
+		? 0
+		: 2;
 	return `${safe.toLocaleString("ru-RU", {
 		minimumFractionDigits: fractionDigits,
 		maximumFractionDigits: fractionDigits,
@@ -257,16 +265,18 @@ export function negativeRowExplanation(row: DoctorPayoutRow): string | null {
 	) {
 		const breakEvenRub = roundMoney(
 			new Decimal(row.revenueRub)
-				.times(row.commissionPct)
-				.div(row.materialDeductionPct),
+				.times(new Decimal(row.commissionPct))
+				.div(new Decimal(row.materialDeductionPct)),
 		);
 		const breakEvenSharePct = new Decimal(row.commissionPct)
-			.div(row.materialDeductionPct)
+			.div(new Decimal(row.materialDeductionPct))
 			.times(100)
+			.toDecimalPlaces(4, Decimal.ROUND_HALF_UP)
 			.toNumber();
 		const actualSharePct = new Decimal(row.materialCostRub)
-			.div(row.revenueRub)
+			.div(new Decimal(row.revenueRub))
 			.times(100)
+			.toDecimalPlaces(4, Decimal.ROUND_HALF_UP)
 			.toNumber();
 		parts.push(
 			`Порог: при ставке ${percentText(row.commissionPct)} и удержании ${percentText(

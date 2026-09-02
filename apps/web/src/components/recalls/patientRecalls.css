@@ -20,31 +20,31 @@
 }
 
 .recall-manager-container {
-	--rm-bg: var(--paper, #ffffff);
-	--rm-surface: var(--paper-strong, #f8fafc);
-	--rm-surface-hover: var(--paper-soft, #f1f5f9);
-	--rm-border: var(--line, #e2e8f0);
-	--rm-border-focus: var(--brand-500, #0d9488);
-	--rm-text-main: var(--ink, #0f172a);
-	--rm-text-muted: var(--muted, #64748b);
-	--rm-text-subtle: var(--muted, #94a3b8);
-	--rm-primary: var(--brand-500, #0d9488);
-	--rm-primary-hover: var(--brand-600, #0f766e);
-	--rm-primary-light: var(--paper-soft, rgba(13, 148, 136, 0.12));
-	--rm-success: var(--ok-fg, #16a34a);
-	--rm-success-light: var(--ok-bg, rgba(22, 163, 74, 0.12));
-	--rm-warning: var(--warn-fg, #d97706);
-	--rm-warning-light: var(--warn-bg, rgba(217, 119, 6, 0.12));
-	--rm-danger: var(--bad-fg, #dc2626);
-	--rm-danger-light: var(--bad-bg, rgba(220, 38, 38, 0.12));
-	--rm-info: var(--brand-500, #0284c7);
-	--rm-info-light: var(--paper-soft, rgba(2, 132, 199, 0.12));
-	--rm-accent: var(--brand-500, #7c3aed);
-	--rm-accent-light: var(--paper-soft, rgba(124, 58, 237, 0.12));
+	--rm-bg: var(--paper);
+	--rm-surface: var(--paper-strong);
+	--rm-surface-hover: var(--paper-soft);
+	--rm-border: var(--line);
+	--rm-border-focus: var(--teal);
+	--rm-text-main: var(--ink);
+	--rm-text-muted: var(--muted);
+	--rm-text-subtle: var(--muted);
+	--rm-primary: var(--teal);
+	--rm-primary-hover: var(--teal-dark);
+	--rm-primary-light: var(--teal-surface);
+	--rm-success: var(--ok-fg);
+	--rm-success-light: var(--ok-bg);
+	--rm-warning: var(--warn-fg);
+	--rm-warning-light: var(--warn-bg);
+	--rm-danger: var(--bad-fg);
+	--rm-danger-light: var(--bad-bg);
+	--rm-info: var(--info-fg);
+	--rm-info-light: var(--info-bg);
+	--rm-accent: var(--teal);
+	--rm-accent-light: var(--teal-surface);
 	--rm-radius-lg: 14px;
 	--rm-radius-md: 10px;
 	--rm-radius-sm: 6px;
-	--rm-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	--rm-shadow: var(--shadow-3);
 
 	background: var(--rm-bg);
 	color: var(--rm-text-main);
@@ -59,53 +59,6 @@
 	overflow: hidden;
 	box-sizing: border-box;
 	font-family: inherit;
-}
-
-/* Multi-Theme Overrides */
-[data-theme="dark"] .recall-manager-container,
-.dark .recall-manager-container {
-	--rm-bg: #0f172a;
-	--rm-surface: #1e293b;
-	--rm-surface-hover: #334155;
-	--rm-border: #334155;
-	--rm-text-main: #f8fafc;
-	--rm-text-muted: #94a3b8;
-	--rm-text-subtle: #64748b;
-	--rm-primary: #2dd4bf;
-	--rm-primary-hover: #14b8a6;
-	--rm-primary-light: rgba(45, 212, 191, 0.15);
-	--rm-success-light: rgba(74, 222, 128, 0.15);
-	--rm-warning-light: rgba(251, 191, 36, 0.15);
-	--rm-danger-light: rgba(248, 113, 113, 0.15);
-	--rm-info-light: rgba(56, 189, 248, 0.15);
-	--rm-accent-light: rgba(167, 139, 250, 0.15);
-}
-
-[data-theme="night"] .recall-manager-container,
-[data-theme="oled"] .recall-manager-container {
-	--rm-bg: #000000;
-	--rm-surface: #121215;
-	--rm-surface-hover: #27272a;
-	--rm-border: #27272a;
-	--rm-text-main: #ffffff;
-	--rm-text-muted: #a1a1aa;
-	--rm-text-subtle: #71717a;
-	--rm-primary: #2dd4bf;
-	--rm-primary-hover: #5eead4;
-	--rm-primary-light: rgba(45, 212, 191, 0.2);
-}
-
-[data-theme="calm_teal"] .recall-manager-container,
-[data-theme="calm-teal"] .recall-manager-container {
-	--rm-bg: #ffffff;
-	--rm-surface: #f0fdfa;
-	--rm-surface-hover: #ccfbf1;
-	--rm-border: #99f6e4;
-	--rm-text-main: #134e4a;
-	--rm-text-muted: #0f766e;
-	--rm-text-subtle: #14b8a6;
-	--rm-primary: #0f766e;
-	--rm-primary-hover: #115e59;
 }
 
 /* Header */
@@ -185,7 +138,7 @@
 
 .recall-tab-btn.active {
 	background: var(--rm-primary);
-	color: #ffffff;
+	color: var(--paper-strong);
 	font-weight: 700;
 }
 
@@ -380,7 +333,7 @@
 .recall-chip.active {
 	background: var(--rm-primary);
 	border-color: var(--rm-primary);
-	color: #ffffff;
+	color: var(--paper-strong);
 	font-weight: 700;
 }
 
@@ -393,7 +346,7 @@
 
 .recall-chip.active .recall-chip-badge {
 	background: rgba(255, 255, 255, 0.25);
-	color: #ffffff;
+	color: var(--paper-strong);
 }
 
 /* Content Area */
@@ -473,52 +426,28 @@
 }
 
 .recall-badge--upcoming {
-	background: rgba(37, 99, 235, 0.15);
-	color: #2563eb;
-	border: 1px solid rgba(37, 99, 235, 0.35);
+	background: var(--info-bg);
+	color: var(--info-fg);
+	border: 1px solid var(--info-fg);
 }
 
 .recall-badge--due_now {
-	background: rgba(225, 29, 72, 0.15);
-	color: #e11d48;
-	border: 1px solid rgba(225, 29, 72, 0.35);
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border: 1px solid var(--bad-fg);
 }
 
 .recall-badge--overdue_30 {
-	background: rgba(234, 88, 12, 0.15);
-	color: #ea580c;
-	border: 1px solid rgba(234, 88, 12, 0.35);
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border: 1px solid var(--warn-fg);
 }
 
 .recall-badge--overdue_90 {
-	background: rgba(225, 29, 72, 0.22);
-	color: #be123c;
-	border: 1px solid rgba(225, 29, 72, 0.45);
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border: 1px solid var(--bad-fg);
 	font-weight: 800;
-}
-
-[data-theme="dark"] .recall-badge--upcoming {
-	background: rgba(59, 130, 246, 0.2);
-	color: #93c5fd;
-	border-color: rgba(59, 130, 246, 0.45);
-}
-
-[data-theme="dark"] .recall-badge--due_now {
-	background: rgba(244, 63, 94, 0.2);
-	color: #fda4af;
-	border-color: rgba(244, 63, 94, 0.45);
-}
-
-[data-theme="dark"] .recall-badge--overdue_30 {
-	background: rgba(249, 115, 22, 0.2);
-	color: #fdba74;
-	border-color: rgba(249, 115, 22, 0.45);
-}
-
-[data-theme="dark"] .recall-badge--overdue_90 {
-	background: rgba(244, 63, 94, 0.25);
-	color: #fecdd3;
-	border-color: rgba(244, 63, 94, 0.6);
 }
 
 .recall-badge--completed {
@@ -573,25 +502,25 @@
 }
 
 .recall-action-btn--whatsapp {
-	color: #15803d;
-	background: rgba(34, 197, 94, 0.1);
-	border-color: rgba(34, 197, 94, 0.3);
+	color: var(--ok-fg);
+	background: var(--ok-bg);
+	border-color: var(--ok-fg);
 }
 
 .recall-action-btn--whatsapp:hover:not(:disabled) {
-	background: rgba(34, 197, 94, 0.2);
-	color: #166534;
+	background: var(--ok-bg);
+	color: var(--ok-fg);
 }
 
 .recall-action-btn--telegram {
-	color: #0284c7;
-	background: rgba(2, 132, 199, 0.1);
-	border-color: rgba(2, 132, 199, 0.3);
+	color: var(--info-fg);
+	background: var(--info-bg);
+	border-color: var(--info-fg);
 }
 
 .recall-action-btn--telegram:hover:not(:disabled) {
-	background: rgba(2, 132, 199, 0.2);
-	color: #0369a1;
+	background: var(--info-bg);
+	color: var(--info-fg);
 }
 
 .recall-action-btn--script {
@@ -601,7 +530,7 @@
 }
 
 .recall-action-btn--book {
-	color: #ffffff;
+	color: var(--paper-strong);
 	background: var(--rm-primary);
 	border-color: var(--rm-primary);
 }
@@ -665,7 +594,7 @@
 .recall-script-tab-btn.active {
 	background: var(--rm-primary);
 	border-color: var(--rm-primary);
-	color: #ffffff;
+	color: var(--paper-strong);
 }
 
 .recall-script-content-box {

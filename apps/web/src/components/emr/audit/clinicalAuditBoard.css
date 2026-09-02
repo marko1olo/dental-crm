@@ -606,6 +606,7 @@
 .cmo-preset-chip-btn {
 	display: inline-flex;
 	align-items: center;
+	min-height: 44px;
 	gap: 0.35rem;
 	padding: 0.35rem 0.65rem;
 	border-radius: 6px;

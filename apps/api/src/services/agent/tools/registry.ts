@@ -52,7 +52,14 @@ export class ToolRegistry {
 
 	// biome-ignore lint/suspicious/noExplicitAny: Generic tool retrieval
 	public get(qualifiedName: string): ToolDefinition<any, any> | undefined {
-		return this.tools.get(qualifiedName);
+		const direct = this.tools.get(qualifiedName);
+		if (direct) return direct;
+		for (const [qName, t] of this.tools.entries()) {
+			if (t.name === qualifiedName || qName.endsWith(`.${qualifiedName}`)) {
+				return t;
+			}
+		}
+		return undefined;
 	}
 
 	public list(): string[] {
@@ -67,7 +74,7 @@ export class ToolRegistry {
 			dialect === "anthropic" ? toolToAnthropicSchema : toolToOpenAiSchema;
 		const out: Record<string, unknown>[] = [];
 		for (const qualified of qualifiedNames) {
-			const tool = this.tools.get(qualified);
+			const tool = this.get(qualified);
 			if (!tool) {
 				throw new ToolRegistryError(`Unknown tool: ${qualified}`);
 			}
@@ -84,7 +91,18 @@ export class ToolRegistry {
 		qualifiedName: string,
 		args: Record<string, unknown>,
 	): Promise<ToolResult> {
-		const tool = this.tools.get(qualifiedName);
+		let resolvedQualifiedName = qualifiedName;
+		let tool = this.tools.get(qualifiedName);
+		if (!tool) {
+			for (const [qName, t] of this.tools.entries()) {
+				if (t.name === qualifiedName || qName.endsWith(`.${qualifiedName}`)) {
+					tool = t;
+					resolvedQualifiedName = qName;
+					break;
+				}
+			}
+		}
+
 		if (!tool) {
 			return {
 				ok: false,
@@ -94,12 +112,12 @@ export class ToolRegistry {
 		}
 
 		// 1. AI RBAC & Security Guard check (Chapter VII) — Fail Closed immediately if lacking permission
-		const rbacCheck = checkAiRbacGuard(ctx, tool, qualifiedName, args);
+		const rbacCheck = checkAiRbacGuard(ctx, tool, resolvedQualifiedName, args);
 		if (!rbacCheck.allowed) {
 			const errorMsg =
 				rbacCheck.error ??
-				`permission denied: ${(tool.permissions ?? [])[0] ?? qualifiedName}`;
-			await this.recordAuditSafe(ctx, qualifiedName, args, {
+				`permission denied: ${(tool.permissions ?? [])[0] ?? resolvedQualifiedName}`;
+			await this.recordAuditSafe(ctx, resolvedQualifiedName, args, {
 				status: "BLOCKED",
 				error: errorMsg,
 			});
@@ -116,11 +134,11 @@ export class ToolRegistry {
 		const decision = checkGuardrails(
 			ctx,
 			tool,
-			qualifiedName,
+			resolvedQualifiedName,
 			ctx.guardrailConfig,
 		);
 		if (decision === "block") {
-			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
+			await this.recordAuditSafe(ctx, resolvedQualifiedName, effectiveArgs, {
 				status: "BLOCKED",
 				error: "blocked by guardrails",
 			});
@@ -132,7 +150,7 @@ export class ToolRegistry {
 		}
 
 		if (decision === "require_approval") {
-			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
+			await this.recordAuditSafe(ctx, resolvedQualifiedName, effectiveArgs, {
 				status: "PENDING_APPROVAL",
 				reason: "guardrail policy requires review",
 			});
@@ -140,7 +158,7 @@ export class ToolRegistry {
 				ok: false,
 				data: {
 					approvalRequired: true,
-					tool: qualifiedName,
+					tool: resolvedQualifiedName,
 					arguments: effectiveArgs,
 				},
 				error: "pending approval",
@@ -154,7 +172,7 @@ export class ToolRegistry {
 			const validationMsg = parsed.error.issues
 				.map((i) => `${i.path.join(".")}: ${i.message}`)
 				.join("; ");
-			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
+			await this.recordAuditSafe(ctx, resolvedQualifiedName, effectiveArgs, {
 				status: "FAILED",
 				error: `validation error: ${validationMsg}`,
 			});
@@ -171,7 +189,7 @@ export class ToolRegistry {
 			const rawResult = await tool.handler(ctx, parsed.data);
 			const elapsedMs = Math.round(performance.now() - t0);
 
-			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
+			await this.recordAuditSafe(ctx, resolvedQualifiedName, effectiveArgs, {
 				status: "SUCCESS",
 				executionTimeMs: elapsedMs,
 			});
@@ -186,7 +204,7 @@ export class ToolRegistry {
 			const errorMsg =
 				error instanceof Error ? error.message : String(error);
 
-			await this.recordAuditSafe(ctx, qualifiedName, effectiveArgs, {
+			await this.recordAuditSafe(ctx, resolvedQualifiedName, effectiveArgs, {
 				status: "FAILED",
 				error: errorMsg,
 				executionTimeMs: elapsedMs,

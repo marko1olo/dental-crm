@@ -10,3 +10,4 @@ export * from "./ToothSanpinKraftBinding.js";
 export * from "./ToothRvgThumbnail.js";
 export * from "./ToothFamilyLoyaltyAccordion.js";
 export * from "./ToothPediatricContext.js";
+export * from "./ChairsidePhotoProtocolModal.js";

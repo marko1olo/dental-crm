@@ -202,7 +202,7 @@ export const UpcomingVisitCard: React.FC<UpcomingVisitCardProps> = ({
 						<div className="flex items-center gap-1.5 mt-1">
 							<span
 								className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-								style={{ backgroundColor: visit.metroLineColor || "#10b981" }}
+								style={{ backgroundColor: visit.metroLineColor || "var(--ok-fg, #10b981)" }}
 							/>
 							<span className="font-semibold text-slate-200">м. {visit.metroStationRu}</span>
 						</div>

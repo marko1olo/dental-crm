@@ -832,7 +832,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 									<div className="emr043-grid-3" style={{ marginTop: "16px" }}>
 										<div className="emr043-section-card" style={{ padding: "12px" }}>
 											<div className="emr043-field-label">Индекс интенсивности КПУ(з):</div>
-											<div style={{ fontSize: "18px", fontWeight: 800, color: "#0284c7" }}>
+											<div style={{ fontSize: "18px", fontWeight: 800, color: "var(--teal)" }}>
 												КПУ = {dmft.totalDmft}
 											</div>
 											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
@@ -922,7 +922,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												<div>
 													<span className="emr043-soap-badge">Визит #{index + 1}</span>
 													<strong>{diary.entryDate}</strong> {diary.entryTime ? `в ${diary.entryTime}` : ""}
-													{diary.toothNumber && <span style={{ marginLeft: "8px", fontWeight: 600, color: "#0284c7" }}>• Зуб FDI № {diary.toothNumber}</span>}
+													{diary.toothNumber && <span style={{ marginLeft: "8px", fontWeight: 600, color: "var(--teal)" }}>• Зуб FDI № {diary.toothNumber}</span>}
 												</div>
 												<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
 													Врач: <strong>{diary.doctorFullName}</strong>
@@ -930,17 +930,17 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 											</div>
 
 											<div style={{ marginBottom: "6px" }}>
-												<span style={{ fontWeight: 700, color: "#0284c7" }}>S (Subjective):</span> {diary.subjectiveComplaints}
+												<span style={{ fontWeight: 700, color: "var(--teal)" }}>S (Subjective):</span> {diary.subjectiveComplaints}
 											</div>
 											<div style={{ marginBottom: "6px" }}>
-												<span style={{ fontWeight: 700, color: "#0284c7" }}>O (Objective):</span> {diary.objectiveStatusLocalis}
+												<span style={{ fontWeight: 700, color: "var(--teal)" }}>O (Objective):</span> {diary.objectiveStatusLocalis}
 												{diary.eodMicroamperes ? ` [ЭОД: ${diary.eodMicroamperes} мкА]` : ""}
 											</div>
 											<div style={{ marginBottom: "6px" }}>
-												<span style={{ fontWeight: 700, color: "#0284c7" }}>A (Assessment):</span> <strong>{diary.assessmentDiagnosisText}</strong> [{diary.assessmentIcd10Code}]
+												<span style={{ fontWeight: 700, color: "var(--teal)" }}>A (Assessment):</span> <strong>{diary.assessmentDiagnosisText}</strong> [{diary.assessmentIcd10Code}]
 											</div>
 											<div style={{ marginBottom: "6px" }}>
-												<span style={{ fontWeight: 700, color: "#0284c7" }}>P (Plan & Protocol):</span> {diary.procedureProtocol}
+												<span style={{ fontWeight: 700, color: "var(--teal)" }}>P (Plan & Protocol):</span> {diary.procedureProtocol}
 											</div>
 											{diary.anesthesiaDetails && (
 												<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginBottom: "4px" }}>
@@ -953,7 +953,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												</div>
 											)}
 											{diary.digitalSignatureHash && (
-												<div style={{ marginTop: "8px", fontSize: "11px", color: "#059669", display: "flex", alignItems: "center", gap: "4px" }}>
+												<div style={{ marginTop: "8px", fontSize: "11px", color: "var(--ok-fg)", display: "flex", alignItems: "center", gap: "4px" }}>
 													<ShieldCheck className="w-3.5 h-3.5" />
 													<span>Заверено УКЭП (ГОСТ Р 34.10): {diary.digitalSignatureHash.slice(0, 20)}…</span>
 												</div>

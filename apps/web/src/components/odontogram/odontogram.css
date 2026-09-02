@@ -1,37 +1,37 @@
 :root,
 [data-theme="light"],
 .light {
-	--odontogram-paper: var(--paper, #ffffff);
-	--odontogram-surface: var(--paper-soft, #f8fafc);
-	--odontogram-surface-hover: var(--paper-strong, #f1f5f9);
-	--odontogram-border: var(--line, #cbd5e1);
-	--odontogram-border-subtle: var(--line, #e2e8f0);
-	--odontogram-border-strong: var(--line-strong, #94a3b8);
-	--odontogram-ink: var(--ink, #0f172a);
-	--odontogram-ink-muted: var(--muted, #64748b);
-	--odontogram-ink-subtle: var(--ink-muted, #475569);
-	--tooth-root-fill: #f1ede4;
-	--tooth-root-stroke: #64748b;
-	--tooth-crown-fill: #ffffff;
-	--tooth-badge-bg: #f8fafc;
-	--tooth-badge-border: #cbd5e1;
+	--odontogram-paper: var(--paper);
+	--odontogram-surface: var(--paper-soft);
+	--odontogram-surface-hover: var(--paper-strong);
+	--odontogram-border: var(--line);
+	--odontogram-border-subtle: var(--line);
+	--odontogram-border-strong: var(--line-strong);
+	--odontogram-ink: var(--ink);
+	--odontogram-ink-muted: var(--muted);
+	--odontogram-ink-subtle: var(--muted);
+	--tooth-root-fill: var(--paper-soft);
+	--tooth-root-stroke: var(--muted);
+	--tooth-crown-fill: var(--paper-strong);
+	--tooth-badge-bg: var(--paper);
+	--tooth-badge-border: var(--line);
 }
 
 :is([data-theme="dark"], html.dark:not([data-theme="light"]):not(.light), body.dark:not([data-theme="light"]):not(.light)) {
-	--odontogram-paper: var(--paper, #0f172a);
-	--odontogram-surface: var(--paper-soft, #020617);
-	--odontogram-surface-hover: var(--paper-strong, #1e293b);
-	--odontogram-border: var(--line, rgba(204, 251, 241, 0.15));
-	--odontogram-border-subtle: var(--line, rgba(204, 251, 241, 0.12));
-	--odontogram-border-strong: var(--line-strong, rgba(204, 251, 241, 0.3));
-	--odontogram-ink: var(--ink, #f8fafc);
-	--odontogram-ink-muted: var(--muted, #94a3b8);
-	--odontogram-ink-subtle: var(--muted, #94a3b8);
-	--tooth-root-fill: #1e293b;
-	--tooth-root-stroke: #64748b;
-	--tooth-crown-fill: #334155;
-	--tooth-badge-bg: rgba(30, 41, 59, 0.95);
-	--tooth-badge-border: rgba(100, 116, 139, 0.6);
+	--odontogram-paper: var(--paper);
+	--odontogram-surface: var(--paper-soft);
+	--odontogram-surface-hover: var(--paper-strong);
+	--odontogram-border: var(--line);
+	--odontogram-border-subtle: var(--line);
+	--odontogram-border-strong: var(--line-strong);
+	--odontogram-ink: var(--ink);
+	--odontogram-ink-muted: var(--muted);
+	--odontogram-ink-subtle: var(--muted);
+	--tooth-root-fill: var(--paper-soft);
+	--tooth-root-stroke: var(--muted);
+	--tooth-crown-fill: var(--paper-strong);
+	--tooth-badge-bg: var(--paper);
+	--tooth-badge-border: var(--line);
 }
 
 [data-theme="night"],
@@ -585,7 +585,7 @@
 
 .tooth-svg-wrapper.selected {
 	background-color: rgba(16, 185, 129, 0.12);
-	outline: 2px solid var(--teal, #10b981) !important;
+	outline: 2px solid var(--teal) !important;
 	outline-offset: 2px;
 	box-shadow: 0 0 20px -2px rgba(16, 185, 129, 0.45);
 	transform: translateY(-2px) scale(1.07);
@@ -682,12 +682,12 @@
 .tooth-surface-target:hover {
 	fill: var(--odontogram-surface-hover, rgba(56, 189, 248, 0.35));
 	fill-opacity: 0.45;
-	stroke: var(--teal, #14b8a6);
+	stroke: var(--teal);
 	stroke-width: 1.2px;
 }
 
 .resorption-boundary-line {
-	stroke: var(--odontogram-border-strong, #64748b);
+	stroke: var(--odontogram-border-strong);
 	stroke-dasharray: 2.5 2;
 }
 
@@ -810,63 +810,68 @@
 }
 
 .tooth-menu-btn.caries {
-	background-color: var(--bad-bg, rgba(239, 68, 68, 0.1));
-	color: var(--bad-fg, #b91c1c);
-	border-color: var(--bad-fg, rgba(239, 68, 68, 0.3));
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
+	border-color: var(--bad-fg);
 }
 .tooth-menu-btn.caries:hover {
-	background-color: var(--bad-bg, rgba(239, 68, 68, 0.2));
-	border-color: var(--bad-fg, #b91c1c);
+	background-color: var(--bad-bg);
+	border-color: var(--bad-fg);
+	opacity: 0.9;
 }
 
 .tooth-menu-btn.pulpitis {
-	background-color: var(--warn-bg, rgba(245, 158, 11, 0.1));
-	color: var(--warn-fg, #b45309);
-	border-color: var(--warn-fg, rgba(245, 158, 11, 0.3));
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--warn-fg);
 }
 .tooth-menu-btn.pulpitis:hover {
-	background-color: var(--warn-bg, rgba(245, 158, 11, 0.2));
-	border-color: var(--warn-fg, #b45309);
+	background-color: var(--warn-bg);
+	border-color: var(--warn-fg);
+	opacity: 0.9;
 }
 
 .tooth-menu-btn.implant {
-	background-color: var(--warn-bg, rgba(234, 179, 8, 0.1));
-	color: var(--warn-fg, #b45309);
-	border-color: var(--warn-fg, rgba(234, 179, 8, 0.3));
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--warn-fg);
 }
 .tooth-menu-btn.implant:hover {
-	background-color: var(--warn-bg, rgba(234, 179, 8, 0.2));
-	border-color: var(--warn-fg, #b45309);
+	background-color: var(--warn-bg);
+	border-color: var(--warn-fg);
+	opacity: 0.9;
 }
 
 .tooth-menu-btn.crown {
-	background-color: var(--info-bg, rgba(59, 130, 246, 0.1));
-	color: var(--info-fg, #0284c7);
-	border-color: var(--info-fg, rgba(59, 130, 246, 0.3));
+	background-color: var(--info-bg);
+	color: var(--info-fg);
+	border-color: var(--info-fg);
 }
 .tooth-menu-btn.crown:hover {
-	background-color: var(--info-bg, rgba(59, 130, 246, 0.2));
-	border-color: var(--info-fg, #0284c7);
+	background-color: var(--info-bg);
+	border-color: var(--info-fg);
+	opacity: 0.9;
 }
 
 .tooth-menu-btn.missing {
-	background-color: var(--paper-soft, rgba(63, 63, 70, 0.1));
-	color: var(--muted, #64748b);
-	border-color: var(--line, rgba(63, 63, 70, 0.3));
+	background-color: var(--paper-soft);
+	color: var(--muted);
+	border-color: var(--line);
 }
 .tooth-menu-btn.missing:hover {
-	background-color: var(--paper-strong, rgba(63, 63, 70, 0.2));
-	border-color: var(--line-strong, #64748b);
+	background-color: var(--paper-strong);
+	border-color: var(--line-strong);
 }
 
 .tooth-menu-btn.filled {
-	background-color: var(--teal-surface, var(--teal-soft, rgba(13, 148, 136, 0.12)));
-	color: var(--teal, #0d9488);
-	border-color: var(--teal, rgba(13, 148, 136, 0.3));
+	background-color: var(--teal-soft);
+	color: var(--teal);
+	border-color: var(--teal);
 }
 .tooth-menu-btn.filled:hover {
-	background-color: var(--teal-soft, rgba(13, 148, 136, 0.25));
-	border-color: var(--teal, #0d9488);
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
+	opacity: 0.9;
 } /* Modals and Overlays */
 .modal-overlay {
 	position: fixed;
@@ -943,7 +948,7 @@
 
 .modal-btn.primary {
 	background-color: var(--teal);
-	color: var(--on-teal, #ffffff);
+	color: var(--paper-strong);
 	box-shadow: 0 4px 14px 0 var(--teal-glow);
 }
 
@@ -985,43 +990,43 @@
 .odontogram-hints {
 	margin-top: 16px;
 	padding: 8px 16px;
-	background: var(--slate-100);
+	background: var(--paper-soft);
 	border-radius: 8px;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	gap: 16px;
 	font-size: 0.85rem;
-	color: var(--slate-600);
+	color: var(--muted);
 	animation: slideUp 0.3s ease-out;
 }
 :is([data-theme="dark"], [data-theme="night"], .dark) .odontogram-hints {
-	background: var(--paper-soft, #1e293b);
-	color: var(--muted, #94a3b8);
+	background: var(--paper-soft);
+	color: var(--muted);
 }
 
 .odontogram-hints kbd {
 	font-family: inherit;
 	font-weight: 600;
-	background: var(--paper, white);
-	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-bottom-width: 2px;
 	padding: 2px 6px;
 	border-radius: 4px;
 	font-size: 0.8rem;
-	color: var(--ink, #334155);
+	color: var(--ink);
 }
 :is([data-theme="dark"], [data-theme="night"], .dark) .odontogram-hints kbd {
-	background: var(--paper, #0f172a);
-	border-color: var(--line, #334155);
-	color: var(--ink, #f1f5f9);
+	background: var(--paper);
+	border-color: var(--line);
+	color: var(--ink);
 }
 
 .hint-divider {
-	color: var(--line, #cbd5e1);
+	color: var(--line);
 }
 :is([data-theme="dark"], [data-theme="night"], .dark) .hint-divider {
-	color: var(--line, #475569);
+	color: var(--line);
 }
 
 @keyframes slideUp {
@@ -1289,7 +1294,7 @@
 .divider-diamond {
 	width: 6px;
 	height: 6px;
-	background-color: var(--teal, #10b981);
+	background-color: var(--teal);
 	transform: rotate(45deg);
 	border-radius: 1px;
 }
@@ -1329,7 +1334,7 @@
 }
 
 .estimator-title svg {
-	color: var(--teal, #10b981);
+	color: var(--teal);
 }
 
 .estimator-actions {
@@ -1341,8 +1346,8 @@
 .badge-signed {
 	font-size: 12px;
 	font-weight: 800;
-	color: var(--ok-fg, #10b981);
-	background-color: var(--ok-bg, rgba(16, 185, 129, 0.1));
+	color: var(--ok-fg);
+	background-color: var(--ok-bg);
 	padding: 4px 8px;
 	border-radius: 6px;
 	letter-spacing: 0.05em;
@@ -1374,8 +1379,8 @@
 	gap: 8px;
 	padding: 8px 16px;
 	background-color: var(--teal-fill, var(--teal));
-	border: 1px solid var(--teal-dark, #059669);
-	color: var(--on-teal, #ffffff);
+	border: 1px solid var(--teal-dark);
+	color: var(--paper-strong);
 	border-radius: 8px;
 	font-size: 14px;
 	font-weight: 500;
@@ -1384,7 +1389,7 @@
 }
 
 .btn-save:hover {
-	background-color: var(--teal-dark, #059669);
+	background-color: var(--teal-dark);
 	box-shadow: 0 4px 12px var(--teal-glow, rgba(16, 185, 129, 0.25));
 }
 
@@ -1471,25 +1476,25 @@
 }
 
 .tooth-badge.baby {
-	background-color: #fce7f3;
-	color: #db2777;
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
 }
 
 [data-theme="dark"] .tooth-badge.baby,
 .dark .tooth-badge.baby {
-	background-color: rgba(219, 39, 119, 0.2);
-	color: #f472b6;
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
 }
 
 .tooth-badge.adult {
-	background-color: #f1f5f9;
-	color: #334155;
+	background-color: var(--paper-soft);
+	color: var(--ink-2, var(--muted));
 }
 
 [data-theme="dark"] .tooth-badge.adult,
 .dark .tooth-badge.adult {
-	background-color: rgba(255, 255, 255, 0.08);
-	color: #e2e8f0;
+	background-color: var(--paper-soft);
+	color: var(--ink-2, var(--muted));
 }
 
 .plan-item-name {
@@ -1522,8 +1527,8 @@
 }
 
 .btn-remove-item:hover {
-	background-color: var(--bad-bg, rgba(239, 68, 68, 0.1));
-	color: var(--bad-fg, #ef4444);
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
 }
 
 .plan-item-footer {
@@ -1549,13 +1554,13 @@
 }
 
 .select-phase:focus {
-	border-color: var(--teal, #10b981);
+	border-color: var(--teal);
 }
 
 .plan-item-total-price {
 	font-size: 14px;
 	font-weight: 700;
-	color: var(--ok-fg, #10b981);
+	color: var(--ok-fg);
 }
 
 .estimator-footer {
@@ -1590,36 +1595,36 @@
    ========================================================================== */
 
 .gost-odontogram-container {
-	background-color: var(--odontogram-paper, #ffffff);
-	border-color: var(--odontogram-border, #cbd5e1);
-	color: var(--odontogram-ink, #0f172a);
+	background-color: var(--odontogram-paper);
+	border-color: var(--odontogram-border);
+	color: var(--odontogram-ink);
 }
 
 .gost-table-wrapper {
 	scrollbar-width: thin;
-	scrollbar-color: var(--odontogram-border-strong, #94a3b8) transparent;
+	scrollbar-color: var(--odontogram-border-strong) transparent;
 }
 
 .gost-table {
-	background-color: var(--odontogram-paper, #ffffff);
-	border: 2px solid var(--odontogram-border-strong, #94a3b8);
+	background-color: var(--odontogram-paper);
+	border: 2px solid var(--odontogram-border-strong);
 	border-collapse: separate;
 	border-spacing: 0;
 }
 
 .gost-table th,
 .gost-table td {
-	border-color: var(--odontogram-border-subtle, #e2e8f0);
+	border-color: var(--odontogram-border-subtle);
 }
 
 .gost-cell {
-	background-color: var(--odontogram-paper, #ffffff);
+	background-color: var(--odontogram-paper);
 	cursor: pointer;
 	outline: none;
 }
 
 .gost-cell:focus-visible {
-	outline: 2px solid #6366f1;
+	outline: 2px solid var(--teal);
 	outline-offset: -2px;
 }
 
@@ -1641,7 +1646,7 @@
 	overscroll-behavior-x: contain;
 	scroll-behavior: smooth;
 	scrollbar-width: thin;
-	scrollbar-color: var(--odontogram-border-strong, #94a3b8) transparent;
+	scrollbar-color: var(--odontogram-border-strong) transparent;
 	padding-bottom: 4px;
 }
 
@@ -1666,8 +1671,8 @@
 	align-items: center;
 	gap: 6px;
 	padding: 8px 12px;
-	background: var(--odontogram-surface, #f8fafc);
-	border: 1px solid var(--odontogram-border-subtle, #e2e8f0);
+	background: var(--odontogram-surface);
+	border: 1px solid var(--odontogram-border-subtle);
 	border-radius: 12px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -1687,9 +1692,9 @@
 	user-select: none;
 	touch-action: manipulation;
 	transition: all 0.15s ease;
-	border: 1px solid var(--odontogram-border-subtle, #cbd5e1);
-	background: var(--odontogram-paper, #ffffff);
-	color: var(--odontogram-ink, #0f172a);
+	border: 1px solid var(--odontogram-border-subtle);
+	background: var(--odontogram-paper);
+	color: var(--odontogram-ink);
 }
 
 .gost-keypad-btn:active {
@@ -1697,7 +1702,7 @@
 }
 
 .gost-keypad-btn:hover {
-	background: var(--odontogram-surface-hover, #f1f5f9);
+	background: var(--odontogram-surface-hover);
 }
 
 /* Hover Quick Action Micro-HUD 10-Theme Calibration */
@@ -1719,27 +1724,27 @@
 
 /* High Contrast Theme Overrides */
 [data-theme="contrast"] .gost-table {
-	border: 2px solid #000000;
+	border: 2px solid var(--line-strong);
 }
 
 [data-theme="contrast"] .gost-table th,
 [data-theme="contrast"] .gost-table td {
-	border-color: #000000;
+	border-color: var(--line-strong);
 }
 
 [data-theme="contrast"] .gost-cell:focus-visible {
-	outline: 3px solid #000000;
+	outline: 3px solid var(--line-strong);
 }
 
 [data-theme="contrast"] .gost-touch-keypad {
-	border: 2px solid #000000;
-	background: #ffffff;
+	border: 2px solid var(--line-strong);
+	background: var(--paper-strong);
 }
 
 [data-theme="contrast"] .gost-keypad-btn {
-	border: 2px solid #000000;
-	color: #000000;
-	background: #ffffff;
+	border: 2px solid var(--line-strong);
+	color: var(--ink);
+	background: var(--paper-strong);
 }
 
 /* ── Graphic Tooth Formula & Form 043/u A4 Print Styles ── */
@@ -1812,8 +1817,8 @@
 
 @media print {
 	body {
-		background: #ffffff !important;
-		color: #0f172a !important;
+		background: var(--paper-strong) !important;
+		color: var(--ink) !important;
 	}
 
 	/* Ensure graphic SVG colors, borders, and fills are preserved during print */
@@ -1832,8 +1837,8 @@
 		width: 100% !important;
 		max-width: 297mm !important;
 		margin: 0 auto !important;
-		background: #ffffff !important;
-		color: #0f172a !important;
+		background: var(--paper-strong) !important;
+		color: var(--ink) !important;
 		page-break-inside: avoid !important;
 		break-inside: avoid !important;
 	}

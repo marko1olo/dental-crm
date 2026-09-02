@@ -830,6 +830,7 @@ html.dark:not([data-theme="light"]) .patient-portal-modal-window,
 	font-size: 1.35rem;
 	font-weight: 900;
 	color: var(--ink, #f8fafc);
+	white-space: nowrap;
 }
 
 .fin-metric-val.deposit {
@@ -943,6 +944,53 @@ html.dark:not([data-theme="light"]) .patient-portal-modal-window,
 	color: #ffffff;
 }
 
+/* Booking Category Chips */
+.booking-category-chips {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	overflow-x: auto;
+	padding-bottom: 0.25rem;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.booking-category-chips::-webkit-scrollbar {
+	display: none;
+}
+
+.booking-cat-chip {
+	min-height: 44px;
+	padding: 0.5rem 1rem;
+	border-radius: 12px;
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	background: var(--paper-soft, #1e293b);
+	color: var(--muted, #94a3b8);
+	font-size: 0.85rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.45rem;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+
+.booking-cat-chip:hover {
+	border-color: var(--teal, #0d9488);
+	color: var(--ink, #f8fafc);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
+}
+
+.booking-cat-chip.active {
+	background: var(--teal-fill, #0d9488);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+}
+
 /* Time Slots Grid */
 .time-slots-container {
 	display: flex;
@@ -1016,7 +1064,7 @@ html.dark:not([data-theme="light"]) .patient-portal-modal-window,
 
 .sbp-logo-badge {
 	background: var(--teal-surface, #f0fdfa);
-	border: 1px solid var(--teal-subtle, rgba(20, 184, 166, 0.3));
+	border: 1px solid var(--color-teal-100, rgba(13, 148, 136, 0.15));
 	border-radius: 0.5rem;
 	padding: 0.25rem 0.65rem;
 	color: var(--teal, #0d9488);
@@ -1061,6 +1109,8 @@ html.dark:not([data-theme="light"]) .patient-portal-modal-window,
 	}
 
 	.finances-summary-hero {
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+		gap: 0.75rem;
+		padding: 0.875rem;
 	}
 }

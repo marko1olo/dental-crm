@@ -124,7 +124,7 @@ export function useUnifiedDictation(
 				}
 			},
 			onInterimText: (text) => {
-				setInterimText(text);
+				setInterimText((prev) => (prev !== text ? text : prev));
 				onInterimRef.current?.(text);
 			},
 			onFinalText: (text, accumulated) => {
@@ -133,18 +133,18 @@ export function useUnifiedDictation(
 				onResultRef.current?.(accumulated);
 			},
 			onTwoLayerTranscript: (data) => {
-				setFinalText(data.finalized);
-				setInterimText(data.interim);
-				setFullTranscript(data.finalized);
+				setFinalText((prev) => (prev !== data.finalized ? data.finalized : prev));
+				setInterimText((prev) => (prev !== data.interim ? data.interim : prev));
+				setFullTranscript((prev) => (prev !== data.finalized ? data.finalized : prev));
 			},
 			onFullTranscript: (accumulated) => {
-				setFullTranscript(accumulated);
+				setFullTranscript((prev) => (prev !== accumulated ? accumulated : prev));
 			},
 			onRmsUpdate: (newRms, speaking) => {
-				setRms(newRms);
-				setIsSpeaking(speaking);
-				// Нормализуем аудио-уровень от 0.0 до 1.0 для индикаторов
-				setAudioLevel(Math.min(1.0, newRms * 5.0));
+				setIsSpeaking((prev) => (prev !== speaking ? speaking : prev));
+				const level = Math.min(1.0, Math.round(newRms * 50) / 10);
+				setAudioLevel((prev) => (Math.abs(prev - level) >= 0.05 ? level : prev));
+				setRms((prev) => (Math.abs(prev - newRms) >= 0.02 ? newRms : prev));
 			},
 			onError: (err) => {
 				const msg = typeof err === "string" ? err : err.message;

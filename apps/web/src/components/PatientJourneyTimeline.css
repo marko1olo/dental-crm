@@ -45,27 +45,27 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	border-bottom: 1px solid var(--line, rgba(82, 82, 91, 0.3));
+	border-bottom: 1px solid var(--line);
 	padding-bottom: 16px;
 }
 
 .timeline-header h3 {
 	margin: 0;
 	font-size: 1.4rem;
-	color: var(--ink, #f4f4f5);
+	color: var(--ink);
 	font-weight: 300;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
 
 .patient-id-badge {
-	background: var(--paper-strong, rgba(39, 39, 42, 0.6));
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	padding: 6px 12px;
 	border-radius: 8px;
 	font-family: monospace;
 	font-size: 0.9rem;
-	color: var(--muted, #a1a1aa);
+	color: var(--muted);
 }
 
 .timeline-track {
@@ -89,7 +89,7 @@
 .marker-icon {
 	width: 40px;
 	height: 40px;
-	background: var(--paper, rgba(39, 39, 42, 0.8));
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 50%;
 	display: flex;
@@ -97,14 +97,14 @@
 	justify-content: center;
 	font-size: 1.2rem;
 	z-index: 2;
-	box-shadow: var(--shadow);
+	box-shadow: var(--shadow-1);
 	transition: all 0.3s ease;
 }
 
 .marker-line {
 	width: 2px;
 	flex: 1;
-	background: var(--line, rgba(82, 82, 91, 0.3));
+	background: var(--line);
 	margin: 8px 0;
 	min-height: 40px;
 }
@@ -114,20 +114,20 @@
 }
 
 .timeline-item.medical_alert .marker-icon {
-	border-color: var(--bad-fg, #b91c1c);
+	border-color: var(--bad-fg);
 }
 
 .timeline-item.transaction .marker-icon {
-	border-color: var(--ok-fg, #15803d);
+	border-color: var(--ok-fg);
 }
 
 .timeline-item.inventory_depletion .marker-icon {
-	border-color: var(--warn-fg, #d97706);
+	border-color: var(--warn-fg);
 }
 
 .timeline-content {
 	flex: 1;
-	background: var(--paper-strong, rgba(39, 39, 42, 0.3));
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	padding: 16px 20px;
@@ -139,8 +139,8 @@
 }
 
 .timeline-content:hover {
-	background: var(--paper-elevated, var(--paper-strong));
-	border-color: var(--line-strong, var(--line));
+	background: var(--paper-strong);
+	border-color: var(--line-strong);
 }
 
 .content-header {
@@ -151,14 +151,14 @@
 
 .timestamp {
 	font-size: 0.85rem;
-	color: var(--muted, #a1a1aa);
+	color: var(--muted);
 	font-family: monospace;
 }
 
 .timeline-content h4 {
 	margin: 0;
 	font-size: 1.15rem;
-	color: var(--ink, #f4f4f5);
+	color: var(--ink);
 	font-weight: 500;
 }
 
@@ -172,7 +172,7 @@
 .amount-highlight {
 	font-size: 1.2rem;
 	font-family: monospace;
-	color: var(--ok-fg, #15803d);
+	color: var(--ok-fg);
 	font-weight: bold;
 	margin-top: 4px;
 }
@@ -180,9 +180,9 @@
 .timeline-action-btn {
 	align-self: flex-start;
 	margin-top: 8px;
-	background: var(--info-bg, rgba(59, 130, 246, 0.1));
-	color: var(--info-fg, #0284c7);
-	border: 1px solid var(--info-fg, rgba(59, 130, 246, 0.3));
+	background: var(--info-bg);
+	color: var(--info-fg);
+	border: 1px solid var(--info-fg);
 	padding: 6px 12px;
 	min-height: 44px;
 	display: inline-flex;
@@ -194,7 +194,8 @@
 }
 
 .timeline-action-btn:hover {
-	background: var(--info-bg, rgba(59, 130, 246, 0.2));
+	background: var(--info-bg);
+	opacity: 0.9;
 }
 
 @media (max-width: 480px) {
@@ -219,7 +220,7 @@
 
 /* Zeigarnik Effect Progress Bar */
 .zeigarnik-progress-container {
-	background: var(--paper-strong, rgba(39, 39, 42, 0.4));
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	padding: 16px;
@@ -237,7 +238,7 @@
 .progress-bar-bg {
 	width: 100%;
 	height: 8px;
-	background: var(--line, rgba(255, 255, 255, 0.1));
+	background: var(--line);
 	border-radius: 4px;
 	overflow: hidden;
 	margin-bottom: 8px;
@@ -245,28 +246,28 @@
 
 .progress-bar-fill {
 	height: 100%;
-	background: var(--ok-fg, #10b981);
+	background: var(--ok-fg);
 	border-radius: 4px;
 	transition: width 0.5s ease;
 }
 
 .progress-hint {
 	font-size: 0.8rem;
-	color: var(--muted, #a1a1aa);
+	color: var(--muted);
 	margin: 0;
 }
 
 /* Highlights */
 .highlight-item .timeline-content {
 	background: var(--paper-strong);
-	border-color: var(--teal, #0d9488);
-	box-shadow: var(--shadow-sm);
+	border-color: var(--teal);
+	box-shadow: var(--shadow-1);
 }
 
 .highlight-item .marker-icon-large {
 	width: 50px;
 	height: 50px;
 	font-size: 1.5rem;
-	border-color: var(--teal, #0d9488);
+	border-color: var(--teal);
 	z-index: 3;
 }

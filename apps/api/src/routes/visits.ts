@@ -370,6 +370,7 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 
 		const patient = await createPatientInDb(orgId, {
 			fullName: "Быстрый прием",
+			isAnonymous: false,
 			phone: null,
 			birthDate: null,
 		});

@@ -53,6 +53,9 @@ export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
 
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import type { EndoToothClinicalData } from "./EndoCanalLogModal";
+import { showToast } from "../GlobalToast";
+import { globalDentalVoiceEngine } from "../../services/voice";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import {
 	type CanalObturationMaterial,
 	type FurcationGrade,
@@ -2495,6 +2498,42 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			setLocalQuadrant(controlledQuadrant);
 		}
 	}, [controlledQuadrant]);
+
+	useEffect(() => {
+		const unsub = globalDentalVoiceEngine.addListener({
+			onIntentParsed: (intent) => {
+				// 1. Голосовое переключение квадрантов («верх право», «верх лево», «низ лево», «низ право», «все зубы»)
+				if (intent.targetQuadrant !== undefined) {
+					let targetQ: OdontogramQuadrantId = intent.targetQuadrant;
+					if (isPediatricEffective && targetQ !== "all") {
+						const pedMap: Record<string, OdontogramQuadrantId> = {
+							Q1: "Q5",
+							Q2: "Q6",
+							Q3: "Q7",
+							Q4: "Q8",
+						};
+						targetQ = pedMap[targetQ] ?? targetQ;
+					}
+					handleSelectQuadrant(targetQ);
+					void SoundFeedbackService.getInstance().playActionSuccess();
+					showToast(`Голос: ${getQuadrantTitle(targetQ, isPediatricEffective)}`, "info");
+				}
+
+				// 2. Голосовое выставление статуса зубов с аудио-фидбеком
+				if (onQuickStateChange && intent.teethUpdates.length > 0) {
+					for (const t of intent.teethUpdates) {
+						onQuickStateChange([t.toothNumber], t.state, t.surfaces);
+					}
+					void SoundFeedbackService.getInstance().playActionSuccess();
+					const summary = intent.teethUpdates
+						.map((t) => `Зуб ${t.toothNumber}: ${t.state}`)
+						.join(", ");
+					showToast(`Голос: ${summary}`, "success");
+				}
+			},
+		});
+		return () => unsub();
+	}, [isPediatricEffective, onQuickStateChange]);
 
 	const topTeethList =
 		customTopTeeth ??

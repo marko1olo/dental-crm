@@ -16,6 +16,7 @@ import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimeli
 import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
+import { PatientHeaderCard } from "../patient/PatientHeaderCard";
 import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
 import { PatientWhatsappSendPanel } from "./PatientWhatsappSendPanel";
@@ -163,22 +164,11 @@ export function PatientOverviewTab() {
 				формату. Уникальные части этого блока (семейный счёт, лояльность,
 				рекламации, лента приёмов, архив) сохранены ниже.
 			*/}
-			<div className="panel-heading compact-heading patients-no-border-mb-8 flex justify-between items-center pb-3 border-b border-[var(--line)]">
-				<div className="flex gap-3 items-center">
-					<span className="text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
-						Пациент в клинике
-						{dashboard?.activeVisit?.patientId === selectedPatientId && (
-							<span
-								title="Пациент сейчас находится в клинике (Активный приём)"
-								className="w-2 h-2 rounded-full bg-emerald-500 inline-block shadow-[0_0_8px_#10b981]"
-							/>
-						)}
-					</span>
-					{selectedPatientId && (
-						<PatientLoyaltyHeader patientId={selectedPatientId} />
-					)}
+			{selectedPatientId && (
+				<div className="mb-4">
+					<PatientHeaderCard patientId={selectedPatientId} />
 				</div>
-			</div>
+			)}
 
 			<div
 				className="patient-clinical-grid patients-my-0"

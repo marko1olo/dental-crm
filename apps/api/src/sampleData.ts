@@ -422,6 +422,8 @@ export const patients: Patient[] = [
 		phone: "+7 927 111-22-33",
 		email: null,
 		notes: "Боится анестезии, предпочитает утренние приемы.",
+		isAnonymous: false,
+		anonymousCode: null,
 		administrativeProfile: null,
 		balanceRub: 0,
 		createdAt: nowIso,
@@ -436,6 +438,8 @@ export const patients: Patient[] = [
 		phone: "+7 927 555-19-40",
 		email: "petrov@example.com",
 		notes: "Нужны документы для налогового вычета.",
+		isAnonymous: false,
+		anonymousCode: null,
 		administrativeProfile: null,
 		balanceRub: 0,
 		createdAt: nowIso,
@@ -450,6 +454,8 @@ export const patients: Patient[] = [
 		phone: "+7 927 900-77-10",
 		email: null,
 		notes: null,
+		isAnonymous: false,
+		anonymousCode: null,
 		administrativeProfile: null,
 		balanceRub: 0,
 		createdAt: nowIso,
@@ -10904,6 +10910,9 @@ function normalizePatientAdministrativeProfile(
 		curatorCommissionPercent: typeof input?.curatorCommissionPercent === "number" ? input.curatorCommissionPercent : null,
 		curatorNotes: nullableTrimmed(input?.curatorNotes),
 		curatorNextContactDate: nullableTrimmed(input?.curatorNextContactDate),
+		isAnonymous: Boolean(input?.isAnonymous),
+		anonymousCode: nullableTrimmed(input?.anonymousCode),
+		decree659Compliance: (input?.decree659Compliance as Record<string, unknown> | null | undefined) ?? null,
 	};
 
 	const hasValue = Object.values(profile).some((value) =>
@@ -10950,6 +10959,8 @@ export function createPatient(input: {
 		phone: nullableTrimmed(input.phone),
 		email: nullableTrimmed(input.email),
 		notes: nullableTrimmed(input.notes),
+		isAnonymous: false,
+		anonymousCode: null,
 		administrativeProfile: normalizePatientAdministrativeProfile(
 			input.administrativeProfile,
 		),

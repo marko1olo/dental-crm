@@ -21,6 +21,7 @@ import {
 	computePayloadHash,
 	createCompositeIdempotencyKey,
 } from "@dental/shared";
+import { flushOfflinePatientBookings } from "../../pwa/patientOfflineStorage";
 import { logger } from "../../utils/logger";
 import {
 	clearSyncedOfflineMutations,
@@ -170,6 +171,15 @@ export class OfflineSyncService {
 							`[OfflineSyncService] Auto-draining ${pending.length} pending mutations on tab focus/visibility restore`,
 						);
 						await this.drainOutbox();
+					}
+					// Drain PWA patient bookings queue (Subway Mode)
+					try {
+						await flushOfflinePatientBookings();
+					} catch (pwaErr) {
+						logger.warn(
+							"[OfflineSyncService] Auto-drain PWA patient bookings failed",
+							pwaErr,
+						);
 					}
 				} catch (err) {
 					logger.warn(

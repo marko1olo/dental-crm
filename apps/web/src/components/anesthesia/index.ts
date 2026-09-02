@@ -6,6 +6,7 @@ export * from './AnesthesiaDosageCalculatorModal';
 export * from './AnesthesiaSafetyHubModal';
 export * from './AnesthesiaQuickBar';
 export * from './AnesthesiaPkuDisposalModal';
+export * from './EmergencyAnaphylaxisProtocolModal';
 export * from '../visit/anesthesiaMrdMath';
 export {
 	calculateAnesthesiaSafety as calculateAnesthesiaComprehensiveSafety,

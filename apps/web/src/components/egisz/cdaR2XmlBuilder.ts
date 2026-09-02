@@ -879,8 +879,8 @@ export function generateGostSignatureStampHtml(params: {
 	const validToStr = formatRuDate(params.validTo);
 
 	return `
-<div class="gost-signature-stamp" style="border: 2px solid #0056b3; border-radius: 6px; padding: 8px 12px; color: #0056b3; font-family: 'Times New Roman', serif; font-size: 11px; line-height: 1.25; max-width: 320px; box-sizing: border-box; background: rgba(0, 86, 179, 0.02);">
-	<div style="font-weight: bold; text-align: center; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; border-bottom: 1px solid #0056b3; padding-bottom: 4px; margin-bottom: 4px;">
+<div class="gost-signature-stamp" style="border: 2px solid var(--egisz-stamp-border, #0056b3); border-radius: 6px; padding: 8px 12px; color: var(--egisz-stamp-color, #0056b3); font-family: 'Times New Roman', serif; font-size: 11px; line-height: 1.25; max-width: 320px; box-sizing: border-box; background: var(--egisz-stamp-bg, rgba(0, 86, 179, 0.02));">
+	<div style="font-weight: bold; text-align: center; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; border-bottom: 1px solid var(--egisz-stamp-border, #0056b3); padding-bottom: 4px; margin-bottom: 4px;">
 		ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ
 	</div>
 	<div style="display: flex; gap: 6px; margin-bottom: 2px;">

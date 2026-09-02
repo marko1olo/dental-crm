@@ -969,7 +969,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															padding: "10px 24px",
 															borderRadius: 10,
 															background: "var(--teal, #0d9488)",
-															color: "#ffffff",
+															color: "var(--on-teal, #ffffff)",
 															fontWeight: 700,
 															fontSize: 14,
 															border: "none",

@@ -24,14 +24,8 @@ export function emptyPatientCoreDraft(): PatientCoreDraft {
 	};
 }
 
-export type PatientAdministrativeProfileDraft = {
-	[K in Exclude<
-		keyof PatientAdministrativeProfile,
-		"preferredAppointmentWeekdays"
-	>]: string;
-} & {
-	preferredAppointmentWeekdays: number[];
-};
+import type { PatientAdministrativeProfileDraft } from "../AppConstants";
+export type { PatientAdministrativeProfileDraft };
 
 export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeProfileDraft {
 	return {
@@ -53,8 +47,17 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		dataProcessingBasisNote: "",
 		orthodonticProgress: "",
 		loyaltyTier: "standard",
+		curatorId: "",
+		curatorFullName: "",
+		curatorAssignedAt: "",
+		curatorFunnelStage: "consultation",
+		curatorCommissionPercent: "",
+		curatorNotes: "",
+		curatorNextContactDate: "",
 	};
 }
+
+
 
 export type AppointmentScheduleDraft = {
 	patientId: string;

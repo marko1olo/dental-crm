@@ -45,6 +45,7 @@ import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { ToothContextDrawer } from "../diagnostic/ToothContextDrawer";
 import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
 import { PeriodontalChartingModal } from "./PeriodontalChartingModal";
+import { OrthodonticCephTrackerModal } from "../orthodontics/OrthodonticCephTrackerModal";
 import { showToast } from "../GlobalToast";
 
 export interface OdontogramViewOption {
@@ -178,6 +179,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
 	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
 	const [isLocalPerioOpen, setIsLocalPerioOpen] = useState<boolean>(false);
+	const [isOrthoCephOpen, setIsOrthoCephOpen] = useState<boolean>(false);
 
 	// 3. Radial Menu Active Anchor
 	const [radialMenuData, setRadialMenuData] = useState<{
@@ -304,6 +306,13 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					setIsLocalPerioOpen(true);
 					void SoundFeedbackService.getInstance().playActionSuccess();
 					showToast("Голос: Пародонтологическая карта", "info");
+				}
+
+				// 4. Голосовое открытие цефалометрии ТРГ
+				if (intent.type === "ceph_landmark" || (intent.cephLandmarks && intent.cephLandmarks.length > 0)) {
+					setIsOrthoCephOpen(true);
+					void SoundFeedbackService.getInstance().playActionSuccess();
+					showToast("Голос: Цефалометрия ТРГ", "info");
 				}
 			},
 		});
@@ -571,6 +580,22 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<span>Пародонтограмма</span>
 						</button>
 
+						{/* Orthodontic Cephalometry TRG Module */}
+						<button
+							type="button"
+							onClick={() => setIsOrthoCephOpen((prev) => !prev)}
+							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 whitespace-nowrap cursor-pointer select-none ${
+								isOrthoCephOpen
+									? "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/50 shadow-xs font-black"
+									: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 hover:bg-purple-500/20"
+							}`}
+							title="Цефалометрия ТРГ: анализ Штайнера, Твида, Wits-число и углы SNA/SNB/ANB"
+							data-testid="btn-open-ortho-ceph"
+						>
+							<Sparkles size={14} className="text-purple-500 shrink-0" />
+							<span>Цефалометрия ТРГ</span>
+						</button>
+
 						{/* Diagnocat AI Report */}
 						{onLoadDiagnocat && (
 							<button
@@ -758,8 +783,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							</div>
 						</div>
 
-						<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 font-medium">
-							⚠️ Это действие изменит статус всех зубов в зубной формуле пациента.
+						<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 font-medium flex items-center gap-2">
+							<AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+							<span>Это действие изменит статус всех зубов в зубной формуле пациента.</span>
 						</div>
 
 						<div className="flex flex-col sm:flex-row items-stretch gap-2.5 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-zinc-800">
@@ -825,6 +851,14 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					setIsLocalPerioOpen(false);
 					onTogglePerio?.();
 				}}
+				patientId={patientId}
+				patientName={patientId ? `Пациент #${patientId}` : undefined}
+			/>
+
+			{/* Tier 3 Orthodontic Cephalometry TRG Tracker Modal */}
+			<OrthodonticCephTrackerModal
+				isOpen={isOrthoCephOpen}
+				onClose={() => setIsOrthoCephOpen(false)}
 				patientId={patientId}
 				patientName={patientId ? `Пациент #${patientId}` : undefined}
 			/>

@@ -1,18 +1,29 @@
 {
   "version": 1,
-  "savedAt": "2026-08-27T20:42:41.326Z",
+  "savedAt": "2026-09-02T16:13:01.627Z",
   "health": {
+    "cloudflare_whisper:89d9d83a5665": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 15,
+      "lastUsedAt": 1788291696035,
+      "lastStatusCode": null,
+      "lastError": null
+    },
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
-      "successes": 566,
-      "lastUsedAt": 1787863361325,
+      "consecutiveFailures": 0,
+      "successes": 657,
+      "lastUsedAt": 1788365566280,
       "lastStatusCode": null,
       "lastError": null
     },
     "google_speech:3e0ef4ad3f5a": {
       "cooldownUntil": 1786270380618,
       "failures": 13,
+      "consecutiveFailures": 13,
       "successes": 0,
       "lastUsedAt": 1786270350618,
       "lastStatusCode": null,
@@ -21,14 +32,25 @@
     "google_speech:401c79dc50d5": {
       "cooldownUntil": 1786270380542,
       "failures": 13,
+      "consecutiveFailures": 13,
       "successes": 0,
       "lastUsedAt": 1786270350542,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },
+    "google_speech:45dd3fb17bd3": {
+      "cooldownUntil": 0,
+      "failures": 13,
+      "consecutiveFailures": 13,
+      "successes": 1,
+      "lastUsedAt": 1788291694870,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live WS closed abnormally (code: 1008, reason: Policy violation or key invalid)"
+    },
     "google_speech:5cdeb7e487c0": {
       "cooldownUntil": 1786270380590,
       "failures": 14,
+      "consecutiveFailures": 14,
       "successes": 302,
       "lastUsedAt": 1786270350590,
       "lastStatusCode": null,
@@ -37,14 +59,61 @@
     "google_speech:5e36d93cca7c": {
       "cooldownUntil": 1786270380588,
       "failures": 14,
+      "consecutiveFailures": 14,
       "successes": 276,
       "lastUsedAt": 1786270350588,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },
+    "google_speech:62d44fb06c9a": {
+      "cooldownUntil": 0,
+      "failures": 13,
+      "consecutiveFailures": 13,
+      "successes": 0,
+      "lastUsedAt": 1788291694936,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
+    "google_speech:73350f6bd10e": {
+      "cooldownUntil": 1788208802579,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 1,
+      "lastUsedAt": 1788208742579,
+      "lastStatusCode": 429,
+      "lastError": "RESOURCE_EXHAUSTED: Rate limit exceeded"
+    },
+    "google_speech:7d3efd99fdf0": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1788208742598,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "google_speech:95d78fd253c9": {
+      "cooldownUntil": 0,
+      "failures": 13,
+      "consecutiveFailures": 13,
+      "successes": 0,
+      "lastUsedAt": 1788291694981,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
+    "google_speech:a95912f4c7b2": {
+      "cooldownUntil": 0,
+      "failures": 13,
+      "consecutiveFailures": 13,
+      "successes": 0,
+      "lastUsedAt": 1788291695015,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
     "google_speech:c5b553420348": {
       "cooldownUntil": 1786270380569,
       "failures": 13,
+      "consecutiveFailures": 13,
       "successes": 0,
       "lastUsedAt": 1786270350569,
       "lastStatusCode": null,
@@ -53,6 +122,7 @@
     "google_speech:c637bdf62cb7": {
       "cooldownUntil": 1786270380592,
       "failures": 13,
+      "consecutiveFailures": 13,
       "successes": 0,
       "lastUsedAt": 1786270350592,
       "lastStatusCode": null,
@@ -61,14 +131,43 @@
     "google_speech:c78fec9a5b53": {
       "cooldownUntil": 1786270380571,
       "failures": 14,
+      "consecutiveFailures": 14,
       "successes": 281,
       "lastUsedAt": 1786270350571,
       "lastStatusCode": null,
       "lastError": "fetch failed"
     },
+    "google_speech:ce349ef84ee9": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 2,
+      "lastUsedAt": 1788208149214,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "google_speech:ee19a8772084": {
+      "cooldownUntil": 0,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 14,
+      "lastUsedAt": 1788291695066,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live WS closed abnormally (code: 1006, reason: Dropped)"
+    },
+    "google_speech:ff1bd86d98d3": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 28,
+      "lastUsedAt": 1788291695108,
+      "lastStatusCode": null,
+      "lastError": null
+    },
     "groq_whisper:2584c81a1b00": {
       "cooldownUntil": 0,
       "failures": 2,
+      "consecutiveFailures": 2,
       "successes": 1,
       "lastUsedAt": 1786010733180,
       "lastStatusCode": null,
@@ -77,16 +176,90 @@
     "groq_whisper:31af829f8541": {
       "cooldownUntil": 0,
       "failures": 0,
+      "consecutiveFailures": 0,
       "successes": 2,
       "lastUsedAt": 1786010939747,
       "lastStatusCode": null,
       "lastError": null
     },
+    "groq_whisper:5510319c53a6": {
+      "cooldownUntil": 1788291708125,
+      "failures": 11,
+      "consecutiveFailures": 11,
+      "successes": 0,
+      "lastUsedAt": 1788291228125,
+      "lastStatusCode": 503,
+      "lastError": "503 "
+    },
+    "groq_whisper:7ac4d90fc01b": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 16,
+      "lastUsedAt": 1788291696029,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq_whisper:92b51601cd1d": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 16,
+      "lastUsedAt": 1788291695998,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq_whisper:a408a6ddaa5d": {
+      "cooldownUntil": 1788291708096,
+      "failures": 12,
+      "consecutiveFailures": 12,
+      "successes": 0,
+      "lastUsedAt": 1788291228096,
+      "lastStatusCode": 500,
+      "lastError": "Internal server error"
+    },
     "groq_whisper:af75a6a49164": {
       "cooldownUntil": 0,
       "failures": 0,
+      "consecutiveFailures": 0,
       "successes": 3,
       "lastUsedAt": 1786010993853,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq_whisper:e1fc3fd8f14e": {
+      "cooldownUntil": 1788291708110,
+      "failures": 11,
+      "consecutiveFailures": 11,
+      "successes": 0,
+      "lastUsedAt": 1788291228110,
+      "lastStatusCode": 503,
+      "lastError": "503 "
+    },
+    "openai_transcribe:8234d0fc8e1f": {
+      "cooldownUntil": 1788292188112,
+      "failures": 11,
+      "consecutiveFailures": 11,
+      "successes": 0,
+      "lastUsedAt": 1788291228112,
+      "lastStatusCode": 429,
+      "lastError": "429 "
+    },
+    "openai_transcribe:893d880f8a5f": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 16,
+      "lastUsedAt": 1788291696024,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "openai_transcribe:b056b0089de8": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 16,
+      "lastUsedAt": 1788291696031,
       "lastStatusCode": null,
       "lastError": null
     }

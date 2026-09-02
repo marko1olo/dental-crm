@@ -49,6 +49,7 @@ blob-report/
 dente-db/
 apps/api/dente-db/
 .local-pg-data/
+dente_local_db_win/
 
 
 # Git internal leftover from a prior history rewrite; must never be tracked.

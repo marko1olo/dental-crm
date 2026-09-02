@@ -1032,7 +1032,7 @@ export function SettingsTelegramTab({
 												disabled={isConsented}
 												style={{
 													background: isActive ? "var(--brand-500)" : "var(--slate-100)",
-													color: isActive ? "#fff" : "var(--slate-700)",
+													color: isActive ? "var(--on-teal, #ffffff)" : "var(--slate-700)",
 													padding: "6px 12px",
 													borderRadius: "16px",
 													border: "none",

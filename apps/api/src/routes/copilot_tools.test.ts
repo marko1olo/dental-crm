@@ -718,7 +718,7 @@ describe("SQUAD XI — Copilot AI Tools E2E Integration Suite", () => {
 			const res = await app.inject({
 				method: "POST",
 				url: "/api/v1/copilot/confirm",
-				headers: authHeaders(),
+				headers: { ...authHeaders(), accept: "application/json" },
 				payload: {
 					sessionId,
 					callId,
@@ -745,7 +745,7 @@ describe("SQUAD XI — Copilot AI Tools E2E Integration Suite", () => {
 			const res = await app.inject({
 				method: "POST",
 				url: "/api/v1/copilot/confirm",
-				headers: authHeaders(),
+				headers: { ...authHeaders(), accept: "application/json" },
 				payload: {
 					sessionId,
 					callId,

@@ -13,7 +13,8 @@ export type PriceLockResolutionPolicy =
 	| "LOCK_ORIGINAL_PRICE"
 	| "UPDATE_TO_CURRENT_PRICE"
 	| "REQUIRE_ADMIN_OVERRIDE"
-	| "CUSTOM_PRICE_OVERRIDE";
+	| "CUSTOM_PRICE_OVERRIDE"
+	| "REPLACE_WITH_804N_ANALOGUE";
 
 export type PriceDiscrepancyKind =
 	| "PRICE_MATCH"

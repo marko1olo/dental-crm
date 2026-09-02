@@ -147,13 +147,13 @@
 }
 
 .profile-password-bar.weak {
-	background: #ef4444;
+	background: var(--bad-fg);
 }
 .profile-password-bar.medium {
-	background: #f59e0b;
+	background: var(--warn-fg);
 }
 .profile-password-bar.strong {
-	background: var(--success-color, #10b981);
+	background: var(--ok-fg);
 }
 
 .profile-password-label {
@@ -171,7 +171,7 @@
 }
 
 .profile-error-hint {
-	color: #ef4444;
+	color: var(--bad-fg);
 	font-size: 12px;
 	margin-top: 4px;
 	display: flex;
@@ -180,9 +180,9 @@
 }
 
 .profile-input-error {
-	border-color: #ef4444;
+	border-color: var(--bad-fg);
 }
 
 .profile-input-error:focus {
-	box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+	box-shadow: 0 0 0 3px var(--bad-bg);
 }

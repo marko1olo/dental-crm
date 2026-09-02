@@ -72,7 +72,7 @@
 	height: 40px;
 	border-radius: 10px;
 	background: var(--teal-surface, #f0fdfa);
-	border: 1px solid var(--teal-subtle, rgba(20, 184, 166, 0.25));
+	border: 1px solid var(--color-teal-100, rgba(13, 148, 136, 0.15));
 	color: var(--teal, #0d9488);
 	flex-shrink: 0;
 }
@@ -107,7 +107,7 @@
 	font-weight: 600;
 	background: var(--teal-surface, #f0fdfa);
 	color: var(--teal, #0d9488);
-	border: 1px solid var(--teal-subtle, rgba(20, 184, 166, 0.3));
+	border: 1px solid var(--color-teal-100, rgba(13, 148, 136, 0.15));
 	white-space: nowrap;
 }
 

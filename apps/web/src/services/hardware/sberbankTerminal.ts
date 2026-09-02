@@ -72,6 +72,15 @@ export interface ExecutePaymentOptions {
 	onStatusUpdate?: SberTerminalStatusListener | undefined;
 }
 
+export class TerminalConnectionError extends Error {
+	public readonly code: string;
+
+	constructor(message: string, code = "TERMINAL_UNREACHABLE") {
+		super(message);
+		this.name = "TerminalConnectionError";
+		this.code = code;
+	}
+}
 
 export class SberbankTerminalService {
 	private config: SberPosTerminalConfig;
@@ -435,18 +444,19 @@ export class SberbankTerminalService {
 
 	/**
 	 * Dispatches low-level driver command to terminal daemon (Pilot-NT / DualConnector / SmartPOS).
-	 * Falls back to realistic browser-side terminal state engine.
+	 * Throws TerminalConnectionError if hardware communication cannot be established.
 	 */
 	private async dispatchDriverCommand(req: SberPosTransactionRequest): Promise<SberPosTransactionResponse> {
-		// Attempt direct communication with local Pilot-NT / DualConnector service on 127.0.0.1:4000
+		const pilotPacket = buildPilotNtCommandPacket(this.config, req);
+		const dualPacket = buildDualConnectorCommand(this.config, req);
+
+		// 1. Direct communication with local Pilot-NT / DualConnector service on configured host:port
+		const localAgentUrl = `http://${this.config.hostIp}:${this.config.hostPort}/api/sberpos/command`;
 		try {
 			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 2000);
+			const timeoutMs = this.config.timeoutMs || 60000;
+			const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-			const pilotPacket = buildPilotNtCommandPacket(this.config, req);
-			const dualPacket = buildDualConnectorCommand(this.config, req);
-
-			const localAgentUrl = `http://${this.config.hostIp}:${this.config.hostPort}/api/sberpos/command`;
 			const res = await fetch(localAgentUrl, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -459,121 +469,51 @@ export class SberbankTerminalService {
 				const data = (await res.json()) as SberPosTransactionResponse;
 				return data;
 			}
-		} catch {
-			// Local terminal agent not responding -> fallback to protocol state simulator
-		}
+			const errPayload = await res.json().catch(() => ({}));
+			const msg =
+				(errPayload as { message?: string; error?: string }).message ||
+				`Терминал вернул ошибку выполнения команды (HTTP ${res.status})`;
+			this.updateStatus("communication_error", msg);
+			throw new TerminalConnectionError(msg, "TERMINAL_COMMAND_FAILED");
+		} catch (err: unknown) {
+			if (err instanceof TerminalConnectionError) {
+				throw err;
+			}
 
-		// Protocol lifecycle simulator
-		return new Promise<SberPosTransactionResponse>((resolve) => {
-			// 1. Simulate PIN entry
-			setTimeout(() => {
-				if (this.currentStatus === "card_wait" || this.currentStatus === "connecting") {
-					this.updateStatus("processing_card", "Считывание чипа карты EMV...");
-					setTimeout(() => {
-						this.updateStatus("pin_entry", "Введите ПИН-код на пин-паде терминала...");
-					}, 800);
-				}
-			}, 1000);
-
-			// 2. Simulate Authorization
-			setTimeout(() => {
-				this.updateStatus("authorizing", "Авторизация в процессинговом центре ПАО Сбербанк...");
-			}, 2500);
-
-			// 3. Complete Transaction
-			setTimeout(() => {
-				const now = new Date();
-				const dateTime = `${now.toLocaleDateString("ru-RU")} ${now.toLocaleTimeString("ru-RU")}`;
-				const rrn = req.originalRrn || String(Math.floor(100000000000 + Math.random() * 900000000000));
-				const authCode = req.originalAuthCode || String(Math.floor(100000 + Math.random() * 900000));
-				const cardHash = "2200********4819";
-				const cardIssuer = detectCardSystem(cardHash, "A0000006581010");
-				const aid = "A0000006581010";
-				const tvr = "0000008000";
-
-				let settlementTotals: SberSettlementTotals | undefined = undefined;
-				if (req.operation === "settlement") {
-					settlementTotals = {
-						batchNumber: 143,
-						dateTime,
-						saleCount: 32,
-						saleTotalKop: 68400000,
-						refundCount: 1,
-						refundTotalKop: 2100000,
-						voidCount: 0,
-						voidTotalKop: 0,
-						sberpayQrCount: 14,
-						sberpayQrTotalKop: 28900000,
-						biometryCount: 5,
-						biometryTotalKop: 11200000,
-						netTotalKop: 66300000,
-					};
-				}
-
-				const customerSlip =
-					req.operation === "settlement" && settlementTotals
-						? formatSberSettlementSlip(this.config, settlementTotals)
-						: formatSberBankSlip(this.config, {
-								isCustomerCopy: true,
-								operation: req.operation,
-								amountKop: req.amountKop,
-								rrn,
-								authCode,
-								cardHash,
-								cardIssuer,
-								aid,
-								tvr,
-								dateTime,
-								responseCode: "00",
-								orderId: req.orderId,
-							});
-
-				const merchantSlip =
-					req.operation === "settlement" && settlementTotals
-						? formatSberSettlementSlip(this.config, settlementTotals)
-						: formatSberBankSlip(this.config, {
-								isCustomerCopy: false,
-								operation: req.operation,
-								amountKop: req.amountKop,
-								rrn,
-								authCode,
-								cardHash,
-								cardIssuer,
-								aid,
-								tvr,
-								dateTime,
-								responseCode: "00",
-								orderId: req.orderId,
-							});
-
-				const qrPayload =
-					req.operation === "sberpay_qr"
-						? generateSberPayQrPayload(req.orderId, req.amountKop, this.config.merchantId)
-						: undefined;
-
-				resolve({
-					success: true,
-					responseCode: "00",
-					responseMessageRu: "Одобрено: транзакция успешно проведена",
-					terminalId: this.config.terminalId,
-					merchantId: this.config.merchantId,
-					rrn,
-					authCode,
-					cardHash,
-					cardIssuer,
-					aid,
-					tvr,
-					amountKop: req.amountKop,
-					transactionDateTime: dateTime,
-					operationType: req.operation,
-					customerSlip,
-					merchantSlip,
-					qrPayload,
-					settlementTotals,
+			// 2. Fallback attempt via backend API proxy /api/payments/sberbank/pos/transaction
+			try {
+				const proxyRes = await fetch("/api/payments/sberbank/pos/transaction", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						terminalId: this.config.terminalId,
+						operation: req.operation,
+						amountKopecks: req.amountKop,
+						orderId: req.orderId,
+						originalRrn: req.originalRrn,
+						originalAuthCode: req.originalAuthCode,
+					}),
 				});
-			}, 3600);
-		});
+
+				if (proxyRes.ok) {
+					const data = (await proxyRes.json()) as SberPosTransactionResponse;
+					return data;
+				}
+			} catch {
+				// Proxy unreachable
+			}
+
+			const failureMessage =
+				err instanceof Error && err.name === "AbortError"
+					? `Таймаут связи с POS-терминалом Сбербанк (${this.config.hostIp}:${this.config.hostPort})`
+					: `Не удалось установить соединение с POS-терминалом Сбербанк (${this.config.hostIp}:${this.config.hostPort}): ${err instanceof Error ? err.message : String(err)}`;
+
+			this.updateStatus("communication_error", failureMessage);
+			logger.error("[SberbankTerminalService] dispatchDriverCommand connection failure:", err);
+			throw new TerminalConnectionError(failureMessage, "TERMINAL_UNREACHABLE");
+		}
 	}
+
 
 	public cancelCurrentOperation(): void {
 		if (this.abortController) {

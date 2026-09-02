@@ -248,7 +248,7 @@ export function AuditTrailHubModal({
 						</div>
 
 						<div className="audit-metric-card">
-							<div className="audit-metric-icon-box" style={{ color: '#0284c7' }}>
+							<div className="audit-metric-icon-box" style={{ color: 'var(--teal, #0284c7)' }}>
 								<Eye size={20} />
 							</div>
 							<div>
@@ -258,7 +258,7 @@ export function AuditTrailHubModal({
 						</div>
 
 						<div className="audit-metric-card">
-							<div className="audit-metric-icon-box" style={{ color: '#059669' }}>
+							<div className="audit-metric-icon-box" style={{ color: 'var(--ok-fg, #059669)' }}>
 								<FileSpreadsheet size={20} />
 							</div>
 							<div>
@@ -268,7 +268,7 @@ export function AuditTrailHubModal({
 						</div>
 
 						<div className="audit-metric-card">
-							<div className="audit-metric-icon-box" style={{ color: '#7c3aed' }}>
+							<div className="audit-metric-icon-box" style={{ color: 'var(--info-fg, #7c3aed)' }}>
 								<Lock size={20} />
 							</div>
 							<div>
@@ -469,7 +469,7 @@ export function AuditTrailHubModal({
 													<td>
 														<div>{entry.payload.actionDescriptionRu}</div>
 														{entry.payload.exportRecordCount ? (
-															<div style={{ fontSize: '0.6875rem', color: '#ef4444', fontWeight: 600 }}>
+															<div style={{ fontSize: '0.6875rem', color: 'var(--bad-fg, #ef4444)', fontWeight: 600 }}>
 																Экспортировано: {entry.payload.exportRecordCount} записей
 															</div>
 														) : null}

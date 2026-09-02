@@ -597,7 +597,7 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 
 .pc-sheet-window {
 	background: var(--pc-bg);
-	border: 1.5px solid var(--pc-border);
+	border: 1px solid var(--pc-border);
 	border-radius: var(--pc-radius-lg);
 	box-shadow: var(--pc-shadow);
 	width: 100%;
@@ -614,7 +614,7 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 	background: #ffffff;
 	padding: 16px;
 	border-radius: var(--pc-radius-md);
-	border: 2px solid var(--pc-primary);
+	border: 1px solid var(--pc-primary);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -973,7 +973,7 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 
 .pc-submodal-card {
 	background: var(--pc-bg);
-	border: 1.5px solid var(--pc-border);
+	border: 1px solid var(--pc-border);
 	border-radius: var(--pc-radius-lg);
 	box-shadow: var(--pc-shadow);
 	width: 100%;
@@ -1023,7 +1023,7 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 	justify-content: center;
 	text-align: center;
 	padding: 6px 8px;
-	border: 1.5px solid var(--pc-border);
+	border: 1px solid var(--pc-border);
 	background: var(--pc-bg);
 	color: var(--pc-text-main);
 }

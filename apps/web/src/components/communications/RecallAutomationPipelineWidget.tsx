@@ -14,6 +14,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 
 export interface RecallCardItem {
@@ -38,7 +39,17 @@ export interface RecallStats {
 	conversionRate: number;
 }
 
-export const RecallAutomationPipelineWidget: React.FC = () => {
+interface RecallAutomationPipelineWidgetProps {
+	clinicName?: string;
+	onOpenScheduleModal?: (patientId: string, patientName: string) => void;
+	onOpenChat?: (patientId: string, patientName: string, phone?: string | null) => void;
+}
+
+export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWidgetProps> = ({
+	clinicName = "Стоматология DENTE",
+	onOpenScheduleModal,
+	onOpenChat,
+}) => {
 	const [recalls, setRecalls] = useState<RecallCardItem[]>([]);
 	const [stats, setStats] = useState<RecallStats>({
 		dueThisMonth: 0,
@@ -54,7 +65,9 @@ export const RecallAutomationPipelineWidget: React.FC = () => {
 	const fetchRecalls = useCallback(async () => {
 		setLoading(true);
 		try {
-			const res = await fetch("/api/patients/recall-candidates");
+			const res = await fetch("/api/patients/recall-candidates", {
+				headers: denteAdminSecretRequestHeaders(),
+			});
 			if (res.ok) {
 				const data = await res.json();
 				const items = Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : [];

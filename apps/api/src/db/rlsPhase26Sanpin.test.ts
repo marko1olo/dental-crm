@@ -95,7 +95,11 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 			  AND c.relname IN (${sql.raw(PHASE26_SANPIN_TABLES.map((t) => `'${t}'`).join(", "))})
 		`);
 
-		const rows = result.rows ?? [];
+		const rows = (result.rows ?? []) as Array<{
+			relname: string;
+			relrowsecurity: boolean;
+			relforcerowsecurity: boolean;
+		}>;
 		const coveredMap = new Map(rows.map((r) => [r.relname, r]));
 
 		assert.equal(
@@ -139,7 +143,15 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 			  AND policyname = 'tenant_isolation'
 		`);
 
-		const rows = result.rows ?? [];
+		const rows = (result.rows ?? []) as Array<{
+			tablename: string;
+			policyname: string;
+			permissive: string;
+			roles: string[];
+			cmd: string;
+			qual: string | null;
+			with_check: string | null;
+		}>;
 		assert.equal(
 			rows.length,
 			37,

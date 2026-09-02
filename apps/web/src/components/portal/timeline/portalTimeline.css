@@ -385,3 +385,24 @@
 		min-height: 44px;
 	}
 }
+
+@media (max-width: 480px) {
+	.portal-timeline-backdrop {
+		padding: 0;
+	}
+	.portal-timeline-modal {
+		height: 100dvh;
+		max-height: 100dvh;
+		border-radius: 0;
+		border: none;
+	}
+	.pt-header {
+		padding: 12px 14px;
+	}
+	.pt-header-user {
+		gap: 8px;
+	}
+	.pt-body {
+		padding: 12px;
+	}
+}

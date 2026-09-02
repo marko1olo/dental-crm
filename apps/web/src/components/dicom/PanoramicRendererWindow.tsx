@@ -275,6 +275,25 @@ export function PanoramicRendererWindow({
 		currentPreset,
 	]);
 
+	// Cleanup worker and raw Float32Array pixel buffers on unmount
+	useEffect(() => {
+		return () => {
+			if (workerRef.current) {
+				workerRef.current.terminate();
+				workerRef.current = null;
+			}
+			rawPixelsRef.current = null;
+			if (canvasRef.current) {
+				const ctx = canvasRef.current.getContext("2d");
+				if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+			}
+			if (crossSectionCanvasRef.current) {
+				const ctx = crossSectionCanvasRef.current.getContext("2d");
+				if (ctx) ctx.clearRect(0, 0, crossSectionCanvasRef.current.width, crossSectionCanvasRef.current.height);
+			}
+		};
+	}, []);
+
 	// Handle Canvas Mouse Move for HU Probe & Synchronized Crosshair
 	const handleCanvasMouseMove = (
 		e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,

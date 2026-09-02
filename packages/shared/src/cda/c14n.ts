@@ -92,14 +92,158 @@ export function formatRuDate(dateInput: Date | string | number | null | undefine
 }
 
 /**
+ * Permitted digital signature profiles under 63-FZ and EGISZ REMD regulations.
+ * Enveloped XML-DSig is strictly prohibited without a full W3C Exclusive Canonical XML (xml-exc-c14n#) engine
+ * with XPath node-set transforms to prevent XML Signature Wrapping (XSW) attacks.
+ *
+ * Russian statutory medical documentation requires detached CAdES-BES (PKCS#7 / CMS) signatures.
+ */
+export const ALLOWED_CDA_SIGNATURE_PROFILES = [
+	"CADES_BES",
+	"DETACHED_CMS",
+	"CADESCOM_CADES_BES",
+] as const;
+export type AllowedCdaSignatureProfile = (typeof ALLOWED_CDA_SIGNATURE_PROFILES)[number];
+
+export const FORBIDDEN_CDA_SIGNATURE_PROFILES = [
+	"XMLDSIG_ENVELOPED",
+	"XADES_ENVELOPED",
+	"ENVELOPED_XMLDSIG",
+	"ENVELOPED",
+] as const;
+
+export class EnvelopedSignatureSecurityError extends Error {
+	public readonly code = "FORBIDDEN_ENVELOPED_SIGNATURE";
+	constructor(message: string) {
+		super(message);
+		this.name = "EnvelopedSignatureSecurityError";
+	}
+}
+
+/**
+ * Detects whether an XML payload contains enveloped XML-DSig or XAdES signature constructs.
+ * Enveloped signatures place <ds:Signature> inside the document tree, which without a full
+ * W3C Exclusive Canonicalization (C14N) processor is vulnerable to signature malleability and XSW.
+ */
+export function detectEnvelopedXmlSignature(xml: string): {
+	readonly hasEnvelopedSignature: boolean;
+	readonly reason?: string;
+} {
+	if (!xml || typeof xml !== "string") return { hasEnvelopedSignature: false };
+
+	const hasSignatureElement =
+		/<(?:[A-Za-z0-9_]+:)?Signature\b[^>]*xmlns(?::[A-Za-z0-9_]+)?=["']http:\/\/www\.w3\.org\/2000\/09\/xmldsig#["']/i.test(xml) ||
+		/<ds:Signature\b/i.test(xml);
+
+	const hasEnvelopedTransform =
+		/http:\/\/www\.w3\.org\/2000\/09\/xmldsig#enveloped-signature/i.test(xml);
+
+	if (hasSignatureElement || hasEnvelopedTransform) {
+		return {
+			hasEnvelopedSignature: true,
+			reason:
+				"Enveloped XML-DSig (<ds:Signature>) обнаружен в теле XML документа. " +
+				"В соответствии с 63-ФЗ и требованиями ЕГИСЗ РЭМД Минздрава РФ, медицинские документы " +
+				"должны подписываться исключительно отсоединенной подписью CAdES-BES (PKCS#7 / CMS). " +
+				"Использование enveloped XML-DSig без сертифицированного W3C C14N каноникализатора запрещено.",
+		};
+	}
+
+	return { hasEnvelopedSignature: false };
+}
+
+/**
+ * Asserts that the XML payload does NOT contain an enveloped XML-DSig block.
+ * Throws EnvelopedSignatureSecurityError if enveloped signatures are detected.
+ */
+export function assertNoEnvelopedXmlSignature(xml: string): void {
+	const check = detectEnvelopedXmlSignature(xml);
+	if (check.hasEnvelopedSignature) {
+		throw new EnvelopedSignatureSecurityError(check.reason!);
+	}
+}
+
+/**
+ * Validates that digital signature mechanism is strictly detached CAdES-BES.
+ * Forbids enveloped XML-DSig / XAdES without a full C14N canonicalizer.
+ */
+export function validateCdaSignatureProfile(profile: string): {
+	readonly valid: boolean;
+	readonly profile: string;
+	readonly error?: string;
+} {
+	const normalized = profile.trim().toUpperCase();
+
+	if (
+		normalized.includes("ENVELOPED") ||
+		normalized === "XMLDSIG" ||
+		normalized === "XADES" ||
+		normalized === "XMLDSIG_ENVELOPED" ||
+		normalized === "XADES_ENVELOPED"
+	) {
+		return {
+			valid: false,
+			profile: normalized,
+			error:
+				`Запрещено использование enveloped XML-DSig (${profile}) без полноценного C14N каноникализатора. ` +
+				"Согласно требованиям 63-ФЗ и ЕГИСЗ РЭМД, разрешено использование исключительно отсоединенной подписи CAdES-BES (PKCS#7 / CMS).",
+		};
+	}
+
+	if (
+		normalized === "CADES_BES" ||
+		normalized === "DETACHED_CMS" ||
+		normalized === "CADESCOM_CADES_BES" ||
+		normalized === "DETACHED" ||
+		normalized === "CADES-BES"
+	) {
+		return { valid: true, profile: "CADES_BES" };
+	}
+
+	return {
+		valid: false,
+		profile: normalized,
+		error: `Недопустимый профиль электронной подписи: ${profile}. Разрешена только отсоединенная подпись CAdES-BES.`,
+	};
+}
+
+/**
+ * Asserts that the requested digital signature mechanism is strictly detached CAdES-BES.
+ * Throws EnvelopedSignatureSecurityError if enveloped XML-DSig or an unsupported profile is requested.
+ */
+export function assertDetachedCadesBesOnly(profile: string): void {
+	const res = validateCdaSignatureProfile(profile);
+	if (!res.valid) {
+		throw new EnvelopedSignatureSecurityError(res.error!);
+	}
+}
+
+export interface CanonicalizeCdaXmlOptions {
+	/**
+	 * When true (or when disallowEnvelopedSignature is not explicitly false), enforces that
+	 * enveloped XML-DSig blocks are strictly rejected to prevent signature malleability.
+	 */
+	readonly disallowEnvelopedSignature?: boolean;
+}
+
+/**
  * Deterministic XML canonicalization subset (C14N) for Russian CDA R2 / УКЭП.
  * 1. Strips UTF-8 BOM (\uFEFF)
  * 2. Normalizes line endings (\r\n -> \n, \r -> \n)
  * 3. Trims trailing whitespace from lines
  * 4. Normalizes leading/trailing document whitespace
+ * 5. Rejects insecure enveloped XML-DSig constructs if disallowEnvelopedSignature is true.
  */
-export function canonicalizeCdaXml(xml: string): string {
+export function canonicalizeCdaXml(
+	xml: string,
+	options: CanonicalizeCdaXmlOptions = { disallowEnvelopedSignature: true },
+): string {
 	if (!xml || typeof xml !== "string") return "";
+
+	if (options.disallowEnvelopedSignature !== false) {
+		assertNoEnvelopedXmlSignature(xml);
+	}
+
 	return xml
 		.replace(/^\uFEFF/, "") // Strip Byte Order Mark (BOM)
 		.replace(/\r\n/g, "\n")

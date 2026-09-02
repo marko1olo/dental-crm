@@ -653,9 +653,9 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 								</span>
 							</div>
 							<p className="hfi-header-subtitle">
-								<span>Пациент: <strong className="text-[var(--ink,#fff)]">{patientName}</strong></span>
+								<span>Пациент: <strong className="text-[var(--ink)]">{patientName}</strong></span>
 								<span>·</span>
-								<span>Медкарта: <strong className="text-[var(--ink,#fff)]">{patientCardNumber}</strong></span>
+								<span>Медкарта: <strong className="text-[var(--ink)]">{patientCardNumber}</strong></span>
 								<span>·</span>
 								<span>Врач: {doctorName}</span>
 							</p>

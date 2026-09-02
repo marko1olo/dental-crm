@@ -572,6 +572,9 @@ export const messageTemplateCatalogs = pgTable(
 	}),
 );
 
+export const messageTemplates = messageTemplateCatalogs;
+
+
 // messenger file attachments (files sent through chat)
 export const messengerFileAttachments = pgTable(
 	"messenger_file_attachments",

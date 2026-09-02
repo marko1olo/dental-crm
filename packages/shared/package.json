@@ -21,6 +21,11 @@
 			"import": "./dist/fiscal/index.js",
 			"default": "./dist/fiscal/index.js"
 		},
+		"./compliance": {
+			"types": "./dist/compliance/decree659Engine.d.ts",
+			"import": "./dist/compliance/decree659Engine.js",
+			"default": "./dist/compliance/decree659Engine.js"
+		},
 		"./sanpin": {
 			"types": "./dist/sanpin/index.d.ts",
 			"import": "./dist/sanpin/index.js",

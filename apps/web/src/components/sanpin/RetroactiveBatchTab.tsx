@@ -42,6 +42,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast.js";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	AUTOCLAVE_REGIME_PRESETS,
 	STATUTORY_CLINIC_CABINETS,
@@ -233,14 +234,9 @@ export function RetroactiveBatchTab() {
 
 		try {
 			setIsSaving(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-
-			const headers: Record<string, string> = {
+			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			};
+			});
 
 			// Perform real API call to batch save or autofill
 			const res = await fetch("/api/registers/autofill-shift", {
@@ -387,7 +383,7 @@ export function RetroactiveBatchTab() {
 								color: "var(--ink, #0f172a)",
 							}}
 						>
-							<Rocket size={24} color="#2563eb" />
+							<Rocket size={24} color="var(--teal)" />
 							Пакетное заполнение журналов СанПиН за период (1 клик)
 						</h2>
 						<div style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", marginTop: "0.25rem" }}>
@@ -398,7 +394,7 @@ export function RetroactiveBatchTab() {
 					<span
 						style={{
 							background: "rgba(5, 150, 105, 0.12)",
-							color: "#059669",
+							color: "var(--ok-fg)",
 							border: "1px solid rgba(5, 150, 105, 0.3)",
 							borderRadius: "9999px",
 							padding: "0.35rem 0.75rem",
@@ -564,9 +560,9 @@ export function RetroactiveBatchTab() {
 											borderRadius: "0.375rem",
 											fontSize: "0.82rem",
 											fontWeight: isSelected ? 700 : 500,
-											border: isSelected ? "1px solid #2563eb" : "1px solid var(--line, #cbd5e1)",
-											background: isSelected ? "rgba(37, 99, 235, 0.12)" : "var(--paper, #ffffff)",
-											color: isSelected ? "#1d4ed8" : "var(--ink, #334155)",
+											border: isSelected ? "1px solid var(--teal)" : "1px solid var(--line, #cbd5e1)",
+											background: isSelected ? "var(--teal-surface, rgba(13, 148, 136, 0.12))" : "var(--paper, #ffffff)",
+											color: isSelected ? "var(--teal)" : "var(--ink, #334155)",
 											cursor: "pointer",
 											display: "flex",
 											alignItems: "center",
@@ -574,7 +570,7 @@ export function RetroactiveBatchTab() {
 											transition: "all 0.15s ease",
 										}}
 									>
-										{isSelected && <Check size={14} color="#2563eb" />}
+										{isSelected && <Check size={14} color="var(--teal)" />}
 										{cab.shortName}
 									</button>
 								);
@@ -671,9 +667,9 @@ export function RetroactiveBatchTab() {
 							fontSize: "1.05rem",
 							fontWeight: 900,
 							letterSpacing: "0.02em",
-							background: "linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%)",
-							borderColor: "#047857",
-							color: "#ffffff",
+							background: "var(--ok-fg)",
+							borderColor: "var(--ok-fg)",
+							color: "var(--on-teal, #ffffff)",
 							borderRadius: "0.5rem",
 							cursor: "pointer",
 							boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
@@ -686,7 +682,7 @@ export function RetroactiveBatchTab() {
 						}}
 						data-testid="execute-sanpin-batch-1click-btn"
 					>
-						<Rocket size={22} color="#ffffff" />
+						<Rocket size={22} color="var(--on-teal, #ffffff)" />
 						<span>Заполнить все журналы СанПиН за период в 1 клик</span>
 					</button>
 				</div>
@@ -700,7 +696,7 @@ export function RetroactiveBatchTab() {
 						<span className="sanpin-kpi-value">
 							{stats.workingDaysCount} <span style={{ fontSize: "0.9rem", color: "var(--muted)" }}>из {stats.totalDays} дн.</span>
 						</span>
-						<span className="sanpin-kpi-subtext" style={{ color: "#059669", fontWeight: 600 }}>
+						<span className="sanpin-kpi-subtext" style={{ color: "var(--ok-fg)", fontWeight: 600 }}>
 							Все смены укомплектованы
 						</span>
 					</div>
@@ -714,7 +710,7 @@ export function RetroactiveBatchTab() {
 					<div className="sanpin-kpi-card" style={{ minHeight: "88px" }}>
 						<span className="sanpin-kpi-label">Циклов автоклава</span>
 						<span className="sanpin-kpi-value">{stats.totalAutoclaveCycles} циклов</span>
-						<span className="sanpin-kpi-subtext" style={{ color: "#059669", fontWeight: 600 }}>
+						<span className="sanpin-kpi-subtext" style={{ color: "var(--ok-fg)", fontWeight: 600 }}>
 							5 точек КТ-1..5: 100% стерильно
 						</span>
 					</div>
@@ -727,10 +723,10 @@ export function RetroactiveBatchTab() {
 
 					<div className="sanpin-kpi-card" style={{ minHeight: "88px" }}>
 						<span className="sanpin-kpi-label">Соответствие СанПиН</span>
-						<span className="sanpin-kpi-value" style={{ color: "#059669" }}>
+						<span className="sanpin-kpi-value" style={{ color: "var(--ok-fg)" }}>
 							100%
 						</span>
-						<span className="sanpin-kpi-subtext" style={{ color: "#059669", fontWeight: 600 }}>
+						<span className="sanpin-kpi-subtext" style={{ color: "var(--ok-fg)", fontWeight: 600 }}>
 							Готово к Роспотребнадзору
 						</span>
 					</div>
@@ -1037,7 +1033,7 @@ export function RetroactiveBatchTab() {
 											</td>
 											<td>
 												<strong>{day.date}</strong>
-												<div style={{ fontSize: "0.75rem", color: day.isWorkingDay ? "var(--muted)" : "#dc2626" }}>
+												<div style={{ fontSize: "0.75rem", color: day.isWorkingDay ? "var(--muted)" : "var(--bad-fg)" }}>
 													{day.dayOfWeekRu} {!day.isWorkingDay && "(Выходной)"}
 												</div>
 											</td>
@@ -1095,8 +1091,8 @@ export function RetroactiveBatchTab() {
 													<span
 														style={{
 															fontSize: "0.72rem",
-															background: "rgba(37, 99, 235, 0.12)",
-															color: "#2563eb",
+															background: "var(--teal-surface, rgba(13, 148, 136, 0.12))",
+															color: "var(--teal)",
 															padding: "0.1rem 0.35rem",
 															borderRadius: "4px",
 															fontWeight: 700,
@@ -1134,12 +1130,12 @@ export function RetroactiveBatchTab() {
 											<td style={{ textAlign: "center" }}>
 												{pendingDeleteDayId === day.id ? (
 													<div style={{ display: "flex", alignItems: "center", gap: "0.3rem", justifyContent: "center" }}>
-														<span style={{ fontSize: "0.75rem", color: "#dc2626", fontWeight: 700 }}>Удалить?</span>
+														<span style={{ fontSize: "0.75rem", color: "var(--bad-fg)", fontWeight: 700 }}>Удалить?</span>
 														<button
 															type="button"
 															onClick={() => confirmDeleteDay(day.id)}
 															className="sanpin-btn sanpin-btn-primary"
-															style={{ minHeight: "28px", padding: "0.15rem 0.45rem", fontSize: "0.75rem", background: "#dc2626", fontWeight: 700 }}
+															style={{ minHeight: "28px", padding: "0.15rem 0.45rem", fontSize: "0.75rem", background: "var(--bad-fg)", fontWeight: 700 }}
 															title="Подтвердить удаление смены"
 														>
 															Да
@@ -1163,7 +1159,7 @@ export function RetroactiveBatchTab() {
 																background: "none",
 																border: "none",
 																cursor: "pointer",
-																color: "var(--brand-primary, #2563eb)",
+																color: "var(--teal)",
 																padding: "0.25rem",
 															}}
 															title="Редактировать смену"
@@ -1177,7 +1173,7 @@ export function RetroactiveBatchTab() {
 																background: "none",
 																border: "none",
 																cursor: "pointer",
-																color: "#ef4444",
+																color: "var(--bad-fg)",
 																padding: "0.25rem",
 															}}
 															title="Удалить смену (с подтверждением)"

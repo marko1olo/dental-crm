@@ -756,7 +756,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 									{/* Statutory Checklist Section */}
 									<div>
 										<h4 className="cmo-section-title">
-											<ShieldCheck size={18} color="#0284c7" />
+											<ShieldCheck size={18} color="var(--teal)" />
 											<span>Критерии качества Приказа Минздрава РФ № 834н, № 785н и стандартов СтАР</span>
 										</h4>
 
@@ -783,7 +783,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 									{selectedRecord.cmoRemarks.length > 0 && (
 										<div>
 											<h4 className="cmo-section-title">
-												<FileWarning size={18} color="#dc2626" />
+												<FileWarning size={18} color="var(--bad-fg)" />
 												<span>Зафиксированные дефекты оформления для Врачебной комиссии</span>
 											</h4>
 											<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -802,7 +802,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 													>
 														<div>
 															<div style={{ fontWeight: 700, fontSize: "0.8125rem", color: "var(--ink)" }}>
-																{rem.title} {rem.isResolved && <span style={{ color: "#16a34a", fontSize: "0.75rem" }}>(Устранено)</span>}
+																{rem.title} {rem.isResolved && <span style={{ color: "var(--ok-fg)", fontSize: "0.75rem" }}>(Устранено)</span>}
 															</div>
 															<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{rem.comment}</div>
 														</div>
@@ -826,7 +826,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 									{/* CMO Action Box */}
 									<div className="cmo-action-box">
 										<h4 className="cmo-section-title" style={{ margin: 0 }}>
-											<Sparkles size={18} color="#0284c7" />
+											<Sparkles size={18} color="var(--teal)" />
 											<span>Инструменты Начмеда (Внесение дефектов & Резолюция)</span>
 										</h4>
 
@@ -945,7 +945,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 											</td>
 											<td>{doc.totalAudited}</td>
 											<td>
-												<span style={{ fontWeight: 700, color: doc.firstPassRatePercent >= 80 ? "#16a34a" : "#d97706" }}>
+												<span style={{ fontWeight: 700, color: doc.firstPassRatePercent >= 80 ? "var(--ok-fg)" : "var(--warn-fg)" }}>
 													{doc.firstPassRatePercent}% ({doc.approvedFirstAttempt} карт)
 												</span>
 											</td>
@@ -961,11 +961,11 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 											</td>
 											<td>
 												{doc.commonDefects.length > 0 ? (
-													<div style={{ fontSize: "0.6875rem", color: "#dc2626" }}>
+													<div style={{ fontSize: "0.6875rem", color: "var(--bad-fg)" }}>
 														{doc.commonDefects.map((d) => `${d.defectTitle} (${d.count})`).join(", ")}
 													</div>
 												) : (
-													<span style={{ color: "#16a34a", fontSize: "0.6875rem" }}>Дефектов нет</span>
+													<span style={{ color: "var(--ok-fg)", fontSize: "0.6875rem" }}>Дефектов нет</span>
 												)}
 											</td>
 											<td style={{ fontSize: "0.6875rem", color: "var(--muted)" }}>
@@ -1049,7 +1049,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 												))
 											) : (
 												<tr>
-													<td colSpan={6} style={{ textAlign: "center", color: "#16a34a" }}>
+													<td colSpan={6} style={{ textAlign: "center", color: "var(--ok-fg)" }}>
 														Дефектов оформления и ведения медицинской карты 043/у не выявлено.
 													</td>
 												</tr>

@@ -1,3 +1,7 @@
+import {
+	injectVisualSignatureStampIntoHtml,
+	renderDigitalSignatureStampHtml,
+} from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
 import {
@@ -17,6 +21,53 @@ import {
 	renderIssuedHtmlToPdf,
 	resolveDocumentRenderContext,
 } from "./shared.js";
+
+function applySignatureStampIfSigned(
+	document: import("@dental/shared").GeneratedDocument,
+	html: string,
+): string {
+	const isElectronicallySigned =
+		document.signatureAttestation?.mode === "qualified_electronic_signature" ||
+		document.signatureAttestation?.mode === "enhanced_non_qualified_electronic_signature" ||
+		Boolean(document.cryptoSignaturePkcs7 && document.cryptoSignaturePkcs7.length > 0) ||
+		Boolean(document.doctorSignaturePkcs7 && document.doctorSignaturePkcs7.length > 0);
+
+	if (!isElectronicallySigned || html.includes("BEGIN_GOST_SIGNATURE_STAMP")) {
+		return html;
+	}
+
+	const certSerial =
+		document.doctorCertSerial ||
+		`00E4A28B${document.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`;
+	const certSubject =
+		document.doctorCertSubject ||
+		document.signatureAttestation?.staffFullName ||
+		"Врач-стоматолог клиники";
+	const validFrom = document.issuedAt || new Date().toISOString();
+	const validToDate = new Date(validFrom);
+	validToDate.setFullYear(validToDate.getFullYear() + 1);
+
+	const stampHtml = renderDigitalSignatureStampHtml({
+		certificateSerialNumber: certSerial,
+		certificateSubject: certSubject,
+		certificateIssuer: "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+		validFrom,
+		validTo: validToDate.toISOString(),
+		signedAt:
+			document.doctorSignedAt ||
+			document.signatureAttestation?.signedAt ||
+			document.issuedAt ||
+			undefined,
+		signatureType:
+			document.signatureAttestation?.mode ===
+			"enhanced_non_qualified_electronic_signature"
+				? "unep"
+				: "ukep",
+		documentId: document.id,
+	});
+
+	return injectVisualSignatureStampIntoHtml(html, stampHtml);
+}
 
 export async function register(app: FastifyInstance) {
 	// ────────────────────────────────────────────────────────────
@@ -86,7 +137,9 @@ export async function register(app: FastifyInstance) {
 					);
 			}
 
-			const result = await renderIssuedHtmlToPdf(issuedSnapshot);
+			const result = await renderIssuedHtmlToPdf(
+				applySignatureStampIfSigned(document, issuedSnapshot),
+			);
 			if (!result.ok) {
 				return reply.code(503).send(apiError(result.error));
 			}
@@ -170,7 +223,9 @@ export async function register(app: FastifyInstance) {
 							),
 						);
 				}
-				const issuedResult = await renderIssuedHtmlToPdf(issuedSnapshot);
+				const issuedResult = await renderIssuedHtmlToPdf(
+					applySignatureStampIfSigned(document, issuedSnapshot),
+				);
 				if (!issuedResult.ok) {
 					return reply.code(503).send(apiError(issuedResult.error));
 				}
@@ -207,7 +262,9 @@ export async function register(app: FastifyInstance) {
 
 			const html = renderDocumentHtml(document, patient, draftSources.context);
 
-			const result = await renderIssuedHtmlToPdf(html);
+			const result = await renderIssuedHtmlToPdf(
+				applySignatureStampIfSigned(document, html),
+			);
 			if (!result.ok) {
 				return reply.code(503).send(apiError(result.error));
 			}

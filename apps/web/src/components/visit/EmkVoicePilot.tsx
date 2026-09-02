@@ -12,6 +12,7 @@ import {
 	ClipboardList,
 	Coins,
 	FileText,
+	LayoutGrid,
 	Mic,
 	MicOff,
 	Sliders,
@@ -27,14 +28,20 @@ import {
 	parseDentalVoiceSpeech,
 	type DentalVoiceIntent,
 	type ToothUpdateVoiceItem,
+	type EndoCanalVoiceItem,
 } from "../../services/voice";
 import { showToast } from "../GlobalToast";
+import type { OdontogramQuadrantId } from "../odontogram/ToothChart";
+import { getQuadrantTitle } from "../odontogram/ToothChart";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 
 export interface EmkVoicePilotProps {
 	readonly onApplyToothState?: (toothNumber: number, state: any, surfaces?: string[]) => void;
 	readonly onApplySoapNotes?: (notes: Record<string, string>) => void;
 	readonly onApplyAnesthesia?: (anesthesia: any) => void;
 	readonly onApplyProcedures?: (procedures: any[]) => void;
+	readonly onApplyQuadrant?: (quadrant: OdontogramQuadrantId) => void;
+	readonly onApplyEndoMeasurements?: (measurements: readonly EndoCanalVoiceItem[]) => void;
 	readonly activeSelectedTooth?: number | null;
 	readonly className?: string;
 }
@@ -44,21 +51,30 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 	onApplySoapNotes,
 	onApplyAnesthesia,
 	onApplyProcedures,
+	onApplyQuadrant,
+	onApplyEndoMeasurements,
 	activeSelectedTooth,
 	className = "",
 }) => {
 	const [isListening, setIsListening] = useState(false);
 	const [volume, setVolume] = useState(0);
 	const [transcript, setTranscript] = useState("");
+	const [interimText, setInterimText] = useState("");
+	const [finalTranscript, setFinalTranscript] = useState("");
 	const [intent, setIntent] = useState<DentalVoiceIntent | null>(null);
 	const [isApplied, setIsApplied] = useState(false);
 	const [isExpanded, setIsExpanded] = useState(true);
 
 	useEffect(() => {
 		const unsub = globalDentalVoiceEngine.addListener({
-			onListeningChange: (isL) => setIsListening(isL),
+			onListeningChange: (isL) => {
+				setIsListening(isL);
+				if (!isL) setInterimText("");
+			},
 			onVolumeChange: (vol) => setVolume(vol),
 			onTranscriptChange: (interim, final) => {
+				setInterimText(interim);
+				setFinalTranscript(final);
 				const full = (final + " " + interim).trim();
 				setTranscript(full);
 				if (full) {
@@ -67,6 +83,13 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 			},
 			onIntentParsed: (parsedIntent) => {
 				setIntent(parsedIntent);
+				if (parsedIntent.targetQuadrant !== undefined && onApplyQuadrant) {
+					onApplyQuadrant(parsedIntent.targetQuadrant);
+					void SoundFeedbackService.getInstance().playActionSuccess();
+					showToast(`Голос: ${getQuadrantTitle(parsedIntent.targetQuadrant)}`, "info");
+				} else if (parsedIntent.teethUpdates.length > 0) {
+					void SoundFeedbackService.getInstance().playSpeechCaptured();
+				}
 			},
 			onError: (err) => {
 				showToast(err, "warning");
@@ -90,7 +113,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 			unsub();
 			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, []);
+	}, [onApplyQuadrant]);
 
 	const handleToggleMic = useCallback(() => {
 		globalDentalVoiceEngine.toggle();
@@ -99,6 +122,8 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 	const handleClear = useCallback(() => {
 		globalDentalVoiceEngine.clear();
 		setTranscript("");
+		setInterimText("");
+		setFinalTranscript("");
 		setIntent(null);
 		setIsApplied(false);
 	}, []);
@@ -107,6 +132,11 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 		if (!intent) return;
 
 		let appliedCount = 0;
+
+		// 0. Применяем квадрант
+		if (intent.targetQuadrant !== undefined && onApplyQuadrant) {
+			onApplyQuadrant(intent.targetQuadrant);
+		}
 
 		// 1. Применяем одонтограмму
 		if (intent.teethUpdates.length > 0 && onApplyToothState) {
@@ -131,12 +161,19 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 			onApplyProcedures([...intent.procedures804n]);
 		}
 
+		// 5. Применяем эндодонтические измерения каналов
+		if (intent.endoCanalMeasurements && intent.endoCanalMeasurements.length > 0 && onApplyEndoMeasurements) {
+			onApplyEndoMeasurements(intent.endoCanalMeasurements);
+			appliedCount++;
+		}
+
 		setIsApplied(true);
+		void SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
 			`Голосовой протокол применён: ${intent.teethUpdates.length} зуб(ов), ${intent.procedures804n.length} услуг(и)`,
 			"success",
 		);
-	}, [intent, onApplyToothState, onApplySoapNotes, onApplyAnesthesia, onApplyProcedures]);
+	}, [intent, onApplyToothState, onApplySoapNotes, onApplyAnesthesia, onApplyProcedures, onApplyQuadrant, onApplyEndoMeasurements]);
 
 	const vuHeight = isListening ? Math.min(100, Math.max(15, (volume / 128) * 100)) : 10;
 
@@ -252,13 +289,30 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 			{transcript && (
 				<div className="p-3 bg-[var(--surface-hover,#f1f5f9)]/50 dark:bg-zinc-950/30 flex flex-col gap-2 border-t border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800">
 					{/* Live Raw Transcript */}
-					<div className="text-xs font-medium text-[var(--ink,#0f172a)] dark:text-zinc-200 italic bg-[var(--paper,#ffffff)] dark:bg-zinc-900 p-2 rounded-xl border border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800">
-						«{transcript}»
+					<div className="text-xs font-medium text-[var(--ink,#0f172a)] dark:text-zinc-200 bg-[var(--paper,#ffffff)] dark:bg-zinc-900 p-2.5 rounded-xl border border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-wrap items-center gap-1.5 leading-relaxed">
+						{finalTranscript && <span>«{finalTranscript}»</span>}
+						{interimText && (
+							<span className="text-blue-600 dark:text-blue-400 font-bold italic animate-pulse">
+								{finalTranscript ? `+ «${interimText}»` : `«${interimText}»`}
+							</span>
+						)}
 					</div>
 
 					{/* Structured Badges */}
 					{intent && (
 						<div className="flex flex-wrap items-center gap-1.5 text-xs">
+							{/* Quadrant switch badge */}
+							{intent.targetQuadrant && (
+								<span className="px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-800 dark:text-blue-200 border border-blue-500/30 font-bold flex items-center gap-1">
+									<LayoutGrid size={13} className="shrink-0" />
+									<span>
+										{intent.targetQuadrant === "all"
+											? "Все квадранты"
+											: `Квадрант ${intent.targetQuadrant}`}
+									</span>
+								</span>
+							)}
+
 							{/* Teeth updates */}
 							{intent.teethUpdates.map((t) => (
 								<span
@@ -293,6 +347,16 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 									<span>{p.name}</span>
 								</span>
 							))}
+
+							{/* Endo Canal Measurements */}
+							{intent.endoCanalMeasurements && intent.endoCanalMeasurements.length > 0 && (
+								<span className="px-2.5 py-1 rounded-lg bg-red-500/15 text-red-800 dark:text-red-200 border border-red-500/30 font-bold flex items-center gap-1">
+									<Sparkles size={13} className="shrink-0 text-red-500" />
+									<span>
+										Эндо: {intent.endoCanalMeasurements.map((c) => `${c.canalName} ${c.workingLengthMm ? `${c.workingLengthMm}мм` : ""}`).join(", ")}
+									</span>
+								</span>
+							)}
 
 							{/* SOAP Summary */}
 							{intent.soapNotes.assessment && (

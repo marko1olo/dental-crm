@@ -633,7 +633,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 					<div
 						style={{
 							backgroundColor: "rgba(16, 185, 129, 0.95)",
-							color: "#ffffff",
+							color: "var(--on-teal, #ffffff)",
 							padding: "10px 16px",
 							borderRadius: "14px",
 							fontSize: "12px",
@@ -656,7 +656,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 					<div
 						style={{
 							backgroundColor: "rgba(13, 148, 136, 0.95)",
-							color: "#ffffff",
+							color: "var(--on-teal, #ffffff)",
 							padding: "10px 16px",
 							borderRadius: "14px",
 							fontSize: "12px",
@@ -793,8 +793,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 																minHeight: "44px",
 																borderRadius: "10px",
 																border: "none",
-																background: "#ffffff",
-																color: "#0f766e",
+																background: "var(--paper-strong, #ffffff)",
+																color: "var(--teal-strong, #0f766e)",
 																fontSize: "12px",
 																fontWeight: 800,
 																cursor: "pointer",
@@ -812,7 +812,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 																minHeight: "44px",
 																borderRadius: "10px",
 																background: "rgba(255, 255, 255, 0.2)",
-																color: "#ffffff",
+																color: "var(--on-teal, #ffffff)",
 																textDecoration: "none",
 															}}
 															title="Позвонить в клинику"
@@ -823,16 +823,17 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												</div>
 											) : (
 												<div className="pwa-card" style={{ textAlign: "center", padding: "16px" }}>
-													<p style={{ margin: 0, fontSize: "13px", fontWeight: 700 }}>
+													<p style={{ margin: 0, fontSize: "13px", color: "var(--muted, #64748b)" }}>
 														У вас нет активных записей на прием
 													</p>
 													<button
 														type="button"
 														onClick={() => setShowSmartBooking(true)}
 														className="pwa-action-btn-primary"
-														style={{ marginTop: "10px" }}
+														style={{ marginTop: "10px", minHeight: "44px" }}
 													>
-														Записаться к врачу
+														<Calendar size={15} />
+														<span>Записаться к врачу</span>
 													</button>
 												</div>
 											)}
@@ -876,7 +877,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											className="pwa-quick-action-btn"
 											onClick={() => setActiveTab("photos")}
 										>
-											<div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(37, 99, 235, 0.15)", color: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+											<div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(37, 99, 235, 0.15)", color: "var(--info-fg, #2563eb)", display: "flex", alignItems: "center", justifyContent: "center" }}>
 												<Camera size={18} />
 											</div>
 											<div>
@@ -923,7 +924,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 													height: "34px",
 													borderRadius: "8px",
 													backgroundColor: "var(--teal, #0d9488)",
-													color: "#ffffff",
+													color: "var(--on-teal, #ffffff)",
 													display: "flex",
 													alignItems: "center",
 													justifyContent: "center",
@@ -949,7 +950,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												padding: "6px 10px",
 												borderRadius: "6px",
 												backgroundColor: "var(--teal, #0d9488)",
-												color: "#ffffff",
+												color: "var(--on-teal, #ffffff)",
 												border: "none",
 												fontSize: "11px",
 												fontWeight: 700,
@@ -992,7 +993,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												target="_blank"
 												rel="noreferrer"
 												className="pwa-action-btn-primary"
-												style={{ background: "#25d366", fontSize: "12px", minHeight: "44px", flex: 1 }}
+												style={{ background: "var(--ok-fg, #25d366)", fontSize: "12px", minHeight: "44px", flex: 1 }}
 											>
 												<MessageCircle size={15} />
 												<span>WhatsApp</span>
@@ -1035,7 +1036,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												borderRadius: "8px",
 												border: "none",
 												background: appointmentsSubTab === "upcoming" ? "var(--brand-500, #0d9488)" : "transparent",
-												color: appointmentsSubTab === "upcoming" ? "#ffffff" : "var(--muted, #64748b)",
+												color: appointmentsSubTab === "upcoming" ? "var(--on-teal, #ffffff)" : "var(--muted, #64748b)",
 												fontSize: "12px",
 												fontWeight: 700,
 												cursor: "pointer",
@@ -1054,7 +1055,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												borderRadius: "8px",
 												border: "none",
 												background: appointmentsSubTab === "history" ? "var(--brand-500, #0d9488)" : "transparent",
-												color: appointmentsSubTab === "history" ? "#ffffff" : "var(--muted, #64748b)",
+												color: appointmentsSubTab === "history" ? "var(--on-teal, #ffffff)" : "var(--muted, #64748b)",
 												fontSize: "12px",
 												fontWeight: 700,
 												cursor: "pointer",
@@ -1073,7 +1074,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												borderRadius: "8px",
 												border: "none",
 												background: appointmentsSubTab === "postop" ? "var(--brand-500, #0d9488)" : "transparent",
-												color: appointmentsSubTab === "postop" ? "#ffffff" : "var(--muted, #64748b)",
+												color: appointmentsSubTab === "postop" ? "var(--on-teal, #ffffff)" : "var(--muted, #64748b)",
 												fontSize: "12px",
 												fontWeight: 700,
 												cursor: "pointer",
@@ -1097,7 +1098,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												borderRadius: "8px",
 												border: "none",
 												background: appointmentsSubTab === "family_care" ? "var(--brand-500, #0d9488)" : "transparent",
-												color: appointmentsSubTab === "family_care" ? "#ffffff" : "var(--muted, #64748b)",
+												color: appointmentsSubTab === "family_care" ? "var(--on-teal, #ffffff)" : "var(--muted, #64748b)",
 												fontSize: "12px",
 												fontWeight: 700,
 												cursor: "pointer",
@@ -1645,12 +1646,12 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											style={{
 												width: "160px",
 												height: "160px",
-												background: "#0f172a",
+												background: "var(--ink, #0f172a)",
 												borderRadius: "12px",
 												display: "flex",
 												alignItems: "center",
 												justifyContent: "center",
-												color: "#ffffff",
+												color: "var(--paper, #ffffff)",
 											}}
 										>
 											<QrCode size={120} />

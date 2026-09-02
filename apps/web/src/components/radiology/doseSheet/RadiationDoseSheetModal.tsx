@@ -273,6 +273,14 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 		}
 	};
 
+	// Clear all dose records handler
+	const handleClearAllDoses = () => {
+		setRecords([]);
+		if (onSaveStudies) {
+			onSaveStudies([]);
+		}
+	};
+
 	// Print Form 043/u Insert Handler
 	const handlePrintDoseSheet = () => {
 		const html = generateDoseSheetHtml(records, {
@@ -802,24 +810,26 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 										value={journalSearch}
 										onChange={(e) => setJournalSearch(e.target.value)}
 										placeholder="Поиск по области, зубам FDI, врачу или заметкам..."
-										className="w-full bg-transparent text-xs md:text-sm font-semibold text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none min-h-[40px]"
+										className="w-full bg-transparent text-xs md:text-sm font-semibold text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none min-h-[44px]"
 									/>
 									{journalSearch && (
 										<button
 											type="button"
 											onClick={() => setJournalSearch("")}
-											className="h-full min-w-[44px] flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+											className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+											title="Очистить поиск"
+											aria-label="Очистить поиск"
 										>
-											<X className="w-3.5 h-3.5" />
+											<X className="w-4 h-4" />
 										</button>
 									)}
 								</div>
 
-								<div className="flex items-center gap-2">
+								<div className="flex items-center gap-2 flex-wrap">
 									<select
 										value={journalModalityFilter}
 										onChange={(e) => setJournalModalityFilter(e.target.value)}
-										className="min-h-[40px] px-3 py-1 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none"
+										className="min-h-[44px] px-3 py-1 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none"
 										aria-label="Фильтр по модальности"
 									>
 										<option value="all">Все модальности</option>
@@ -830,10 +840,24 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 										))}
 									</select>
 
+									{records.length > 0 && (
+										<button
+											type="button"
+											onClick={handleClearAllDoses}
+											className="inline-flex items-center gap-1.5 min-h-[44px] min-w-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 active:scale-95 transition-all shadow-xs cursor-pointer"
+											title="Очистить все записи дозовых нагрузок"
+											aria-label="Очистить все записи дозовых нагрузок"
+											data-testid="clear-all-doses-btn"
+										>
+											<Trash2 className="w-3.5 h-3.5" />
+											<span>Очистить дозы</span>
+										</button>
+									)}
+
 									<button
 										type="button"
 										onClick={() => setActiveTab("calculator")}
-										className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal)] text-white hover:opacity-90 active:scale-95 transition-all shadow-sm"
+										className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal)] text-white hover:opacity-90 active:scale-95 transition-all shadow-sm"
 									>
 										<Plus className="w-3.5 h-3.5" />
 										<span>Новое исследование</span>

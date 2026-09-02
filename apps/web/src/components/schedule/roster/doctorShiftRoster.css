@@ -284,8 +284,8 @@
 
 .roster-conflict-tag.warning {
 	background: var(--paper);
-	color: var(--warn-fg, #b45309);
-	border: 1px solid var(--warn-fg, #f59e0b);
+	color: var(--warn-fg);
+	border: 1px solid var(--warn-fg);
 	box-shadow: var(--shadow-1);
 }
 
@@ -301,7 +301,7 @@
 }
 
 .roster-conflict-tag.warning .roster-conflict-dot {
-	background-color: var(--warn-fg, #f59e0b);
+	background-color: var(--warn-fg);
 }
 
 .roster-conflict-text {
@@ -618,12 +618,12 @@
 }
 
 .roster-btn-primary {
-	background: var(--teal-fill, var(--teal));
-	color: var(--on-teal, #ffffff);
+	background: var(--teal);
+	color: var(--paper-strong);
 }
 
 .roster-btn-primary:hover {
-	background: var(--teal-dark, var(--teal));
+	background: var(--teal-dark);
 }
 
 .roster-btn-secondary {
@@ -644,7 +644,7 @@
 
 .roster-btn-danger:hover {
 	background: var(--bad-fg);
-	color: #ffffff;
+	color: var(--paper);
 }
 
 /* A4 Print Layout */

@@ -239,8 +239,8 @@
 
 .warranty-tooth-chip.selected {
 	background: var(--teal);
-	color: var(--on-teal, #ffffff);
-	border-color: var(--teal-dark, var(--teal));
+	color: var(--paper-strong);
+	border-color: var(--teal-dark);
 	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
 }
 
@@ -388,8 +388,8 @@
 }
 
 .warranty-risk-score-badge.moderate {
-	background: var(--warn-border, rgba(217, 119, 6, 0.15));
-	color: var(--warn-fg, #d97706);
+	background: var(--warn-bg);
+	color: var(--warn-fg);
 }
 
 .warranty-risk-score-badge.high,
@@ -447,7 +447,7 @@
 	left: 3px;
 	width: 18px;
 	height: 18px;
-	background: #ffffff;
+	background: var(--paper-strong);
 	border-radius: 50%;
 	transition: transform 0.2s ease;
 }
@@ -500,10 +500,10 @@
 .warranty-preview-frame {
 	width: 100%;
 	max-width: 820px;
-	background: #ffffff;
-	color: #0f172a;
+	background: var(--paper-strong);
+	color: var(--ink);
 	border-radius: 8px;
-	box-shadow: var(--shadow-2, 0 10px 15px -3px rgba(0, 0, 0, 0.2));
+	box-shadow: var(--shadow-2);
 	padding: 24px;
 	border: 1px solid var(--line);
 	overflow: hidden;
@@ -513,7 +513,7 @@
 	width: 100%;
 	height: 640px;
 	border: none;
-	background: #ffffff;
+	background: var(--paper-strong);
 }
 
 /* Footer & Buttons */
@@ -566,9 +566,9 @@
 	min-height: 40px;
 	padding: 0 18px;
 	border-radius: 6px;
-	border: 1px solid var(--teal-dark, var(--teal));
+	border: 1px solid var(--teal);
 	background: var(--teal);
-	color: var(--on-teal, #ffffff);
+	color: var(--paper-strong);
 	font-size: 13px;
 	font-weight: 700;
 	cursor: pointer;
@@ -580,7 +580,7 @@
 }
 
 .warranty-btn-primary:hover {
-	background: var(--teal-dark, var(--teal));
+	background: var(--teal-dark);
 }
 
 .warranty-btn-primary:active {

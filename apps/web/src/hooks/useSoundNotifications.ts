@@ -111,10 +111,46 @@ export function useSoundNotifications({
 	muted = false,
 }: UseSoundNotificationsOptions = {}) {
 	const audioCtxRef = useRef<AudioCtxRef>(null);
+	const idleSuspendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const lastOnlineChimeAt = useRef(0);
 	const lastSlotWarningAt = useRef(0);
 	// Множество endsAt (ISO-строка) приёмов, по которым сигнал уже прозвучал.
 	const warnedSlots = useRef<Set<string>>(new Set());
+
+	const scheduleIdleSuspend = useCallback((ctx: AudioContext) => {
+		if (idleSuspendTimerRef.current) {
+			clearTimeout(idleSuspendTimerRef.current);
+		}
+		idleSuspendTimerRef.current = setTimeout(() => {
+			if (ctx.state === "running") {
+				ctx.suspend().catch(() => undefined);
+			}
+			idleSuspendTimerRef.current = null;
+		}, 5000);
+	}, []);
+
+	const playSoundWithIdleSuspend = useCallback(
+		(playFn: (ctx: AudioContext) => void) => {
+			const ctx = getOrCreateCtx(audioCtxRef);
+			if (!ctx) return;
+			if (idleSuspendTimerRef.current) {
+				clearTimeout(idleSuspendTimerRef.current);
+				idleSuspendTimerRef.current = null;
+			}
+			if (ctx.state === "suspended") {
+				ctx.resume()
+					.then(() => {
+						playFn(ctx);
+						scheduleIdleSuspend(ctx);
+					})
+					.catch(() => undefined);
+			} else {
+				playFn(ctx);
+				scheduleIdleSuspend(ctx);
+			}
+		},
+		[scheduleIdleSuspend],
+	);
 
 	// WS-соединение расписания — то же, что у useScheduleRealtime.
 	const wsUrl = (() => {
@@ -136,15 +172,8 @@ export function useSoundNotifications({
 		if (now - lastOnlineChimeAt.current < COOLDOWN_MS) return;
 		lastOnlineChimeAt.current = now;
 
-		const ctx = getOrCreateCtx(audioCtxRef);
-		if (!ctx) return;
-		// AudioContext может быть suspended до жеста пользователя.
-		if (ctx.state === "suspended") {
-			ctx.resume().then(() => playOnlineBookingChime(ctx)).catch(() => undefined);
-		} else {
-			playOnlineBookingChime(ctx);
-		}
-	}, [lastMessage, muted]);
+		playSoundWithIdleSuspend(playOnlineBookingChime);
+	}, [lastMessage, muted, playSoundWithIdleSuspend]);
 
 	// Таймер «5 минут до конца слота» для врача.
 	const checkSlotEnd = useCallback(() => {
@@ -166,17 +195,11 @@ export function useSoundNotifications({
 			if (diff > 0 && diff <= SLOT_END_WARNING_MS && diff > SLOT_END_WARNING_MS - SLOT_CHECK_INTERVAL_MS) {
 				warnedSlots.current.add(key);
 				lastSlotWarningAt.current = now;
-				const ctx = getOrCreateCtx(audioCtxRef);
-				if (!ctx) break;
-				if (ctx.state === "suspended") {
-					ctx.resume().then(() => playSlotEndWarningChime(ctx)).catch(() => undefined);
-				} else {
-					playSlotEndWarningChime(ctx);
-				}
+				playSoundWithIdleSuspend(playSlotEndWarningChime);
 				break;
 			}
 		}
-	}, [currentDoctorUserId, doctorTodaySlots, muted]);
+	}, [currentDoctorUserId, doctorTodaySlots, muted, playSoundWithIdleSuspend]);
 
 	useEffect(() => {
 		if (!currentDoctorUserId || !doctorTodaySlots?.length) return;
@@ -185,10 +208,17 @@ export function useSoundNotifications({
 		return () => clearInterval(timer);
 	}, [currentDoctorUserId, doctorTodaySlots, checkSlotEnd]);
 
-	// Очищаем AudioContext при размонтировании.
+	// Очищаем AudioContext и таймеры при размонтировании.
 	useEffect(() => {
 		return () => {
-			audioCtxRef.current?.close().catch(() => undefined);
+			if (idleSuspendTimerRef.current) {
+				clearTimeout(idleSuspendTimerRef.current);
+				idleSuspendTimerRef.current = null;
+			}
+			if (audioCtxRef.current) {
+				audioCtxRef.current.close().catch(() => undefined);
+				audioCtxRef.current = null;
+			}
 		};
 	}, []);
 
@@ -196,24 +226,12 @@ export function useSoundNotifications({
 	 * Тестовая функция для ручной проверки звука в настройках.
 	 */
 	const testOnlineBookingSound = useCallback(() => {
-		const ctx = getOrCreateCtx(audioCtxRef);
-		if (!ctx) return;
-		if (ctx.state === "suspended") {
-			ctx.resume().then(() => playOnlineBookingChime(ctx)).catch(() => undefined);
-		} else {
-			playOnlineBookingChime(ctx);
-		}
-	}, []);
+		playSoundWithIdleSuspend(playOnlineBookingChime);
+	}, [playSoundWithIdleSuspend]);
 
 	const testSlotEndSound = useCallback(() => {
-		const ctx = getOrCreateCtx(audioCtxRef);
-		if (!ctx) return;
-		if (ctx.state === "suspended") {
-			ctx.resume().then(() => playSlotEndWarningChime(ctx)).catch(() => undefined);
-		} else {
-			playSlotEndWarningChime(ctx);
-		}
-	}, []);
+		playSoundWithIdleSuspend(playSlotEndWarningChime);
+	}, [playSoundWithIdleSuspend]);
 
 	return { testOnlineBookingSound, testSlotEndSound };
 }

@@ -280,7 +280,7 @@ function ToggleSwitch({
 					width: 20,
 					height: 20,
 					borderRadius: "50%",
-					background: "#ffffff",
+					background: "var(--paper-strong, #ffffff)",
 					boxShadow: "0 1px 4px rgba(0,0,0,.25)",
 					transform: `translateX(${checked ? 24 : 3}px)`,
 					transition: "transform .22s cubic-bezier(.4,0,.2,1)",

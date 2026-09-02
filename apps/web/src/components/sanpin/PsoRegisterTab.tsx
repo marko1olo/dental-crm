@@ -116,7 +116,7 @@ export const DEFAULT_PSO_DEMO_RECORDS: PsoCleaningLog[] = [
 ];
 
 export function PsoRegisterTab() {
-	const [logs, setLogs] = useState<PsoCleaningLog[]>(DEFAULT_PSO_DEMO_RECORDS);
+	const [logs, setLogs] = useState<PsoCleaningLog[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [testFilter, setTestFilter] = useState<string>("all");
@@ -148,17 +148,13 @@ export function PsoRegisterTab() {
 			});
 			if (res.ok) {
 				const data = await res.json();
-				if (Array.isArray(data) && data.length > 0) {
-					setLogs(data);
-				} else {
-					setLogs(DEFAULT_PSO_DEMO_RECORDS);
-				}
+				setLogs(Array.isArray(data) ? data : []);
 			} else {
-				setLogs(DEFAULT_PSO_DEMO_RECORDS);
+				setLogs([]);
 			}
 		} catch (err) {
 			console.error("Failed to load PSO logs", err);
-			setLogs(DEFAULT_PSO_DEMO_RECORDS);
+			setLogs([]);
 		} finally {
 			setLoading(false);
 		}
@@ -442,8 +438,24 @@ export function PsoRegisterTab() {
 							</tr>
 						) : filteredLogs.length === 0 ? (
 							<tr>
-								<td colSpan={9} style={{ textAlign: "center", padding: "2.5rem", color: "var(--muted)", fontSize: "0.95rem" }}>
-									Записи предстерилизационной очистки не найдены.
+								<td colSpan={9} style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
+									<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", maxWidth: "560px", margin: "0 auto" }}>
+										<FlaskConical size={36} color="var(--brand-primary, #2563eb)" />
+										<div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink, #0f172a)" }}>
+											Журнал предстерилизационной очистки пуст
+										</div>
+										<div style={{ fontSize: "0.825rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
+											Внесите результаты азопирамовой и фенолфталеиновой проб партии инструментов (Форма № 366/у по СанПиН 3.3686-21).
+										</div>
+										<button
+											type="button"
+											onClick={() => setIsModalOpen(true)}
+											className="sanpin-btn sanpin-btn-primary"
+											style={{ minHeight: "40px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+										>
+											<Plus size={15} /> + Внести пробу ПСО (Форма № 366/у)
+										</button>
+									</div>
 								</td>
 							</tr>
 						) : (

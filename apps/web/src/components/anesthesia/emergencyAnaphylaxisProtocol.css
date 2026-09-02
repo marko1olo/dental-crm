@@ -1,0 +1,643 @@
+/* emergencyAnaphylaxisProtocol.css — Стили для экстренного протокола реанимации (Анафилаксия, LAST, Коллапс) */
+
+.emergency-protocol-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(15, 23, 42, 0.85);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	overflow-y: auto;
+}
+
+.emergency-protocol-card {
+	width: 100%;
+	max-width: 1100px;
+	max-height: 94vh;
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	border-radius: 16px;
+	border: 2px solid var(--danger-border, rgba(239, 68, 68, 0.4));
+	box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.35), 0 0 0 1px rgba(239, 68, 68, 0.2);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	animation: emergencyPulse 3s infinite ease-in-out;
+}
+
+@keyframes emergencyPulse {
+	0%, 100% {
+		border-color: rgba(239, 68, 68, 0.8);
+		box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+	}
+	50% {
+		border-color: rgba(239, 68, 68, 1);
+		box-shadow: 0 0 45px rgba(239, 68, 68, 0.5);
+	}
+}
+
+/* Header */
+.emergency-header {
+	padding: 16px 20px;
+	background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(249, 115, 22, 0.1));
+	border-bottom: 2px solid rgba(239, 68, 68, 0.3);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.emergency-header-title {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.emergency-icon-badge {
+	width: 52px;
+	height: 52px;
+	border-radius: 12px;
+	background: #ef4444;
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+	animation: emergencyIconShake 1.5s infinite ease-in-out;
+}
+
+@keyframes emergencyIconShake {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.08); }
+}
+
+.emergency-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+/* Scenario Tabs */
+.emergency-scenarios-bar {
+	display: flex;
+	gap: 8px;
+	padding: 12px 20px;
+	background: var(--paper, #f8fafc);
+	border-bottom: 1px solid var(--glass-border, #e2e8f0);
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+}
+
+.emergency-scenario-btn {
+	min-height: 48px;
+	padding: 8px 18px;
+	border-radius: 10px;
+	border: 1px solid var(--glass-border, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #1e293b);
+	font-weight: 800;
+	font-size: 13px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	white-space: nowrap;
+	flex-shrink: 0;
+	scroll-snap-align: start;
+}
+
+.emergency-scenario-btn:hover {
+	border-color: #ef4444;
+	background: rgba(239, 68, 68, 0.05);
+}
+
+.emergency-scenario-btn.active {
+	background: #ef4444;
+	color: #ffffff;
+	border-color: #dc2626;
+	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.emergency-scenario-btn.active.last {
+	background: #ea580c;
+	border-color: #c2410c;
+	box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+}
+
+.emergency-scenario-btn.active.syncope {
+	background: #0284c7;
+	border-color: #0369a1;
+	box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+}
+
+.emergency-scenario-btn.active.crisis {
+	background: #7c3aed;
+	border-color: #6d28d9;
+	box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+/* Golden Rule Banner */
+.emergency-golden-banner {
+	padding: 12px 20px;
+	background: rgba(239, 68, 68, 0.12);
+	border-left: 6px solid #ef4444;
+	font-size: 13px;
+	font-weight: 800;
+	color: #b91c1c;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+[data-theme="dark"] .emergency-golden-banner,
+.dark .emergency-golden-banner {
+	background: rgba(239, 68, 68, 0.2);
+	color: #fca5a5;
+}
+
+/* Main Body Grid */
+.emergency-modal-body {
+	display: grid;
+	grid-template-columns: 1fr 340px;
+	gap: 16px;
+	padding: 16px 20px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+@media (max-width: 900px) {
+	.emergency-modal-body {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Weight Calculator Section */
+.emergency-calc-panel {
+	background: var(--paper, #f8fafc);
+	border: 1px solid var(--glass-border, #e2e8f0);
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.emergency-weight-chips {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.emergency-weight-chip {
+	min-height: 48px;
+	min-width: 54px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--glass-border, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	font-weight: 800;
+	font-size: 13px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+}
+
+.emergency-weight-chip:hover {
+	border-color: #ef4444;
+}
+
+.emergency-weight-chip.active {
+	background: #ef4444;
+	color: #ffffff;
+	border-color: #dc2626;
+}
+
+/* Dose Cards Grid */
+.emergency-dose-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 10px;
+}
+
+.emergency-dose-card {
+	padding: 12px 14px;
+	border-radius: 10px;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--glass-border, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.emergency-dose-card.primary-drug {
+	border-color: rgba(239, 68, 68, 0.5);
+	background: linear-gradient(180deg, rgba(239, 68, 68, 0.06), var(--paper-strong, #ffffff));
+}
+
+.emergency-dose-card.lipid-drug {
+	border-color: rgba(249, 115, 22, 0.5);
+	background: linear-gradient(180deg, rgba(249, 115, 22, 0.06), var(--paper-strong, #ffffff));
+}
+
+.emergency-dose-val {
+	font-size: 18px;
+	font-weight: 900;
+	color: #ef4444;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.emergency-dose-val.lipid {
+	color: #ea580c;
+}
+
+/* Timeline Steps */
+.emergency-timeline {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.emergency-step-card {
+	padding: 14px 16px;
+	border-radius: 12px;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--glass-border, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	transition: all 0.2s ease;
+}
+
+.emergency-step-card.critical {
+	border-left: 6px solid #ef4444;
+	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
+}
+
+.emergency-step-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.emergency-step-num {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: #ef4444;
+	color: #ffffff;
+	font-weight: 900;
+	font-size: 14px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.emergency-step-time {
+	font-size: 12px;
+	font-weight: 800;
+	padding: 4px 8px;
+	border-radius: 6px;
+	background: rgba(239, 68, 68, 0.1);
+	color: #b91c1c;
+}
+
+.emergency-checklist {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.emergency-check-item {
+	min-height: 48px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: var(--paper, #f8fafc);
+	border: 1px solid var(--glass-border, #e2e8f0);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s ease;
+}
+
+.emergency-check-item:hover {
+	border-color: #ef4444;
+}
+
+.emergency-check-item.done {
+	background: rgba(34, 197, 94, 0.1);
+	border-color: rgba(34, 197, 94, 0.4);
+	color: #15803d;
+	text-decoration: line-through;
+}
+
+/* Sidebar: Timer & Emergency Telemetry */
+.emergency-sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.emergency-stopwatch-panel {
+	background: #0f172a;
+	color: #f8fafc;
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.emergency-stopwatch-digits {
+	font-size: 38px;
+	font-weight: 900;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	letter-spacing: 2px;
+	color: #ef4444;
+	text-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+}
+
+.emergency-stopwatch-digits.running {
+	animation: digitsPulse 1s infinite alternate;
+}
+
+@keyframes digitsPulse {
+	from { opacity: 0.9; }
+	to { opacity: 1; }
+}
+
+.emergency-timer-btns {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	width: 100%;
+}
+
+.emergency-timer-btn {
+	min-height: 48px;
+	border-radius: 8px;
+	border: none;
+	font-weight: 800;
+	font-size: 12px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+}
+
+.emergency-timer-btn.start {
+	background: #22c55e;
+	color: #ffffff;
+}
+
+.emergency-timer-btn.pause {
+	background: #f59e0b;
+	color: #ffffff;
+}
+
+.emergency-timer-btn.reset {
+	background: #475569;
+	color: #ffffff;
+}
+
+/* Metronome Bar */
+.emergency-cpr-metronome {
+	min-height: 48px;
+	width: 100%;
+	border-radius: 8px;
+	border: 1px solid #334155;
+	background: #1e293b;
+	color: #f8fafc;
+	font-weight: 800;
+	font-size: 13px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+}
+
+.emergency-cpr-metronome.active {
+	background: #dc2626;
+	border-color: #ef4444;
+	box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+	animation: cprPulse 0.545s infinite ease-in-out; /* 110 bpm */
+}
+
+@keyframes cprPulse {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.03); }
+}
+
+/* Call 112 Section */
+.emergency-call-btn {
+	min-height: 52px;
+	width: 100%;
+	border-radius: 10px;
+	background: #dc2626;
+	color: #ffffff;
+	font-weight: 900;
+	font-size: 15px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	text-decoration: none;
+	cursor: pointer;
+	box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+	border: 2px solid #ef4444;
+	transition: all 0.15s ease;
+}
+
+.emergency-call-btn:hover {
+	background: #b91c1c;
+	transform: translateY(-1px);
+}
+
+/* Quick Drug Admin Buttons */
+.emergency-quick-admin-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.emergency-quick-drug-btn {
+	min-height: 48px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--glass-border, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	font-weight: 700;
+	font-size: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.emergency-quick-drug-btn:hover {
+	border-color: #ef4444;
+	background: rgba(239, 68, 68, 0.05);
+}
+
+/* Resuscitation Event Log */
+.emergency-log-card {
+	background: var(--paper, #f8fafc);
+	border: 1px solid var(--glass-border, #e2e8f0);
+	border-radius: 10px;
+	padding: 10px 12px;
+	max-height: 180px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 11px;
+}
+
+.emergency-log-entry {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	color: var(--ink, #334155);
+	line-height: 1.4;
+}
+
+.emergency-log-time {
+	font-weight: 800;
+	color: #ef4444;
+	flex-shrink: 0;
+}
+
+/* Footer */
+.emergency-footer {
+	padding: 14px 20px;
+	background: var(--paper, #f8fafc);
+	border-top: 1px solid var(--glass-border, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.emergency-footer-btns {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.emergency-action-btn {
+	min-height: 48px;
+	padding: 8px 16px;
+	border-radius: 8px;
+	border: 1px solid var(--glass-border, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	font-weight: 800;
+	font-size: 13px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.emergency-action-btn.primary {
+	background: #22c55e;
+	color: #ffffff;
+	border-color: #16a34a;
+}
+
+.emergency-action-btn.primary:hover {
+	background: #16a34a;
+}
+
+.emergency-action-btn.danger {
+	background: #ef4444;
+	color: #ffffff;
+	border-color: #dc2626;
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] .emergency-protocol-card,
+.dark .emergency-protocol-card {
+	background: #0f172a;
+	color: #f8fafc;
+	border-color: #ef4444;
+}
+
+[data-theme="dark"] .emergency-scenarios-bar,
+.dark .emergency-scenarios-bar,
+[data-theme="dark"] .emergency-calc-panel,
+.dark .emergency-calc-panel,
+[data-theme="dark"] .emergency-footer,
+.dark .emergency-footer {
+	background: #1e293b;
+	border-color: #334155;
+}
+
+[data-theme="dark"] .emergency-scenario-btn,
+.dark .emergency-scenario-btn,
+[data-theme="dark"] .emergency-weight-chip,
+.dark .emergency-weight-chip,
+[data-theme="dark"] .emergency-dose-card,
+.dark .emergency-dose-card,
+[data-theme="dark"] .emergency-step-card,
+.dark .emergency-step-card,
+[data-theme="dark"] .emergency-quick-drug-btn,
+.dark .emergency-quick-drug-btn,
+[data-theme="dark"] .emergency-action-btn,
+.dark .emergency-action-btn {
+	background: #0f172a;
+	color: #f8fafc;
+	border-color: #334155;
+}
+
+[data-theme="dark"] .emergency-check-item,
+.dark .emergency-check-item,
+[data-theme="dark"] .emergency-log-card,
+.dark .emergency-log-card {
+	background: #090d16;
+	border-color: #334155;
+	color: #cbd5e1;
+}
+
+/* High-stress Touch Targets Assurance */
+@media (pointer: coarse) {
+	.emergency-scenario-btn,
+	.emergency-weight-chip,
+	.emergency-check-item,
+	.emergency-timer-btn,
+	.emergency-cpr-metronome,
+	.emergency-call-btn,
+	.emergency-quick-drug-btn,
+	.emergency-action-btn {
+		min-height: 52px;
+	}
+}

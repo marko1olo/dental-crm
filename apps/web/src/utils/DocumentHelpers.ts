@@ -270,6 +270,7 @@ export const documentIssueSignatureModeLabels: Record<
 > = {
 	paper_signed: "Бумажный экземпляр подписан",
 	simple_electronic_signature: "Простая электронная подпись",
+	enhanced_non_qualified_electronic_signature: "УНЭП",
 	qualified_electronic_signature: "УКЭП",
 };
 

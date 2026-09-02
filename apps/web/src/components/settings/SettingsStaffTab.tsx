@@ -7,6 +7,7 @@ import { showToast } from "../GlobalToast";
 import { DoctorSnilsValidationWidget } from "./DoctorSnilsValidationWidget";
 import { StaffAuthorityPanel } from "./StaffAuthorityPanel";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
+import { StaffProfileCard } from "./StaffProfileCard";
 import { CREATABLE_STAFF_ROLES, staffRoleTitle } from "./settingsInviteRoles";
 import {
 	planStaffCredentialUpdate,
@@ -82,6 +83,8 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 	 * пятью сотрудниками осталась бы без номеров навсегда.
 	 */
 	const [newStaffPhone, setNewStaffPhone] = useState("");
+	const [newStaffSnils, setNewStaffSnils] = useState("");
+	const [selectedStaffForCard, setSelectedStaffForCard] = useState<any | null>(null);
 
 	// PIN editing state
 	const [editingPinForId, setEditingPinForId] = useState<string | null>(null);
@@ -134,6 +137,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 					role: newStaffRole,
 					phone: newStaffPhone.trim() || null,
 					email: newStaffEmail.trim() || null,
+					snils: newStaffSnils.trim() || null,
 					active: true,
 					canSignMedicalRecords: newStaffRole === "doctor",
 					canManageMoney:
@@ -152,6 +156,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 			setNewStaffName("");
 			setNewStaffEmail("");
 			setNewStaffPhone("");
+			setNewStaffSnils("");
 			/*
 			 * БЫЛО: «Сотрудник успешно добавлен. Пожалуйста, перезагрузите страницу.»
 			 *
@@ -349,7 +354,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 								<div className="flex items-center gap-3 mb-3">
 									<div
 										className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white shrink-0"
-										style={{ backgroundColor: member.color || "#3b82f6" }}
+										style={{ backgroundColor: member.color || "var(--accent, #3b82f6)" }}
 									>
 										{member.fullName ? member.fullName.charAt(0) : "S"}
 									</div>
@@ -527,6 +532,14 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 											>
 												<Phone size={14} /> Телефон
 											</button>
+											<button
+												type="button"
+												className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer font-semibold text-teal-700 dark:text-teal-400"
+												onClick={() => setSelectedStaffForCard(member)}
+												title="Открыть расширенную карточку сотрудника (СНИЛС, ИНН, медкнижка, ставки ЗП, безопасность)"
+											>
+												<UserPlus size={14} /> Карточка
+											</button>
 										</div>
 									)}
 								</div>
@@ -598,7 +611,12 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 							/>
 						</label>
 
-						{newStaffRole === "doctor" ? <DoctorSnilsValidationWidget /> : null}
+						{newStaffRole === "doctor" ? (
+							<DoctorSnilsValidationWidget
+								initialSnils={newStaffSnils}
+								onValidSnils={(formatted) => setNewStaffSnils(formatted)}
+							/>
+						) : null}
 
 						<div className="form-actions">
 							<button
@@ -612,6 +630,19 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 					</form>
 				</article>
 			</div>
+
+			{selectedStaffForCard && (
+				<StaffProfileCard
+					staffMember={selectedStaffForCard}
+					callerRole={auth?.user?.role || "owner"}
+					isOpen={Boolean(selectedStaffForCard)}
+					onClose={() => setSelectedStaffForCard(null)}
+					onSaved={async () => {
+						await reloadStaffList(loadDashboard);
+						setSelectedStaffForCard(null);
+					}}
+				/>
+			)}
 		</section>
 	);
 }

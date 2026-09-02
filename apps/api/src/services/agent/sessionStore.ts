@@ -9,9 +9,10 @@
  * 5. Provide sub-millisecond in-memory L1 cache with write-through synchronization.
  */
 
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
-import { copilotSessions } from "../../db/schema/copilot.js";
+import { copilotMessages, copilotSessions } from "../../db/schema/copilot.js";
+import { ensureValidUuid } from "./copilotSessionStore.js";
 import { Redactor } from "./redaction.js";
 import type { ProviderMessage } from "./types.js";
 
@@ -63,6 +64,7 @@ export class PostgresSessionStore {
 			this.l1Cache.delete(key);
 		}
 
+		const uuid = ensureValidUuid(sessionId);
 		try {
 			const rows = await withTenantCtx(organizationId, async (tx) => {
 				return tx
@@ -70,7 +72,7 @@ export class PostgresSessionStore {
 					.from(copilotSessions)
 					.where(
 						and(
-							eq(copilotSessions.id, sessionId),
+							eq(copilotSessions.id, uuid),
 							eq(copilotSessions.organizationId, organizationId),
 						),
 					)
@@ -82,30 +84,35 @@ export class PostgresSessionStore {
 				return undefined;
 			}
 
-			if (row.expiresAt.getTime() <= now) {
-				// Expired in database
-				await this.delete(sessionId, organizationId).catch(() => {});
-				return undefined;
-			}
+			// Load messages for this session
+			const messageRows = await withTenantCtx(organizationId, async (tx) => {
+				return tx
+					.select()
+					.from(copilotMessages)
+					.where(eq(copilotMessages.sessionId, uuid))
+					.orderBy(copilotMessages.createdAt);
+			});
 
-			const rawRedactorState = row.redactorState as
-				| RedactorStatePayload
-				| undefined;
-			const redactor = Redactor.fromState(rawRedactorState);
-			const history = (row.history ?? []) as ProviderMessage[];
+			const history: ProviderMessage[] =
+				messageRows.length > 0
+					? messageRows.map((m) => ({
+							role: m.role as "user" | "assistant" | "system" | "tool",
+							content: m.content,
+						}))
+					: (cached?.history ?? []);
 
 			const session: SessionState = {
 				history,
-				redactor,
+				redactor: cached?.redactor ?? new Redactor(),
 				updatedAt: row.updatedAt.getTime(),
 				organizationId: row.organizationId,
 				userId: row.userId ?? undefined,
-				clinicId: row.clinicId ?? undefined,
+				clinicId: row.organizationId,
 			};
 
 			this.l1Cache.set(key, session);
 			return session;
-		} catch (err) {
+		} catch {
 			// Database unreachable or test runner without DB: fall back to cached session if available
 			if (cached) return cached;
 			return undefined;
@@ -168,33 +175,26 @@ export class PostgresSessionStore {
 		this.l1Cache.set(key, state);
 
 		const now = new Date(state.updatedAt);
-		const expiresAt = new Date(state.updatedAt + this.ttlMs);
-		const redactorState = state.redactor.exportState();
+		const uuid = ensureValidUuid(sessionId);
 
 		try {
 			await withTenantCtx(organizationId, async (tx) => {
 				await tx
 					.insert(copilotSessions)
 					.values({
-						id: sessionId,
+						id: uuid,
 						organizationId,
 						userId: state.userId ?? null,
-						clinicId: state.clinicId ?? null,
-						history: state.history,
-						redactorState,
+						activeView: null,
+						summary: null,
 						createdAt: now,
 						updatedAt: now,
-						expiresAt,
 					})
 					.onConflictDoUpdate({
 						target: copilotSessions.id,
 						set: {
-							history: state.history,
-							redactorState,
 							userId: state.userId ?? null,
-							clinicId: state.clinicId ?? null,
 							updatedAt: now,
-							expiresAt,
 						},
 					});
 			});
@@ -213,13 +213,14 @@ export class PostgresSessionStore {
 		const key = this.getCacheKey(organizationId, sessionId);
 		this.l1Cache.delete(key);
 
+		const uuid = ensureValidUuid(sessionId);
 		try {
 			await withTenantCtx(organizationId, async (tx) => {
 				await tx
 					.delete(copilotSessions)
 					.where(
 						and(
-							eq(copilotSessions.id, sessionId),
+							eq(copilotSessions.id, uuid),
 							eq(copilotSessions.organizationId, organizationId),
 						),
 					);
@@ -243,24 +244,6 @@ export class PostgresSessionStore {
 				this.l1Cache.delete(key);
 				deletedCount++;
 			}
-		}
-
-		// Clean PostgreSQL
-		try {
-			if (organizationId) {
-				await withTenantCtx(organizationId, async (tx) => {
-					await tx
-						.delete(copilotSessions)
-						.where(
-							and(
-								eq(copilotSessions.organizationId, organizationId),
-								lt(copilotSessions.expiresAt, new Date(now)),
-							),
-						);
-				});
-			}
-		} catch {
-			// Ignore DB cleanup errors
 		}
 
 		return deletedCount;

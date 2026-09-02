@@ -153,7 +153,7 @@ export function SterilizationStudioModal({
 							<div className="sterilization-kpi-grid">
 								<div className="sterilization-kpi-card">
 									<span className="sterilization-kpi-title">
-										<Flame size={14} color="#0284c7" /> Режимы автоклавирования
+										<Flame size={14} color="var(--teal, #0284c7)" /> Режимы автоклавирования
 									</span>
 									<span className="sterilization-kpi-value">134°C / 121°C</span>
 									<span className="sterilization-kpi-hint">Класс B (фракционированный вакуум)</span>
@@ -161,7 +161,7 @@ export function SterilizationStudioModal({
 
 								<div className="sterilization-kpi-card">
 									<span className="sterilization-kpi-title">
-										<FlaskConical size={14} color="#059669" /> Химические интеграторы
+										<FlaskConical size={14} color="var(--ok-fg, #059669)" /> Химические интеграторы
 									</span>
 									<span className="sterilization-kpi-value">4 и 5 класс</span>
 									<span className="sterilization-kpi-hint">ИнтеТЕСТ / Медтест / СтериТЕСТ</span>
@@ -169,7 +169,7 @@ export function SterilizationStudioModal({
 
 								<div className="sterilization-kpi-card">
 									<span className="sterilization-kpi-title">
-										<Package size={14} color="#7c3aed" /> Срок стерильности
+										<Package size={14} color="var(--info-fg, #7c3aed)" /> Срок стерильности
 									</span>
 									<span className="sterilization-kpi-value">50 – 180 суток</span>
 									<span className="sterilization-kpi-hint">СанПиН 3.3686-21 табл. 3.14</span>

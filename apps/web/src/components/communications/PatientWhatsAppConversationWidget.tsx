@@ -13,6 +13,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 
 export interface ChatMessage {
@@ -46,10 +47,11 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 	const [draft, setDraft] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [sending, setSending] = useState(false);
+	const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 	const [lastInboundAt, setLastInboundAt] = useState<string | null>(initialLastInboundAt ?? null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	// Evaluate 24-hour Meta session window
+	// 24h Window Check per Meta Cloud API Policy
 	const isSessionOpen = useMemo(() => {
 		if (!lastInboundAt) return false;
 		const lastTime = new Date(lastInboundAt).getTime();
@@ -65,7 +67,9 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 		if (!patientId) return;
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/communications/inbox/${encodeURIComponent(patientId)}`);
+			const res = await fetch(`/api/communications/inbox/${encodeURIComponent(patientId)}`, {
+				headers: denteAdminSecretRequestHeaders(),
+			});
 			if (res.ok) {
 				const data = await res.json();
 				const list = Array.isArray(data) ? data : Array.isArray(data.messages) ? data.messages : [];

@@ -297,13 +297,13 @@ export type DoctorPayoutReport = {
 // ─── Формула. Чистые функции, ни одного обращения к базе ─────────────────────
 
 /** Копейки: округление половины вверх, как в бухгалтерии. */
-function roundMoney(value: Decimal): number {
-	return value.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
+export function roundMoney(value: Decimal | number | string): number {
+	return new Decimal(value).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
 }
 
 /** Процент от суммы, округлённый до копейки. */
 export function percentOfMoney(amountRub: number, percent: number): number {
-	return roundMoney(new Decimal(amountRub).times(percent).div(100));
+	return roundMoney(new Decimal(amountRub).times(new Decimal(percent)).div(100));
 }
 
 /**
@@ -368,7 +368,7 @@ export function computeDoctorPayout(
 	}
 
 	const netRevenueRub = roundMoney(
-		new Decimal(input.revenueRub).minus(input.refundRub ?? 0),
+		new Decimal(input.revenueRub).minus(new Decimal(input.refundRub ?? 0)),
 	);
 	const accruedRub = percentOfMoney(netRevenueRub, input.commissionPct);
 	const refundClawbackRub = input.refundRub && input.refundRub > 0
@@ -406,7 +406,7 @@ export function computeDoctorPayout(
 	}
 
 	const totalWithheld = new Decimal(withheldMaterialRub ?? 0).plus(
-		withheldLabRub ?? 0,
+		new Decimal(withheldLabRub ?? 0),
 	);
 	const payoutRub = roundMoney(new Decimal(accruedRub).minus(totalWithheld));
 
@@ -887,10 +887,15 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
  * без mode: "number"). Обе формы нормальны; молчаливый NaN на деньгах — нет.
  */
 function moneyFromDb(value: unknown, field: string): number {
-	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (typeof value === "number" && Number.isFinite(value)) {
+		return new Decimal(value).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
+	}
 	if (typeof value === "string" && value.trim() !== "") {
-		const parsed = Number(value);
-		if (Number.isFinite(parsed)) return parsed;
+		try {
+			return new Decimal(value.trim()).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
+		} catch {
+			// fall through to error
+		}
 	}
 	if (value === null || value === undefined) return 0;
 	throw new Error(
@@ -901,10 +906,15 @@ function moneyFromDb(value: unknown, field: string): number {
 /** Процент из базы: null остаётся null, мусор — ошибка, а не тихий ноль. */
 function percentFromDb(value: unknown, field: string): number | null {
 	if (value === null || value === undefined) return null;
-	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (typeof value === "number" && Number.isFinite(value)) {
+		return new Decimal(value).toNumber();
+	}
 	if (typeof value === "string" && value.trim() !== "") {
-		const parsed = Number(value);
-		if (Number.isFinite(parsed)) return parsed;
+		try {
+			return new Decimal(value.trim()).toNumber();
+		} catch {
+			// fall through to error
+		}
 	}
 	throw new Error(
 		`Поле «${field}» пришло из базы в непригодном для процента виде: ${JSON.stringify(value)}`,
@@ -1345,7 +1355,7 @@ export async function doctorPayouts(
 							quantity: qty,
 							unit: mat.unit ?? "шт",
 							unitCostRub: unitCost,
-							totalCostRub: roundMoney(new Decimal(qty).times(unitCost)),
+							totalCostRub: roundMoney(new Decimal(qty).times(new Decimal(unitCost))),
 						};
 					});
 
@@ -1455,7 +1465,7 @@ export async function doctorPayouts(
 
 	rows.sort(
 		(left, right) =>
-			right.revenueRub - left.revenueRub ||
+			new Decimal(right.revenueRub).minus(new Decimal(left.revenueRub)).toNumber() ||
 			left.doctorName.localeCompare(right.doctorName, "ru"),
 	);
 
@@ -1478,17 +1488,17 @@ export async function doctorPayouts(
 	let doctorsWithoutRate = 0;
 
 	for (const row of rows) {
-		materialCost = materialCost.plus(row.materialCostRub);
-		totalLabCost = totalLabCost.plus(row.labCostRub);
+		materialCost = materialCost.plus(new Decimal(row.materialCostRub));
+		totalLabCost = totalLabCost.plus(new Decimal(row.labCostRub));
 		if (
 			row.state === "computed" &&
 			row.payoutRub !== null &&
 			row.withheldMaterialRub !== null
 		) {
-			accrued = accrued.plus(row.accruedRub ?? 0);
-			withheldMaterial = withheldMaterial.plus(row.withheldMaterialRub);
-			withheldLab = withheldLab.plus(row.withheldLabRub ?? 0);
-			payout = payout.plus(row.payoutRub);
+			accrued = accrued.plus(new Decimal(row.accruedRub ?? 0));
+			withheldMaterial = withheldMaterial.plus(new Decimal(row.withheldMaterialRub));
+			withheldLab = withheldLab.plus(new Decimal(row.withheldLabRub ?? 0));
+			payout = payout.plus(new Decimal(row.payoutRub));
 			doctorsCounted += 1;
 		} else {
 			doctorsWithoutRate += 1;
@@ -1508,7 +1518,12 @@ export async function doctorPayouts(
 				"Пока склад не ведётся и материалы не списываются при подписании приёма, удерживать нечего.",
 		);
 	}
-	if (totalRevenueRub - attributableRevenueRub > 0) {
+	if (
+		new Decimal(totalRevenueRub)
+			.minus(new Decimal(attributableRevenueRub))
+			.toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+			.greaterThan(0)
+	) {
 		limitations.push(
 			"Часть кассы периода не отнесена ни к одному врачу: платёж не связан с приёмом. " +
 				"Чтобы деньги попадали врачу, оплату нужно оформлять из визита, созданного из записи в расписании.",
@@ -1531,7 +1546,7 @@ export async function doctorPayouts(
 			paymentCount: Number(snapshotHead?.totalPaymentCount ?? 0),
 			attributableRevenueRub,
 			unattributedRevenueRub: roundMoney(
-				new Decimal(totalRevenueRub).minus(attributableRevenueRub),
+				new Decimal(totalRevenueRub).minus(new Decimal(attributableRevenueRub)),
 			),
 			materialCostRub: roundMoney(materialCost),
 			labCostRub: roundMoney(totalLabCost),

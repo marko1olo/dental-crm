@@ -1,20 +1,20 @@
-import type {
-	SpeechChunkUploadInput,
-	SpeechGatewayStatus,
-	SpeechTranscriptionSource,
-} from "@dental/shared";
-import { useCallback, useRef, useState } from "react";
-import {
-	denteAdminSecretRequestHeaders,
-	operatorReadableErrorDetail,
-} from "../AppHelpers";
-import { showToast } from "../components/GlobalToast";
-import { actionFailureToast } from "../lib/panelStateText";
+/**
+ * useShortDictation.ts — Компактный хук диктовки для точечных полей и кнопок микрофона.
+ *
+ * ВОЗМОЖНОСТИ:
+ * 1. Потоковое Gemini Live Bidi распознавание через WebSocket (/api/speech/live).
+ * 2. VAD Hands-Free захват речи через AudioWorklet (без необходимости удерживать кнопку).
+ * 3. Реалтайм-стриминг interimText (синий пульсирующий курсив) и финализация по тишине.
+ * 4. Полная обратная совместимость с колбэком onResult и новым объектом ShortDictationOptions.
+ */
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { UnifiedAudioClient } from "../services/voice/UnifiedAudioClient";
 import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
-import { logger } from "../utils/logger";
+import { showToast } from "../components/GlobalToast";
 
-type ContextType =
+export type ContextType =
 	| "schedule"
 	| "visit"
 	| "patient"
@@ -22,240 +22,180 @@ type ContextType =
 	| "payment"
 	| "general";
 
+export interface ShortDictationOptions {
+	readonly onResult?: (text: string) => void;
+	readonly onInterim?: (interim: string) => void;
+	readonly autoFallback?: boolean;
+	readonly specialty?: string;
+}
+
 export function useShortDictation(
 	context: ContextType,
-	onResult: (text: string) => void,
+	handlerOrOptions?: ((text: string) => void) | ShortDictationOptions,
 ) {
 	const [isRecording, setIsRecording] = useState(false);
 	const [isProcessing, setIsProcessing] = useState(false);
-
-	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-	const audioChunksRef = useRef<Blob[]>([]);
-	const streamRef = useRef<MediaStream | null>(null);
+	const [isSpeaking, setIsSpeaking] = useState(false);
+	const [interimText, setInterimText] = useState("");
+	const [finalText, setFinalText] = useState("");
+	const [fullTranscript, setFullTranscript] = useState("");
+	const [audioLevel, setAudioLevel] = useState(0);
+	const [rms, setRms] = useState(0);
 
 	const dashboard = useAppStore((state) => state.dashboard);
-	const speechGatewayStatus = useAppStore(
-		(state) => state.speechGatewayStatus as SpeechGatewayStatus | null,
-	);
-	// Секрет администратора берётся из сеанса, а не из localStorage: подробное
-	// объяснение — у места использования ниже.
 	const clinicalAdminSecretSession = useSettingsStore(
 		(state) => state.clinicalAdminSecretSession,
 	);
 
-	const cleanupStream = useCallback(() => {
-		if (streamRef.current) {
-			streamRef.current.getTracks().forEach((track) => {
-				track.stop();
-			});
-			streamRef.current = null;
-		}
+	const clientRef = useRef<UnifiedAudioClient | null>(null);
+
+	const options: ShortDictationOptions =
+		typeof handlerOrOptions === "function"
+			? { onResult: handlerOrOptions }
+			: (handlerOrOptions ?? {});
+
+	const onResultRef = useRef(options.onResult);
+	onResultRef.current = options.onResult;
+
+	const onInterimRef = useRef(options.onInterim);
+	onInterimRef.current = options.onInterim;
+
+	useEffect(() => {
+		return () => {
+			if (clientRef.current) {
+				clientRef.current.dispose();
+				clientRef.current = null;
+			}
+		};
 	}, []);
 
-	const startBrowserNative = useCallback(() => {
-		const SpeechRecognition =
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(window as any).SpeechRecognition ||
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(window as any).webkitSpeechRecognition;
-		if (!SpeechRecognition) {
-			showToast(
-				"Распознавание речи не поддерживается в этом браузере.",
-				"error",
-			);
-			return;
+	const clearTranscript = useCallback(() => {
+		if (clientRef.current) {
+			clientRef.current.clearTranscript();
 		}
+		setInterimText("");
+		setFinalText("");
+		setFullTranscript("");
+	}, []);
 
-		const recognition = new SpeechRecognition();
-		recognition.lang = "ru-RU";
-		recognition.continuous = false;
-		recognition.interimResults = false;
-
-		recognition.onstart = () => setIsRecording(true);
-
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		recognition.onresult = (event: any) => {
-			const transcript = event.results[0][0].transcript;
-			if (transcript) onResult(transcript);
-		};
-
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		recognition.onerror = (e: any) => {
-			if (e.error !== "no-speech") {
-				showToast(`Ошибка распознавания: ${e.error}`, "error");
+	const stopRecording = useCallback(async (): Promise<string> => {
+		if (!clientRef.current) return fullTranscript;
+		setIsProcessing(true);
+		try {
+			const finalRes = await clientRef.current.stop();
+			const clean = finalRes ? finalRes.trim() : "";
+			if (clean) {
+				onResultRef.current?.(clean);
 			}
+			return clean;
+		} catch (err) {
+			console.warn("[useShortDictation] stop error:", err);
+			return fullTranscript;
+		} finally {
 			setIsRecording(false);
-		};
+			setIsProcessing(false);
+			setInterimText("");
+		}
+	}, [fullTranscript]);
 
-		recognition.onend = () => setIsRecording(false);
-		recognition.start();
-	}, [onResult]);
+	const startRecording = useCallback(async () => {
+		if (isRecording) return;
+		setIsProcessing(true);
+		setInterimText("");
+		setFinalText("");
 
-	const sendToServer = useCallback(
-		async (audioBlob: Blob) => {
-			setIsProcessing(true);
-			try {
-				const reader = new FileReader();
-				const base64Promise = new Promise<string>((resolve, reject) => {
-					reader.onloadend = () => {
-						const result = reader.result as string | null;
-						if (result) {
-							resolve(result.split(",")[1] || "");
-						} else {
-							reject(new Error("Failed to read blob"));
-						}
-					};
-					reader.onerror = reject;
-					reader.readAsDataURL(audioBlob);
-				});
-				const audioBase64 = await base64Promise;
-
-				const source: SpeechTranscriptionSource =
-					context === "visit" || context === "patient" ? "visit" : "document";
-
-				const input: SpeechChunkUploadInput = {
-					recordingId: `short_${Date.now()}`,
-					chunkIndex: 0,
-					mimeType: audioBlob.type || "audio/webm",
-					audioBase64,
-					durationMs: 3000,
-					language: "ru",
-					source,
-					patientId: dashboard?.activeVisit?.patientId,
-					visitId: dashboard?.activeVisit?.id,
-					specialty: "universal",
-					clientRecordedAt: new Date().toISOString(),
-				};
-
-				/*
-				 * БЫЛО: секрет читался из localStorage по ключу
-				 * "dente_clinical_admin_secret_session". Этот ключ НИКТО НИКОГДА НЕ ПИШЕТ —
-				 * во всём вебе есть только три чтения (здесь и дважды в useVoiceAssistant)
-				 * и ни одной записи. Значит secret всегда был undefined, заголовок секрета
-				 * не уходил, и на этой машине это не было видно: в корневом .env включены
-				 * лазейки DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS, гасящие охрану.
-				 * Лазейки живут только пока NODE_ENV !== "production".
-				 *
-				 * Проверено живьём на отдельном экземпляре API с заданным секретом и
-				 * выключенными лазейками: /api/speech/status отвечает 403
-				 * («speech gateway status»). То есть у настоящего заказчика диктовка врача
-				 * не работала вовсе, а врач видел только то, что распознавание «хуже
-				 * ожидаемого».
-				 *
-				 * Настоящее место секрета — сеанс в store/settingsStore.ts, куда его вводит
-				 * администратор на экране разблокировки; оттуда же его берёт
-				 * hooks/domains/useAuthLogic.ts (`adminSecretOverride ?? clinicalAdminSecretSession`).
-				 */
-				const secret = clinicalAdminSecretSession.trim() || undefined;
-				const headers = denteAdminSecretRequestHeaders(
-					{ "Content-Type": "application/json" },
-					secret,
-				);
-
-				const response = await fetch("/api/speech/transcribe-chunk", {
-					method: "POST",
-					headers,
-					body: JSON.stringify(input),
-				});
-
-				const payload = await response.json();
-
-				if (!response.ok || payload.chunk?.status === "failed") {
-					throw new Error(
-						operatorReadableErrorDetail(payload.message || payload.error) ||
-							"Ошибка сервера",
-					);
-				}
-
-				if (payload.chunk?.transcript) {
-					onResult(payload.chunk.transcript);
-				} else {
-					showToast("Не удалось распознать речь", "warning");
-				}
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			} catch (err: any) {
-				logger.error("Server STT Error:", err);
-				showToast(
-					"Сбой сервера распознавания. Переключаем на ввод текстом.",
-					"error",
-				);
-			} finally {
-				setIsProcessing(false);
+		try {
+			if (clientRef.current) {
+				clientRef.current.dispose();
+				clientRef.current = null;
 			}
-		},
-		[context, dashboard, onResult, clinicalAdminSecretSession.trim],
-	);
+
+			const client = new UnifiedAudioClient({
+				preferredMode: "gemini_live",
+				organizationId: dashboard?.activeVisit?.organizationId ?? null,
+				patientId: dashboard?.activeVisit?.patientId ?? null,
+				visitId: dashboard?.activeVisit?.id ?? null,
+				specialty: options.specialty ?? "therapy",
+				adminSecret: clinicalAdminSecretSession.trim() || undefined,
+				autoFallback: options.autoFallback ?? true,
+			});
+			clientRef.current = client;
+
+			client.subscribe({
+				onStateChange: (newState) => {
+					if (newState === "listening") {
+						setIsRecording(true);
+						setIsProcessing(false);
+					} else if (newState === "processing") {
+						setIsProcessing(true);
+					} else if (newState === "idle") {
+						setIsRecording(false);
+						setIsProcessing(false);
+					}
+				},
+				onInterimText: (interim) => {
+					setInterimText(interim);
+					onInterimRef.current?.(interim);
+				},
+				onFinalText: (final, accumulated) => {
+					setFinalText(final);
+					setFullTranscript(accumulated);
+					if (accumulated && accumulated.trim()) {
+						onResultRef.current?.(accumulated.trim());
+					}
+				},
+				onTwoLayerTranscript: (data) => {
+					setInterimText(data.interim);
+					setFinalText(data.finalized);
+					setFullTranscript(data.fullWithInterim);
+				},
+				onRmsUpdate: (newRms, speaking) => {
+					setIsSpeaking(speaking);
+					setRms(newRms);
+					setAudioLevel(Math.min(1.0, Math.round(newRms * 50) / 10));
+				},
+				onError: (err) => {
+					const msg = typeof err === "string" ? err : err.message;
+					showToast(`Ошибка диктовки: ${msg}`, "error");
+					setIsRecording(false);
+					setIsProcessing(false);
+				},
+			});
+
+			await client.start();
+			setIsRecording(true);
+			setIsProcessing(false);
+		} catch (err: unknown) {
+			const msg =
+				err instanceof Error
+					? err.message
+					: "Не удалось запустить микрофон";
+			showToast(msg, "error");
+			setIsRecording(false);
+			setIsProcessing(false);
+		}
+	}, [dashboard, clinicalAdminSecretSession, isRecording, options.autoFallback, options.specialty]);
 
 	const toggleRecording = useCallback(async () => {
 		if (isRecording) {
-			if (
-				mediaRecorderRef.current &&
-				mediaRecorderRef.current.state === "recording"
-			) {
-				mediaRecorderRef.current.stop();
-			}
-			return;
+			await stopRecording();
+		} else {
+			await startRecording();
 		}
-
-		if (!navigator.onLine || !speechGatewayStatus?.serverTranscriptionEnabled) {
-			startBrowserNative();
-			return;
-		}
-
-		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			streamRef.current = stream;
-			const mediaRecorder = new MediaRecorder(stream);
-			mediaRecorderRef.current = mediaRecorder;
-			audioChunksRef.current = [];
-
-			mediaRecorder.ondataavailable = (e) => {
-				if (e.data.size > 0) {
-					audioChunksRef.current.push(e.data);
-				}
-			};
-
-			mediaRecorder.onstop = () => {
-				setIsRecording(false);
-				cleanupStream();
-				const audioBlob = new Blob(audioChunksRef.current, {
-					type: mediaRecorder.mimeType,
-				});
-				if (audioBlob.size > 0) {
-					sendToServer(audioBlob);
-				}
-			};
-
-			mediaRecorder.start();
-			setIsRecording(true);
-
-			setTimeout(() => {
-				if (mediaRecorder.state === "recording") {
-					mediaRecorder.stop();
-				}
-			}, 10000);
-		} catch (err) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(err as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			logger.error("Microphone access denied or error:", err);
-			startBrowserNative();
-		}
-	}, [
-		isRecording,
-		speechGatewayStatus,
-		startBrowserNative,
-		sendToServer,
-		cleanupStream,
-	]);
+	}, [isRecording, startRecording, stopRecording]);
 
 	return {
 		isRecording,
 		isProcessing,
+		isSpeaking,
+		interimText,
+		finalText,
+		fullTranscript,
+		audioLevel,
+		rms,
 		toggleRecording,
+		startRecording,
+		stopRecording,
+		clearTranscript,
 	};
 }

@@ -1,0 +1,427 @@
+/* ==========================================================================
+   CHAIRSIDE PRE-FLIGHT CHECKLIST STYLES (DENTE & SanPiN 3.3686-21 Standards)
+   Touch-First Ergonomics for Gloved Operations (>= 48x48px targets)
+   ========================================================================== */
+
+.chairside-preflight-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1100;
+	background: rgba(15, 23, 42, 0.8);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	box-sizing: border-box;
+}
+
+.chairside-preflight-modal {
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-xl, 20px);
+	box-shadow: var(--shadow-3);
+	width: 100%;
+	max-width: 860px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	animation: preflightFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes preflightFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.97) translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+/* Header */
+.chairside-preflight-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+.chairside-preflight-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.chairside-preflight-icon-badge {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: var(--teal-surface);
+	color: var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	border: 1px solid var(--line);
+}
+
+.chairside-preflight-title {
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--ink);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.chairside-preflight-badge {
+	font-size: 11px;
+	font-weight: 800;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	background: var(--teal-surface);
+	color: var(--teal);
+	border: 1px solid var(--line);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.chairside-preflight-subtitle {
+	font-size: 12px;
+	color: var(--muted);
+	margin: 2px 0 0 0;
+}
+
+.chairside-preflight-close-btn {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.chairside-preflight-close-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+/* Body */
+.chairside-preflight-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* Readiness Hero Card */
+.chairside-readiness-hero {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.chairside-readiness-hero.all-ready {
+	background: var(--ok-bg);
+	border-color: var(--ok-fg);
+}
+
+.chairside-progress-pill {
+	font-size: 13px;
+	font-weight: 800;
+	padding: 6px 12px;
+	border-radius: 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.chairside-progress-pill.ready {
+	background: var(--ok-fg);
+	color: var(--paper-strong);
+	border-color: var(--ok-fg);
+}
+
+/* Checklist Grid */
+.chairside-checklist-items {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* Individual Check Item (Touch-First >= 48px) */
+.chairside-check-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	min-height: 56px;
+	background: var(--paper);
+	border: 1.5px solid var(--line);
+	border-radius: 12px;
+	gap: 14px;
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+	touch-action: manipulation;
+}
+
+.chairside-check-item:hover {
+	border-color: var(--teal);
+	background: var(--paper-soft);
+}
+
+.chairside-check-item.completed {
+	border-color: var(--ok-fg);
+	background: var(--ok-bg);
+}
+
+.chairside-check-item-main {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	min-width: 0;
+	flex: 1;
+}
+
+.chairside-check-toggle-btn {
+	width: 48px;
+	height: 48px;
+	min-width: 48px;
+	min-height: 48px;
+	border-radius: 12px;
+	border: 2px solid var(--line-strong);
+	background: var(--paper-soft);
+	color: transparent;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.chairside-check-item.completed .chairside-check-toggle-btn {
+	background: var(--ok-fg);
+	border-color: var(--ok-fg);
+	color: var(--paper-strong);
+	box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+}
+
+.chairside-check-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.chairside-check-title {
+	font-size: 13px;
+	font-weight: 800;
+	color: var(--ink);
+	line-height: 1.3;
+}
+
+.chairside-check-subtitle {
+	font-size: 11px;
+	color: var(--muted);
+	line-height: 1.35;
+}
+
+.chairside-check-norm-badge {
+	font-size: 10px;
+	font-weight: 700;
+	padding: 1px 6px;
+	border-radius: 4px;
+	background: var(--paper-soft);
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	border: 1px solid var(--line);
+	width: fit-content;
+	margin-top: 2px;
+}
+
+/* Fast Action Bar & Disinfection Countdown Timer */
+.chairside-quick-tools-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 12px 16px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	flex-wrap: wrap;
+}
+
+.chairside-disinfection-timer-btn {
+	min-height: 48px;
+	padding: 8px 16px;
+	border-radius: 10px;
+	border: 1px solid var(--teal);
+	background: var(--teal-surface);
+	color: var(--teal);
+	font-size: 12px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.chairside-disinfection-timer-btn:hover {
+	background: var(--teal);
+	color: var(--paper-strong);
+}
+
+.chairside-disinfection-timer-btn.running {
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
+	animation: timerPulse 1s infinite alternate;
+}
+
+@keyframes timerPulse {
+	from {
+		opacity: 0.9;
+	}
+	to {
+		opacity: 1;
+		transform: scale(1.02);
+	}
+}
+
+/* Kraft Package Barcode Scanner Box */
+.chairside-kraft-scan-box {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+
+.chairside-kraft-scan-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.chairside-kraft-input {
+	flex: 1;
+	min-height: 44px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line-strong);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	font-family: monospace;
+	font-weight: 700;
+	outline: none;
+}
+
+.chairside-kraft-input:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px var(--teal-surface);
+}
+
+/* Footer & Complete Button (>= 48px) */
+.chairside-preflight-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
+	gap: 12px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}
+
+.chairside-preflight-save-btn {
+	min-height: 48px;
+	padding: 10px 24px;
+	border-radius: 12px;
+	border: none;
+	background: var(--teal);
+	color: var(--paper-strong);
+	font-size: 14px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+	touch-action: manipulation;
+}
+
+.chairside-preflight-save-btn:hover {
+	background: var(--teal-dark);
+	transform: translateY(-1px);
+	box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45);
+}
+
+.chairside-preflight-save-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+	.chairside-preflight-modal {
+		max-height: 100dvh;
+		height: 100dvh;
+		border-radius: 0;
+		border: none;
+	}
+	.chairside-preflight-header {
+		padding: 12px 14px;
+	}
+	.chairside-preflight-body {
+		padding: 12px 14px;
+	}
+	.chairside-preflight-footer {
+		padding: 12px 14px;
+		flex-direction: column;
+	}
+	.chairside-preflight-save-btn {
+		width: 100%;
+	}
+}

@@ -15,6 +15,7 @@ import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { PublicBookingWidget } from "./pages/PublicBookingWidget";
 import { OdontogramStudioStandalone } from "./pages/OdontogramStudioStandalone";
 import { ClinicalModalsStudioStandalone } from "./pages/ClinicalModalsStudioStandalone";
+import { SttLaboratoryView } from "./pages/SttLaboratoryView";
 import { logger } from "./utils/logger";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
@@ -132,6 +133,21 @@ if (publicPortalRoute) {
 		<React.StrictMode>
 			<BootErrorBoundary audience="clinic">
 				<OdontogramStudioStandalone />
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.hash.startsWith("#stt-lab") ||
+		window.location.pathname.startsWith("/stt-lab") ||
+		window.location.search.includes("stt-lab"))
+) {
+	installApiAuthFetch();
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<SttLaboratoryView />
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,

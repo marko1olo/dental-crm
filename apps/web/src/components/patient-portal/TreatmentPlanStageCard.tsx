@@ -217,8 +217,8 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 							height: "30px",
 							minWidth: "30px",
 							borderRadius: "50%",
-							backgroundColor: isCompleted ? "var(--pc-success, #10b981)" : isInProgress ? "var(--pc-warning, #f59e0b)" : "#475569",
-							color: "#ffffff",
+							backgroundColor: isCompleted ? "var(--pc-success, #10b981)" : isInProgress ? "var(--pc-warning, #f59e0b)" : "var(--muted, #475569)",
+							color: "var(--on-teal, #ffffff)",
 							fontWeight: 800,
 							fontSize: "13px",
 							display: "flex",
@@ -232,14 +232,14 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 
 					<div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
 						<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-							<strong style={{ fontSize: "15px", color: "var(--pc-text-main, #f8fafc)" }}>
+							<strong style={{ fontSize: "15px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 								{stage.titleRu}
 							</strong>
 							<span
 								className={`pc-status-badge ${isCompleted ? "paid" : isInProgress ? "unpaid" : ""}`}
 								style={{ fontSize: "11px", padding: "2px 8px" }}
 							>
-								{isCompleted ? "✓ Завершен" : isInProgress ? "⏳ В процессе лечения" : "📅 Запланирован"}
+								{isCompleted ? "Завершен" : isInProgress ? "В процессе лечения" : "Запланирован"}
 							</span>
 						</div>
 
@@ -265,7 +265,7 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 				{/* Price & Payment Action */}
 				<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
 					<div style={{ textAlign: "right" }}>
-						<span style={{ fontSize: "17px", fontWeight: 800, color: "var(--pc-text-main, #f8fafc)" }}>
+						<span style={{ fontSize: "17px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 							{formatRubles(stage.costRub)}
 						</span>
 						<div style={{ fontSize: "11px", color: "var(--pc-success, #10b981)", fontWeight: 600 }}>
@@ -284,7 +284,7 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 								borderRadius: "8px",
 								border: "none",
 								backgroundColor: "var(--pc-primary, #0d9488)",
-								color: "#ffffff",
+								color: "var(--on-teal, #ffffff)",
 								fontSize: "13px",
 								fontWeight: 700,
 								cursor: "pointer",
@@ -313,7 +313,7 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 					borderRadius: "8px",
 					padding: "8px 12px",
 					fontSize: "12px",
-					color: "var(--pc-text-main, #f8fafc)",
+					color: "var(--pc-text-main, var(--ink, #0f172a))",
 				}}
 			>
 				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px" }}>
@@ -356,7 +356,7 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 								}}
 							>
 								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-									<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--pc-text-main, #f8fafc)" }}>
+									<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 										{dual.humanTitleRu}
 									</div>
 								</div>

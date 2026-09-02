@@ -223,7 +223,7 @@ export function PatientMemoPrintModal({
 				<div className="flex-1 overflow-y-auto min-h-[280px] max-h-[440px] p-2 pb-8 bg-slate-900/10 dark:bg-slate-950/40 rounded-xl border border-[var(--line)]">
 					<div
 						className="p-5 sm:p-6 pb-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl leading-relaxed flex flex-col gap-3.5"
-						style={{ background: "#ffffff", color: "#0f172a" }}
+						style={{ background: "var(--paper-strong, #ffffff)", color: "var(--ink, #0f172a)" }}
 					>
 						{/* Form Official Header */}
 						<div className="border-b-2 border-slate-900 pb-2 text-[10px] text-slate-700 flex justify-between items-start gap-4">

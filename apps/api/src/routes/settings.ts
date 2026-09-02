@@ -5,6 +5,7 @@ import {
 	createStaffMemberSchema,
 	dentalSpecialtySchema,
 	documentKindSchema,
+	evaluatePasswordEntropy,
 	imagingStudyKindSchema,
 	nonNegativeMoneyRubSchema,
 	type StaffAuthorityFlagKey,
@@ -1096,9 +1097,22 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 				email?: string;
 				passwordHash?: string;
 				pinCodeHash?: string;
+				passwordEntropyBits?: number;
 			} = {};
 			if (email) updates.email = email.toLowerCase().trim();
-			if (password) updates.passwordHash = await hashCredential(password);
+			if (password) {
+				const entropy = evaluatePasswordEntropy(password);
+				if (!entropy.isAcceptableForStaff) {
+					reply.code(400);
+					return {
+						error: "WeakPasswordError",
+						message:
+							"Пароль слишком слабый для сотрудника клиники. Требуется энтропия не менее 50 бит (заглавные, строчные, цифры, спецсимволы).",
+					};
+				}
+				updates.passwordHash = await hashCredential(password);
+				updates.passwordEntropyBits = entropy.effectiveEntropyBits;
+			}
 			if (pinCode) updates.pinCodeHash = await hashCredential(pinCode);
 
 			try {

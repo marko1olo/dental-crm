@@ -82,7 +82,7 @@
 
 .auth-primary-btn {
 	background: var(--teal);
-	color: var(--on-teal, #ffffff);
+	color: var(--paper-strong);
 	border: none;
 	padding: 13px 24px;
 	border-radius: 10px;
@@ -120,7 +120,7 @@
 
 .auth-error {
 	margin: 0;
-	color: var(--bad-fg, #ef4444);
+	color: var(--bad-fg);
 	font-size: 0.85rem;
 	font-weight: 600;
 	animation: shake 0.35s ease;
@@ -149,10 +149,10 @@
 .otp-cell {
 	width: 58px;
 	height: 64px;
-	border: 2px solid var(--line, #e2e8f0);
+	border: 2px solid var(--line);
 	border-radius: 12px;
 	background: var(--paper);
-	color: var(--ink, #1e293b);
+	color: var(--ink);
 	font-size: 1.8rem;
 	font-weight: 800;
 	text-align: center;
@@ -211,9 +211,9 @@
 }
 
 .logout-btn {
-	background: var(--bad-bg, rgba(239, 68, 68, 0.1));
-	color: var(--bad-fg, #b91c1c);
-	border: 1px solid var(--bad-fg, rgba(239, 68, 68, 0.3));
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border: 1px solid var(--bad-fg);
 	padding: 8px 16px;
 	border-radius: 8px;
 	cursor: pointer;
@@ -226,7 +226,8 @@
 }
 
 .logout-btn:hover {
-	background: var(--bad-bg, rgba(239, 68, 68, 0.2));
+	background: var(--bad-bg);
+	opacity: 0.9;
 }
 
 .portal-grid {
@@ -283,9 +284,9 @@
 }
 
 .btn-confirm {
-	background: var(--ok-bg, rgba(16, 185, 129, 0.15));
-	color: var(--ok-fg, #15803d);
-	border: 1px solid var(--ok-fg, rgba(16, 185, 129, 0.3));
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-fg);
 	padding: 8px 14px;
 	border-radius: 8px;
 	cursor: pointer;
@@ -303,9 +304,9 @@
 }
 
 .btn-cancel {
-	background: var(--bad-bg, rgba(239, 68, 68, 0.1));
-	color: var(--bad-fg, #b91c1c);
-	border: 1px solid var(--bad-fg, rgba(239, 68, 68, 0.3));
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border: 1px solid var(--bad-fg);
 	padding: 8px 14px;
 	border-radius: 8px;
 	cursor: pointer;
@@ -345,10 +346,10 @@
 	font-size: 1.1rem;
 }
 .text-green {
-	color: var(--ok-fg, #15803d);
+	color: var(--ok-fg);
 }
 .text-orange {
-	color: var(--warn-fg, #d97706);
+	color: var(--warn-fg);
 }
 
 .stages-list {
@@ -368,11 +369,11 @@
 }
 
 .stage-item.completed {
-	border-left-color: var(--ok-fg, #15803d);
+	border-left-color: var(--ok-fg);
 	opacity: 0.8;
 }
 .stage-item.pending {
-	border-left-color: var(--warn-fg, #d97706);
+	border-left-color: var(--warn-fg);
 }
 
 .stage-desc {
@@ -398,9 +399,9 @@
 }
 
 .btn-download {
-	background: var(--info-bg, rgba(59, 130, 246, 0.1));
-	color: var(--info-fg, #0284c7);
-	border: 1px solid var(--info-fg, rgba(59, 130, 246, 0.3));
+	background: var(--info-bg);
+	color: var(--info-fg);
+	border: 1px solid var(--info-fg);
 	padding: 8px 16px;
 	min-height: 44px;
 	display: flex;

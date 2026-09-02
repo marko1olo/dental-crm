@@ -835,6 +835,23 @@ export interface BuildPatientIndexOptions {
 }
 
 /**
+ * Extracts Unix millisecond timestamp from standard UUIDv7 string (first 48 bits).
+ */
+export function extractTimestampFromUuidV7(id?: string | null): Date | null {
+	if (!id) return null;
+	try {
+		const hex = id.replace(/-/g, "").slice(0, 12);
+		if (hex.length === 12) {
+			const ms = Number.parseInt(hex, 16);
+			if (!Number.isNaN(ms) && ms > 1500000000000 && ms < 2500000000000) {
+				return new Date(ms);
+			}
+		}
+	} catch {}
+	return null;
+}
+
+/**
  * Builds high-density semantic memory chunks from all clinical databases for a patient,
  * bounded by a 5-year chronological window (or specified horizon).
  */
@@ -963,6 +980,18 @@ export async function buildPatientHistoryMemoryIndex(
 	for (const d of diaries) {
 		if (d?.visitId) {
 			diaryByVisitId.set(d.visitId, d);
+		}
+	}
+
+	const visitDateById = new Map<string, Date>();
+	for (const v of patientVisits) {
+		if (v?.id) {
+			const d = v.signedAt
+				? new Date(v.signedAt)
+				: v.createdAt
+					? new Date(v.createdAt)
+					: extractTimestampFromUuidV7(v.id) || new Date();
+			visitDateById.set(v.id, d);
 		}
 	}
 
@@ -1318,7 +1347,10 @@ export async function buildPatientHistoryMemoryIndex(
 
 		for (const item of items) {
 			if (!item || !item.id) continue;
-			const rawDate = new Date();
+			const rawDate =
+				(item.visitId ? visitDateById.get(item.visitId) : null) ||
+				extractTimestampFromUuidV7(item.id) ||
+				new Date();
 			const dateStr = rawDate.toISOString();
 			const dateRu = rawDate.toLocaleDateString("ru-RU");
 			const toothNum =
