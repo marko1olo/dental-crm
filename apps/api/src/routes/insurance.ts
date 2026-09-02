@@ -502,9 +502,21 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			"insurance guarantee letters read",
 		);
 		if (!orgId) return;
-
-		const { patientId, status, search } = request.query;
-		const conditions: SQL[] = [eq(dmsGuaranteeLetters.organizationId, orgId)];
+		const querySchema = z.object({
+			patientId: z.string().uuid().optional(),
+			status: z.string().optional(),
+			search: z.string().optional(),
+		});
+		const parsedQuery = querySchema.safeParse(request.query);
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Параметр patientId должен быть валидным UUID.",
+				details: parsedQuery.error.issues,
+			});
+		}
+		const { patientId, status, search } = parsedQuery.data;
+		const conditions: SQL[] = [eq(dmsGuaranteeLetters.organizationId, orgId as string)];
 
 		if (patientId) {
 			conditions.push(eq(dmsGuaranteeLetters.patientId, patientId));

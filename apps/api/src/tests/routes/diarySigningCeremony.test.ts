@@ -795,6 +795,7 @@ describe("церемония подписания дневника одинак�
 				.from(visitDiaries)
 				.where(eq(visitDiaries.id, diary.id)),
 		);
+		assert.ok(unalteredDiary, "Unaltered diary must exist");
 		assert.equal(unalteredDiary.diagnosisIcd10, "K02.1");
 		assert.equal(unalteredDiary.anamnesis, ANAMNESIS);
 
