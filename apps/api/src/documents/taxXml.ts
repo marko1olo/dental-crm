@@ -136,13 +136,47 @@ export function buildKnd1151156Xml(
 		};
 	}
 
+	const clinicProfileAny = context.clinicProfile as unknown as {
+		inn?: string | null;
+		kpp?: string | null;
+		ogrn?: string | null;
+		legalName?: string | null;
+		clinicName?: string | null;
+		signatoryName?: string | null;
+		signatorySnils?: string | null;
+		licenseNumber?: string | null;
+		licenseDate?: string | null;
+	};
+
+	const clinicInn = digits(clinicProfileAny.inn);
+	if (clinicInn.length !== 10 && clinicInn.length !== 12) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error:
+				"Для XML-выгрузки по форме КНД 1151156 нужен корректный ИНН клиники (10 знаков для юрлица или 12 знаков для ИП).",
+		};
+	}
+
 	const scopedPayments = taxPaymentsForDocumentScope(document, context.payments);
 	if (!scopedPayments.length) {
 		return {
 			ok: false,
 			statusCode: 409,
 			error:
-				"Не найдены оплаченные фискальные чеки за указанный налоговый год для формирования справки.",
+				"Для XML-выгрузки по форме КНД 1151156 нужен хотя бы один оплаченный платеж за указанный налоговый год.",
+		};
+	}
+
+	const invalidCodePayment = scopedPayments.find(
+		(p) => p.taxDeductionCode && p.taxDeductionCode !== "1" && p.taxDeductionCode !== "2",
+	);
+	if (invalidCodePayment) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error:
+				"Для XML КНД 1151156 каждый платеж должен иметь код услуги 1 или 2.",
 		};
 	}
 
@@ -156,8 +190,9 @@ export function buildKnd1151156Xml(
 		};
 	}
 
-	const isSelfPayer = !firstPayment.payerFullName || 
-		firstPayment.payerRelationship === "self" || 
+	const isSelfPayer =
+		!firstPayment.payerFullName ||
+		firstPayment.payerRelationship === "self" ||
 		firstPayment.payerRelationship === "patient";
 
 	const payerFullNameStr = cleanString(firstPayment.payerFullName) || cleanString(patient.fullName);
@@ -169,7 +204,7 @@ export function buildKnd1151156Xml(
 		};
 	}
 	const payerFio = parseFio(payerFullNameStr);
-	const payerInn = cleanString(firstPayment.payerInn) || cleanString(patient.administrativeProfile?.taxpayerInn);
+	const payerInn = cleanString(firstPayment.payerInn) || (isSelfPayer && firstPayment.payerInn === undefined ? cleanString(patient.administrativeProfile?.taxpayerInn) : undefined);
 	const payerBirthDate = cleanString(firstPayment.payerBirthDate) || cleanString(patient.birthDate);
 	if (!payerBirthDate) {
 		return {
@@ -178,7 +213,15 @@ export function buildKnd1151156Xml(
 			error: "Не указана дата рождения налогоплательщика. Поле обязательно для формата ФНС КНД 1151156.",
 		};
 	}
-	const payerIdentity = parseIdentityDoc(firstPayment.payerIdentityDocument || patient.administrativeProfile?.identityDocument);
+	const payerIdentity = parseIdentityDoc(firstPayment.payerIdentityDocument) || (isSelfPayer && firstPayment.payerIdentityDocument === undefined ? parseIdentityDoc(patient.administrativeProfile?.identityDocument) : undefined);
+	if (!payerInn && !payerIdentity) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error:
+				"Для XML КНД 1151156 нужны ФИО, дата рождения и 12-значный ИНН либо документ личности налогоплательщика с датой выдачи.",
+		};
+	}
 
 	const kinshipCode = mapRelationshipToKinshipCode(firstPayment.payerRelationship);
 
@@ -201,6 +244,15 @@ export function buildKnd1151156Xml(
 	}
 	const patientInn = cleanString(patient.administrativeProfile?.taxpayerInn);
 	const patientIdentity = parseIdentityDoc(patient.administrativeProfile?.identityDocument);
+
+	if (!isSelfPayer && !patientInn && !patientIdentity) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error:
+				"Если налогоплательщик и пациент разные, для XML КНД 1151156 нужны ФИО, дата рождения и 12-значный ИНН либо документ личности пациента с датой выдачи.",
+		};
+	}
 
 	// Точный подсчет в копейках
 	const code1Payments = scopedPayments.filter((p) => p.taxDeductionCode === "1" || !p.taxDeductionCode);
@@ -225,19 +277,6 @@ export function buildKnd1151156Xml(
 		}),
 	);
 
-	const clinicProfileAny = context.clinicProfile as unknown as {
-		inn?: string | null;
-		kpp?: string | null;
-		ogrn?: string | null;
-		legalName?: string | null;
-		clinicName?: string | null;
-		signatoryName?: string | null;
-		signatorySnils?: string | null;
-		licenseNumber?: string | null;
-		licenseDate?: string | null;
-	};
-
-	const clinicInn = digits(clinicProfileAny.inn);
 	const clinicKpp = digits(clinicProfileAny.kpp) || undefined;
 	const clinicOgrn = digits(clinicProfileAny.ogrn) || "1027700132195";
 
