@@ -510,7 +510,24 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 					.limit(1);
 
 				if (!lockedInvoice) {
-					throw new Error("Счёт на оплату не найден в этой клинике.");
+					const err = new Error("Счёт на оплату не найден в этой клинике.");
+					// biome-ignore lint/suspicious/noExplicitAny: error mapping
+					(err as any).statusCode = 404;
+					throw err;
+				}
+
+				if (
+					input.operationType !== "income_return" &&
+					(lockedInvoice.status === "paid" || lockedInvoice.status === "refunded")
+				) {
+					const err = new Error(
+						`Счёт уже находится в статусе «${lockedInvoice.status}» и не может быть фискализирован повторно.`,
+					);
+					// biome-ignore lint/suspicious/noExplicitAny: error mapping
+					(err as any).statusCode = 409;
+					// biome-ignore lint/suspicious/noExplicitAny: error mapping
+					(err as any).errorCode = "InvoiceAlreadySettled";
+					throw err;
 				}
 			}
 
