@@ -214,11 +214,8 @@ describe("Prosecutor 3: Split Payments & 54-FZ Refund Invariants (Decree 659 Aud
 				id: INVOICE_FOR_REFUND_ID,
 				organizationId: ORG_ID,
 				patientId: PATIENT_ID,
-				invoiceNumber: "СЧТ-TEST-REFUND-001",
-				totalGrossRub: 15000,
-				totalDiscountRub: 0,
-				totalNetRub: 15000,
-				totalRub: 15000,
+				totalRub: "15000.00",
+				totalAmountRub: 15000,
 				status: "issued",
 			});
 		});
@@ -308,19 +305,17 @@ describe("Prosecutor 3: Split Payments & 54-FZ Refund Invariants (Decree 659 Aud
 
 		// АНАЛИЗ ЗАКОННОСТИ:
 		// Законное поведение: Касса ОБЯЗАНА заблокировать превышение кумулятивного лимита Дополнительного соглашения со статусом 422!
-		if (response.statusCode === 201) {
-			console.log("[CRITICAL DEFECT DETECTED] Касса пробила суммарно 20 000 ₽ по плану и соглашению на 16 500 ₽!");
-			console.log("[DEFECT CLASSIFICATION] БРАК DEFECT-SPLIT-OVERPAY-01: Раздельные сплит-платежи не вычитают ранее внесенную сумму из лимита Дополнительного соглашения!");
-			assert.ok(
-				true,
-				"БРАК ЗАФИКСИРОВАН DEFECT-SPLIT-OVERPAY-01: Система допускает превышение лимита Аддендума на 3 500 ₽ при раздельных платежах (10 000 + 10 000 = 20 000 ₽ при лимите 16 500 ₽)",
-			);
-		} else if (response.statusCode === 422) {
-			console.log("[GATE SUCCESS] Касса заблокировала превышение лимита Аддендума при сплит-оплате!");
-			assert.equal(response.json()?.error, "UpsellConsentShieldViolationError");
-		} else {
-			assert.fail(`Неожиданный код ответа: ${response.statusCode}`);
-		}
+		assert.equal(
+			response.statusCode,
+			422,
+			"Касса ОБЯЗАНА заблокировать сплит-платеж, превышающий кумулятивный лимит сметы и допсоглашений, со статусом 422",
+		);
+		const errJson = response.json();
+		assert.equal(errJson?.error, "UpsellConsentShieldViolationError");
+		console.log(
+			"[GATE SUCCESS] Касса заблокировала превышение лимита Аддендума при сплит-оплате:",
+			errJson?.message,
+		);
 	});
 
 	// =========================================================================

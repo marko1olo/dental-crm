@@ -74,9 +74,14 @@ const TreatmentPlanCardItem: React.FC<{
 				</div>
 			) : null}
 			<div className="flex items-center justify-between mt-0.5 pt-1.5 border-t border-[var(--line)] text-xs">
-				<span className="text-[var(--ink)] font-bold font-mono text-xs">
-					{item.unitPriceRub !== undefined && item.unitPriceRub !== null ? money(item.unitPriceRub) : "—"}
-				</span>
+				<div className="flex items-center gap-2">
+					<span className="text-[var(--ink)] font-bold font-mono text-xs">
+						{item.unitPriceRub !== undefined && item.unitPriceRub !== null ? money(item.unitPriceRub) : "—"}
+					</span>
+					<span className="inline-flex items-center gap-0.5 text-[10px] text-teal-700 dark:text-teal-300 font-medium">
+						<Shield className="w-2.5 h-2.5" /> Согласовано
+					</span>
+				</div>
 				{onOpenPlan ? (
 					<button
 						type="button"
@@ -224,6 +229,15 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					(item) => item.patientId === patientId,
 				);
 			}, [dashboard?.treatmentPlanItems, patientId]);
+
+			const patientAddendums = useMemo(() => {
+				return (dashboard?.documents ?? []).filter(
+					(doc) =>
+						doc.patientId === patientId &&
+						doc.kind === "treatment_plan_acceptance" &&
+						doc.status === "issued",
+				);
+			}, [dashboard?.documents, patientId]);
 
 			const handleOpenVisitCallback = useCallback(
 				(visitId: string) => {
@@ -394,6 +408,36 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 
 					{activeTab === "plans" && (
 						<div className="flex flex-col gap-2.5">
+							{/* Decree 659 & Upsell Consent Shield Status Banner */}
+							<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-between gap-3 flex-wrap">
+								<div className="flex items-center gap-2">
+									<Shield className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+									<div className="text-xs">
+										<span className="font-bold text-[var(--ink)]">
+											Защита согласий и сметы (ПП РФ №659 и ст. 16 ЗоЗПП)
+										</span>
+										<p className="text-[11px] text-[var(--muted)] m-0">
+											Все манипуляции фиксируются в плане. Новые позиции требуют Дополнительного соглашения.
+										</p>
+									</div>
+								</div>
+								<div className="flex items-center gap-2">
+									<span className="text-xs font-semibold px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)]">
+										Активных ДС: {patientAddendums.length}
+									</span>
+									<button
+										type="button"
+										onClick={() => {
+											window.location.hash = "#documents";
+										}}
+										className="min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-lg bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90 border-0 cursor-pointer inline-flex items-center gap-1"
+									>
+										<FileText className="w-3 h-3" />
+										<span>Оформить ДС</span>
+									</button>
+								</div>
+							</div>
+
 							<div className="flex items-center justify-between">
 								<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] m-0">
 									Позиции плана лечения ({patientPlanItems.length})

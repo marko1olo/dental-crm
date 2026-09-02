@@ -1113,6 +1113,8 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					planNumber={`ПЛАН-№${patientId.slice(0, 4)}`}
 					planTitle={currentTier.title}
 					planCreatedAtIso={new Date().toISOString()}
+					approvedAtIso={signedAgreement ? new Date().toISOString() : undefined}
+					isSignedWithPatient={Boolean(signedAgreement)}
 					doctorFullName={auth?.currentUser?.name || "Д-р Смирнов А. В."}
 					doctorUserId={auth?.currentUser?.id || undefined}
 					planItems={stages.flatMap((s) => s.items)}

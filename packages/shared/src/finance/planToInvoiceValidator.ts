@@ -94,6 +94,7 @@ export interface Service804nAnalogue {
 
 export interface ValidatedPlanItemResult {
 	readonly itemId: string;
+	readonly serviceId?: string | undefined;
 	readonly toothNumber: number | null;
 	readonly surfaces: readonly string[];
 	readonly code804n: string;
@@ -461,6 +462,7 @@ export function validatePlanToInvoice(
 
 		validatedItems.push({
 			itemId: item.itemId,
+			serviceId: item.serviceId,
 			toothNumber: item.toothNumber ?? null,
 			surfaces: item.surfaces ?? [],
 			code804n: item.code804n,

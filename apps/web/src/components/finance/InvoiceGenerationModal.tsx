@@ -110,6 +110,68 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 	const [showAdminPinDrawer, setShowAdminPinDrawer] = useState<boolean>(false);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+	// Decree 659 & Upsell Consent Shield compliance state
+	const [patientApprovedPlans, setPatientApprovedPlans] = useState<any[]>([]);
+	const [patientIssuedAddendums, setPatientIssuedAddendums] = useState<any[]>([]);
+	const [isCheckingCompliance, setIsCheckingCompliance] = useState<boolean>(false);
+	const [isCreatingAddendum, setIsCreatingAddendum] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (!isOpen || !patientId) return;
+
+		let isMounted = true;
+		const fetchComplianceData = async () => {
+			setIsCheckingCompliance(true);
+			try {
+				const [plansRes, docsRes] = await Promise.all([
+					fetch(`/api/patients/${patientId}/treatment-plans`, {
+						headers: denteAdminSecretRequestHeaders(),
+					}).catch(() => null),
+					fetch(`/api/documents?patientId=${patientId}`, {
+						headers: denteAdminSecretRequestHeaders(),
+					}).catch(() => null),
+				]);
+
+				if (plansRes && plansRes.ok) {
+					const data = await plansRes.json().catch(() => null);
+					if (isMounted && data?.plans) {
+						const approved = (data.plans as any[]).filter(
+							(p) => p.status === "Approved" || p.status === "approved" || p.isSignedWithPatient,
+						);
+						setPatientApprovedPlans(approved);
+					}
+				}
+
+				if (docsRes && docsRes.ok) {
+					const docsData = await docsRes.json().catch(() => null);
+					if (isMounted && Array.isArray(docsData)) {
+						const addendums = docsData.filter(
+							(d) => d.kind === "treatment_plan_acceptance" && d.status === "issued",
+						);
+						setPatientIssuedAddendums(addendums);
+					}
+				} else if (dashboard?.documents) {
+					const addendums = (dashboard.documents as any[]).filter(
+						(d) =>
+							d.patientId === patientId &&
+							d.kind === "treatment_plan_acceptance" &&
+							d.status === "issued",
+					);
+					if (isMounted) setPatientIssuedAddendums(addendums);
+				}
+			} catch (err) {
+				console.warn("[InvoiceGenerationModal] Compliance fetch error:", err);
+			} finally {
+				if (isMounted) setIsCheckingCompliance(false);
+			}
+		};
+
+		fetchComplianceData();
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, patientId, dashboard?.documents]);
+
 	// Transform dashboard catalog to Lookup items
 	const catalogLookup: readonly CatalogServiceLookup[] = useMemo(() => {
 		const raw = (dashboard?.serviceCatalog as any[]) || [];
@@ -282,8 +344,137 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 		}
 	};
 
+	// Identify unapproved items under Decree 659 & Upsell Consent Shield
+	const unapprovedItems = useMemo(() => {
+		// If current plan itself is approved and signed, items inside it are approved
+		if (isSignedWithPatient && approvedAtIso) {
+			return [];
+		}
+
+		return report.items.filter((it) => {
+			const targetServiceId =
+				it.suggested804nAnalogue?.serviceId || (it as any).serviceId;
+
+			// 1. Is it in any approved plan?
+			const inApprovedPlan = patientApprovedPlans.some((plan) => {
+				const planItems = plan.items || [];
+				return planItems.some((pi: any) => {
+					if (
+						targetServiceId &&
+						(pi.priceId === targetServiceId ||
+							pi.priceId?.startsWith(`${targetServiceId}::`))
+					) {
+						return true;
+					}
+					if (
+						it.nameRu &&
+						(pi.name === it.nameRu ||
+							pi.title === it.nameRu ||
+							pi.priceId?.includes(it.nameRu))
+					) {
+						return true;
+					}
+					return false;
+				});
+			});
+
+			if (inApprovedPlan) return false;
+
+			// 2. Is it covered by an issued Addendum?
+			const itemAmountRub = it.effectiveUnitPriceKopecks / 100;
+			const coveredByAddendum = patientIssuedAddendums.some((addendum) => {
+				const limit = Number(addendum.totalAmountRub || 0);
+				if (itemAmountRub > limit) return false;
+				const titleLower = (addendum.title || "").toLowerCase();
+				const itemTitleLower = it.nameRu.toLowerCase();
+				if (titleLower.includes("отбеливан") && !itemTitleLower.includes("отбеливан"))
+					return false;
+				if (titleLower.includes("имплант") && !itemTitleLower.includes("имплант"))
+					return false;
+				return true;
+			});
+
+			return !coveredByAddendum;
+		});
+	}, [
+		report.items,
+		isSignedWithPatient,
+		approvedAtIso,
+		patientApprovedPlans,
+		patientIssuedAddendums,
+	]);
+
+	// Create Addendum under Decree 659
+	const handleCreateAddendum = async () => {
+		if (unapprovedItems.length === 0) return;
+		setIsCreatingAddendum(true);
+		try {
+			const totalAmountRub = unapprovedItems.reduce(
+				(sum, it) => sum + (it.effectiveUnitPriceKopecks / 100) * it.quantity,
+				0,
+			);
+			const payload = {
+				patientId,
+				kind: "treatment_plan_acceptance",
+				title: `Дополнительное соглашение к плану лечения (ПП РФ №659) от ${new Date().toLocaleDateString("ru-RU")}`,
+				totalAmountRub,
+				status: "issued",
+				payloadJson: {
+					decree659Compliant: true,
+					unapprovedItems: unapprovedItems.map((it) => ({
+						itemId: it.itemId,
+						nameRu: it.nameRu,
+						code804n: it.code804n,
+						quantity: it.quantity,
+						priceRub: it.effectiveUnitPriceKopecks / 100,
+					})),
+				},
+			};
+
+			const res = await fetch("/api/documents", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(payload),
+			});
+
+			if (!res.ok) {
+				const errBody = await res.json().catch(() => null);
+				throw new Error(
+					errBody?.message || `Ошибка сервера (HTTP ${res.status})`,
+				);
+			}
+
+			const doc = await res.json();
+			setPatientIssuedAddendums((prev) => [...prev, doc]);
+			showToast(
+				`Дополнительное соглашение на сумму ${totalAmountRub.toLocaleString("ru-RU")} ₽ успешно сформировано (ПП РФ №659)!`,
+				"success",
+				5000,
+			);
+		} catch (err: any) {
+			showToast(
+				`Ошибка формирования Дополнительного соглашения: ${err.message}`,
+				"error",
+				5000,
+			);
+		} finally {
+			setIsCreatingAddendum(false);
+		}
+	};
+
 	// Submit and generate invoice
 	const handleCreateInvoice = async () => {
+		if (unapprovedItems.length > 0) {
+			showToast(
+				`Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 ЗоЗПП: в смете есть ${unapprovedItems.length} несогласованных услуг. Оформите Дополнительное соглашение.`,
+				"warning",
+				5000,
+			);
+			return;
+		}
+
 		if (!report.canGenerateInvoice) {
 			showToast(
 				"Формирование заблокировано: устраните архивные или нулевые позиции",
@@ -319,7 +510,8 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 					),
 					discountRub: Number((it.effectiveDiscountKopecks / 100).toFixed(2)),
 					resolutionPolicy: it.selectedResolution,
-					serviceId: it.suggested804nAnalogue?.serviceId,
+					serviceId:
+						it.suggested804nAnalogue?.serviceId || (it as any).serviceId,
 				})),
 				adminOverridePin: adminOverrideAuthorized
 					? adminPinInput.trim()
@@ -502,6 +694,63 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 
 				{/* 3. Items Table */}
 				<div className="flex-1 overflow-y-auto p-6 min-h-0">
+					{/* Decree 659 & Upsell Consent Shield Warning Banner */}
+					{unapprovedItems.length > 0 && (
+						<div className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
+							<div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+								<div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+									<ShieldAlert
+										size={18}
+										className="text-amber-600 dark:text-amber-400 shrink-0"
+									/>
+									<span className="text-sm">
+										Постановление Правительства РФ №659 от 30.05.2026 и ст. 16 ЗоЗПП (Upsell Consent Shield)
+									</span>
+								</div>
+								<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40">
+									Требуется Дополнительное соглашение
+								</span>
+							</div>
+							<p className="mt-1 leading-relaxed">
+								В смету включены платные медицинские услуги, отсутствующие в утвержденном плане лечения пациента. Согласно п. 21-23 Правил предоставления платных медуслуг (ПП РФ №659) и ст. 16 Закона РФ «О защите прав потребителей», оказание и выставление счетов на такие услуги без подписания Дополнительного соглашения строго запрещены.
+							</p>
+							<div className="mt-2.5 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20">
+								<div className="font-semibold text-amber-800 dark:text-amber-300 mb-1">
+									Несогласованные позиции ({unapprovedItems.length}):
+								</div>
+								<ul className="list-disc pl-5 space-y-0.5 text-[11px]">
+									{unapprovedItems.map((it) => (
+										<li key={it.itemId}>
+											<span className="font-bold text-[var(--ink)]">
+												{it.nameRu}
+											</span>{" "}
+											({it.code804n}) —{" "}
+											<span className="font-mono">
+												{formatKopecksRu(it.effectiveUnitPriceKopecks)}
+											</span>
+										</li>
+									))}
+								</ul>
+							</div>
+							<div className="mt-3 flex items-center gap-3 flex-wrap">
+								<button
+									type="button"
+									onClick={handleCreateAddendum}
+									disabled={isCreatingAddendum}
+									className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+								>
+									<FileText size={14} />
+									{isCreatingAddendum
+										? "Формирование соглашения..."
+										: "Сформировать Дополнительное соглашение (ДС-2026)"}
+								</button>
+								<span className="text-[11px] text-amber-700 dark:text-amber-400 italic">
+									После оформления документа система разблокирует выписку наряда и счета
+								</span>
+							</div>
+						</div>
+					)}
+
 					{report.blockingReasons.length > 0 && !adminOverrideAuthorized && (
 						<div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs">
 							<div className="flex items-center gap-2 font-bold mb-1">
@@ -537,12 +786,17 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 							{report.items.map((it) => {
 								const hasArchived = it.isArchived || !it.isFoundInCatalog;
 								const hasAnalogue = !!it.suggested804nAnalogue;
+								const isUnapproved = unapprovedItems.some(
+									(u) => u.itemId === it.itemId,
+								);
 
 								return (
 									<tr
 										key={it.itemId}
 										className={`hover:bg-[var(--paper-soft)] transition-colors ${
-											it.severity === "BLOCKED" ? "bg-rose-500/5" : ""
+											it.severity === "BLOCKED" || isUnapproved
+												? "bg-rose-500/5"
+												: ""
 										}`}
 									>
 										<td className="py-3 pl-2 max-w-[280px]">
@@ -553,6 +807,13 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 											<div className="text-[11px] text-[var(--ink-muted)]">
 												{it.categoryRu} • {it.quantity} шт.
 											</div>
+
+											{isUnapproved && (
+												<div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded w-fit">
+													<AlertTriangle size={11} className="shrink-0" />
+													<span>ПП РФ №659: Требует Допсоглашения</span>
+												</div>
+											)}
 
 											{/* Analogue Recommender Box */}
 											{hasArchived && (
@@ -765,17 +1026,28 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 						<button
 							type="button"
 							onClick={handleCreateInvoice}
-							disabled={!report.canGenerateInvoice || isSubmitting}
+							disabled={
+								!report.canGenerateInvoice ||
+								isSubmitting ||
+								unapprovedItems.length > 0
+							}
+							title={
+								unapprovedItems.length > 0
+									? "Выписка заблокирована: оформите Дополнительное соглашение (ПП РФ №659)"
+									: undefined
+							}
 							className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-lg shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all active:scale-95"
 						>
 							<FileText size={16} />
 							{isSubmitting
 								? "Формирование..."
-								: documentType === "work_order"
-									? "Оформить наряд-заказ"
-									: documentType === "completed_act"
-										? "Сформировать акт"
-										: "Выписать счет на оплату"}
+								: unapprovedItems.length > 0
+									? "Заблокировано по ПП РФ №659"
+									: documentType === "work_order"
+										? "Оформить наряд-заказ"
+										: documentType === "completed_act"
+											? "Сформировать акт"
+											: "Выписать счет на оплату"}
 						</button>
 					</div>
 				</footer>
