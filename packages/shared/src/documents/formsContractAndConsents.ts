@@ -88,7 +88,7 @@ export const informedConsent1051nPayloadSchema = z.object({
 	consentType: informedConsentTypeSchema.default("general_primary"),
 	consentTitle: z.string().trim().min(1).max(240).default("ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ НА МЕДИЦИНСКОЕ ВМЕШАТЕЛЬСТВО"),
 	clinicLegalName: z.string().trim().min(1).max(240).default('ООО "Денте Клиник"'),
-	clinicAddress: z.string().trim().max(240).default("г. Москва, ул. Стоматологов, д. 10"),
+	clinicAddress: z.string().trim().max(240).default(""),
 	clinicOgrn: z.string().trim().max(32).default("1234567890123"),
 	clinicInn: z.string().trim().max(16).default("7701234567"),
 	medicalLicenseNumber: z.string().trim().max(64).default(DEFAULT_CLINIC_LICENSE_NUMBER),
@@ -102,7 +102,7 @@ export const informedConsent1051nPayloadSchema = z.object({
 	representativeFullName: z.string().trim().max(160).nullable().optional(),
 	representativePassport: z.string().trim().max(120).nullable().optional(),
 	representativeRelation: z.string().trim().max(80).nullable().optional(),
-	attendingDoctorFullName: z.string().trim().min(1).max(160).default("Смирнова Анна Сергеевна"),
+	attendingDoctorFullName: z.string().trim().max(160).default(""),
 	attendingDoctorSpecialty: z.string().trim().max(120).default("Врач-стоматолог-терапевт"),
 	diagnosisOrIndication: z.string().trim().min(1).max(300),
 	interventionName: z.string().trim().min(1).max(300),
@@ -180,7 +180,7 @@ export function generateStatutoryConsent1051nPayload(params: {
 		consentType: params.consentType,
 		consentTitle: title,
 		clinicLegalName: c?.legalName || 'ООО "Денте Клиник"',
-		clinicAddress: c?.address || "г. Москва, ул. Стоматологов, д. 10",
+		clinicAddress: c?.address || "",
 		clinicOgrn: c?.ogrn || "1234567890123",
 		clinicInn: c?.inn || "7701234567",
 		medicalLicenseNumber: c?.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER,
@@ -370,7 +370,7 @@ export const paidServiceContract736PayloadSchema = z.object({
 	contractNumber: z.string().trim().min(1).max(64),
 	contractDate: z.string().trim().min(10).max(32).default(() => new Date().toISOString().slice(0, 10)),
 	clinicLegalName: z.string().trim().min(1).max(240).default('ООО "Денте Клиник"'),
-	clinicAddress: z.string().trim().max(240).default("г. Москва, ул. Стоматологов, д. 10"),
+	clinicAddress: z.string().trim().max(240).default(""),
 	clinicOgrn: z.string().trim().max(32).default("1234567890123"),
 	clinicInn: z.string().trim().max(16).default("7701234567"),
 	clinicKpp: z.string().trim().max(16).nullable().optional().default("770101001"),
@@ -393,7 +393,7 @@ export const paidServiceContract736PayloadSchema = z.object({
 	estimatedTotalRub: z.number().nonnegative().default(0),
 	serviceStart: z.string().trim().max(32).nullable().optional(),
 	serviceEnd: z.string().trim().max(32).nullable().optional(),
-	doctorFullName: z.string().trim().max(160).default("Смирнова Анна Сергеевна"),
+	doctorFullName: z.string().trim().max(160).default(""),
 });
 export type PaidServiceContract736Payload = z.infer<typeof paidServiceContract736PayloadSchema>;
 
@@ -404,7 +404,7 @@ export function renderPaidServiceContract736Html(payload: PaidServiceContract736
 	const contractNum = payload.contractNumber || "ДОГ-2026/043";
 	const contractDate = payload.contractDate || new Date().toISOString().slice(0, 10);
 	const clinicName = payload.clinicLegalName || 'ООО "Денте Клиник"';
-	const clinicAddress = payload.clinicAddress || "г. Москва, ул. Стоматологов, д. 10";
+	const clinicAddress = payload.clinicAddress || "";
 	const clinicOgrn = payload.clinicOgrn || "1234567890123";
 	const clinicInn = payload.clinicInn || "7701234567";
 	const clinicKpp = payload.clinicKpp || "770101001";
@@ -414,7 +414,7 @@ export function renderPaidServiceContract736Html(payload: PaidServiceContract736
 	const clinicPhone = payload.clinicPhone || "+7 (495) 123-45-67";
 	const clinicWebsite = payload.clinicWebsite || "https://dente-clinic.ru";
 
-	const patientName = payload.patientFullName || "Иванов Иван Иванович";
+	const patientName = payload.patientFullName || "";
 	const patientBirth = payload.patientBirthDate || "01.01.1990";
 	const patientPassport = payload.patientPassport || "Паспорт гражданина РФ";
 	const patientAddress = payload.patientAddress || "г. Москва";
@@ -531,7 +531,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
         Лицензия: № ${escapeHtml(medLic)}<br>
         Тел: ${escapeHtml(clinicPhone)}<br><br>
         Руководитель клиники / Врач:<br><br>
-        ___________________ / ${escapeHtml(payload.doctorFullName || "Смирнова А.С.")} / <span class="stamp-seal">М.П.</span>
+        ___________________ / ${escapeHtml(payload.doctorFullName || "")} / <span class="stamp-seal">М.П.</span>
       </td>
       <td style="width:50%; vertical-align:top;">
         <strong>ЗАКАЗЧИК (ПАЦИЕНТ):</strong><br>
@@ -570,14 +570,14 @@ export const actOfCompletedWorksPayloadSchema = z.object({
 	contractNumber: z.string().trim().min(1).max(64).default("ДОГ-2026/043"),
 	contractDate: z.string().trim().min(10).max(32).default(() => new Date().toISOString().slice(0, 10)),
 	clinicLegalName: z.string().trim().min(1).max(240).default('ООО "Денте Клиник"'),
-	clinicAddress: z.string().trim().max(240).default("г. Москва, ул. Стоматологов, д. 10"),
+	clinicAddress: z.string().trim().max(240).default(""),
 	clinicOgrn: z.string().trim().max(32).default("1234567890123"),
 	clinicInn: z.string().trim().max(16).default("7701234567"),
 	medicalLicenseNumber: z.string().trim().max(64).default(DEFAULT_CLINIC_LICENSE_NUMBER),
 	customerFullName: z.string().trim().min(1).max(160),
 	customerPassport: z.string().trim().max(120).default("Паспорт гражданина РФ"),
 	patientFullName: z.string().trim().min(1).max(160),
-	attendingDoctorFullName: z.string().trim().min(1).max(160).default("Смирнова Анна Сергеевна"),
+	attendingDoctorFullName: z.string().trim().max(160).default(""),
 	attendingDoctorSpecialty: z.string().trim().max(120).default("Врач-стоматолог"),
 	items: z.array(actOfCompletedWorksItemSchema).min(1),
 	totalAmountRub: z.number().nonnegative(),
@@ -595,14 +595,14 @@ export function renderActOfCompletedWorksHtml(payload: ActOfCompletedWorksPayloa
 	const contractNum = payload.contractNumber || "ДОГ-2026/043";
 	const contractDate = payload.contractDate || actDate;
 	const clinicName = payload.clinicLegalName || 'ООО "Денте Клиник"';
-	const clinicAddress = payload.clinicAddress || "г. Москва, ул. Стоматологов, д. 10";
+	const clinicAddress = payload.clinicAddress || "";
 	const clinicOgrn = payload.clinicOgrn || "1234567890123";
 	const clinicInn = payload.clinicInn || "7701234567";
 	const medLic = payload.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER;
 
-	const customerName = payload.customerFullName || payload.patientFullName || "Иванов Иван Иванович";
+	const customerName = payload.customerFullName || payload.patientFullName || "";
 	const patientName = payload.patientFullName || customerName;
-	const doctorName = payload.attendingDoctorFullName || "Смирнова Анна Сергеевна";
+	const doctorName = payload.attendingDoctorFullName || "";
 	const doctorSpecialty = payload.attendingDoctorSpecialty || "Врач-стоматолог";
 
 	const items: ActOfCompletedWorksItem[] = payload.items || [];

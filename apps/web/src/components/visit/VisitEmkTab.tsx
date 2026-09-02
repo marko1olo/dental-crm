@@ -55,7 +55,7 @@ import { AppointmentModal } from "../schedule/AppointmentModal";
 import { type Appointment, calculateAge } from "@dental/shared";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { PatientBillingModal } from "../finance/PatientBillingModal";
-import { InformedConsentModal } from "../consents/InformedConsentModal";
+import { InformedConsentModal, type SignedConsentPayload } from "../consents/InformedConsentModal";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import { EmkVoicePilot } from "./EmkVoicePilot";
 import { PatientAllergySafetyBanner } from "../patient/PatientAllergySafetyBanner";
@@ -1062,6 +1062,81 @@ export function VisitEmkTab() {
 			setIsLinkingTray(false);
 		}
 	};
+
+	const handleConsentSigned = React.useCallback(
+		async (payload: SignedConsentPayload) => {
+			const patId = realVisitFieldId(activePatient?.id);
+			if (!patId) {
+				showToast("Пациент не выбран для сохранения согласия", "warning");
+				return;
+			}
+
+			try {
+				const currentVisitId = realVisitFieldId(dashboard?.activeVisit?.id);
+				const headers =
+					appLogic.auth?.denteClinicalMutationHeaders?.({
+						"Content-Type": "application/json",
+					}) ??
+					denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					});
+
+				const res = await fetch(`/api/patients/${patId}/consents`, {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						...payload,
+						visitId: currentVisitId,
+					}),
+				});
+
+				if (!res.ok) {
+					const errData = await res.json().catch(() => null);
+					showToast(
+						errData?.message || "Не удалось сохранить подписанное согласие на сервере",
+						"error",
+					);
+					return;
+				}
+
+				if (payload.attachedToForm043u) {
+					updateVisitNoteField(
+						"recommendations",
+						`${visitNoteForm?.recommendations ? `${visitNoteForm.recommendations}\n` : ""}Пациент подписал ${payload.title || "ИДС"} (Хеш SHA-256: ${payload.integrityHash.slice(0, 16)}...)`,
+					);
+				}
+
+				showToast(
+					`Согласие «${payload.title || payload.code}» успешно подписано и привязано к карте пациента`,
+					"success",
+				);
+			} catch (err) {
+				logger.error("[VisitEmkTab] Ошибка сохранения согласия:", err);
+				showToast("Сбой соединения при отправке согласия пациента", "error");
+			}
+		},
+		[
+			activePatient?.id,
+			dashboard?.activeVisit?.id,
+			appLogic.auth,
+			updateVisitNoteField,
+			visitNoteForm?.recommendations,
+			showToast,
+		],
+	);
+
+	const handleConsentConfirmed = React.useCallback(
+		(_payload: {
+			consentType: string;
+			intervention: string;
+			toothOrArea: string;
+			confirmedAt: string;
+			integrityHash?: string;
+		}) => {
+			setIsInformedConsentModalOpen(false);
+		},
+		[],
+	);
 
 	const emkTabs = [
 		{ id: "all", label: "Все поля" },
@@ -2832,7 +2907,7 @@ export function VisitEmkTab() {
 						specialty: appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт",
 					}}
 					clinicLegalName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-					clinicLicenseNumber="ЛО41-01137-77/00368421"
+					clinicLicenseNumber={dashboard?.clinicSettings?.profile?.medicalLicenseNumber || "ЛО41-01137-77/00368421"}
 				/>
 
 				{/* Модальное окно Информированного добровольного согласия (Приказ № 1051н) */}
@@ -2844,10 +2919,12 @@ export function VisitEmkTab() {
 					doctorName={appLogic?.activeDoctor?.fullName || appLogic?.auth?.currentUser?.name || "Врач-стоматолог"}
 					doctorSpecialty={appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт"}
 					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника «DENTE»"}
-					clinicLegalName="ООО «ДЕНТЕ МЕДИКАЛ ГРУПП»"
-					licenseNumber="№ ЛО41-01137-77/00368421 от 14.02.2023 г. выдана Департаментом здравоохранения города Москвы"
+					clinicLegalName={dashboard?.clinicSettings?.profile?.legalName || dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+					licenseNumber={dashboard?.clinicSettings?.profile?.medicalLicenseNumber || "ЛО41-01137-77/00368421"}
 					diagnosisIcd={typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis : undefined}
-					toothNumbers=""
+					toothNumbers={activeSelectedTooth ? String(activeSelectedTooth) : ""}
+					onConsentSigned={handleConsentSigned}
+					onConsentConfirmed={handleConsentConfirmed}
 				/>
 
 				{/* Модальное окно валидатора и экспорта СЭМД ЕГИСЗ */}
@@ -3227,13 +3304,19 @@ export function VisitEmkTab() {
 				<div className="border-b-2 border-slate-900 pb-3 mb-4 flex items-start justify-between gap-4">
 					<div>
 						<div className="text-base font-black text-slate-900 uppercase tracking-tight">
-							Стоматологическая клиника «DENTE»
+							{dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника «DENTE»"}
 						</div>
 						<div className="text-xs font-semibold text-slate-700">
-							ООО «ДЕНТЕ МЕДИКАЛ ГРУПП» • Лицензия № ЛО41-01137-77/00368421 от 14.02.2023 г.
+							{dashboard?.clinicSettings?.profile?.legalName || dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+							{dashboard?.clinicSettings?.profile?.medicalLicenseNumber
+								? ` • Лицензия № ${dashboard.clinicSettings.profile.medicalLicenseNumber}`
+								: ""}
 						</div>
 						<div className="text-[11px] text-slate-500">
-							119048, г. Москва, ул. Стоматологическая, д. 24, корп. 1 • Тел: +7 (495) 777-88-99 • dente-clinic.ru
+							{[
+								dashboard?.clinicSettings?.profile?.address,
+								dashboard?.clinicSettings?.profile?.phone ? `Тел: ${dashboard.clinicSettings.profile.phone}` : "",
+							].filter(Boolean).join(" • ")}
 						</div>
 						<h1 className="text-lg font-black tracking-tight text-slate-950 uppercase mt-2">
 							МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (Форма № 043/у)

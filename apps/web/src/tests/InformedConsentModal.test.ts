@@ -4,7 +4,7 @@ import {
 	BASE_INFORMED_CONSENT_PRESET,
 	CLINICAL_CONSENT_PRESETS,
 } from "@dental/shared";
-import { InformedConsentModal } from "../components/documents/InformedConsentModal";
+import { InformedConsentModal } from "../components/consents/InformedConsentModal";
 
 test("InformedConsentModal component contract and clinical presets integrity", () => {
 	assert.equal(typeof InformedConsentModal, "function");

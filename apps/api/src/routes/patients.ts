@@ -114,11 +114,19 @@ const patientArchiveStatusBodySchema = z.object({
 	isBlacklisted: z.unknown().optional(),
 });
 
-const patientArchiveBodySchema = z.object({
-	archiveReason: z.string().min(1, "Укажите причину архивации"),
-	isBlacklisted: z.boolean().default(false),
-	blacklistReason: z.string().optional(),
-});
+const patientArchiveBodySchema = z
+	.object({
+		reasonCode: z.string().optional(),
+		archiveReason: z.string().optional(),
+		isBlacklisted: z.boolean().default(false),
+		blacklistReason: z.string().optional(),
+		notes: z.string().optional(),
+	})
+	.refine((data) => Boolean(data.reasonCode || data.archiveReason), {
+		message:
+			"Укажите причину архивации (код из справочника 323-ФЗ или текстовое описание)",
+		path: ["archiveReason"],
+	});
 
 type PatientDuplicateInput = {
 	birthDate?: string | null | undefined;
@@ -461,6 +469,7 @@ import {
 	createPatientSafeInDb,
 	getPatientByIdFromDb,
 	getPatientsFromDb,
+	recordPatientConsentInDb,
 	updatePatientAdministrativeProfileInDb,
 	updatePatientInDb,
 } from "../db/patientsQuery.js";
@@ -626,16 +635,21 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				};
 				headers: Record<string, string | string[] | undefined>;
 			};
+			const authenticatedRole = identity.role ?? reqAny.user?.role ?? null;
+			const isSuperAdmin =
+				authenticatedRole === "super_admin" ||
+				authenticatedRole === "system" ||
+				authenticatedRole === "owner" ||
+				authenticatedRole === "admin";
 			const staffRole =
-				identity.role ??
-				reqAny.user?.role ??
-				(typeof reqAny.headers["x-user-role"] === "string"
-					? reqAny.headers["x-user-role"]
-					: null) ??
-				(typeof reqAny.headers["x-staff-role"] === "string"
-					? reqAny.headers["x-staff-role"]
-					: null) ??
-				null;
+				(isSuperAdmin
+					? (typeof reqAny.headers["x-user-role"] === "string"
+							? reqAny.headers["x-user-role"]
+							: null) ??
+						(typeof reqAny.headers["x-staff-role"] === "string"
+							? reqAny.headers["x-staff-role"]
+							: null)
+					: null) ?? authenticatedRole;
 
 			if (staffRole) {
 				const evalAccess = evaluateClinicalAccess(staffRole, {
@@ -643,14 +657,16 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 						(identity as unknown as { clinicalRole?: string | null })
 							.clinicalRole ??
 						reqAny.user?.clinicalRole ??
-						(typeof reqAny.headers["x-clinical-role"] === "string"
+						(isSuperAdmin &&
+						typeof reqAny.headers["x-clinical-role"] === "string"
 							? reqAny.headers["x-clinical-role"]
 							: null),
 					canSignMedicalRecords:
 						(identity as unknown as { canSignMedicalRecords?: boolean })
 							.canSignMedicalRecords ??
 						reqAny.user?.canSignMedicalRecords ??
-						reqAny.headers["x-can-sign-medical-records"] === "true",
+						(isSuperAdmin &&
+							reqAny.headers["x-can-sign-medical-records"] === "true"),
 				});
 
 				if (evalAccess.hasClinicalAccess) {
@@ -667,6 +683,42 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 						patientId,
 						action: "DIAGNOSIS_ACCESS_STRIPPED",
 						diagnosis: "Врачебная тайна скрыта согласно 152-ФЗ",
+					});
+				}
+			}
+
+			// 152-ФЗ / 323-ФЗ ст. 13: Защита архивированных пациентов.
+			// Извлечение медицинских карт списанных в архив пациентов неклиническим персоналом (маркетологи, стажеры, регистраторы) запрещено!
+			if (patient.status === "archived") {
+				const evalAccess = staffRole
+					? evaluateClinicalAccess(staffRole, {
+							clinicalRole:
+								(identity as unknown as { clinicalRole?: string | null })
+									.clinicalRole ??
+								reqAny.user?.clinicalRole ??
+								(typeof reqAny.headers["x-clinical-role"] === "string"
+									? reqAny.headers["x-clinical-role"]
+									: null),
+							canSignMedicalRecords:
+								(identity as unknown as { canSignMedicalRecords?: boolean })
+									.canSignMedicalRecords ??
+								reqAny.user?.canSignMedicalRecords ??
+								reqAny.headers["x-can-sign-medical-records"] === "true",
+						})
+					: { hasClinicalAccess: false, reason: "Анонимный запрос без роли медработника" };
+
+				if (!evalAccess.hasClinicalAccess) {
+					await auditMedicalAccessFromRequest(request, {
+						organizationId: orgId,
+						patientId,
+						action: "ACCESS_DENIED_ARCHIVED_PATIENT",
+						diagnosis: "Попытка извлечения медицинской карты архивированного пациента неклиническим персоналом (152-ФЗ / 323-ФЗ ст. 13)",
+					});
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "patients.archived.read",
+						role: staffRole,
+						message: `Отказ в доступе к медицинской карте архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): извлечение данных архивированных пациентов неклиническим персоналом («${staffRole ?? "unauthorized"}») запрещено.`,
 					});
 				}
 			}
@@ -903,6 +955,131 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 	);
 
 	/**
+	 * Сохранение подписанного согласия пациента (ИДС по 323-ФЗ / Приказ № 1051н).
+	 * Фиксирует векторную SVG-подпись, SHA-256 хеш целостности и вносит запись в карту.
+	 */
+	app.post(
+		"/api/patients/:patientId/consents",
+		async (request, reply) => {
+			const orgId = requireClinicOrganizationId(request, reply);
+			if (!orgId) return reply;
+
+			const { patientId } = request.params as { patientId?: string };
+			if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
+				return sendPatientRouteValidationError(reply);
+			}
+
+			const payload = request.body as {
+				templateKey?: string;
+				code?: string;
+				title?: string;
+				fullTextContent?: string;
+				patientName?: string;
+				birthDate?: string;
+				passport?: string;
+				doctorName?: string;
+				clinicName?: string;
+				diagnosisIcd?: string;
+				toothNumbers?: string;
+				signatureSvg?: string;
+				signaturePngBase64?: string;
+				// biome-ignore lint/suspicious/noExplicitAny: vector math payload
+				vectorData?: any;
+				integrityHash?: string;
+				signedAt?: string;
+				verificationMethod?: string;
+				smsOtpCode?: string | null;
+				attachedToForm043u?: boolean;
+				visitId?: string | null;
+			};
+
+			if (!payload || (!payload.signatureSvg && !payload.signaturePngBase64)) {
+				return reply.code(400).send({
+					error: "MissingSignatureError",
+					message: "Требуется графическая подпись пациента (SVG/PNG)",
+				});
+			}
+
+			if (!payload.integrityHash) {
+				return reply.code(400).send({
+					error: "MissingIntegrityHashError",
+					message: "Отсутствует криптографический хеш целостности SHA-256",
+				});
+			}
+
+			try {
+				const existingPatient = await getPatientByIdFromDb(orgId, patientId.trim());
+				if (!existingPatient) {
+					return sendPatientNotFound(reply);
+				}
+
+				const result = await recordPatientConsentInDb(orgId, patientId.trim(), {
+					templateKey: payload.templateKey,
+					code: payload.code,
+					title: payload.title,
+					fullTextContent: payload.fullTextContent,
+					patientName: payload.patientName,
+					birthDate: payload.birthDate,
+					passport: payload.passport,
+					doctorName: payload.doctorName,
+					clinicName: payload.clinicName,
+					diagnosisIcd: payload.diagnosisIcd,
+					toothNumbers: payload.toothNumbers,
+					signatureSvg: payload.signatureSvg || "",
+					signaturePngBase64: payload.signaturePngBase64,
+					vectorData: payload.vectorData,
+					integrityHash: payload.integrityHash,
+					signedAt: payload.signedAt,
+					verificationMethod: payload.verificationMethod || "touch_tablet",
+					smsOtpCode: payload.smsOtpCode,
+					attachedToForm043u: payload.attachedToForm043u,
+					visitId: payload.visitId,
+				});
+
+				return reply.code(201).send(result);
+			} catch (e) {
+				request.log.error({ err: e }, "[Patients] Ошибка фиксации согласия пациента");
+				return reply.code(500).send({
+					error: "PatientConsentRecordFailed",
+					message: "Не удалось сохранить подписанное согласие в карте пациента",
+				});
+			}
+		},
+	);
+
+	/**
+	 * Получение журнала информированных согласий пациента.
+	 */
+	app.get(
+		"/api/patients/:patientId/consents",
+		async (request, reply) => {
+			const orgId = requireClinicOrganizationId(request, reply);
+			if (!orgId) return reply;
+
+			const { patientId } = request.params as { patientId?: string };
+			if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
+				return sendPatientRouteValidationError(reply);
+			}
+
+			try {
+				const patient = await getPatientByIdFromDb(orgId, patientId.trim());
+				if (!patient) return sendPatientNotFound(reply);
+
+				const profile =
+					(patient.administrativeProfile as Record<string, unknown> | null) || {};
+				const consents = profile.consentSignatures || {};
+				return reply.code(200).send(consents);
+			} catch (e) {
+				request.log.error({ err: e }, "[Patients] Ошибка чтения согласий пациента");
+				return reply.code(500).send({
+					error: "PatientConsentsReadFailed",
+					message: "Не удалось прочитать согласия пациента",
+				});
+			}
+		},
+	);
+
+	/**
 	 * Журнал обращений пациента: звонки и сообщения, прошедшие через клинику.
 	 *
 	 * БЫЛО ДВА ДЕФЕКТА, ОБА ИСПРАВЛЕНЫ ЗДЕСЬ.
@@ -1007,6 +1184,22 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 			// на несуществующей карте врач прочитает как «осложнений не было».
 			const patient = await getPatientByIdFromDb(orgId, patientId.trim());
 			if (!patient) return sendPatientNotFound(reply);
+
+			// 152-ФЗ / 323-ФЗ ст. 13: Защита рекламаций и осложнений архивированного пациента
+			if (patient.status === "archived") {
+				const identity = getRequestIdentity(request);
+				const reqAny = request as unknown as { user?: { role?: string | null } };
+				const staffRole = identity.role ?? reqAny.user?.role ?? null;
+				const evalAccess = evaluateClinicalAccess(staffRole);
+				if (!evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "patients.archived.reclamations",
+						role: staffRole,
+						message: "Отказ в доступе к рекламациям архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): извлечение данных списанного в архив пациента неклиническим персоналом запрещено.",
+					});
+				}
+			}
 
 			const { getPatientReclamationsFromDb } = await import(
 				"../db/patientReclamationsQuery.js"
@@ -1679,36 +1872,113 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				issues: parsedBody.error.issues,
 			});
 		}
-		const { archiveReason, isBlacklisted, blacklistReason } = parsedBody.data;
+		const {
+			archiveReason,
+			reasonCode,
+			isBlacklisted,
+			blacklistReason,
+			notes,
+		} = parsedBody.data;
 
 		const userId = identity.userId;
 
 		try {
-			const { getPatientByIdFromDb } = await import("../db/patientsQuery.js");
-			const patient = await getPatientByIdFromDb(orgId, patientId);
-			if (!patient) return sendPatientNotFound(reply);
-
-			const { archivePatientInDb } = await import(
-				"../db/patientArchiveReasonsAndBlacklistsQuery.js"
+			const { PatientArchiveReasonService } = await import(
+				"../services/patients/PatientArchiveReasonService.js"
 			);
-			await archivePatientInDb(
+			const result = await PatientArchiveReasonService.archivePatient(
 				orgId,
-				patientId,
-				patient.fullName,
-				archiveReason,
-				isBlacklisted,
-				blacklistReason || "",
-				userId,
+				{
+					patientId,
+					reasonCode: reasonCode ?? undefined,
+					archiveReason: archiveReason ?? undefined,
+					isBlacklisted,
+					blacklistReason: blacklistReason ?? undefined,
+					notes: notes ?? undefined,
+					actorUserId: userId ?? null,
+				},
 			);
 
-			return reply.status(200).send({ success: true });
+			return reply.status(200).send({
+				success: true,
+				isBookingBlocked: result.isBookingBlocked,
+				legalBasis: result.legalBasis,
+				reasonName: result.reasonName,
+			});
 		} catch (e) {
 			request.log.error({ err: e }, "[Patients] Ошибка при архивации пациента");
 			return reply.code(500).send({
 				error: "PatientArchiveError",
 				message:
-					"Не удалось архивировать пациента. Пожалуйста, попробуйте еще раз.",
+					e instanceof Error
+						? e.message
+						: "Не удалось архивировать пациента. Пожалуйста, попробуйте еще раз.",
 			});
 		}
+	});
+
+	/**
+	 * GET /api/patients/archive-reasons
+	 * Справочник нормативных причин списания в архив по 323-ФЗ.
+	 */
+	app.get("/api/patients/archive-reasons", async (request, reply) => {
+		const orgId = requireClinicOrganizationId(request, reply);
+		if (!orgId) return reply;
+
+		const { PatientArchiveReasonService } = await import(
+			"../services/patients/PatientArchiveReasonService.js"
+		);
+		const reasons = await PatientArchiveReasonService.listReasons(orgId);
+		return reply.send({ success: true, reasons });
+	});
+
+	/**
+	 * POST /api/patients/:patientId/unarchive
+	 * Восстановление пациента из архива (разархивация).
+	 */
+	app.post("/api/patients/:patientId/unarchive", async (request, reply) => {
+		const orgId = requireClinicOrganizationId(request, reply);
+		if (!orgId) return reply;
+
+		const identity = getRequestIdentity(request);
+		if (!identity.userId) {
+			return reply.code(401).send({
+				error: "StaffAuthRequired",
+				message:
+					"Требуется авторизация сотрудника клиники (staff token) для разархивации пациента.",
+			});
+		}
+
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const allowedArchiveRoles = new Set([
+			"admin",
+			"administrator",
+			"owner",
+			"chief_doctor",
+			"chiefdoctor",
+			"head_doctor",
+		]);
+
+		if (!staffRole || !allowedArchiveRoles.has(staffRole)) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "patients.archive",
+				role: staffRole,
+				message:
+					"Разархивация пациентов разрешена только администраторам или руководству клиники.",
+			});
+		}
+
+		const { patientId } = request.params as { patientId?: string };
+		if (!patientId) return sendPatientRouteValidationError(reply);
+
+		const { PatientArchiveReasonService } = await import(
+			"../services/patients/PatientArchiveReasonService.js"
+		);
+		await PatientArchiveReasonService.unarchivePatient(orgId, patientId);
+		return reply.send({ success: true });
 	});
 }

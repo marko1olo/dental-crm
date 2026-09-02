@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
+import { useAppStore } from "../../store/appStore";
 import {
 	Printer,
 	Download,
@@ -66,15 +67,15 @@ const DEFAULT_043_DATA: MedicalCardForm043uData = {
 	clinic: {
 		clinicName: "Стоматологическая клиника «ДЕНТЕ»",
 		clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-		clinicAddress: "119048, г. Москва, ул. Усачёва, д. 29, корп. 1",
-		clinicPhone: "+7 (495) 789-20-20",
-		clinicOgrn: "1237700456789",
-		clinicInn: "7704812345",
-		clinicKpp: "770401001",
-		licenseNumber: "ЛО-77-01-021456",
-		licenseDate: "15.03.2023",
-		licenseIssuer: "Департамент здравоохранения города Москвы",
-		chiefDoctorFullName: "Прохоров Константин Игоревич",
+		clinicAddress: "",
+		clinicPhone: "",
+		clinicOgrn: "",
+		clinicInn: "",
+		clinicKpp: "",
+		licenseNumber: "",
+		licenseDate: "",
+		licenseIssuer: "",
+		chiefDoctorFullName: "",
 	},
 	passport: {
 		medicalCardNumber: "",
@@ -214,10 +215,80 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		cmoAuditorName,
 		cmoAuditorRole,
 	}) {
+		const dashboard = useAppStore((s) => s.dashboard);
+		const profile = dashboard?.clinicSettings?.profile;
+		const staff = dashboard?.clinicSettings?.staff;
+
+		const resolvedChiefDoctor =
+			staff?.find(
+				(s) =>
+					s.role === "owner" ||
+					(s.specialties &&
+						s.specialties.some((sp) => sp.toLowerCase().includes("глав"))),
+			)?.fullName ||
+			profile?.signatoryName ||
+			"";
+
+		const resolvedClinic = useMemo(
+			() => ({
+				clinicName:
+					initialData?.clinic?.clinicName ||
+					profile?.clinicName ||
+					DEFAULT_043_DATA.clinic.clinicName,
+				clinicLegalName:
+					initialData?.clinic?.clinicLegalName ||
+					profile?.legalName ||
+					profile?.clinicName ||
+					DEFAULT_043_DATA.clinic.clinicLegalName,
+				clinicAddress:
+					initialData?.clinic?.clinicAddress ||
+					profile?.address ||
+					"",
+				clinicPhone:
+					initialData?.clinic?.clinicPhone ||
+					profile?.phone ||
+					"",
+				clinicOgrn:
+					initialData?.clinic?.clinicOgrn ||
+					profile?.ogrn ||
+					"",
+				clinicInn:
+					initialData?.clinic?.clinicInn ||
+					profile?.inn ||
+					"",
+				clinicKpp:
+					initialData?.clinic?.clinicKpp ||
+					profile?.kpp ||
+					"",
+				licenseNumber:
+					initialData?.clinic?.licenseNumber ||
+					profile?.medicalLicenseNumber ||
+					"",
+				licenseDate:
+					initialData?.clinic?.licenseDate ||
+					profile?.medicalLicenseIssuedAt ||
+					"",
+				licenseIssuer:
+					initialData?.clinic?.licenseIssuer ||
+					profile?.medicalLicenseIssuer ||
+					"",
+				chiefDoctorFullName:
+					initialData?.clinic?.chiefDoctorFullName ||
+					resolvedChiefDoctor ||
+					"",
+			}),
+			[initialData?.clinic, profile, resolvedChiefDoctor],
+		);
+
 		const [formData, setFormData] = useState<MedicalCardForm043uData>(() => {
 			return {
 				...DEFAULT_043_DATA,
 				...initialData,
+				clinic: {
+					...DEFAULT_043_DATA.clinic,
+					...resolvedClinic,
+					...(initialData?.clinic || {}),
+				},
 				passport: { ...DEFAULT_043_DATA.passport, ...(initialData?.passport || {}) },
 				anamnesis: { ...DEFAULT_043_DATA.anamnesis, ...(initialData?.anamnesis || {}) },
 				dentalStatus: { ...DEFAULT_043_DATA.dentalStatus, ...(initialData?.dentalStatus || {}) },
@@ -1036,7 +1107,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						onRejectRecord={(_recId, resolution) => {
 							setCmoResolution(resolution);
 						}}
-						currentAuditorName={cmoAuditorName || formData.clinic.chiefDoctorFullName || "Прохоров Константин Игоревич"}
+						currentAuditorName={cmoAuditorName || formData.clinic.chiefDoctorFullName || "Главный врач"}
 						currentAuditorRole={cmoAuditorRole || "chief_medical_officer"}
 					/>
 
