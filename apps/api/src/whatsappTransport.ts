@@ -20,6 +20,8 @@
  * Документация: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
  */
 
+import { MessageTemplateEngine } from "./services/communications/MessageTemplateEngine.js";
+
 const GRAPH_API_VERSION = "v21.0";
 
 export type WhatsappTransportResult =
@@ -35,6 +37,7 @@ export type WhatsappTransportResult =
 			providerMessageId: null;
 			errorCode: number | null;
 			errorClass:
+				| "medical_secrecy_violation"
 				| "not_configured"
 				| "rate_limited"
 				| "auth"
@@ -99,6 +102,18 @@ export function normalizeWhatsappRecipient(
 export async function sendWhatsappTextMessage(
 	input: SendWhatsappTextInput,
 ): Promise<WhatsappTransportResult> {
+	// 152-ФЗ / 323-ФЗ: Защита врачебной тайны перед отправкой байтов в сокет WhatsApp Cloud API
+	const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(input.text);
+	if (leakCheck.hasLeak) {
+		return {
+			ok: false,
+			providerMessageId: null,
+			errorCode: 422,
+			errorClass: "medical_secrecy_violation",
+			errorMessage: `152-ФЗ / 323-ФЗ ст. 13: Заблокирована отправка сообщения в WhatsApp Cloud API из-за риска разглашения врачебной тайны (${leakCheck.detectedTerms.join(", ")})`,
+		};
+	}
+
 	const timeoutMs = Math.max(1000, Math.min(60_000, input.timeoutMs ?? 12_000));
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);

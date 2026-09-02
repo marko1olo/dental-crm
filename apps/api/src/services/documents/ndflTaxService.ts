@@ -18,18 +18,21 @@
 import {
 	buildFnsKnd1151156Xml,
 	classifyNdflServiceCode,
+	generateFnsNdflPrintHtml,
 	isDmsInsurancePayment,
 	isNonMedicalGood,
 	kopecksToNumericString,
 	parseKopecks,
 	rublesFromKopecks,
 	sumKopecks,
+	validateFnsFiscalReceiptsChecksums,
 	validateFnsNdflXmlStructure,
 	validateRussianInn,
 	validateRussianKpp,
 	validateRussianOgrn,
 	validateRussianSnils,
 	type FnsFiscalReceiptItem,
+	type FnsNdflPrintSigningOptions,
 	type FnsNdflXmlResult,
 	type FnsPreflightIssue,
 	type FnsTaxPayload,
@@ -301,6 +304,29 @@ export class NdflTaxService {
 			}
 		}
 
+		// Валидация контрольных сумм и целостности фискальных чеков
+		const checksumValidation = validateFnsFiscalReceiptsChecksums(payload);
+		if (!checksumValidation.isValid) {
+			result.isValidForSubmission = false;
+			for (const err of checksumValidation.errors) {
+				result.preflightIssues.push({
+					field: "receipts.checksum",
+					message: err,
+					severity: "error",
+				});
+			}
+		}
+
 		return result;
+	}
+
+	/**
+	 * Рендеринг официальной печатной формы КНД 1151156 с автоматическим нанесением синего штампа УКЭП.
+	 */
+	static renderCertificatePrintHtml(
+		payload: FnsTaxPayload,
+		signingOptions?: FnsNdflPrintSigningOptions | boolean | undefined,
+	): string {
+		return generateFnsNdflPrintHtml(payload, signingOptions);
 	}
 }

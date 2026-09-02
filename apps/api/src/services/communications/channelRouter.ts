@@ -281,7 +281,9 @@ export async function sendThroughChannel(
 				: {
 						ok: false,
 						errorClass: result.errorClass,
-						errorMessage: `Telegram ответил ${result.errorCode ?? "без кода"} (${result.errorClass}).`,
+						errorMessage:
+							result.details ??
+							`Telegram ответил ${result.errorCode ?? "без кода"} (${result.errorClass}).`,
 					};
 		}
 

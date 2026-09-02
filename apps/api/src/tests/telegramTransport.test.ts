@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { afterEach, describe, mock, test } from "node:test";
-import { sendTelegramTextMessage } from "../telegramTransport.js";
+import { sendTelegramPhotoMessage, sendTelegramTextMessage } from "../telegramTransport.js";
 
 describe("sendTelegramTextMessage", () => {
 	const originalFetch = globalThis.fetch;
@@ -109,5 +109,47 @@ describe("sendTelegramTextMessage", () => {
 			errorCode: null,
 			errorClass: "network",
 		});
+	});
+
+	test("152-FZ / 323-ФЗ: blocks outgoing message with clinical diagnosis before sending to Telegram socket", async () => {
+		let fetchCalled = false;
+		globalThis.fetch = mock.fn(async () => {
+			fetchCalled = true;
+			return new Response(JSON.stringify({ result: { message_id: 1 } }), { status: 200 });
+			// biome-ignore lint/suspicious/noExplicitAny: test mock
+		}) as any;
+
+		const result = await sendTelegramTextMessage({
+			botToken: "fake_token",
+			chatId: "12345",
+			text: "Здравствуйте, Иван! У вас острый пульпит зуба 46 и кариес. Ждем на лечение.",
+		});
+
+		assert.strictEqual(fetchCalled, false, "Запрос к Telegram Bot API не должен выполняться при утечке тайны");
+		assert.strictEqual(result.ok, false);
+		assert.strictEqual(result.errorClass, "medical_secrecy_violation");
+		assert.strictEqual(result.errorCode, 422);
+		assert.ok(result.details?.includes("врачебной тайны"));
+	});
+
+	test("152-FZ / 323-ФЗ: blocks photo message with clinical diagnosis in caption", async () => {
+		let fetchCalled = false;
+		globalThis.fetch = mock.fn(async () => {
+			fetchCalled = true;
+			return new Response(JSON.stringify({ result: { message_id: 2 } }), { status: 200 });
+			// biome-ignore lint/suspicious/noExplicitAny: test mock
+		}) as any;
+
+		const result = await sendTelegramPhotoMessage({
+			botToken: "fake_token",
+			chatId: "12345",
+			photoUrl: "https://clinic.example.com/xray.jpg",
+			caption: "Снимок КЛКТ: обнаружен периодонтит зуба 26 и гранулема.",
+		});
+
+		assert.strictEqual(fetchCalled, false);
+		assert.strictEqual(result.ok, false);
+		assert.strictEqual(result.errorClass, "medical_secrecy_violation");
+		assert.strictEqual(result.errorCode, 422);
 	});
 });

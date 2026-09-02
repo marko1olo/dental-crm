@@ -171,7 +171,18 @@ export function injectVisualSignatureStampIntoHtml(
 		});
 	}
 
-	// 2. Поиск стандартного блока signatures
+	// 2. Поиск колонок подписи в справках КНД 1151156 (блок .signatures с .sign-col)
+	const signColRegex = /(<div class="signatures">[\s\S]*?<div class="sign-col">[\s\S]*?<\/div>\s*)(<div class="sign-col">[\s\S]*?)(<\/div>\s*<\/div>)/i;
+	if (signColRegex.test(html)) {
+		return html.replace(signColRegex, (_match, leftCol, rightCol, closing) => {
+			const cleanedRight = rightCol
+				.replace(/<div class="sign-line"><\/div>/gi, "")
+				.replace(/<div style="text-align:\s*right;">М\.П\.[^<]*<\/div>/gi, "");
+			return `${leftCol}<div class="sign-col">\n${stampHtml}\n${cleanedRight}${closing}`;
+		});
+	}
+
+	// 3. Поиск стандартного блока signatures
 	const signaturesRegex = /(<div class="signatures">[\s\S]*?)(<\/div>)/i;
 	if (signaturesRegex.test(html)) {
 		return html.replace(signaturesRegex, (_match, content, closing) => {

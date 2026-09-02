@@ -23,9 +23,12 @@
  * API, ни в текст ошибки.
  */
 
+import { MessageTemplateEngine } from "./services/communications/MessageTemplateEngine.js";
+
 type SmsProviderId = "smsru" | "smsc";
 
 type SmsErrorClass =
+	| "medical_secrecy_violation"
 	| "not_configured"
 	| "rate_limited"
 	| "auth"
@@ -485,6 +488,20 @@ export async function sendSms(
 			errorMessage: "Пустой текст сообщения.",
 		};
 	}
+
+	// 152-ФЗ / 323-ФЗ: Защита врачебной тайны перед отправкой в SMS-шлюз
+	const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(input.text);
+	if (leakCheck.hasLeak) {
+		return {
+			ok: false,
+			providerMessageId: null,
+			segments: null,
+			errorCode: 422,
+			errorClass: "medical_secrecy_violation",
+			errorMessage: `152-ФЗ / 323-ФЗ ст. 13: Заблокирована отправка SMS из-за риска разглашения врачебной тайны (${leakCheck.detectedTerms.join(", ")})`,
+		};
+	}
+
 	if (!/^\d{11,15}$/.test(input.toMsisdn)) {
 		return {
 			ok: false,
@@ -544,6 +561,13 @@ export async function fetchSmsBalance(
 				body: form.toString(),
 				signal: controller.signal,
 			});
+			if (!response.ok) {
+				return {
+					ok: false,
+					errorClass: "server",
+					errorMessage: `Шлюз SMS.RU вернул HTTP ${response.status}.`,
+				};
+			}
 			const payload = (await response.json().catch(() => ({}))) as {
 				status_code?: unknown;
 				balance?: unknown;
@@ -576,6 +600,13 @@ export async function fetchSmsBalance(
 			body: form.toString(),
 			signal: controller.signal,
 		});
+		if (!response.ok) {
+			return {
+				ok: false,
+				errorClass: "server",
+				errorMessage: `Шлюз SMSC.RU вернул HTTP ${response.status}.`,
+			};
+		}
 		const payload = (await response.json().catch(() => ({}))) as {
 			balance?: unknown;
 			currency?: unknown;

@@ -11,7 +11,9 @@ import {
 	parseFio,
 	preflightValidatePayload,
 	rublesFromKopecks,
+	validateFnsFiscalReceiptsChecksums,
 	validateFnsNdflXmlStructure,
+	type FnsNdflPrintSigningOptions,
 	type FnsTaxPayload,
 } from "../ndflXmlGenerator.js";
 import {
@@ -290,5 +292,108 @@ describe("FNS Form KND 1151156 & Electronic Format KND 1184043 XML Generator Sui
 		assert.ok(html.includes("Иванов Иван Иванович"));
 		assert.ok(html.includes("Лечение кариеса"));
 		assert.ok(html.includes("Дентальная имплантация"));
+	});
+
+	test("5.1 validateFnsFiscalReceiptsChecksums detects kopeck-exact checksum discrepancies down to 1 kopeck", () => {
+		const payloadWithDiscrepancy: FnsTaxPayload = {
+			...validLegalClinicPayload,
+			expenses: {
+				code1AmountRub: 170000.01, // Заявлено на 1 копейку больше, чем сумма чеков (170000.00)
+				code2AmountRub: 300000.0,
+			},
+		};
+
+		const check = validateFnsFiscalReceiptsChecksums(payloadWithDiscrepancy);
+		assert.strictEqual(check.isValid, false);
+		assert.strictEqual(check.code1DiscrepancyKopecks, 1);
+		assert.ok(check.errors.some((e) => e.includes("Расхождение контрольной суммы по коду 1")));
+
+		const preflight = preflightValidatePayload(payloadWithDiscrepancy);
+		assert.ok(preflight.some((p) => p.field === "receipts.checksum" && p.severity === "error"));
+	});
+
+	test("5.2 validateFnsFiscalReceiptsChecksums rejects duplicate fiscal receipts and tax year mismatches", () => {
+		const payloadWithDuplicatesAndWrongYear: FnsTaxPayload = {
+			...validLegalClinicPayload,
+			taxYear: 2025,
+			receipts: [
+				{
+					id: "rec-1",
+					receiptNumber: "00124",
+					fiscalDocumentNumber: "78912",
+					receiptDate: "2025-04-10",
+					serviceName: "Лечение кариеса",
+					deductionCode: "1",
+					amountRub: 10000,
+				},
+				{
+					id: "rec-2",
+					receiptNumber: "00124",
+					fiscalDocumentNumber: "78912", // Тот же ФД — дубликат!
+					receiptDate: "2025-04-10",
+					serviceName: "Лечение кариеса повтор",
+					deductionCode: "1",
+					amountRub: 10000,
+				},
+				{
+					id: "rec-3",
+					receiptNumber: "00555",
+					fiscalDocumentNumber: "78999",
+					receiptDate: "2024-11-20", // 2024 год при налоговом периоде 2025!
+					serviceName: "Профгигиена",
+					deductionCode: "1",
+					amountRub: 5000,
+				},
+			],
+		};
+
+		const check = validateFnsFiscalReceiptsChecksums(payloadWithDuplicatesAndWrongYear);
+		assert.strictEqual(check.isValid, false);
+		assert.ok(check.errors.some((e) => e.includes("обнаружен дубликат чека")));
+		assert.ok(check.errors.some((e) => e.includes("не соответствует налоговому периоду справки")));
+	});
+
+	test("5.3 validateFnsFiscalReceiptsChecksums rejects retail non-medical goods included in deduction receipts", () => {
+		const payloadWithRetailGood: FnsTaxPayload = {
+			...validLegalClinicPayload,
+			receipts: [
+				{
+					id: "rec-retail-1",
+					receiptNumber: "00999",
+					fiscalDocumentNumber: "11223",
+					receiptDate: "2025-05-12",
+					serviceName: "Электрическая зубная щетка Oral-B Pro",
+					deductionCode: "1",
+					amountRub: 6500,
+				},
+			],
+		};
+
+		const check = validateFnsFiscalReceiptsChecksums(payloadWithRetailGood);
+		assert.strictEqual(check.isValid, false);
+		assert.ok(check.errors.some((e) => e.includes("сопутствующим товаром и не подлежит социальному налоговому вычету")));
+	});
+
+	test("6.1 generateFnsNdflPrintHtml automatically applies official blue UKEP stamp of the clinic per GOST R 7.0.97-2016", () => {
+		const signingOpts: FnsNdflPrintSigningOptions = {
+			certificateSerialNumber: "00E4A28B9988776655443322",
+			certificateSubject: 'ООО "СТОМАТОЛОГИЯ ДЕНТЕ" (Руководитель Смирнов А.В.)',
+			certificateIssuer: "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+			validFrom: "2026-01-01T00:00:00.000Z",
+			validTo: "2027-01-01T00:00:00.000Z",
+			signedAt: "2026-03-25T14:30:00.000Z",
+			signatureType: "ukep",
+		};
+
+		const signedHtml = generateFnsNdflPrintHtml(validLegalClinicPayload, signingOpts);
+
+		assert.ok(signedHtml.includes("BEGIN_GOST_SIGNATURE_STAMP"));
+		assert.ok(signedHtml.includes("END_GOST_SIGNATURE_STAMP"));
+		assert.ok(signedHtml.includes("ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"));
+		assert.ok(signedHtml.includes("00E4A28B9988776655443322"));
+		assert.ok(signedHtml.includes("ООО &quot;СТОМАТОЛОГИЯ ДЕНТЕ&quot;"));
+		assert.ok(signedHtml.includes("КНД 1151156"));
+		// Проверяем, что синий штамп нанесен в блоке подписи (.sign-col)
+		assert.ok(signedHtml.includes('<div class="sign-col">\n<!-- BEGIN_GOST_SIGNATURE_STAMP -->'));
 	});
 });

@@ -19,6 +19,7 @@ export type DeliveryErrorClass =
 	| "recipient_rejected"
 	| "sender_rejected"
 	| "message_rejected"
+	| "medical_secrecy_violation"
 	| "chat_blocked"
 	| "bad_request"
 	| "timeout"

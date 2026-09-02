@@ -1,3 +1,5 @@
+import { MessageTemplateEngine } from "./services/communications/MessageTemplateEngine.js";
+
 export type TelegramTransportResult =
 	| {
 			ok: true;
@@ -12,6 +14,7 @@ export type TelegramTransportResult =
 			retryAfterSeconds: number | null;
 			errorCode: number | null;
 			errorClass:
+				| "medical_secrecy_violation"
 				| "rate_limited"
 				| "auth"
 				| "chat_blocked"
@@ -20,6 +23,7 @@ export type TelegramTransportResult =
 				| "network"
 				| "server"
 				| "unknown";
+			details?: string;
 	  };
 
 export type SendTelegramTextMessageInput = {
@@ -90,6 +94,19 @@ function telegramMessageIdFromPayload(payload: unknown): number | null {
 export async function sendTelegramTextMessage(
 	input: SendTelegramTextMessageInput,
 ): Promise<TelegramTransportResult> {
+	// 152-ФЗ / 323-ФЗ: Защита врачебной тайны перед отправкой в сокет Telegram Bot API
+	const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(input.text);
+	if (leakCheck.hasLeak) {
+		return {
+			ok: false,
+			telegramMessageId: null,
+			retryAfterSeconds: null,
+			errorCode: 422,
+			errorClass: "medical_secrecy_violation",
+			details: `152-ФЗ / 323-ФЗ ст. 13: Заблокирована отправка сообщения в Telegram Bot API из-за риска утечки врачебной тайны (обнаружены термины: ${leakCheck.detectedTerms.join(", ")})`,
+		};
+	}
+
 	const timeoutMs = Math.max(1000, Math.min(60_000, input.timeoutMs ?? 12_000));
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -149,6 +166,19 @@ export async function sendTelegramTextMessage(
 export async function sendTelegramPhotoMessage(
 	input: SendTelegramPhotoMessageInput,
 ): Promise<TelegramTransportResult> {
+	// 152-ФЗ / 323-ФЗ: Защита врачебной тайны в подписи к фотографии
+	const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(input.caption);
+	if (leakCheck.hasLeak) {
+		return {
+			ok: false,
+			telegramMessageId: null,
+			retryAfterSeconds: null,
+			errorCode: 422,
+			errorClass: "medical_secrecy_violation",
+			details: `152-ФЗ / 323-ФЗ ст. 13: Заблокирована отправка подписи к фото в Telegram Bot API из-за риска утечки врачебной тайны (обнаружены термины: ${leakCheck.detectedTerms.join(", ")})`,
+		};
+	}
+
 	const timeoutMs = Math.max(1000, Math.min(60_000, input.timeoutMs ?? 12_000));
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);

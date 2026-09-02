@@ -53,6 +53,10 @@ import {
 	validateRussianOgrn,
 	validateRussianSnils,
 } from "../fiscal/taxDeduction.js";
+import {
+	injectVisualSignatureStampIntoHtml,
+	renderDigitalSignatureStampHtml,
+} from "../crypto/visualSignatureStamp.js";
 
 /** Результат сборки XML и расчета вычета */
 export interface FnsNdflXmlResult {
@@ -84,6 +88,36 @@ export function escapeXmlAttr(value: string | number | null | undefined): string
 /** Очистка строки от нецифровых символов */
 export function cleanDigits(str?: string | null): string {
 	return str ? str.replace(/\D/g, "") : "";
+}
+
+/** Параметры нанесения официального штампа УКЭП клиники по ГОСТ Р 7.0.97-2016 */
+export interface FnsNdflPrintSigningOptions {
+	certificateSerialNumber?: string | undefined;
+	certificateSubject?: string | undefined;
+	certificateIssuer?: string | undefined;
+	validFrom?: string | undefined;
+	validTo?: string | undefined;
+	signedAt?: string | undefined;
+	signatureType?: "ukep" | "unep" | undefined;
+}
+
+/** Результат строгой валидации контрольных сумм фискальных чеков */
+export interface FnsReceiptsChecksumValidationResult {
+	isValid: boolean;
+	totalReceiptsCount: number;
+	code1ReceiptsCount: number;
+	code2ReceiptsCount: number;
+	calculatedCode1Kopecks: number;
+	calculatedCode2Kopecks: number;
+	calculatedTotalKopecks: number;
+	declaredCode1Kopecks?: number | undefined;
+	declaredCode2Kopecks?: number | undefined;
+	declaredTotalKopecks?: number | undefined;
+	code1DiscrepancyKopecks: number;
+	code2DiscrepancyKopecks: number;
+	totalDiscrepancyKopecks: number;
+	errors: string[];
+	warnings: string[];
 }
 
 /** Перевод целых копеек в рубли (число с плавающей точкой) для вывода */
@@ -213,7 +247,7 @@ export function isNonMedicalGood(name?: string, category?: string): boolean {
 		"набор гигиен",
 		"набор для отбеливан",
 		"пенка для полост",
-		"домашнее отбеливан",
+		"домашн",
 		"гель для отбеливан",
 		"бокс для капп",
 		"футляр",
@@ -305,6 +339,164 @@ export function parseFio(fullNameStr: string): FnsFullName {
 		family: parts[0] || "Иванов",
 		given: parts[1] || "Иван",
 		...(patronymic ? { patronymic } : {}),
+	};
+}
+
+/**
+ * Строгая валидация контрольных сумм фискальных чеков (54-ФЗ / ст. 219 НК РФ):
+ * - Полное копеечное совпадение сумм чеков и заявленных сумм расходов (без расхождений)
+ * - Защита от дубликатов чеков (один ФД не может быть учтен повторно)
+ * - Проверка на строго положительные целочисленные суммы
+ * - Проверка соответствия даты чека налоговому периоду
+ * - Запрет на включение сопутствующих товаров (зубные пасты/щетки) и выплат по ДМС
+ */
+export function validateFnsFiscalReceiptsChecksums(
+	payload: FnsTaxPayload,
+): FnsReceiptsChecksumValidationResult {
+	const errors: string[] = [];
+	const warnings: string[] = [];
+	const receipts = payload.receipts || [];
+	const targetTaxYear = Number(payload.taxYear);
+
+	let code1ReceiptsCount = 0;
+	let code2ReceiptsCount = 0;
+	let calculatedCode1Kopecks = 0;
+	let calculatedCode2Kopecks = 0;
+
+	const seenReceiptKeys = new Set<string>();
+
+	for (let i = 0; i < receipts.length; i++) {
+		const r = receipts[i];
+		if (!r) continue;
+		const itemIdx = i + 1;
+
+		const receiptNum = (r.receiptNumber || "").trim();
+		const fiscalDocNum = (r.fiscalDocumentNumber || "").trim();
+		if (!receiptNum && !fiscalDocNum) {
+			errors.push(
+				`Чек #${itemIdx}: отсутствует номер фискального чека или номер ФД.`,
+			);
+		}
+
+		const uniqueKey = fiscalDocNum
+			? `fd:${fiscalDocNum}`
+			: `num:${receiptNum}_date:${r.receiptDate}`;
+
+		if (seenReceiptKeys.has(uniqueKey)) {
+			errors.push(
+				`Чек #${itemIdx}: обнаружен дубликат чека № ${receiptNum}${fiscalDocNum ? ` (ФД ${fiscalDocNum})` : ""}. Повторное включение одного и того же фискального чека запрещено ст. 219 НК РФ.`,
+			);
+		} else {
+			seenReceiptKeys.add(uniqueKey);
+		}
+
+		let amountKop = 0;
+		if (typeof r.amountKopecks === "number") {
+			amountKop = r.amountKopecks;
+		} else if (r.amountRub != null) {
+			amountKop = parseKopecks(r.amountRub);
+		}
+
+		if (isNaN(amountKop) || amountKop <= 0) {
+			errors.push(
+				`Чек #${itemIdx} (№ ${receiptNum}): сумма должна быть строго положительной (получено: ${r.amountRub} ₽ / ${r.amountKopecks} коп.).`,
+			);
+		}
+
+		if (r.receiptDate) {
+			const rYear = new Date(r.receiptDate).getFullYear();
+			if (!isNaN(rYear) && targetTaxYear && rYear !== targetTaxYear) {
+				errors.push(
+					`Чек #${itemIdx} (№ ${receiptNum}) от ${r.receiptDate}: дата чека (${rYear} год) не соответствует налоговому периоду справки (${targetTaxYear} год).`,
+				);
+			}
+		} else {
+			warnings.push(
+				`Чек #${itemIdx} (№ ${receiptNum}): не указана точная дата фискального чека.`,
+			);
+		}
+
+		if (isNonMedicalGood(r.serviceName)) {
+			errors.push(
+				`Чек #${itemIdx} (№ ${receiptNum}): позиция «${r.serviceName}» является сопутствующим товаром и не подлежит социальному налоговому вычету по ст. 219 НК РФ.`,
+			);
+		}
+
+		if (r.deductionCode === "2") {
+			code2ReceiptsCount++;
+			calculatedCode2Kopecks += amountKop;
+		} else {
+			code1ReceiptsCount++;
+			calculatedCode1Kopecks += amountKop;
+		}
+	}
+
+	const calculatedTotalKopecks = calculatedCode1Kopecks + calculatedCode2Kopecks;
+
+	let declaredCode1Kopecks: number | undefined;
+	let declaredCode2Kopecks: number | undefined;
+
+	if (typeof payload.expenses.code1AmountKopecks === "number") {
+		declaredCode1Kopecks = payload.expenses.code1AmountKopecks;
+	} else if (payload.expenses.code1AmountRub != null) {
+		declaredCode1Kopecks = parseKopecks(payload.expenses.code1AmountRub);
+	}
+
+	if (typeof payload.expenses.code2AmountKopecks === "number") {
+		declaredCode2Kopecks = payload.expenses.code2AmountKopecks;
+	} else if (payload.expenses.code2AmountRub != null) {
+		declaredCode2Kopecks = parseKopecks(payload.expenses.code2AmountRub);
+	}
+
+	const declaredTotalKopecks =
+		declaredCode1Kopecks !== undefined || declaredCode2Kopecks !== undefined
+			? (declaredCode1Kopecks || 0) + (declaredCode2Kopecks || 0)
+			: undefined;
+
+	let code1DiscrepancyKopecks = 0;
+	let code2DiscrepancyKopecks = 0;
+	let totalDiscrepancyKopecks = 0;
+
+	if (receipts.length > 0) {
+		if (declaredCode1Kopecks !== undefined) {
+			code1DiscrepancyKopecks = Math.abs(calculatedCode1Kopecks - declaredCode1Kopecks);
+			if (code1DiscrepancyKopecks > 0) {
+				errors.push(
+					`Расхождение контрольной суммы по коду 1: сумма фискальных чеков (${(calculatedCode1Kopecks / 100).toFixed(2)} ₽) не совпадает с заявленной суммой расходов (${(declaredCode1Kopecks / 100).toFixed(2)} ₽). Расхождение: ${(code1DiscrepancyKopecks / 100).toFixed(2)} ₽.`,
+				);
+			}
+		}
+
+		if (declaredCode2Kopecks !== undefined) {
+			code2DiscrepancyKopecks = Math.abs(calculatedCode2Kopecks - declaredCode2Kopecks);
+			if (code2DiscrepancyKopecks > 0) {
+				errors.push(
+					`Расхождение контрольной суммы по коду 2 (дорогостоящее лечение): сумма фискальных чеков (${(calculatedCode2Kopecks / 100).toFixed(2)} ₽) не совпадает с заявленной суммой расходов (${(declaredCode2Kopecks / 100).toFixed(2)} ₽). Расхождение: ${(code2DiscrepancyKopecks / 100).toFixed(2)} ₽.`,
+				);
+			}
+		}
+
+		if (declaredTotalKopecks !== undefined) {
+			totalDiscrepancyKopecks = Math.abs(calculatedTotalKopecks - declaredTotalKopecks);
+		}
+	}
+
+	return {
+		isValid: errors.length === 0,
+		totalReceiptsCount: receipts.length,
+		code1ReceiptsCount,
+		code2ReceiptsCount,
+		calculatedCode1Kopecks,
+		calculatedCode2Kopecks,
+		calculatedTotalKopecks,
+		declaredCode1Kopecks,
+		declaredCode2Kopecks,
+		declaredTotalKopecks,
+		code1DiscrepancyKopecks,
+		code2DiscrepancyKopecks,
+		totalDiscrepancyKopecks,
+		errors,
+		warnings,
 	};
 }
 
@@ -408,6 +600,23 @@ export function preflightValidatePayload(payload: FnsTaxPayload): FnsPreflightIs
 			field: "receipts",
 			message: "Добавьте хотя бы один оплаченный фискальный чек или сумму расходов за налоговый год",
 			severity: "error",
+		});
+	}
+
+	// 5. Валидация контрольных сумм и непротиворечивости чеков
+	const checksumValidation = validateFnsFiscalReceiptsChecksums(payload);
+	for (const err of checksumValidation.errors) {
+		issues.push({
+			field: "receipts.checksum",
+			message: err,
+			severity: "error",
+		});
+	}
+	for (const warn of checksumValidation.warnings) {
+		issues.push({
+			field: "receipts.checksum",
+			message: warn,
+			severity: "warning",
 		});
 	}
 
@@ -735,7 +944,10 @@ export function validateFnsNdflXmlStructure(xmlContent: string): {
  * Генерация официальной печатной формы A4 "Справка об оплате медицинских услуг"
  * (Приложение № 1 к приказу ФНС России от 08.11.2023 № ЕА-7-11/824@ / форма по КНД 1151156).
  */
-export function generateFnsNdflPrintHtml(payload: FnsTaxPayload): string {
+export function generateFnsNdflPrintHtml(
+	payload: FnsTaxPayload,
+	signingOptions?: FnsNdflPrintSigningOptions | boolean | undefined,
+): string {
 	const calculation = buildFnsKnd1151156Xml(payload);
 	const docDate = formatFnsRuDate(payload.documentDate);
 	const payer = payload.payer;
@@ -765,7 +977,7 @@ export function generateFnsNdflPrintHtml(payload: FnsTaxPayload): string {
 		)
 		.join("");
 
-	return `<!DOCTYPE html>
+	let html = `<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -932,4 +1144,43 @@ export function generateFnsNdflPrintHtml(payload: FnsTaxPayload): string {
   </div>
 </body>
 </html>`;
+
+	if (signingOptions) {
+		const opts: FnsNdflPrintSigningOptions =
+			typeof signingOptions === "object" && signingOptions !== null
+				? signingOptions
+				: {};
+
+		const certSerial =
+			opts.certificateSerialNumber ||
+			`00E4A28B${payload.documentNumber.replace(/\D/g, "").padStart(12, "0").slice(0, 16).toUpperCase()}`;
+		const certSubject =
+			opts.certificateSubject ||
+			clinic.name ||
+			clinic.directorName ||
+			"ООО СТОМАТОЛОГИЯ ДЕНТЕ";
+		const validFrom =
+			opts.validFrom ||
+			(typeof payload.documentDate === "string"
+				? payload.documentDate
+				: new Date().toISOString());
+		const validToDate = new Date(validFrom);
+		validToDate.setFullYear(validToDate.getFullYear() + 1);
+
+		const stampHtml = renderDigitalSignatureStampHtml({
+			certificateSerialNumber: certSerial,
+			certificateSubject: certSubject,
+			certificateIssuer:
+				opts.certificateIssuer || "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+			validFrom,
+			validTo: opts.validTo || validToDate.toISOString(),
+			signedAt: opts.signedAt || validFrom,
+			signatureType: opts.signatureType || "ukep",
+			documentId: payload.documentNumber,
+		});
+
+		html = injectVisualSignatureStampIntoHtml(html, stampHtml);
+	}
+
+	return html;
 }

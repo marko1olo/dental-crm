@@ -41,10 +41,17 @@ function applySignatureStampIfSigned(
 	const certSerial =
 		document.doctorCertSerial ||
 		`00E4A28B${document.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`;
+	const isTaxCert =
+		document.kind === "tax_deduction_certificate" ||
+		document.kind === "legacy_tax_deduction_certificate";
+	const defaultSubject = isTaxCert
+		? document.signatureAttestation?.staffFullName ||
+			"Главный врач / Уполномоченное лицо клиники"
+		: "Врач-стоматолог клиники";
 	const certSubject =
 		document.doctorCertSubject ||
 		document.signatureAttestation?.staffFullName ||
-		"Врач-стоматолог клиники";
+		defaultSubject;
 	const validFrom = document.issuedAt || new Date().toISOString();
 	const validToDate = new Date(validFrom);
 	validToDate.setFullYear(validToDate.getFullYear() + 1);
