@@ -14,6 +14,9 @@ const SENSITIVE_KEY_PATTERNS: readonly RegExp[] = [
 	/card(_?num(ber)?|_?pan)?|cvv|cvc|pan|bank_?account|iban|account_?num(ber)?/i,
 	/passport|snils|oms|polis/i,
 	/certificate|signature|sig[_\-]?value|ecp|eds|salt|argon2|bcrypt/i,
+	/diagnosis|diagnoses|mkb10|icd10|clinical[_\-]?notes?|anamnesis|complaints/i,
+	/tooth[_\-]?formula|odontogram|treatment[_\-]?plan|emr[_\-]?records?/i,
+	/диагноз|мкб10|анамнез|жалобы|зубная[_\-]?формула|план[_\-]?лечения|одонтограмма/i,
 	/пароль|пинкод|токен|секрет|паспорт|снилс|полис|номер_карты|код_подтверждения|эцп|подпись|ключ/i,
 ];
 

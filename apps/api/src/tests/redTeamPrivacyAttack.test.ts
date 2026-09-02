@@ -769,36 +769,12 @@ describe("RED-TEAM HAMMER: 152-FZ / 323-ФЗ Aggressive Attack Suite", { concurr
 
 		wsBroker.broadcastToOrganization(ORGANIZATION_ID, clinicalEvent);
 
-		console.log(
-			"\n[RED-TEAM AUDIT 11: WebSocket Broadcast Received Count]:",
-			receivedMessages.length,
-		);
-
+		// 152-ФЗ / 323-ФЗ: Неклинический WebSocket-клиент категорически не должен получать клинические события!
 		assert.strictEqual(
 			receivedMessages.length,
-			1,
-			"WebSocket клиент должен получить широковещательное сообщение",
+			0,
+			"WebSocket клиент маркетолога не должен получить клиническое событие UPDATE_ODONTOGRAM (152-ФЗ)",
 		);
-
-		const firstMsg = receivedMessages[0];
-		assert.ok(firstMsg, "Message must not be empty");
-		const parsed = JSON.parse(firstMsg!);
-		const leaks = detectLeaks(parsed);
-
-		console.log(
-			"[RED-TEAM AUDIT 11: WebSocket Broadcast Leaks count]:",
-			leaks.length,
-			leaks.slice(0, 5),
-		);
-
-		if (leaks.length > 0) {
-			console.error(
-				"\n[CRITICAL VULNERABILITY IN WEBSOCKET BROKER]: Клиническая тайна транслируется без фильтрации ролей!\n",
-				leaks,
-			);
-			assert.fail(
-				`КРИТИЧЕСКИЙ БРАК: WebSocket-брокер транслирует медицинскую тайну (диагнозы) неклиническим слушателям:\n${leaks.join("\n")}`,
-			);
-		}
+		console.log("✔ АТАКА 11 ОТБИТА: Клиническое событие UPDATE_ODONTOGRAM аппаратно заблокировано для неклинического сокета.");
 	});
 });

@@ -8,11 +8,14 @@ import { register as registerPdf } from "./documents/pdf.js";
 import { register as registerSignUkep } from "./documents/signUkep.js";
 import { register as registerTaxXml } from "./documents/taxXml.js";
 import { register as registerVoid } from "./documents/void.js";
+import { registerQuery } from "./documents/query.js";
 
 export * from "./documents/shared.js";
+export * from "./documents/query.js";
 
 export async function registerDocumentRoutes(app: FastifyInstance) {
 	await registerCreate(app);
+	await registerQuery(app);
 	await registerIssue(app);
 	await registerVoid(app);
 	await registerTaxXml(app);
