@@ -100,11 +100,6 @@ import {
 	type SbpDynamicQrModel,
 	type SignableStatutoryDocument,
 } from "./patientWebappEngine.js";
-import { PostOpCareTimelineWidget } from "./PostOpCareTimelineWidget.js";
-import { FamilyBalanceShareWidget } from "./FamilyBalanceShareWidget.js";
-import { ImplantPassportWidget } from "./ImplantPassportWidget.js";
-import { FamilyDentalCareHubWidget } from "./FamilyDentalCareHubWidget.js";
-import { InteractiveSmartBookingFlow } from "./InteractiveSmartBookingFlow.js";
 import { InteractiveTreatmentTimelineWidget } from "./InteractiveTreatmentTimelineWidget.js";
 import "./patientWebapp.css";
 
@@ -745,21 +740,6 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 						{/* App Content Tabs */}
 						<main className="pwa-app-content">
-							{showSmartBooking ? (
-								<InteractiveSmartBookingFlow
-									patientId={profile.patientId}
-									defaultPatientName={profile.fullName}
-									defaultPatientPhone={profile.phone}
-									clinicName={profile.clinicName}
-									clinicAddress={profile.clinicAddress}
-									onBookingSuccess={() => {
-										setShowSmartBooking(false);
-										onAppointmentBook?.();
-									}}
-									onCancel={() => setShowSmartBooking(false)}
-								/>
-							) : (
-								<>
 									{/* TAB 1: ГЛАВНАЯ (HOME) */}
 									{activeTab === "home" && (
 										<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -976,18 +956,6 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											Если после лечения возникла ноющая боль или отек — напишите дежурному врачу в WhatsApp или позвоните в клинику.
 										</p>
 										<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-											<button
-												type="button"
-												onClick={() => {
-													setActiveTab("appointments");
-													setAppointmentsSubTab("postop");
-												}}
-												className="pwa-action-btn-secondary"
-												style={{ fontSize: "12px", minHeight: "44px", flex: "1 1 100%", background: "rgba(13, 148, 136, 0.12)", color: "var(--brand-500, #0d9488)", border: "1px solid rgba(13, 148, 136, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontWeight: 700 }}
-											>
-												<HeartPulse size={15} />
-												<span>Памятка и календарь после операции</span>
-											</button>
 											<a
 												href="https://wa.me/79991234567"
 												target="_blank"
@@ -1017,7 +985,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 									{/* Quick Action: New Appointment */}
 									<button
 										type="button"
-										onClick={() => setShowSmartBooking(true)}
+										onClick={onAppointmentBook}
 										className="pwa-action-btn-primary"
 										style={{ minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 									>
@@ -1064,54 +1032,6 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											}}
 										>
 											История ({profile.pastAppointments.length})
-										</button>
-										<button
-											type="button"
-											onClick={() => setAppointmentsSubTab("postop")}
-											style={{
-												flex: 1,
-												minHeight: "40px",
-												borderRadius: "8px",
-												border: "none",
-												background: appointmentsSubTab === "postop" ? "var(--brand-500, #0d9488)" : "transparent",
-												color: appointmentsSubTab === "postop" ? "var(--on-teal, #ffffff)" : "var(--muted, #64748b)",
-												fontSize: "12px",
-												fontWeight: 700,
-												cursor: "pointer",
-												whiteSpace: "nowrap",
-												padding: "0 8px",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												gap: "4px",
-											}}
-										>
-											<HeartPulse size={14} />
-											<span>После операции</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setAppointmentsSubTab("family_care")}
-											style={{
-												flex: 1.2,
-												minHeight: "40px",
-												borderRadius: "8px",
-												border: "none",
-												background: appointmentsSubTab === "family_care" ? "var(--brand-500, #0d9488)" : "transparent",
-												color: appointmentsSubTab === "family_care" ? "var(--on-teal, #ffffff)" : "var(--muted, #64748b)",
-												fontSize: "12px",
-												fontWeight: 700,
-												cursor: "pointer",
-												whiteSpace: "nowrap",
-												padding: "0 8px",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												gap: "4px",
-											}}
-										>
-											<Users size={14} />
-											<span>Семья (CAMBRA)</span>
 										</button>
 									</div>
 
@@ -1198,58 +1118,26 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											</div>
 										))
 									)}
-
-									{appointmentsSubTab === "postop" && (
-										<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-											<PostOpCareTimelineWidget
-												patientName={profile.fullName}
-												clinicName={profile.clinicName}
-												emergencyPhone={profile.clinicPhone}
-												toothFdiCodes={profile.activeTreatmentPlan ? ["48", "36"] : ["48"]}
-												onEmergencyCallRequested={(reason) => {
-													showToast(`Экстренный вызов передан дежурному врачу: ${reason}`, "success");
-												}}
-												onSutureRemovalBooked={() => {
-													onAppointmentBook?.();
-												}}
-											/>
-										</div>
-									)}
-
-									{appointmentsSubTab === "family_care" && (
-										<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-											<FamilyDentalCareHubWidget
-												currentPatientId={profile.patientId}
-												onBookMemberHygiene={() => {
-													setShowSmartBooking(true);
-												}}
-												onBookParallelVisit={() => {
-													setShowSmartBooking(true);
-												}}
-												onSendFamilyReminder={async () => {
-													showToast("Семейные напоминания отправлены членам семьи", "success");
-												}}
-											/>
-										</div>
-									)}
 								</div>
 							)}
 
 							{/* TAB: ПОСЛЕ ОПЕРАЦИИ / РЕАБИЛИТАЦИЯ (POST-OP) */}
 							{activeTab === "postop" && (
 								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-									<PostOpCareTimelineWidget
-										patientName={profile.fullName}
-										clinicName={profile.clinicName}
-										emergencyPhone={profile.clinicPhone}
-										toothFdiCodes={profile.activeTreatmentPlan ? ["48", "36"] : ["48"]}
-										onEmergencyCallRequested={(reason) => {
-											showToast(`Экстренный вызов передан дежурному врачу: ${reason}`, "success");
-										}}
-										onSutureRemovalBooked={() => {
-											onAppointmentBook?.();
-										}}
-									/>
+									<div className="pwa-card" style={{ borderLeft: "4px solid var(--danger, #ef4444)" }}>
+										<strong style={{ fontSize: "14px" }}>Памятка после приёма</strong>
+										<p style={{ margin: "8px 0", fontSize: "12px", color: "var(--muted, #64748b)", lineHeight: "1.5" }}>
+											Соблюдайте назначения лечащего врача. При возникновении острой боли или отёка свяжитесь с клиникой.
+										</p>
+										<a
+											href={`tel:${profile.clinicPhone.replace(/\D/g, "")}`}
+											className="pwa-action-btn-primary"
+											style={{ fontSize: "12px", minHeight: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+										>
+											<Phone size={15} />
+											<span>Позвонить в клинику</span>
+										</a>
+									</div>
 								</div>
 							)}
 
@@ -1258,7 +1146,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 									<InteractiveTreatmentTimelineWidget
 										planProfile={profile.activeTreatmentPlan ?? undefined}
-										onBookStage={() => setShowSmartBooking(true)}
+										onBookStage={onAppointmentBook}
 										onPayStageSbp={(stageId) => {
 											const st = profile.activeTreatmentPlan?.stages.find((s) => s.id === stageId);
 											if (st) handlePayStageSbp(st);
@@ -1400,16 +1288,6 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 							{/* TAB 5: ОПЛАТА И ДОКУМЕНТЫ (PAYMENTS & DOCUMENTS) */}
 							{activeTab === "payments" && (
 								<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-									{/* Семейный баланс и кошелек 323-ФЗ */}
-									<FamilyBalanceShareWidget
-										currentPatientId={profile.patientId}
-										onTopUpSuccess={(amountKopecks) => {
-											if (onPaymentComplete) {
-												onPaymentComplete("FAMILY-TOPUP", kopecksToRubles(amountKopecks));
-											}
-										}}
-									/>
-
 									{/* Unpaid Invoices Section */}
 									<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
 										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1523,18 +1401,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 										})}
 									</div>
 
-									{/* Electronic Implant & Prosthetics Passport */}
-									<div style={{ marginTop: "8px" }}>
-										<ImplantPassportWidget
-											currentPatientId={profile.patientId}
-											onBookCheckupAppointment={() => {
-												setShowSmartBooking(true);
-											}}
-										/>
-									</div>
 								</div>
-							)}
-								</>
 							)}
 						</main>
 
@@ -1542,11 +1409,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 						<nav className="pwa-bottom-tabbar">
 							<button
 								type="button"
-								className={`pwa-tab-button ${!showSmartBooking && activeTab === "home" ? "active" : ""}`}
-								onClick={() => {
-									setShowSmartBooking(false);
-									setActiveTab("home");
-								}}
+								className={`pwa-tab-button ${activeTab === "home" ? "active" : ""}`}
+								onClick={() => setActiveTab("home")}
 							>
 								<Smile size={20} />
 								<span>Главная</span>
@@ -1554,11 +1418,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 							<button
 								type="button"
-								className={`pwa-tab-button ${!showSmartBooking && activeTab === "appointments" ? "active" : ""}`}
-								onClick={() => {
-									setShowSmartBooking(false);
-									setActiveTab("appointments");
-								}}
+								className={`pwa-tab-button ${activeTab === "appointments" ? "active" : ""}`}
+								onClick={() => setActiveTab("appointments")}
 							>
 								<Calendar size={20} />
 								<span>Записи</span>
@@ -1569,11 +1430,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 							<button
 								type="button"
-								className={`pwa-tab-button ${!showSmartBooking && activeTab === "plan" ? "active" : ""}`}
-								onClick={() => {
-									setShowSmartBooking(false);
-									setActiveTab("plan");
-								}}
+								className={`pwa-tab-button ${activeTab === "plan" ? "active" : ""}`}
+								onClick={() => setActiveTab("plan")}
 							>
 								<Activity size={20} />
 								<span>План</span>
@@ -1581,11 +1439,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 							<button
 								type="button"
-								className={`pwa-tab-button ${!showSmartBooking && activeTab === "photos" ? "active" : ""}`}
-								onClick={() => {
-									setShowSmartBooking(false);
-									setActiveTab("photos");
-								}}
+								className={`pwa-tab-button ${activeTab === "photos" ? "active" : ""}`}
+								onClick={() => setActiveTab("photos")}
 							>
 								<Camera size={20} />
 								<span>До/После</span>
@@ -1593,11 +1448,8 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 
 							<button
 								type="button"
-								className={`pwa-tab-button ${!showSmartBooking && activeTab === "payments" ? "active" : ""}`}
-								onClick={() => {
-									setShowSmartBooking(false);
-									setActiveTab("payments");
-								}}
+								className={`pwa-tab-button ${activeTab === "payments" ? "active" : ""}`}
+								onClick={() => setActiveTab("payments")}
 							>
 								<CreditCard size={20} />
 								<span>Оплата</span>
